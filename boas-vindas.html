@@ -80,6 +80,13 @@
     (function () {
       "use strict";
       var FX = window.AtlasFX;
+
+      /* A apresentação chegou até aqui: da próxima vez o boot manda
+         direto para o login. Marcado no INÍCIO e não no clique do
+         botão — quem viu a tela já viu a apresentação, tenha clicado
+         ou fechado a aba. */
+      if (window.AtlasSettings) AtlasSettings.markIntroSeen();
+
       var sky = FX.makeSky(document.getElementById("fxStars"), document.getElementById("fxDust"));
       var hud = FX.makeHud({ clock: document.getElementById("hudClock") });
       FX.add(function (now, dt) { sky.draw(now, dt); hud.tick(now, dt); });

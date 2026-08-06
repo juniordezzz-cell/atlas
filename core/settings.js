@@ -15,6 +15,7 @@
      dateFormat   "dd/MM/yyyy" | "MM/dd/yyyy" | "yyyy-MM-dd"
      numberFormat "pt-BR" | "en-US"
      animations   true | false
+     intro        "primeira" | "sempre"
 
    API
    ---
@@ -38,6 +39,7 @@
   if (window.AtlasSettings) return; // idempotente
 
   var LS_KEY = "atlas.settings.v1";
+  var INTRO_KEY = "atlas.intro.seen.v1";
 
   var DEFAULTS = {
     theme: "dark",          // o ATLAS nasce escuro
@@ -45,7 +47,13 @@
     currency: "USD",        // regra do sistema: cripto em USD
     dateFormat: "dd/MM/yyyy",
     numberFormat: "pt-BR",
-    animations: true
+    animations: true,
+    /* Boot + boas-vindas somam ~10s. Isso é um ativo de marca na
+       PRIMEIRA vez e um pedágio em todas as outras — quem usa o
+       sistema cinco vezes por dia pagaria cinco vezes. Por padrão a
+       apresentação roda uma vez só; quem quiser rever escolhe
+       "sempre" nas Configurações. */
+    intro: "primeira"
   };
 
   var ALLOWED = {
@@ -53,7 +61,8 @@
     lang: ["pt-BR", "en"],
     currency: ["BRL", "USD", "EUR"],
     dateFormat: ["dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd"],
-    numberFormat: ["pt-BR", "en-US"]
+    numberFormat: ["pt-BR", "en-US"],
+    intro: ["primeira", "sempre"]
   };
 
   var state = null;
@@ -197,7 +206,29 @@
       catch (e) { return String(num); }
     },
 
-    locale: function () { return state.numberFormat; }
+    locale: function () { return state.numberFormat; },
+
+    /* ---------- Apresentação de abertura (boot + boas-vindas) ----------
+       "Já viu" é FATO, não preferência: fica numa chave própria, fora do
+       objeto de settings, para não ser exportado como se fosse escolha do
+       usuário nem restaurado por "Restaurar padrões". A preferência de
+       verdade é intro: "primeira" | "sempre". */
+    introSeen: function () {
+      try { return localStorage.getItem(INTRO_KEY) === "1"; }
+      catch (e) { return false; }
+    },
+    markIntroSeen: function () {
+      try { localStorage.setItem(INTRO_KEY, "1"); } catch (e) {}
+    },
+    /* `?intro=1` na URL força a apresentação — é o que o botão
+       "Rever apresentação" das Configurações usa. */
+    shouldPlayIntro: function () {
+      try {
+        if (/[?&]intro=1/.test(location.search)) return true;
+      } catch (e) {}
+      if (state.intro === "sempre") return true;
+      return !AtlasSettings.introSeen();
+    }
   };
 
   load();

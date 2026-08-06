@@ -168,6 +168,9 @@
   background: color-mix(in srgb, var(--atlas-accent) 12%, transparent);
 }
 .set-foot .hint { font-size: 11.5px; color: var(--atlas-text-faint); }
+/* dica que é link (ex.: "Rever agora") — precisa se anunciar como clicável */
+.set-foot .hint-link { color: var(--atlas-accent); text-decoration: underline; text-underline-offset: 2px; }
+.set-foot .hint-link:hover { color: var(--atlas-accent-2); }
 
 /* ---- Separador "Configurações por módulo" ---- */
 .set-sep {

@@ -27,6 +27,12 @@
       "Animações": "Animations",
       "Ativa transições e efeitos de movimento":
         "Enables transitions and motion effects",
+      "Apresentação de abertura": "Opening sequence",
+      "O boot e a tela de boas-vindas. Por padrão rodam só na primeira vez.":
+        "The boot and welcome screens. By default they run only the first time.",
+      "Só na primeira vez": "First time only",
+      "Sempre": "Always",
+      "Rever agora": "Replay now",
       "Idioma e Região": "Language & Region",
       "Idioma": "Language",
       "Muda todo o sistema, inclusive o Oráculo":
