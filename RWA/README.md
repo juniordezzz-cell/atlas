@@ -68,10 +68,11 @@ RWA/
 └── assets/                 Logos/ícones opcionais
 ```
 
-> **Arquivos desligados.** `js/app.js`, `js/router.js` e os sete `js/view-*.js`
-> continuam no disco, mas **nenhuma tag `<script>` aponta para eles** — foram
-> substituídos por `rwa-app.js` e estão aguardando remoção. Não edite esses
-> arquivos achando que corrige a tela: o código em execução é o `rwa-app.js`.
+> **Histórico.** `js/app.js`, `js/router.js` e sete `js/view-*.js` existiam aqui
+> como versão anterior desta arquitetura. Ficaram meses no disco sem nenhuma tag
+> `<script>` apontando para eles, o que levava quem fosse corrigir um bug a
+> editar o arquivo errado. Foram removidos — estão no histórico do git se algum
+> dia forem necessários. O código em execução é o `rwa-app.js`.
 
 ### Rotas
 
