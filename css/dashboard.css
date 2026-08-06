@@ -272,6 +272,41 @@ body {
    Estilos movidos para o componente compartilhado (core/ui/atlas-shell.css).
    O Dashboard usa o mesmo Oráculo dos módulos. */
 
+/* ============ NAVEGAÇÃO MÓVEL ============
+   Botão e folha são injetados por js/atlas-nav.js. No desktop os dois
+   ficam fora de cena; abaixo de 860px são a ÚNICA forma de chegar aos
+   módulos. */
+
+.nav-toggle {
+  display: none;              /* só existe no mobile — ver @media abaixo */
+  width: 40px; height: 40px;
+  flex: none;
+  place-items: center;
+  margin-right: 4px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid var(--card-borda);
+  color: var(--texto-suave);
+  transition: color .16s ease, border-color .16s ease;
+}
+.nav-toggle svg { width: 20px; height: 20px; }
+.nav-toggle:hover { color: var(--texto); border-color: var(--card-borda-forte); }
+
+.nav-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 49;                /* abaixo da sidebar (50), acima de tudo mais */
+  background: var(--atlas-scrim, rgba(4, 7, 14, 0.72));
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: atlasScrimIn .18s ease;
+}
+.nav-scrim[hidden] { display: none; }
+@keyframes atlasScrimIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* trava a rolagem do fundo enquanto o menu está aberto */
+html.nav-locked, html.nav-locked body { overflow: hidden; }
+
 /* ============ RESPONSIVO ============ */
 @media (max-width: 1240px) {
   .kpis { grid-template-columns: repeat(3, 1fr); }
@@ -282,10 +317,22 @@ body {
 @media (max-width: 860px) {
   .app { grid-template-columns: 1fr; }
   .sidebar {
-    position: fixed; z-index: 50;
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 50;
+    /* largura explícita: sem as colunas do grid, um elemento fixed
+       encolheria até o conteúdo e o menu sairia torto */
+    width: min(var(--sidebar-w), 82vw);
+    overflow-y: auto;
     transform: translateX(-100%);
-    transition: transform .25s ease;
+    transition: transform .25s var(--atlas-ease, ease);
+    box-shadow: none;
   }
+  .sidebar.is-open {
+    transform: translateX(0);
+    box-shadow: var(--atlas-sh-3, 0 22px 48px -20px rgba(0, 0, 0, 0.75));
+  }
+  .nav-toggle { display: grid; }
   .main { padding: 18px; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .charts { grid-template-columns: 1fr; }
@@ -293,6 +340,13 @@ body {
 @media (max-width: 480px) {
   .kpis { grid-template-columns: 1fr; }
   .greet p { display: none; }
+}
+
+/* Sem animação de deslize para quem pediu menos movimento: o menu
+   simplesmente aparece. Continua totalmente utilizável. */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+  .nav-scrim { animation: none; }
 }
 
 /* ============================================================
