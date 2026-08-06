@@ -182,7 +182,11 @@
      mesmo ícone (avatar) do Oráculo e mesmo painel de todos os módulos. O markup é
      injetado por JS; aqui só registramos o cérebro do Dashboard (js/oraculo.js). -->
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- Chart.js — MESMA origem e MESMA versão de defi/ e RWA/ (jsDelivr).
+     Antes esta página usava cdnjs e as outras jsDelivr: o mesmo arquivo
+     baixado duas vezes, dois DNS, dois handshakes e dois pontos de
+     falha externos. Ao trocar de módulo o navegador já tem em cache. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <!-- ===== Camadas de dados dos módulos (consolidação real em US$) ===== -->
 <script src="wallets/walletStore.js"></script>
