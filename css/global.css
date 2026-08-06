@@ -1,8 +1,22 @@
 /* ===================================================================
    ATLAS — Base global
-   =================================================================== */
+   -------------------------------------------------------------------
+   NÃO devolver o @import de fonte que ficava aqui.
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+   Um @import dentro do CSS é a forma mais lenta possível de carregar
+   fonte: o navegador só descobre a requisição depois de baixar e
+   começar a interpretar este arquivo, então ela nunca entra em
+   paralelo com o resto do carregamento. E nas páginas que já traziam
+   o <link> no <head> — dashboard, relatórios, configurações, academy —
+   a mesma família acabava pedida DUAS vezes.
+
+   A fonte agora entra por <link rel="preconnect"> + <link rel="stylesheet">
+   no <head> de cada página, com a MESMA string de URL em todas, de
+   propósito: assim o navegador reaproveita uma única entrada de cache
+   no site inteiro. Pedir eixos diferentes faz o Google servir
+   instâncias com métricas ligeiramente distintas, e o mesmo componente
+   passa a medir diferente de uma página para outra.
+   =================================================================== */
 
 * {
   margin: 0;
