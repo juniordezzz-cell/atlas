@@ -24,9 +24,15 @@
     row(dl, "Custo investido", U.money(cost, 0));
     row(dl, "Resultado", U.money(pnl, 0) + " (" + U.pct(pnlPct) + ")");
     row(dl, "Posições ativas", String(c.posicoes));
-    row(dl, "Teses (ativas / revisão / total)", c.teses_ativas + " / " + c.teses_revisao + " / " + c.teses);
+    /* Antes: "ativas / revisão / total" com c.teses_revisao, que NUNCA
+       existiu em Store.get.counts() — o relatório imprimia literalmente
+       "3 / undefined / 5". "Em revisão" também não é mais um estado do
+       sistema: os status oficiais da entidade compartilhada de Teses são
+       planejada, andamento, concluída e arquivada. A linha passa a
+       mostrar os três números que existem de fato. */
+    row(dl, "Teses (planejadas / em andamento / total)",
+        c.teses_planejadas + " / " + c.teses_andamento + " / " + c.teses);
     row(dl, "Watchlist", String(c.watchlist));
-    row(dl, "Teses planejadas", String(c.teses_planejadas));
     var summaryCard = U.card({ eyebrow: "Resumo executivo", title: "Panorama do portfólio", body: [dl] });
     view.appendChild(summaryCard);
 
