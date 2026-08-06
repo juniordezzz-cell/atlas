@@ -27,15 +27,20 @@ O ponto de entrada é `RWA/index.html`. O botão **RWA** do Atlas aponta para l�
 <a href="RWA/index.html">RWA</a>
 ```
 
-O link "Voltar ao Atlas" na sidebar retorna para `../index.html`.
+O link "Voltar ao Atlas" no rodapé da sidebar retorna para `../dashboard.html`.
 
 ---
 
-## Arquitetura (SPA modular)
+## Arquitetura (SPA em arquivo único)
 
-Uma única página. As telas são **views** trocadas por um roteador de hash
-(`#/rota`), sem reload. Cada view tem sua responsabilidade e reaproveita
-componentes e a camada de dados.
+Uma única página. As telas são trocadas por um roteador de hash (`#/rota`), sem
+reload. **Shell, roteador, views e formulários vivem todos em `js/rwa-app.js`.**
+
+Essa concentração foi deliberada: a versão anterior era espalhada em
+`shell.js` + `router.js` + `app.js` + sete `view-*.js`, e qualquer erro em um
+deles produzia **tela branca muda**. O arquivo único é blindado — captura erro
+global e mostra a falha na tela, com Chart.js, `AtlasWallets` e `AtlasAssets`
+todos opcionais.
 
 ```
 RWA/
@@ -45,27 +50,28 @@ RWA/
 │   ├── tokens.css          Paleta e variáveis (dark institucional)
 │   ├── base.css            Reset, tipografia, utilitários
 │   ├── layout.css          Shell: sidebar + topbar + grids
-│   ├── components.css       KPI, tabela, badges, regime, heatmap, timeline…
-│   ├── animations.css       Keyframes (respeita prefers-reduced-motion)
+│   ├── components.css      KPI, tabela, badges, regime, heatmap, timeline…
+│   ├── animations.css      Keyframes (respeita prefers-reduced-motion)
 │   └── responsive.css      Notebook · Tablet · Mobile (sidebar colapsável)
 │
 ├── components/
-│   ├── shell.js            Sidebar de navegação + top bar (window.Shell)
 │   └── ui.js               Peças de UI: kpi, panel, meter, legend (window.UI)
 │
 ├── js/
 │   ├── store.js            ★ Camada de dados única (window.RWAStore)
 │   ├── utils.js            Formatação, ícones SVG, regime/score, toast (window.U)
 │   ├── charts.js           Wrappers Chart.js temáticos (window.Charts)
-│   ├── router.js           Roteador SPA por hash (window.Router)
-│   ├── app.js              Bootstrap: monta shell, registra rotas, inicia
-│   └── view-*.js           dashboard · portfolio · asset · macro · risk ·
-│                           narrative · journal (window.Views.*)
+│   └── rwa-app.js          ★ Shell + Router + Views + Formulários
 │
 ├── data/
 │   └── seed.example.json   Snapshot dos dados + derivados (referência / API)
 └── assets/                 Logos/ícones opcionais
 ```
+
+> **Arquivos desligados.** `js/app.js`, `js/router.js` e os sete `js/view-*.js`
+> continuam no disco, mas **nenhuma tag `<script>` aponta para eles** — foram
+> substituídos por `rwa-app.js` e estão aguardando remoção. Não edite esses
+> arquivos achando que corrige a tela: o código em execução é o `rwa-app.js`.
 
 ### Rotas
 
@@ -116,10 +122,24 @@ no dashboard:
 Para crescer (novos feeds, mais ativos, API externa), basta:
 
 - **Novo dado** → adicionar ao `store.js` (ou plugar a API na mesma interface).
-- **Nova tela** → criar `js/view-nova.js` com `window.Views.nova`, registrar a
-  rota no `app.js` e o item na sidebar (`components/shell.js`).
+- **Nova tela** → dentro de `js/rwa-app.js`: escrever o handler da view,
+  registrá-lo em `Router.register("rota", handler)` e acrescentar a entrada no
+  array `NAV` do topo do arquivo — a sidebar se monta a partir dele.
 
 Nenhuma dessas mudanças toca na estrutura principal.
+
+---
+
+## Pendências conhecidas
+
+- **Teses.** O RWA é o único módulo que ainda não consome a entidade
+  compartilhada `AtlasTheses`. Por isso as decisões registradas aqui
+  (`Narrative` e `Journal`) não aparecem no Academy junto com as de Hold,
+  Trade e DeFi.
+- **Tokens sem ponte.** Os cinco tokens de regime de mercado (`--r-riskon`,
+  `--r-riskoff`, `--r-liqexp`, `--r-liqcon`, `--r-trans`) não passam por
+  `themes/atlas-theme.css` e mantêm o valor fixo daqui, logo não acompanham o
+  tema claro.
 
 ---
 
