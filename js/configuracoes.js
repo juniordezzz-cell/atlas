@@ -62,29 +62,44 @@
       "Backup restaurado": "Backup restored",
       "Nenhum dado salvo ainda": "No data saved yet",
       "Preferências salvas": "Preferences saved",
+      "Não foi possível salvar": "Could not save",
       "Restaurar todas as preferências para o padrão?":
-        "Restore all preferences to their defaults?"
+        "Restore all preferences to their defaults?",
+      "Tema, idioma, formato de data e demais preferências voltam ao padrão de fábrica. Seus dados não são apagados.":
+        "Theme, language, date format and other preferences return to factory defaults. Your data is not erased.",
+      "Registre ativos, trades, posições ou teses em algum módulo — o backup exporta o que existir.":
+        "Record assets, trades, positions or theses in a module — the backup exports whatever exists.",
+      "Restaurar este backup?": "Restore this backup?",
+      "Não foi possível importar": "Could not import",
+      "Backup": "Backup"
     });
   }
 
   function t(s) { return window.AtlasI18n ? AtlasI18n.t(s) : s; }
 
-  /* ---- 2. Toast de confirmação ---- */
-  var toastEl = null, toastTimer = null;
-  function toast(msg) {
-    if (!toastEl) {
-      toastEl = document.createElement("div");
-      toastEl.className = "atlas-toast";
-      toastEl.setAttribute("role", "status");
-      toastEl.innerHTML =
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">' +
-        '<path d="M20 6 9 17l-5-5"/></svg><span></span>';
-      document.body.appendChild(toastEl);
-    }
-    toastEl.querySelector("span").textContent = msg;
-    toastEl.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1900);
+  /* ---- 2. Avisos e diálogos ----
+     Esta página tinha o SEU toast (a quinta implementação do sistema) e
+     usava window.confirm/alert para restaurar padrões e importar backup.
+     Agora tudo passa pelo kit compartilhado (core/ui/atlas-ui.js).
+
+     Os invólucros abaixo existem para o caso de o kit não ter sido
+     carregado: a função continua, só perde o acabamento. Nenhuma
+     funcionalidade depende do kit estar presente. */
+
+  function toast(msg, kind) {
+    if (window.AtlasUI) { AtlasUI.toast(msg, { kind: kind || "ok" }); return; }
+    if (window.console) console.log("[ATLAS]", msg);
+  }
+
+  function confirmar(opts) {
+    if (window.AtlasUI) return AtlasUI.confirm(opts);
+    return Promise.resolve(window.confirm(opts.title + (opts.message ? "\n\n" + opts.message : "")));
+  }
+
+  function avisar(opts) {
+    if (window.AtlasUI) return AtlasUI.alert(opts);
+    window.alert(opts.title + (opts.message ? "\n\n" + opts.message : ""));
+    return Promise.resolve();
   }
 
   /* ---- 3. Sincroniza os controles com o estado atual ---- */
@@ -135,10 +150,16 @@
     var resetBtn = document.getElementById("btnReset");
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {
-        if (!window.confirm(t("Restaurar todas as preferências para o padrão?"))) return;
-        AtlasSettings.reset();
-        syncControls();
-        toast(t("Preferências salvas"));
+        confirmar({
+          title: t("Restaurar todas as preferências para o padrão?"),
+          message: t("Tema, idioma, formato de data e demais preferências voltam ao padrão de fábrica. Seus dados não são apagados."),
+          confirmLabel: t("Restaurar padrões")
+        }).then(function (ok) {
+          if (!ok) return;
+          AtlasSettings.reset();
+          syncControls();
+          toast(t("Preferências salvas"));
+        });
       });
     }
 
@@ -172,7 +193,11 @@
       btnExport.addEventListener("click", function () {
         var st = AtlasBackup.stats();
         if (!st.keys) {
-          window.alert(t("Nenhum dado salvo ainda") + ".");
+          avisar({
+            eyebrow: t("Backup"),
+            title: t("Nenhum dado salvo ainda"),
+            message: t("Registre ativos, trades, posições ou teses em algum módulo — o backup exporta o que existir.")
+          });
           return;
         }
         var r = AtlasBackup.download();
@@ -198,26 +223,40 @@
             var info = AtlasBackup.inspect(payload);
             var atual = AtlasBackup.stats();
 
+            /* O texto continua dizendo TUDO o que o window.confirm dizia:
+               restaurar backup é a ação mais destrutiva do sistema e não
+               pode ficar mais bonita às custas de ficar menos clara. */
             var msg =
-              "Restaurar este backup?\n\n" +
               "Arquivo: " + file.name + "\n" +
               "Criado em: " + info.createdAt + "\n" +
-              "Contém: " + info.keys + " registros (" + info.human + ")\n" +
-              "  " + info.labels.join(", ") + "\n\n" +
+              "Contém: " + info.keys + " registros (" + info.human + ") — " +
+              info.labels.join(", ") + "\n\n" +
               (atual.keys
                 ? "ATENÇÃO: os dados atuais no navegador (" + atual.keys +
-                  " registros) serão SUBSTITUÍDOS.\n\n"
-                : "O navegador está vazio agora, nada será perdido.\n\n") +
-              "A página vai recarregar ao final.";
+                  " registros) serão SUBSTITUÍDOS."
+                : "O navegador está vazio agora, nada será perdido.") +
+              "\n\nA página vai recarregar ao final.";
 
-            if (!window.confirm(msg)) return;
-
-            AtlasBackup.restore(payload, "replace");
-            toast(t("Backup restaurado"));
-            setTimeout(function () { location.reload(); }, 700);
+            return confirmar({
+              eyebrow: t("Backup"),
+              title: t("Restaurar este backup?"),
+              message: msg,
+              confirmLabel: t("Restaurar"),
+              danger: !!atual.keys      // só é destrutivo se há o que perder
+            }).then(function (ok) {
+              if (!ok) return;
+              AtlasBackup.restore(payload, "replace");
+              toast(t("Backup restaurado"));
+              setTimeout(function () { location.reload(); }, 700);
+            });
           })
           .catch(function (err) {
-            window.alert("Não foi possível importar:\n\n" + err.message);
+            avisar({
+              eyebrow: t("Backup"),
+              title: t("Não foi possível importar"),
+              message: err.message,
+              danger: true
+            });
           });
       });
     }
@@ -230,7 +269,7 @@
     var host = document.getElementById("modSettings");
     if (!host || !window.AtlasModuleSettings) return;
     AtlasModuleSettings.render(host, function (ok, mod) {
-      toast(ok ? t("Preferências salvas") : "Não foi possível salvar");
+      toast(ok ? t("Preferências salvas") : t("Não foi possível salvar"), ok ? "ok" : "erro");
     });
     if (window.AtlasI18n) AtlasI18n.refresh();
   }
