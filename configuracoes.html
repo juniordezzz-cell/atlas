@@ -256,7 +256,13 @@
   </main>
 </div>
 
+<!-- walletMenus.js entra aqui só pelo AtlasCloseMenus: é o utilitário
+     único de "fechar ao clicar fora" que o menu de perfil usa. Esta
+     página não monta seletor de carteira, por isso não carrega o
+     restante do pacote /wallets. -->
+<script src="wallets/walletMenus.js"></script>
 <script src="js/atlas-nav.js"></script>
+<script src="js/atlas-topbar.js"></script>
 <script src="core/ui/atlas-shell.js"></script>
 <script src="js/configuracoes.js"></script>
 </body>

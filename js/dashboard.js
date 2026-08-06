@@ -82,15 +82,21 @@ Chart.defaults.font.size = 11;
   grad.addColorStop(0, 'rgba(0,191,255,0.35)');
   grad.addColorStop(1, 'rgba(0,191,255,0)');
 
-  // escala dinâmica a partir dos dados reais
-  const vals = (D.evolucao.valores && D.evolucao.valores.length) ? D.evolucao.valores : [0, 1];
-  const lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
-  const pad = Math.max((hi - lo) * 0.25, hi * 0.05, 1);
-  const yMin = Math.max(0, Math.floor((lo - pad) / 1000) * 1000);
-  const yMax = Math.ceil((hi + pad) / 1000) * 1000;
-  const yStep = Math.max(1000, Math.round((yMax - yMin) / 5 / 1000) * 1000);
+  /* A escala do eixo Y é recalculada a cada troca de período: com
+     janelas diferentes o mínimo e o máximo mudam, e uma escala fixa
+     deixaria a linha achatada ou cortada. */
+  function escala(vals) {
+    const v = (vals && vals.length) ? vals : [0, 1];
+    const lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
+    const pad = Math.max((hi - lo) * 0.25, hi * 0.05, 1);
+    const yMin = Math.max(0, Math.floor((lo - pad) / 1000) * 1000);
+    const yMax = Math.ceil((hi + pad) / 1000) * 1000;
+    return { yMin, yMax, yStep: Math.max(1000, Math.round((yMax - yMin) / 5 / 1000) * 1000) };
+  }
 
-  new Chart(ctx, {
+  const e0 = escala(D.evolucao.valores);
+
+  const chart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: D.evolucao.labelsCheios,
@@ -116,13 +122,114 @@ Chart.defaults.font.size = 11;
       scales: {
         y: {
           grid: { color: 'rgba(160,174,192,0.08)' },
-          ticks: { callback: (v) => (v/1000) + 'K', stepSize: yStep },
-          min: yMin, max: yMax, border: { display: false },
+          ticks: { callback: (v) => (v/1000) + 'K', stepSize: e0.yStep },
+          min: e0.yMin, max: e0.yMax, border: { display: false },
         },
         x: { grid: { display: false }, border: { display: false } },
       },
     },
   });
+
+  /* ===================================================================
+     Seletor de período — o botão "Últimos 30 dias" existia no HTML e
+     não fazia nada. Agora ele troca a janela de verdade, relendo a
+     consolidação com o número de dias pedido.
+
+     A leitura é a MESMA de js/data.js (AtlasConsolidation.snapshot):
+     nenhuma regra de cálculo é reescrita aqui, só o parâmetro muda.
+     =================================================================== */
+  const PERIODOS = [
+    { dias: 7,  rotulo: 'Últimos 7 dias' },
+    { dias: 30, rotulo: 'Últimos 30 dias' },
+    { dias: 90, rotulo: 'Últimos 90 dias' },
+  ];
+
+  const btn = document.querySelector('.chart-evolucao .select');
+  if (!btn || !window.AtlasConsolidation) return;
+
+  const MES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  function rotulos(dias) {
+    const out = [], hoje = new Date();
+    /* um rótulo a cada ~1/5 da janela: em 90 dias, 90 rótulos viram
+       uma tarja preta ilegível */
+    const passo = Math.max(1, Math.round(dias / 5));
+    for (let i = dias - 1; i >= 0; i--) {
+      const d = new Date(hoje); d.setDate(hoje.getDate() - i);
+      out.push((i % passo === 0 || i === 0) ? (d.getDate() + ' ' + MES[d.getMonth()]) : '');
+    }
+    return out;
+  }
+  function usd(v) { return 'US$ ' + Math.round(v || 0).toLocaleString('pt-BR'); }
+  function pct(v) {
+    v = (typeof v === 'number' && isFinite(v)) ? v : 0;
+    return (v > 0 ? '+' : '') + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+  }
+
+  function aplicar(dias, rotulo) {
+    let snap;
+    try { snap = window.AtlasConsolidation.snapshot(dias); }
+    catch (e) { return; }                       // consolidação indisponível: mantém o que está na tela
+    if (!snap) return;
+
+    const esc = escala(snap.evolution);
+    chart.data.labels = rotulos(dias);
+    chart.data.datasets[0].data = snap.evolution;
+    chart.options.scales.y.min = esc.yMin;
+    chart.options.scales.y.max = esc.yMax;
+    chart.options.scales.y.ticks.stepSize = esc.yStep;
+    chart.update();
+
+    const total = document.getElementById('evoTotal');
+    const varia = document.getElementById('evoVar');
+    if (total) total.textContent = usd(snap.total);
+    if (varia) {
+      varia.textContent = pct(snap.pnlPct) + ' no período';
+      varia.className = snap.pnl < 0 ? 'neg' : 'pos';
+    }
+    btn.firstChild.nodeValue = rotulo + ' ';
+  }
+
+  /* O menu segue a convenção do resto do sistema (data-open) e por
+     isso já herda o fechar-ao-clicar-fora de wallets/walletMenus.js. */
+  const wrap = document.createElement('div');
+  wrap.className = 'tb-menu tb-menu--period';
+  wrap.setAttribute('data-atlas-menu', 'periodo');
+  wrap.setAttribute('data-open', 'false');
+  btn.parentNode.insertBefore(wrap, btn);
+  wrap.appendChild(btn);
+  btn.setAttribute('aria-haspopup', 'menu');
+  btn.setAttribute('aria-expanded', 'false');
+
+  const pop = document.createElement('div');
+  pop.className = 'tb-menu__pop';
+  pop.setAttribute('role', 'menu');
+  pop.innerHTML = '<div class="tb-menu__list">' + PERIODOS.map(p =>
+    '<button type="button" class="tb-menu__item" role="menuitem" data-dias="' + p.dias + '">' +
+      '<span>' + p.rotulo + '</span></button>'
+  ).join('') + '</div>';
+  wrap.appendChild(pop);
+
+  btn.addEventListener('click', (ev) => {
+    ev.preventDefault(); ev.stopPropagation();
+    const abrindo = wrap.getAttribute('data-open') !== 'true';
+    document.querySelectorAll('[data-atlas-menu][data-open="true"]').forEach(n => {
+      if (n !== wrap) n.setAttribute('data-open', 'false');
+    });
+    wrap.setAttribute('data-open', abrindo ? 'true' : 'false');
+    btn.setAttribute('aria-expanded', abrindo ? 'true' : 'false');
+  });
+
+  pop.addEventListener('click', (ev) => {
+    const alvo = ev.target.closest('[data-dias]');
+    if (!alvo) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const p = PERIODOS.find(x => String(x.dias) === alvo.getAttribute('data-dias'));
+    if (p) aplicar(p.dias, p.rotulo);
+    wrap.setAttribute('data-open', 'false');
+    btn.setAttribute('aria-expanded', 'false');
+  });
+
+  if (window.AtlasCloseMenus) window.AtlasCloseMenus();
 })();
 
 /* ---- Donut helper ---- */

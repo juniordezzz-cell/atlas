@@ -45,13 +45,26 @@
   "use strict";
   if (window.AtlasCloseMenus) return;
 
-  /* Uma convenção só: o componente de carteira, aberto.
+  /* Uma convenção só: data-open="true|false" no elemento raiz do menu.
      Antes eram duas (classe .open no Hold/DeFi/Dashboard, atributo
      data-open no Trade/RWA) porque cada módulo tinha a sua pele.
-     Com um componente só, existe um estado só. */
-  var SELETOR = '.awsel[data-open="true"]';
+     Com um componente só, existe um estado só.
 
-  function fecharNo(n) { n.setAttribute("data-open", "false"); }
+     A lista cobre o seletor de carteira (.awsel) e os menus da barra
+     superior do shell da raiz ([data-atlas-menu] — aplicativos,
+     notificações e perfil, em js/atlas-topbar.js). Menu novo que
+     adote a mesma convenção entra aqui e ganha fechar-ao-clicar-fora
+     de graça, sem um segundo mecanismo concorrente na página. */
+  var SELETOR = '.awsel[data-open="true"], [data-atlas-menu][data-open="true"]';
+
+  function fecharNo(n) {
+    n.setAttribute("data-open", "false");
+    /* o gatilho anuncia o próprio estado ao leitor de tela; só mexe
+       se ele já declara o atributo, para não inventar semântica em
+       componente que não pediu */
+    var g = n.firstElementChild;
+    if (g && g.hasAttribute("aria-expanded")) g.setAttribute("aria-expanded", "false");
+  }
 
   window.AtlasCloseMenus = function () {
     /* idempotente: pode ser chamado a cada render sem acumular nada */
