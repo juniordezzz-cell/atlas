@@ -42,6 +42,18 @@
   ];
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
 
+  /* Confirmação de ação destrutiva pelo kit compartilhado
+     (core/ui/atlas-ui.js), com window.confirm como rede de segurança —
+     o RWA carrega tudo como opcional de propósito. O callback só roda
+     no "sim", mesma semântica do `if (confirm(...)) { ... }` anterior. */
+  function perguntar(opts, aoConfirmar) {
+    if (window.AtlasUI) {
+      AtlasUI.confirm(opts).then(function (ok) { if (ok) aoConfirmar(); });
+      return;
+    }
+    if (window.confirm(opts.title + "\n\n" + (opts.message || ""))) aoConfirmar();
+  }
+
   var Shell = {
     mount: function (rootSel) {
       var root = U.qs(rootSel);
@@ -289,10 +301,15 @@
     });
     var del = m.querySelector("[data-del]");
     if (del) del.addEventListener("click", function () {
-      if (confirm("Excluir " + existing.ticker + " do portfólio?")) {
+      perguntar({
+        title: "Excluir " + existing.ticker + " do portfólio?",
+        message: "A posição e o histórico de análise deste ativo saem do RWA. Não há como desfazer.",
+        confirmLabel: "Excluir",
+        danger: true
+      }, function () {
         S.removeAsset(existing.id); U.toast("Ativo removido.");
         closeModal(); location.hash = "#/portfolio";
-      }
+      });
     });
   }
 
@@ -598,7 +615,12 @@
     });
     U.qsa(".jdel").forEach(function (b) {
       b.addEventListener("click", function () {
-        if (confirm("Excluir esta entrada?")) { S.removeJournal(+b.dataset.i); Router.resolve(); }
+        perguntar({
+          title: "Excluir esta entrada do diário?",
+          message: "O registro da decisão é apagado permanentemente.",
+          confirmLabel: "Excluir",
+          danger: true
+        }, function () { S.removeJournal(+b.dataset.i); Router.resolve(); });
       });
     });
   };

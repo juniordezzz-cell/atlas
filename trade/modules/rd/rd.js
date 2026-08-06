@@ -160,7 +160,12 @@
     mount.querySelector("[data-back]").addEventListener("click", function () { show("list"); });
     mount.querySelector("[data-edit]").addEventListener("click", function () { editId = r.id; show("form"); });
     mount.querySelector("[data-del]").addEventListener("click", function () {
-      if (window.confirm("Excluir este registro de decisão?")) { app.removeRd(r.id); show("list"); }
+      ATLAS.util.perguntar({
+        title: "Excluir este registro de decisão?",
+        message: "O racional, a análise técnica e os parâmetros de risco vão junto. Não há como desfazer.",
+        confirmLabel: "Excluir",
+        danger: true
+      }, function () { app.removeRd(r.id); show("list"); });
     });
     var sl = mount.querySelector("[data-study]");
     if (sl) sl.addEventListener("click", function () {
@@ -278,8 +283,10 @@
     mount.querySelector("[data-cancel]").addEventListener("click", function () { show(r ? "detail" : "list"); });
     mount.querySelector("[data-save]").addEventListener("click", function () {
       var asset = val("asset");
-      if (!asset) { window.alert("Informe o ativo da operação."); return; }
-      if (!val("rationale")) { window.alert("Registre o racional da decisão."); return; }
+      /* Antes: window.alert. Agora o campo errado se marca sozinho —
+         quem está preenchendo vê ONDE está o problema. */
+      if (!asset) return ATLAS.util.invalido(mount.querySelector('[data-f="asset"]'), "Informe o ativo da operação.");
+      if (!val("rationale")) return ATLAS.util.invalido(mount.querySelector('[data-f="rationale"]'), "Registre o racional da decisão.");
       var payload = {
         studyId: val("studyId") || null,
         asset: asset,

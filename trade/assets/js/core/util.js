@@ -121,5 +121,46 @@
     }
   };
 
+  /* ============================================================
+     AVISOS E CONFIRMAÇÕES
+     ------------------------------------------------------------
+     O Trade era o único módulo SEM toast: todo aviso saía como
+     window.alert, e excluir trade, tese ou registro de decisão passava
+     por window.confirm. Agora usa o kit compartilhado
+     (core/ui/atlas-ui.js), o mesmo do resto do sistema.
+
+     Os três invólucros mantêm o caminho nativo como rede de segurança:
+     sem o kit carregado, a função continua — só perde o acabamento.
+     ============================================================ */
+
+  /* Confirmação destrutiva. O callback só roda no "sim" — mesma
+     semântica do `if (confirm(...)) { ... }` que havia antes. */
+  util.perguntar = function (opts, aoConfirmar) {
+    if (window.AtlasUI) {
+      window.AtlasUI.confirm(opts).then(function (ok) { if (ok) aoConfirmar(); });
+      return;
+    }
+    if (window.confirm(opts.title + "\n\n" + (opts.message || ""))) aoConfirmar();
+  };
+
+  util.toast = function (msg, kind) {
+    if (window.AtlasUI) { window.AtlasUI.toast(msg, { kind: kind || "ok" }); return; }
+    if (window.console) console.log("[ATLAS Trade]", msg);
+  };
+
+  /* Validação de campo. Devolve SEMPRE false, para o chamador poder
+     escrever `if (!x) return util.invalido(campo, "...");`.
+
+     Isto substitui window.alert("Informe o ativo"): o alert travava a
+     tela, não dizia QUAL campo estava errado e sumia sem deixar rastro.
+     Agora o próprio campo fica marcado, com a mensagem embaixo, e a
+     marca some quando a pessoa começa a corrigir. */
+  util.invalido = function (campo, msg) {
+    if (window.AtlasUI && campo) { window.AtlasUI.invalid(campo, msg); return false; }
+    if (campo && campo.focus) { try { campo.focus(); } catch (e) {} }
+    util.toast(msg, "warn");
+    return false;
+  };
+
   ATLAS.util = util;
 })(window.ATLAS = window.ATLAS || {});

@@ -178,9 +178,15 @@
       b.addEventListener("click", function () {
         var target = b.dataset.act;
         if (target === "concluida") {
-          if (!window.confirm("Concluir fecha a versão " + t.version + " e envia a tese automaticamente para o Academy. Continuar?")) return;
-          app.setStudyState(t.id, "concluido");
-          show("list");
+          ATLAS.util.perguntar({
+            title: "Concluir esta tese?",
+            message: "Fecha a versão " + t.version + " e envia a tese automaticamente para o Academy. " +
+                     "De lá ela pode ser reaberta, criando uma nova versão.",
+            confirmLabel: "Concluir"
+          }, function () {
+            app.setStudyState(t.id, "concluido");
+            show("list");
+          });
           return;
         }
         if (target === "arquivada") { window.AtlasTheses.archive(t.id); return; }
@@ -188,9 +194,12 @@
       });
     });
     mount.querySelector("[data-del]").addEventListener("click", function () {
-      if (window.confirm("Excluir esta tese apaga também o histórico e as versões. Esta ação não pode ser desfeita. Excluir?")) {
-        app.removeStudy(t.id); show("list");
-      }
+      ATLAS.util.perguntar({
+        title: "Excluir esta tese?",
+        message: "O histórico e todas as versões vão junto. Não há como desfazer.",
+        confirmLabel: "Excluir",
+        danger: true
+      }, function () { app.removeStudy(t.id); show("list"); });
     });
     var rdBtn = mount.querySelector("[data-rd]");
     if (rdBtn) rdBtn.addEventListener("click", function () {
@@ -251,7 +260,10 @@
     mount.querySelector("[data-cancel]").addEventListener("click", function () { show(t ? "detail" : "list"); });
     mount.querySelector("[data-save]").addEventListener("click", function () {
       var asset = val("asset"), title = val("title");
-      if (!asset || !title) { window.alert("Informe o ativo e o título da tese."); return; }
+      /* Antes um window.alert dizia "informe o ativo E o título" sem
+         apontar qual dos dois faltava. Agora cada campo se marca. */
+      if (!asset) return ATLAS.util.invalido(mount.querySelector('[data-f="asset"]'), "Informe o ativo da tese.");
+      if (!title) return ATLAS.util.invalido(mount.querySelector('[data-f="title"]'), "Informe o título da tese.");
       if (t) {
         app.updateStudyMeta(t.id, { asset: asset, title: title });
         selectedId = t.id; show("detail");

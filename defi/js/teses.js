@@ -20,6 +20,18 @@
   var editingId = null;
   var openDetail = null;
 
+  /* Confirmação de ação destrutiva pelo kit compartilhado
+     (core/ui/atlas-ui.js), com o window.confirm como rede de segurança
+     caso a página não carregue o kit. O callback só roda no "sim" —
+     mesma semântica do `if (!confirm(...)) return;` que havia antes. */
+  function perguntar(opts, aoConfirmar) {
+    if (window.AtlasUI) {
+      AtlasUI.confirm(opts).then(function (ok) { if (ok) aoConfirmar(); });
+      return;
+    }
+    if (window.confirm(opts.title + "\n\n" + (opts.message || ""))) aoConfirmar();
+  }
+
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -147,10 +159,16 @@
     U.qsa("[data-done]", host).forEach(function (b) {
       b.addEventListener("click", function () {
         var t = T.get(b.dataset.done);
-        if (!window.confirm("Concluir fecha a versão " + (t ? t.version : "") + " e envia a tese automaticamente para o Academy. Continuar?")) return;
-        T.conclude(b.dataset.done);
-        U.toast("Tese concluída — disponível no Academy.", "ok");
-        openDetail = null; refresh();
+        perguntar({
+          title: "Concluir esta tese?",
+          message: "Fecha a versão " + (t ? t.version : "") + " e envia a tese automaticamente " +
+                   "para o Academy. De lá ela pode ser reaberta, criando uma nova versão.",
+          confirmLabel: "Concluir"
+        }, function () {
+          T.conclude(b.dataset.done);
+          U.toast("Tese concluída — disponível no Academy.", "ok");
+          openDetail = null; refresh();
+        });
       });
     });
     U.qsa("[data-arch]", host).forEach(function (b) {
@@ -161,9 +179,15 @@
     });
     U.qsa("[data-del]", host).forEach(function (b) {
       b.addEventListener("click", function () {
-        if (!window.confirm("Excluir esta tese apaga o histórico e as versões. Ação irreversível. Excluir?")) return;
-        T.remove(b.dataset.del);
-        openDetail = null; refresh();
+        perguntar({
+          title: "Excluir esta tese?",
+          message: "O histórico e todas as versões vão junto. Não há como desfazer.",
+          confirmLabel: "Excluir",
+          danger: true
+        }, function () {
+          T.remove(b.dataset.del);
+          openDetail = null; refresh();
+        });
       });
     });
   }

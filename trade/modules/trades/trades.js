@@ -190,7 +190,12 @@
 
     mount.querySelector("[data-back]").addEventListener("click", function () { show("list"); });
     mount.querySelector("[data-del]").addEventListener("click", function () {
-      if (window.confirm("Excluir este trade?")) { app.removeTrade(t.id); show("list"); }
+      ATLAS.util.perguntar({
+        title: "Excluir este trade?",
+        message: "As parciais, as notas e o histórico da operação vão junto. Não há como desfazer.",
+        confirmLabel: "Excluir",
+        danger: true
+      }, function () { app.removeTrade(t.id); show("list"); });
     });
     var rdl = mount.querySelector("[data-rd]");
     if (rdl) rdl.addEventListener("click", function () { if (ATLAS.rd) { ATLAS.rd.openDetail(rdl.dataset.rd); } ATLAS.router.go("rd"); });
@@ -205,7 +210,7 @@
       mount.querySelector("[data-add-partial]").addEventListener("click", function () {
         var price = mount.querySelector("[data-p-price]").value.trim();
         var portion = mount.querySelector("[data-p-portion]").value.trim();
-        if (!price) { window.alert("Informe o preço da parcial."); return; }
+        if (!price) return ATLAS.util.invalido(mount.querySelector("[data-p-price]"), "Informe o preço da parcial.");
         app.addPartial(t.id, { price: price, portion: portion });
       });
       mount.querySelector("[data-move-stop]").addEventListener("click", function () {
@@ -366,7 +371,7 @@
     mount.querySelector("[data-cancel]").addEventListener("click", function () { show("list"); });
     mount.querySelector("[data-save]").addEventListener("click", function () {
       var asset = val("asset");
-      if (!asset) { window.alert("Informe o ativo."); return; }
+      if (!asset) return ATLAS.util.invalido(mount.querySelector('[data-f="asset"]'), "Informe o ativo.");
       var tr = app.openTrade({
         asset: asset, side: sideState.side, rdId: val("rdId") || null, studyId: val("studyId") || null,
         entry: numOr("entry"), stop: numOr("stop"), target: numOr("target"),
@@ -402,7 +407,7 @@
     mount.querySelector("[data-cancel]").addEventListener("click", function () { show("detail"); });
     mount.querySelector("[data-save]").addEventListener("click", function () {
       var pnl = parseFloat(val("pnl"));
-      if (isNaN(pnl)) { window.alert("Informe o resultado em %."); return; }
+      if (isNaN(pnl)) return ATLAS.util.invalido(mount.querySelector('[data-f="pnl"]'), "Informe o resultado em %.");
       var exitV = val("exit");
       app.closeTrade(t.id, { exit: exitV === "" ? null : (isNaN(parseFloat(exitV)) ? exitV : parseFloat(exitV)), pnl: pnl, note: val("note") });
       show("detail");
