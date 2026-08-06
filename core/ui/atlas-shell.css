@@ -654,3 +654,91 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
    sem folha/scrim, sem disputa de z-index, sem dependência de
    contexto de empilhamento (foi isso que engolia os cliques).
    =================================================================== */
+
+/* ===================================================================
+   6. KIT DE INTERFACE (core/ui/atlas-ui.js)
+   -------------------------------------------------------------------
+   Só o que NÃO existia ainda: a pilha de toasts e a mensagem de campo
+   inválido. O diálogo do kit reaproveita as classes .awd da seção 5 —
+   mesmo scrim, mesma caixa, mesmo fio de luz, mesmos botões. Não há
+   uma segunda aparência de modal no sistema, e não deve haver.
+
+   HISTÓRICO: existiam CINCO toasts diferentes (Hold, DeFi, RWA,
+   Academy e Configurações), com três assinaturas e cinco CSS — uns no
+   canto inferior direito, outro no centro. O Trade não tinha nenhum e
+   usava window.alert. Esta é a única daqui em diante.
+   =================================================================== */
+
+.atlas-toasts {
+  position: fixed;
+  right: var(--atlas-sp-6);
+  bottom: var(--atlas-sp-6);
+  z-index: 9000;                 /* acima do Oráculo, abaixo do diálogo */
+  display: flex;
+  flex-direction: column;
+  gap: var(--atlas-sp-2);
+  pointer-events: none;          /* não rouba clique da página */
+  max-width: min(380px, calc(100vw - 32px));
+}
+
+.atlas-toast {
+  pointer-events: auto;          /* mas o toast em si é clicável (dispensa) */
+  display: flex;
+  align-items: flex-start;
+  gap: var(--atlas-sp-3);
+  padding: var(--atlas-sp-3) var(--atlas-sp-4);
+  border-radius: var(--atlas-r-md);
+  background: var(--atlas-surface-solid);
+  border: 1px solid var(--atlas-border-hi);
+  border-left: 3px solid var(--atlas-info);
+  box-shadow: var(--atlas-sh-3);
+  color: var(--atlas-text);
+  font-size: var(--atlas-fs-sm);
+  line-height: 1.45;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(16px);
+  transition: opacity var(--atlas-dur) var(--atlas-ease),
+              transform var(--atlas-dur) var(--atlas-ease);
+}
+.atlas-toast.is-in { opacity: 1; transform: none; }
+
+.atlas-toast__ic { flex: none; display: grid; place-items: center; margin-top: 1px; }
+.atlas-toast__ic svg { width: 17px; height: 17px; }
+.atlas-toast__txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.atlas-toast__txt strong {
+  font-size: var(--atlas-fs-sm);
+  font-weight: 650;
+  color: var(--atlas-text-hi);
+}
+
+.atlas-toast--ok   { border-left-color: var(--atlas-pos); }
+.atlas-toast--ok   .atlas-toast__ic { color: var(--atlas-pos); }
+.atlas-toast--info { border-left-color: var(--atlas-info); }
+.atlas-toast--info .atlas-toast__ic { color: var(--atlas-info); }
+.atlas-toast--warn { border-left-color: var(--atlas-warn); }
+.atlas-toast--warn .atlas-toast__ic { color: var(--atlas-warn); }
+.atlas-toast--erro { border-left-color: var(--atlas-neg); }
+.atlas-toast--erro .atlas-toast__ic { color: var(--atlas-neg); }
+
+/* No celular a pilha ocupa a largura, ancorada embaixo */
+@media (max-width: 560px) {
+  .atlas-toasts {
+    left: var(--atlas-sp-3);
+    right: var(--atlas-sp-3);
+    bottom: var(--atlas-sp-3);
+    max-width: none;
+  }
+}
+
+/* Mensagem de campo inválido. A borda vermelha e o shake vêm de
+   .is-invalid, que já existia em themes/atlas-effects.css e nunca
+   tinha sido aplicada por ninguém — toda validação era window.alert. */
+.atlas-invalid-msg {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--atlas-fs-label);
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  color: var(--atlas-neg);
+}
