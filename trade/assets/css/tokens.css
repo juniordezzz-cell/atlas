@@ -1,0 +1,88 @@
+/* ============================================================
+   ATLAS — Design Tokens
+   Fonte única de verdade para cor, tipografia, espaço e forma.
+   Nenhum valor de cor "solto" deve existir fora deste arquivo.
+   ============================================================ */
+
+:root {
+  /* ---- Cor: base ---------------------------------------- */
+  --bg-deep:        #070B14;   /* fundo do app (navy quase preto)   */
+  --bg-raise:       #0B1220;   /* superfície elevada opaca          */
+  --bg-sunken:      #050810;   /* poços / trilhas de gráfico        */
+
+  /* ---- Cor: vidro (glassmorphism) ----------------------- */
+  --glass-fill:     rgba(20, 30, 52, 0.55);
+  --glass-fill-hi:  rgba(28, 41, 68, 0.68);
+  --glass-border:   rgba(126, 162, 224, 0.14);
+  --glass-hairline: rgba(150, 180, 235, 0.10);
+  --glass-inner:    rgba(180, 210, 255, 0.06); /* brilho interno topo */
+
+  /* ---- Cor: acento (azul ATLAS) ------------------------- */
+  --azure:          #4C9AFF;   /* primária                          */
+  --azure-strong:   #1D6BF0;
+  --azure-deep:     #0E3E8A;
+  --cyan:           #22D3EE;   /* parceiro do Oráculo                 */
+  --azure-soft:     rgba(76, 154, 255, 0.14);
+
+  /* ---- Cor: semântica de trade -------------------------- */
+  --profit:         #2DD4BF;   /* alta / lucro                      */
+  --profit-soft:    rgba(45, 212, 191, 0.14);
+  --loss:           #F87171;   /* baixa / prejuízo                  */
+  --loss-soft:      rgba(248, 113, 113, 0.14);
+  --warn:           #FBBF24;   /* alerta / atenção                  */
+  --warn-soft:      rgba(251, 191, 36, 0.14);
+
+  /* ---- Cor: texto --------------------------------------- */
+  --text-hi:        #E9EEFA;   /* títulos, valores                  */
+  --text:           #C2CEE4;   /* corpo                             */
+  --text-mut:       #8595B2;   /* secundário                        */
+  --text-faint:     #566484;   /* labels, captions                  */
+
+  /* ---- Tipografia --------------------------------------- */
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-ui:      "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  --fs-display:  clamp(1.55rem, 1.1rem + 1.6vw, 2.1rem);
+  --fs-h2:       1.18rem;
+  --fs-h3:       0.98rem;
+  --fs-body:     0.9rem;
+  --fs-sm:       0.8rem;
+  --fs-label:    0.7rem;   /* eyebrows / labels em caixa alta       */
+
+  --lh-tight: 1.1;
+  --lh-body:  1.55;
+  --track-label: 0.14em;   /* letter-spacing de labels              */
+
+  /* ---- Espaçamento (escala 4pt) ------------------------- */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 40px;
+  --sp-9: 56px; --sp-10: 72px;
+
+  /* ---- Raio --------------------------------------------- */
+  --r-sm:  10px;
+  --r-md:  16px;
+  --r-lg:  22px;
+  --r-xl:  28px;
+  --r-pill: 999px;
+
+  /* ---- Sombra / brilho ---------------------------------- */
+  --shadow-soft:  0 1px 0 var(--glass-inner) inset,
+                  0 18px 40px -20px rgba(0, 0, 0, 0.7);
+  --shadow-card:  0 1px 0 var(--glass-inner) inset,
+                  0 24px 60px -30px rgba(0, 0, 0, 0.85);
+  --glow-azure:   0 0 0 1px rgba(76,154,255,0.35),
+                  0 8px 34px -6px rgba(76,154,255,0.42);
+  --glow-cyan:    0 0 40px -4px rgba(34,211,238,0.55);
+
+  /* ---- Layout ------------------------------------------- */
+  --topbar-h:  64px;
+  --sidebar-w: 236px;
+  --content-max: 1240px;
+
+  /* ---- Movimento ---------------------------------------- */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 140ms;
+  --dur:      260ms;
+  --dur-slow: 520ms;
+}

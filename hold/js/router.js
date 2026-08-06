@@ -1,0 +1,217 @@
+/* ============================================================
+   HOLD SYSTEM · js/router.js
+   Inicializa o Store, monta o shell e roteia por hash.
+   Reage a STATE_CHANGED re-renderizando a view atual.
+   ============================================================ */
+(function () {
+  "use strict";
+  var U = window.UI, S = window.Store;
+
+  var NAV = [
+    { section: "Operação" },
+    { route: "dashboard",     label: "Painel",       icon: "dashboard" },
+    { route: "ativos",        label: "Ativos",       icon: "layers", count: function (c) { return c.ativos; } },
+    { section: "Fundamento" },
+    { route: "teses",         label: "Teses",        icon: "doc", count: function (c) { return c.teses; } },
+    { section: "Análise" },
+    { route: "metricas",      label: "Métricas",     icon: "chart" },
+    { route: "historico",     label: "Histórico",    icon: "history", count: function (c) { return c.historico; } },
+    { route: "relatorios",    label: "Relatórios",   icon: "report" }
+  ];
+
+  var current = { route: "dashboard", query: {} };
+  var mounted = false;
+
+  function parseHash() {
+    var raw = (location.hash || "#/dashboard").replace(/^#\/?/, "");
+    var parts = raw.split("?");
+    var route = parts[0] || "dashboard";
+    var query = {};
+    if (parts[1]) parts[1].split("&").forEach(function (kv) {
+      var p = kv.split("="); query[decodeURIComponent(p[0])] = decodeURIComponent(p[1] || "");
+    });
+    if (!window.Pages[route]) route = "dashboard";
+    return { route: route, query: query };
+  }
+
+  function buildShell() {
+    var app = U.el("div", { class: "app", id: "app" });
+
+    /* sidebar */
+    var sidebar = U.el("aside", { class: "sidebar" });
+    var brand = U.el("div", { class: "brand" });
+    brand.appendChild(U.el("div", { class: "brand-mark", text: "H" }));
+    brand.appendChild(U.el("div", { class: "brand-text" }, [
+      U.el("div", { class: "brand-name", text: "ATLAS HOLD" }),
+      U.el("div", { class: "brand-sub", text: "Long-Term System" })
+    ]));
+    sidebar.appendChild(brand);
+
+    /* voltar ao Atlas */
+    var back = U.el("a", { class: "nav-back", href: "../dashboard.html", title: "Voltar ao Atlas" });
+    back.innerHTML = U.icon("chevron");
+    back.appendChild(U.el("span", { class: "label", text: "Voltar ao Atlas" }));
+    sidebar.appendChild(back);
+
+    var nav = U.el("nav", { class: "nav", id: "nav" });
+    sidebar.appendChild(nav);
+    app.appendChild(sidebar);
+
+    /* main */
+    var main = U.el("main", { class: "main" });
+    var topbar = U.el("header", { class: "topbar", id: "topbar" });
+    main.appendChild(topbar);
+    var viewHost = U.el("div", { class: "view", id: "app-view" });
+    main.appendChild(viewHost);
+    app.appendChild(main);
+
+    // ANTES: document.body.innerHTML = "" — isso apagava também o botão do
+    // Oráculo e a faixa do ATLAS, que o shell tinha acabado de montar. O
+    // shell então os recriava, gerando um pisca-pisca e uma corrida de
+    // remontagem a cada render. Agora só removemos o que é do Hold.
+    Array.prototype.slice.call(document.body.childNodes).forEach(function (n) {
+      if (n.nodeType === 1 && n.hasAttribute("data-atlas-ui")) return; // do shell: preserva
+      document.body.removeChild(n);
+    });
+    document.body.appendChild(app);
+
+    try { localStorage.removeItem("HOLD_SIDEBAR"); } catch (e) {}
+    mounted = true;
+  }
+
+  function renderNav() {
+    var nav = document.getElementById("nav");
+    if (!nav) return;
+    nav.innerHTML = "";
+    var c = S.get.counts();
+    NAV.forEach(function (item) {
+      if (item.section) { nav.appendChild(U.el("div", { class: "nav-section", text: item.section })); return; }
+      var a = U.el("a", { class: "nav-item" + (item.route === current.route ? " active" : ""), href: "#/" + item.route });
+      a.innerHTML = U.icon(item.icon);
+      a.appendChild(U.el("span", { class: "label", text: item.label }));
+      if (item.count) {
+        var n = item.count(c);
+        if (n) a.appendChild(U.el("span", { class: "count", text: n }));
+      }
+      nav.appendChild(a);
+    });
+  }
+
+  function renderTopbar(meta) {
+    var tb = document.getElementById("topbar");
+    if (!tb) return;
+    tb.innerHTML = "";
+    var crumb = U.el("div", { class: "crumb" });
+    crumb.appendChild(U.el("h1", { text: meta.title }));
+    if (meta.crumb) {
+      crumb.appendChild(U.el("span", { class: "sep", text: "/" }));
+      crumb.appendChild(U.el("span", { class: "ctx", text: meta.crumb }));
+    }
+    tb.appendChild(crumb);
+
+    var actions = U.el("div", { class: "topbar-actions" });
+
+    /* ---- Seletor de carteira (Global/Local) ---- */
+    actions.appendChild(buildWalletSelector());
+
+    var pill = U.el("div", { class: "market-pill" });
+    pill.appendChild(U.el("span", { class: "dot" }));
+    pill.appendChild(document.createTextNode("Carteira " + U.compact(S.get.portfolioValue())));
+    actions.appendChild(pill);
+    tb.appendChild(actions);
+  }
+
+  function buildWalletSelector() {
+    /* Delegado 100% ao componente compartilhado (/wallets). O Hold não
+       monta markup, não liga clique e não tem CSS de seletor: o host é
+       uma div sem classe nenhuma, justamente para não existir nada
+       daqui que possa sobrescrever a aparência do componente. */
+    var wrap = U.el("div");
+    if (!window.AtlasWallets || !window.WalletSelector) return wrap;
+    window.WalletSelector.render(wrap, {
+      module: "hold", scope: "module",
+      balanceModule: "hold",
+      /* o Hold guarda a carteira em uso no estado dele, porque é por
+         ela que a partição dos dados do módulo é feita */
+      getActive: S.wallets.active,
+      onSelect: function (id) { S.wallets.set(id); },   // Hold reage via emit()
+      /* alimenta o ledger central com o total da carteira ativa do Hold */
+      feed: function () {
+        var a = S.wallets.active();
+        return [{ id: a.id, module: "hold",
+                  capital: S.get.portfolioCost(),
+                  saldo: S.get.portfolioValue(),
+                  valorAtual: S.get.portfolioValue(), assets: [] }];
+      },
+      afterChange: function (w, acao) {
+        if (acao === "create") {
+          S.wallets.set(w.id);
+          U.toast("Carteira criada", w.name + " está ativa.", "success");
+        } else if (acao === "rename") {
+          U.toast("Carteira renomeada", w.name, "success");
+        } else if (acao === "remove") {
+          U.toast("Carteira excluída", w.name, "success");
+        }
+      }
+    });
+    return wrap;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function render() {
+    if (!mounted) buildShell();
+    current = parseHash();
+    var host = document.getElementById("app-view");
+    var pageFn = window.Pages[current.route] || window.Pages.dashboard;
+    var result = pageFn(current);
+    host.innerHTML = "";
+    host.appendChild(result.node);
+    host.scrollTop = 0;
+    renderNav();
+    renderTopbar({ title: result.title, crumb: result.crumb });
+    window.scrollTo(0, 0);
+  }
+
+  function rerender() { render(); }
+
+  window.Router = { render: render, rerender: rerender, get current() { return current; } };
+
+  function init() {
+    S.init();
+    // re-render em qualquer mudança de estado (mantém contadores/topbar em dia)
+    /* Trocar/criar carteira precisa redesenhar a página inteira: a
+       topbar (nome e saldo da carteira ativa) e a view (os números são
+       por carteira). Este listener existia mas era um corpo vazio fora
+       do caso "modal aberto" — o comentário prometia "full render" e
+       não havia render nenhum. Resultado: criava a carteira no Hold e a
+       tela continuava mostrando a anterior.
+
+       Reage a wallet_change venha de onde vier: do próprio Hold, de
+       outro módulo ou de outra aba (state.js assina AtlasWallets e
+       reemite aqui). O setTimeout junta várias mudanças do mesmo tick
+       em um render só e evita reentrância. (setTimeout e não rAF: rAF
+       não roda com a aba em segundo plano, e a carteira pode mudar
+       justamente enquanto o usuário está em outra aba.) */
+    var renderPendente = false;
+    S.on(S.EVENTS.STATE_CHANGED, function (p) {
+      // com modal aberto, só cromo leve — um render derrubaria o modal
+      if (document.querySelector(".modal-scrim")) { try { renderNav(); } catch (e) {} return; }
+      if (!p || p.evt !== "wallet_change") return;
+      if (renderPendente) return;
+      renderPendente = true;
+      setTimeout(function () {
+        renderPendente = false;
+        try { render(); } catch (e) { if (window.console) console.error(e); }
+      }, 0);
+    });
+    window.addEventListener("hashchange", render);
+    if (!location.hash) location.hash = "#/dashboard";
+    render();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();

@@ -1,0 +1,253 @@
+/* ============================================================
+   ATLAS · css/atlas-celestial.css
+   Camadas visuais compartilhadas (boot + boas-vindas):
+   fundo espacial → nebulosas → estrelas → partículas →
+   halo → anéis → NÚCLEO DO ORÁCULO → reflexos → HUD
+
+   Núcleo: a imagem NÃO gira (girar a arte achatava e parecia
+   uma moeda). O movimento vem da LUZ: specular orbitando,
+   sheen varrendo, halo respirando — e um wobble 3D lento da
+   cena inteira. Só transform/opacity → GPU, sem reflow.
+   ============================================================ */
+
+/* ---------------- Fundo espacial em camadas ---------------- */
+.sky {
+  position: fixed; inset: 0; overflow: hidden; pointer-events: none;
+  background:
+    radial-gradient(1100px 640px at 50% 40%, #0B1224 0%, #060B18 46%, #02040A 100%);
+}
+.sky__nebula {
+  position: absolute; inset: -20%;
+  background:
+    radial-gradient(46% 34% at 26% 32%, rgba(0, 90, 190, 0.16), transparent 68%),
+    radial-gradient(40% 30% at 74% 24%, rgba(120, 40, 160, 0.10), transparent 70%),
+    radial-gradient(52% 38% at 62% 78%, rgba(0, 150, 170, 0.09), transparent 72%);
+  filter: blur(28px);
+  animation: nebDrift 60s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.sky__nebula--b {
+  background:
+    radial-gradient(34% 26% at 68% 60%, rgba(200, 60, 80, 0.07), transparent 70%),
+    radial-gradient(30% 26% at 22% 74%, rgba(0, 120, 220, 0.09), transparent 72%);
+  animation: nebDrift 84s ease-in-out infinite alternate-reverse;
+}
+@keyframes nebDrift {
+  from { transform: translate3d(-2.2%, -1.4%, 0) scale(1); }
+  to   { transform: translate3d(2.2%, 1.8%, 0) scale(1.06); }
+}
+.sky__stars, .sky__dust { position: absolute; inset: 0; }
+.sky__vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 90% at 50% 46%, transparent 58%, rgba(0, 2, 8, 0.55) 100%);
+}
+
+/* ---------------- Cena do núcleo (3D real) ---------------- */
+.core-scene {
+  position: relative;
+  width: clamp(200px, 34vmin, 300px);
+  height: clamp(200px, 34vmin, 300px);
+  perspective: 1100px;
+}
+/* wobble lento nos DOIS eixos — profundidade sem "girar a moeda" */
+.core-tilt {
+  position: absolute; inset: 0;
+  transform-style: preserve-3d;
+  animation: coreWobble 22s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes coreWobble {
+  0%   { transform: rotateX(3.5deg) rotateY(-4deg); }
+  25%  { transform: rotateX(-2.5deg) rotateY(3deg); }
+  50%  { transform: rotateX(3deg) rotateY(4.5deg); }
+  75%  { transform: rotateX(-3.5deg) rotateY(-3deg); }
+  100% { transform: rotateX(3.5deg) rotateY(-4deg); }
+}
+
+/* núcleo: imagem estática + camadas de LUZ por cima */
+.core {
+  position: absolute; inset: 0;
+  transform: translateZ(0);
+  animation: coreBreathe 9s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes coreBreathe {
+  0%, 100% { transform: translateZ(0) scale(1); }
+  50%      { transform: translateZ(0) scale(1.018); }
+}
+.core__img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 34px rgba(0, 140, 255, 0.34))
+          drop-shadow(0 0 18px rgba(220, 60, 80, 0.16));
+}
+/* as camadas de luz cobrem só o ORBE central da arte (a arte tem anel próprio) */
+.core__light, .core__sheen, .core__rim, .core__spec {
+  position: absolute; inset: 15.5%; border-radius: 50%;
+  pointer-events: none;
+}
+/* luz principal ORBITANDO — muda conforme a "rotação" */
+.core__light {
+  background: conic-gradient(from 0deg,
+    rgba(255, 255, 255, 0.00) 0deg,
+    rgba(160, 220, 255, 0.14) 52deg,
+    rgba(255, 255, 255, 0.05) 96deg,
+    rgba(255, 255, 255, 0.00) 150deg,
+    rgba(0, 0, 20, 0.16) 216deg,
+    rgba(0, 0, 20, 0.00) 300deg);
+  animation: lightOrbit 17s linear infinite;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+@keyframes lightOrbit { to { transform: rotate(360deg); } }
+/* specular fixo (fonte de luz da cena) + terminador escuro oposto */
+.core__spec {
+  background:
+    radial-gradient(28% 24% at 33% 27%, rgba(255, 255, 255, 0.20), transparent 70%),
+    radial-gradient(70% 66% at 74% 76%, rgba(2, 6, 18, 0.34), transparent 62%);
+}
+/* borda: rim-light de um lado, sombra do outro → volume */
+.core__rim {
+  box-shadow:
+    inset 10px 6px 22px rgba(150, 215, 255, 0.16),
+    inset -14px -10px 30px rgba(0, 0, 14, 0.46);
+}
+/* brilho que PERCORRE a esfera de tempos em tempos */
+.core__sheen { overflow: hidden; }
+.core__sheen::before {
+  content: ""; position: absolute; top: -30%; bottom: -30%;
+  left: -55%; width: 34%;
+  background: linear-gradient(100deg, transparent 0%,
+    rgba(190, 235, 255, 0.16) 45%, rgba(255, 255, 255, 0.30) 50%,
+    rgba(190, 235, 255, 0.16) 55%, transparent 100%);
+  transform: rotate(12deg);
+  animation: sheenSweep 7.5s ease-in-out infinite;
+  will-change: left;
+}
+@keyframes sheenSweep {
+  0%, 58%  { left: -55%; opacity: 0; }
+  62%      { opacity: 1; }
+  82%, 100%{ left: 125%; opacity: 0; }
+}
+
+/* ---------------- Halo (glow + bloom + pulso) ---------------- */
+.core-halo {
+  position: absolute; inset: -18%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side,
+    rgba(0, 170, 255, 0.16) 42%,
+    rgba(0, 140, 255, 0.07) 62%,
+    transparent 74%);
+  filter: blur(10px);
+  animation: haloPulse 5.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.core-halo--bloom {
+  inset: -34%;
+  background: radial-gradient(closest-side,
+    rgba(90, 40, 120, 0.10) 30%,
+    rgba(0, 120, 220, 0.08) 55%,
+    transparent 76%);
+  filter: blur(26px);
+  animation-duration: 8.4s; animation-delay: -2.4s;
+}
+@keyframes haloPulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.055); }
+}
+
+/* ---------------- Anéis independentes (nunca planos) ---------------- */
+.core-ring {
+  position: absolute; left: 50%; top: 50%;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  will-change: transform;
+}
+.core-ring--a { /* anel largo atrás, lento */
+  width: 148%; height: 148%;
+  border-color: rgba(0, 180, 255, 0.16);
+  border-top-color: rgba(120, 220, 255, 0.42);
+  transform: translate(-50%, -50%) rotateX(74deg) translateZ(-40px);
+  animation: ringSpinA 26s linear infinite;
+  opacity: 0.85;
+}
+@keyframes ringSpinA {
+  from { transform: translate(-50%, -50%) rotateX(74deg) translateZ(-40px) rotateZ(0deg); }
+  to   { transform: translate(-50%, -50%) rotateX(74deg) translateZ(-40px) rotateZ(360deg); }
+}
+.core-ring--b { /* anel médio na frente, mais rápido, sentido oposto */
+  width: 126%; height: 126%;
+  border-color: rgba(255, 120, 130, 0.10);
+  border-bottom-color: rgba(255, 160, 170, 0.30);
+  transform: translate(-50%, -50%) rotateX(78deg) rotateY(-8deg) translateZ(34px);
+  animation: ringSpinB 15s linear infinite;
+  opacity: 0.7;
+}
+@keyframes ringSpinB {
+  from { transform: translate(-50%, -50%) rotateX(78deg) rotateY(-8deg) translateZ(34px) rotateZ(360deg); }
+  to   { transform: translate(-50%, -50%) rotateX(78deg) rotateY(-8deg) translateZ(34px) rotateZ(0deg); }
+}
+.core-ring--c { /* anel fino inclinado, quase vertical */
+  width: 160%; height: 160%;
+  border-color: rgba(150, 200, 255, 0.05);
+  border-left-color: rgba(160, 215, 255, 0.20);
+  transform: translate(-50%, -50%) rotateX(64deg) rotateY(22deg) translateZ(-70px);
+  animation: ringSpinC 38s linear infinite reverse;
+  opacity: 0.55;
+}
+@keyframes ringSpinC {
+  from { transform: translate(-50%, -50%) rotateX(64deg) rotateY(22deg) translateZ(-70px) rotateZ(0deg); }
+  to   { transform: translate(-50%, -50%) rotateX(64deg) rotateY(22deg) translateZ(-70px) rotateZ(360deg); }
+}
+
+/* sombra dinâmica sob o núcleo (pulsa junto com o halo) */
+.core-shadow {
+  position: absolute; left: 50%; bottom: -14%;
+  width: 68%; height: 10%;
+  transform: translateX(-50%);
+  background: radial-gradient(50% 50% at 50% 50%, rgba(0, 30, 70, 0.5), transparent 72%);
+  filter: blur(8px);
+  animation: shadowPulse 5.6s ease-in-out infinite;
+}
+@keyframes shadowPulse {
+  0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.75; }
+  50%      { transform: translateX(-50%) scaleX(1.1); opacity: 1; }
+}
+
+/* ---------------- HUD vivo (cantos) ---------------- */
+.hud {
+  position: fixed; z-index: 40;
+  font: 500 10.5px/1.6 'JetBrains Mono', 'Inter', monospace;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(160, 200, 235, 0.55);
+  display: flex; gap: 18px; align-items: center;
+  animation: hudIn 1.2s ease both;
+}
+@keyframes hudIn { from { opacity: 0; } }
+.hud b { color: rgba(210, 240, 255, 0.9); font-weight: 600; margin-left: 4px; }
+.hud .ok { color: #37E5A5; }
+.hud-tl { top: 22px; left: 26px; }
+.hud-tr { top: 22px; right: 26px; }
+.hud-bl { bottom: 22px; left: 26px; }
+.hud-br { bottom: 22px; right: 26px; }
+.hud-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #37E5A5; box-shadow: 0 0 8px rgba(55, 229, 165, 0.8);
+  animation: hudBlink 2.4s ease-in-out infinite;
+}
+@keyframes hudBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+@media (max-width: 640px) {
+  .hud-bl, .hud-tr { display: none; } /* mantém só o essencial no celular */
+  .hud { gap: 12px; }
+}
+
+/* ---------------- Acessibilidade / performance ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  .sky__nebula, .core-tilt, .core, .core__light, .core__sheen::before,
+  .core-halo, .core-ring, .core-shadow, .hud-dot {
+    animation: none !important;
+  }
+}

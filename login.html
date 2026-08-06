@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLAS — Login</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/login.css">
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="themes/atlas-theme.css">
+  <link rel="stylesheet" href="themes/atlas-effects.css">
+  <script src="core/settings.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/currency.js"></script>
+  <script src="core/atlas-boot.js"></script>
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <h2 class="login-title">Entrar na sua conta</h2>
+
+    <form id="loginForm" novalidate>
+      <label class="field">
+        <span>Email</span>
+        <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+      </label>
+
+      <label class="field">
+        <span>Senha</span>
+        <input type="password" id="senha" placeholder="••••••••••" autocomplete="current-password">
+      </label>
+
+      <a href="#" class="forgot">Esqueceu sua senha?</a>
+
+      <button type="submit" class="btn-entrar">Entrar</button>
+
+      <p class="signup">Não tem conta? <a href="#">Cadastre-se</a></p>
+    </form>
+  </div>
+
+  <script src="js/login.js"></script>
+</body>
+</html>

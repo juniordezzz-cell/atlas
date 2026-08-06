@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="defi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Posição · ATLAS DeFi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/cards.css" />
+  <link rel="stylesheet" href="css/forms.css" />
+  <link rel="stylesheet" href="css/tables.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <!-- Seletor de carteira: componente compartilhado (um CSS para todo o ATLAS) -->
+  <link rel="stylesheet" href="../wallets/walletSelector.css">
+  <script src="../core/ui/atlas-shell.js" defer></script>
+</head>
+<body>
+  <div id="nav"></div>
+
+  <main class="app">
+    <div class="wrap page page-enter" id="poolRoot">
+      <!-- injetado por pool.js -->
+      <div class="loader"><div class="loader-orbit"><span></span><span></span><span></span></div><div class="loader-label">Carregando posição…</div></div>
+    </div>
+  </main>
+
+  <!-- Modal Editar -->
+  <div class="modal-overlay" id="modalEdit">
+    <div class="modal">
+      <div class="modal-head"><h3>Editar posição</h3><button class="modal-close" data-close="modalEdit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">
+        <div class="col-2" style="gap:0 16px">
+          <div class="field"><label>Valor atual</label><div class="input-money"><span>US$</span><input class="input" id="eVal" type="number" /></div></div>
+          <div class="field"><label>APR</label><input class="input" id="eApr" type="number" /></div>
+        </div>
+        <div class="field"><label>Status</label>
+          <select class="select" id="eStatus">
+            <option value="ativa">Ativa</option>
+            <option value="range">Fora do Range</option>
+            <option value="analise">Em análise</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-cancel" data-close="modalEdit">Cancelar</button>
+        <button class="btn btn-primary" id="saveEdit">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Fechar posição -->
+  <div class="modal-overlay" id="modalClose">
+    <div class="modal">
+      <div class="modal-head"><h3>Fechar posição</h3><button class="modal-close" data-close="modalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">
+        <p class="muted" style="margin-bottom:16px;font-size:14px">A posição será movida para o Histórico. Toda venda depende de invalidação ou realização da tese.</p>
+        <div class="field"><label>Motivo do encerramento</label>
+          <textarea class="textarea" id="closeReason" placeholder="ex.: Realização da tese — objetivo atingido."></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-cancel" data-close="modalClose">Cancelar</button>
+        <button class="btn btn-danger" id="confirmClose">Fechar posição</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="../wallets/walletStore.js"></script>
+  <script src="../wallets/walletTypes.js"></script>
+  <script src="../wallets/walletLedger.js"></script>
+  <script src="../wallets/walletManager.js"></script>
+  <script src="../wallets/walletMenus.js"></script>
+  <script src="../wallets/walletDialog.js"></script>
+  <script src="../wallets/walletSelector.js"></script>
+  <script src="../core/http.js"></script>
+  <script src="../core/providers/registry.js"></script>
+  <script src="../core/providers/coingecko.js"></script>
+  <script src="../core/atlas-price.js"></script>
+  <script src="js/tokens.js"></script>
+  <script src="js/performance.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/pool.js"></script>
+</body>
+</html>

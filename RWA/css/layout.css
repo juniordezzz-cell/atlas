@@ -1,0 +1,89 @@
+/* ============================================================
+   ATLAS · RWA — layout.css
+   Shell do terminal: sidebar + topbar + conteúdo + grids.
+   ============================================================ */
+
+.app-shell { display: grid; grid-template-columns: var(--rail) 1fr; min-height: 100vh; }
+
+/* Scrim (overlay do menu mobile) — SEMPRE position:fixed.
+   BUG CORRIGIDO: sem estilo base, o navegador tratava o .scrim como
+   item do grid no desktop, ocupando a coluna do conteúdo e empurrando
+   o .main (topbar + páginas) para fora da tela. Era isso que fazia o
+   menu aparecer e o conteúdo não. */
+.scrim { position: fixed; inset: 0; z-index: 150; background: rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity var(--med); }
+.scrim.show { opacity: 1; pointer-events: auto; }
+
+/* ---------- Sidebar (navegação) ---------- */
+.sidebar {
+  position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column;
+  background: var(--surface-2); border-right: 1px solid var(--border); padding: 16px 12px;
+}
+.side-brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px; }
+.side-brand .mark {
+  width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 6px 16px -8px rgba(79,140,255,0.6);
+}
+.side-brand .mark svg { width: 18px; height: 18px; color: #fff; }
+.side-brand .txt .n { font-weight: 700; font-size: 15px; letter-spacing: 0.2px; }
+.side-brand .txt .n b { color: var(--accent); }
+.side-brand .txt .s { font-size: 10px; color: var(--text-3); letter-spacing: 1px; text-transform: uppercase; }
+
+.side-label { font-size: 10px; font-weight: 600; letter-spacing: 1.3px; text-transform: uppercase; color: var(--text-3); padding: 12px 10px 6px; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: var(--r-sm);
+  font-size: 13.5px; font-weight: 500; color: var(--text-2); transition: all var(--fast) var(--ease); position: relative;
+}
+.nav-item svg { width: 17px; height: 17px; flex: none; opacity: 0.85; }
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.nav-item.active { color: var(--text); background: var(--accent-soft); }
+.nav-item.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2.5px; border-radius: 2px; background: var(--accent); }
+
+.side-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); }
+.side-back {
+  display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: var(--r-sm);
+  font-size: 13px; color: var(--text-2); transition: all var(--fast) var(--ease);
+}
+.side-back svg { width: 16px; height: 16px; }
+.side-back:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+
+/* ---------- Main ---------- */
+.main { display: flex; flex-direction: column; min-width: 0; }
+
+/* Topbar */
+.topbar {
+  position: sticky; top: 0; z-index: 50; height: var(--topbar-h);
+  display: flex; align-items: center; gap: 16px; padding: 0 22px;
+  background: rgba(11, 15, 26, 0.82); backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);
+}
+.topbar .search { position: relative; flex: 1; max-width: 420px; }
+.topbar .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--text-3); pointer-events: none; }
+.topbar .search input {
+  width: 100%; padding: 9px 12px 9px 34px; font-size: 13px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); transition: border-color var(--fast);
+}
+.topbar .search input::placeholder { color: var(--text-3); }
+.topbar .search input:focus { outline: none; border-color: var(--border-accent); }
+.topbar .tb-spacer { flex: 1; }
+
+.tb-metric { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.tb-metric .k { font-size: 10px; color: var(--text-3); letter-spacing: 0.6px; text-transform: uppercase; }
+.tb-metric .v { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--text); }
+.tb-sep { width: 1px; height: 30px; background: var(--border); }
+
+/* Conteúdo / view */
+.view { padding: 22px; max-width: var(--maxw); width: 100%; margin: 0 auto; animation: fade var(--med) var(--ease); }
+
+.view-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.view-title { font-size: 22px; }
+.view-sub { color: var(--text-2); font-size: 13px; margin-top: 3px; }
+
+/* ---------- Grid helpers ---------- */
+.grid { display: grid; gap: 14px; }
+.g-4 { grid-template-columns: repeat(4, 1fr); }
+.g-3 { grid-template-columns: repeat(3, 1fr); }
+.g-2 { grid-template-columns: repeat(2, 1fr); }
+.g-21 { grid-template-columns: 2fr 1fr; }
+.g-12 { grid-template-columns: 1fr 2fr; }
+.section { margin-top: 14px; }

@@ -1,0 +1,27 @@
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Node (caso adicione tooling futuramente)
+node_modules/
+
+# Segredos — nunca commitar
+.env
+*.key
+*.pem
+config.local.*
+
+# Snapshots e artefatos — o histórico do git substitui o .zip manual.
+# Os arquivos continuam no disco; só ficam fora do versionamento.
+*.zip
+
+# Repositório git órfão e vazio herdado de uma tentativa anterior.
+# Sem esta linha o git o trataria como submódulo (gitlink) e o commit
+# nasceria quebrado. Pode ser apagado do disco quando você quiser.
+atlas/

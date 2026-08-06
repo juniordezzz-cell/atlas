@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLAS — Relatórios</title>
+  <!-- Inter e Poppins: estas páginas DECLARAVAM as duas em
+       css/variables.css e não carregavam nenhuma — o texto caía no
+       fallback do sistema, e o mesmo componente media diferente aqui
+       e nos módulos. O conjunto de pesos do Inter é o MESMO de todas
+       as páginas de propósito: pedir eixos diferentes faz o Google
+       servir instâncias com métricas ligeiramente diferentes. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;550;600;650;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/relatorios.css">
+
+  <!-- ===== ATLAS · camada global ===== -->
+  <link rel="stylesheet" href="themes/atlas-theme.css">
+  <link rel="stylesheet" href="themes/atlas-effects.css">
+  <link rel="stylesheet" href="core/ui/atlas-shell.css">
+  <!-- Seletor de carteira: componente compartilhado (um CSS para todo o ATLAS) -->
+  <link rel="stylesheet" href="wallets/walletSelector.css">
+  <link rel="stylesheet" href="core/ui/atlas-calendar.css">
+
+  <script src="core/settings.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/currency.js"></script>
+  <script src="core/atlas-boot.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3a13 13 0 0 0 0 18M12 3a13 13 0 0 1 0 18M3 12h18"/></svg>
+      </span>
+      <span class="logo-text">ATLAS</span>
+    </div>
+    <nav class="nav">
+      <a class="nav-item" href="dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a class="nav-item" href="hold/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="3.5"/></svg>
+        <span>Hold</span>
+      </a>
+      <a class="nav-item" href="trade/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 17l6-6 4 4 7-8"/><path d="M21 7v5M21 7h-5"/></svg>
+        <span>Trade</span>
+      </a>
+      <a class="nav-item" href="defi/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/></svg>
+        <span>DeFi</span>
+      </a>
+      <a class="nav-item" href="RWA/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+        <span>RWA</span>
+      </a>
+      <a class="nav-item" href="academy/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"/></svg>
+        <span>Academy</span>
+      </a>
+      <a class="nav-item active" href="relatorios.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+        <span>Relatórios</span>
+      </a>
+      <a class="nav-item" href="configuracoes.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 12.6a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.4 6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8"/></svg>
+        <span>Configurações</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <header class="topbar">
+      <div class="greet">
+        <h1 data-i18n="Relatórios">Relatórios</h1>
+        <p data-i18n="Escolha a carteira do relatório">Escolha a carteira do relatório</p>
+      </div>
+      <div class="topbar-right"><div class="avatar">JJ</div></div>
+    </header>
+
+    <!-- controles -->
+    <section class="rep-controls">
+      <div class="rep-field">
+        <label data-i18n="Carteira">Carteira</label>
+        <!-- MESMO seletor de carteira do Dashboard e dos módulos.
+             Era um <select> nativo — a sexta aparência diferente de
+             carteira no ATLAS, e a única sem criar/renomear/excluir. -->
+        <div id="repWallet"></div>
+      </div>
+      <div class="rep-field">
+        <label data-i18n="Período">Período</label>
+        <select id="repPeriod" class="rep-select" aria-label="Período"></select>
+      </div>
+    </section>
+
+    <!-- estado vazio -->
+    <div id="repEmpty" class="rep-empty" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      <h3 data-i18n="Sem movimentos nesta carteira">Sem movimentos nesta carteira</h3>
+      <p data-i18n="Os relatórios aparecem quando houver entradas, saídas ou resultados registrados.">Os relatórios aparecem quando houver entradas, saídas ou resultados registrados.</p>
+    </div>
+
+    <!-- corpo do relatório -->
+    <div id="repBody">
+      <section class="rep-kpis" id="repKpis"></section>
+
+      <section class="rep-grid">
+        <div class="rep-card">
+          <div class="rep-card__head"><h3 data-i18n="Fluxo por período">Fluxo por período</h3><span class="eyebrow">USD</span></div>
+          <div class="rep-chart-wrap"><canvas id="repChart"></canvas></div>
+        </div>
+        <div class="rep-card">
+          <div class="rep-card__head"><h3 data-i18n="Calendário do mês">Calendário do mês</h3></div>
+          <div class="rep-cal-wrap" id="repCal"></div>
+        </div>
+      </section>
+
+      <section class="rep-grid">
+        <div class="rep-card">
+          <div class="rep-card__head"><h3 data-i18n="Comparação entre períodos">Comparação entre períodos</h3></div>
+          <table class="rep-compare" id="repCompare"></table>
+          <div class="rep-proj" id="repProj" style="display:none">
+            <div class="rep-proj__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 7-8"/><path d="M21 7v5M21 7h-5"/></svg></div>
+            <div class="rep-proj__txt">
+              <div class="rep-proj__label" data-i18n="Projeção do próximo período">Projeção do próximo período</div>
+              <div class="rep-proj__value">—</div>
+              <div class="rep-proj__note" data-i18n="estimativa por tendência linear">estimativa por tendência linear</div>
+            </div>
+          </div>
+        </div>
+        <div class="rep-card">
+          <div class="rep-card__head"><h3 data-i18n="Movimentos recentes">Movimentos recentes</h3></div>
+          <div class="rep-moves" id="repMoves"></div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="wallets/walletStore.js"></script>
+<script src="wallets/walletTypes.js"></script>
+<script src="wallets/walletLedger.js"></script>
+<script src="wallets/walletManager.js"></script>
+<script src="wallets/walletMenus.js"></script>
+<script src="wallets/walletDialog.js"></script>
+<script src="wallets/walletSelector.js"></script>
+<script src="core/atlas-price.js"></script>
+<script src="js/atlas-movements.js"></script>
+<script src="core/ui/atlas-calendar.js"></script>
+<script src="core/ui/atlas-shell.js"></script>
+<script src="js/relatorios.js"></script>
+</body>
+</html>

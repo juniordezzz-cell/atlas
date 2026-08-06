@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="defi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Staking · ATLAS DeFi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/cards.css" />
+  <link rel="stylesheet" href="css/forms.css" />
+  <link rel="stylesheet" href="css/tables.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <!-- Seletor de carteira: componente compartilhado (um CSS para todo o ATLAS) -->
+  <link rel="stylesheet" href="../wallets/walletSelector.css">
+  <script src="../core/ui/atlas-shell.js" defer></script>
+</head>
+<body>
+  <div id="nav"></div>
+  <main class="app">
+    <div class="wrap page page-enter">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Rendimento</div>
+          <h1 class="page-title">Staking</h1>
+          <p class="page-sub">Ativos em staking e recompensas acumuladas.</p>
+        </div>
+      </div>
+      <div class="fin-grid" id="stakeKpis" style="grid-template-columns:repeat(3,1fr)"></div>
+      <div class="section"><div class="section-head"><h2>Posições de staking</h2></div>
+        <div class="pos-grid" id="stakeGrid"></div>
+      </div>
+    </div>
+  </main>
+  <div id="toasts"></div>
+  <script src="../wallets/walletStore.js"></script>
+  <script src="../wallets/walletTypes.js"></script>
+  <script src="../wallets/walletLedger.js"></script>
+  <script src="../wallets/walletManager.js"></script>
+  <script src="../wallets/walletMenus.js"></script>
+  <script src="../wallets/walletDialog.js"></script>
+  <script src="../wallets/walletSelector.js"></script>
+  <script src="../core/atlas-price.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/staking.js"></script>
+</body>
+</html>

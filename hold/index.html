@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="hold">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HOLD · Sistema de Investimento — ATLAS</title>
+  <meta name="description" content="HOLD — gestão estruturada de investimentos de longo prazo baseada em tese, análise e decisão documentada." />
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg" />
+
+  <!-- Fonte Inter (fallback system-ui se offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/components.css" />
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <!-- Seletor de carteira: componente compartilhado (um CSS para todo o ATLAS) -->
+  <link rel="stylesheet" href="../wallets/walletSelector.css">
+  <script src="../core/ui/atlas-shell.js" defer></script>
+</head>
+<body>
+  <!-- carregando… (substituído pelo shell no boot) -->
+  <div style="display:grid;place-items:center;height:100vh;color:#9AA4B2;font-family:system-ui">
+    <div style="text-align:center">
+      <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#4DA3FF,#8B5CF6);display:grid;place-items:center;font-weight:800;color:#06111f;margin:0 auto 12px">H</div>
+      Carregando HOLD…
+    </div>
+  </div>
+
+  <!-- Dados (semente) -->
+  <!-- Core ATLAS: http + provedores de dados -->
+  <script src="../core/http.js"></script>
+  <script src="../core/providers/registry.js"></script>
+  <script src="../core/providers/coingecko.js"></script>
+  <script src="../core/atlas-price.js"></script>
+  <script src="../js/atlas-assets.js"></script>
+  <script src="data/seed.js"></script>
+
+  <!-- Núcleo -->
+  <script src="../wallets/walletStore.js"></script>
+  <script src="../wallets/walletTypes.js"></script>
+  <script src="../wallets/walletLedger.js"></script>
+  <script src="../wallets/walletManager.js"></script>
+  <script src="../wallets/walletMenus.js"></script>
+  <script src="../wallets/walletDialog.js"></script>
+  <script src="../wallets/walletSelector.js"></script>
+  <script src="../js/atlas-movements.js"></script>
+  <script src="../core/entities/theses.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/forms.js"></script>
+
+  <!-- Páginas -->
+  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/ativos.js"></script>
+  <script src="js/pages/teses.js"></script>
+  <script src="js/pages/metricas.js"></script>
+  <script src="js/pages/historico.js"></script>
+  <script src="js/pages/relatorios.js"></script>
+
+  <!-- Router (inicializa a app) -->
+  <script src="js/router.js"></script>
+</body>
+</html>

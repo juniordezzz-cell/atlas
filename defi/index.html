@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="defi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard · ATLAS DeFi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/cards.css" />
+  <link rel="stylesheet" href="css/forms.css" />
+  <link rel="stylesheet" href="css/tables.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <!-- Seletor de carteira: componente compartilhado (um CSS para todo o ATLAS) -->
+  <link rel="stylesheet" href="../wallets/walletSelector.css">
+  <script src="../core/ui/atlas-shell.js" defer></script>
+</head>
+<body>
+  <div id="nav"></div>
+
+  <main class="app">
+    <div class="wrap page page-enter">
+
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Visão geral</div>
+          <h1 class="page-title">Patrimônio DeFi</h1>
+          <p class="page-sub">Suas posições, métricas e evolução — tudo em um só lugar.</p>
+        </div>
+        <div class="head-actions">
+          <a class="btn btn-primary" href="pools.html?new=1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Nova posição
+          </a>
+        </div>
+      </div>
+
+      <!-- 1. Cards financeiros -->
+      <div class="fin-grid" id="kpis"></div>
+
+      <!-- 2. Gráficos -->
+      <div class="chart-split section">
+        <div class="panel panel-pad">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Evolução</div>
+              <h3>Evolução Patrimonial</h3>
+            </div>
+            <div class="segmented" id="range-toggle">
+              <button data-r="15">15D</button>
+              <button data-r="30" class="active">30D</button>
+              <button data-r="45">Máx</button>
+            </div>
+          </div>
+          <div class="chart-box h-lg"><canvas id="chartEvolution"></canvas></div>
+        </div>
+
+        <div class="panel panel-pad">
+          <div class="panel-head">
+            <div>
+              <div class="eyebrow">Alocação</div>
+              <h3>Distribuição</h3>
+            </div>
+            <div class="segmented" id="dist-toggle">
+              <button data-d="chain" class="active">Chain</button>
+              <button data-d="protocol">Protocolo</button>
+              <button data-d="category">Categoria</button>
+            </div>
+          </div>
+          <div class="chart-box h-md" style="margin-bottom:16px"><canvas id="chartDist"></canvas></div>
+          <div class="legend" id="distLegend"></div>
+        </div>
+      </div>
+
+      <!-- 3. Posições -->
+      <div class="section">
+        <div class="section-head">
+          <h2>Posições ativas</h2>
+          <a class="link" href="pools.html">Ver todas <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </div>
+        <div class="pos-grid" id="positions"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toasts"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="../wallets/walletStore.js"></script>
+  <script src="../wallets/walletTypes.js"></script>
+  <script src="../wallets/walletLedger.js"></script>
+  <script src="../wallets/walletManager.js"></script>
+  <script src="../wallets/walletMenus.js"></script>
+  <script src="../wallets/walletDialog.js"></script>
+  <script src="../wallets/walletSelector.js"></script>
+  <script src="../core/http.js"></script>
+  <script src="../core/providers/registry.js"></script>
+  <script src="../core/providers/coingecko.js"></script>
+  <script src="../core/atlas-price.js"></script>
+  <script src="js/tokens.js"></script>
+  <script src="js/performance.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLAS — Configurações</title>
+  <!-- Inter e Poppins: estas páginas DECLARAVAM as duas em
+       css/variables.css e não carregavam nenhuma — o texto caía no
+       fallback do sistema, e o mesmo componente media diferente aqui
+       e nos módulos. O conjunto de pesos do Inter é o MESMO de todas
+       as páginas de propósito: pedir eixos diferentes faz o Google
+       servir instâncias com métricas ligeiramente diferentes. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;550;600;650;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/configuracoes.css">
+
+  <!-- ===== ATLAS · camada global ===== -->
+  <link rel="stylesheet" href="themes/atlas-theme.css">
+  <link rel="stylesheet" href="themes/atlas-effects.css">
+  <link rel="stylesheet" href="core/ui/atlas-shell.css">
+
+  <script src="core/settings.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/currency.js"></script>
+  <script src="core/atlas-boot.js"></script>
+  <script src="core/atlas-backup.js"></script>
+  <script src="core/atlas-module-settings.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <circle cx="12" cy="12" r="9"/><path d="M12 3a13 13 0 0 0 0 18M12 3a13 13 0 0 1 0 18M3 12h18"/>
+        </svg>
+      </span>
+      <span class="logo-text">ATLAS</span>
+    </div>
+
+    <nav class="nav">
+      <a class="nav-item" href="dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Dashboard</span>
+      </a>
+      <a class="nav-item" href="hold/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="3.5"/></svg>
+        <span>Hold</span>
+      </a>
+      <a class="nav-item" href="trade/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 17l6-6 4 4 7-8"/><path d="M21 7v5M21 7h-5"/></svg>
+        <span>Trade</span>
+      </a>
+      <a class="nav-item" href="defi/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/></svg>
+        <span>DeFi</span>
+      </a>
+      <a class="nav-item" href="RWA/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+        <span>RWA</span>
+      </a>
+      <a class="nav-item" href="academy/index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"/></svg>
+        <span>Academy</span>
+      </a>
+      <a class="nav-item" href="relatorios.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
+        <span>Relatórios</span>
+      </a>
+      <a class="nav-item active" href="configuracoes.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 12.6a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.4 6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8"/></svg>
+        <span>Configurações</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="greet">
+        <h1 data-i18n="Configurações">Configurações</h1>
+        <p data-i18n="Ajuste tema, idioma e preferências do sistema">Ajuste tema, idioma e preferências do sistema</p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar">JJ</div>
+      </div>
+    </header>
+
+    <section class="settings">
+
+      <!-- ===== Aparência ===== -->
+      <div class="set-card">
+        <div class="set-card-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <h3 data-i18n="Aparência">Aparência</h3>
+        </div>
+
+        <div class="set-row">
+          <div class="set-row-txt">
+            <div class="set-label" data-i18n="Tema">Tema</div>
+            <div class="set-desc" data-i18n="Escolha entre o modo escuro (padrão) e o claro">Escolha entre o modo escuro (padrão) e o claro</div>
+          </div>
+          <div class="set-row-ctrl">
+            <div class="seg" data-key="theme" role="group">
+              <button type="button" data-val="dark" aria-pressed="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                <span data-i18n="Escuro">Escuro</span>
+              </button>
+              <button type="button" data-val="light" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+                <span data-i18n="Claro">Claro</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="set-row">
+          <div class="set-row-txt">
+            <div class="set-label" data-i18n="Animações">Animações</div>
+            <div class="set-desc" data-i18n="Ativa transições e efeitos de movimento">Ativa transições e efeitos de movimento</div>
+          </div>
+          <div class="set-row-ctrl">
+            <button type="button" class="switch" data-key="animations" aria-pressed="true" aria-label="Animações"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Idioma e Região ===== -->
+      <div class="set-card">
+        <div class="set-card-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+          <h3 data-i18n="Idioma e Região">Idioma e Região</h3>
+        </div>
+
+        <div class="set-row">
+          <div class="set-row-txt">
+            <div class="set-label" data-i18n="Idioma">Idioma</div>
+            <div class="set-desc" data-i18n="Muda o idioma de todo o sistema">Muda o idioma de todo o sistema</div>
+          </div>
+          <div class="set-row-ctrl">
+            <div class="seg" data-key="lang" role="group">
+              <button type="button" data-val="pt-BR" aria-pressed="true"><span data-i18n="Português">Português</span></button>
+              <button type="button" data-val="en" aria-pressed="false"><span data-i18n="English">English</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="set-row">
+          <div class="set-row-txt">
+            <div class="set-label" data-i18n="Formato de data">Formato de data</div>
+            <div class="set-desc" data-i18n="Como as datas aparecem nos relatórios">Como as datas aparecem nos relatórios</div>
+          </div>
+          <div class="set-row-ctrl">
+            <div class="seg" data-key="dateFormat" role="group">
+              <button type="button" data-val="dd/MM/yyyy" aria-pressed="true">dd/MM/yyyy</button>
+              <button type="button" data-val="MM/dd/yyyy" aria-pressed="false">MM/dd/yyyy</button>
+              <button type="button" data-val="yyyy-MM-dd" aria-pressed="false">yyyy-MM-dd</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="set-row">
+          <div class="set-row-txt">
+            <div class="set-label" data-i18n="Moeda">Moeda</div>
+            <div class="set-desc" data-i18n="O ATLAS opera em dólar (padrão do sistema)">O ATLAS opera em dólar (padrão do sistema)</div>
+          </div>
+          <div class="set-row-ctrl">
+            <span class="locked">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              USD · <span data-i18n="Padrão do sistema">Padrão do sistema</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Por módulo (montado por core/atlas-module-settings.js) ===== -->
+      <div class="set-sep">
+        <span data-i18n="Configurações por módulo">Configurações por módulo</span>
+      </div>
+      <div id="modSettings"></div>
+
+      <!-- ===== Dados e Backup ===== -->
+      <div class="set-card">
+        <div class="set-card-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+          <h3 data-i18n="Dados e Backup">Dados e Backup</h3>
+          <span class="eyebrow" id="bkStatus">—</span>
+        </div>
+
+        <div class="set-row">
+          <div class="set-row-txt">
+            <div class="set-label" data-i18n="Exportar backup">Exportar backup</div>
+            <div class="set-desc" data-i18n="Baixa um arquivo .json com todos os dados de todos os módulos. Guarde no Drive ou pendrive.">Baixa um arquivo .json com todos os dados de todos os módulos. Guarde no Drive ou pendrive.</div>
+          </div>
+          <div class="set-row-ctrl set-foot">
+            <button type="button" id="btnExport" class="btn-ghost accent">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>
+              <span data-i18n="Exportar backup">Exportar backup</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="set-row">
+          <div class="set-row-txt">
+            <div class="set-label" data-i18n="Importar backup">Importar backup</div>
+            <div class="set-desc" data-i18n="Restaura os dados a partir de um arquivo exportado. Substitui o que estiver no navegador agora.">Restaura os dados a partir de um arquivo exportado. Substitui o que estiver no navegador agora.</div>
+          </div>
+          <div class="set-row-ctrl set-foot">
+            <input type="file" id="bkFile" accept=".json,application/json" hidden>
+            <button type="button" id="btnImport" class="btn-ghost">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 21h16"/></svg>
+              <span data-i18n="Escolher arquivo">Escolher arquivo</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="set-row bk-detail">
+          <div class="set-row-txt">
+            <div class="set-desc" id="bkList">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Sistema ===== -->
+      <div class="set-card">
+        <div class="set-card-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+          <h3 data-i18n="Sistema">Sistema</h3>
+        </div>
+        <div class="set-row">
+          <div class="set-row-txt">
+            <div class="set-label" data-i18n="Restaurar padrões">Restaurar padrões</div>
+            <div class="set-desc" data-i18n="Restaura tema, idioma e preferências para o padrão de fábrica">Restaura tema, idioma e preferências para o padrão de fábrica</div>
+          </div>
+          <div class="set-row-ctrl set-foot">
+            <button type="button" id="btnReset" class="btn-ghost danger">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              <span data-i18n="Restaurar padrões">Restaurar padrões</span>
+            </button>
+            <span class="hint" data-i18n="Não apaga seus dados">Não apaga seus dados</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<script src="core/ui/atlas-shell.js"></script>
+<script src="js/configuracoes.js"></script>
+</body>
+</html>

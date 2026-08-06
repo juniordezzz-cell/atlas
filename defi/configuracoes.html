@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="defi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configurações · ATLAS DeFi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/cards.css" />
+  <link rel="stylesheet" href="css/forms.css" />
+  <link rel="stylesheet" href="css/tables.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <!-- Seletor de carteira: componente compartilhado (um CSS para todo o ATLAS) -->
+  <link rel="stylesheet" href="../wallets/walletSelector.css">
+  <script src="../core/ui/atlas-shell.js" defer></script>
+</head>
+<body>
+  <div id="nav"></div>
+  <main class="app">
+    <div class="wrap page page-enter" style="max-width:840px">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Preferências</div>
+          <h1 class="page-title">Configurações</h1>
+          <p class="page-sub">Ajuste o módulo do jeito que você trabalha.</p>
+        </div>
+      </div>
+
+      <div class="panel panel-pad" style="margin-bottom:18px">
+        <div class="panel-head"><h3>Aparência & idioma</h3></div>
+        <div class="cfg-row">
+          <div class="cfg-info"><div class="t">Tema</div><div class="d">Modo de exibição do módulo.</div></div>
+          <div class="cfg-ctl"><div class="segmented" id="cfgTheme"><button data-v="dark" class="active">Escuro</button><button data-v="light">Claro</button></div></div>
+        </div>
+        <div class="cfg-row">
+          <div class="cfg-info"><div class="t">Idioma</div><div class="d">Idioma da interface.</div></div>
+          <div class="cfg-ctl"><select class="select" id="cfgLang"><option value="pt-BR">Português (BR)</option><option value="en-US">English (US)</option><option value="es-ES">Español</option></select></div>
+        </div>
+        <div class="cfg-row">
+          <div class="cfg-info"><div class="t">Moeda padrão</div><div class="d">Moeda usada para exibir valores.</div></div>
+          <div class="cfg-ctl"><select class="select" id="cfgCur"><option value="USD">US$ · Dólar</option><option value="BRL">R$ · Real</option><option value="EUR">€ · Euro</option></select></div>
+        </div>
+      </div>
+
+      <div class="panel panel-pad" style="margin-bottom:18px">
+        <div class="panel-head"><h3>Dados</h3></div>
+        <div class="cfg-row">
+          <div class="cfg-info"><div class="t">Exportar patrimônio</div><div class="d">Baixe todas as posições e histórico em JSON.</div></div>
+          <div class="cfg-ctl"><button class="btn btn-secondary" id="btnExport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Exportar</button></div>
+        </div>
+        <div class="cfg-row">
+          <div class="cfg-info"><div class="t">Backup local</div><div class="d">Salva um snapshot no navegador.</div></div>
+          <div class="cfg-ctl"><button class="btn btn-secondary" id="btnBackup">Fazer backup</button></div>
+        </div>
+        <div class="cfg-row">
+          <div class="cfg-info"><div class="t">Restaurar dados de exemplo</div><div class="d">Recarrega as posições de demonstração. Substitui os dados atuais.</div></div>
+          <div class="cfg-ctl"><button class="btn btn-danger" id="btnReset">Restaurar</button></div>
+        </div>
+      </div>
+
+      <div class="panel panel-pad">
+        <div class="row" style="gap:14px;align-items:flex-start">
+          <span class="fin-ic" style="background:rgba(34,211,238,0.10);color:var(--cyan-400);width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg>
+          </span>
+          <div>
+            <div class="t" style="font-family:var(--font-display);font-weight:600;color:var(--text-hi);font-size:15px">Oráculo</div>
+            <p class="muted" style="font-size:13.5px;margin-top:4px">Este módulo registra e organiza todo o seu patrimônio DeFi. Numa etapa futura, o Oráculo usará esses dados — posições, diários e histórico — para responder perguntas sobre a sua carteira. Nenhuma IA está ativa neste módulo agora.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div id="toasts"></div>
+  <script src="../wallets/walletStore.js"></script>
+  <script src="../wallets/walletTypes.js"></script>
+  <script src="../wallets/walletLedger.js"></script>
+  <script src="../wallets/walletManager.js"></script>
+  <script src="../wallets/walletMenus.js"></script>
+  <script src="../wallets/walletDialog.js"></script>
+  <script src="../wallets/walletSelector.js"></script>
+  <script src="../core/atlas-price.js"></script>
+  <!-- config.js chama C.mountNav(), que monta o seletor de carteira. O item
+       "Nova carteira" dele usa AtlasWalletDialog — por isso walletDialog.js
+       precisa estar na lista acima, em TODA página que monta o seletor. -->
+  <script src="js/data.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/config.js"></script>
+</body>
+</html>

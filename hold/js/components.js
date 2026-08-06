@@ -1,0 +1,343 @@
+/* ============================================================
+   HOLD SYSTEM · js/components.js
+   Construtores de UI reutilizáveis + ícones + formatadores.
+   Nada aqui muta estado; só produz DOM a partir de dados.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  /* ---------- DOM helper ---------- */
+  function el(tag, attrs, children) {
+    var node = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function (k) {
+        var v = attrs[k];
+        if (v == null) return;
+        if (k === "class") node.className = v;
+        else if (k === "html") node.innerHTML = v;
+        else if (k === "text") node.textContent = v;
+        else if (k === "dataset") Object.keys(v).forEach(function (d) { node.dataset[d] = v[d]; });
+        else if (k.slice(0, 2) === "on" && typeof v === "function") node.addEventListener(k.slice(2).toLowerCase(), v);
+        else node.setAttribute(k, v);
+      });
+    }
+    (children == null ? [] : [].concat(children)).forEach(function (c) {
+      if (c == null || c === false) return;
+      node.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(String(c)) : c);
+    });
+    return node;
+  }
+
+  /* ---------- Icons (feather-style, stroke currentColor) ---------- */
+  var PATHS = {
+    dashboard: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
+    wallet: '<path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><circle cx="16" cy="14" r="1.4"/>',
+    eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+    layers: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+    doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/>',
+    beaker: '<path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><line x1="7" y1="15" x2="17" y2="15"/>',
+    chart: '<line x1="3" y1="21" x2="21" y2="21"/><rect x="5" y="11" width="3" height="7"/><rect x="11" y="7" width="3" height="11"/><rect x="17" y="13" width="3" height="5"/>',
+    history: '<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3 2"/>',
+    report: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><path d="M8 18v-4"/><path d="M12 18v-7"/><path d="M16 18v-2"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    search: '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    chevron: '<polyline points="15 18 9 12 15 6"/>',
+    arrowUp: '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
+    arrowDown: '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
+    trendUp: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/>',
+    trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
+    zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/>',
+    convert: '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+    filter: '<polygon points="22 3 2 3 10 12.5 10 19 14 21 14 12.5 22 3"/>',
+    coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="M16.71 13.88.7.71-.71"/>'
+  };
+  function icon(name, cls) {
+    return '<svg class="ico ' + (cls || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (PATHS[name] || "") + '</svg>';
+  }
+  function iconEl(name, cls) {
+    var span = document.createElement("span");
+    span.innerHTML = icon(name, cls);
+    return span.firstChild;
+  }
+
+  /* ---------- Formatters ---------- */
+  function money(v, dp) {
+    var n = +v || 0, abs = Math.abs(n);
+    var opt = dp != null ? { minimumFractionDigits: dp, maximumFractionDigits: dp }
+      : (abs >= 1000 ? { maximumFractionDigits: 0 } : { maximumFractionDigits: 2 });
+    return "$" + n.toLocaleString("en-US", opt);
+  }
+  function compact(v) {
+    var n = +v || 0;
+    if (Math.abs(n) >= 1e12) return "$" + (n / 1e12).toFixed(2) + "T";
+    if (Math.abs(n) >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
+    if (Math.abs(n) >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+    if (Math.abs(n) >= 1e3) return "$" + (n / 1e3).toFixed(1) + "K";
+    return "$" + n.toFixed(0);
+  }
+  function pct(v, dp) { var n = +v || 0; return (n >= 0 ? "+" : "") + n.toFixed(dp == null ? 2 : dp) + "%"; }
+  function signClass(v) { return v > 0 ? "pos" : v < 0 ? "neg" : "neu"; }
+  function qty(v) { return (+v || 0).toLocaleString("en-US", { maximumFractionDigits: 6 }); }
+  function dateShort(iso) {
+    try { return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }); }
+    catch (e) { return iso; }
+  }
+  function dateTime(iso) {
+    try { return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" }); }
+    catch (e) { return iso; }
+  }
+
+  /* ---------- Badges ---------- */
+  var STATUS_BADGE = {
+    invested:  { cls: "invested",  label: "Investido" },
+    watchlist: { cls: "watchlist", label: "Watchlist" },
+    sold:      { cls: "sold",      label: "Vendido" },
+    active:    { cls: "active",    label: "Ativa" },
+    review:    { cls: "review",    label: "Em revisão" },
+    invalid:   { cls: "invalid",   label: "Invalidada" },
+    draft:     { cls: "draft",     label: "Rascunho" },
+    done:      { cls: "invested",  label: "Concluído" },
+    /* status oficiais de Tese (entidade compartilhada) */
+    planejada: { cls: "draft",     label: "Planejada" },
+    andamento: { cls: "active",    label: "Em andamento" },
+    concluida: { cls: "invested",  label: "Concluída" },
+    arquivada: { cls: "invalid",   label: "Arquivada" }
+  };
+  function badge(status, textOverride) {
+    var b = STATUS_BADGE[status] || { cls: "plain", label: status };
+    var span = el("span", { class: "badge " + b.cls });
+    span.appendChild(el("span", { class: "dot" }));
+    span.appendChild(document.createTextNode(textOverride || b.label));
+    return span;
+  }
+  function typeBadge(tipo) {
+    var span = el("span", { class: "badge " + tipo, text: tipo.charAt(0).toUpperCase() + tipo.slice(1) });
+    return span;
+  }
+
+  /* ---------- Conviction meter ---------- */
+  function conviction(value, showVal) {
+    var v = Math.max(0, Math.min(10, Math.round(+value || 0)));
+    var tier = v >= 8 ? "high" : v >= 5 ? "mid" : "low";
+    var wrap = el("div", { class: "conviction " + tier });
+    var segs = el("div", { class: "segs" });
+    for (var i = 1; i <= 10; i++) segs.appendChild(el("span", { class: "seg" + (i <= v ? " on" : "") }));
+    wrap.appendChild(segs);
+    if (showVal !== false) wrap.appendChild(el("span", { class: "val", html: v + "<small>/10</small>" }));
+    return wrap;
+  }
+  function convictionMini(value) {
+    var v = Math.max(0, Math.min(10, +value || 0));
+    var wrap = el("span", { class: "conviction-mini" });
+    var bar = el("span", { class: "bar" });
+    bar.appendChild(el("i", { style: "width:" + (v * 10) + "%" }));
+    wrap.appendChild(bar);
+    wrap.appendChild(el("span", { class: "n", text: v }));
+    return wrap;
+  }
+
+  /* ---------- Asset cell ---------- */
+  function assetCell(a) {
+    if (!a) return el("span", { class: "dim", text: "—" });
+    var cell = el("div", { class: "asset-cell" });
+    cell.appendChild(el("div", { class: "ticker-badge", text: a.ticker.slice(0, 4) }));
+    var col = el("div");
+    col.appendChild(el("div", { class: "a-name", text: a.nome }));
+    col.appendChild(el("div", { class: "a-tick", text: a.ticker + " · " + a.tipo }));
+    cell.appendChild(col);
+    return cell;
+  }
+
+  /* ---------- Card ---------- */
+  function card(opts) {
+    opts = opts || {};
+    var c = el("div", { class: "card" + (opts.hoverable ? " hoverable" : "") });
+    if (opts.title || opts.eyebrow || opts.action) {
+      var head = el("div", { class: "card-head" });
+      var titleWrap = el("div", { class: "grow", style: "margin-right:auto" });
+      if (opts.eyebrow) titleWrap.appendChild(el("div", { class: "eyebrow", text: opts.eyebrow }));
+      if (opts.title) titleWrap.appendChild(el("h3", { text: opts.title }));
+      head.appendChild(titleWrap);
+      if (opts.action) head.appendChild(opts.action);
+      c.appendChild(head);
+    }
+    var body = el("div", { class: "card-body" + (opts.tight ? " tight" : "") });
+    [].concat(opts.body || []).forEach(function (n) { if (n) body.appendChild(n); });
+    c.appendChild(body);
+    return c;
+  }
+
+  function kpi(opts) {
+    var c = el("div", { class: "card kpi" });
+    var label = el("div", { class: "kpi-label" });
+    if (opts.icon) label.appendChild(iconEl(opts.icon));
+    label.appendChild(document.createTextNode(opts.label));
+    c.appendChild(label);
+    c.appendChild(el("div", { class: "kpi-val", text: opts.value }));
+    if (opts.delta != null) {
+      var dir = opts.delta > 0 ? "up" : opts.delta < 0 ? "down" : "flat";
+      var d = el("div", { class: "kpi-delta " + dir });
+      d.innerHTML = icon(opts.delta > 0 ? "arrowUp" : opts.delta < 0 ? "arrowDown" : "check");
+      d.appendChild(document.createTextNode(" " + opts.deltaText));
+      c.appendChild(d);
+    } else if (opts.sub) {
+      c.appendChild(el("div", { class: "kpi-delta flat", text: opts.sub }));
+    }
+    if (opts.spark) {
+      var s = el("div", { class: "kpi-spark" }); s.appendChild(opts.spark); c.appendChild(s);
+    }
+    return c;
+  }
+
+  /* ---------- Table ---------- */
+  // columns: [{ head, right?, render(row)->node|string }]
+  function table(columns, rows, opts) {
+    opts = opts || {};
+    var wrap = el("div", { class: "table-wrap" });
+    var t = el("table", { class: "tbl" });
+    var thead = el("thead"), htr = el("tr");
+    columns.forEach(function (col) { htr.appendChild(el("th", { class: col.right ? "right" : "", text: col.head })); });
+    thead.appendChild(htr); t.appendChild(thead);
+    var tb = el("tbody");
+    if (!rows.length) {
+      var tr = el("tr");
+      tr.appendChild(el("td", { colspan: columns.length, class: "dim", style: "text-align:center;padding:28px", text: opts.empty || "Nenhum registro." }));
+      tb.appendChild(tr);
+    }
+    rows.forEach(function (row) {
+      var tr = el("tr", { class: opts.onRow ? "clickable" : "" });
+      if (opts.onRow) tr.addEventListener("click", function () { opts.onRow(row); });
+      columns.forEach(function (col) {
+        var td = el("td", { class: col.right ? "right" : "" });
+        var val = col.render(row);
+        if (val == null) val = "—";
+        if (typeof val === "string" || typeof val === "number") td.textContent = String(val);
+        else td.appendChild(val);
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb); wrap.appendChild(t);
+    return wrap;
+  }
+
+  /* ---------- Empty state ---------- */
+  function empty(iconName, title, msg, action) {
+    var e = el("div", { class: "empty" });
+    e.innerHTML = icon(iconName || "layers");
+    e.appendChild(el("h3", { text: title }));
+    if (msg) e.appendChild(el("p", { text: msg }));
+    if (action) e.appendChild(action);
+    return e;
+  }
+
+  /* ---------- Button ---------- */
+  function button(label, opts) {
+    opts = opts || {};
+    var b = el("button", { class: "btn " + (opts.variant || "secondary") + (opts.size ? " " + opts.size : "") + (opts.block ? " block" : "") });
+    if (opts.icon) b.innerHTML = icon(opts.icon);
+    b.appendChild(document.createTextNode(label));
+    if (opts.onClick) b.addEventListener("click", opts.onClick);
+    return b;
+  }
+
+  /* ---------- Modal ---------- */
+  var activeScrim = null;
+  function modal(opts) {
+    closeModal();
+    var scrim = el("div", { class: "modal-scrim" });
+    scrim.addEventListener("mousedown", function (e) { if (e.target === scrim) closeModal(); });
+    var m = el("div", { class: "modal" + (opts.wide ? " wide" : "") });
+
+    var head = el("div", { class: "modal-head" });
+    var titleWrap = el("div");
+    if (opts.eyebrow) titleWrap.appendChild(el("div", { class: "eyebrow", text: opts.eyebrow }));
+    titleWrap.appendChild(el("h2", { text: opts.title || "" }));
+    head.appendChild(titleWrap);
+    var closeBtn = el("button", { class: "icon-btn", "aria-label": "Fechar" });
+    closeBtn.innerHTML = icon("x"); closeBtn.addEventListener("click", closeModal);
+    head.appendChild(closeBtn);
+    m.appendChild(head);
+
+    var body = el("div", { class: "modal-body" });
+    [].concat(opts.body || []).forEach(function (n) { if (n) body.appendChild(n); });
+    m.appendChild(body);
+
+    if (opts.footer) {
+      var foot = el("div", { class: "modal-foot" });
+      [].concat(opts.footer).forEach(function (n) { if (n) foot.appendChild(n); });
+      m.appendChild(foot);
+    }
+    scrim.appendChild(m);
+    document.body.appendChild(scrim);
+    activeScrim = scrim;
+    document.addEventListener("keydown", escClose);
+    var firstInput = m.querySelector("input,select,textarea,button.btn");
+    if (firstInput) setTimeout(function () { firstInput.focus(); }, 40);
+    return { close: closeModal, node: m, body: body };
+  }
+  function escClose(e) { if (e.key === "Escape") closeModal(); }
+  function closeModal() {
+    if (activeScrim) { activeScrim.remove(); activeScrim = null; document.removeEventListener("keydown", escClose); }
+  }
+
+  /* ---------- Toast ---------- */
+  function toast(title, msg, kind) {
+    var wrap = document.querySelector(".toast-wrap");
+    if (!wrap) { wrap = el("div", { class: "toast-wrap" }); document.body.appendChild(wrap); }
+    var t = el("div", { class: "toast " + (kind || "") });
+    var ic = { success: "check", warning: "alert", danger: "alert" }[kind] || "check";
+    t.innerHTML = icon(ic);
+    var col = el("div");
+    col.appendChild(el("div", { class: "t-title", text: title }));
+    if (msg) col.appendChild(el("div", { class: "t-msg", text: msg }));
+    t.appendChild(col);
+    wrap.appendChild(t);
+    setTimeout(function () { t.style.opacity = "0"; t.style.transform = "translateX(16px)"; setTimeout(function () { t.remove(); }, 260); }, 3200);
+  }
+
+  /* ---------- Form field builders ---------- */
+  function field(label, control, opts) {
+    opts = opts || {};
+    var f = el("div", { class: "field" });
+    if (label) {
+      var l = el("label", {}, [label]);
+      if (opts.required) l.appendChild(el("span", { class: "req", text: " *" }));
+      f.appendChild(l);
+    }
+    f.appendChild(control);
+    if (opts.hint) f.appendChild(el("div", { class: "hint", text: opts.hint }));
+    return f;
+  }
+  function input(attrs) { return el("input", Object.assign({ class: "input" }, attrs)); }
+  function textarea(attrs) { return el("textarea", Object.assign({ class: "textarea" }, attrs)); }
+  function select(options, value) {
+    var s = el("select", { class: "select" });
+    options.forEach(function (o) {
+      var opt = el("option", { value: o.value, text: o.label });
+      if (o.value === value) opt.selected = true;
+      s.appendChild(opt);
+    });
+    return s;
+  }
+
+  window.UI = {
+    el: el, icon: icon, iconEl: iconEl,
+    money: money, compact: compact, pct: pct, signClass: signClass, qty: qty,
+    dateShort: dateShort, dateTime: dateTime,
+    badge: badge, typeBadge: typeBadge, conviction: conviction, convictionMini: convictionMini,
+    assetCell: assetCell, card: card, kpi: kpi, table: table, empty: empty, button: button,
+    modal: modal, closeModal: closeModal, toast: toast,
+    field: field, input: input, textarea: textarea, select: select
+  };
+})();

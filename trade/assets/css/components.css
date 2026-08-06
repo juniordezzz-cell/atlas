@@ -1,0 +1,202 @@
+/* ============================================================
+   ATLAS — Componentes compartilhados
+   ============================================================ */
+
+/* ---- Cartão glass (base de tudo) ----------------------- */
+.card {
+  position: relative;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  padding: var(--sp-5);
+  transition: transform var(--dur) var(--ease),
+              border-color var(--dur) var(--ease),
+              box-shadow var(--dur) var(--ease);
+}
+.card::before { /* fio de luz no topo */
+  content: "";
+  position: absolute; inset: 0 0 auto 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-hairline) 20%, var(--glass-hairline) 80%, transparent);
+  border-radius: inherit;
+}
+.card--hover:hover {
+  transform: translateY(-3px);
+  border-color: rgba(76,154,255,0.30);
+  box-shadow: var(--shadow-card), 0 12px 40px -18px rgba(76,154,255,0.35);
+}
+.card__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.card__title { font-family: var(--font-display); font-size: var(--fs-h3); color: var(--text-hi); font-weight: 600; }
+
+/* ---- Marca (brand cell no canto sup. esq.) ------------- */
+.brand-cell {
+  grid-area: brand;
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 0 var(--sp-5);
+  border-right: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-fill);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.brand__mark { width: 30px; height: 30px; flex: none; filter: drop-shadow(0 0 10px rgba(76,154,255,0.55)); }
+.brand__word {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: 1.16rem; letter-spacing: 0.16em; color: var(--text-hi);
+}
+
+/* ---- Topbar -------------------------------------------- */
+.topbar {
+  grid-area: topbar;
+  display: flex; align-items: center; gap: var(--sp-4);
+  padding: 0 var(--sp-6);
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-fill);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  /* O backdrop-filter cria um contexto de empilhamento aqui. Sem um
+     z-index próprio, a topbar é pintada na ordem do documento — ou
+     seja, ANTES da .view — e o conteúdo da página cobria o menu de
+     carteira aberto: os cliques nos itens acertavam o .dash__hero.
+     O z-index do menu não resolvia: ele só vale DENTRO deste
+     contexto. Quem precisa subir é a topbar inteira. */
+  position: relative;
+  z-index: 30;
+}
+.topbar__greeting { display: flex; flex-direction: column; line-height: 1.15; }
+.topbar__greeting b { color: var(--text-hi); font-weight: 600; font-size: var(--fs-body); }
+.topbar__spacer { flex: 1; }
+
+.status {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--fs-sm); color: var(--text-mut);
+}
+.status__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--profit); box-shadow: 0 0 10px var(--profit);
+  animation: breathe 2.6s var(--ease) infinite;
+}
+
+/* ============================================================
+   Seletor de carteira — NÃO fica mais aqui.
+   O componente inteiro (markup e CSS) vive em /wallets:
+   wallets/walletSelector.js + wallets/walletSelector.css.
+   Nenhuma regra de seletor de carteira pode voltar para este
+   arquivo: era exatamente assim que Hold, DeFi, Trade, RWA e
+   Dashboard acabavam com cinco aparências diferentes.
+   ============================================================ */
+
+/* ---- Sidebar / navegação ------------------------------- */
+.nav {
+  grid-area: nav;
+  display: flex; flex-direction: column; gap: var(--sp-1);
+  padding: var(--sp-5) var(--sp-3);
+  border-right: 1px solid var(--glass-border);
+  background: rgba(8,12,22,0.4);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.nav__item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-3);
+  border-radius: var(--r-sm);
+  color: var(--text-mut);
+  font-size: var(--fs-body); font-weight: 500;
+  position: relative;
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.nav__item svg { width: 19px; height: 19px; flex: none; opacity: 0.9; }
+.nav__back {
+  color: var(--text-mut);
+  margin-bottom: var(--sp-2);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--glass-border);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+}
+.nav__back:hover { color: var(--cyan); background: rgba(34,211,238,0.08); }
+.nav__back svg { opacity: 1; }
+.nav__item:hover { color: var(--text-hi); background: rgba(76,154,255,0.08); }
+.nav__item[aria-current="true"] { color: var(--text-hi); background: var(--azure-soft); }
+.nav__item[aria-current="true"]::before {
+  content: ""; position: absolute; left: -3px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px; border-radius: var(--r-pill);
+  background: linear-gradient(var(--cyan), var(--azure));
+  box-shadow: 0 0 12px rgba(76,154,255,0.7);
+}
+.nav__soon {
+  margin-left: auto; font-size: 0.58rem; letter-spacing: 0.08em;
+  color: var(--text-faint); border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill); padding: 1px 6px; text-transform: uppercase;
+}
+.nav__group-label { padding: var(--sp-4) var(--sp-3) var(--sp-2); }
+
+@media (max-width: 900px) {
+  .nav { flex-direction: row; overflow-x: auto; padding: var(--sp-3); border-right: none; border-bottom: 1px solid var(--glass-border); }
+  .nav__item { flex: none; }
+  .nav__group-label, .nav__soon { display: none; }
+  .nav__item span.label { display: none; }
+}
+
+/* ---- Badges / chips ------------------------------------ */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--fs-label); font-weight: 600; letter-spacing: 0.04em;
+  padding: 3px 9px; border-radius: var(--r-pill);
+  text-transform: uppercase;
+}
+.badge--profit { color: var(--profit); background: var(--profit-soft); }
+.badge--loss   { color: var(--loss);   background: var(--loss-soft); }
+.badge--warn   { color: var(--warn);   background: var(--warn-soft); }
+.badge--azure  { color: var(--azure);  background: var(--azure-soft); }
+.badge--dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ---- Botões -------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4); border-radius: var(--r-pill);
+  font-size: var(--fs-sm); font-weight: 600;
+  border: 1px solid var(--glass-border);
+  transition: all var(--dur-fast) var(--ease);
+}
+.btn:hover { border-color: rgba(76,154,255,0.4); background: var(--azure-soft); color: var(--text-hi); }
+.btn--ghost { color: var(--text-mut); }
+.btn--accent {
+  color: #05101f; border-color: transparent;
+  background: linear-gradient(135deg, var(--cyan), var(--azure));
+  box-shadow: 0 6px 18px -8px rgba(76,154,255,0.8);
+}
+.btn--accent:hover { color: #05101f; filter: brightness(1.06); background: linear-gradient(135deg, var(--cyan), var(--azure)); }
+.btn--profit { color: #04140f; border-color: transparent; background: linear-gradient(135deg, #4be3c8, var(--profit)); }
+.btn--profit:hover { color: #04140f; filter: brightness(1.06); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.btn[disabled]:hover { border-color: var(--glass-border); background: none; color: var(--text-mut); }
+
+/* ---- Estado vazio (módulos futuros) -------------------- */
+.empty {
+  display: grid; place-items: center; text-align: center;
+  min-height: 60vh; gap: var(--sp-4);
+}
+.empty__glyph {
+  width: 66px; height: 66px; border-radius: var(--r-lg);
+  display: grid; place-items: center;
+  background: var(--glass-fill); border: 1px solid var(--glass-border);
+  color: var(--azure); box-shadow: var(--glow-azure);
+}
+.empty h2 { font-size: var(--fs-display); }
+.empty p { color: var(--text-mut); max-width: 42ch; }
+
+/* ---- Utilidades ---------------------------------------- */
+.grid { display: grid; gap: var(--sp-5); }
+.up   { color: var(--profit); }
+.down { color: var(--loss); }
+
+@keyframes breathe { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* aviso de carteira isolada na topbar */
+.topbar__iso {
+  display: inline-block; margin-left: 10px; padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  background: rgba(251,191,36,0.14); color: #FBBF24; vertical-align: middle;
+}

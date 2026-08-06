@@ -1,0 +1,45 @@
+/* ===================================================================
+   ATLAS — Design Tokens
+   Paleta e tipografia extraídas exatamente da referência visual.
+   =================================================================== */
+
+:root {
+  /* --- Paleta de Cores (item 4) --- */
+  --azul-principal: #00BFFF;
+  --azul-escuro:    #0A1A2F;
+  --azul-profundo:  #07121F;
+  --ciano:          #00F0FF;
+  --dourado:        #FFD700;
+  --cinza:          #A0AEC0;
+  --fundo:          #05080F;
+  --card:           #0D1422;
+  --texto:          #E6F1FF;
+
+  /* --- Derivados / apoio --- */
+  --card-borda:     rgba(0, 191, 255, 0.10);
+  --card-borda-forte: rgba(0, 191, 255, 0.22);
+  --verde:          #00E28A;   /* variações positivas */
+  --vermelho:       #FF5470;   /* variações negativas */
+  --texto-suave:    rgba(230, 241, 255, 0.62);
+  --texto-fraco:    rgba(230, 241, 255, 0.38);
+  --linha:          rgba(160, 174, 192, 0.10);
+
+  /* --- Glows --- */
+  --glow-azul:  0 0 40px rgba(0, 191, 255, 0.45);
+  --glow-ciano: 0 0 60px rgba(0, 240, 255, 0.35);
+
+  /* --- Tipografia (item 5) --- */
+  --fonte-titulo: 'Poppins', 'Inter', system-ui, sans-serif;
+  --fonte-corpo:  'Inter', system-ui, sans-serif;
+
+  --fs-titulo:   32px;  --fw-titulo:   600;
+  --fs-subtitulo:18px;  --fw-subtitulo:500;
+  --fs-corpo:    14px;  --fw-corpo:    400;
+  --fs-legenda:  12px;  --fw-legenda:  400;
+
+  /* --- Espaçamento / raio --- */
+  --raio:      14px;
+  --raio-sm:   10px;
+  --gap:       20px;
+  --sidebar-w: 248px;
+}

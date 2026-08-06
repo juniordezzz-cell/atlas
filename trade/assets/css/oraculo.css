@@ -1,0 +1,145 @@
+/* ============================================================
+   ATLAS — Oráculo
+   O elemento de assinatura: presença constante, viva, tecnológica.
+   Toda a "ousadia" visual do produto mora aqui; o resto é quieto.
+   ============================================================ */
+
+.oraculo {
+  position: fixed;
+  right: var(--sp-6);
+  bottom: var(--sp-6);
+  z-index: 60;
+}
+
+/* ---- Orbe (gatilho onipresente) ------------------------ */
+.oraculo__orb {
+  position: relative;
+  width: 62px; height: 62px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 32% 30%, #1a3358, #0a1424 70%);
+  border: 1px solid rgba(76,154,255,0.35);
+  box-shadow: var(--glow-cyan), inset 0 1px 0 rgba(180,220,255,0.25);
+  transition: transform var(--dur) var(--ease);
+}
+.oraculo__orb:hover { transform: scale(1.06); }
+.oraculo__orb:active { transform: scale(0.97); }
+
+/* Núcleo: gradiente cônico girando lentamente = "pensando" */
+.oraculo__core {
+  position: absolute; inset: 9px; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--cyan), var(--azure), var(--azure-deep), var(--cyan));
+  filter: blur(1px);
+  animation: oraculo-spin 7s linear infinite;
+  mask: radial-gradient(circle, transparent 42%, #000 46%);
+  -webkit-mask: radial-gradient(circle, transparent 42%, #000 46%);
+}
+/* Ponto central pulsante */
+.oraculo__dot {
+  position: relative; z-index: 2;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #dff3ff, var(--cyan) 65%);
+  box-shadow: 0 0 14px var(--cyan);
+  animation: breathe 2.8s var(--ease) infinite;
+}
+/* Anéis de eco emanando */
+.oraculo__ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1px solid rgba(34,211,238,0.5);
+  animation: oraculo-echo 3.4s var(--ease) infinite;
+}
+.oraculo__ring:nth-child(2) { animation-delay: 1.7s; }
+
+/* Selo de notificação (avisos do Oráculo) */
+.oraculo__pin {
+  position: absolute; top: -2px; right: -2px; z-index: 3;
+  min-width: 20px; height: 20px; padding: 0 5px; border-radius: var(--r-pill);
+  display: grid; place-items: center;
+  background: var(--warn); color: #211500;
+  font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700;
+  box-shadow: 0 0 12px rgba(251,191,36,0.7);
+  border: 2px solid var(--bg-deep);
+}
+.oraculo__pin[hidden] { display: none; }
+
+/* ---- Painel de conversa -------------------------------- */
+.oraculo__panel {
+  position: fixed;
+  right: var(--sp-6); bottom: calc(var(--sp-6) + 78px);
+  width: min(390px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - 140px));
+  display: flex; flex-direction: column;
+  background: var(--glass-fill-hi);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card), var(--glow-cyan);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  overflow: hidden;
+  opacity: 0; visibility: hidden; transform: translateY(14px) scale(0.98);
+  transform-origin: bottom right;
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease), visibility var(--dur);
+  z-index: 59;
+}
+.oraculo[data-open="true"] .oraculo__panel { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+
+.oraculo__panel-head {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--glass-border);
+}
+.oraculo__badge {
+  width: 34px; height: 34px; border-radius: 50%; flex: none; position: relative;
+  background: radial-gradient(circle at 32% 30%, #1a3358, #0a1424 70%);
+  border: 1px solid rgba(76,154,255,0.35);
+  display: grid; place-items: center;
+}
+.oraculo__badge i {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #dff3ff, var(--cyan) 65%);
+  box-shadow: 0 0 10px var(--cyan);
+}
+.oraculo__panel-head h3 { font-size: var(--fs-h3); }
+.oraculo__panel-head p { font-size: var(--fs-label); color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.12em; }
+.oraculo__close { margin-left: auto; color: var(--text-mut); width: 30px; height: 30px; border-radius: var(--r-sm); display: grid; place-items: center; }
+.oraculo__close:hover { color: var(--text-hi); background: var(--atlas-inner); }
+
+.oraculo__log { flex: 1; overflow-y: auto; padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); }
+.oraculo__msg { max-width: 88%; font-size: var(--fs-sm); line-height: 1.5; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); }
+.oraculo__msg--bot  { align-self: flex-start; background: var(--azure-soft); color: var(--text-hi); border: 1px solid var(--glass-border); border-bottom-left-radius: 6px; }
+.oraculo__msg--user { align-self: flex-end; background: var(--atlas-inner); border: 1px solid var(--glass-border); border-bottom-right-radius: 6px; }
+
+.oraculo__chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: 0 var(--sp-5) var(--sp-3); }
+.oraculo__chip {
+  font-size: var(--fs-label); color: var(--text-mut);
+  border: 1px solid var(--glass-border); border-radius: var(--r-pill);
+  padding: 6px 11px; transition: all var(--dur-fast) var(--ease);
+}
+.oraculo__chip:hover { color: var(--text-hi); border-color: rgba(76,154,255,0.4); background: var(--azure-soft); }
+
+.oraculo__composer { display: flex; gap: var(--sp-2); padding: var(--sp-4); border-top: 1px solid var(--glass-border); }
+.oraculo__input {
+  flex: 1; background: var(--bg-sunken); border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill); padding: var(--sp-3) var(--sp-4);
+  color: var(--text-hi); font-size: var(--fs-sm); outline: none;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.oraculo__input:focus { border-color: rgba(76,154,255,0.5); }
+.oraculo__input::placeholder { color: var(--text-faint); }
+.oraculo__send {
+  width: 40px; height: 40px; flex: none; border-radius: 50%;
+  display: grid; place-items: center; color: #05101f;
+  background: linear-gradient(135deg, var(--cyan), var(--azure));
+  box-shadow: 0 6px 18px -6px rgba(76,154,255,0.7);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.oraculo__send:hover { transform: scale(1.06); }
+
+@media (max-width: 900px) {
+  .oraculo__panel { right: 12px; left: 12px; width: auto; bottom: 88px; }
+}
+
+@keyframes oraculo-spin { to { transform: rotate(360deg); } }
+@keyframes oraculo-echo {
+  0%   { transform: scale(1);    opacity: 0.55; }
+  100% { transform: scale(1.9);  opacity: 0; }
+}

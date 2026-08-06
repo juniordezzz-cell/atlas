@@ -1,0 +1,43 @@
+/* ============================================================
+   ATLAS · RWA — responsive.css
+   Desktop-first (terminal). Colapsa a sidebar no mobile.
+   ============================================================ */
+
+@media (max-width: 1280px) {
+  .g-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 1080px) {
+  :root { --rail: 68px; }
+  .side-brand .txt, .side-label, .nav-item span, .side-back span { display: none; }
+  .side-brand { justify-content: center; padding: 6px 0 18px; }
+  .nav-item { justify-content: center; padding: 11px; }
+  .side-back { justify-content: center; }
+  .g-21, .g-12, .g-3 { grid-template-columns: 1fr; }
+  .g-2 { grid-template-columns: 1fr; }
+  .donut-flex { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  :root { --rail: 0px; --topbar-h: 56px; }
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 200; width: 232px; height: 100vh;
+    transform: translateX(-100%); transition: transform var(--med) var(--ease);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar.open .side-brand .txt, .sidebar.open .side-label, .sidebar.open .nav-item span, .sidebar.open .side-back span { display: block; }
+  .sidebar.open .nav-item { justify-content: flex-start; padding: 9px 11px; }
+  .sidebar.open .side-brand { justify-content: flex-start; padding: 6px 8px 18px; }
+  .side-back span { display: inline; }
+  .nav-toggle { display: inline-flex !important; }
+  /* .scrim agora tem estilo base em layout.css (correção do grid) */
+
+  .g-4 { grid-template-columns: 1fr; }
+  .view { padding: 16px; }
+  .tb-metric.hide-sm { display: none; }
+  .topbar .search { max-width: none; }
+}
+
+.nav-toggle { display: none; width: 36px; height: 36px; border-radius: var(--r-sm); border: 1px solid var(--border); align-items: center; justify-content: center; }
+.nav-toggle svg { width: 18px; height: 18px; }

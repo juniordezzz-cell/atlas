@@ -1,0 +1,38 @@
+/* ============================================================
+   ATLAS · DeFi — animations.css
+   Animações suaves. Respeita prefers-reduced-motion.
+   ============================================================ */
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0% { transform: scale(1); opacity: 0.4; } 70% { transform: scale(2.4); opacity: 0; } 100% { opacity: 0; } }
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes countUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes floatGlow { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+/* Reveal em cascata (aplicado via JS com --i) */
+.reveal { opacity: 0; animation: rise var(--med) var(--ease) forwards; animation-delay: calc(var(--i, 0) * 55ms); }
+
+/* Entrada de página */
+.page-enter { animation: fade 380ms var(--ease); }
+
+/* Barra de progresso genérica (loading de gráficos etc.) */
+.bar-load { height: 2px; background: var(--grad-line); background-size: 200% 100%; animation: barMove 1.4s linear infinite; border-radius: 2px; }
+@keyframes barMove { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Hover lift utilitário */
+.lift { transition: transform var(--med) var(--ease); }
+.lift:hover { transform: translateY(-3px); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; }
+}

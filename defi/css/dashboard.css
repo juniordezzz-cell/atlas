@@ -1,0 +1,47 @@
+/* ============================================================
+   ATLAS · DeFi — dashboard.css
+   Grids de layout: dashboard, analytics, página da pool.
+   ============================================================ */
+
+/* Split cards + gráficos */
+.chart-split { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; }
+.col-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.col-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+
+/* Container de gráfico */
+.chart-box { position: relative; width: 100%; }
+.chart-box.h-lg { height: 300px; }
+.chart-box.h-md { height: 230px; }
+.chart-box.h-sm { height: 180px; }
+
+/* Seção com título e ação */
+.section { margin-top: 30px; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.section-head h2 { font-size: 18px; }
+.section-head .link {
+  font-size: 13px; color: var(--blue-400); font-weight: 600; display: inline-flex; align-items: center; gap: 5px;
+  transition: gap var(--fast) var(--ease);
+}
+.section-head .link:hover { gap: 8px; }
+.section-head .link svg { width: 14px; height: 14px; }
+
+/* Donut central com valor */
+.donut-wrap { position: relative; display: grid; grid-template-columns: 200px 1fr; gap: 22px; align-items: center; }
+.donut-center { position: absolute; left: 100px; top: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+.donut-center .dc-v { font-family: var(--font-mono); font-size: 20px; font-weight: 600; color: var(--text-hi); }
+.donut-center .dc-k { font-size: 11px; color: var(--text-mut); }
+
+/* Header da página da pool */
+.pool-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 8px; flex-wrap: wrap; }
+.pool-hero .ph-left { display: flex; align-items: center; gap: 16px; }
+.pool-hero .ph-title { font-size: 26px; font-family: var(--font-display); font-weight: 700; color: var(--text-hi); }
+.pool-hero .ph-tags { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 8px; }
+.pool-hero .ph-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.pool-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 22px 0; }
+
+@media (max-width: 900px) {
+  .pool-summary { grid-template-columns: 1fr 1fr; }
+  .donut-wrap { grid-template-columns: 1fr; }
+  .donut-center { left: 50%; top: 120px; }
+}

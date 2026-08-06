@@ -1,0 +1,656 @@
+/* ===================================================================
+   ATLAS — SHELL UNIFICADO
+   -------------------------------------------------------------------
+   Resolve dois itens do briefing de uma vez, nos QUATRO módulos,
+   apesar de eles terem arquiteturas diferentes:
+
+     Item 2 — cabeçalho idêntico, com [Voltar ao Atlas] sempre no
+              mesmo lugar.
+     Item 1 — Oráculo onipresente: mesmo ícone (avatar) e mesmo painel.
+
+   Estratégia: em vez de reescrever os quatro shells (sidebar do Hold,
+   grid do Trade, topnav do DeFi, rail do RWA), o ATLAS injeta uma
+   faixa própria acima de tudo e neutraliza os botões antigos.
+   Funciona igual em SPA e em multipágina.
+   =================================================================== */
+
+/* ===================================================================
+/* ===================================================================
+   1. RODAPÉ "VOLTAR AO ATLAS"
+
+   A faixa escura no topo foi REMOVIDA. Ela roubava 52px de altura em
+   toda página e repetia o nome do módulo que a própria sidebar já
+   mostrava. No lugar dela, o botão de voltar é injetado como ÚLTIMO
+   item da sidebar de cada módulo — visível, mas do tamanho de um
+   item de menu.
+
+   O DeFi usa barra horizontal no topo (não tem sidebar). Lá o botão
+   nativo dele continua valendo — por isso .nav-back não é escondido.
+   =================================================================== */
+
+/* A sidebar que recebeu o botão vira coluna flex, para o margin-top:auto
+   empurrar o item para o rodapé mesmo quando a lista é curta. */
+[data-atlas-sidebar="on"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.atlas-backfoot {
+  margin-top: auto;               /* cola no rodapé */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-inline: var(--atlas-sp-3, 12px);
+  margin-bottom: var(--atlas-sp-4, 16px);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-surface);
+  color: var(--atlas-text-mut);
+  font-family: var(--atlas-font-ui);
+  font-size: 12.5px;
+  font-weight: 550;
+  text-decoration: none;
+  flex: none;
+  transition: color .18s ease, border-color .18s ease, background .18s ease;
+}
+.atlas-backfoot svg { width: 15px; height: 15px; flex: none; }
+.atlas-backfoot span { white-space: nowrap; }
+.atlas-backfoot:hover {
+  color: var(--atlas-text-hi);
+  border-color: var(--atlas-border-hi);
+  background: var(--atlas-bg-raise);
+}
+.atlas-backfoot:active { transform: translateY(1px); }
+
+/* Sidebar recolhida (Hold/Trade): mostra só o ícone */
+.collapsed .atlas-backfoot span,
+[data-collapsed="true"] .atlas-backfoot span { display: none; }
+.collapsed .atlas-backfoot,
+[data-collapsed="true"] .atlas-backfoot { justify-content: center; }
+
+/* ===================================================================
+   2. NEUTRALIZAÇÃO DOS BOTÕES ANTIGOS
+   Eram quatro posições diferentes — a origem da "bagunça".
+   =================================================================== */
+/* ===================================================================
+   2. NEUTRALIZAÇÃO DOS BOTÕES ANTIGOS
+   Eram quatro posições diferentes — a origem da "bagunça".
+
+   Condicionado a [data-atlas-backfoot="on"], que o shell só marca
+   DEPOIS de injetar o botão novo. Assim o DeFi — que não tem sidebar
+   e portanto não recebe o substituto — mantém o botão dele e nunca
+   fica sem saída.
+   =================================================================== */
+html[data-atlas-backfoot="on"] .nav-back,
+html[data-atlas-backfoot="on"] .nav__back,
+html[data-atlas-backfoot="on"] .side-back,
+html[data-atlas-backfoot="on"] .side-foot,
+html[data-atlas-shell="on"] .brand-sub,
+html[data-atlas-shell="on"] .topbar__iso ~ .eyebrow,
+/* o Trade já tinha um Oráculo próprio — agora todos usam o mesmo */
+html[data-atlas-shell="on"] #oraculo-root .oraculo {
+  display: none !important;
+}
+
+/* ===================================================================
+   3. ORÁCULO UNIVERSAL
+   Mesmo ícone (avatar) do Oráculo, mesmo painel, mesma posição — em todo módulo E no Dashboard.
+
+   A posição é !important de propósito. São 40 arquivos CSS em 6
+   módulos; qualquer regra solta de um deles podia empurrar o botão
+   e fazê-lo rolar junto com a página. Aqui a posição é lei.
+   =================================================================== */
+.atlas-oraculo {
+  position: fixed !important;
+  right: var(--atlas-sp-6) !important;
+  bottom: var(--atlas-sp-6) !important;
+  top: auto !important;
+  left: auto !important;
+  z-index: 950;
+  font-family: var(--atlas-font-ui);
+}
+
+/* Enquanto um menu de carteira está aberto, o orb FECHADO do Oráculo
+   não pode receber clique — a "trava por JS" às vezes o joga por cima
+   do último item do menu (o "Nova carteira") e engolia o toque, que
+   fechava o menu sem criar a carteira. Com o menu fechado, o orb volta
+   ao normal. O painel aberto do Oráculo não é afetado. */
+html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
+  pointer-events: none;
+}
+
+/* ---- Gatilho: avatar do Oráculo (idêntico ao Dashboard) ---- */
+.atlas-oraculo__orb {
+  position: relative;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+/* A imagem flutua como um gênio da lâmpada + leve balanço */
+.atlas-oraculo__avatar {
+  position: absolute;
+  width: 58px; height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 14px rgba(59, 130, 246, 0.65))
+          drop-shadow(0 0 10px rgba(239, 68, 68, 0.45));
+  animation: atlas-fab-float 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+.atlas-oraculo__orb:hover .atlas-oraculo__avatar { transform: scale(1.1); }
+.atlas-oraculo__orb:active .atlas-oraculo__avatar { transform: scale(0.97); }
+
+/* Anel cônico girando (vermelho ↔ azul) — assinatura do Oráculo */
+.atlas-oraculo__aura {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(#0000, #0000) padding-box,
+    conic-gradient(from 0deg,
+      rgba(239, 68, 68, 0.7), rgba(59, 130, 246, 0.7), rgba(239, 68, 68, 0.7)) border-box;
+  animation: atlas-fab-spin 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes atlas-fab-float {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-9px) rotate(2deg); }
+}
+@keyframes atlas-fab-spin { to { transform: rotate(360deg); } }
+
+/* Fallback caso a imagem não carregue: núcleo luminoso do tema */
+.atlas-oraculo__orb--fallback {
+  background: radial-gradient(circle at 32% 30%,
+    color-mix(in srgb, var(--atlas-accent) 30%, var(--atlas-bg-raise)),
+    var(--atlas-bg-deep) 72%);
+  border: 1px solid var(--atlas-accent-line);
+  box-shadow: var(--atlas-glow), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* atlas-breathe: reaproveitada pelo ponto do badge no cabeçalho do painel */
+@keyframes atlas-breathe {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%      { transform: scale(1.22); opacity: 0.75; }
+}
+
+.atlas-oraculo__pin {
+  position: absolute; top: -2px; right: -2px; z-index: 3;
+  min-width: 20px; height: 20px;
+  padding: 0 5px;
+  border-radius: var(--atlas-r-pill);
+  display: grid; place-items: center;
+  background: var(--atlas-warn);
+  color: #211500;
+  font-family: var(--atlas-font-mono);
+  font-size: 0.66rem; font-weight: 700;
+  border: 2px solid var(--atlas-bg-deep);
+  box-shadow: 0 0 12px var(--atlas-warn);
+}
+.atlas-oraculo__pin[hidden] { display: none; }
+
+/* ---- Painel ---- */
+.atlas-oraculo__panel {
+  position: fixed;
+  right: var(--atlas-sp-6);
+  bottom: calc(var(--atlas-sp-6) + 86px);
+  width: min(390px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - 160px));
+  display: flex;
+  flex-direction: column;
+  background: var(--atlas-surface-hi);
+  border: 1px solid var(--atlas-border-hi);
+  border-radius: var(--atlas-r-xl);
+  box-shadow: var(--atlas-sh-3), var(--atlas-glow);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px) scale(0.98);
+  transform-origin: bottom right;
+  transition: opacity var(--atlas-dur) var(--atlas-ease),
+              transform var(--atlas-dur) var(--atlas-ease),
+              visibility var(--atlas-dur);
+}
+.atlas-oraculo[data-open="true"] .atlas-oraculo__panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.atlas-oraculo__head {
+  display: flex;
+  align-items: center;
+  gap: var(--atlas-sp-3);
+  padding: var(--atlas-sp-4) var(--atlas-sp-4) var(--atlas-sp-3);
+  border-bottom: 1px solid var(--atlas-border);
+  flex: none;
+}
+.atlas-oraculo__head h3 {
+  margin: 0;
+  font-family: var(--atlas-font-display);
+  font-size: 0.95rem;
+  color: var(--atlas-text-hi);
+  letter-spacing: 0.04em;
+}
+.atlas-oraculo__head p {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: var(--atlas-text-mut);
+}
+.atlas-oraculo__badge {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--atlas-grad-soft);
+  border: 1px solid var(--atlas-accent-line);
+  flex: none;
+}
+.atlas-oraculo__badge i {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--atlas-accent-2);
+  box-shadow: 0 0 10px var(--atlas-accent-2);
+  animation: atlas-breathe 2.8s var(--atlas-ease) infinite;
+}
+.atlas-oraculo__close {
+  margin-left: auto;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--atlas-border);
+  background: transparent;
+  color: var(--atlas-text-mut);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: color var(--atlas-dur-fast) var(--atlas-ease),
+              border-color var(--atlas-dur) var(--atlas-ease);
+}
+.atlas-oraculo__close:hover { color: var(--atlas-text-hi); border-color: var(--atlas-border-hi); }
+
+.atlas-oraculo__log {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--atlas-sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--atlas-sp-3);
+}
+.atlas-oraculo__msg {
+  max-width: 86%;
+  padding: var(--atlas-sp-3) var(--atlas-sp-4);
+  border-radius: var(--atlas-r-md);
+  font-size: var(--atlas-fs-sm);
+  line-height: 1.5;
+  animation: atlas-rise var(--atlas-dur) var(--atlas-ease-out);
+}
+.atlas-oraculo__msg--bot {
+  align-self: flex-start;
+  background: var(--atlas-surface);
+  border: 1px solid var(--atlas-border);
+  color: var(--atlas-text);
+  border-bottom-left-radius: var(--atlas-r-xs);
+}
+.atlas-oraculo__msg--user {
+  align-self: flex-end;
+  background: var(--atlas-accent-soft);
+  border: 1px solid var(--atlas-accent-line);
+  color: var(--atlas-text-hi);
+  border-bottom-right-radius: var(--atlas-r-xs);
+}
+
+.atlas-oraculo__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--atlas-sp-2);
+  padding: 0 var(--atlas-sp-4) var(--atlas-sp-3);
+  flex: none;
+}
+.atlas-oraculo__chip {
+  padding: 6px var(--atlas-sp-3);
+  border-radius: var(--atlas-r-pill);
+  border: 1px solid var(--atlas-border);
+  background: transparent;
+  color: var(--atlas-text-mut);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color var(--atlas-dur-fast) var(--atlas-ease),
+              border-color var(--atlas-dur) var(--atlas-ease),
+              background-color var(--atlas-dur) var(--atlas-ease);
+}
+.atlas-oraculo__chip:hover {
+  color: var(--atlas-text-hi);
+  border-color: var(--atlas-accent-line);
+  background: var(--atlas-accent-soft);
+}
+
+.atlas-oraculo__composer {
+  display: flex;
+  gap: var(--atlas-sp-2);
+  padding: var(--atlas-sp-3) var(--atlas-sp-4) var(--atlas-sp-4);
+  border-top: 1px solid var(--atlas-border);
+  flex: none;
+}
+.atlas-oraculo__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 38px;
+  padding: 0 var(--atlas-sp-3);
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-bg-deep);
+  color: var(--atlas-text-hi);
+  font-family: inherit;
+  font-size: var(--atlas-fs-sm);
+}
+.atlas-oraculo__send {
+  width: 38px; height: 38px;
+  flex: none;
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid var(--atlas-accent-line);
+  background: var(--atlas-grad);
+  color: #04121F;
+  cursor: pointer;
+  display: grid; place-items: center;
+}
+
+/* ===================================================================
+   4. RESPONSIVO
+   =================================================================== */
+@media (max-width: 720px) {
+  .atlas-backfoot { font-size: 12px; padding: 9px 11px; }
+  .atlas-oraculo { right: var(--atlas-sp-4) !important; bottom: var(--atlas-sp-4) !important; }
+  .atlas-oraculo__orb { width: 60px; height: 60px; }
+  .atlas-oraculo__avatar { width: 48px; height: 48px; }
+  .atlas-oraculo__panel { right: var(--atlas-sp-3); left: var(--atlas-sp-3); width: auto; bottom: calc(var(--atlas-sp-4) + 72px); }
+}
+
+/* ===================================================================
+   5. DIÁLOGO DE CARTEIRA
+   -------------------------------------------------------------------
+   Substitui o window.prompt() cinza do navegador. Centrado, com o
+   fundo escurecido e desfocado, para a criação de carteira virar um
+   momento do sistema e não um pop-up de sistema operacional.
+   =================================================================== */
+
+.awd {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: var(--atlas-sp-4);
+  font-family: var(--atlas-font-ui);
+}
+
+.awd__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--atlas-scrim);
+  backdrop-filter: blur(7px) saturate(120%);
+  -webkit-backdrop-filter: blur(7px) saturate(120%);
+  opacity: 0;
+  transition: opacity var(--atlas-dur) var(--atlas-ease);
+}
+.awd.is-in .awd__scrim { opacity: 1; }
+
+/* Em janela baixa a caixa passava de 740px de altura, estourava os
+   720px do viewport e o botão "Criar carteira" ficava fora da tela,
+   sem rolagem nenhuma para alcançá-lo. Agora a caixa cabe sempre e
+   rola por dentro. */
+.awd__box {
+  position: relative;
+  width: min(430px, 100%);
+  max-height: calc(100vh - var(--atlas-sp-4) * 2);
+  overflow-y: auto;
+  padding: var(--atlas-sp-6);
+  border-radius: var(--atlas-r-lg);
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-surface-solid);
+  box-shadow: var(--atlas-sh-3), var(--atlas-glow);
+  opacity: 0;
+  transform: translateY(14px) scale(.97);
+  transition: opacity var(--atlas-dur) var(--atlas-ease-out),
+              transform var(--atlas-dur) var(--atlas-ease-out);
+}
+.awd.is-in .awd__box { opacity: 1; transform: none; }
+
+/* fio de luz do acento no topo da caixa */
+.awd__box::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 12%; right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--atlas-accent), transparent);
+}
+
+.awd__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--atlas-sp-4);
+}
+
+.awd__scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: var(--atlas-r-pill);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: var(--atlas-track-label);
+  text-transform: uppercase;
+}
+.awd__scope--global {
+  color: var(--atlas-accent);
+  background: var(--atlas-accent-soft);
+  border: 1px solid var(--atlas-accent-line);
+}
+.awd__scope--isolada {
+  color: var(--atlas-text-mut);
+  background: var(--atlas-inner);
+  border: 1px solid var(--atlas-border);
+}
+.awd__scope svg { flex: none; }
+
+.awd__x {
+  display: grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--atlas-text-faint);
+  cursor: pointer;
+  transition: color var(--atlas-dur-fast) var(--atlas-ease),
+              background var(--atlas-dur-fast) var(--atlas-ease);
+}
+.awd__x svg { width: 15px; height: 15px; }
+.awd__x:hover { color: var(--atlas-text-hi); background: var(--atlas-inner); }
+
+.awd__title {
+  margin: 0 0 5px;
+  font-family: var(--atlas-font-display);
+  font-size: var(--atlas-fs-h1);
+  font-weight: 700;
+  color: var(--atlas-text-hi);
+  letter-spacing: -0.01em;
+}
+.awd__lead {
+  margin: 0 0 var(--atlas-sp-5);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--atlas-text-mut);
+}
+
+/* prévia: mostra a carteira como ela vai aparecer no seletor */
+.awd__preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: var(--atlas-sp-5);
+  border-radius: var(--atlas-r-md);
+  border: 1px dashed var(--atlas-border);
+  background: var(--atlas-inner);
+}
+.awd__badge {
+  display: grid;
+  place-items: center;
+  width: 40px; height: 40px;
+  border-radius: var(--atlas-r-sm);
+  background: var(--atlas-grad-soft);
+  border: 1px solid var(--atlas-accent-line);
+  font-size: 20px;
+  line-height: 1;
+  flex: none;
+}
+@keyframes awd-pop {
+  0%   { transform: scale(.72) rotate(-8deg); }
+  60%  { transform: scale(1.12) rotate(3deg); }
+  100% { transform: none; }
+}
+.awd__badge.pop { animation: awd-pop 340ms var(--atlas-ease-out); }
+.awd__preview-txt {
+  font-weight: 650;
+  font-size: 13.5px;
+  color: var(--atlas-text-hi);
+}
+.awd__preview-txt.is-empty { color: var(--atlas-text-faint); font-weight: 500; font-style: italic; }
+
+.awd__field { display: block; margin-bottom: var(--atlas-sp-5); }
+.awd__field > span {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: var(--atlas-track-label);
+  text-transform: uppercase;
+  color: var(--atlas-text-faint);
+}
+.awd__field input {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-bg-raise);
+  color: var(--atlas-text-hi);
+  font: inherit;
+  font-size: 13.5px;
+  transition: border-color var(--atlas-dur) var(--atlas-ease),
+              box-shadow var(--atlas-dur) var(--atlas-ease);
+}
+.awd__field input::placeholder { color: var(--atlas-text-faint); }
+.awd__field input:focus {
+  outline: none;
+  border-color: var(--atlas-accent);
+  box-shadow: 0 0 0 3px var(--atlas-accent-soft);
+}
+
+.awd__groups { display: flex; flex-direction: column; gap: 12px; }
+.awd__group-lb {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: var(--atlas-track-label);
+  text-transform: uppercase;
+  color: var(--atlas-text-faint);
+  margin-bottom: -4px;
+}
+.awd__emojis {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+/* quando a centralização precisa ser feita por JS, a entrada passa a
+   ser só de opacidade — o transform fica reservado para o translate */
+.awd--pinned .awd__box { transform: translate(-50%, -50%) !important; }
+.awd__emoji {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: var(--atlas-r-xs);
+  border: 1px solid transparent;
+  background: var(--atlas-inner);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform var(--atlas-dur-fast) var(--atlas-ease),
+              border-color var(--atlas-dur-fast) var(--atlas-ease),
+              background var(--atlas-dur-fast) var(--atlas-ease);
+}
+.awd__emoji:hover { transform: translateY(-2px) scale(1.08); background: var(--atlas-surface-hi); }
+.awd__emoji.on {
+  border-color: var(--atlas-accent);
+  background: var(--atlas-accent-soft);
+  transform: none;
+}
+
+.awd__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: var(--atlas-sp-6);
+}
+.awd__btn {
+  padding: 10px 18px;
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid var(--atlas-border);
+  background: transparent;
+  color: var(--atlas-text-mut);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--atlas-dur-fast) var(--atlas-ease),
+              border-color var(--atlas-dur-fast) var(--atlas-ease),
+              background var(--atlas-dur-fast) var(--atlas-ease);
+}
+.awd__btn:hover { color: var(--atlas-text-hi); border-color: var(--atlas-border-hi); }
+.awd__btn--go {
+  background: var(--atlas-grad);
+  border-color: transparent;
+  color: #04121F;
+  font-weight: 700;
+}
+.awd__btn--go:hover { filter: brightness(1.08); }
+.awd__btn--go:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  filter: none;
+}
+/* excluir carteira — mesma caixa, mesmo botão, só o tom de aviso */
+.awd__btn--danger {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #F87171;
+  font-weight: 700;
+}
+.awd__btn--danger:hover {
+  background: rgba(248, 113, 113, 0.22);
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #FCA5A5;
+}
+
+@media (max-width: 480px) {
+  .awd__emojis { grid-template-columns: repeat(6, 1fr); }
+  .awd__box { padding: var(--atlas-sp-5); }
+}
+
+
+/* ===================================================================
+   6. SELETOR DE CARTEIRA
+   -------------------------------------------------------------------
+   Não tem nada aqui de propósito. O componente inteiro — markup, CSS,
+   medidas, cores e empilhamento — vive em /wallets/walletSelector.css.
+   O fechar-ao-clicar-fora é o listener de captura de walletMenus.js:
+   sem folha/scrim, sem disputa de z-index, sem dependência de
+   contexto de empilhamento (foi isso que engolia os cliques).
+   =================================================================== */

@@ -1,0 +1,38 @@
+/* ============================================================
+   ATLAS — Módulo Analytics (Sprint 5)
+   ============================================================ */
+
+.an__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--sp-4); }
+.an__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); align-items: start; }
+@media (max-width: 1000px) { .an__grid { grid-template-columns: 1fr; } }
+
+/* ---- Barras por ativo ---------------------------------- */
+.an__bars { display: flex; flex-direction: column; gap: var(--sp-3); }
+.an__bar-row { display: grid; grid-template-columns: 54px 1fr 66px; align-items: center; gap: var(--sp-3); }
+.an__bar-label { font-size: var(--fs-sm); color: var(--text-hi); }
+.an__bar-track { height: 10px; border-radius: var(--r-pill); background: var(--bg-sunken); overflow: hidden; }
+.an__bar-fill { display: block; height: 100%; border-radius: var(--r-pill); transition: width var(--dur-slow) var(--ease); }
+.an__bar-val { font-size: var(--fs-sm); text-align: right; }
+
+/* ---- Long vs Short ------------------------------------- */
+.an__sides { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-4); }
+.an__side { display: flex; flex-direction: column; gap: 4px; padding: var(--sp-4); border-radius: var(--r-md); background: var(--bg-sunken); border: 1px solid var(--glass-hairline); }
+.an__side-h { font-size: var(--fs-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); }
+.an__side b { font-size: 1.4rem; }
+
+/* ---- Aprendizado do Oráculo ------------------------------ */
+.an__insights { display: flex; flex-direction: column; gap: var(--sp-3); }
+.an__insight { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--bg-sunken); border: 1px solid var(--glass-hairline); border-left-width: 3px; }
+.an__insight p { font-size: var(--fs-sm); line-height: 1.55; color: var(--text); }
+.an__insight .nsum__orb { width: 26px; height: 26px; flex: none; }
+.an__insight .nsum__orb i { width: 7px; height: 7px; }
+.an__insight--up { border-left-color: var(--profit); }
+.an__insight--down { border-left-color: var(--loss); }
+.an__insight--neutral { border-left-color: var(--azure); }
+
+/* ---- Tags / pós-análise -------------------------------- */
+.an__tags { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.tr__review-cta { display: flex; flex-direction: column; gap: var(--sp-3); align-items: flex-start; }
+.tr__review-cta .btn { margin-top: var(--sp-1); }
+
+@media (max-width: 560px) { .an__sides { grid-template-columns: 1fr; } }

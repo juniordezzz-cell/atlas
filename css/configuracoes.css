@@ -1,0 +1,261 @@
+/* ===================================================================
+   ATLAS — Configurações (página raiz)
+   Controles de preferências globais. Todo o visual usa tokens
+   --atlas-* para acompanhar claro/escuro automaticamente.
+   =================================================================== */
+
+.settings {
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---- Cartão ---- */
+.set-card {
+  background: var(--atlas-bg-raise);
+  border: 1px solid var(--atlas-border);
+  border-radius: var(--raio, 14px);
+  box-shadow: var(--atlas-sh-1);
+  overflow: hidden;
+}
+.set-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 12px;
+}
+.set-card-head svg { width: 18px; height: 18px; color: var(--atlas-accent); }
+.set-card-head h3 { font-size: 15px; font-weight: 600; color: var(--atlas-text-hi); }
+.set-card-head .eyebrow {
+  margin-left: auto;
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--atlas-text-faint);
+}
+
+/* ---- Linha (rótulo + controle) ---- */
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 20px;
+  border-top: 1px solid var(--atlas-hairline);
+}
+.set-row-txt { min-width: 0; flex: 1; }
+.set-label { font-size: 13.5px; font-weight: 500; color: var(--atlas-text-hi); }
+.set-desc  { font-size: 12px; color: var(--atlas-text-mut); margin-top: 3px; line-height: 1.4; }
+.set-row-ctrl { flex-shrink: 0; }
+
+/* ---- Controle segmentado ---- */
+.seg {
+  display: inline-flex;
+  background: var(--atlas-surface);
+  border: 1px solid var(--atlas-border);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+}
+.seg button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--atlas-text-mut);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: color .18s ease, background .18s ease;
+  white-space: nowrap;
+}
+.seg button svg { width: 15px; height: 15px; }
+.seg button:hover { color: var(--atlas-text); }
+.seg button[aria-pressed="true"] {
+  background: var(--atlas-accent-soft);
+  color: var(--atlas-accent);
+  box-shadow: inset 0 0 0 1px var(--atlas-accent-line);
+}
+
+/* ---- Interruptor (switch) ---- */
+.switch {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-surface);
+  cursor: pointer;
+  padding: 0;
+  transition: background .2s ease, border-color .2s ease;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--atlas-text-mut);
+  transition: transform .2s ease, background .2s ease;
+}
+.switch[aria-pressed="true"] {
+  background: var(--atlas-accent-soft);
+  border-color: var(--atlas-accent-line);
+}
+.switch[aria-pressed="true"]::after {
+  transform: translateX(20px);
+  background: var(--atlas-accent);
+}
+
+/* ---- Campo travado (moeda) ---- */
+.locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--atlas-surface);
+  border: 1px dashed var(--atlas-border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  color: var(--atlas-text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.locked svg { width: 14px; height: 14px; color: var(--atlas-text-faint); }
+
+/* ---- Rodapé de ação ---- */
+.set-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+.btn-ghost {
+  appearance: none;
+  border: 1px solid var(--atlas-border);
+  background: transparent;
+  color: var(--atlas-text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 9px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: border-color .18s ease, color .18s ease, background .18s ease;
+}
+.btn-ghost svg { width: 15px; height: 15px; }
+.btn-ghost:hover { color: var(--atlas-text-hi); border-color: var(--atlas-border-hi); }
+.btn-ghost.danger:hover {
+  color: var(--atlas-neg);
+  border-color: var(--atlas-neg);
+  background: var(--atlas-neg-soft);
+}
+.btn-ghost.accent {
+  color: var(--atlas-accent);
+  border-color: color-mix(in srgb, var(--atlas-accent) 45%, transparent);
+}
+.btn-ghost.accent:hover {
+  color: var(--atlas-accent);
+  border-color: var(--atlas-accent);
+  background: color-mix(in srgb, var(--atlas-accent) 12%, transparent);
+}
+.set-foot .hint { font-size: 11.5px; color: var(--atlas-text-faint); }
+
+/* ---- Separador "Configurações por módulo" ---- */
+.set-sep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 2px -4px;
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--atlas-text-faint);
+}
+.set-sep::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--atlas-hairline);
+}
+#modSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ---- Campo de texto/número das seções por módulo ---- */
+.set-input {
+  appearance: none;
+  background: var(--atlas-surface);
+  border: 1px solid var(--atlas-border);
+  border-radius: 10px;
+  color: var(--atlas-text-hi);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 8px 12px;
+  min-width: 190px;
+  transition: border-color .18s ease, background .18s ease;
+}
+.set-input[type="number"] { min-width: 110px; text-align: right; }
+.set-input:hover { border-color: var(--atlas-border-hi); }
+.set-input:focus {
+  outline: none;
+  border-color: var(--atlas-accent);
+  background: var(--atlas-bg-raise);
+}
+
+/* ---- Dados e Backup: resumo do que está salvo ---- */
+.set-row.bk-detail { padding-top: 11px; padding-bottom: 15px; }
+.set-row.bk-detail .set-desc {
+  font-size: 11.5px;
+  color: var(--atlas-text-faint);
+  line-height: 1.6;
+}
+#bkStatus { font-variant-numeric: tabular-nums; }
+
+/* ---- Toast de confirmação ---- */
+.atlas-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 20px);
+  background: var(--atlas-surface-solid);
+  border: 1px solid var(--atlas-border-hi);
+  box-shadow: var(--atlas-sh-2);
+  color: var(--atlas-text-hi);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 12px 18px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transition: opacity .22s ease, transform .22s ease;
+}
+.atlas-toast svg { width: 17px; height: 17px; color: var(--atlas-pos); }
+.atlas-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 620px) {
+  .set-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .set-row-ctrl { width: 100%; }
+  .seg { width: 100%; }
+  .seg button { flex: 1; justify-content: center; }
+}
+
+/* Botão de ação desabilitado (ex.: nada arquivado para restaurar) */
+.btn-ghost.is-off,
+.btn-ghost:disabled { opacity: .45; cursor: not-allowed; }
+.btn-ghost.is-off:hover,
+.btn-ghost:disabled:hover { color: var(--atlas-text-mut); border-color: var(--atlas-border); background: transparent; }

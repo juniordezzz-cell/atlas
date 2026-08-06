@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLAS — Boot</title>
+  <link rel="preload" as="image" href="assets/atena.webp">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/atlas-celestial.css">
+  <link rel="stylesheet" href="css/init.css">
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="themes/atlas-theme.css">
+  <link rel="stylesheet" href="themes/atlas-effects.css">
+  <script src="core/settings.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/currency.js"></script>
+  <script src="core/atlas-boot.js"></script>
+</head>
+<body class="init-body">
+
+  <!-- CAMADAS DE PROFUNDIDADE: fundo → nebulosas → estrelas → partículas -->
+  <div class="sky">
+    <div class="sky__nebula"></div>
+    <div class="sky__nebula sky__nebula--b"></div>
+    <canvas class="sky__stars" id="fxStars"></canvas>
+    <canvas class="sky__dust" id="fxDust"></canvas>
+    <div class="sky__vignette"></div>
+  </div>
+
+  <!-- HUD VIVO -->
+  <div class="hud hud-tl"><span class="hud-dot"></span> ATLAS CORE</div>
+  <div class="hud hud-tr"><span>CLOCK <b id="hudClock">--:--:--</b></span></div>
+  <div class="hud hud-bl">
+    <span>CPU <b id="hudCpu">--</b></span>
+    <span>MEM <b id="hudMem">--</b></span>
+    <span>NET <b id="hudNet">--</b></span>
+    <span>LAT <b id="hudLat">--</b></span>
+  </div>
+  <div class="hud hud-br">
+    <span>SYNC <b id="hudSync">0%</b></span>
+    <span><b class="ok">SEC OK</b></span>
+  </div>
+
+  <main class="init-stage" id="stage">
+    <!-- NÚCLEO DO ORÁCULO: halo → anéis → esfera → luz → reflexos -->
+    <div class="core-scene">
+      <span class="core-halo core-halo--bloom"></span>
+      <span class="core-halo"></span>
+      <div class="core-tilt">
+        <span class="core-ring core-ring--c"></span>
+        <span class="core-ring core-ring--a"></span>
+        <div class="core">
+          <img class="core__img" src="assets/atena.webp" alt="Oráculo">
+          <span class="core__light"></span>
+          <span class="core__spec"></span>
+          <span class="core__rim"></span>
+          <span class="core__sheen"></span>
+        </div>
+        <span class="core-ring core-ring--b"></span>
+      </div>
+      <span class="core-shadow"></span>
+    </div>
+
+    <h1 class="brand">A T L A S</h1>
+    <p class="status msg-in" id="bootMsg">Ligando sistema…</p>
+
+    <div class="progress">
+      <div class="progress__track">
+        <div class="progress__bar" id="bar"></div>
+        <span class="progress__shine"></span>
+      </div>
+      <span class="progress__pct" id="percent">0%</span>
+    </div>
+
+    <button class="skip" id="skip" type="button">pular boot ›</button>
+  </main>
+
+  <script src="js/atlas-fx.js"></script>
+  <script src="js/init.js"></script>
+</body>
+</html>

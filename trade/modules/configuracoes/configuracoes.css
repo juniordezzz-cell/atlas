@@ -1,0 +1,37 @@
+/* ============================================================
+   ATLAS — Módulo Configurações (Sprint 6)
+   ============================================================ */
+
+.cfg .card { display: flex; flex-direction: column; gap: var(--sp-4); }
+.cfg__hint { font-size: var(--fs-label); color: var(--text-faint); }
+
+/* ---- Carteiras ----------------------------------------- */
+.cfg__wallets { display: flex; flex-direction: column; gap: var(--sp-2); }
+.cfg__wallet {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3); border-radius: var(--r-md);
+  background: var(--bg-sunken); border: 1px solid var(--glass-hairline);
+}
+.cfg__wallet-meta { flex: 1; min-width: 0; }
+.cfg__wallet-meta b { color: var(--text-hi); font-size: var(--fs-sm); display: flex; align-items: center; gap: var(--sp-2); }
+.cfg__wallet-meta span { font-size: var(--fs-label); color: var(--text-mut); }
+.cfg__wallet-actions { display: flex; gap: var(--sp-2); }
+.cfg__wallet-actions .btn { padding: var(--sp-2); }
+.cfg__del:hover { color: var(--loss); border-color: rgba(248,113,113,0.4); background: var(--loss-soft); }
+
+.cfg__wallet--edit { flex-direction: column; align-items: stretch; gap: var(--sp-4); border-color: rgba(76,154,255,0.3); }
+
+/* ---- Swatches de cor ----------------------------------- */
+.cfg__swatches { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.cfg__swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; transition: transform var(--dur-fast) var(--ease); }
+.cfg__swatch:hover { transform: scale(1.1); }
+.cfg__swatch[aria-current="true"] { border-color: var(--text-hi); box-shadow: 0 0 0 2px var(--bg-deep), 0 0 10px rgba(76,154,255,0.6); }
+
+.cfg__add { margin-top: var(--sp-2); }
+
+/* ---- Backup / dados ------------------------------------ */
+.cfg__actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+.cfg__arch { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4); border-radius: var(--r-md); background: var(--bg-sunken); border: 1px solid var(--glass-hairline); }
+.cfg__arch-row { display: flex; gap: var(--sp-2); flex-wrap: wrap; align-items: center; }
+.cfg__arch-info { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
+.cfg__danger { margin-top: var(--sp-2); padding-top: var(--sp-4); border-top: 1px solid var(--glass-hairline); }

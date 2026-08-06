@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLAS — Bem-vindo</title>
+  <link rel="preload" as="image" href="assets/atena.webp">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/atlas-celestial.css">
+  <link rel="stylesheet" href="css/boas-vindas.css">
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="themes/atlas-theme.css">
+  <link rel="stylesheet" href="themes/atlas-effects.css">
+  <script src="core/settings.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/currency.js"></script>
+  <script src="core/atlas-boot.js"></script>
+</head>
+<body class="welcome-body">
+
+  <!-- mesmas camadas de profundidade do boot -->
+  <div class="sky">
+    <div class="sky__nebula"></div>
+    <div class="sky__nebula sky__nebula--b"></div>
+    <canvas class="sky__stars" id="fxStars"></canvas>
+    <canvas class="sky__dust" id="fxDust"></canvas>
+    <div class="sky__vignette"></div>
+  </div>
+
+  <!-- fade cinematográfico de entrada e saída -->
+  <div class="cine-fade" id="cineFade"></div>
+
+  <div class="hud hud-tl"><span class="hud-dot"></span> ATLAS · ONLINE</div>
+  <div class="hud hud-br"><span>CLOCK <b id="hudClock">--:--:--</b></span></div>
+
+  <main class="welcome-stage">
+    <!-- ATO 1: a esfera cresce sob a luz -->
+    <div class="core-scene welcome-core">
+      <span class="core-halo core-halo--bloom"></span>
+      <span class="core-halo"></span>
+      <div class="core-tilt">
+        <span class="core-ring core-ring--c"></span>
+        <span class="core-ring core-ring--a"></span>
+        <div class="core">
+          <img class="core__img" src="assets/atena.webp" alt="Oráculo">
+          <span class="core__light"></span>
+          <span class="core__spec"></span>
+          <span class="core__rim"></span>
+          <span class="core__sheen"></span>
+        </div>
+        <span class="core-ring core-ring--b"></span>
+      </div>
+      <span class="core-shadow"></span>
+      <!-- feixe de luz que revela a cena -->
+      <span class="welcome-beam"></span>
+    </div>
+
+    <!-- ATO 2: a mensagem -->
+    <div class="welcome-content">
+      <p class="welcome-eyebrow">SISTEMA OPERACIONAL FINANCEIRO</p>
+      <h1 class="welcome-title">Bem-vindo ao <span class="grad">ATLAS</span></h1>
+      <p class="welcome-sub">Processo, dados e decisão — tudo em um só lugar.<br>Hold · Trade · DeFi · RWA</p>
+      <!-- ATO 3: a porta de entrada -->
+      <a class="btn-enter" href="login.html" id="btnEnter">Entrar no sistema <span class="arr">›</span></a>
+    </div>
+  </main>
+
+  <script src="js/atlas-fx.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      var FX = window.AtlasFX;
+      var sky = FX.makeSky(document.getElementById("fxStars"), document.getElementById("fxDust"));
+      var hud = FX.makeHud({ clock: document.getElementById("hudClock") });
+      FX.add(function (now, dt) { sky.draw(now, dt); hud.tick(now, dt); });
+
+      /* saída cinematográfica: fade antes de ir pro login */
+      var fade = document.getElementById("cineFade");
+      document.getElementById("btnEnter").addEventListener("click", function (e) {
+        e.preventDefault();
+        fade.classList.add("out");
+        setTimeout(function () { window.location.href = "login.html"; }, 620);
+      });
+
+      /* prefetch do login */
+      var l = document.createElement("link");
+      l.rel = "prefetch"; l.href = "login.html";
+      document.head.appendChild(l);
+    })();
+  </script>
+</body>
+</html>

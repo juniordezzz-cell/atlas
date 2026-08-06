@@ -1,0 +1,144 @@
+/* ============================================================
+   ATLAS · DeFi — components.js
+   Componentes reutilizáveis: navegação superior, card financeiro,
+   card de pool/posição, estado vazio, tag.
+   ============================================================ */
+(function () {
+  "use strict";
+  var U = window.U;
+
+  var NAV = [
+    { id: "dashboard", label: "Dashboard", href: "index.html" },
+    { id: "pools", label: "Pools", href: "pools.html" },
+    { id: "staking", label: "Staking", href: "staking.html" },
+    { id: "lending", label: "Lending", href: "lending.html" },
+    { id: "analytics", label: "Analytics", href: "analytics.html" },
+    { id: "historico", label: "Histórico", href: "historico.html" },
+    { id: "teses", label: "Teses", href: "teses.html" }
+  ];
+
+  var C = {
+    /* ---------- Navegação superior ---------- */
+    nav: function (active) {
+      var links = NAV.map(function (n) {
+        return '<a class="nav-link' + (n.id === active ? " active" : "") + '" href="' + n.href + '">' + n.label + '</a>';
+      }).join("");
+
+      return '' +
+        '<header class="topnav">' +
+          '<div class="topnav-inner">' +
+            '<a class="brand" href="index.html">' +
+              '<span class="brand-mark">' + U.icon("layers") + '</span>' +
+              '<span class="brand-name">ATLAS<b> DeFi</b></span>' +
+            '</a>' +
+            '<nav class="nav-links">' + links + '</nav>' +
+            '<div class="nav-spacer"></div>' +
+            '<div id="wsel"></div>' +
+            '<a class="nav-back" href="../dashboard.html" title="Voltar ao Atlas">' +
+              U.icon("back") + '<span>Voltar ao Atlas</span>' +
+            '</a>' +
+          '</div>' +
+        '</header>';
+    },
+
+    mountNav: function (active) {
+      var host = U.qs("#nav");
+      if (host) host.innerHTML = C.nav(active);
+      C.mountWalletSelector();
+    },
+
+    /* ---------- Seletor de carteira (Global/Local) ---------- */
+    mountWalletSelector: function () {
+      /* Delegado 100% ao componente compartilhado (/wallets). O host é
+         uma div sem classe: markup, medidas e cores são todos de
+         wallets/walletSelector.css, iguais aos dos outros módulos.
+
+         reload: PROVISÓRIO. As páginas do DeFi montam pools, staking e
+         lending no load e não reagem à troca de carteira; até isso
+         virar reativo, recarregar é o que mantém os números certos.
+         Remoção rastreada na tarefa "remover todos os reload:true". */
+      var host = U.qs("#wsel");
+      if (!host || !window.WalletSelector || !window.AtlasWallets || !window.DeFiStore) return;
+      var S = window.DeFiStore;
+
+      window.WalletSelector.render(host, {
+        module: "defi", scope: "module", reload: true,
+        balanceModule: "defi",
+        getActive: S.activeWallet,
+        onSelect: function (id) { S.setWallet(id); },
+        afterChange: function (w, acao) { if (acao === "create") S.setWallet(w.id); }
+      });
+    },
+
+    /* ---------- Card financeiro (KPI) ---------- */
+    finCard: function (o) {
+      // o: { label, value, icon, accent, delta (num|null), sub }
+      var accent = o.accent ? " accent-" + o.accent : "";
+      var foot = "";
+      if (o.delta != null) foot += U.delta(o.delta);
+      if (o.sub) foot += '<span class="sub">' + o.sub + '</span>';
+      return '' +
+        '<div class="fin-card' + accent + '">' +
+          '<div class="fin-top">' +
+            '<span class="fin-label">' + o.label + '</span>' +
+            '<span class="fin-ic">' + U.icon(o.icon) + '</span>' +
+          '</div>' +
+          '<div class="fin-value">' + o.value + '</div>' +
+          (foot ? '<div class="fin-foot">' + foot + '</div>' : '') +
+        '</div>';
+    },
+
+    /* ---------- Card de pool / posição ---------- */
+    poolCard: function (p) {
+      var st = U.status(p.status);
+      var rangeOut = p.status === "range";
+      var rangeHtml = "";
+      if ((p.status === "ativa" || p.status === "range") && p.rangeHigh > 0) {
+        var pos = Math.max(4, Math.min(96, (p.rangePos || 0.5) * 100));
+        rangeHtml = '<div class="range-bar' + (rangeOut ? " out" : "") + '"><i style="left:0;width:' + pos + '%"></i></div>';
+      }
+      var profitCls = p.profit > 0 ? "up" : (p.profit < 0 ? "down" : "flat");
+
+      return '' +
+        '<a class="pos-card" href="pool.html?id=' + p.id + '">' +
+          '<div class="pos-head">' +
+            '<div class="pos-pair">' +
+              '<div class="pair-icons">' + U.coin(p.base) + U.coin(p.quote) + '</div>' +
+              '<div>' +
+                '<div class="pair-name">' + p.base + ' / ' + p.quote + '</div>' +
+                '<div class="pair-proto">' + p.protocol + '</div>' +
+              '</div>' +
+            '</div>' +
+            U.statusDot(p.status) +
+          '</div>' +
+          '<div class="pos-tags">' +
+            '<span class="tag tag-chain"><span class="dot" style="background:' + DeFiStore.colorOf("chain", p.chain) + '"></span>' + p.chain + '</span>' +
+            '<span class="tag tag-proto">' + p.protocol + '</span>' +
+            '<span class="tag tag-cat">' + p.category + '</span>' +
+          '</div>' +
+          '<div class="pos-metrics">' +
+            '<div class="pos-metric"><div class="k">Capital</div><div class="v">' + U.money(p.capital) + '</div></div>' +
+            '<div class="pos-metric"><div class="k">Lucro</div><div class="v delta ' + profitCls + '">' + U.pct(p.profitPct, true) + '</div></div>' +
+            '<div class="pos-metric"><div class="k">Valor atual</div><div class="v">' + U.money(p.currentValue) + '</div></div>' +
+            '<div class="pos-metric"><div class="k">APR</div><div class="v">' + (p.apr ? U.pct(p.apr) : "—") + '</div></div>' +
+          '</div>' +
+          rangeHtml +
+        '</a>';
+    },
+
+    /* ---------- Estado vazio ---------- */
+    empty: function (o) {
+      // o: { icon, title, text, actionLabel, actionHref }
+      var btn = o.actionLabel ? '<a class="btn btn-primary" href="' + (o.actionHref || "#") + '">' + U.icon("plus") + o.actionLabel + '</a>' : "";
+      return '' +
+        '<div class="empty">' +
+          '<div class="empty-art">' + U.icon(o.icon || "inbox") + '</div>' +
+          '<h3>' + o.title + '</h3>' +
+          '<p>' + o.text + '</p>' +
+          btn +
+        '</div>';
+    }
+  };
+
+  window.C = C;
+})();

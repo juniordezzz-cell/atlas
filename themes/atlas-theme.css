@@ -1,0 +1,480 @@
+/* ===================================================================
+   ATLAS — SISTEMA CENTRALIZADO DE IDENTIDADE VISUAL
+   -------------------------------------------------------------------
+   FONTE ÚNICA DA VERDADE para cor, tipografia, geometria e movimento.
+
+   Como funciona
+   -------------
+   1. CAMADA CANÔNICA  (--atlas-*)  → os tokens reais do sistema.
+   2. CAMADA DE TEMA   ([data-theme]) → escuro (padrão) / claro.
+   3. CAMADA DE MÓDULO ([data-module]) → sotaque de cor de cada módulo.
+   4. CAMADA DE PONTE  → traduz os tokens canônicos para os nomes
+      legados que cada módulo já usa no seu CSS. É isso que permite
+      centralizar sem reescrever as 18 mil linhas existentes.
+
+   REGRA DE OURO
+   -------------
+   Nenhuma cor importante deve nascer dentro de um componente.
+   Alterou uma variável aqui → o módulo inteiro muda sozinho.
+
+   Como usar no HTML
+   -----------------
+     <html lang="pt-BR" data-module="hold">
+     <link rel="stylesheet" href="../themes/atlas-theme.css">   <-- por ÚLTIMO
+
+   Os seletores usam html[...] (especificidade 0,1,1) justamente para
+   vencer os :root (0,1,0) dos módulos independente da ordem de carga.
+   =================================================================== */
+
+/* ===================================================================
+   1. CAMADA CANÔNICA — tokens estruturais (não dependem de tema)
+   =================================================================== */
+:root {
+  /* --- Tipografia ------------------------------------------------ */
+  --atlas-font-display: "Space Grotesk", "Sora", "Poppins", "Segoe UI", system-ui, sans-serif;
+  --atlas-font-ui:      "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --atlas-font-mono:    "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --atlas-fs-display: clamp(1.55rem, 1.1rem + 1.6vw, 2.1rem);
+  --atlas-fs-h1:      1.42rem;
+  --atlas-fs-h2:      1.18rem;
+  --atlas-fs-h3:      0.98rem;
+  --atlas-fs-body:    0.90rem;
+  --atlas-fs-sm:      0.80rem;
+  --atlas-fs-label:   0.70rem;
+
+  --atlas-lh-tight: 1.12;
+  --atlas-lh-body:  1.55;
+  --atlas-track-label: 0.14em;
+
+  /* --- Espaçamento ----------------------------------------------- */
+  --atlas-sp-1:  4px;
+  --atlas-sp-2:  8px;
+  --atlas-sp-3: 12px;
+  --atlas-sp-4: 16px;
+  --atlas-sp-5: 20px;
+  --atlas-sp-6: 24px;
+  --atlas-sp-7: 32px;
+  --atlas-sp-8: 40px;
+  --atlas-sp-9: 56px;
+
+  /* --- Geometria -------------------------------------------------- */
+  --atlas-r-xs:   6px;
+  --atlas-r-sm:  10px;
+  --atlas-r-md:  14px;
+  --atlas-r-lg:  20px;
+  --atlas-r-xl:  26px;
+  --atlas-r-pill: 999px;
+
+  /* --- Layout ----------------------------------------------------- */
+  --atlas-sidebar-w: 240px;
+  --atlas-topbar-h:   64px;
+  --atlas-content-max: 1400px;
+  --atlas-gutter:     24px;
+
+  /* --- Movimento (item 3 do briefing) ----------------------------- */
+  --atlas-ease:       cubic-bezier(0.22, 1, 0.36, 1);
+  --atlas-ease-out:   cubic-bezier(0.16, 1, 0.30, 1);
+  --atlas-ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+  --atlas-dur-fast:   140ms;
+  --atlas-dur:        260ms;
+  --atlas-dur-slow:   520ms;
+
+  /* --- Elevação (recalculada por tema) ---------------------------- */
+  --atlas-lift:       -2px;   /* deslocamento no hover */
+  --atlas-lift-press:  0px;   /* deslocamento no clique */
+}
+
+/* ===================================================================
+   2. CAMADA DE TEMA — ESCURO (padrão do ATLAS)
+   =================================================================== */
+:root,
+html[data-theme="dark"] {
+  --atlas-bg-deep:     #05080F;
+  --atlas-bg:          #0A0F1C;
+  --atlas-bg-raise:    #0E1526;
+  --atlas-surface:     rgba(22, 32, 56, 0.55);
+  --atlas-surface-solid: #121B31;
+  --atlas-surface-hi:  rgba(31, 44, 74, 0.70);
+
+  --atlas-border:      rgba(140, 170, 225, 0.13);
+  --atlas-border-hi:   rgba(150, 185, 255, 0.28);
+  --atlas-hairline:    rgba(150, 180, 235, 0.09);
+  --atlas-inner:       rgba(180, 210, 255, 0.06);
+
+  --atlas-text-hi:     #EAF0FB;
+  --atlas-text:        #C3CEE4;
+  --atlas-text-mut:    #808DA9;
+  --atlas-text-faint:  #56617F;
+
+  --atlas-pos:         #2DD4BF;
+  --atlas-pos-soft:    rgba(45, 212, 191, 0.14);
+  --atlas-neg:         #F87171;
+  --atlas-neg-soft:    rgba(248, 113, 113, 0.14);
+  --atlas-warn:        #FBBF24;
+  --atlas-warn-soft:   rgba(251, 191, 36, 0.14);
+  --atlas-info:        #60A5FA;
+  --atlas-info-soft:   rgba(96, 165, 250, 0.14);
+
+  --atlas-sh-1: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --atlas-sh-2: 0 10px 30px -12px rgba(0, 0, 0, 0.60);
+  --atlas-sh-3: 0 22px 48px -20px rgba(0, 0, 0, 0.75);
+  --atlas-scrim: rgba(4, 7, 14, 0.72);
+}
+
+/* ===================================================================
+   2b. CAMADA DE TEMA — CLARO (arquitetura pronta, item 5 e 9)
+   =================================================================== */
+html[data-theme="light"] {
+  --atlas-bg-deep:     #EEF2F8;
+  --atlas-bg:          #F6F8FC;
+  --atlas-bg-raise:    #FFFFFF;
+  --atlas-surface:     rgba(255, 255, 255, 0.86);
+  --atlas-surface-solid: #FFFFFF;
+  --atlas-surface-hi:  rgba(255, 255, 255, 1);
+
+  --atlas-border:      rgba(15, 30, 60, 0.12);
+  --atlas-border-hi:   rgba(15, 30, 60, 0.26);
+  --atlas-hairline:    rgba(15, 30, 60, 0.08);
+  --atlas-inner:       rgba(15, 30, 60, 0.04);
+
+  --atlas-text-hi:     #0B1220;
+  --atlas-text:        #2B3648;
+  --atlas-text-mut:    #5C6980;
+  --atlas-text-faint:  #8B97AC;
+
+  --atlas-pos:         #0F9D8E;
+  --atlas-pos-soft:    rgba(15, 157, 142, 0.12);
+  --atlas-neg:         #DC2626;
+  --atlas-neg-soft:    rgba(220, 38, 38, 0.10);
+  --atlas-warn:        #B45309;
+  --atlas-warn-soft:   rgba(180, 83, 9, 0.10);
+  --atlas-info:        #1D4ED8;
+  --atlas-info-soft:   rgba(29, 78, 216, 0.10);
+
+  --atlas-sh-1: 0 1px 2px rgba(15, 30, 60, 0.08);
+  --atlas-sh-2: 0 10px 28px -14px rgba(15, 30, 60, 0.28);
+  --atlas-sh-3: 0 22px 48px -22px rgba(15, 30, 60, 0.34);
+  --atlas-scrim: rgba(240, 244, 250, 0.78);
+}
+
+/* ===================================================================
+   3. CAMADA DE MÓDULO — o sotaque de cor de cada território
+   -------------------------------------------------------------------
+   HOLD  → azul celeste / ciano   (longo prazo, o céu do ATLAS)
+   TRADE → azul elétrico / índigo (execução, energia)
+   DEFI  → verde menta            (rendimento)
+   RWA   → verde esmeralda / lima (ativos reais)
+   =================================================================== */
+
+/* Padrão (dashboard, login, boas-vindas, academy): identidade ATLAS */
+:root {
+  --atlas-accent:      #00BFFF;
+  --atlas-accent-2:    #00F0FF;
+  --atlas-accent-deep: #0E3E8A;
+  --atlas-accent-soft: rgba(0, 191, 255, 0.14);
+  --atlas-accent-line: rgba(0, 191, 255, 0.28);
+  --atlas-grad:        linear-gradient(135deg, #00BFFF 0%, #00F0FF 100%);
+  --atlas-grad-soft:   linear-gradient(135deg, rgba(0,191,255,0.18) 0%, rgba(0,240,255,0.08) 100%);
+  --atlas-glow:        0 0 40px -4px rgba(0, 191, 255, 0.50);
+  --atlas-glow-strong: 0 0 60px -6px rgba(0, 240, 255, 0.60);
+}
+
+html[data-module="hold"] {
+  --atlas-accent:      #4DA3FF;
+  --atlas-accent-2:    #22D3EE;
+  --atlas-accent-deep: #1E5FB4;
+  --atlas-accent-soft: rgba(77, 163, 255, 0.14);
+  --atlas-accent-line: rgba(77, 163, 255, 0.30);
+  --atlas-grad:        linear-gradient(135deg, #4DA3FF 0%, #22D3EE 100%);
+  --atlas-grad-soft:   linear-gradient(135deg, rgba(77,163,255,0.18) 0%, rgba(34,211,238,0.07) 100%);
+  --atlas-glow:        0 0 40px -4px rgba(77, 163, 255, 0.50);
+  --atlas-glow-strong: 0 0 60px -6px rgba(34, 211, 238, 0.55);
+}
+
+html[data-module="trade"] {
+  --atlas-accent:      #4C9AFF;
+  --atlas-accent-2:    #1D6BF0;
+  --atlas-accent-deep: #0E3E8A;
+  --atlas-accent-soft: rgba(76, 154, 255, 0.14);
+  --atlas-accent-line: rgba(76, 154, 255, 0.30);
+  --atlas-grad:        linear-gradient(135deg, #4C9AFF 0%, #1D6BF0 100%);
+  --atlas-grad-soft:   linear-gradient(135deg, rgba(76,154,255,0.18) 0%, rgba(29,107,240,0.07) 100%);
+  --atlas-glow:        0 0 40px -4px rgba(76, 154, 255, 0.50);
+  --atlas-glow-strong: 0 0 60px -6px rgba(34, 211, 238, 0.55);
+}
+
+html[data-module="defi"] {
+  --atlas-accent:      #00E28A;
+  --atlas-accent-2:    #5EEAD4;
+  --atlas-accent-deep: #047857;
+  --atlas-accent-soft: rgba(0, 226, 138, 0.14);
+  --atlas-accent-line: rgba(0, 226, 138, 0.30);
+  --atlas-grad:        linear-gradient(135deg, #00E28A 0%, #5EEAD4 100%);
+  --atlas-grad-soft:   linear-gradient(135deg, rgba(0,226,138,0.18) 0%, rgba(94,234,212,0.07) 100%);
+  --atlas-glow:        0 0 40px -4px rgba(0, 226, 138, 0.45);
+  --atlas-glow-strong: 0 0 60px -6px rgba(94, 234, 212, 0.55);
+}
+
+html[data-module="rwa"] {
+  --atlas-accent:      #10B981;
+  --atlas-accent-2:    #A3E635;
+  --atlas-accent-deep: #065F46;
+  --atlas-accent-soft: rgba(16, 185, 129, 0.14);
+  --atlas-accent-line: rgba(16, 185, 129, 0.30);
+  --atlas-grad:        linear-gradient(135deg, #10B981 0%, #A3E635 100%);
+  --atlas-grad-soft:   linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(163,230,53,0.07) 100%);
+  --atlas-glow:        0 0 40px -4px rgba(16, 185, 129, 0.45);
+  --atlas-glow-strong: 0 0 60px -6px rgba(163, 230, 53, 0.50);
+}
+
+/* ===================================================================
+   4. CAMADA DE PONTE — tokens legados alimentados pelos canônicos
+   -------------------------------------------------------------------
+   Cada módulo continua escrevendo var(--primary), var(--azure), etc.
+   A diferença é que agora esses nomes são apenas apelidos do sistema
+   central. Nenhuma cor literal sobrevive fora deste arquivo.
+   =================================================================== */
+
+/* ---------- HOLD ---------- */
+html[data-module="hold"] {
+  --bg:            var(--atlas-bg);
+  --surface:       var(--atlas-bg-raise);
+  --surface-alt:   var(--atlas-surface-solid);
+  --primary:       var(--atlas-accent);
+  --secondary:     var(--atlas-accent-2);
+  --accent:        var(--atlas-accent-2);
+  --success:       var(--atlas-pos);
+  --warning:       var(--atlas-warn);
+  --danger:        var(--atlas-neg);
+  --text:          var(--atlas-text-hi);
+  --text-dim:      var(--atlas-text-mut);
+  --border:        var(--atlas-border);
+
+  --primary-08:    color-mix(in srgb, var(--atlas-accent) 8%, transparent);
+  --primary-14:    color-mix(in srgb, var(--atlas-accent) 14%, transparent);
+  --primary-24:    color-mix(in srgb, var(--atlas-accent) 24%, transparent);
+  --secondary-14:  color-mix(in srgb, var(--atlas-accent-2) 14%, transparent);
+  --accent-14:     color-mix(in srgb, var(--atlas-accent-2) 14%, transparent);
+  --success-12:    var(--atlas-pos-soft);
+  --danger-12:     var(--atlas-neg-soft);
+  --warning-12:    var(--atlas-warn-soft);
+
+  --sidebar-w:     var(--atlas-sidebar-w);
+  --topbar-h:      var(--atlas-topbar-h);
+  --maxw:          var(--atlas-content-max);
+  --radius:        var(--atlas-r-sm);
+  --radius-sm:     var(--atlas-r-xs);
+  --radius-lg:     var(--atlas-r-md);
+  --font:          var(--atlas-font-ui);
+  --mono:          var(--atlas-font-mono);
+  --ease:          var(--atlas-ease);
+}
+
+/* ---------- TRADE ---------- */
+html[data-module="trade"] {
+  --bg-deep:        var(--atlas-bg-deep);
+  --bg-raise:       var(--atlas-bg-raise);
+  --bg-sunken:      var(--atlas-bg-deep);
+  --glass-fill:     var(--atlas-surface);
+  --glass-fill-hi:  var(--atlas-surface-hi);
+  --glass-border:   var(--atlas-border);
+  --glass-hairline: var(--atlas-hairline);
+  --glass-inner:    var(--atlas-inner);
+
+  --azure:          var(--atlas-accent);
+  --azure-strong:   var(--atlas-accent-2);
+  --azure-deep:     var(--atlas-accent-deep);
+  --azure-soft:     var(--atlas-accent-soft);
+  --cyan:           var(--atlas-accent-2);
+
+  --profit:         var(--atlas-pos);
+  --profit-soft:    var(--atlas-pos-soft);
+  --loss:           var(--atlas-neg);
+  --loss-soft:      var(--atlas-neg-soft);
+  --warn:           var(--atlas-warn);
+  --warn-soft:      var(--atlas-warn-soft);
+
+  --text-hi:        var(--atlas-text-hi);
+  --text:           var(--atlas-text);
+  --text-mut:       var(--atlas-text-mut);
+  --text-faint:     var(--atlas-text-faint);
+
+  --font-display:   var(--atlas-font-display);
+  --font-ui:        var(--atlas-font-ui);
+  --font-mono:      var(--atlas-font-mono);
+
+  --r-sm:  var(--atlas-r-sm);
+  --r-md:  var(--atlas-r-md);
+  --r-lg:  var(--atlas-r-lg);
+  --r-xl:  var(--atlas-r-xl);
+  --r-pill: var(--atlas-r-pill);
+
+  --glow-cyan:   var(--atlas-glow);
+  --topbar-h:    var(--atlas-topbar-h);
+  --sidebar-w:   var(--atlas-sidebar-w);
+  --content-max: var(--atlas-content-max);
+  --ease:        var(--atlas-ease);
+  --dur-fast:    var(--atlas-dur-fast);
+  --dur:         var(--atlas-dur);
+  --dur-slow:    var(--atlas-dur-slow);
+}
+
+/* ---------- DEFI (exceção estrutural: só cor e efeito mudam) ------- */
+html[data-module="defi"] {
+  --bg-0:            var(--atlas-bg-deep);
+  --bg-1:            var(--atlas-bg);
+  --bg-2:            var(--atlas-bg-raise);
+  --surface:         var(--atlas-surface);
+  --surface-solid:   var(--atlas-surface-solid);
+  --surface-hi:      var(--atlas-surface-hi);
+  --glass-border:    var(--atlas-border);
+  --glass-border-hi: var(--atlas-border-hi);
+
+  /* O DeFi nomeia tudo como "blue-*" por herança. Os nomes ficam,
+     os valores agora são o verde do módulo. */
+  --blue-500:  var(--atlas-accent);
+  --blue-400:  var(--atlas-accent-2);
+  --blue-300:  color-mix(in srgb, var(--atlas-accent-2) 60%, #FFFFFF);
+  --blue-600:  var(--atlas-accent-deep);
+  --blue-glow: color-mix(in srgb, var(--atlas-accent) 35%, transparent);
+  --violet:    var(--atlas-accent-2);
+  --violet-400: color-mix(in srgb, var(--atlas-accent-2) 70%, #FFFFFF);
+  --cyan:      var(--atlas-accent-2);
+  --cyan-400:  color-mix(in srgb, var(--atlas-accent-2) 60%, #FFFFFF);
+
+  --text-hi:   var(--atlas-text-hi);
+  --text:      var(--atlas-text);
+  --text-mut:  var(--atlas-text-mut);
+  --text-faint: var(--atlas-text-faint);
+
+  --ok:        var(--atlas-pos);
+  --ok-bg:     var(--atlas-pos-soft);
+  --warn:      var(--atlas-warn);
+  --warn-bg:   var(--atlas-warn-soft);
+  --danger:    var(--atlas-neg);
+  --danger-bg: var(--atlas-neg-soft);
+  --info:      var(--atlas-info);
+  --info-bg:   var(--atlas-info-soft);
+
+  --grad-brand: var(--atlas-grad);
+  --grad-cyan:  var(--atlas-grad);
+  --grad-line:  linear-gradient(90deg,
+                  transparent 0%,
+                  var(--atlas-accent-line) 50%,
+                  transparent 100%);
+
+  --r-sm:  var(--atlas-r-sm);
+  --r-md:  var(--atlas-r-md);
+  --r-lg:  var(--atlas-r-lg);
+  --r-xl:  var(--atlas-r-xl);
+  --r-pill: var(--atlas-r-pill);
+
+  --shadow-1: var(--atlas-sh-1);
+  --shadow-2: var(--atlas-sh-2);
+  --shadow-glow: 0 0 0 1px var(--atlas-border), var(--atlas-sh-3);
+
+  --maxw:    var(--atlas-content-max);
+  --gutter:  var(--atlas-gutter);
+  --font-display: var(--atlas-font-display);
+  --font-body:    var(--atlas-font-ui);
+  --font-mono:    var(--atlas-font-mono);
+  --ease: var(--atlas-ease);
+  --fast: var(--atlas-dur-fast);
+  --med:  var(--atlas-dur);
+}
+
+/* ---------- RWA ---------- */
+html[data-module="rwa"] {
+  --bg:            var(--atlas-bg);
+  --surface:       var(--atlas-surface-solid);
+  --surface-2:     var(--atlas-bg-raise);
+  --surface-hi:    var(--atlas-surface-hi);
+  --border:        var(--atlas-border);
+  --border-hi:     var(--atlas-border-hi);
+  --border-accent: var(--atlas-accent-line);
+
+  --accent:        var(--atlas-accent);
+  --accent-2:      var(--atlas-accent-2);
+  --accent-soft:   var(--atlas-accent-soft);
+  --accent2-soft:  color-mix(in srgb, var(--atlas-accent-2) 12%, transparent);
+
+  --pos:       var(--atlas-pos);
+  --neg:       var(--atlas-neg);
+  --warn:      var(--atlas-warn);
+  --pos-soft:  var(--atlas-pos-soft);
+  --neg-soft:  var(--atlas-neg-soft);
+  --warn-soft: var(--atlas-warn-soft);
+
+  --text:   var(--atlas-text-hi);
+  --text-2: var(--atlas-text-mut);
+  --text-3: var(--atlas-text-faint);
+
+  --font: var(--atlas-font-ui);
+  --mono: var(--atlas-font-mono);
+
+  --r-xs: var(--atlas-r-xs);
+  --r-sm: var(--atlas-r-sm);
+  --r-md: var(--atlas-r-md);
+  --r-lg: var(--atlas-r-lg);
+  --r-pill: var(--atlas-r-pill);
+
+  --sh-1: var(--atlas-sh-1);
+  --sh-2: var(--atlas-sh-2);
+
+  --rail:      var(--atlas-sidebar-w);
+  --topbar-h:  var(--atlas-topbar-h);
+  --maxw:      var(--atlas-content-max);
+  --ease:      var(--atlas-ease);
+  --fast:      var(--atlas-dur-fast);
+  --med:       var(--atlas-dur);
+}
+
+/* ---------- SHELL ATLAS (dashboard / login / boas-vindas / academy) ---------- */
+html[data-module="atlas"],
+html[data-module="academy"] {
+  --azul-principal: var(--atlas-accent);
+  --azul-escuro:    var(--atlas-bg);
+  --azul-profundo:  var(--atlas-bg-deep);
+  --ciano:          var(--atlas-accent-2);
+  --cinza:          var(--atlas-text-mut);
+  --fundo:          var(--atlas-bg-deep);
+  --card:           var(--atlas-bg-raise);
+  --texto:          var(--atlas-text-hi);
+  --texto-suave:    var(--atlas-text);
+  --texto-fraco:    var(--atlas-text-mut);
+  --card-borda:       var(--atlas-border);
+  --card-borda-forte: var(--atlas-border-hi);
+  --linha:          var(--atlas-hairline);
+  --verde:          var(--atlas-pos);
+  --vermelho:       var(--atlas-neg);
+  --glow-azul:      var(--atlas-glow);
+  --glow-ciano:     var(--atlas-glow-strong);
+  --fonte-titulo:   var(--atlas-font-display);
+  --fonte-corpo:    var(--atlas-font-ui);
+  --raio:           var(--atlas-r-md);
+  --raio-sm:        var(--atlas-r-sm);
+  --gap:            var(--atlas-sp-5);
+  --sidebar-w:      var(--atlas-sidebar-w);
+}
+
+/* ===================================================================
+   5. FALLBACK — navegadores sem color-mix()
+   Mantém o sistema utilizável mesmo em engines antigas.
+   =================================================================== */
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  html[data-module="hold"] {
+    --primary-08: rgba(77, 163, 255, 0.08);
+    --primary-14: rgba(77, 163, 255, 0.14);
+    --primary-24: rgba(77, 163, 255, 0.24);
+    --secondary-14: rgba(34, 211, 238, 0.14);
+    --accent-14: rgba(34, 211, 238, 0.14);
+  }
+  html[data-module="defi"] {
+    --blue-300: #7DF3D8;
+    --blue-glow: rgba(0, 226, 138, 0.35);
+    --violet-400: #8FF2E0;
+    --cyan-400: #8FF2E0;
+  }
+  html[data-module="rwa"] { --accent2-soft: rgba(163, 230, 53, 0.12); }
+}

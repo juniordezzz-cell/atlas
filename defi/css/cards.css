@@ -1,0 +1,157 @@
+/* ============================================================
+   ATLAS · DeFi — cards.css
+   Cards financeiros, cards de pool, painéis (glassmorphism discreto)
+   ============================================================ */
+
+/* ---------- Painel genérico (glass) ---------- */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  box-shadow: var(--shadow-2);
+}
+.panel-pad { padding: 22px; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.panel-head h3 { font-size: 15.5px; }
+.panel-head .eyebrow { margin-bottom: 3px; }
+
+/* ============================================================
+   CARD FINANCEIRO (KPI)
+   ============================================================ */
+.fin-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+}
+.fin-card {
+  position: relative; overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg); padding: 20px 20px 18px;
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  transition: transform var(--med) var(--ease), border-color var(--med) var(--ease);
+}
+.fin-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--grad-line); opacity: 0.8;
+}
+.fin-card:hover { transform: translateY(-3px); border-color: var(--glass-border-hi); }
+.fin-card .fin-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.fin-card .fin-label { font-size: 12.5px; color: var(--text-mut); font-weight: 500; letter-spacing: 0.2px; }
+.fin-card .fin-ic {
+  width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center;
+  background: rgba(59,130,246,0.10); color: var(--blue-400); flex: none;
+}
+.fin-card .fin-ic svg { width: 17px; height: 17px; }
+.fin-card.accent-violet .fin-ic { background: rgba(139,92,246,0.12); color: var(--violet-400); }
+.fin-card.accent-cyan .fin-ic { background: rgba(34,211,238,0.10); color: var(--cyan-400); }
+.fin-card.accent-green .fin-ic { background: var(--ok-bg); color: var(--ok); }
+.fin-card .fin-value { font-family: var(--font-mono); font-size: 27px; font-weight: 600; color: var(--text-hi); letter-spacing: -0.6px; }
+.fin-card .fin-foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.fin-card .fin-foot .sub { font-size: 12px; color: var(--text-faint); }
+
+/* ============================================================
+   CARD DE POOL / POSIÇÃO (nunca tabela)
+   ============================================================ */
+.pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+
+.pos-card {
+  position: relative; display: block; cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg); padding: 18px;
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  transition: transform var(--med) var(--ease), border-color var(--med) var(--ease), box-shadow var(--med) var(--ease);
+  overflow: hidden;
+}
+.pos-card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 1px transparent; transition: box-shadow var(--med) var(--ease);
+}
+.pos-card:hover { transform: translateY(-3px); border-color: var(--glass-border-hi); box-shadow: var(--shadow-glow); }
+.pos-card:hover::after { box-shadow: inset 0 0 40px -20px var(--blue-glow); }
+
+.pos-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.pos-pair { display: flex; align-items: center; gap: 11px; }
+.pair-icons { display: flex; }
+.pair-icons .coin {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: #fff;
+  border: 2px solid var(--bg-2); box-shadow: var(--shadow-1);
+}
+.pair-icons .coin:nth-child(2) { margin-left: -10px; }
+.pos-pair .pair-name { font-family: var(--font-display); font-weight: 600; font-size: 15.5px; color: var(--text-hi); }
+.pos-pair .pair-proto { font-size: 11.5px; color: var(--text-mut); margin-top: 1px; }
+
+.pos-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
+
+.pos-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+.pos-metric .k { font-size: 11px; color: var(--text-faint); letter-spacing: 0.3px; text-transform: uppercase; }
+.pos-metric .v { font-family: var(--font-mono); font-size: 16px; font-weight: 600; color: var(--text-hi); }
+
+.pos-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--glass-border); }
+
+/* range bar (visual da posição no range) */
+.range-bar { height: 5px; border-radius: 3px; background: rgba(120,150,220,0.12); position: relative; margin-top: 12px; overflow: hidden; }
+.range-bar > i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--grad-brand); }
+.range-bar.out > i { background: linear-gradient(90deg, var(--warn), #f59e0b); }
+
+/* ---------- Mini stat inline ---------- */
+.mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.mini-stat { padding: 14px 16px; border-radius: var(--r-md); background: rgba(120,150,220,0.05); border: 1px solid var(--glass-border); }
+.mini-stat .k { font-size: 11.5px; color: var(--text-mut); }
+.mini-stat .v { font-family: var(--font-mono); font-size: 19px; font-weight: 600; color: var(--text-hi); margin-top: 3px; }
+
+/* ---------- Lista de movimentações ---------- */
+.mov-list { display: flex; flex-direction: column; }
+.mov-item { display: flex; align-items: center; gap: 14px; padding: 13px 4px; border-bottom: 1px solid var(--glass-border); }
+.mov-item:last-child { border-bottom: none; }
+.mov-ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; flex: none; }
+.mov-ic svg { width: 17px; height: 17px; }
+.mov-ic.in { background: var(--ok-bg); color: var(--ok); }
+.mov-ic.out { background: var(--danger-bg); color: var(--danger); }
+.mov-ic.re { background: var(--info-bg); color: var(--info); }
+.mov-main { flex: 1; min-width: 0; }
+.mov-main .t { font-size: 14px; color: var(--text-hi); font-weight: 500; }
+.mov-main .d { font-size: 12px; color: var(--text-mut); }
+.mov-amt { font-family: var(--font-mono); font-weight: 600; font-size: 14px; text-align: right; }
+
+/* ---------- Timeline ---------- */
+.timeline { position: relative; padding-left: 26px; }
+.timeline::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(var(--blue-500), var(--violet)); opacity: 0.4; }
+.tl-item { position: relative; padding: 0 0 22px; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-item::before {
+  content: ""; position: absolute; left: -26px; top: 3px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--bg-2); border: 2px solid var(--blue-400); box-shadow: 0 0 0 4px rgba(59,130,246,0.10);
+}
+.tl-item.violet::before { border-color: var(--violet); box-shadow: 0 0 0 4px rgba(139,92,246,0.12); }
+.tl-item.warn::before { border-color: var(--warn); box-shadow: 0 0 0 4px rgba(251,191,36,0.12); }
+.tl-item.end::before { border-color: var(--text-faint); box-shadow: none; }
+.tl-item .tl-date { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-mut); }
+.tl-item .tl-title { font-size: 14.5px; color: var(--text-hi); font-weight: 600; margin: 2px 0 3px; }
+.tl-item .tl-desc { font-size: 13px; color: var(--text-mut); }
+
+/* ---------- Diário ---------- */
+.diary-goal {
+  padding: 18px 20px; border-radius: var(--r-md); border-left: 3px solid var(--blue-500);
+  background: rgba(59,130,246,0.06); font-size: 15px; color: var(--text-hi); font-style: italic; line-height: 1.6;
+}
+.diary-note { padding: 14px 0; border-bottom: 1px solid var(--glass-border); }
+.diary-note:last-child { border-bottom: none; }
+.diary-note .meta { font-size: 11.5px; color: var(--text-faint); font-family: var(--font-mono); margin-bottom: 5px; }
+.diary-note .txt { font-size: 14px; color: var(--text); line-height: 1.6; }
+
+/* ---------- Tabs (página da pool) ---------- */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--glass-border); margin-bottom: 24px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 12px 16px; font-size: 13.5px; font-weight: 500; color: var(--text-mut); background: transparent;
+  border: none; border-bottom: 2px solid transparent; white-space: nowrap; transition: color var(--fast), border-color var(--fast);
+}
+.tab:hover { color: var(--text-hi); }
+.tab.active { color: var(--text-hi); border-bottom-color: var(--blue-500); }
+.tab-panel { display: none; animation: fade var(--med) var(--ease); }
+.tab-panel.active { display: block; }

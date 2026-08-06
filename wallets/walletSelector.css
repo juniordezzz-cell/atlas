@@ -1,0 +1,371 @@
+/* ============================================================
+   ATLAS · /wallets/walletSelector.css
+   ------------------------------------------------------------
+   O CSS DO SELETOR DE CARTEIRA. Um só, para o ATLAS inteiro.
+
+   Antes cada módulo pintava o seletor com o SEU CSS: .wsel no Hold
+   e no DeFi, .wallet-sel no Dashboard, .wallet__* no Trade, .w-* no
+   RWA. Cinco folhas diferentes para o mesmo componente — larguras,
+   alturas, paddings, fontes e hovers que nunca coincidiam e que
+   divergiam de novo a cada mexida em qualquer módulo.
+
+   Agora existe esta folha e mais nenhuma. Regra: nenhum arquivo CSS
+   de módulo pode conter regra de seletor de carteira. Se um dia o
+   seletor sair diferente em algum módulo, o erro está aqui — não lá.
+
+   POR QUE OS VALORES SÃO LITERAIS E NÃO TOKENS DO TEMA
+   ----------------------------------------------------
+   Os módulos têm conjuntos de tokens diferentes (--primary no Hold,
+   --accent no RWA, --azure no Trade, --azul-principal no Dashboard),
+   com valores diferentes e fallbacks diferentes. Herdar token era a
+   própria fonte da divergência. Aqui as medidas e as cores nascem
+   fechadas em --aws-*, declaradas no próprio componente. O seletor
+   fica idêntico em qualquer página, com qualquer tema carregado.
+
+   Escopo: tudo sob .awsel. As classes antigas (.wsel*, .wallet-*,
+   .wallet__*, .w-*) não existem mais em lugar nenhum.
+   ============================================================ */
+
+.awsel {
+  /* ---- medidas (a geometria idêntica em todo módulo vem daqui) ---- */
+  --aws-btn-pad-y: 7px;
+  --aws-btn-pad-x: 11px;
+  --aws-menu-w: 268px;
+  --aws-menu-pad: 6px;
+  --aws-row-pad-y: 8px;
+  --aws-row-pad-x: 10px;
+  --aws-gap: 10px;
+  --aws-radius: 12px;
+  --aws-radius-sm: 9px;
+  --aws-swatch: 26px;
+
+  /* ---- tipografia ---- */
+  --aws-font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --aws-fs-name: 13px;
+  --aws-fs-sub: 11px;
+  --aws-fs-badge: 9.5px;
+  --aws-fs-head: 10px;
+
+  /* ---- cores ---- */
+  --aws-surface: #131A26;
+  --aws-surface-2: rgba(255, 255, 255, 0.045);
+  --aws-border: rgba(255, 255, 255, 0.10);
+  --aws-border-hi: rgba(120, 160, 235, 0.34);
+  --aws-text: #E6EDF6;
+  --aws-text-dim: #8B98AC;
+  --aws-text-faint: #6B7789;
+  --aws-accent: #4C9AFF;
+  --aws-accent-soft: rgba(76, 154, 255, 0.15);
+  --aws-danger: #F87171;
+  --aws-danger-soft: rgba(248, 113, 113, 0.14);
+  --aws-warn: #FBBF24;
+  --aws-warn-soft: rgba(251, 191, 36, 0.15);
+  --aws-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+
+  position: relative;
+  display: inline-block;
+  font-family: var(--aws-font);
+  font-size: var(--aws-fs-name);
+  line-height: 1.25;
+  color: var(--aws-text);
+  text-align: left;
+
+  /* Tipografia FECHADA — não herda ajuste de fonte de módulo nenhum.
+     O Hold aplica `font-feature-settings: "cv02","cv03","cv04","cv11","tnum"`
+     no body; o DeFi, o RWA e o Trade aplicam "tnum" em outros pontos; o
+     Dashboard não aplica nada. Essas variantes de caractere mudam a
+     LARGURA dos glifos: o mesmo "Nova carteira global", em Inter 13px/600,
+     media 126,70px no Hold e 126,27px no Dashboard. Zerar aqui é o que faz
+     o componente medir igual em qualquer página. */
+  font-feature-settings: normal;
+  font-variant: normal;
+  font-variant-numeric: normal;
+  font-variant-ligatures: normal;
+  font-kerning: auto;
+  font-stretch: 100%;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* o menu aberto sobe acima do conteúdo da página */
+  z-index: 1;
+}
+.awsel[data-open="true"] { z-index: 40; }
+
+/* Reset dos botões internos. Os módulos têm regras genéricas de
+   button (base.css do Trade, global.css do DeFi…) que vazavam para
+   dentro do componente e mudavam fonte, borda e padding. */
+.awsel button {
+  margin: 0;
+  border: 0;
+  background: none;
+  font-family: var(--aws-font);
+  font-size: var(--aws-fs-name);
+  line-height: 1.25;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.awsel svg { display: block; flex: none; }
+
+/* ============================================================
+   BOTÃO (o que fica na topbar)
+   ============================================================ */
+.awsel .awsel__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 260px;
+  padding: var(--aws-btn-pad-y) var(--aws-btn-pad-x);
+  border: 1px solid var(--aws-border) !important;
+  border-radius: var(--aws-radius-sm);
+  background: var(--aws-surface-2) !important;
+  transition: border-color .14s ease, background .14s ease;
+}
+.awsel .awsel__btn:hover {
+  border-color: var(--aws-border-hi) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+.awsel .awsel__btn:focus-visible {
+  outline: 2px solid var(--aws-accent);
+  outline-offset: 2px;
+}
+
+.awsel__swatch {
+  width: var(--aws-swatch);
+  height: var(--aws-swatch);
+  border-radius: 8px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: #06121F;
+  letter-spacing: 0.2px;
+  overflow: hidden;
+}
+.awsel__swatch--emoji {
+  background: var(--aws-surface-2) !important;
+  border: 1px solid var(--aws-border);
+  font-size: 14px;
+}
+.awsel__swatch--add {
+  background: var(--aws-accent-soft) !important;
+  color: var(--aws-accent);
+}
+
+.awsel__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.awsel__name {
+  font-size: var(--aws-fs-name);
+  font-weight: 600;
+  color: var(--aws-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.awsel__sub {
+  font-size: var(--aws-fs-sub);
+  font-weight: 500;
+  color: var(--aws-text-dim);
+  white-space: nowrap;
+}
+.awsel__chev {
+  color: var(--aws-text-faint);
+  transition: transform .16s ease;
+}
+.awsel[data-open="true"] .awsel__chev { transform: rotate(180deg); }
+
+/* ============================================================
+   MENU
+   ============================================================ */
+.awsel__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: var(--aws-menu-w);
+  padding: var(--aws-menu-pad);
+  border: 1px solid var(--aws-border);
+  border-radius: var(--aws-radius);
+  background: var(--aws-surface);
+  box-shadow: var(--aws-shadow);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+}
+.awsel[data-open="true"] .awsel__menu { display: flex; }
+
+.awsel__head {
+  padding: 7px 10px 5px;
+  font-size: var(--aws-fs-head);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--aws-text-faint);
+}
+
+.awsel__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 288px;   /* ~6 linhas; passando disso, rola por dentro */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.awsel__list::-webkit-scrollbar { width: 6px; }
+.awsel__list::-webkit-scrollbar-thumb {
+  background: var(--aws-border); border-radius: 3px;
+}
+
+/* uma linha = a opção (clique troca) + as ações (renomear/excluir) */
+.awsel__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: var(--aws-radius-sm);
+}
+.awsel__row:hover { background: var(--aws-surface-2); }
+.awsel__row--on { background: var(--aws-accent-soft); }
+.awsel__row--on:hover { background: var(--aws-accent-soft); }
+
+.awsel .awsel__opt {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--aws-gap);
+  padding: var(--aws-row-pad-y) var(--aws-row-pad-x);
+  border-radius: var(--aws-radius-sm);
+}
+.awsel__opt-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.awsel__opt-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.awsel__opt-name {
+  font-size: var(--aws-fs-name);
+  font-weight: 600;
+  color: var(--aws-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.awsel__opt-sub {
+  font-size: var(--aws-fs-sub);
+  font-weight: 500;
+  color: var(--aws-text-dim);
+  white-space: nowrap;
+}
+
+.awsel__badge {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 20px;
+  font-size: var(--aws-fs-badge);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+.awsel__badge--global { color: var(--aws-accent); background: var(--aws-accent-soft); }
+.awsel__badge--local  { color: var(--aws-warn);   background: var(--aws-warn-soft); }
+
+.awsel__check {
+  flex: none;
+  margin-left: auto;
+  color: var(--aws-accent);
+  display: inline-flex;
+}
+
+/* Ações da linha. Aparecem no hover e no foco por teclado — mas
+   ficam sempre no fluxo, com largura reservada, para a linha não
+   mudar de tamanho quando o mouse passa. */
+.awsel__acts {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 6px;
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.awsel .awsel__row:hover .awsel__acts,
+.awsel .awsel__row:focus-within .awsel__acts { opacity: 1; }
+.awsel .awsel__act {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--aws-text-dim);
+  transition: background .12s ease, color .12s ease;
+}
+.awsel .awsel__act:hover { background: rgba(255, 255, 255, 0.09); color: var(--aws-text); }
+.awsel .awsel__act--del:hover { background: var(--aws-danger-soft); color: var(--aws-danger); }
+.awsel .awsel__act[disabled] { opacity: .3; cursor: not-allowed; }
+.awsel .awsel__act[disabled]:hover { background: none; color: var(--aws-text-dim); }
+
+/* ============================================================
+   RODAPÉ — criar carteira. São itens da lista, com a mesma
+   altura, o mesmo padding e o mesmo hover das opções acima.
+   ============================================================ */
+.awsel__foot {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--aws-border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.awsel .awsel__add {
+  display: flex;
+  align-items: center;
+  gap: var(--aws-gap);
+  padding: var(--aws-row-pad-y) var(--aws-row-pad-x);
+  border-radius: var(--aws-radius-sm);
+  transition: background .12s ease;
+}
+.awsel .awsel__add:hover { background: var(--aws-surface-2); }
+.awsel__add-txt {
+  font-size: var(--aws-fs-name);
+  font-weight: 600;
+  color: var(--aws-accent);
+}
+
+/* ============================================================
+   VAZIO (nenhuma carteira no escopo — só acontece em filtro)
+   ============================================================ */
+.awsel__empty {
+  padding: var(--aws-row-pad-y) var(--aws-row-pad-x);
+  font-size: var(--aws-fs-sub);
+  color: var(--aws-text-faint);
+}
+
+/* ============================================================
+   TELA ESTREITA — o botão encolhe, o menu passa a caber na tela.
+   As medidas continuam vindo daqui, iguais em todo módulo.
+   ============================================================ */
+@media (max-width: 720px) {
+  .awsel__meta { display: none; }
+  .awsel__btn { padding: 6px; gap: 6px; }
+  .awsel__menu { width: min(var(--aws-menu-w), calc(100vw - 24px)); }
+}

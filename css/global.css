@@ -1,0 +1,85 @@
+/* ===================================================================
+   ATLAS — Base global
+   =================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--fonte-corpo);
+  font-size: var(--fs-corpo);
+  color: var(--texto);
+  background: var(--fundo);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--fonte-titulo);
+  font-weight: var(--fw-titulo);
+  line-height: 1.15;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; }
+input { font-family: inherit; }
+
+::selection {
+  background: rgba(0, 191, 255, 0.30);
+  color: #fff;
+}
+
+/* Scrollbar sutil */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 191, 255, 0.18);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 191, 255, 0.32); }
+
+/* Utilidades de cor de variação */
+.pos { color: var(--verde); }
+.neg { color: var(--vermelho); }
+
+/* Foco acessível */
+:focus-visible {
+  outline: 2px solid var(--azul-principal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* ===== Transição suave de entrada de página (ATLAS) ===== */
+@keyframes atlasPageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* ATENÇÃO — NÃO devolver transform a esta animação.
+   O <body> com animação que TOCA em transform vira bloco de contenção
+   para position:fixed. Com fill-mode "both" o efeito é PERMANENTE, mesmo
+   com o quadro final em "transform: none". Isso quebrava, na página
+   inteira: o botão do Oráculo (rolava junto), o diálogo de carteira
+   (descia da tela) e a folha dos menus (ficava fora da área visível,
+   por isso o menu não fechava).
+   O body faz só opacidade. O transform continua nos filhos, que não são
+   ancestrais de nada com position:fixed. */
+@keyframes atlasPageFade { from { opacity: 0; } to { opacity: 1; } }
+body { animation: atlasPageFade .5s ease both; }
+.card, .kpis > * { animation: atlasPageIn .55s ease both; }
+.kpis > *:nth-child(2) { animation-delay: .06s; }
+.kpis > *:nth-child(3) { animation-delay: .12s; }
+.kpis > *:nth-child(4) { animation-delay: .18s; }

@@ -1,0 +1,97 @@
+/* ============================================================
+   ATLAS · DeFi — forms.css
+   Inputs, selects, textareas, wizard, segmentos, barra de pesquisa
+   ============================================================ */
+
+.field { margin-bottom: 16px; }
+.field > label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text); margin-bottom: 7px; letter-spacing: 0.2px; }
+.field .hint { font-size: 11.5px; color: var(--text-faint); margin-top: 6px; }
+
+.input, .select, .textarea {
+  width: 100%; padding: 11px 13px; font-size: 14px; color: var(--text-hi);
+  background: var(--surface); border: 1px solid var(--glass-border); border-radius: var(--r-md);
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.input::placeholder, .textarea::placeholder { color: var(--text-faint); }
+.input:focus, .select:focus, .textarea:focus {
+  outline: none; border-color: var(--blue-500); background: var(--surface-hi);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.14);
+}
+.textarea { resize: vertical; min-height: 92px; line-height: 1.6; font-family: var(--font-body); }
+.select {
+  appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237E8AA6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 38px;
+}
+
+.input-money { position: relative; }
+.input-money > span { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-mut); font-family: var(--font-mono); font-size: 14px; }
+.input-money .input { padding-left: 34px; font-family: var(--font-mono); }
+
+/* Segmento de opções (blockchain / protocolo em grade) */
+.opt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.opt {
+  display: flex; align-items: center; gap: 9px; padding: 12px 13px; border-radius: var(--r-md);
+  border: 1px solid var(--glass-border); background: rgba(120,150,220,0.04); cursor: pointer;
+  transition: all var(--fast) var(--ease); font-size: 13.5px; color: var(--text); font-weight: 500;
+}
+.opt:hover { border-color: var(--glass-border-hi); background: rgba(120,150,220,0.08); }
+.opt.selected { border-color: var(--blue-500); background: rgba(59,130,246,0.10); color: var(--text-hi); box-shadow: 0 0 0 1px var(--blue-500) inset; }
+.opt .swatch { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-size: 9px; font-weight: 700; color: #fff; flex: none; }
+
+/* Segmented control (toggle horizontal) */
+.segmented { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface); border: 1px solid var(--glass-border); border-radius: var(--r-md); }
+.segmented button {
+  padding: 7px 14px; font-size: 12.5px; font-weight: 600; color: var(--text-mut); background: transparent;
+  border: none; border-radius: 9px; transition: all var(--fast) var(--ease);
+}
+.segmented button:hover { color: var(--text-hi); }
+.segmented button.active { color: var(--text-hi); background: rgba(59,130,246,0.16); }
+
+/* Wizard (nova pool) */
+.wizard-steps { display: flex; align-items: center; gap: 0; margin-bottom: 24px; }
+.wstep { display: flex; align-items: center; gap: 9px; flex: 1; }
+.wstep .dot {
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text-mut);
+  border: 1px solid var(--glass-border); background: var(--bg-2); transition: all var(--med) var(--ease);
+}
+.wstep .lbl { font-size: 12.5px; color: var(--text-mut); font-weight: 500; }
+.wstep .line { flex: 1; height: 1px; background: var(--glass-border); margin: 0 10px; }
+.wstep.active .dot { color: #fff; background: var(--grad-brand); border-color: transparent; box-shadow: 0 4px 12px -4px var(--blue-glow); }
+.wstep.active .lbl { color: var(--text-hi); }
+.wstep.done .dot { color: var(--ok); border-color: rgba(52,211,153,0.4); background: var(--ok-bg); }
+.wstep.done .lbl { color: var(--text); }
+.wizard-panel { display: none; }
+.wizard-panel.active { display: block; animation: fade var(--med) var(--ease); }
+
+/* Barra de pesquisa */
+.searchbar { position: relative; flex: 1; max-width: 340px; }
+.searchbar svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-mut); pointer-events: none; }
+.searchbar input {
+  width: 100%; padding: 10px 13px 10px 38px; font-size: 13.5px; color: var(--text-hi);
+  background: var(--surface); border: 1px solid var(--glass-border); border-radius: var(--r-md);
+  transition: all var(--fast) var(--ease);
+}
+.searchbar input::placeholder { color: var(--text-faint); }
+.searchbar input:focus { outline: none; border-color: var(--glass-border-hi); background: var(--surface-hi); }
+
+/* Barra de filtros */
+.filterbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+.filter-select { min-width: 150px; }
+.filter-select .select { padding-top: 9px; padding-bottom: 9px; font-size: 13px; }
+
+/* Toggle switch (config) */
+.switch { position: relative; width: 44px; height: 25px; flex: none; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .track { position: absolute; inset: 0; border-radius: 999px; background: rgba(120,150,220,0.18); transition: background var(--fast) var(--ease); cursor: pointer; }
+.switch .track::before { content: ""; position: absolute; left: 3px; top: 3px; width: 19px; height: 19px; border-radius: 50%; background: #fff; transition: transform var(--fast) var(--ease); box-shadow: var(--shadow-1); }
+.switch input:checked + .track { background: var(--blue-500); }
+.switch input:checked + .track::before { transform: translateX(19px); }
+
+/* Linha de config */
+.cfg-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--glass-border); }
+.cfg-row:last-child { border-bottom: none; }
+.cfg-row .cfg-info .t { font-size: 14px; color: var(--text-hi); font-weight: 500; }
+.cfg-row .cfg-info .d { font-size: 12.5px; color: var(--text-mut); margin-top: 2px; }
+.cfg-row .cfg-ctl { flex: none; min-width: 160px; display: flex; justify-content: flex-end; }

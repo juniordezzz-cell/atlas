@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="rwa">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ATLAS · RWA — Macro Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <!-- Seletor de carteira: componente compartilhado (um CSS para todo o ATLAS) -->
+  <link rel="stylesheet" href="../wallets/walletSelector.css">
+  <script src="../core/ui/atlas-shell.js" defer></script>
+</head>
+<body>
+  <div class="app-shell" id="shell"></div>
+  <div id="toasts"></div>
+
+  <!-- Chart.js (CDN — carrega async para não travar em file://) -->
+  <script>
+    (function(){
+      var s=document.createElement("script");
+      s.src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js";
+      s.async=true;
+      s.onload=function(){if(window.Router&&Router.resolve)Router.resolve();};
+      s.onerror=function(){};
+      document.head.appendChild(s);
+    })();
+  </script>
+
+  <!-- Registro central de carteiras (opcional — fallback interno se falhar) -->
+  <script src="../wallets/walletStore.js"></script>
+  <script src="../wallets/walletTypes.js"></script>
+  <script src="../wallets/walletLedger.js"></script>
+  <script src="../wallets/walletManager.js"></script>
+  <script src="../wallets/walletMenus.js"></script>
+  <script src="../wallets/walletDialog.js"></script>
+  <script src="../wallets/walletSelector.js"></script>
+  <script src="../js/atlas-movements.js" onerror="void 0"></script>
+  <!-- Autocomplete de ativos CoinGecko (opcional) -->
+  <!-- Core ATLAS: http + provedores de dados (opcionais — fallback interno) -->
+  <script src="../core/http.js" onerror="void 0"></script>
+  <script src="../core/providers/registry.js" onerror="void 0"></script>
+  <script src="../core/providers/coingecko.js" onerror="void 0"></script>
+  <script src="../js/atlas-assets.js" onerror="void 0"></script>
+
+  <!-- Núcleo do módulo -->
+  <script src="js/store.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="components/ui.js"></script>
+
+  <!-- App unificado (shell + rotas + views) -->
+  <script src="js/rwa-app.js"></script>
+</body>
+</html>

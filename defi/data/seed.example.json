@@ -1,0 +1,2221 @@
+{
+  "meta": {
+    "currency": "USD",
+    "theme": "dark",
+    "lang": "pt-BR",
+    "updatedAt": "2026-07-06T23:46:14.818Z"
+  },
+  "portfolioHistory": [
+    {
+      "date": "2026-05-23",
+      "value": 7199
+    },
+    {
+      "date": "2026-05-24",
+      "value": 7308
+    },
+    {
+      "date": "2026-05-25",
+      "value": 7313
+    },
+    {
+      "date": "2026-05-26",
+      "value": 7284
+    },
+    {
+      "date": "2026-05-27",
+      "value": 7276
+    },
+    {
+      "date": "2026-05-28",
+      "value": 7362
+    },
+    {
+      "date": "2026-05-29",
+      "value": 7348
+    },
+    {
+      "date": "2026-05-30",
+      "value": 7358
+    },
+    {
+      "date": "2026-05-31",
+      "value": 7452
+    },
+    {
+      "date": "2026-06-01",
+      "value": 7464
+    },
+    {
+      "date": "2026-06-02",
+      "value": 7526
+    },
+    {
+      "date": "2026-06-03",
+      "value": 7630
+    },
+    {
+      "date": "2026-06-04",
+      "value": 7755
+    },
+    {
+      "date": "2026-06-05",
+      "value": 7801
+    },
+    {
+      "date": "2026-06-06",
+      "value": 7806
+    },
+    {
+      "date": "2026-06-07",
+      "value": 7840
+    },
+    {
+      "date": "2026-06-08",
+      "value": 7873
+    },
+    {
+      "date": "2026-06-09",
+      "value": 7932
+    },
+    {
+      "date": "2026-06-10",
+      "value": 7929
+    },
+    {
+      "date": "2026-06-11",
+      "value": 8032
+    },
+    {
+      "date": "2026-06-12",
+      "value": 8003
+    },
+    {
+      "date": "2026-06-13",
+      "value": 8101
+    },
+    {
+      "date": "2026-06-14",
+      "value": 8056
+    },
+    {
+      "date": "2026-06-15",
+      "value": 8064
+    },
+    {
+      "date": "2026-06-16",
+      "value": 8097
+    },
+    {
+      "date": "2026-06-17",
+      "value": 8150
+    },
+    {
+      "date": "2026-06-18",
+      "value": 8213
+    },
+    {
+      "date": "2026-06-19",
+      "value": 8289
+    },
+    {
+      "date": "2026-06-20",
+      "value": 8381
+    },
+    {
+      "date": "2026-06-21",
+      "value": 8401
+    },
+    {
+      "date": "2026-06-22",
+      "value": 8516
+    },
+    {
+      "date": "2026-06-23",
+      "value": 8468
+    },
+    {
+      "date": "2026-06-24",
+      "value": 8425
+    },
+    {
+      "date": "2026-06-25",
+      "value": 8453
+    },
+    {
+      "date": "2026-06-26",
+      "value": 8574
+    },
+    {
+      "date": "2026-06-27",
+      "value": 8536
+    },
+    {
+      "date": "2026-06-28",
+      "value": 8640
+    },
+    {
+      "date": "2026-06-29",
+      "value": 8716
+    },
+    {
+      "date": "2026-06-30",
+      "value": 8838
+    },
+    {
+      "date": "2026-07-01",
+      "value": 8860
+    },
+    {
+      "date": "2026-07-02",
+      "value": 8965
+    },
+    {
+      "date": "2026-07-03",
+      "value": 9077
+    },
+    {
+      "date": "2026-07-04",
+      "value": 9149
+    },
+    {
+      "date": "2026-07-05",
+      "value": 9237
+    },
+    {
+      "date": "2026-07-06",
+      "value": 9244
+    }
+  ],
+  "profitHistory": [
+    {
+      "date": "2026-05-23",
+      "value": 73
+    },
+    {
+      "date": "2026-05-24",
+      "value": 77
+    },
+    {
+      "date": "2026-05-25",
+      "value": 81
+    },
+    {
+      "date": "2026-05-26",
+      "value": 84
+    },
+    {
+      "date": "2026-05-27",
+      "value": 87
+    },
+    {
+      "date": "2026-05-28",
+      "value": 89
+    },
+    {
+      "date": "2026-05-29",
+      "value": 91
+    },
+    {
+      "date": "2026-05-30",
+      "value": 94
+    },
+    {
+      "date": "2026-05-31",
+      "value": 96
+    },
+    {
+      "date": "2026-06-01",
+      "value": 94
+    },
+    {
+      "date": "2026-06-02",
+      "value": 98
+    },
+    {
+      "date": "2026-06-03",
+      "value": 95
+    },
+    {
+      "date": "2026-06-04",
+      "value": 100
+    },
+    {
+      "date": "2026-06-05",
+      "value": 106
+    },
+    {
+      "date": "2026-06-06",
+      "value": 110
+    },
+    {
+      "date": "2026-06-07",
+      "value": 108
+    },
+    {
+      "date": "2026-06-08",
+      "value": 113
+    },
+    {
+      "date": "2026-06-09",
+      "value": 119
+    },
+    {
+      "date": "2026-06-10",
+      "value": 120
+    },
+    {
+      "date": "2026-06-11",
+      "value": 126
+    },
+    {
+      "date": "2026-06-12",
+      "value": 133
+    },
+    {
+      "date": "2026-06-13",
+      "value": 142
+    },
+    {
+      "date": "2026-06-14",
+      "value": 142
+    },
+    {
+      "date": "2026-06-15",
+      "value": 144
+    },
+    {
+      "date": "2026-06-16",
+      "value": 145
+    },
+    {
+      "date": "2026-06-17",
+      "value": 153
+    },
+    {
+      "date": "2026-06-18",
+      "value": 156
+    },
+    {
+      "date": "2026-06-19",
+      "value": 153
+    },
+    {
+      "date": "2026-06-20",
+      "value": 159
+    },
+    {
+      "date": "2026-06-21",
+      "value": 167
+    },
+    {
+      "date": "2026-06-22",
+      "value": 168
+    },
+    {
+      "date": "2026-06-23",
+      "value": 168
+    },
+    {
+      "date": "2026-06-24",
+      "value": 176
+    },
+    {
+      "date": "2026-06-25",
+      "value": 182
+    },
+    {
+      "date": "2026-06-26",
+      "value": 180
+    },
+    {
+      "date": "2026-06-27",
+      "value": 186
+    },
+    {
+      "date": "2026-06-28",
+      "value": 189
+    },
+    {
+      "date": "2026-06-29",
+      "value": 194
+    },
+    {
+      "date": "2026-06-30",
+      "value": 206
+    },
+    {
+      "date": "2026-07-01",
+      "value": 205
+    },
+    {
+      "date": "2026-07-02",
+      "value": 200
+    },
+    {
+      "date": "2026-07-03",
+      "value": 197
+    },
+    {
+      "date": "2026-07-04",
+      "value": 195
+    },
+    {
+      "date": "2026-07-05",
+      "value": 207
+    },
+    {
+      "date": "2026-07-06",
+      "value": 211
+    }
+  ],
+  "pools": [
+    {
+      "id": "p1",
+      "base": "ORCA",
+      "quote": "SOL",
+      "protocol": "Kamino",
+      "chain": "Solana",
+      "category": "Liquidez",
+      "capital": 820,
+      "currentValue": 918,
+      "profit": 98,
+      "profitPct": 12,
+      "apr": 38.4,
+      "status": "ativa",
+      "rangeLow": 0.0031,
+      "rangeHigh": 0.0048,
+      "rangePos": 0.62,
+      "openedAt": "2026-05-18",
+      "closedAt": null,
+      "goal": "Aumentar minha posição em SOL aproveitando taxas do par ORCA/SOL. Aceito ficar alguns dias fora do range se o SOL subir forte.",
+      "notes": [
+        {
+          "date": "2026-05-18",
+          "text": "Abertura da posição. Range definido com folga pra cima esperando continuidade do SOL."
+        },
+        {
+          "date": "2026-06-02",
+          "text": "Taxas acumulando bem. Mantendo — tese intacta."
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-05-18",
+          "title": "Abertura",
+          "desc": "Capital inicial US$ 820 aportado no par ORCA/SOL.",
+          "type": "open"
+        },
+        {
+          "date": "2026-05-29",
+          "title": "Primeiro rebalanceamento",
+          "desc": "Range reajustado após alta do SOL.",
+          "type": "violet"
+        },
+        {
+          "date": "2026-06-11",
+          "title": "Coleta de taxas",
+          "desc": "US$ 34 em taxas realizadas e reinvestidas.",
+          "type": ""
+        }
+      ],
+      "movements": [
+        {
+          "date": "2026-05-18",
+          "type": "in",
+          "label": "Aporte inicial",
+          "amount": 820
+        },
+        {
+          "date": "2026-05-29",
+          "type": "re",
+          "label": "Rebalanceamento",
+          "amount": 0
+        },
+        {
+          "date": "2026-06-11",
+          "type": "in",
+          "label": "Taxas reinvestidas",
+          "amount": 34
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-05-28",
+          "value": 821
+        },
+        {
+          "date": "2026-05-29",
+          "value": 830
+        },
+        {
+          "date": "2026-05-30",
+          "value": 832
+        },
+        {
+          "date": "2026-05-31",
+          "value": 840
+        },
+        {
+          "date": "2026-06-01",
+          "value": 843
+        },
+        {
+          "date": "2026-06-02",
+          "value": 843
+        },
+        {
+          "date": "2026-06-03",
+          "value": 838
+        },
+        {
+          "date": "2026-06-04",
+          "value": 834
+        },
+        {
+          "date": "2026-06-05",
+          "value": 845
+        },
+        {
+          "date": "2026-06-06",
+          "value": 846
+        },
+        {
+          "date": "2026-06-07",
+          "value": 842
+        },
+        {
+          "date": "2026-06-08",
+          "value": 848
+        },
+        {
+          "date": "2026-06-09",
+          "value": 851
+        },
+        {
+          "date": "2026-06-10",
+          "value": 859
+        },
+        {
+          "date": "2026-06-11",
+          "value": 855
+        },
+        {
+          "date": "2026-06-12",
+          "value": 860
+        },
+        {
+          "date": "2026-06-13",
+          "value": 867
+        },
+        {
+          "date": "2026-06-14",
+          "value": 868
+        },
+        {
+          "date": "2026-06-15",
+          "value": 866
+        },
+        {
+          "date": "2026-06-16",
+          "value": 865
+        },
+        {
+          "date": "2026-06-17",
+          "value": 862
+        },
+        {
+          "date": "2026-06-18",
+          "value": 868
+        },
+        {
+          "date": "2026-06-19",
+          "value": 877
+        },
+        {
+          "date": "2026-06-20",
+          "value": 885
+        },
+        {
+          "date": "2026-06-21",
+          "value": 887
+        },
+        {
+          "date": "2026-06-22",
+          "value": 896
+        },
+        {
+          "date": "2026-06-23",
+          "value": 901
+        },
+        {
+          "date": "2026-06-24",
+          "value": 912
+        },
+        {
+          "date": "2026-06-25",
+          "value": 919
+        },
+        {
+          "date": "2026-06-26",
+          "value": 915
+        },
+        {
+          "date": "2026-06-27",
+          "value": 919
+        },
+        {
+          "date": "2026-06-28",
+          "value": 929
+        },
+        {
+          "date": "2026-06-29",
+          "value": 936
+        },
+        {
+          "date": "2026-06-30",
+          "value": 944
+        },
+        {
+          "date": "2026-07-01",
+          "value": 951
+        },
+        {
+          "date": "2026-07-02",
+          "value": 959
+        },
+        {
+          "date": "2026-07-03",
+          "value": 970
+        },
+        {
+          "date": "2026-07-04",
+          "value": 977
+        },
+        {
+          "date": "2026-07-05",
+          "value": 985
+        },
+        {
+          "date": "2026-07-06",
+          "value": 987
+        }
+      ]
+    },
+    {
+      "id": "p2",
+      "base": "ETH",
+      "quote": "USDC",
+      "protocol": "Aerodrome",
+      "chain": "Base",
+      "category": "Liquidez",
+      "capital": 1500,
+      "currentValue": 1642,
+      "profit": 142,
+      "profitPct": 9.5,
+      "apr": 24.1,
+      "status": "ativa",
+      "rangeLow": 2900,
+      "rangeHigh": 3600,
+      "rangePos": 0.48,
+      "openedAt": "2026-04-30",
+      "closedAt": null,
+      "goal": "Renda estável em ETH/USDC. Quero manter exposição a ETH e capturar taxas em par de alto volume.",
+      "notes": [
+        {
+          "date": "2026-04-30",
+          "text": "Par de alta liquidez na Base. Foco em consistência de taxas."
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-04-30",
+          "title": "Abertura",
+          "desc": "US$ 1.500 no par ETH/USDC na Aerodrome.",
+          "type": "open"
+        },
+        {
+          "date": "2026-05-22",
+          "title": "Coleta de taxas",
+          "desc": "US$ 61 realizados.",
+          "type": ""
+        }
+      ],
+      "movements": [
+        {
+          "date": "2026-04-30",
+          "type": "in",
+          "label": "Aporte inicial",
+          "amount": 1500
+        },
+        {
+          "date": "2026-05-22",
+          "type": "in",
+          "label": "Taxas realizadas",
+          "amount": 61
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-05-18",
+          "value": 1505
+        },
+        {
+          "date": "2026-05-19",
+          "value": 1502
+        },
+        {
+          "date": "2026-05-20",
+          "value": 1510
+        },
+        {
+          "date": "2026-05-21",
+          "value": 1518
+        },
+        {
+          "date": "2026-05-22",
+          "value": 1517
+        },
+        {
+          "date": "2026-05-23",
+          "value": 1524
+        },
+        {
+          "date": "2026-05-24",
+          "value": 1518
+        },
+        {
+          "date": "2026-05-25",
+          "value": 1524
+        },
+        {
+          "date": "2026-05-26",
+          "value": 1520
+        },
+        {
+          "date": "2026-05-27",
+          "value": 1520
+        },
+        {
+          "date": "2026-05-28",
+          "value": 1522
+        },
+        {
+          "date": "2026-05-29",
+          "value": 1533
+        },
+        {
+          "date": "2026-05-30",
+          "value": 1544
+        },
+        {
+          "date": "2026-05-31",
+          "value": 1543
+        },
+        {
+          "date": "2026-06-01",
+          "value": 1556
+        },
+        {
+          "date": "2026-06-02",
+          "value": 1568
+        },
+        {
+          "date": "2026-06-03",
+          "value": 1573
+        },
+        {
+          "date": "2026-06-04",
+          "value": 1585
+        },
+        {
+          "date": "2026-06-05",
+          "value": 1599
+        },
+        {
+          "date": "2026-06-06",
+          "value": 1607
+        },
+        {
+          "date": "2026-06-07",
+          "value": 1601
+        },
+        {
+          "date": "2026-06-08",
+          "value": 1602
+        },
+        {
+          "date": "2026-06-09",
+          "value": 1619
+        },
+        {
+          "date": "2026-06-10",
+          "value": 1613
+        },
+        {
+          "date": "2026-06-11",
+          "value": 1624
+        },
+        {
+          "date": "2026-06-12",
+          "value": 1640
+        },
+        {
+          "date": "2026-06-13",
+          "value": 1638
+        },
+        {
+          "date": "2026-06-14",
+          "value": 1639
+        },
+        {
+          "date": "2026-06-15",
+          "value": 1632
+        },
+        {
+          "date": "2026-06-16",
+          "value": 1647
+        },
+        {
+          "date": "2026-06-17",
+          "value": 1658
+        },
+        {
+          "date": "2026-06-18",
+          "value": 1666
+        },
+        {
+          "date": "2026-06-19",
+          "value": 1672
+        },
+        {
+          "date": "2026-06-20",
+          "value": 1668
+        },
+        {
+          "date": "2026-06-21",
+          "value": 1662
+        },
+        {
+          "date": "2026-06-22",
+          "value": 1670
+        },
+        {
+          "date": "2026-06-23",
+          "value": 1665
+        },
+        {
+          "date": "2026-06-24",
+          "value": 1682
+        },
+        {
+          "date": "2026-06-25",
+          "value": 1685
+        },
+        {
+          "date": "2026-06-26",
+          "value": 1678
+        },
+        {
+          "date": "2026-06-27",
+          "value": 1683
+        },
+        {
+          "date": "2026-06-28",
+          "value": 1688
+        },
+        {
+          "date": "2026-06-29",
+          "value": 1688
+        },
+        {
+          "date": "2026-06-30",
+          "value": 1686
+        },
+        {
+          "date": "2026-07-01",
+          "value": 1684
+        },
+        {
+          "date": "2026-07-02",
+          "value": 1684
+        },
+        {
+          "date": "2026-07-03",
+          "value": 1691
+        },
+        {
+          "date": "2026-07-04",
+          "value": 1682
+        },
+        {
+          "date": "2026-07-05",
+          "value": 1689
+        },
+        {
+          "date": "2026-07-06",
+          "value": 1705
+        }
+      ]
+    },
+    {
+      "id": "p3",
+      "base": "SOL",
+      "quote": "USDC",
+      "protocol": "Meteora",
+      "chain": "Solana",
+      "category": "Liquidez",
+      "capital": 640,
+      "currentValue": 611,
+      "profit": -29,
+      "profitPct": -4.5,
+      "apr": 52,
+      "status": "range",
+      "rangeLow": 132,
+      "rangeHigh": 158,
+      "rangePos": 1,
+      "openedAt": "2026-06-08",
+      "closedAt": null,
+      "goal": "Posição agressiva de taxas altas. Aceito volatilidade. Reavaliar se ficar muito tempo fora do range.",
+      "notes": [
+        {
+          "date": "2026-06-08",
+          "text": "Entrada agressiva buscando APR alto na Meteora."
+        },
+        {
+          "date": "2026-06-20",
+          "text": "SOL rompeu o topo do range — fora do range. Monitorando pra decidir remontagem."
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-06-08",
+          "title": "Abertura",
+          "desc": "US$ 640 no par SOL/USDC.",
+          "type": "open"
+        },
+        {
+          "date": "2026-06-20",
+          "title": "Saiu do range",
+          "desc": "Preço do SOL acima do teto do range.",
+          "type": "warn"
+        }
+      ],
+      "movements": [
+        {
+          "date": "2026-06-08",
+          "type": "in",
+          "label": "Aporte inicial",
+          "amount": 640
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-06-09",
+          "value": 636
+        },
+        {
+          "date": "2026-06-10",
+          "value": 630
+        },
+        {
+          "date": "2026-06-11",
+          "value": 637
+        },
+        {
+          "date": "2026-06-12",
+          "value": 634
+        },
+        {
+          "date": "2026-06-13",
+          "value": 636
+        },
+        {
+          "date": "2026-06-14",
+          "value": 630
+        },
+        {
+          "date": "2026-06-15",
+          "value": 637
+        },
+        {
+          "date": "2026-06-16",
+          "value": 635
+        },
+        {
+          "date": "2026-06-17",
+          "value": 632
+        },
+        {
+          "date": "2026-06-18",
+          "value": 631
+        },
+        {
+          "date": "2026-06-19",
+          "value": 638
+        },
+        {
+          "date": "2026-06-20",
+          "value": 641
+        },
+        {
+          "date": "2026-06-21",
+          "value": 637
+        },
+        {
+          "date": "2026-06-22",
+          "value": 639
+        },
+        {
+          "date": "2026-06-23",
+          "value": 641
+        },
+        {
+          "date": "2026-06-24",
+          "value": 632
+        },
+        {
+          "date": "2026-06-25",
+          "value": 638
+        },
+        {
+          "date": "2026-06-26",
+          "value": 641
+        },
+        {
+          "date": "2026-06-27",
+          "value": 647
+        },
+        {
+          "date": "2026-06-28",
+          "value": 640
+        },
+        {
+          "date": "2026-06-29",
+          "value": 634
+        },
+        {
+          "date": "2026-06-30",
+          "value": 630
+        },
+        {
+          "date": "2026-07-01",
+          "value": 635
+        },
+        {
+          "date": "2026-07-02",
+          "value": 636
+        },
+        {
+          "date": "2026-07-03",
+          "value": 640
+        },
+        {
+          "date": "2026-07-04",
+          "value": 637
+        },
+        {
+          "date": "2026-07-05",
+          "value": 632
+        },
+        {
+          "date": "2026-07-06",
+          "value": 635
+        }
+      ]
+    },
+    {
+      "id": "p4",
+      "base": "JUP",
+      "quote": "SOL",
+      "protocol": "Orca",
+      "chain": "Solana",
+      "category": "Yield",
+      "capital": 300,
+      "currentValue": 300,
+      "profit": 0,
+      "profitPct": 0,
+      "apr": 0,
+      "status": "analise",
+      "rangeLow": 0,
+      "rangeHigh": 0,
+      "rangePos": 0.5,
+      "openedAt": "2026-06-28",
+      "closedAt": null,
+      "goal": "Em análise — avaliando abrir posição em JUP/SOL. Ainda montando a tese.",
+      "notes": [
+        {
+          "date": "2026-06-28",
+          "text": "Estudando liquidez e volume do par antes de aportar."
+        }
+      ],
+      "timeline": [
+        {
+          "date": "2026-06-28",
+          "title": "Em análise",
+          "desc": "Tese em construção, sem aporte ainda.",
+          "type": "violet"
+        }
+      ],
+      "movements": [],
+      "history": [
+        {
+          "date": "2026-06-29",
+          "value": 300
+        },
+        {
+          "date": "2026-06-30",
+          "value": 300
+        },
+        {
+          "date": "2026-07-01",
+          "value": 299
+        },
+        {
+          "date": "2026-07-02",
+          "value": 299
+        },
+        {
+          "date": "2026-07-03",
+          "value": 299
+        },
+        {
+          "date": "2026-07-04",
+          "value": 299
+        },
+        {
+          "date": "2026-07-05",
+          "value": 299
+        },
+        {
+          "date": "2026-07-06",
+          "value": 299
+        }
+      ]
+    }
+  ],
+  "closed": [
+    {
+      "id": "c1",
+      "base": "cbETH",
+      "quote": "ETH",
+      "protocol": "Aave",
+      "chain": "Base",
+      "category": "Lending",
+      "capital": 1200,
+      "finalValue": 1356,
+      "profit": 156,
+      "profitPct": 13,
+      "apr": 19.2,
+      "status": "encerrada",
+      "openedAt": "2026-02-10",
+      "closedAt": "2026-05-05",
+      "reason": "Realização da tese — objetivo de rendimento atingido.",
+      "history": [
+        {
+          "date": "2026-04-14",
+          "value": 1202
+        },
+        {
+          "date": "2026-04-15",
+          "value": 1202
+        },
+        {
+          "date": "2026-04-16",
+          "value": 1210
+        },
+        {
+          "date": "2026-04-17",
+          "value": 1211
+        },
+        {
+          "date": "2026-04-18",
+          "value": 1211
+        },
+        {
+          "date": "2026-04-19",
+          "value": 1214
+        },
+        {
+          "date": "2026-04-20",
+          "value": 1217
+        },
+        {
+          "date": "2026-04-21",
+          "value": 1222
+        },
+        {
+          "date": "2026-04-22",
+          "value": 1222
+        },
+        {
+          "date": "2026-04-23",
+          "value": 1222
+        },
+        {
+          "date": "2026-04-24",
+          "value": 1229
+        },
+        {
+          "date": "2026-04-25",
+          "value": 1235
+        },
+        {
+          "date": "2026-04-26",
+          "value": 1233
+        },
+        {
+          "date": "2026-04-27",
+          "value": 1230
+        },
+        {
+          "date": "2026-04-28",
+          "value": 1228
+        },
+        {
+          "date": "2026-04-29",
+          "value": 1230
+        },
+        {
+          "date": "2026-04-30",
+          "value": 1226
+        },
+        {
+          "date": "2026-05-01",
+          "value": 1222
+        },
+        {
+          "date": "2026-05-02",
+          "value": 1227
+        },
+        {
+          "date": "2026-05-03",
+          "value": 1222
+        },
+        {
+          "date": "2026-05-04",
+          "value": 1226
+        },
+        {
+          "date": "2026-05-05",
+          "value": 1224
+        },
+        {
+          "date": "2026-05-06",
+          "value": 1226
+        },
+        {
+          "date": "2026-05-07",
+          "value": 1228
+        },
+        {
+          "date": "2026-05-08",
+          "value": 1229
+        },
+        {
+          "date": "2026-05-09",
+          "value": 1234
+        },
+        {
+          "date": "2026-05-10",
+          "value": 1230
+        },
+        {
+          "date": "2026-05-11",
+          "value": 1236
+        },
+        {
+          "date": "2026-05-12",
+          "value": 1234
+        },
+        {
+          "date": "2026-05-13",
+          "value": 1240
+        },
+        {
+          "date": "2026-05-14",
+          "value": 1244
+        },
+        {
+          "date": "2026-05-15",
+          "value": 1246
+        },
+        {
+          "date": "2026-05-16",
+          "value": 1253
+        },
+        {
+          "date": "2026-05-17",
+          "value": 1256
+        },
+        {
+          "date": "2026-05-18",
+          "value": 1262
+        },
+        {
+          "date": "2026-05-19",
+          "value": 1270
+        },
+        {
+          "date": "2026-05-20",
+          "value": 1276
+        },
+        {
+          "date": "2026-05-21",
+          "value": 1280
+        },
+        {
+          "date": "2026-05-22",
+          "value": 1280
+        },
+        {
+          "date": "2026-05-23",
+          "value": 1288
+        },
+        {
+          "date": "2026-05-24",
+          "value": 1289
+        },
+        {
+          "date": "2026-05-25",
+          "value": 1290
+        },
+        {
+          "date": "2026-05-26",
+          "value": 1288
+        },
+        {
+          "date": "2026-05-27",
+          "value": 1291
+        },
+        {
+          "date": "2026-05-28",
+          "value": 1296
+        },
+        {
+          "date": "2026-05-29",
+          "value": 1293
+        },
+        {
+          "date": "2026-05-30",
+          "value": 1296
+        },
+        {
+          "date": "2026-05-31",
+          "value": 1299
+        },
+        {
+          "date": "2026-06-01",
+          "value": 1295
+        },
+        {
+          "date": "2026-06-02",
+          "value": 1300
+        },
+        {
+          "date": "2026-06-03",
+          "value": 1302
+        },
+        {
+          "date": "2026-06-04",
+          "value": 1304
+        },
+        {
+          "date": "2026-06-05",
+          "value": 1305
+        },
+        {
+          "date": "2026-06-06",
+          "value": 1311
+        },
+        {
+          "date": "2026-06-07",
+          "value": 1318
+        },
+        {
+          "date": "2026-06-08",
+          "value": 1315
+        },
+        {
+          "date": "2026-06-09",
+          "value": 1323
+        },
+        {
+          "date": "2026-06-10",
+          "value": 1325
+        },
+        {
+          "date": "2026-06-11",
+          "value": 1325
+        },
+        {
+          "date": "2026-06-12",
+          "value": 1324
+        },
+        {
+          "date": "2026-06-13",
+          "value": 1331
+        },
+        {
+          "date": "2026-06-14",
+          "value": 1332
+        },
+        {
+          "date": "2026-06-15",
+          "value": 1331
+        },
+        {
+          "date": "2026-06-16",
+          "value": 1331
+        },
+        {
+          "date": "2026-06-17",
+          "value": 1337
+        },
+        {
+          "date": "2026-06-18",
+          "value": 1338
+        },
+        {
+          "date": "2026-06-19",
+          "value": 1338
+        },
+        {
+          "date": "2026-06-20",
+          "value": 1345
+        },
+        {
+          "date": "2026-06-21",
+          "value": 1340
+        },
+        {
+          "date": "2026-06-22",
+          "value": 1341
+        },
+        {
+          "date": "2026-06-23",
+          "value": 1349
+        },
+        {
+          "date": "2026-06-24",
+          "value": 1351
+        },
+        {
+          "date": "2026-06-25",
+          "value": 1358
+        },
+        {
+          "date": "2026-06-26",
+          "value": 1362
+        },
+        {
+          "date": "2026-06-27",
+          "value": 1362
+        },
+        {
+          "date": "2026-06-28",
+          "value": 1357
+        },
+        {
+          "date": "2026-06-29",
+          "value": 1355
+        },
+        {
+          "date": "2026-06-30",
+          "value": 1349
+        },
+        {
+          "date": "2026-07-01",
+          "value": 1351
+        },
+        {
+          "date": "2026-07-02",
+          "value": 1348
+        },
+        {
+          "date": "2026-07-03",
+          "value": 1354
+        },
+        {
+          "date": "2026-07-04",
+          "value": 1356
+        },
+        {
+          "date": "2026-07-05",
+          "value": 1364
+        },
+        {
+          "date": "2026-07-06",
+          "value": 1360
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "base": "RAY",
+      "quote": "USDC",
+      "protocol": "Raydium",
+      "chain": "Solana",
+      "category": "Liquidez",
+      "capital": 500,
+      "finalValue": 442,
+      "profit": -58,
+      "profitPct": -11.6,
+      "apr": 61,
+      "status": "encerrada",
+      "openedAt": "2026-03-22",
+      "closedAt": "2026-04-18",
+      "reason": "Invalidação da tese — rompimento de suporte, saída pra preservar capital.",
+      "history": [
+        {
+          "date": "2026-06-10",
+          "value": 496
+        },
+        {
+          "date": "2026-06-11",
+          "value": 487
+        },
+        {
+          "date": "2026-06-12",
+          "value": 488
+        },
+        {
+          "date": "2026-06-13",
+          "value": 488
+        },
+        {
+          "date": "2026-06-14",
+          "value": 488
+        },
+        {
+          "date": "2026-06-15",
+          "value": 483
+        },
+        {
+          "date": "2026-06-16",
+          "value": 481
+        },
+        {
+          "date": "2026-06-17",
+          "value": 476
+        },
+        {
+          "date": "2026-06-18",
+          "value": 469
+        },
+        {
+          "date": "2026-06-19",
+          "value": 467
+        },
+        {
+          "date": "2026-06-20",
+          "value": 465
+        },
+        {
+          "date": "2026-06-21",
+          "value": 467
+        },
+        {
+          "date": "2026-06-22",
+          "value": 471
+        },
+        {
+          "date": "2026-06-23",
+          "value": 473
+        },
+        {
+          "date": "2026-06-24",
+          "value": 470
+        },
+        {
+          "date": "2026-06-25",
+          "value": 465
+        },
+        {
+          "date": "2026-06-26",
+          "value": 461
+        },
+        {
+          "date": "2026-06-27",
+          "value": 461
+        },
+        {
+          "date": "2026-06-28",
+          "value": 452
+        },
+        {
+          "date": "2026-06-29",
+          "value": 454
+        },
+        {
+          "date": "2026-06-30",
+          "value": 455
+        },
+        {
+          "date": "2026-07-01",
+          "value": 453
+        },
+        {
+          "date": "2026-07-02",
+          "value": 449
+        },
+        {
+          "date": "2026-07-03",
+          "value": 443
+        },
+        {
+          "date": "2026-07-04",
+          "value": 436
+        },
+        {
+          "date": "2026-07-05",
+          "value": 436
+        },
+        {
+          "date": "2026-07-06",
+          "value": 434
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "base": "mSOL",
+      "quote": "SOL",
+      "protocol": "Marinade",
+      "chain": "Solana",
+      "category": "Staking",
+      "capital": 900,
+      "finalValue": 1017,
+      "profit": 117,
+      "profitPct": 13,
+      "apr": 8.4,
+      "status": "encerrada",
+      "openedAt": "2026-01-15",
+      "closedAt": "2026-06-01",
+      "reason": "Realização da tese — rotação de capital para nova oportunidade.",
+      "history": [
+        {
+          "date": "2026-02-20",
+          "value": 900
+        },
+        {
+          "date": "2026-02-21",
+          "value": 903
+        },
+        {
+          "date": "2026-02-22",
+          "value": 902
+        },
+        {
+          "date": "2026-02-23",
+          "value": 900
+        },
+        {
+          "date": "2026-02-24",
+          "value": 901
+        },
+        {
+          "date": "2026-02-25",
+          "value": 901
+        },
+        {
+          "date": "2026-02-26",
+          "value": 903
+        },
+        {
+          "date": "2026-02-27",
+          "value": 900
+        },
+        {
+          "date": "2026-02-28",
+          "value": 903
+        },
+        {
+          "date": "2026-03-01",
+          "value": 903
+        },
+        {
+          "date": "2026-03-02",
+          "value": 905
+        },
+        {
+          "date": "2026-03-03",
+          "value": 908
+        },
+        {
+          "date": "2026-03-04",
+          "value": 906
+        },
+        {
+          "date": "2026-03-05",
+          "value": 910
+        },
+        {
+          "date": "2026-03-06",
+          "value": 913
+        },
+        {
+          "date": "2026-03-07",
+          "value": 916
+        },
+        {
+          "date": "2026-03-08",
+          "value": 915
+        },
+        {
+          "date": "2026-03-09",
+          "value": 915
+        },
+        {
+          "date": "2026-03-10",
+          "value": 915
+        },
+        {
+          "date": "2026-03-11",
+          "value": 918
+        },
+        {
+          "date": "2026-03-12",
+          "value": 920
+        },
+        {
+          "date": "2026-03-13",
+          "value": 924
+        },
+        {
+          "date": "2026-03-14",
+          "value": 924
+        },
+        {
+          "date": "2026-03-15",
+          "value": 924
+        },
+        {
+          "date": "2026-03-16",
+          "value": 927
+        },
+        {
+          "date": "2026-03-17",
+          "value": 925
+        },
+        {
+          "date": "2026-03-18",
+          "value": 928
+        },
+        {
+          "date": "2026-03-19",
+          "value": 929
+        },
+        {
+          "date": "2026-03-20",
+          "value": 931
+        },
+        {
+          "date": "2026-03-21",
+          "value": 931
+        },
+        {
+          "date": "2026-03-22",
+          "value": 932
+        },
+        {
+          "date": "2026-03-23",
+          "value": 930
+        },
+        {
+          "date": "2026-03-24",
+          "value": 931
+        },
+        {
+          "date": "2026-03-25",
+          "value": 931
+        },
+        {
+          "date": "2026-03-26",
+          "value": 929
+        },
+        {
+          "date": "2026-03-27",
+          "value": 930
+        },
+        {
+          "date": "2026-03-28",
+          "value": 929
+        },
+        {
+          "date": "2026-03-29",
+          "value": 927
+        },
+        {
+          "date": "2026-03-30",
+          "value": 931
+        },
+        {
+          "date": "2026-03-31",
+          "value": 932
+        },
+        {
+          "date": "2026-04-01",
+          "value": 932
+        },
+        {
+          "date": "2026-04-02",
+          "value": 931
+        },
+        {
+          "date": "2026-04-03",
+          "value": 935
+        },
+        {
+          "date": "2026-04-04",
+          "value": 934
+        },
+        {
+          "date": "2026-04-05",
+          "value": 936
+        },
+        {
+          "date": "2026-04-06",
+          "value": 938
+        },
+        {
+          "date": "2026-04-07",
+          "value": 938
+        },
+        {
+          "date": "2026-04-08",
+          "value": 941
+        },
+        {
+          "date": "2026-04-09",
+          "value": 939
+        },
+        {
+          "date": "2026-04-10",
+          "value": 938
+        },
+        {
+          "date": "2026-04-11",
+          "value": 935
+        },
+        {
+          "date": "2026-04-12",
+          "value": 938
+        },
+        {
+          "date": "2026-04-13",
+          "value": 941
+        },
+        {
+          "date": "2026-04-14",
+          "value": 943
+        },
+        {
+          "date": "2026-04-15",
+          "value": 940
+        },
+        {
+          "date": "2026-04-16",
+          "value": 938
+        },
+        {
+          "date": "2026-04-17",
+          "value": 937
+        },
+        {
+          "date": "2026-04-18",
+          "value": 936
+        },
+        {
+          "date": "2026-04-19",
+          "value": 940
+        },
+        {
+          "date": "2026-04-20",
+          "value": 938
+        },
+        {
+          "date": "2026-04-21",
+          "value": 936
+        },
+        {
+          "date": "2026-04-22",
+          "value": 935
+        },
+        {
+          "date": "2026-04-23",
+          "value": 936
+        },
+        {
+          "date": "2026-04-24",
+          "value": 938
+        },
+        {
+          "date": "2026-04-25",
+          "value": 936
+        },
+        {
+          "date": "2026-04-26",
+          "value": 935
+        },
+        {
+          "date": "2026-04-27",
+          "value": 936
+        },
+        {
+          "date": "2026-04-28",
+          "value": 934
+        },
+        {
+          "date": "2026-04-29",
+          "value": 935
+        },
+        {
+          "date": "2026-04-30",
+          "value": 933
+        },
+        {
+          "date": "2026-05-01",
+          "value": 934
+        },
+        {
+          "date": "2026-05-02",
+          "value": 936
+        },
+        {
+          "date": "2026-05-03",
+          "value": 938
+        },
+        {
+          "date": "2026-05-04",
+          "value": 942
+        },
+        {
+          "date": "2026-05-05",
+          "value": 942
+        },
+        {
+          "date": "2026-05-06",
+          "value": 945
+        },
+        {
+          "date": "2026-05-07",
+          "value": 947
+        },
+        {
+          "date": "2026-05-08",
+          "value": 949
+        },
+        {
+          "date": "2026-05-09",
+          "value": 947
+        },
+        {
+          "date": "2026-05-10",
+          "value": 945
+        },
+        {
+          "date": "2026-05-11",
+          "value": 945
+        },
+        {
+          "date": "2026-05-12",
+          "value": 946
+        },
+        {
+          "date": "2026-05-13",
+          "value": 948
+        },
+        {
+          "date": "2026-05-14",
+          "value": 950
+        },
+        {
+          "date": "2026-05-15",
+          "value": 952
+        },
+        {
+          "date": "2026-05-16",
+          "value": 956
+        },
+        {
+          "date": "2026-05-17",
+          "value": 960
+        },
+        {
+          "date": "2026-05-18",
+          "value": 959
+        },
+        {
+          "date": "2026-05-19",
+          "value": 958
+        },
+        {
+          "date": "2026-05-20",
+          "value": 960
+        },
+        {
+          "date": "2026-05-21",
+          "value": 959
+        },
+        {
+          "date": "2026-05-22",
+          "value": 962
+        },
+        {
+          "date": "2026-05-23",
+          "value": 962
+        },
+        {
+          "date": "2026-05-24",
+          "value": 962
+        },
+        {
+          "date": "2026-05-25",
+          "value": 961
+        },
+        {
+          "date": "2026-05-26",
+          "value": 961
+        },
+        {
+          "date": "2026-05-27",
+          "value": 964
+        },
+        {
+          "date": "2026-05-28",
+          "value": 968
+        },
+        {
+          "date": "2026-05-29",
+          "value": 966
+        },
+        {
+          "date": "2026-05-30",
+          "value": 965
+        },
+        {
+          "date": "2026-05-31",
+          "value": 965
+        },
+        {
+          "date": "2026-06-01",
+          "value": 968
+        },
+        {
+          "date": "2026-06-02",
+          "value": 972
+        },
+        {
+          "date": "2026-06-03",
+          "value": 975
+        },
+        {
+          "date": "2026-06-04",
+          "value": 974
+        },
+        {
+          "date": "2026-06-05",
+          "value": 974
+        },
+        {
+          "date": "2026-06-06",
+          "value": 976
+        },
+        {
+          "date": "2026-06-07",
+          "value": 977
+        },
+        {
+          "date": "2026-06-08",
+          "value": 980
+        },
+        {
+          "date": "2026-06-09",
+          "value": 981
+        },
+        {
+          "date": "2026-06-10",
+          "value": 981
+        },
+        {
+          "date": "2026-06-11",
+          "value": 984
+        },
+        {
+          "date": "2026-06-12",
+          "value": 987
+        },
+        {
+          "date": "2026-06-13",
+          "value": 990
+        },
+        {
+          "date": "2026-06-14",
+          "value": 992
+        },
+        {
+          "date": "2026-06-15",
+          "value": 995
+        },
+        {
+          "date": "2026-06-16",
+          "value": 996
+        },
+        {
+          "date": "2026-06-17",
+          "value": 994
+        },
+        {
+          "date": "2026-06-18",
+          "value": 997
+        },
+        {
+          "date": "2026-06-19",
+          "value": 1001
+        },
+        {
+          "date": "2026-06-20",
+          "value": 999
+        },
+        {
+          "date": "2026-06-21",
+          "value": 1000
+        },
+        {
+          "date": "2026-06-22",
+          "value": 1000
+        },
+        {
+          "date": "2026-06-23",
+          "value": 1000
+        },
+        {
+          "date": "2026-06-24",
+          "value": 999
+        },
+        {
+          "date": "2026-06-25",
+          "value": 999
+        },
+        {
+          "date": "2026-06-26",
+          "value": 998
+        },
+        {
+          "date": "2026-06-27",
+          "value": 997
+        },
+        {
+          "date": "2026-06-28",
+          "value": 996
+        },
+        {
+          "date": "2026-06-29",
+          "value": 994
+        },
+        {
+          "date": "2026-06-30",
+          "value": 993
+        },
+        {
+          "date": "2026-07-01",
+          "value": 992
+        },
+        {
+          "date": "2026-07-02",
+          "value": 993
+        },
+        {
+          "date": "2026-07-03",
+          "value": 993
+        },
+        {
+          "date": "2026-07-04",
+          "value": 991
+        },
+        {
+          "date": "2026-07-05",
+          "value": 993
+        },
+        {
+          "date": "2026-07-06",
+          "value": 992
+        }
+      ]
+    }
+  ],
+  "staking": [
+    {
+      "id": "s1",
+      "token": "mSOL",
+      "protocol": "Marinade",
+      "chain": "Solana",
+      "amount": 4.2,
+      "apr": 8.1,
+      "rewards": 0.34,
+      "value": 612,
+      "status": "ativa"
+    },
+    {
+      "id": "s2",
+      "token": "JitoSOL",
+      "protocol": "Jito",
+      "chain": "Solana",
+      "amount": 3.1,
+      "apr": 8.9,
+      "rewards": 0.28,
+      "value": 458,
+      "status": "ativa"
+    },
+    {
+      "id": "s3",
+      "token": "ETH",
+      "protocol": "Pendle",
+      "chain": "Ethereum",
+      "amount": 0.22,
+      "apr": 6.4,
+      "rewards": 0.004,
+      "value": 720,
+      "status": "ativa"
+    }
+  ],
+  "lending": [
+    {
+      "id": "l1",
+      "token": "USDC",
+      "protocol": "Aave",
+      "chain": "Base",
+      "supplied": 2000,
+      "apy": 7.2,
+      "earned": 41,
+      "value": 2041,
+      "status": "ativa",
+      "health": 2.8
+    },
+    {
+      "id": "l2",
+      "token": "ETH",
+      "protocol": "Aave",
+      "chain": "Arbitrum",
+      "supplied": 800,
+      "apy": 3.1,
+      "earned": 9,
+      "value": 809,
+      "status": "ativa",
+      "health": 3.4
+    },
+    {
+      "id": "l3",
+      "token": "USDC",
+      "protocol": "Kamino",
+      "chain": "Solana",
+      "supplied": 1100,
+      "apy": 9.6,
+      "earned": 33,
+      "value": 1133,
+      "status": "range",
+      "health": 1.9
+    }
+  ]
+}

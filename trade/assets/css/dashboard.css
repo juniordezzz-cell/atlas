@@ -1,0 +1,72 @@
+/* ============================================================
+   ATLAS — Dashboard
+   ============================================================ */
+
+.dash { display: grid; gap: var(--sp-5); }
+
+/* Cabeçalho da home */
+.dash__hero { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-4); flex-wrap: wrap; }
+.dash__hero h1 { font-size: var(--fs-display); }
+.dash__hero .eyebrow { margin-bottom: var(--sp-2); }
+
+/* Grelha principal: gráfico grande + coluna de KPIs */
+.dash__top { display: grid; grid-template-columns: 1.7fr 1fr; gap: var(--sp-5); align-items: stretch; }
+.dash__kpis { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
+.dash__row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5); align-items: start; }
+
+@media (max-width: 1080px) {
+  .dash__top { grid-template-columns: 1fr; }
+  .dash__row { grid-template-columns: 1fr; }
+}
+
+/* ---- Card do patrimônio / banca ------------------------ */
+.banca__value { font-family: var(--font-mono); font-size: clamp(1.8rem, 1.2rem + 2vw, 2.6rem); color: var(--text-hi); letter-spacing: -0.02em; }
+.banca__delta { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-2); font-size: var(--fs-sm); }
+.banca__chart { margin-top: var(--sp-4); width: 100%; height: 150px; display: block; }
+.banca__axis { display: flex; justify-content: space-between; margin-top: var(--sp-2); }
+.banca__axis span { font-size: var(--fs-label); color: var(--text-faint); font-family: var(--font-mono); }
+
+/* ---- KPI card ------------------------------------------ */
+.kpi { display: flex; flex-direction: column; gap: var(--sp-2); }
+.kpi__label { font-size: var(--fs-label); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--text-faint); }
+.kpi__value { font-family: var(--font-mono); font-size: 1.5rem; color: var(--text-hi); }
+.kpi__sub { font-size: var(--fs-label); color: var(--text-mut); }
+.kpi__spark { height: 34px; margin-top: auto; }
+
+/* ---- Listas (estudos, trades, alertas) ----------------- */
+.list { display: flex; flex-direction: column; gap: var(--sp-1); }
+.list__item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2); border-radius: var(--r-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+.list__item:hover { background: var(--atlas-inner); }
+.list__item + .list__item { border-top: 1px solid var(--glass-hairline); }
+.list__icon { width: 34px; height: 34px; flex: none; border-radius: var(--r-sm); display: grid; place-items: center; background: var(--bg-sunken); border: 1px solid var(--glass-border); }
+.list__body { min-width: 0; flex: 1; }
+.list__body b { display: block; color: var(--text-hi); font-weight: 600; font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.list__body span { font-size: var(--fs-label); color: var(--text-mut); }
+.list__meta { margin-left: auto; text-align: right; flex: none; }
+.list__meta .mono { display: block; font-size: var(--fs-sm); }
+
+.card__foot { margin-top: var(--sp-4); }
+
+/* ---- Resumo do Oráculo (card destaque) ------------------- */
+.nsum { position: relative; overflow: hidden; }
+.nsum::after {
+  content: ""; position: absolute; right: -40px; top: -40px; width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(34,211,238,0.18), transparent 62%);
+  pointer-events: none;
+}
+.nsum__head { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.nsum__orb { width: 30px; height: 30px; border-radius: 50%; flex: none; position: relative;
+  background: radial-gradient(circle at 32% 30%, #1a3358, #0a1424 70%);
+  border: 1px solid rgba(76,154,255,0.35); display: grid; place-items: center; }
+.nsum__orb i { width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #dff3ff, var(--cyan) 65%); box-shadow: 0 0 10px var(--cyan); animation: breathe 2.8s var(--ease) infinite; }
+.nsum__text { font-size: var(--fs-body); color: var(--text); line-height: 1.55; }
+.nsum__text b { color: var(--text-hi); }
+.nsum__text .up { font-weight: 600; }
+
+/* Entrada escalonada dos cards */
+.reveal { opacity: 0; transform: translateY(10px); animation: rise var(--dur-slow) var(--ease) forwards; }
+@keyframes rise { to { opacity: 1; transform: translateY(0); } }

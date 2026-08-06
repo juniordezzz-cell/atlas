@@ -1,0 +1,115 @@
+/* ============================================================
+   ATLAS · css/boas-vindas.css — apresentação cinematográfica
+   Sequência: fade → esfera cresce → luz varre → mensagem →
+   botão Entrar → (fade) → login/dashboard.
+   Camadas visuais compartilhadas em atlas-celestial.css.
+   ============================================================ */
+
+.welcome-body {
+  margin: 0; min-height: 100vh; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fonte-corpo, 'Inter', system-ui, sans-serif);
+  color: var(--texto, #E6F1FF);
+  background: #02040A;
+}
+
+/* fade de abertura (some) e de saída (volta) */
+.cine-fade {
+  position: fixed; inset: 0; z-index: 90; background: #01030a;
+  pointer-events: none;
+  animation: cineOpen 1.3s ease both;
+}
+@keyframes cineOpen { from { opacity: 1; } to { opacity: 0; } }
+.cine-fade.out { animation: cineClose 0.62s ease both; pointer-events: auto; }
+@keyframes cineClose { from { opacity: 0; } to { opacity: 1; } }
+
+.welcome-stage {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+
+/* ATO 1 — a esfera surge pequena e cresce sob a luz */
+.welcome-core {
+  width: clamp(220px, 38vmin, 330px);
+  height: clamp(220px, 38vmin, 330px);
+  margin-bottom: 28px;
+  animation: coreArrive 1.6s cubic-bezier(0.22, 0.8, 0.28, 1) both 0.25s;
+}
+@keyframes coreArrive {
+  from { opacity: 0; transform: scale(0.82) translateY(14px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+/* feixe de luz que varre a cena uma única vez na entrada */
+.welcome-beam {
+  position: absolute; inset: -12%;
+  border-radius: 50%; overflow: hidden; pointer-events: none;
+}
+.welcome-beam::before {
+  content: ""; position: absolute; top: -20%; bottom: -20%;
+  left: -70%; width: 42%;
+  background: linear-gradient(100deg, transparent, rgba(190, 235, 255, 0.20) 48%, rgba(255, 255, 255, 0.32) 52%, transparent);
+  transform: rotate(14deg);
+  animation: beamReveal 1.5s ease-out both 1.15s;
+}
+@keyframes beamReveal { from { left: -70%; } to { left: 140%; } }
+
+/* ATO 2 — mensagem entra em cascata */
+.welcome-content { display: flex; flex-direction: column; align-items: center; }
+.welcome-eyebrow {
+  margin: 0 0 10px;
+  font: 600 11px 'Inter', sans-serif;
+  letter-spacing: 0.34em; text-indent: 0.34em;
+  color: rgba(140, 200, 245, 0.62);
+  animation: riseIn 0.8s ease both 1.35s;
+}
+.welcome-title {
+  margin: 0 0 12px;
+  font-family: var(--fonte-titulo, 'Poppins', sans-serif);
+  font-size: clamp(26px, 5.4vmin, 42px); font-weight: 600;
+  animation: riseIn 0.8s ease both 1.55s;
+}
+.welcome-title .grad {
+  background: linear-gradient(92deg, #58C4FF, #E6F6FF 55%, #58C4FF);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 34px rgba(0, 160, 255, 0.25);
+}
+.welcome-sub {
+  margin: 0 0 30px;
+  font-size: 14px; line-height: 1.7;
+  color: var(--texto-suave, rgba(230, 241, 255, 0.62));
+  animation: riseIn 0.8s ease both 1.75s;
+}
+@keyframes riseIn { from { opacity: 0; transform: translateY(12px); } }
+
+/* ATO 3 — a porta de entrada */
+.btn-enter {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 13px 30px; border-radius: 99px;
+  font: 600 14px 'Inter', sans-serif; letter-spacing: 0.04em;
+  color: #EAF7FF; text-decoration: none;
+  background: linear-gradient(120deg, rgba(0, 120, 220, 0.24), rgba(0, 200, 255, 0.14));
+  border: 1px solid rgba(90, 190, 255, 0.34);
+  box-shadow: 0 0 22px rgba(0, 150, 255, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: riseIn 0.8s ease both 2.05s, btnGlow 3.6s ease-in-out infinite 2.9s;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+@keyframes btnGlow {
+  0%, 100% { box-shadow: 0 0 22px rgba(0, 150, 255, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+  50%      { box-shadow: 0 0 34px rgba(0, 180, 255, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+}
+.btn-enter:hover {
+  transform: translateY(-2px);
+  border-color: rgba(140, 215, 255, 0.6);
+  box-shadow: 0 0 40px rgba(0, 190, 255, 0.4);
+}
+.btn-enter:focus-visible { outline: 2px solid #45B7FF; outline-offset: 3px; }
+.btn-enter .arr { transition: transform 0.25s ease; }
+.btn-enter:hover .arr { transform: translateX(4px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cine-fade, .welcome-core, .welcome-beam::before,
+  .welcome-eyebrow, .welcome-title, .welcome-sub, .btn-enter {
+    animation: none !important; opacity: 1;
+  }
+}

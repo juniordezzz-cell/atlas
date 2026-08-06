@@ -1,0 +1,66 @@
+/* ============================================================
+   ATLAS · RWA — tokens.css
+   Identidade: dark mode institucional ("Bloomberg + Web3").
+   Paleta e escalas definidas no blueprint.
+   ============================================================ */
+:root {
+  /* Superfícies */
+  --bg:            #0B0F1A;
+  --surface:       #111827;
+  --surface-2:     #0F1524;
+  --surface-hi:    #161F33;
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-hi:     rgba(255, 255, 255, 0.16);
+  --border-accent: rgba(79, 140, 255, 0.35);
+
+  /* Acentos */
+  --accent:        #4F8CFF;   /* azul institucional */
+  --accent-2:      #8B5CF6;   /* roxo macro */
+  --accent-soft:   rgba(79, 140, 255, 0.12);
+  --accent2-soft:  rgba(139, 92, 246, 0.12);
+
+  /* Semânticos */
+  --pos:           #22C55E;
+  --neg:           #EF4444;
+  --warn:          #F59E0B;
+  --pos-soft:      rgba(34, 197, 94, 0.12);
+  --neg-soft:      rgba(239, 68, 68, 0.12);
+  --warn-soft:     rgba(245, 158, 11, 0.12);
+
+  /* Texto */
+  --text:          #E5E7EB;
+  --text-2:        #9CA3AF;
+  --text-3:        #6B7280;
+
+  /* Regimes de mercado */
+  --r-riskon:      #22C55E;
+  --r-riskoff:     #EF4444;
+  --r-liqexp:      #4F8CFF;
+  --r-liqcon:      #F59E0B;
+  --r-trans:       #8B5CF6;
+
+  /* Tipografia */
+  --font:   "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:   "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Raios */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 11px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* Sombras (quase invisíveis — institucional) */
+  --sh-1: 0 1px 0 rgba(255,255,255,0.02) inset, 0 1px 2px rgba(0,0,0,0.4);
+  --sh-2: 0 8px 24px -12px rgba(0,0,0,0.7);
+
+  /* Layout */
+  --rail: 236px;
+  --topbar-h: 60px;
+  --maxw: 1560px;
+
+  /* Timing */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --fast: 130ms;
+  --med: 240ms;
+}

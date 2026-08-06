@@ -1,0 +1,50 @@
+/* ============================================================
+   ATLAS · DeFi — tables.css
+   Listas de dados (histórico, distribuições). Estilo limpo,
+   nunca "planilha". Posições sempre em cards; aqui só séries.
+   ============================================================ */
+
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead th {
+  text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase;
+  color: var(--text-faint); padding: 0 16px 12px; border-bottom: 1px solid var(--glass-border);
+}
+.data-table thead th.right { text-align: right; }
+.data-table tbody td { padding: 15px 16px; font-size: 13.5px; color: var(--text); border-bottom: 1px solid var(--glass-border); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr { transition: background var(--fast) var(--ease); }
+.data-table tbody tr:hover { background: rgba(120,150,220,0.04); }
+.data-table td.right { text-align: right; font-family: var(--font-mono); }
+.data-table td.strong { color: var(--text-hi); font-weight: 500; }
+
+/* Linha de histórico como card compacto */
+.hist-row {
+  display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 16px;
+  padding: 16px 18px; border-radius: var(--r-md); background: var(--surface);
+  border: 1px solid var(--glass-border); cursor: pointer; margin-bottom: 10px;
+  transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.hist-row:hover { border-color: var(--glass-border-hi); transform: translateX(2px); }
+.hist-row .h-pair { display: flex; align-items: center; gap: 11px; }
+.hist-row .h-name { font-family: var(--font-display); font-weight: 600; font-size: 14.5px; color: var(--text-hi); }
+.hist-row .h-meta { font-size: 12px; color: var(--text-mut); }
+.hist-row .h-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.hist-row .h-result { text-align: right; }
+.hist-row .h-result .r { font-family: var(--font-mono); font-size: 16px; font-weight: 600; }
+.hist-row .h-result .p { font-size: 11.5px; color: var(--text-mut); }
+
+/* Barra de distribuição (legenda + barra) */
+.dist-list { display: flex; flex-direction: column; gap: 14px; }
+.dist-item .dist-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.dist-item .dist-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+.dist-item .dist-label .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.dist-item .dist-val { font-family: var(--font-mono); font-size: 13px; color: var(--text-hi); font-weight: 600; }
+.dist-item .dist-bar { height: 7px; border-radius: 4px; background: rgba(120,150,220,0.10); overflow: hidden; }
+.dist-item .dist-bar > i { display: block; height: 100%; border-radius: 4px; }
+
+/* legenda de donut */
+.legend { display: flex; flex-direction: column; gap: 11px; }
+.legend-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
+.legend-item .lg-l { display: flex; align-items: center; gap: 9px; color: var(--text); }
+.legend-item .lg-l .sw { width: 10px; height: 10px; border-radius: 3px; }
+.legend-item .lg-v { font-family: var(--font-mono); color: var(--text-hi); font-weight: 600; }

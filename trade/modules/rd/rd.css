@@ -1,0 +1,58 @@
+/* ============================================================
+   ATLAS — Módulo Registro de Decisão (Sprint 3)
+   Reaproveita .estudos / .est__* e adiciona o que é próprio do RD.
+   ============================================================ */
+
+/* ---- Banner de pendência (estudos sem RD) -------------- */
+.rd__banner {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  padding: var(--sp-4) var(--sp-5); border-radius: var(--r-md);
+  background: var(--azure-soft); border: 1px solid rgba(76,154,255,0.3);
+  color: var(--text-hi); font-size: var(--fs-sm);
+}
+.rd__banner > span { flex: 1; min-width: 200px; color: var(--text); }
+.rd__banner b { color: var(--text-hi); }
+
+/* ---- Medidor de confiança ------------------------------ */
+.conf { display: inline-flex; align-items: center; gap: 5px; }
+.conf__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--bg-sunken); border: 1px solid var(--glass-border); transition: all var(--dur-fast) var(--ease); }
+.conf__dot--on { background: linear-gradient(135deg, var(--cyan), var(--azure)); border-color: transparent; box-shadow: 0 0 8px rgba(76,154,255,0.6); }
+.conf--edit .conf__dot { width: 22px; height: 22px; cursor: pointer; }
+.conf--edit .conf__dot:hover { border-color: rgba(76,154,255,0.6); }
+
+.rd__card-conf { display: flex; align-items: center; gap: var(--sp-2); }
+.rd__conf-lbl { font-size: var(--fs-label); color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* ---- Detalhe ------------------------------------------- */
+.rd__grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--sp-5); align-items: start; }
+@media (max-width: 1000px) { .rd__grid { grid-template-columns: 1fr; } }
+
+.rd__main { display: flex; flex-direction: column; gap: var(--sp-5); }
+.rd__conf-row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.rd__conf-num { color: var(--azure); font-size: var(--fs-sm); }
+
+.rd__field { display: flex; flex-direction: column; gap: var(--sp-2); }
+.rd__field-lbl { font-size: var(--fs-label); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--text-faint); }
+.rd__field-val { color: var(--text); font-size: var(--fs-body); line-height: 1.6; white-space: pre-wrap; }
+
+.rd__side { display: flex; flex-direction: column; gap: var(--sp-5); }
+.rd__risk { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.rd__risk-cell {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: var(--sp-3); border-radius: var(--r-sm);
+  background: var(--bg-sunken); border: 1px solid var(--glass-hairline);
+}
+.rd__risk-cell span { font-size: var(--fs-label); color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; }
+.rd__risk-cell b { color: var(--text-hi); font-size: var(--fs-body); }
+
+.rd__studylink {
+  text-align: left; display: flex; flex-direction: column; gap: var(--sp-2); cursor: pointer;
+}
+.rd__studylink:hover { border-color: rgba(76,154,255,0.32); }
+.rd__studylink b { color: var(--text-hi); font-size: var(--fs-h3); }
+
+select.input { appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238595B2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right var(--sp-4) center; padding-right: var(--sp-8);
+}
+select.input option { background: var(--bg-raise); color: var(--text-hi); }

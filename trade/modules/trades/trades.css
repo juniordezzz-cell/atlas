@@ -1,0 +1,44 @@
+/* ============================================================
+   ATLAS — Módulo Trades (Sprint 4)
+   Reaproveita .estudos / .est__* / .rd__* e adiciona o próprio.
+   ============================================================ */
+
+.tr__card-pnl { font-size: 1.7rem; letter-spacing: -0.02em; }
+.tr__card-nums { display: flex; gap: var(--sp-4); flex-wrap: wrap; }
+.tr__card-nums span { font-size: var(--fs-label); color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+.tr__card-nums b { color: var(--text); font-size: var(--fs-sm); letter-spacing: 0; }
+
+/* ---- Grade de números do trade ------------------------- */
+.tr__stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--sp-3);
+}
+.tr__stat {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: var(--sp-4); border-radius: var(--r-md);
+  background: var(--glass-fill); border: 1px solid var(--glass-border); box-shadow: var(--shadow-soft);
+}
+.tr__stat span { font-size: var(--fs-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); }
+.tr__stat b { color: var(--text-hi); font-size: 1.1rem; }
+
+.tr__pnl-big { font-size: 1.5rem; font-weight: 600; }
+
+/* ---- Gerenciamento ------------------------------------- */
+.tr__manage { display: flex; flex-direction: column; gap: var(--sp-3); }
+.tr__manage-row { display: flex; gap: var(--sp-2); }
+.tr__manage-row .input { flex: 1; min-width: 0; }
+.tr__manage-row .btn { flex: none; white-space: nowrap; }
+.tr__close { margin-top: var(--sp-2); justify-content: center; }
+
+/* ---- Parciais ------------------------------------------ */
+.tr__partials { margin-top: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-2); }
+.tr__partial {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3); border-radius: var(--r-sm);
+  background: var(--bg-sunken); border: 1px solid var(--glass-hairline);
+}
+.tr__partial > b { color: var(--cyan); }
+.tr__partial-note { flex: 1; color: var(--text-mut); font-size: var(--fs-sm); }
+
+@media (max-width: 640px) {
+  .tr__manage-row { flex-wrap: wrap; }
+}

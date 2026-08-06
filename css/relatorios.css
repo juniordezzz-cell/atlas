@@ -1,0 +1,177 @@
+/* ===================================================================
+   ATLAS · css/relatorios.css   (Etapa 4)
+   Página de Relatórios — por carteira. 100% tokens --atlas-*.
+   =================================================================== */
+
+/* ---- Barra de controles (carteira + granularidade) ---- */
+.rep-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.rep-field { display: flex; flex-direction: column; gap: 5px; }
+.rep-field > label {
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--atlas-text-faint);
+  font-weight: 600;
+}
+.rep-select {
+  appearance: none;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--atlas-text-hi);
+  background: var(--atlas-surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%237c8aa5' stroke-width='2'%3E%3Cpath d='m3 4.5 3 3 3-3'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
+  border: 1px solid var(--atlas-border);
+  border-radius: 10px;
+  padding: 9px 34px 9px 13px;
+  min-width: 210px;
+  cursor: pointer;
+  transition: border-color .16s ease;
+}
+.rep-select:hover { border-color: var(--atlas-border-hi); }
+.rep-select:focus { outline: none; border-color: var(--atlas-accent-line); }
+/* O selo Global/Local da carteira agora é do próprio componente
+   compartilhado (wallets/walletSelector.css) — aqui não há mais
+   aparência de carteira. */
+
+/* ---- KPIs ---- */
+.rep-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.rep-kpi {
+  background: var(--atlas-bg-raise);
+  border: 1px solid var(--atlas-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--atlas-sh-1);
+}
+.rep-kpi__label {
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--atlas-text-mut);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.rep-kpi__label svg { width: 14px; height: 14px; }
+.rep-kpi__value { font-size: 23px; font-weight: 700; color: var(--atlas-text-hi); margin-top: 8px; letter-spacing: -.01em; }
+.rep-kpi__sub { font-size: 11.5px; color: var(--atlas-text-faint); margin-top: 3px; }
+.rep-kpi.is-pos .rep-kpi__value { color: var(--atlas-pos); }
+.rep-kpi.is-neg .rep-kpi__value { color: var(--atlas-neg); }
+
+/* ---- Grade principal (gráfico + calendário) ---- */
+.rep-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.rep-card {
+  background: var(--atlas-bg-raise);
+  border: 1px solid var(--atlas-border);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: var(--atlas-sh-1);
+  min-width: 0;
+}
+.rep-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.rep-card__head h3 { font-size: 14.5px; font-weight: 600; color: var(--atlas-text-hi); }
+.rep-card__head .eyebrow { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--atlas-text-faint); }
+.rep-chart-wrap { position: relative; height: 300px; }
+.rep-cal-wrap { display: flex; justify-content: center; }
+
+/* ---- Comparação entre períodos ---- */
+.rep-compare { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rep-compare th {
+  text-align: right;
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--atlas-text-faint);
+  font-weight: 600;
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--atlas-hairline);
+}
+.rep-compare th:first-child { text-align: left; }
+.rep-compare td { padding: 10px 12px; border-bottom: 1px solid var(--atlas-hairline); text-align: right; color: var(--atlas-text); }
+.rep-compare td:first-child { text-align: left; color: var(--atlas-text-hi); font-weight: 500; text-transform: capitalize; }
+.rep-compare tr:last-child td { border-bottom: 0; }
+.rep-compare .val-pos { color: var(--atlas-pos); }
+.rep-compare .val-neg { color: var(--atlas-neg); }
+.rep-delta { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-size: 12px; }
+.rep-delta svg { width: 12px; height: 12px; }
+
+/* ---- Projeção ---- */
+.rep-proj {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--atlas-accent-soft);
+  border: 1px solid var(--atlas-accent-line);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 4px;
+}
+.rep-proj__icon {
+  width: 38px; height: 38px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  background: var(--atlas-accent-soft);
+  color: var(--atlas-accent);
+}
+.rep-proj__icon svg { width: 20px; height: 20px; }
+.rep-proj__txt { min-width: 0; }
+.rep-proj__label { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--atlas-text-mut); }
+.rep-proj__value { font-size: 18px; font-weight: 700; color: var(--atlas-text-hi); margin-top: 2px; }
+.rep-proj__note { font-size: 11px; color: var(--atlas-text-faint); margin-top: 2px; }
+
+/* ---- Lista de movimentos ---- */
+.rep-moves { display: flex; flex-direction: column; }
+.rep-move {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 2px;
+  border-bottom: 1px solid var(--atlas-hairline);
+}
+.rep-move:last-child { border-bottom: 0; }
+.rep-move__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--atlas-text-mut); }
+.rep-move__dot.entrada { background: var(--atlas-pos); }
+.rep-move__dot.saida { background: var(--atlas-neg); }
+.rep-move__dot.resultado { background: var(--atlas-accent); }
+.rep-move__main { flex: 1; min-width: 0; }
+.rep-move__label { font-size: 13px; color: var(--atlas-text-hi); }
+.rep-move__meta { font-size: 11.5px; color: var(--atlas-text-faint); }
+.rep-move__val { font-size: 13.5px; font-weight: 600; color: var(--atlas-text-hi); white-space: nowrap; }
+.rep-move__val.entrada { color: var(--atlas-pos); }
+.rep-move__val.saida { color: var(--atlas-neg); }
+
+/* ---- Estado vazio ---- */
+.rep-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--atlas-text-mut);
+}
+.rep-empty svg { width: 40px; height: 40px; color: var(--atlas-text-faint); margin-bottom: 12px; }
+.rep-empty h3 { font-size: 15px; color: var(--atlas-text-hi); margin-bottom: 6px; }
+.rep-empty p { font-size: 13px; }
+
+@media (max-width: 900px) {
+  .rep-kpis { grid-template-columns: repeat(2, 1fr); }
+  .rep-grid { grid-template-columns: 1fr; }
+}

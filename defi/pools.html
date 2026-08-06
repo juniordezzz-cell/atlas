@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="defi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pools · ATLAS DeFi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/cards.css" />
+  <link rel="stylesheet" href="css/forms.css" />
+  <link rel="stylesheet" href="css/tables.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+
+  <!-- ===== ATLAS · camada global (Fase 0) ===================================
+       Identidade visual, tema, idioma e moeda centralizados.
+       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
+       ============================================================ -->
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <!-- Seletor de carteira: componente compartilhado (um CSS para todo o ATLAS) -->
+  <link rel="stylesheet" href="../wallets/walletSelector.css">
+  <script src="../core/ui/atlas-shell.js" defer></script>
+</head>
+<body>
+  <div id="nav"></div>
+
+  <main class="app">
+    <div class="wrap page page-enter">
+
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Liquidez</div>
+          <h1 class="page-title">Pools</h1>
+          <p class="page-sub">Cada posição funciona como um projeto independente, com tese e histórico próprios.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-primary" id="btnNew">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Nova Pool
+          </button>
+        </div>
+      </div>
+
+      <div class="filterbar">
+        <div class="searchbar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.5-3.5"/></svg>
+          <input type="text" id="search" placeholder="Buscar por token, protocolo…" />
+        </div>
+        <div class="filter-select"><select class="select" id="fChain"><option value="">Blockchain</option></select></div>
+        <div class="filter-select"><select class="select" id="fProto"><option value="">Protocolo</option></select></div>
+        <div class="filter-select"><select class="select" id="fStatus">
+          <option value="">Status</option>
+          <option value="ativa">Ativa</option>
+          <option value="range">Fora do Range</option>
+          <option value="analise">Em análise</option>
+        </select></div>
+      </div>
+
+      <div class="pos-grid" id="poolsGrid"></div>
+    </div>
+  </main>
+
+  <!-- Modal Nova Pool -->
+  <div class="modal-overlay" id="modalNew">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Nova Pool</h3>
+        <button class="modal-close" id="closeNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div class="wizard-steps" id="wsteps">
+          <div class="wstep active" data-s="0"><span class="dot">1</span><span class="lbl">Blockchain</span><span class="line"></span></div>
+          <div class="wstep" data-s="1"><span class="dot">2</span><span class="lbl">Protocolo</span><span class="line"></span></div>
+          <div class="wstep" data-s="2"><span class="dot">3</span><span class="lbl">Tokens</span><span class="line"></span></div>
+          <div class="wstep" data-s="3"><span class="dot">4</span><span class="lbl">Capital</span><span class="line"></span></div>
+          <div class="wstep" data-s="4"><span class="dot">5</span><span class="lbl">Objetivo</span></div>
+        </div>
+
+        <!-- Passo 1: Blockchain -->
+        <div class="wizard-panel active" data-panel="0">
+          <div class="field"><label>Escolha a blockchain</label>
+            <div class="opt-grid" id="optChain"></div>
+          </div>
+        </div>
+        <!-- Passo 2: Protocolo -->
+        <div class="wizard-panel" data-panel="1">
+          <div class="field"><label>Escolha o protocolo</label>
+            <div class="opt-grid" id="optProto"></div>
+          </div>
+        </div>
+        <!-- Passo 3: Tokens -->
+        <div class="wizard-panel" data-panel="2">
+
+          <!-- Autopreenchimento a partir das pools reais (DefiLlama).
+               Busca na lista já baixada; o botão atualiza pela rede. -->
+          <div class="field">
+            <label>Buscar a pool <span class="muted" style="font-weight:400">— opcional, preenche o par sozinho</span></label>
+            <div class="tk-row">
+              <input class="input" id="poolQ" placeholder="ex.: SOL-USDC, ORCA, ETH" autocomplete="off" />
+              <button class="btn btn-secondary" id="poolRefresh" type="button">Atualizar lista</button>
+            </div>
+            <div class="hint" id="poolHint"></div>
+            <div id="poolResults"></div>
+          </div>
+
+          <div class="field"><label>Token base</label>
+            <div class="tk-row">
+              <input class="input" id="tkBase" placeholder="ex.: SOL" data-atlas-asset="symbol" list="dlTokens" autocomplete="off" />
+              <input class="input tk-qty" id="qtyBase" type="number" step="any" min="0" placeholder="quantidade" />
+            </div>
+          </div>
+          <div class="field"><label>Token par</label>
+            <div class="tk-row">
+              <input class="input" id="tkQuote" placeholder="ex.: USDC" data-atlas-asset="symbol" list="dlTokens" autocomplete="off" />
+              <input class="input tk-qty" id="qtyQuote" type="number" step="any" min="0" placeholder="quantidade" />
+            </div>
+          </div>
+
+          <!-- Preenchida por pools.js a partir do DeFiTokens. Datalist
+               nativo de propósito: zero CSS, zero dropdown para depurar,
+               e funciona igual em file://. -->
+          <datalist id="dlTokens"></datalist>
+          <div class="field"><label>Categoria</label>
+            <select class="select" id="tkCat">
+              <option>Liquidez</option><option>Yield</option><option>Staking</option><option>Lending</option><option>Estável</option>
+            </select>
+          </div>
+        </div>
+        <!-- Passo 4: Capital -->
+        <div class="wizard-panel" data-panel="3">
+          <div class="field"><label>Composição do capital</label>
+            <div class="cap-calc" id="capCalc">
+              <div class="cap-line" data-side="base">
+                <span class="cap-qty">—</span>
+                <span class="cap-x">×</span>
+                <div class="input-money cap-price"><span>US$</span>
+                  <input class="input" id="prBase" type="number" step="any" min="0" placeholder="0,00" />
+                </div>
+                <span class="cap-eq">=</span>
+                <span class="cap-sub" id="subBase">US$ 0,00</span>
+              </div>
+              <div class="cap-line" data-side="quote">
+                <span class="cap-qty">—</span>
+                <span class="cap-x">×</span>
+                <div class="input-money cap-price"><span>US$</span>
+                  <input class="input" id="prQuote" type="number" step="any" min="0" placeholder="0,00" />
+                </div>
+                <span class="cap-eq">=</span>
+                <span class="cap-sub" id="subQuote">US$ 0,00</span>
+              </div>
+              <div class="cap-total">
+                <span>Capital total</span>
+                <b id="capTotal">US$ 0,00</b>
+              </div>
+              <div class="cap-status" id="capStatus">Digite as quantidades no passo anterior.</div>
+            </div>
+            <input type="hidden" id="capital" />
+            <div class="hint">O preço é buscado sozinho, mas <b>você pode corrigir</b> — se a posição foi aberta em outra data, use o preço daquele dia.</div>
+          </div>
+          <div class="field"><label>APR estimado <span class="tip"><span class="tip-icon">?</span><span class="tip-body">Rendimento anualizado esperado. Pode ser ajustado depois conforme o realizado.</span></span></label>
+            <div class="input-money" style="position:relative"><input class="input" id="apr" type="number" min="0" placeholder="0" style="padding-left:13px" /></div>
+            <div class="hint">Opcional — deixe em branco se ainda estiver em análise.</div>
+          </div>
+          <div class="field"><label>Data de criação da pool</label>
+            <input class="input" id="openedAt" type="date" />
+            <div class="hint">Se você abriu a posição antes de hoje, coloque a data real — é dela que sai o APR realizado.</div>
+          </div>
+          <div class="field"><label>Situação do range</label>
+            <div class="rng-opts" id="rngOpts">
+              <button type="button" class="rng-opt on" data-v="dentro">Dentro do range</button>
+              <button type="button" class="rng-opt" data-v="fora">Fora do range</button>
+              <button type="button" class="rng-opt" data-v="analise">Ainda em análise</button>
+            </div>
+          </div>
+          <div class="field"><label>Faixa de preço <span class="opt-tag">opcional</span></label>
+            <div class="tk-row">
+              <input class="input" id="rngLow" type="number" step="any" min="0" placeholder="mínima — ex.: 0.01444382" />
+              <input class="input" id="rngHigh" type="number" step="any" min="0" placeholder="máxima" />
+            </div>
+            <!-- A pool cota uma RAZÃO, não um preço em dólar. No print da
+                 Orca é "SOL per ORCA". Sem saber qual token é o numerador,
+                 a faixa inverte e o selo dentro/fora sai errado. -->
+            <select class="select" id="rngDenom" style="margin-top:8px">
+              <option value="base_por_quote">a faixa está em BASE por PAR (ex.: SOL por ORCA)</option>
+              <option value="quote_por_base">a faixa está em PAR por BASE (ex.: ORCA por SOL)</option>
+            </select>
+            <div class="hint">Copie os dois números da sua corretora. Dá para preencher depois, na página da posição.</div>
+          </div>
+        </div>
+        <!-- Passo 5: Objetivo -->
+        <div class="wizard-panel" data-panel="4">
+          <div class="field"><label>Objetivo da estratégia</label>
+            <div class="obj-list" id="objList"></div>
+            <div class="hint" style="margin-top:9px">Pode marcar mais de um.</div>
+          </div>
+          <div class="field"><label>Observação <span class="opt-tag">opcional</span></label>
+            <textarea class="textarea textarea-sm" id="goal" placeholder="ex.: aceito ficar alguns dias fora do range."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-cancel" id="wPrev">Voltar</button>
+        <button class="btn btn-primary" id="wNext">Continuar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <!-- Core ATLAS: http + provedores de dados -->
+  <script src="../core/http.js"></script>
+  <script src="../core/providers/registry.js"></script>
+  <script src="../core/providers/coingecko.js"></script>
+  <script src="../core/providers/defillama.js"></script>
+  <script src="../core/atlas-price.js"></script>
+  <script src="../js/atlas-assets.js"></script>
+  <script src="../wallets/walletStore.js"></script>
+  <script src="../wallets/walletTypes.js"></script>
+  <script src="../wallets/walletLedger.js"></script>
+  <script src="../wallets/walletManager.js"></script>
+  <script src="../wallets/walletMenus.js"></script>
+  <script src="../wallets/walletDialog.js"></script>
+  <script src="../wallets/walletSelector.js"></script>
+  <script src="js/tokens.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/filters.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/pools.js"></script>
+</body>
+</html>
