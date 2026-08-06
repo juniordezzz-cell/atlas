@@ -4,11 +4,78 @@
 
 const D = ATLAS_DATA;
 
+/* ===================================================================
+   PRIMEIRO ACESSO
+   -------------------------------------------------------------------
+   Os seeds do ATLAS são vazios de propósito — ninguém quer começar com
+   dados de mentira. Mas o Dashboard não tinha estado vazio: quem
+   entrava pela primeira vez via seis KPIs em "US$ 0", um gráfico reto
+   em zero, dois donuts em branco e três listas vazias. Nenhum texto,
+   nenhuma seta, nada dizendo o que fazer.
+
+   O minuto mais decisivo de um SaaS é o primeiro. Aqui ele era uma
+   tela morta.
+
+   Quando não há NADA registrado em nenhum módulo, o painel dá lugar a
+   um roteiro de início. Assim que existir qualquer valor, o Dashboard
+   normal volta sozinho — não há estado a limpar nem botão a apertar.
+   =================================================================== */
+const SEM_DADOS = !D.categoria.labels.length &&
+                  !D.movimentacoes.length &&
+                  !D.pools.length;
+
 /* ---- Saudação ---- */
 document.getElementById('saudacao').textContent =
   `${D.usuario.saudacao}, ${D.usuario.nome}`;
 document.getElementById('evoTotal').textContent = D.evolucao.total;
 document.getElementById('evoVar').textContent = D.evolucao.variacao;
+
+/* ---- Roteiro de início (só no primeiro acesso) ---- */
+if (SEM_DADOS) {
+  const PASSOS = [
+    { href: 'hold/index.html',    modulo: 'Hold',  titulo: 'Registre o que você carrega',
+      texto: 'Ativos de longo prazo, com a tese que justifica cada posição.' },
+    { href: 'trade/index.html',   modulo: 'Trade', titulo: 'Documente suas operações',
+      texto: 'Estudo, registro de decisão e trade — o ciclo completo.' },
+    { href: 'defi/index.html',    modulo: 'DeFi',  titulo: 'Acompanhe suas posições',
+      texto: 'Pools, staking e lending, com APR e resultado real.' },
+    { href: 'RWA/index.html',     modulo: 'RWA',   titulo: 'Mapeie os ativos reais',
+      texto: 'Portfólio, ambiente macro e motor de risco.' }
+  ];
+
+  const inicio = document.createElement('section');
+  inicio.className = 'onboard';
+  inicio.innerHTML =
+    '<div class="onboard-head">' +
+      '<span class="onboard-eyebrow">Primeiros passos</span>' +
+      '<h2>Seu ATLAS está pronto — e vazio.</h2>' +
+      '<p>Nada é inventado aqui: os números aparecem conforme você registra. ' +
+         'Comece por qualquer módulo; o patrimônio total se consolida sozinho.</p>' +
+    '</div>' +
+    '<div class="onboard-grid">' +
+      PASSOS.map((p, i) =>
+        '<a class="onboard-card" href="' + p.href + '">' +
+          '<span class="onboard-n">' + (i + 1) + '</span>' +
+          '<span class="onboard-mod">' + p.modulo + '</span>' +
+          '<strong>' + p.titulo + '</strong>' +
+          '<span class="onboard-txt">' + p.texto + '</span>' +
+        '</a>').join('') +
+    '</div>' +
+    '<div class="onboard-foot">' +
+      '<span>Já usava o ATLAS antes?</span>' +
+      '<a href="configuracoes.html">Restaurar um backup</a>' +
+    '</div>';
+
+  const main = document.querySelector('.main');
+  main.insertBefore(inicio, document.getElementById('kpis'));
+
+  /* Gráficos e listas vazios não informam nada e ainda fazem a tela
+     parecer quebrada. Ficam de fora até existir o primeiro dado. */
+  ['.charts', '.bottom'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.style.display = 'none';
+  });
+}
 
 /* ---- KPIs ---- */
 document.getElementById('kpis').innerHTML = D.kpis.map(k => {
@@ -77,6 +144,9 @@ Chart.defaults.font.size = 11;
 
 /* ---- Evolução Patrimonial (linha) ---- */
 (function () {
+  /* Sem dados, a seção inteira está oculta: desenhar num canvas de
+     tamanho zero só gasta trabalho e polui o console. */
+  if (SEM_DADOS) return;
   const ctx = document.getElementById('chartEvolucao').getContext('2d');
   const grad = ctx.createLinearGradient(0, 0, 0, 200);
   grad.addColorStop(0, 'rgba(0,191,255,0.35)');
@@ -270,8 +340,10 @@ function donut(canvasId, legendId, cfg) {
     </li>`).join('');
 }
 
-donut('chartCategoria', 'legendCategoria', D.categoria);
-donut('chartBlockchain', 'legendBlockchain', D.blockchain);
+if (!SEM_DADOS) {
+  donut('chartCategoria', 'legendCategoria', D.categoria);
+  donut('chartBlockchain', 'legendBlockchain', D.blockchain);
+}
 
 /* ===================================================================
    ATLAS — Seletor de carteira GLOBAL (Bloco 3)

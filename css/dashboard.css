@@ -502,3 +502,94 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
    arquivo: era exatamente assim que Hold, DeFi, Trade, RWA e
    Dashboard acabavam com cinco aparências diferentes.
    ============================================================ */
+
+/* ============ PRIMEIRO ACESSO ============
+   Roteiro que substitui o painel enquanto não há nenhum dado
+   registrado. Montado por js/dashboard.js apenas nesse caso — assim
+   que existir qualquer valor, o Dashboard normal volta sozinho. */
+
+.onboard {
+  margin-bottom: var(--gap);
+  padding: 28px 26px 22px;
+  border-radius: var(--raio);
+  background:
+    radial-gradient(120ch 60ch at 12% -30%, rgba(0, 191, 255, 0.10), transparent 60%),
+    var(--atlas-surface-solid);
+  border: 1px solid var(--card-borda);
+}
+
+.onboard-head { max-width: 62ch; margin-bottom: 22px; }
+.onboard-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 10.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: var(--atlas-track-label);
+  color: var(--azul-principal);
+}
+.onboard-head h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.onboard-head p {
+  margin-top: 8px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--texto-suave);
+}
+
+.onboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.onboard-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 16px 16px 18px;
+  border-radius: var(--raio-sm);
+  background: rgba(5, 8, 15, 0.45);
+  border: 1px solid var(--linha);
+  transition: border-color .18s ease, transform .18s ease, background .18s ease;
+}
+.onboard-card:hover {
+  border-color: var(--card-borda-forte);
+  background: rgba(0, 191, 255, 0.05);
+  transform: translateY(-2px);
+}
+.onboard-n {
+  position: absolute;
+  top: 14px; right: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
+.onboard-mod {
+  font-size: 10.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: var(--atlas-track-label);
+  color: var(--azul-principal);
+}
+.onboard-card strong { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.onboard-txt { font-size: 12.5px; line-height: 1.5; color: var(--texto-fraco); }
+
+.onboard-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--linha);
+  font-size: 12.5px;
+  color: var(--texto-fraco);
+}
+.onboard-foot a { color: var(--azul-principal); font-weight: 500; }
+.onboard-foot a:hover { color: var(--ciano); }
+
+@media (max-width: 1240px) { .onboard-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px)  { .onboard-grid { grid-template-columns: 1fr; }
+                             .onboard { padding: 22px 18px 18px; }
+                             .onboard-head h2 { font-size: 19px; } }
