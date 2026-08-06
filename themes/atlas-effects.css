@@ -59,7 +59,7 @@ button.btn,
     background-color var(--atlas-dur)   var(--atlas-ease),
     color         var(--atlas-dur-fast) var(--atlas-ease),
     filter        var(--atlas-dur)      var(--atlas-ease);
-  will-change: transform;
+  /* NÃO devolver "will-change: transform" aqui — ver nota em §3. */
 }
 
 .btn:hover,
@@ -244,7 +244,23 @@ textarea.is-invalid {
     transform    var(--atlas-dur)  var(--atlas-ease),
     box-shadow   var(--atlas-dur)  var(--atlas-ease),
     border-color var(--atlas-dur)  var(--atlas-ease);
-  will-change: transform;
+
+  /* ------------------------------------------------------------------
+     NÃO devolver "will-change: transform" a esta regra (nem à dos
+     botões, em §1).
+
+     will-change promove o elemento a uma camada de composição de GPU
+     PERMANENTE — não só durante a animação. Aplicado a um seletor
+     coletivo, o custo multiplica: só o Dashboard tem 6 KPIs, 6 cards e
+     ~10 botões, ou seja mais de vinte camadas vivas o tempo todo, cada
+     uma consumindo memória de vídeo. Em máquina modesta isso engasga o
+     scroll — exatamente o contrário do que a propriedade promete.
+
+     will-change existe para avisar o navegador ANTES de uma mudança
+     cara e imprevisível. Uma transição de transform declarada no
+     próprio elemento já é previsível: o navegador cria a camada
+     sozinho quando a transição começa e a descarta quando termina.
+     ------------------------------------------------------------------ */
 }
 
 .card:hover,
