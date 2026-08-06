@@ -1,0 +1,220 @@
+/* ===================================================================
+   ATLAS — IMPRESSÃO / PDF
+   -------------------------------------------------------------------
+   O Hold já oferecia "Imprimir / PDF" (hold/js/pages/relatorios.js) e
+   o sistema inteiro não tinha UMA regra @media print. O resultado era
+   um PDF com sidebar, barra superior, botão do Oráculo flutuando por
+   cima do conteúdo, malha de fundo, fundo preto e sombras — quatro
+   páginas de tinta para meia página de informação.
+
+   Relatório é entregável. Um relatório que imprime mal é um relatório
+   que não existe.
+
+   SEGURANÇA
+   ---------
+   Este arquivo é carregado com media="print". Ele NÃO participa da
+   renderização em tela em nenhuma hipótese, então não há risco de
+   regressão visual no uso normal — só muda o que sai na folha.
+
+   Carregar SEMPRE depois de atlas-effects.css.
+   =================================================================== */
+
+@media print {
+
+  /* ================================================================
+     1. PÁGINA
+     ================================================================ */
+  @page {
+    margin: 14mm 12mm;
+  }
+
+  /* Tinta é cara e papel é branco. Todo o sistema é dark: imprimir o
+     tema escuro gasta um cartucho por relatório e sai ilegível na
+     maioria das impressoras. Os tokens são reescritos para uma paleta
+     de tinta — como tudo no ATLAS lê variável, isso já vira a maior
+     parte do trabalho. */
+  html, html[data-theme="dark"], html[data-theme="light"] {
+    --atlas-bg-deep:       #FFFFFF;
+    --atlas-bg:            #FFFFFF;
+    --atlas-bg-raise:      #FFFFFF;
+    --atlas-surface:       #FFFFFF;
+    --atlas-surface-solid: #FFFFFF;
+    --atlas-surface-hi:    #FFFFFF;
+
+    --atlas-border:    #C8CEDA;
+    --atlas-border-hi: #9AA3B4;
+    --atlas-hairline:  #DDE2EA;
+    --atlas-inner:     transparent;
+
+    --atlas-text-hi:    #000000;
+    --atlas-text:       #1A1F2B;
+    --atlas-text-mut:   #4A5364;
+    --atlas-text-faint: #6B7382;
+
+    /* lucro e prejuízo continuam distinguíveis em preto e branco
+       porque são tons bem diferentes de cinza ao converter */
+    --atlas-pos:  #0A6B4F;
+    --atlas-neg:  #A3161B;
+    --atlas-warn: #7A4A00;
+    --atlas-info: #14417A;
+    --atlas-pos-soft:  transparent;
+    --atlas-neg-soft:  transparent;
+    --atlas-warn-soft: transparent;
+    --atlas-info-soft: transparent;
+
+    --atlas-accent:      #14417A;
+    --atlas-accent-2:    #14417A;
+    --atlas-accent-soft: transparent;
+    --atlas-accent-line: #9AA3B4;
+    --atlas-grad:      none;
+    --atlas-grad-soft: none;
+    --atlas-glow:        none;
+    --atlas-glow-strong: none;
+
+    --atlas-sh-1: none;
+    --atlas-sh-2: none;
+    --atlas-sh-3: none;
+
+    background: #FFFFFF !important;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #000 !important;
+    /* a animação de entrada, se pega no meio, imprime a página
+       meio transparente */
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  /* O campo esquemático (malha + brilhos) é um ::before fixo em tela
+     cheia: imprime como um borrão cinza atrás de tudo. */
+  body::before,
+  body::after { display: none !important; }
+
+  /* ================================================================
+     2. O QUE NÃO VAI PARA O PAPEL
+     ------------------------------------------------------------------
+     Navegação, ações e enfeite. Numa folha impressa nada disso pode
+     ser clicado — é só tinta gasta e espaço roubado do conteúdo.
+     ================================================================ */
+  .sidebar, #sidebar, aside.side, .rail,
+  nav.nav, .nav, .nav-links, .topnav,
+  .nav-back, .side-back, .nav__back,
+  .nav-toggle, .nav-scrim,
+  [data-atlas-ui="oraculo"],
+  [data-atlas-ui="backfoot"],
+  [data-atlas-ui="topstrip"],
+  .atlas-oraculo,
+  .awsel, .awd,
+  .tb-menu__pop,
+  .sky, .hud, .cine-fade,
+  #toasts, .toast, .toast-wrap,
+  .modal-scrim, .scrim,
+  .head-actions, .topbar-actions, .topbar-right,
+  .icon-btn, .card-btn, .select,
+  .btn, .btn-primary, .btn-secondary, .btn-ghost, .btn-danger,
+  .segmented, .filterbar, .searchbox, .searchbar, .search,
+  .filter-select, .set-row-ctrl,
+  .skip, .progress {
+    display: none !important;
+  }
+
+  /* Botão isolado que escapou dos seletores acima */
+  button { display: none !important; }
+
+  /* ================================================================
+     3. LAYOUT: uma coluna, largura inteira
+     ------------------------------------------------------------------
+     Com a sidebar fora, a grade de duas colunas deixaria metade da
+     folha em branco.
+     ================================================================ */
+  .app, .app-shell {
+    display: block !important;
+    grid-template-columns: none !important;
+    min-height: 0 !important;
+  }
+  .main, .view, .view__inner, .wrap, main {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Grades de cartões viram duas colunas: em uma só, um relatório de
+     seis indicadores vira seis páginas. */
+  .kpis, .fin-grid, .rep-kpis, .g-4, .g-3, .g-2,
+  .charts, .bottom, .rep-grid, .chart-split, .pos-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* ================================================================
+     4. SUPERFÍCIES
+     ================================================================ */
+  .card, .panel, .kpi, .set-card, .fin-card, .pos-card,
+  .rep-card, .rep-kpi, .est__card, .thesis-card, .wcard {
+    background: #FFFFFF !important;
+    border: 1px solid #C8CEDA !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* um cartão partido entre duas folhas é ilegível */
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 10px 12px !important;
+  }
+  /* fio de luz e cantoneiras de HUD: puro enfeite de tela */
+  .card::before, .panel::before, .set-card::before,
+  .kpi::before, .kpi::after { display: none !important; }
+
+  /* ================================================================
+     5. TEXTO E DADOS
+     ================================================================ */
+  h1 { font-size: 17pt !important; }
+  h2 { font-size: 13pt !important; }
+  h3 { font-size: 11pt !important; }
+  body, p, td, th, li, dd, dt { font-size: 9.5pt !important; }
+
+  h1, h2, h3, .page-title, .card-title {
+    color: #000 !important;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  table { width: 100% !important; border-collapse: collapse !important; }
+  th, td {
+    border-bottom: 1px solid #DDE2EA !important;
+    padding: 4px 6px !important;
+    color: #1A1F2B !important;
+  }
+  thead { display: table-header-group; }   /* repete o cabeçalho a cada folha */
+  tr { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Gráficos em <canvas> imprimem como imagem: mantidos, mas limitados
+     em altura para não empurrar a tabela para a folha seguinte. */
+  canvas {
+    max-width: 100% !important;
+    max-height: 62mm !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ================================================================
+     6. SEM MOVIMENTO
+     ================================================================ */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+
+  /* Links internos do app não têm serventia no papel; imprimir a URL
+     ao lado de cada um só polui. Mantém só a cor de tinta. */
+  a { color: #14417A !important; text-decoration: none !important; }
+}
