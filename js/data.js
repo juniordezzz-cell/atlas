@@ -7,7 +7,12 @@
    depois sem tocar no dashboard.
    =================================================================== */
 
-const ATLAS_DATA = (function () {
+/* Era um IIFE que montava ATLAS_DATA uma vez. Virou função com nome
+   para o Dashboard poder REMONTAR os dados sem recarregar a página —
+   criar ou excluir uma carteira muda o KPI "Carteiras" e pode mudar os
+   totais. Nada dentro mudou: o corpo é o mesmo, e ATLAS_DATA continua
+   sendo o resultado da primeira chamada. */
+function buildAtlasData() {
   function n(v) { return (typeof v === "number" && isFinite(v)) ? v : 0; }
   function usd(v) { return "US$ " + Math.round(n(v)).toLocaleString("pt-BR"); }
   function usdC(v) { return "US$ " + n(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -155,4 +160,9 @@ const ATLAS_DATA = (function () {
     alertas,
     oraculo: { mensagem: "Consolidando " + snap.byModule.length + " módulos · patrimônio " + usd(snap.total) + "." }
   };
-})();
+}
+
+window.buildAtlasData = buildAtlasData;
+
+/* `var` e não `const`: o Dashboard reatribui ATLAS_DATA ao remontar. */
+var ATLAS_DATA = buildAtlasData();

@@ -1,8 +1,32 @@
 /* ===================================================================
    ATLAS — Dashboard (render)
+   -------------------------------------------------------------------
+   Este arquivo pintava tudo em NÍVEL SUPERIOR: rodava uma vez, no
+   load, e não tinha como repetir. Por isso o seletor de carteira usava
+   `reload: true` — recarregar a página era o único jeito de manter os
+   números certos depois de criar ou excluir uma carteira.
+
+   Agora cada pedaço da tela é uma função, e `repintar()` refaz todas.
+   A lógica de cada uma é a mesma de antes, linha por linha; o que
+   mudou é só poderem ser chamadas de novo.
+
+   O QUE EXIGE REPINTURA — e o que não exige
+   -----------------------------------------
+   A consolidação (js/atlas-consolidation.js) soma TODAS as carteiras
+   globais, não a ativa. Então:
+
+     trocar de carteira   → nenhum número daqui muda. O `reload` que
+                            existia nesse caminho era desperdício puro:
+                            piscava a tela inteira para chegar ao mesmo
+                            resultado.
+     criar / excluir      → muda o KPI "Carteiras" e, se a nova global
+                            tiver dados, os totais. Aqui sim é preciso
+                            remontar.
+     renomear             → muda só o rótulo do seletor, que já se
+                            repinta sozinho pela assinatura do store.
    =================================================================== */
 
-const D = ATLAS_DATA;
+let D = ATLAS_DATA;
 
 /* ===================================================================
    PRIMEIRO ACESSO
@@ -20,54 +44,74 @@ const D = ATLAS_DATA;
    um roteiro de início. Assim que existir qualquer valor, o Dashboard
    normal volta sozinho — não há estado a limpar nem botão a apertar.
    =================================================================== */
-const SEM_DADOS = !D.categoria.labels.length &&
-                  !D.movimentacoes.length &&
-                  !D.pools.length;
+let SEM_DADOS = calcularSemDados();
 
-/* ---- Saudação ---- */
-document.getElementById('saudacao').textContent =
-  `${D.usuario.saudacao}, ${D.usuario.nome}`;
-document.getElementById('evoTotal').textContent = D.evolucao.total;
-document.getElementById('evoVar').textContent = D.evolucao.variacao;
+function calcularSemDados() {
+  return !D.categoria.labels.length &&
+         !D.movimentacoes.length &&
+         !D.pools.length;
+}
+
+/* ---- Cabeçalho ---- */
+function pintarCabecalho() {
+  document.getElementById('saudacao').textContent =
+    `${D.usuario.saudacao}, ${D.usuario.nome}`;
+  document.getElementById('evoTotal').textContent = D.evolucao.total;
+  document.getElementById('evoVar').textContent = D.evolucao.variacao;
+}
 
 /* ---- Roteiro de início (só no primeiro acesso) ---- */
-if (SEM_DADOS) {
-  const PASSOS = [
-    { href: 'hold/index.html',    modulo: 'Hold',  titulo: 'Registre o que você carrega',
-      texto: 'Ativos de longo prazo, com a tese que justifica cada posição.' },
-    { href: 'trade/index.html',   modulo: 'Trade', titulo: 'Documente suas operações',
-      texto: 'Estudo, registro de decisão e trade — o ciclo completo.' },
-    { href: 'defi/index.html',    modulo: 'DeFi',  titulo: 'Acompanhe suas posições',
-      texto: 'Pools, staking e lending, com APR e resultado real.' },
-    { href: 'RWA/index.html',     modulo: 'RWA',   titulo: 'Mapeie os ativos reais',
-      texto: 'Portfólio, ambiente macro e motor de risco.' }
-  ];
+const PASSOS = [
+  { href: 'hold/index.html',    modulo: 'Hold',  titulo: 'Registre o que você carrega',
+    texto: 'Ativos de longo prazo, com a tese que justifica cada posição.' },
+  { href: 'trade/index.html',   modulo: 'Trade', titulo: 'Documente suas operações',
+    texto: 'Estudo, registro de decisão e trade — o ciclo completo.' },
+  { href: 'defi/index.html',    modulo: 'DeFi',  titulo: 'Acompanhe suas posições',
+    texto: 'Pools, staking e lending, com APR e resultado real.' },
+  { href: 'RWA/index.html',     modulo: 'RWA',   titulo: 'Mapeie os ativos reais',
+    texto: 'Portfólio, ambiente macro e motor de risco.' }
+];
 
-  const inicio = document.createElement('section');
-  inicio.className = 'onboard';
-  inicio.innerHTML =
-    '<div class="onboard-head">' +
-      '<span class="onboard-eyebrow">Primeiros passos</span>' +
-      '<h2>Seu ATLAS está pronto — e vazio.</h2>' +
-      '<p>Nada é inventado aqui: os números aparecem conforme você registra. ' +
-         'Comece por qualquer módulo; o patrimônio total se consolida sozinho.</p>' +
-    '</div>' +
-    '<div class="onboard-grid">' +
-      PASSOS.map((p, i) =>
-        '<a class="onboard-card" href="' + p.href + '">' +
-          '<span class="onboard-n">' + (i + 1) + '</span>' +
-          '<span class="onboard-mod">' + p.modulo + '</span>' +
-          '<strong>' + p.titulo + '</strong>' +
-          '<span class="onboard-txt">' + p.texto + '</span>' +
-        '</a>').join('') +
-    '</div>' +
-    '<div class="onboard-foot">' +
-      '<span>Já usava o ATLAS antes?</span>' +
-      '<a href="configuracoes.html">Restaurar um backup</a>' +
-    '</div>';
+function pintarRoteiro() {
+  const existente = document.querySelector('.onboard');
 
-  const main = document.querySelector('.main');
-  main.insertBefore(inicio, document.getElementById('kpis'));
+  if (!SEM_DADOS) {
+    /* saiu do primeiro acesso: tira o roteiro e devolve o painel */
+    if (existente) existente.remove();
+    ['.charts', '.bottom'].forEach(sel => {
+      const el = document.querySelector(sel);
+      if (el) el.style.display = '';
+    });
+    return;
+  }
+
+  if (!existente) {
+    const inicio = document.createElement('section');
+    inicio.className = 'onboard';
+    inicio.innerHTML =
+      '<div class="onboard-head">' +
+        '<span class="onboard-eyebrow">Primeiros passos</span>' +
+        '<h2>Seu ATLAS está pronto — e vazio.</h2>' +
+        '<p>Nada é inventado aqui: os números aparecem conforme você registra. ' +
+           'Comece por qualquer módulo; o patrimônio total se consolida sozinho.</p>' +
+      '</div>' +
+      '<div class="onboard-grid">' +
+        PASSOS.map((p, i) =>
+          '<a class="onboard-card" href="' + p.href + '">' +
+            '<span class="onboard-n">' + (i + 1) + '</span>' +
+            '<span class="onboard-mod">' + p.modulo + '</span>' +
+            '<strong>' + p.titulo + '</strong>' +
+            '<span class="onboard-txt">' + p.texto + '</span>' +
+          '</a>').join('') +
+      '</div>' +
+      '<div class="onboard-foot">' +
+        '<span>Já usava o ATLAS antes?</span>' +
+        '<a href="configuracoes.html">Restaurar um backup</a>' +
+      '</div>';
+
+    const main = document.querySelector('.main');
+    main.insertBefore(inicio, document.getElementById('kpis'));
+  }
 
   /* Gráficos e listas vazios não informam nada e ainda fazem a tela
      parecer quebrada. Ficam de fora até existir o primeiro dado. */
@@ -78,80 +122,89 @@ if (SEM_DADOS) {
 }
 
 /* ---- KPIs ---- */
-document.getElementById('kpis').innerHTML = D.kpis.map(k => {
-  const valorClass = k.destaque ? 'valor destaque' : 'valor';
-  const subClass = k.tipo === 'neutro' ? 'sub neutro' : `sub ${k.tipo}`;
-  const periodo = k.periodo ? `<span class="periodo">${k.periodo}</span>` : '';
-  return `
-    <div class="kpi">
-      <div class="rotulo">${k.rotulo}</div>
-      <div class="${valorClass}">${k.valor}</div>
-      <div class="${subClass}">${k.variacao}${periodo}</div>
-    </div>`;
-}).join('');
+function pintarKpis() {
+  document.getElementById('kpis').innerHTML = D.kpis.map(k => {
+    const valorClass = k.destaque ? 'valor destaque' : 'valor';
+    const subClass = k.tipo === 'neutro' ? 'sub neutro' : `sub ${k.tipo}`;
+    const periodo = k.periodo ? `<span class="periodo">${k.periodo}</span>` : '';
+    return `
+      <div class="kpi">
+        <div class="rotulo">${k.rotulo}</div>
+        <div class="${valorClass}">${k.valor}</div>
+        <div class="${subClass}">${k.variacao}${periodo}</div>
+      </div>`;
+  }).join('');
+}
 
 /* ---- Movimentações ---- */
 const iconEntrada = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12l7 7 7-7"/></svg>`;
 const iconSaida   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`;
-document.getElementById('movList').innerHTML = D.movimentacoes.map(m => `
-  <li class="mov-item">
-    <span class="mov-icon ${m.tipo === 'neg' ? 'neg' : ''}">${m.tipo === 'neg' ? iconSaida : iconEntrada}</span>
-    <div class="mov-info">
-      <div class="t">${m.titulo}</div>
-      <div class="o">${m.origem}</div>
-    </div>
-    <div class="mov-right">
-      <div class="v ${m.tipo}">${m.valor}</div>
-      <div class="q">${m.quando}</div>
-    </div>
-  </li>`).join('');
+
+function pintarMovimentacoes() {
+  document.getElementById('movList').innerHTML = D.movimentacoes.map(m => `
+    <li class="mov-item">
+      <span class="mov-icon ${m.tipo === 'neg' ? 'neg' : ''}">${m.tipo === 'neg' ? iconSaida : iconEntrada}</span>
+      <div class="mov-info">
+        <div class="t">${m.titulo}</div>
+        <div class="o">${m.origem}</div>
+      </div>
+      <div class="mov-right">
+        <div class="v ${m.tipo}">${m.valor}</div>
+        <div class="q">${m.quando}</div>
+      </div>
+    </li>`).join('');
+}
 
 /* ---- Pools ---- */
-document.getElementById('poolList').innerHTML = D.pools.map(p => `
-  <li class="pool-item">
-    <span class="pool-icon">${p.par.split('/')[0].slice(0,3)}</span>
-    <div class="pool-info">
-      <div class="par">${p.par}</div>
-      <div class="dex">${p.dex}</div>
-    </div>
-    <div class="pool-metric">
-      <div class="lbl">APR</div>
-      <div class="apr">${p.apr}</div>
-    </div>
-    <div class="pool-lucro">
-      <div class="lbl">Lucro</div>
-      <div class="val">${p.lucro}</div>
-    </div>
-  </li>`).join('');
+function pintarPools() {
+  document.getElementById('poolList').innerHTML = D.pools.map(p => `
+    <li class="pool-item">
+      <span class="pool-icon">${p.par.split('/')[0].slice(0,3)}</span>
+      <div class="pool-info">
+        <div class="par">${p.par}</div>
+        <div class="dex">${p.dex}</div>
+      </div>
+      <div class="pool-metric">
+        <div class="lbl">APR</div>
+        <div class="apr">${p.apr}</div>
+      </div>
+      <div class="pool-lucro">
+        <div class="lbl">Lucro</div>
+        <div class="val">${p.lucro}</div>
+      </div>
+    </li>`).join('');
+}
 
 /* ---- Alertas ----
-   Agora vêm dos quatro módulos (AtlasConsolidation.alerts) e trazem
-   nível e origem. O ícone acompanha a gravidade: um triângulo igual
-   para tudo achata a diferença entre "concentração de 41%" e "posição
-   investida sem tese". */
+   Vêm dos quatro módulos (AtlasConsolidation.alerts) e trazem nível e
+   origem. O ícone acompanha a gravidade: um triângulo igual para tudo
+   achata a diferença entre "concentração de 41%" e "posição investida
+   sem tese". */
 const ICON_NIVEL = {
   crit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>`,
   warn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>`,
   info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>`
 };
 
-const alertList = document.getElementById('alertList');
-if (D.alertas.length) {
-  alertList.innerHTML = D.alertas.map(a => `
-    <li class="alert-item nivel-${a.level || 'warn'}">
-      <span class="alert-ic">${ICON_NIVEL[a.level] || ICON_NIVEL.warn}</span>
-      <div>
-        <div class="alert-txt">${a.texto}</div>
-        <div class="alert-when">${a.module ? `<span class="alert-mod">${a.module}</span>` : ''}${a.quando}</div>
-      </div>
-    </li>`).join('');
-} else {
-  /* "Nenhum alerta" é informação — a lista em branco parecia defeito */
-  alertList.innerHTML = `
-    <li class="alert-empty">
-      <strong>Nada pedindo atenção</strong>
-      <span>Posições sem tese, teses paradas e pools fora da faixa aparecem aqui.</span>
-    </li>`;
+function pintarAlertas() {
+  const alertList = document.getElementById('alertList');
+  if (D.alertas.length) {
+    alertList.innerHTML = D.alertas.map(a => `
+      <li class="alert-item nivel-${a.level || 'warn'}">
+        <span class="alert-ic">${ICON_NIVEL[a.level] || ICON_NIVEL.warn}</span>
+        <div>
+          <div class="alert-txt">${a.texto}</div>
+          <div class="alert-when">${a.module ? `<span class="alert-mod">${a.module}</span>` : ''}${a.quando}</div>
+        </div>
+      </li>`).join('');
+  } else {
+    /* "Nenhum alerta" é informação — a lista em branco parecia defeito */
+    alertList.innerHTML = `
+      <li class="alert-empty">
+        <strong>Nada pedindo atenção</strong>
+        <span>Posições sem tese, teses paradas e pools fora da faixa aparecem aqui.</span>
+      </li>`;
+  }
 }
 
 /* ===================================================================
@@ -161,31 +214,32 @@ Chart.defaults.color = 'rgba(230,241,255,0.55)';
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.font.size = 11;
 
-/* ---- Evolução Patrimonial (linha) ---- */
-(function () {
-  /* Sem dados, a seção inteira está oculta: desenhar num canvas de
-     tamanho zero só gasta trabalho e polui o console. */
-  if (SEM_DADOS) return;
-  const ctx = document.getElementById('chartEvolucao').getContext('2d');
+/* A escala do eixo Y é recalculada a cada troca de período ou de
+   dados: com janelas diferentes o mínimo e o máximo mudam, e uma
+   escala fixa deixaria a linha achatada ou cortada. */
+function escala(vals) {
+  const v = (vals && vals.length) ? vals : [0, 1];
+  const lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
+  const pad = Math.max((hi - lo) * 0.25, hi * 0.05, 1);
+  const yMin = Math.max(0, Math.floor((lo - pad) / 1000) * 1000);
+  const yMax = Math.ceil((hi + pad) / 1000) * 1000;
+  return { yMin, yMax, yStep: Math.max(1000, Math.round((yMax - yMin) / 5 / 1000) * 1000) };
+}
+
+let chartEvolucao = null;
+
+function criarGraficoEvolucao() {
+  if (chartEvolucao) return chartEvolucao;
+  const canvas = document.getElementById('chartEvolucao');
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d');
   const grad = ctx.createLinearGradient(0, 0, 0, 200);
   grad.addColorStop(0, 'rgba(0,191,255,0.35)');
   grad.addColorStop(1, 'rgba(0,191,255,0)');
 
-  /* A escala do eixo Y é recalculada a cada troca de período: com
-     janelas diferentes o mínimo e o máximo mudam, e uma escala fixa
-     deixaria a linha achatada ou cortada. */
-  function escala(vals) {
-    const v = (vals && vals.length) ? vals : [0, 1];
-    const lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
-    const pad = Math.max((hi - lo) * 0.25, hi * 0.05, 1);
-    const yMin = Math.max(0, Math.floor((lo - pad) / 1000) * 1000);
-    const yMax = Math.ceil((hi + pad) / 1000) * 1000;
-    return { yMin, yMax, yStep: Math.max(1000, Math.round((yMax - yMin) / 5 / 1000) * 1000) };
-  }
-
   const e0 = escala(D.evolucao.valores);
 
-  const chart = new Chart(ctx, {
+  chartEvolucao = new Chart(ctx, {
     type: 'line',
     data: {
       labels: D.evolucao.labelsCheios,
@@ -218,15 +272,122 @@ Chart.defaults.font.size = 11;
       },
     },
   });
+  return chartEvolucao;
+}
 
-  /* ===================================================================
-     Seletor de período — o botão "Últimos 30 dias" existia no HTML e
-     não fazia nada. Agora ele troca a janela de verdade, relendo a
-     consolidação com o número de dias pedido.
+/* ---- Donut helper ----
+   Guarda a instância por canvas: recriar por cima de um Chart vivo
+   vaza o anterior (o Chart.js mantém o canvas registrado e os
+   listeners de hover continuam ativos). */
+const donuts = {};
 
-     A leitura é a MESMA de js/data.js (AtlasConsolidation.snapshot):
-     nenhuma regra de cálculo é reescrita aqui, só o parâmetro muda.
-     =================================================================== */
+function donut(canvasId, legendId, cfg) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  if (donuts[canvasId]) {
+    const c = donuts[canvasId];
+    c.data.labels = cfg.labels;
+    c.data.datasets[0].data = cfg.valores;
+    c.data.datasets[0].backgroundColor = cfg.cores;
+    c.update();
+  } else {
+    donuts[canvasId] = new Chart(canvas.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: cfg.labels,
+        datasets: [{
+          data: cfg.valores,
+          backgroundColor: cfg.cores,
+          borderColor: 'transparent',
+          borderWidth: 0,
+          spacing: 3,
+          hoverOffset: 6,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0D1422', borderColor: 'rgba(0,191,255,0.3)', borderWidth: 1,
+            padding: 10, displayColors: false,
+            callbacks: { label: (c) => c.label + ': ' + c.parsed + '%' }
+          },
+        },
+      },
+    });
+  }
+
+  document.getElementById(legendId).innerHTML = cfg.labels.map((l, i) => `
+    <li>
+      <span class="swatch" style="background:${cfg.cores[i]}"></span>
+      <span class="nome">${l}</span>
+      <span class="val">${cfg.valores[i].toString().replace('.', ',')}%</span>
+    </li>`).join('');
+}
+
+function pintarGraficos() {
+  /* Sem dados a seção inteira está oculta: desenhar num canvas de
+     tamanho zero só gasta trabalho e polui o console. */
+  if (SEM_DADOS) return;
+
+  const c = criarGraficoEvolucao();
+  if (c) {
+    const esc = escala(D.evolucao.valores);
+    c.data.labels = D.evolucao.labelsCheios;
+    c.data.datasets[0].data = D.evolucao.valores;
+    c.options.scales.y.min = esc.yMin;
+    c.options.scales.y.max = esc.yMax;
+    c.options.scales.y.ticks.stepSize = esc.yStep;
+    c.update();
+  }
+
+  donut('chartCategoria', 'legendCategoria', D.categoria);
+  donut('chartBlockchain', 'legendBlockchain', D.blockchain);
+}
+
+/* ===================================================================
+   PINTURA COMPLETA
+   =================================================================== */
+function pintarTudo() {
+  pintarCabecalho();
+  pintarRoteiro();
+  pintarKpis();
+  pintarMovimentacoes();
+  pintarPools();
+  pintarAlertas();
+  pintarGraficos();
+}
+
+/* Remonta os dados e repinta. Substitui o location.reload() que o
+   seletor de carteira disparava: sem flash branco e sem perder a
+   posição de rolagem. */
+function repintar() {
+  try {
+    D = window.buildAtlasData ? window.buildAtlasData() : D;
+  } catch (e) {
+    if (window.console) console.error('[Dashboard] falha ao remontar os dados:', e);
+    return;                                   // mantém a tela anterior, que é coerente
+  }
+  SEM_DADOS = calcularSemDados();
+  pintarTudo();
+}
+
+window.AtlasDashboard = { repintar: repintar };
+
+pintarTudo();
+
+/* ===================================================================
+   Seletor de período — o botão "Últimos 30 dias" existia no HTML e
+   não fazia nada. Agora ele troca a janela de verdade, relendo a
+   consolidação com o número de dias pedido.
+
+   A leitura é a MESMA de js/data.js (AtlasConsolidation.snapshot):
+   nenhuma regra de cálculo é reescrita aqui, só o parâmetro muda.
+   =================================================================== */
+(function () {
   const PERIODOS = [
     { dias: 7,  rotulo: 'Últimos 7 dias' },
     { dias: 30, rotulo: 'Últimos 30 dias' },
@@ -259,6 +420,9 @@ Chart.defaults.font.size = 11;
     try { snap = window.AtlasConsolidation.snapshot(dias); }
     catch (e) { return; }                       // consolidação indisponível: mantém o que está na tela
     if (!snap) return;
+
+    const chart = criarGraficoEvolucao();
+    if (!chart) return;
 
     const esc = escala(snap.evolution);
     chart.data.labels = rotulos(dias);
@@ -321,49 +485,6 @@ Chart.defaults.font.size = 11;
   if (window.AtlasCloseMenus) window.AtlasCloseMenus();
 })();
 
-/* ---- Donut helper ---- */
-function donut(canvasId, legendId, cfg) {
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: cfg.labels,
-      datasets: [{
-        data: cfg.valores,
-        backgroundColor: cfg.cores,
-        borderColor: 'transparent',
-        borderWidth: 0,
-        spacing: 3,
-        hoverOffset: 6,
-      }],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      cutout: '70%',
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0D1422', borderColor: 'rgba(0,191,255,0.3)', borderWidth: 1,
-          padding: 10, displayColors: false,
-          callbacks: { label: (c) => c.label + ': ' + c.parsed + '%' }
-        },
-      },
-    },
-  });
-
-  document.getElementById(legendId).innerHTML = cfg.labels.map((l, i) => `
-    <li>
-      <span class="swatch" style="background:${cfg.cores[i]}"></span>
-      <span class="nome">${l}</span>
-      <span class="val">${cfg.valores[i].toString().replace('.', ',')}%</span>
-    </li>`).join('');
-}
-
-if (!SEM_DADOS) {
-  donut('chartCategoria', 'legendCategoria', D.categoria);
-  donut('chartBlockchain', 'legendBlockchain', D.blockchain);
-}
-
 /* ===================================================================
    ATLAS — Seletor de carteira GLOBAL (Bloco 3)
    Troca a carteira global ativa da central → afeta todos os módulos.
@@ -384,38 +505,15 @@ if (!SEM_DADOS) {
      aba —, por isso não existe mais um segundo render assinando
      AtlasWallets aqui.
 
-     ------------------------------------------------------------------
-     reload: PROVISÓRIO — e o que falta para tirá-lo.
-
-     Trocar de carteira muda TODOS os números desta tela. Hoje eles são
-     pintados uma vez, em nível superior deste arquivo, então recarregar
-     a página é o único jeito de mantê-los certos. O custo é o flash
-     branco e a perda da posição de rolagem.
-
-     Para remover com segurança, três coisas precisam acontecer juntas —
-     é refatoração, não ajuste, e por isso não foi feita de passagem:
-
-       1. js/data.js precisa expor um CONSTRUTOR (buildAtlasData()) em
-          vez de montar ATLAS_DATA uma vez num IIFE. Hoje é `const`.
-       2. Este arquivo precisa virar funções re-executáveis. Quase tudo
-          aqui roda em nível superior: saudação, KPIs, movimentações,
-          pools, alertas e o roteiro de primeiro acesso. Também é
-          preciso decidir o que fazer quando SEM_DADOS muda de valor
-          entre uma carteira e outra (a seção de gráficos é escondida
-          nesse caso, e teria de voltar).
-       3. Os dois gráficos de rosca precisam ser atualizados em vez de
-          recriados — Chart.getChart(canvas) devolve a instância viva;
-          criar por cima vaza a anterior.
-
-     O mesmo vale para defi/js/components.js, com um agravante: o DeFi é
-     multipágina, e cada uma das sete telas monta o seu conteúdo no
-     load. Ali o reload é defensável enquanto o módulo for MPA.
-
-     Enquanto isso, recarregar mantém os números CERTOS, que é o que não
-     se pode perder. Prefira o flash à divergência silenciosa. */
+     SEM `reload: true`. A consolidação soma TODAS as carteiras globais,
+     não a ativa: trocar de carteira não muda nenhum número desta tela,
+     então recarregar era piscar a página inteira para chegar ao mesmo
+     resultado. Criar e excluir MUDAM (o KPI "Carteiras", e os totais se
+     a nova global tiver dados) — nesses casos `afterChange` remonta os
+     dados e repinta, sem flash e sem perder a rolagem. */
   window.WalletSelector.render(host, {
     module: "atlas",
     scope: "module",
-    reload: true
+    afterChange: function () { repintar(); }
   });
 })();

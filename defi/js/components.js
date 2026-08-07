@@ -53,10 +53,29 @@
          uma div sem classe: markup, medidas e cores são todos de
          wallets/walletSelector.css, iguais aos dos outros módulos.
 
-         reload: PROVISÓRIO. As páginas do DeFi montam pools, staking e
-         lending no load e não reagem à troca de carteira; até isso
-         virar reativo, recarregar é o que mantém os números certos.
-         Remoção rastreada na tarefa "remover todos os reload:true". */
+         ------------------------------------------------------------
+         reload: MANTIDO AQUI DE PROPÓSITO — e o Dashboard não usa mais.
+
+         A diferença entre os dois casos importa:
+
+           Dashboard  a consolidação soma TODAS as carteiras globais,
+                      não a ativa. Trocar de carteira não mudava número
+                      nenhum lá, então o reload era desperdício puro e
+                      foi removido (ver js/dashboard.js).
+           DeFi       os dados são PARTICIONADOS por carteira
+                      (DeFiStore.byWallet[id]). Trocar de carteira muda
+                      pools, staking, lending, KPIs e gráficos — tudo.
+
+         E o DeFi é multipágina: sete telas, cada uma montando o próprio
+         conteúdo no load, cada uma com seu script de entrada
+         (dashboard.js, pools.js, staking.js, lending.js, analytics.js,
+         history.js, teses.js). Tornar isso reativo é extrair a
+         renderização de SETE arquivos para funções re-executáveis —
+         refatoração de módulo, não ajuste de seletor.
+
+         Enquanto for MPA, recarregar é o mecanismo honesto: é como uma
+         aplicação multipágina troca de contexto. O custo é o flash; o
+         que não se pode perder é o número certo. */
       var host = U.qs("#wsel");
       if (!host || !window.WalletSelector || !window.AtlasWallets || !window.DeFiStore) return;
       var S = window.DeFiStore;
