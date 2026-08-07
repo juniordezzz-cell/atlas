@@ -384,10 +384,35 @@ if (!SEM_DADOS) {
      aba —, por isso não existe mais um segundo render assinando
      AtlasWallets aqui.
 
-     reload: PROVISÓRIO. Os KPIs, os gráficos e as listas do Dashboard
-     são montados no load e não reagem à troca de carteira; até isso
-     virar reativo, recarregar é o que mantém os números certos.
-     Remoção rastreada na tarefa "remover todos os reload:true". */
+     ------------------------------------------------------------------
+     reload: PROVISÓRIO — e o que falta para tirá-lo.
+
+     Trocar de carteira muda TODOS os números desta tela. Hoje eles são
+     pintados uma vez, em nível superior deste arquivo, então recarregar
+     a página é o único jeito de mantê-los certos. O custo é o flash
+     branco e a perda da posição de rolagem.
+
+     Para remover com segurança, três coisas precisam acontecer juntas —
+     é refatoração, não ajuste, e por isso não foi feita de passagem:
+
+       1. js/data.js precisa expor um CONSTRUTOR (buildAtlasData()) em
+          vez de montar ATLAS_DATA uma vez num IIFE. Hoje é `const`.
+       2. Este arquivo precisa virar funções re-executáveis. Quase tudo
+          aqui roda em nível superior: saudação, KPIs, movimentações,
+          pools, alertas e o roteiro de primeiro acesso. Também é
+          preciso decidir o que fazer quando SEM_DADOS muda de valor
+          entre uma carteira e outra (a seção de gráficos é escondida
+          nesse caso, e teria de voltar).
+       3. Os dois gráficos de rosca precisam ser atualizados em vez de
+          recriados — Chart.getChart(canvas) devolve a instância viva;
+          criar por cima vaza a anterior.
+
+     O mesmo vale para defi/js/components.js, com um agravante: o DeFi é
+     multipágina, e cada uma das sete telas monta o seu conteúdo no
+     load. Ali o reload é defensável enquanto o módulo for MPA.
+
+     Enquanto isso, recarregar mantém os números CERTOS, que é o que não
+     se pode perder. Prefira o flash à divergência silenciosa. */
   window.WalletSelector.render(host, {
     module: "atlas",
     scope: "module",
