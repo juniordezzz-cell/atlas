@@ -150,6 +150,26 @@
     return inflight;
   }
 
+  /* ---------- símbolo curto, igual ao que o Intl imprime ----------
+     format() usa Intl, que em pt-BR escreve "US$ 1.234" para dólar e
+     em en-US escreve "$1,234". compact() montava o texto na mão com
+     META.symbol ("$"), então o MESMO valor aparecia como "US$ 60.000"
+     num card e "$ 60 mil" no card ao lado.
+
+     Aqui o prefixo é lido do próprio Intl, para os dois caminhos nunca
+     divergirem: formata 0, tira dígitos, separadores e espaços. */
+  function prefixo(code) {
+    var locale = (window.AtlasSettings && window.AtlasSettings.locale()) || "pt-BR";
+    try {
+      return (0).toLocaleString(locale, {
+        style: "currency", currency: code,
+        minimumFractionDigits: 0, maximumFractionDigits: 0
+      }).replace(/[\d\s .,]/g, "");
+    } catch (e) {
+      return AtlasCurrency.symbol(code);
+    }
+  }
+
   function emit() {
     listeners.slice().forEach(function (fn) {
       try { fn(AtlasCurrency.code(), rates, stale); } catch (e) {}
@@ -245,7 +265,7 @@
       for (var i = 0; i < units.length; i++) {
         if (abs >= units[i][0]) {
           var n = abs / units[i][0];
-          return sign + AtlasCurrency.symbol(code) + " " +
+          return sign + prefixo(code) + " " +
                  n.toFixed(n < 10 ? 1 : 0).replace(".", en ? "." : ",") + units[i][1];
         }
       }

@@ -262,3 +262,5 @@
 .btn-ghost:disabled { opacity: .45; cursor: not-allowed; }
 .btn-ghost.is-off:hover,
 .btn-ghost:disabled:hover { color: var(--atlas-text-mut); border-color: var(--atlas-border); background: transparent; }
+/* procedência do câmbio (Configurações → Moeda) */
+.set-foot .hint-warn { color: var(--atlas-warn); }

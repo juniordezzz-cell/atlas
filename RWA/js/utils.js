@@ -5,20 +5,43 @@
 (function () {
   "use strict";
 
+  /* ============================================================
+     DINHEIRO — delegado ao AtlasCurrency
+     ------------------------------------------------------------
+     Estas funções cravavam "US$" e o locale pt-BR. core/currency.js
+     existe desde a Fase 0 com conversão real (três fontes de câmbio em
+     cascata, cache de 6h, validação das taxas) e NENHUM módulo o usava:
+     escolher BRL nas Configurações não mudava nada em lugar nenhum.
+
+     O valor recebido está SEMPRE em USD — é a regra de armazenamento do
+     ATLAS. A conversão acontece só na hora de exibir.
+
+     O caminho antigo fica como reserva: o RWA carrega as dependências
+     como opcionais de propósito, e sem o AtlasCurrency o módulo tem de
+     continuar mostrando número.
+     ============================================================ */
+  function fmt(v, dec) {
+    if (window.AtlasCurrency) return AtlasCurrency.format(v, { decimals: dec });
+    var n = Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    return (v < 0 ? "-" : "") + "US$ " + n;
+  }
+
   var U = {
     money: function (v, dec) {
       dec = dec == null ? (Math.abs(v) < 100 && v !== 0 ? 2 : 0) : dec;
-      var n = Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
-      return (v < 0 ? "-" : "") + "US$ " + n;
+      return fmt(v, dec);
     },
-    money0: function (v) { return (v < 0 ? "-" : "") + "US$ " + Math.abs(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 }); },
+    money0: function (v) { return fmt(v, 0); },
     compact: function (v) {
+      if (window.AtlasCurrency) return AtlasCurrency.compact(v);
       var a = Math.abs(v), s = v < 0 ? "-" : "";
       if (a >= 1e6) return s + "US$ " + (a / 1e6).toFixed(2) + "M";
       if (a >= 1e3) return s + "US$ " + (a / 1e3).toFixed(1) + "K";
       return s + "US$ " + a.toFixed(0);
     },
-    signed: function (v) { return (v > 0 ? "+" : v < 0 ? "-" : "") + "US$ " + Math.abs(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 }); },
+    /* o "+" é do RWA (ganho/perda), não da moeda: o sinal negativo já
+       vem do próprio formatador */
+    signed: function (v) { return (v > 0 ? "+" : "") + fmt(v, 0); },
     pct: function (v, sign) { return (sign && v > 0 ? "+" : "") + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%"; },
     num: function (v, dec) { return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: dec || 0, maximumFractionDigits: dec == null ? 2 : dec }); },
     date: function (iso) { if (!iso) return "—"; var d = new Date(iso + (iso.length === 10 ? "T00:00:00" : "")); return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }); },

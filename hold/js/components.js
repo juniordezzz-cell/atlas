@@ -71,14 +71,25 @@
   }
 
   /* ---------- Formatters ---------- */
+  /* ============================================================
+     DINHEIRO — delegado ao AtlasCurrency
+     ------------------------------------------------------------
+     O Hold formatava "$1,234" com locale en-US — a única grafia
+     diferente do resto do ATLAS, que usa "US$ 1.234". Agora a moeda, o
+     símbolo e o locale vêm todos de core/currency.js, e escolher BRL
+     nas Configurações passa a valer aqui também.
+
+     O valor recebido está SEMPRE em USD (regra de armazenamento).
+     ============================================================ */
   function money(v, dp) {
     var n = +v || 0, abs = Math.abs(n);
-    var opt = dp != null ? { minimumFractionDigits: dp, maximumFractionDigits: dp }
-      : (abs >= 1000 ? { maximumFractionDigits: 0 } : { maximumFractionDigits: 2 });
-    return "$" + n.toLocaleString("en-US", opt);
+    var dec = dp != null ? dp : (abs >= 1000 ? 0 : 2);
+    if (window.AtlasCurrency) return AtlasCurrency.format(n, { decimals: dec });
+    return "$" + n.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
   function compact(v) {
     var n = +v || 0;
+    if (window.AtlasCurrency) return AtlasCurrency.compact(n);
     if (Math.abs(n) >= 1e12) return "$" + (n / 1e12).toFixed(2) + "T";
     if (Math.abs(n) >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
     if (Math.abs(n) >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";

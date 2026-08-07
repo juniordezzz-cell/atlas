@@ -14,8 +14,16 @@
    sendo o resultado da primeira chamada. */
 function buildAtlasData() {
   function n(v) { return (typeof v === "number" && isFinite(v)) ? v : 0; }
-  function usd(v) { return "US$ " + Math.round(n(v)).toLocaleString("pt-BR"); }
-  function usdC(v) { return "US$ " + n(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  /* Dinheiro — delegado ao AtlasCurrency. Os totais consolidados estão
+     em USD (regra de armazenamento); a conversão é camada de exibição. */
+  function usd(v) {
+    if (window.AtlasCurrency) return AtlasCurrency.format(n(v), { decimals: 0 });
+    return "US$ " + Math.round(n(v)).toLocaleString("pt-BR");
+  }
+  function usdC(v) {
+    if (window.AtlasCurrency) return AtlasCurrency.format(n(v), { decimals: 2 });
+    return "US$ " + n(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   function pct(v) { v = n(v); return (v > 0 ? "+" : "") + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%"; }
   function tipo(v) { return v > 0 ? "pos" : v < 0 ? "neg" : "neutro"; }
   function saudacao() { const h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }

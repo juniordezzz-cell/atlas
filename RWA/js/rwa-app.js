@@ -661,6 +661,16 @@
       .register("narrative", V.narrative, "narrative")
       .register("journal", V.journal, "journal")
       .start();
+
+    /* Trocar a moeda (ou o formato de data/número) exige repintar os
+       valores. AtlasBoot já coordena isso e ninguém nunca se registrou —
+       a camada existia sem um só assinante. */
+    if (window.AtlasBoot && window.AtlasBoot.onRepaint) {
+      window.AtlasBoot.onRepaint(function () {
+        try { Shell.refreshTopbar(); Router.resolve(); }
+        catch (e) { if (window.console) console.error(e); }
+      });
+    }
   }
   try { boot(); }
   catch (e) {

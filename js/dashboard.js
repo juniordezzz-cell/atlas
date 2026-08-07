@@ -377,6 +377,13 @@ function repintar() {
 
 window.AtlasDashboard = { repintar: repintar };
 
+/* Trocar a moeda (ou o formato de data/número) nas Configurações exige
+   repintar todos os valores. AtlasBoot já coordena isso — repintar() foi
+   escrita para a troca de carteira e serve igual aqui. */
+if (window.AtlasBoot && window.AtlasBoot.onRepaint) {
+  window.AtlasBoot.onRepaint(repintar);
+}
+
 pintarTudo();
 
 /* ===================================================================

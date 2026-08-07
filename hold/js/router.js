@@ -207,6 +207,15 @@
         try { render(); } catch (e) { if (window.console) console.error(e); }
       }, 0);
     });
+    /* Trocar a moeda (ou o formato de data/número) nas Configurações
+       exige repintar os valores. AtlasBoot já coordena isso e ninguém
+       nunca se registrou — a camada existia sem um só assinante. */
+    if (window.AtlasBoot && AtlasBoot.onRepaint) {
+      AtlasBoot.onRepaint(function () {
+        try { render(); } catch (e) { if (window.console) console.error(e); }
+      });
+    }
+
     window.addEventListener("hashchange", render);
     if (!location.hash) location.hash = "#/dashboard";
     render();

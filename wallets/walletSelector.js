@@ -98,6 +98,8 @@
   }
   function money(opts, v) {
     if (opts.money) { try { return opts.money(v); } catch (e) {} }
+    /* saldo da carteira na moeda de exibição — o ledger guarda em USD */
+    if (global.AtlasCurrency) return global.AtlasCurrency.format(v, { decimals: 0 });
     return "US$ " + (Math.round(v * 100) / 100).toLocaleString("en-US");
   }
   function saldo(opts, id) {
@@ -236,6 +238,22 @@
     if (subscribed || !W || !W.subscribe) return;
     subscribed = true;
     W.subscribe(repintarTudo);
+
+    /* O saldo mostrado aqui está em USD no ledger e é convertido na
+       exibição. Trocar de moeda não mexe no store de carteiras, então
+       sem esta assinatura o seletor continuava exibindo "US$" enquanto
+       o resto da tela já mostrava "R$". Um símbolo errado ao lado de um
+       número certo é pior que os dois errados. */
+    if (global.document && global.document.addEventListener) {
+      global.document.addEventListener("atlas:currency", repintarTudo);
+    }
+    if (global.AtlasSettings && global.AtlasSettings.on) {
+      global.AtlasSettings.on(function (changed) {
+        if (changed.indexOf("currency") !== -1 || changed.indexOf("numberFormat") !== -1) {
+          repintarTudo();
+        }
+      });
+    }
   }
 
   /* ============================================================

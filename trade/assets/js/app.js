@@ -18,6 +18,17 @@
       ATLAS.topbar.mount(document.querySelector(".topbar"));
     });
 
+    /* Trocar a moeda (ou o formato de data/número) exige repintar os
+       valores. AtlasBoot já coordena isso e ninguém nunca se registrou. */
+    if (window.AtlasBoot && window.AtlasBoot.onRepaint) {
+      window.AtlasBoot.onRepaint(function () {
+        try {
+          ATLAS.topbar.mount(document.querySelector(".topbar"));
+          ATLAS.router._resolve();
+        } catch (e) { if (window.console) console.error(e); }
+      });
+    }
+
     ATLAS.router.start();
   }
 

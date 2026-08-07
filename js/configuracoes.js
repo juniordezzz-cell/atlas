@@ -60,6 +60,11 @@
       "Escolher arquivo": "Choose file",
       "Backup exportado": "Backup exported",
       "Backup restaurado": "Backup restored",
+      "Só a exibição muda. Seus dados continuam guardados em dólar.":
+        "Only the display changes. Your data stays stored in US dollars.",
+      "Câmbio de": "Rates from",
+      "Câmbio indisponível — usando taxa de referência":
+        "Rates unavailable — using reference rate",
       "Nenhum dado salvo ainda": "No data saved yet",
       "Preferências salvas": "Preferences saved",
       "Não foi possível salvar": "Could not save",
@@ -274,7 +279,38 @@
     if (window.AtlasI18n) AtlasI18n.refresh();
   }
 
-  function init() { syncControls(); wire(); wireBackup(); wireModules(); }
+  /* ---- 7. Procedência do câmbio ----
+     Trocar para BRL/EUR converte com taxa vinda da rede. Se a taxa é de
+     um cache velho ou do fallback embutido, o usuário precisa saber —
+     um número convertido com taxa errada não se distingue de um certo. */
+  function renderFxStatus() {
+    var el = document.getElementById("fxStatus");
+    if (!el || !window.AtlasCurrency) return;
+
+    if (AtlasCurrency.code() === "USD") { el.textContent = ""; return; }
+
+    if (AtlasCurrency.isStale()) {
+      el.textContent = t("Câmbio indisponível — usando taxa de referência");
+      el.classList.add("hint-warn");
+      return;
+    }
+    el.classList.remove("hint-warn");
+    var d = AtlasCurrency.updatedAt();
+    el.textContent = d
+      ? t("Câmbio de") + " " + AtlasSettings.formatDate(d) + " " +
+        String(d.getHours()).padStart(2, "0") + "h" + String(d.getMinutes()).padStart(2, "0")
+      : "";
+  }
+
+  function init() {
+    syncControls(); wire(); wireBackup(); wireModules();
+    renderFxStatus();
+    if (window.AtlasCurrency) {
+      AtlasCurrency.on(renderFxStatus);          // taxa chegou/falhou
+      AtlasCurrency.ready();                     // garante uma busca no load
+    }
+    if (window.AtlasSettings) AtlasSettings.on(renderFxStatus);
+  }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

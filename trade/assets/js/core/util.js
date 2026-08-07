@@ -6,11 +6,20 @@
 
   var util = {
     // ---- Formatação -------------------------------------
+    /* Dinheiro — delegado ao AtlasCurrency (core/currency.js).
+       Antes o "USD" era o padrão cravado aqui e o argumento `currency`
+       nunca era passado por nenhum chamador, então o Trade ficava preso
+       ao dólar mesmo com a moeda global em BRL. O valor recebido está
+       SEMPRE em USD (regra de armazenamento do ATLAS); a conversão é só
+       camada de exibição. O argumento continua aceito para não quebrar
+       chamada antiga. */
     money: function (n, currency) {
-      currency = currency || "USD";
+      if (window.AtlasCurrency) {
+        return window.AtlasCurrency.format(n, { decimals: 0, currency: currency || undefined });
+      }
       try {
         return new Intl.NumberFormat("pt-BR", {
-          style: "currency", currency: currency, maximumFractionDigits: 0
+          style: "currency", currency: currency || "USD", maximumFractionDigits: 0
         }).format(n);
       } catch (e) { return "$" + Math.round(n).toLocaleString("pt-BR"); }
     },

@@ -5,25 +5,38 @@
 (function () {
   "use strict";
 
-  var CUR = "USD";
-  try { if (window.DeFiStore) CUR = DeFiStore.meta().currency || "USD"; } catch (e) {}
+  /* ============================================================
+     DINHEIRO — delegado ao AtlasCurrency
+     ------------------------------------------------------------
+     Este arquivo lia a moeda de DeFiStore.meta().currency — um SEGUNDO
+     lugar de verdade, gravado só pela antiga tela de Configurações do
+     DeFi (removida) e ignorado pelo resto do ATLAS. Escolher BRL ali
+     não mudava nada em módulo nenhum.
+
+     Agora a moeda é a global (AtlasSettings) e a conversão é a de
+     core/currency.js. O valor recebido está SEMPRE em USD — regra de
+     armazenamento do ATLAS; a conversão é só camada de exibição.
+     ============================================================ */
   var SYMBOL = { USD: "US$", BRL: "R$", EUR: "€" };
+
+  function fmt(v, dec) {
+    if (window.AtlasCurrency) return AtlasCurrency.format(v, { decimals: dec });
+    var n = Math.abs(v).toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    return (v < 0 ? "-" : "") + (SYMBOL.USD) + " " + n;
+  }
 
   var U = {
     /* ---------- Formatação ---------- */
     money: function (v, opts) {
       opts = opts || {};
-      var sym = SYMBOL[CUR] || "US$";
       var abs = Math.abs(v);
       var dec = opts.dec != null ? opts.dec : (abs < 100 && abs !== 0 ? 2 : 0);
-      var n = abs.toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
-      var sign = v < 0 ? "-" : "";
-      return sign + sym + " " + n;
+      return fmt(v, dec);
     },
+    /* o "+" é do DeFi (lucro/prejuízo), não da moeda: o negativo já vem
+       do próprio formatador */
     signedMoney: function (v) {
-      var s = v > 0 ? "+" : (v < 0 ? "-" : "");
-      var sym = SYMBOL[CUR] || "US$";
-      return s + sym + " " + Math.abs(v).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+      return (v > 0 ? "+" : "") + fmt(v, 0);
     },
     num: function (v, dec) {
       dec = dec == null ? 2 : dec;

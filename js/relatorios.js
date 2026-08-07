@@ -32,7 +32,10 @@
   function locale() { return (window.AtlasSettings && AtlasSettings.get("lang") === "en") ? "en-US" : "pt-BR"; }
 
   /* ---------- helpers ---------- */
+  /* Dinheiro — delegado ao AtlasCurrency. O valor está sempre em USD
+     (regra de armazenamento); a conversão é camada de exibição. */
   function money(v) {
+    if (window.AtlasCurrency) return AtlasCurrency.format(v, { decimals: 0 });
     var sign = v < 0 ? "-" : "";
     return sign + "US$ " + Math.abs(Math.round(v)).toLocaleString(locale());
   }
@@ -282,6 +285,14 @@
     fillPeriods();
     wire();
     render();
+
+    /* Trocar a moeda repinta os valores do relatório. */
+    if (window.AtlasBoot && AtlasBoot.onRepaint) {
+      AtlasBoot.onRepaint(function () {
+        try { fillPeriods(); render(); }
+        catch (e) { if (window.console) console.error(e); }
+      });
+    }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
