@@ -206,6 +206,14 @@
 <script src="trade/assets/js/core/store.js"></script>
 <script src="trade/assets/js/core/seed.js"></script>
 <script src="trade/assets/js/core/state.js"></script>
+
+<!-- Livro-razão central e entidade de Teses: são as duas fontes que
+     alimentam os cards "Últimas Movimentações" e "Alertas Inteligentes"
+     com os QUATRO módulos, e não só com o RWA como antes. Precisam vir
+     depois das camadas de dados acima (os adaptadores as consultam) e
+     antes de js/data.js, que monta o ATLAS_DATA. -->
+<script src="core/entities/theses.js"></script>
+<script src="js/atlas-movements.js"></script>
 <script src="js/atlas-consolidation.js"></script>
 
 <!-- ===== Dashboard ===== -->

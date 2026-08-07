@@ -593,3 +593,34 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
 @media (max-width: 560px)  { .onboard-grid { grid-template-columns: 1fr; }
                              .onboard { padding: 22px 18px 18px; }
                              .onboard-head h2 { font-size: 19px; } }
+
+/* ---- Alertas: nível e origem ----
+   Os alertas passaram a vir dos quatro módulos, com gravidade. Um
+   triângulo amarelo igual para tudo achatava a diferença entre
+   "concentração de 41%" e "posição investida sem tese". */
+.alert-item.nivel-crit .alert-ic { background: rgba(255,84,112,0.12); color: var(--vermelho); }
+.alert-item.nivel-warn .alert-ic { background: rgba(255,215,0,0.12);  color: var(--dourado); }
+.alert-item.nivel-info .alert-ic { background: rgba(0,191,255,0.10);  color: var(--azul-principal); }
+
+.alert-mod {
+  display: inline-block;
+  margin-right: 7px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(0,191,255,0.10);
+  color: var(--azul-principal);
+  font-size: 9.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  vertical-align: 1px;
+}
+
+.alert-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 18px 4px 8px;
+}
+.alert-empty strong { font-size: 13px; font-weight: 600; color: var(--texto-suave); }
+.alert-empty span { font-size: 12px; line-height: 1.5; color: var(--texto-fraco); }

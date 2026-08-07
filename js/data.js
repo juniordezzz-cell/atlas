@@ -80,17 +80,30 @@ const ATLAS_DATA = (function () {
     };
   }
 
-  /* Últimas movimentações (journal do RWA) */
+  /* Últimas movimentações — LIVRO-RAZÃO CENTRAL (todos os módulos)
+     -------------------------------------------------------------------
+     Antes este card lia RWAStore.journal(): o diário de UM módulo, com
+     o rótulo "Últimas Movimentações". Quem registrava um trade ou uma
+     pool não via nada aqui, e o card contradizia a promessa central do
+     produto — tudo em um só lugar.
+
+     AtlasMovements já mescla os quatro módulos (tem um adaptador para
+     cada) e é a mesma fonte que a página de Relatórios usa. Passa a ser
+     a fonte daqui também: uma verdade só sobre o que se movimentou. */
+  const MOD_LABEL = { hold: "Hold", trade: "Trade", defi: "DeFi", rwa: "RWA" };
+  const TIPO_LABEL = { entrada: "Entrada", saida: "Saída", resultado: "Resultado" };
+
   let movimentacoes = [];
   try {
-    const negTypes = { revisao: 1, reduce: 1, saida: 1 };
-    movimentacoes = (window.RWAStore ? window.RWAStore.journal() : []).slice(0, 4).map(j => ({
-      titulo: (j.text || "").split(".")[0],
-      origem: j.ticker || "RWA",
-      valor: (j.type || "nota").toUpperCase(),
-      quando: dataBR(j.date),
-      tipo: negTypes[j.type] ? "neg" : "pos"
-    }));
+    movimentacoes = (window.AtlasMovements ? window.AtlasMovements.list() : [])
+      .slice(-4).reverse()                       // list() vem em ordem crescente
+      .map(m => ({
+        titulo: m.label || TIPO_LABEL[m.tipo] || "Movimento",
+        origem: MOD_LABEL[m.module] || "ATLAS",
+        valor: (m.tipo === "saida" ? "−" : "+") + usd(m.valorUSD).replace("US$ ", "US$ "),
+        quando: dataBR(m.date),
+        tipo: m.tipo === "saida" ? "neg" : "pos"
+      }));
   } catch (e) { movimentacoes = []; }
 
   /* Pools / posições ativas (staking + lending do DeFi) */
@@ -105,12 +118,20 @@ const ATLAS_DATA = (function () {
     pools = st.concat(ln).slice(0, 4);
   } catch (e) { pools = []; }
 
-  /* Alertas inteligentes (Risk Engine do RWA) */
+  /* Alertas inteligentes — QUATRO MÓDULOS
+     -------------------------------------------------------------------
+     Antes: só RWAStore.riskEngine(). O Hold já calculava os próprios
+     alertas (posição sem tese, tese arquivada com posição aberta,
+     concentração acima de 40%) e nunca chegavam à tela principal.
+     Agora a consolidação junta Hold + RWA + DeFi + teses paradas de
+     qualquer módulo, com o crítico no topo. */
   let alertas = [];
   try {
-    alertas = (window.RWAStore ? window.RWAStore.riskEngine().alerts : []).slice(0, 3).map(a => ({
-      texto: typeof a === "string" ? a : (a.text || a.msg || ""),
-      quando: (typeof a === "object" && a.when) ? a.when : "agora"
+    alertas = (C && C.alerts ? C.alerts() : []).slice(0, 4).map(a => ({
+      texto: a.texto,
+      quando: a.quando,
+      level: a.level,
+      module: a.module
     }));
   } catch (e) { alertas = []; }
 

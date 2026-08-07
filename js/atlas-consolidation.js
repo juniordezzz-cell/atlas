@@ -193,9 +193,116 @@
     };
   }
 
+  /* ============================================================
+     ALERTAS CONSOLIDADOS
+     ------------------------------------------------------------
+     O card "Alertas Inteligentes" do Dashboard lia SÓ o motor de
+     risco do RWA. O nome prometia o sistema inteiro e entregava um
+     módulo de quatro — e o Hold já calculava alertas próprios
+     (Store.get.alerts) que nunca chegavam à tela principal.
+
+     Aqui cada módulo contribui com o que ELE sabe. Nada é inventado:
+     toda regra abaixo ou já existia no módulo, ou lê um estado que o
+     próprio módulo define como problema.
+
+     Formato de saída: { level, module, texto, quando }
+       level: "crit" | "warn" | "info"  (ordena a lista)
+     ============================================================ */
+
+  var PESO = { crit: 0, warn: 1, info: 2 };
+
+  function alerts() {
+    var out = [];
+
+    function add(level, module, texto, quando) {
+      if (!texto) return;
+      out.push({
+        level: PESO[level] != null ? level : "info",
+        module: module,
+        texto: String(texto),
+        quando: quando || "agora"
+      });
+    }
+
+    /* ---- Hold: regras que o módulo já calculava e ninguém via ---- */
+    safe(function () {
+      var S = hold();
+      if (!S || !S.get || !S.get.alerts) return null;
+      S.get.alerts().forEach(function (a) {
+        add(a.level, "hold", a.title + " — " + a.sub);
+      });
+      return true;
+    }, null);
+
+    /* ---- RWA: motor de risco (a única fonte que já aparecia) ----
+       O riskEngine emite um item com level "ok" quando NÃO há nada
+       errado ("Nenhuma sobre-exposição relevante"). Dentro da tela do
+       RWA isso é um selo de tudo certo; num card chamado "Alertas
+       Inteligentes" vira uma tranquilização com cara de aviso. Fica
+       de fora — a ausência de alerta já é a mensagem. */
+    var NIVEL_RWA = { neg: "crit", warn: "warn", info: "info" };
+    safe(function () {
+      if (!global.RWAStore || !global.RWAStore.riskEngine) return null;
+      (global.RWAStore.riskEngine().alerts || []).forEach(function (a) {
+        var nivel = (a && a.level) || "warn";
+        if (nivel === "ok") return;
+        add(NIVEL_RWA[nivel] || "warn", "rwa",
+            typeof a === "string" ? a : (a.text || a.msg || ""),
+            (a && a.when) || "agora");
+      });
+      return true;
+    }, null);
+
+    /* ---- DeFi: posição fora da faixa de preço ----
+       Pool fora do range para de render taxa e começa a acumular
+       perda impermanente. O módulo já marca esse estado; faltava
+       alguém avisar fora da tela do DeFi. */
+    safe(function () {
+      if (!global.DeFiStore || !global.DeFiStore.activePools) return null;
+      global.DeFiStore.activePools().forEach(function (p) {
+        if (p.status === "range") {
+          add("crit", "defi", "Pool " + p.base + "/" + p.quote + " (" + p.protocol +
+                              ") está fora da faixa de preço.");
+        }
+      });
+      return true;
+    }, null);
+
+    /* ---- Todos os módulos: tese aberta há mais de 72h ----
+       Mesma régua que o Oráculo já usa (core/ui/atlas-shell.js). Uma
+       tese parada é decisão adiada, que é o problema que o ATLAS
+       existe para combater. */
+    safe(function () {
+      var T = global.AtlasTheses;
+      if (!T || !T.open) return null;
+      var LIM = 72 * 3600 * 1000;
+      var paradas = T.open().filter(function (t) {
+        return t.createdAt && (Date.now() - new Date(t.createdAt).getTime()) > LIM;
+      });
+      /* uma linha por módulo, não uma por tese: dez teses paradas no
+         Trade viravam dez alertas iguais e enterravam o resto */
+      var porModulo = {};
+      paradas.forEach(function (t) {
+        var m = t.module || "atlas";
+        porModulo[m] = (porModulo[m] || 0) + 1;
+      });
+      Object.keys(porModulo).forEach(function (m) {
+        var n = porModulo[m];
+        add("warn", m, n + (n === 1 ? " tese aberta" : " teses abertas") +
+                       " há mais de 72h — vale concluir ou arquivar.");
+      });
+      return true;
+    }, null);
+
+    /* crítico primeiro; dentro do mesmo nível, preserva a ordem de
+       chegada (que é a ordem dos módulos acima) */
+    return out.sort(function (a, b) { return PESO[a.level] - PESO[b.level]; });
+  }
+
   global.AtlasConsolidation = {
     snapshot: snapshot,
     moduleList: moduleList,
-    blockchain: blockchain
+    blockchain: blockchain,
+    alerts: alerts
   };
 })(window);

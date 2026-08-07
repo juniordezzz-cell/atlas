@@ -124,16 +124,35 @@ document.getElementById('poolList').innerHTML = D.pools.map(p => `
     </div>
   </li>`).join('');
 
-/* ---- Alertas ---- */
-const iconAlert = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>`;
-document.getElementById('alertList').innerHTML = D.alertas.map(a => `
-  <li class="alert-item">
-    <span class="alert-ic">${iconAlert}</span>
-    <div>
-      <div class="alert-txt">${a.texto}</div>
-      <div class="alert-when">${a.quando}</div>
-    </div>
-  </li>`).join('');
+/* ---- Alertas ----
+   Agora vêm dos quatro módulos (AtlasConsolidation.alerts) e trazem
+   nível e origem. O ícone acompanha a gravidade: um triângulo igual
+   para tudo achata a diferença entre "concentração de 41%" e "posição
+   investida sem tese". */
+const ICON_NIVEL = {
+  crit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>`,
+  warn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>`,
+  info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>`
+};
+
+const alertList = document.getElementById('alertList');
+if (D.alertas.length) {
+  alertList.innerHTML = D.alertas.map(a => `
+    <li class="alert-item nivel-${a.level || 'warn'}">
+      <span class="alert-ic">${ICON_NIVEL[a.level] || ICON_NIVEL.warn}</span>
+      <div>
+        <div class="alert-txt">${a.texto}</div>
+        <div class="alert-when">${a.module ? `<span class="alert-mod">${a.module}</span>` : ''}${a.quando}</div>
+      </div>
+    </li>`).join('');
+} else {
+  /* "Nenhum alerta" é informação — a lista em branco parecia defeito */
+  alertList.innerHTML = `
+    <li class="alert-empty">
+      <strong>Nada pedindo atenção</strong>
+      <span>Posições sem tese, teses paradas e pools fora da faixa aparecem aqui.</span>
+    </li>`;
+}
 
 /* ===================================================================
    Gráficos (Chart.js)
