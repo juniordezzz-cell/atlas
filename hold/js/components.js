@@ -253,6 +253,7 @@
 
   /* ---------- Modal ---------- */
   var activeScrim = null;
+  var soltarFoco = null;      // devolvida por AtlasUI.trapFocus
   function modal(opts) {
     closeModal();
     var scrim = el("div", { class: "modal-scrim" });
@@ -282,12 +283,23 @@
     document.body.appendChild(scrim);
     activeScrim = scrim;
     document.addEventListener("keydown", escClose);
+
+    /* Armadilha de foco do kit compartilhado (core/ui/atlas-ui.js).
+       Sem ela o Tab escapava do modal e ia navegando pela página ATRÁS
+       do overlay — quem usa teclado acabava preenchendo um formulário
+       que não estava vendo. Também marca role/aria-modal, que este
+       modal nunca declarou, e devolve o foco a quem abriu ao fechar. */
+    if (window.AtlasUI && AtlasUI.trapFocus) {
+      soltarFoco = AtlasUI.trapFocus(m, closeModal);
+    }
+
     var firstInput = m.querySelector("input,select,textarea,button.btn");
     if (firstInput) setTimeout(function () { firstInput.focus(); }, 40);
     return { close: closeModal, node: m, body: body };
   }
   function escClose(e) { if (e.key === "Escape") closeModal(); }
   function closeModal() {
+    if (soltarFoco) { soltarFoco(); soltarFoco = null; }
     if (activeScrim) { activeScrim.remove(); activeScrim = null; document.removeEventListener("keydown", escClose); }
   }
 

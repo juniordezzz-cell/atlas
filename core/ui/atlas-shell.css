@@ -742,3 +742,43 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   letter-spacing: 0.01em;
   color: var(--atlas-neg);
 }
+
+/* ===================================================================
+   7. PULAR PARA O CONTEÚDO
+   -------------------------------------------------------------------
+   Injetado por core/ui/atlas-shell.js como primeiro filho do <body>.
+   Invisível até receber foco: aparece para quem navega por Tab e não
+   ocupa espaço para quem usa mouse.
+
+   Fora da tela por posicionamento, e NÃO por display:none nem
+   visibility:hidden — as duas tirariam o link da ordem de tabulação,
+   que é justamente o que ele existe para ocupar.
+   =================================================================== */
+
+.atlas-skip {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 10000;
+  transform: translate(-50%, -140%);
+  padding: 10px 20px;
+  border-radius: 0 0 var(--atlas-r-md) var(--atlas-r-md);
+  background: var(--atlas-accent);
+  color: var(--atlas-bg-deep);
+  font-family: var(--atlas-font-ui);
+  font-size: var(--atlas-fs-sm);
+  font-weight: 650;
+  text-decoration: none;
+  box-shadow: var(--atlas-sh-2);
+  transition: transform var(--atlas-dur) var(--atlas-ease);
+}
+.atlas-skip:focus,
+.atlas-skip:focus-visible {
+  transform: translate(-50%, 0);
+  outline: 2px solid var(--atlas-text-hi);
+  outline-offset: 2px;
+}
+
+/* o alvo recebe tabindex="-1" para poder ser focado; o anel padrão ali
+   não informa nada (é a página inteira) e só polui */
+[data-atlas-ui="skip"] + * :focus:not(:focus-visible) { outline: none; }

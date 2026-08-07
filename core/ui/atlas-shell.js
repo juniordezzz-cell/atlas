@@ -347,8 +347,52 @@
      Por isso a montagem observa o body e se reinjeta quando some.
      ============================================================ */
 
+  /* ============================================================
+     ATALHO "PULAR PARA O CONTEÚDO"
+     ------------------------------------------------------------
+     Toda página do ATLAS abre com uma barra lateral de oito itens.
+     Quem navega por teclado tinha de passar por todos eles em CADA
+     troca de tela antes de chegar ao conteúdo — e não havia nenhum
+     skip link nas 19 páginas.
+
+     O link fica invisível até receber foco, que é o comportamento
+     esperado: aparece para quem usa Tab e não ocupa espaço para
+     quem usa mouse.
+     ============================================================ */
+
+  var ALVOS_CONTEUDO = [
+    "main.main", "main.view", "main.app", "#app", ".view__inner", ".view", "main"
+  ];
+
+  function mountSkipLink() {
+    if (document.querySelector('[data-atlas-ui="skip"]')) return;
+
+    var alvo = null;
+    for (var i = 0; i < ALVOS_CONTEUDO.length && !alvo; i++) {
+      alvo = document.querySelector(ALVOS_CONTEUDO[i]);
+    }
+    if (!alvo) return;                       // página sem área de conteúdo definida
+
+    if (!alvo.id) alvo.id = "atlasConteudo";
+    /* tabindex -1 para o alvo poder RECEBER o foco ao pular; sem isso
+       o link move só a rolagem e o teclado continua na navegação */
+    if (!alvo.hasAttribute("tabindex")) alvo.setAttribute("tabindex", "-1");
+
+    var a = document.createElement("a");
+    a.className = "atlas-skip";
+    a.setAttribute("data-atlas-ui", "skip");
+    a.href = "#" + alvo.id;
+    a.textContent = t("Pular para o conteúdo");
+    a.addEventListener("click", function () {
+      try { alvo.focus(); } catch (e) {}
+    });
+    document.body.insertBefore(a, document.body.firstChild);
+  }
+
   function mount() {
     if (!document.body) return;
+
+    mountSkipLink();
 
     // A faixa escura no topo foi REMOVIDA (item 6). No lugar dela, cada
     // módulo recebe um "Voltar ao Atlas" no rodapé da própria sidebar.

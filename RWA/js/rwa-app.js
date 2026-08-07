@@ -205,7 +205,12 @@
   /* ============================================================
      MODAL genérico + formulário de ativo
      ============================================================ */
-  function closeModal() { var m = U.qs("#rwaModal"); if (m) m.remove(); }
+  var soltarFocoModal = null;         // devolvida por AtlasUI.trapFocus
+
+  function closeModal() {
+    if (soltarFocoModal) { soltarFocoModal(); soltarFocoModal = null; }
+    var m = U.qs("#rwaModal"); if (m) m.remove();
+  }
   function openModal(title, bodyHtml, footHtml) {
     closeModal();
     var wrap = document.createElement("div");
@@ -219,6 +224,21 @@
       '</div>';
     document.body.appendChild(wrap);
     wrap.addEventListener("click", function (e) { if (e.target === wrap || e.target.hasAttribute("data-close")) closeModal(); });
+
+    /* Armadilha de foco do kit compartilhado. Este modal não prendia o
+       foco, não fechava no Escape e não declarava role/aria-modal —
+       trapFocus resolve os três de uma vez e devolve o foco a quem
+       abriu. A caixa interna é o alvo: o backdrop é só o fundo. */
+    var caixa = wrap.querySelector(".rmodal") || wrap;
+    if (window.AtlasUI && AtlasUI.trapFocus) {
+      soltarFocoModal = AtlasUI.trapFocus(caixa, closeModal);
+    }
+    /* primeiro campo em foco, como no diálogo de carteira */
+    setTimeout(function () {
+      var f = caixa.querySelector("input,select,textarea,button:not([data-close])");
+      if (f) { try { f.focus(); } catch (e) {} }
+    }, 50);
+
     return wrap;
   }
 

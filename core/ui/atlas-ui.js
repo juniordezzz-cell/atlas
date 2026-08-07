@@ -354,8 +354,70 @@
      5. API
      ============================================================ */
 
+  /* ============================================================
+     6. ARMADILHA DE FOCO PARA MODAIS DE TERCEIROS
+     ------------------------------------------------------------
+     Os diálogos DESTE kit já prendem o foco por dentro. Mas o Hold e o
+     RWA têm modais próprios, anteriores ao kit, e nenhum dos dois
+     prendia: com Tab o foco escapava para a página ATRÁS do overlay, e
+     quem usa teclado ou leitor de tela acabava preenchendo um
+     formulário que não estava vendo. Nenhum deles declarava
+     role="dialog" nem aria-modal.
+
+     Em vez de repetir a lógica em cada módulo, eles chamam isto.
+
+       var solta = AtlasUI.trapFocus(nodeDoModal, aoFechar);
+       ...
+       solta();   // ao fechar: devolve o foco a quem abriu
+
+     Marca role/aria-modal se o elemento ainda não os declarar, para o
+     chamador não precisar lembrar.
+     ============================================================ */
+  function trapFocus(root, onEscape) {
+    if (!root) return function () {};
+
+    if (!root.getAttribute("role")) root.setAttribute("role", "dialog");
+    if (!root.getAttribute("aria-modal")) root.setAttribute("aria-modal", "true");
+
+    var anterior = document.activeElement;
+
+    function lista() {
+      return Array.prototype.filter.call(
+        root.querySelectorAll('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])'),
+        function (el) { return !el.disabled && el.offsetParent !== null; }
+      );
+    }
+
+    function onKey(e) {
+      if (e.key === "Escape" && typeof onEscape === "function") {
+        e.preventDefault();
+        onEscape();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      var f = lista();
+      if (!f.length) return;
+      var primeiro = f[0], ultimo = f[f.length - 1];
+      if (!root.contains(document.activeElement)) { e.preventDefault(); primeiro.focus(); return; }
+      if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo.focus(); }
+      else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro.focus(); }
+    }
+
+    document.addEventListener("keydown", onKey, true);
+
+    return function soltar() {
+      document.removeEventListener("keydown", onKey, true);
+      /* devolver o foco é o que faz a navegação por teclado não
+         recomeçar do topo da página a cada modal fechado */
+      if (anterior && anterior.focus && document.contains(anterior)) {
+        try { anterior.focus(); } catch (e) {}
+      }
+    };
+  }
+
   window.AtlasUI = {
     toast: toast,
+    trapFocus: trapFocus,
     confirm: function (o) { return dialogo(Object.assign({}, o || {}, { tipo: "confirm" })); },
     alert:   function (o) { return dialogo(Object.assign({}, o || {}, { tipo: "alert" })); },
     prompt:  function (o) { return dialogo(Object.assign({}, o || {}, { tipo: "prompt" })); },
