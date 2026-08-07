@@ -209,22 +209,13 @@
      preferências e aos relatórios. "Sair" volta à tela de entrada.
      ============================================================ */
 
-  function nomeDoGestor() {
-    /* mesma fonte que a tela de Configurações usa (AtlasModuleSettings
-       grava em HOLD_STATE_V2.config) — sem duplicar o valor em lugar novo */
-    try {
-      var raw = localStorage.getItem("HOLD_STATE_V2");
-      if (raw) {
-        var nome = (JSON.parse(raw).config || {}).nome_gestor;
-        if (nome && String(nome).trim() && nome !== "Gestor HOLD") return String(nome).trim();
-      }
-    } catch (e) { /* storage bloqueado: cai no padrão */ }
-    try {
-      if (window.ATLAS_DATA && ATLAS_DATA.usuario && ATLAS_DATA.usuario.nome) {
-        return ATLAS_DATA.usuario.nome;
-      }
-    } catch (e) {}
-    return "Gestor ATLAS";
+  /* Leitor único do perfil, em core/settings.js. Esta função já foi uma
+     segunda cópia da leitura de HOLD_STATE_V2.config.nome_gestor — o
+     tipo de duplicata que faz um lugar mostrar o nome novo e o outro o
+     antigo. Agora só delega. */
+  function perfil() {
+    if (window.AtlasSettings && AtlasSettings.profile) return AtlasSettings.profile();
+    return { name: "Gestor ATLAS", initials: "GA" };
   }
 
   var IC_GEAR =
@@ -241,14 +232,21 @@
     var avatar = document.querySelector(".topbar-right .avatar");
     if (!avatar) return;
 
+    var p = perfil();
+    /* As iniciais estavam escritas como "JJ" no HTML das três páginas.
+       Passam a vir do nome configurado — trocar o nome nas
+       Configurações agora troca o avatar em todo o shell. */
+    avatar.textContent = p.initials;
+    avatar.setAttribute("title", p.name);
+
     var raiz = envolver(avatar, { id: "perfil" });
     if (!raiz) return;
 
     raiz._pop.innerHTML =
       '<div class="tb-menu__user">' +
-        '<span class="tb-menu__user-av">' + esc(avatar.textContent.trim() || "JJ") + "</span>" +
+        '<span class="tb-menu__user-av">' + esc(p.initials) + "</span>" +
         '<span class="tb-menu__user-txt">' +
-          "<strong>" + esc(nomeDoGestor()) + "</strong>" +
+          "<strong>" + esc(p.name) + "</strong>" +
           "<span>Conta local · dados neste navegador</span>" +
         "</span>" +
       "</div>" +

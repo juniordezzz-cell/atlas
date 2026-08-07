@@ -44,7 +44,9 @@
       fields: [
         { k: "nome_gestor", type: "text", def: "",
           label: "Nome do gestor",
-          desc: "Aparece nos relatórios do Hold",
+          /* deixou de valer só para o Hold: AtlasSettings.profile() lê
+             daqui e alimenta a saudação e o avatar do shell inteiro */
+          desc: "Aparece na saudação do painel, no avatar e nos relatórios",
           placeholder: "Seu nome" },
         { k: "alerta_invalidacao", type: "bool", def: true,
           label: "Alertar teses invalidadas",

@@ -208,6 +208,36 @@
 
     locale: function () { return state.numberFormat; },
 
+    /* ---------- Quem está usando o sistema ----------
+       O nome do gestor NÃO é guardado aqui. Ele pertence às
+       configurações do módulo Hold (HOLD_STATE_V2.config.nome_gestor),
+       que é onde a tela de Configurações grava — via o schema de
+       core/atlas-module-settings.js.
+
+       Este método é só um LEITOR, exposto aqui porque core/settings.js
+       é o único arquivo carregado em todas as páginas. Guardar uma
+       segunda cópia do nome dentro das preferências criaria dois
+       lugares de verdade divergindo em silêncio, que é exatamente o
+       problema que a moeda do DeFi tinha. */
+    profile: function () {
+      var nome = "";
+      try {
+        var raw = localStorage.getItem("HOLD_STATE_V2");
+        if (raw) nome = String((JSON.parse(raw).config || {}).nome_gestor || "").trim();
+      } catch (e) { /* storage bloqueado: cai no padrão */ }
+
+      /* "Gestor HOLD" é o valor de fábrica do seed do módulo, não uma
+         escolha do usuário — tratado como vazio. */
+      if (!nome || nome === "Gestor HOLD") nome = "Gestor ATLAS";
+
+      var partes = nome.split(/\s+/).filter(Boolean);
+      var iniciais = partes.length > 1
+        ? (partes[0][0] + partes[partes.length - 1][0])
+        : nome.slice(0, 2);
+
+      return { name: nome, initials: iniciais.toUpperCase() };
+    },
+
     /* ---------- Apresentação de abertura (boot + boas-vindas) ----------
        "Já viu" é FATO, não preferência: fica numa chave própria, fora do
        objeto de settings, para não ser exportado como se fosse escolha do

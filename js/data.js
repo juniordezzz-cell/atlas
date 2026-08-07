@@ -23,9 +23,18 @@ const ATLAS_DATA = (function () {
   const C = window.AtlasConsolidation;
   const snap = C ? C.snapshot(30) : null;
 
+  /* Quem está usando o sistema. Antes "Jeferson Junior" e "JJ" estavam
+     CRAVADOS aqui e no HTML de três páginas — o campo "Nome do gestor"
+     das Configurações existia e não mudava nada fora dos relatórios do
+     Hold. AtlasSettings.profile() lê da mesma chave que aquela tela
+     grava, sem criar uma segunda cópia do nome. */
+  const perfil = (window.AtlasSettings && AtlasSettings.profile)
+    ? AtlasSettings.profile()
+    : { name: "Gestor ATLAS", initials: "GA" };
+
   if (!snap) {
     return {
-      usuario: { nome: "Jeferson Junior", iniciais: "JJ", saudacao: saudacao() },
+      usuario: { nome: perfil.name, iniciais: perfil.initials, saudacao: saudacao() },
       kpis: [{ rotulo: "Patrimônio Total", valor: usd(0), variacao: "—", periodo: "", tipo: "neutro" }],
       evolucao: { total: usd(0), variacao: "—", labels: [], valores: [0], labelsCheios: [] },
       categoria: { labels: [], valores: [], cores: [] },
@@ -136,7 +145,7 @@ const ATLAS_DATA = (function () {
   } catch (e) { alertas = []; }
 
   return {
-    usuario: { nome: "Jeferson Junior", iniciais: "JJ", saudacao: saudacao() },
+    usuario: { nome: perfil.name, iniciais: perfil.initials, saudacao: saudacao() },
     kpis,
     evolucao: { total: usd(snap.total), variacao: pct(snap.pnlPct) + " no período", labels, valores: snap.evolution, labelsCheios },
     categoria,
