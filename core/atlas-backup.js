@@ -69,6 +69,31 @@
     "atlas.fx.v1": 1
   };
 
+  /* Chaves descartáveis por PADRÃO de nome (a lista acima é exata).
+     ------------------------------------------------------------------
+     A antiga tela de Configurações do DeFi tinha um botão "Backup
+     local" que gravava atlas_defi_backup_<timestamp> e nunca limpava
+     nada: cada clique deixava uma cópia inteira do módulo no
+     localStorage, para sempre. São fotografias mortas de um estado
+     antigo — entrariam no arquivo de backup multiplicando o tamanho
+     dele sem acrescentar nada.
+
+     Aquela tela foi removida (as preferências dela duplicavam as
+     globais e o tema claro dela nem funcionava), então nenhuma chave
+     nova dessas aparece. As que já existem no navegador do usuário
+     ficam fora do backup a partir daqui. */
+  var CACHE_PATTERNS = [
+    /^atlas_defi_backup_/i
+  ];
+
+  function isCache(key) {
+    if (CACHE_KEYS[key]) return true;
+    for (var i = 0; i < CACHE_PATTERNS.length; i++) {
+      if (CACHE_PATTERNS[i].test(key)) return true;
+    }
+    return false;
+  }
+
   /* Rótulo humano por chave — usado no resumo da tela */
   var LABELS = {
     "atlas.settings.v1":       "Configurações",
@@ -123,7 +148,7 @@
         key: key,
         label: labelFor(key),
         bytes: val.length,
-        group: CACHE_KEYS[key] ? "cache" : "dados"
+        group: isCache(key) ? "cache" : "dados"
       });
     }
     out.sort(function (a, b) { return a.key < b.key ? -1 : 1; });
