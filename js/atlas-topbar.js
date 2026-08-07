@@ -178,13 +178,19 @@
 
     var corpo;
     if (alertas.length) {
+      /* Sem rodapé "ver todos": os alertas vêm dos quatro módulos e não
+         existe uma página que os reúna. Apontar para o motor de risco do
+         RWA mandaria o usuário para o lugar errado na maioria das vezes. */
       corpo = '<div class="tb-menu__list">' + alertas.map(function (a) {
-        return '<div class="tb-menu__note" role="menuitem" tabindex="-1">' +
+        return '<div class="tb-menu__note tb-menu__note--' + esc(a.level || "warn") + '" ' +
+               'role="menuitem" tabindex="-1">' +
           '<div class="tb-menu__note-txt">' + esc(a.texto) + "</div>" +
-          '<div class="tb-menu__note-when">' + esc(a.quando) + "</div>" +
+          '<div class="tb-menu__note-when">' +
+            (a.module ? '<span class="alert-mod">' + esc(a.module) + "</span>" : "") +
+            esc(a.quando) +
+          "</div>" +
         "</div>";
-      }).join("") + "</div>" +
-      '<a class="tb-menu__foot" href="RWA/index.html#/risk">Ver motor de risco</a>';
+      }).join("") + "</div>";
     } else {
       /* estado vazio de verdade, em vez de um menu em branco */
       corpo = '<div class="tb-menu__empty">' +

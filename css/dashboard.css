@@ -624,3 +624,7 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
 }
 .alert-empty strong { font-size: 13px; font-weight: 600; color: var(--texto-suave); }
 .alert-empty span { font-size: 12px; line-height: 1.5; color: var(--texto-fraco); }
+
+/* Nível do alerta dentro do menu do sino (mesma semântica do card) */
+.tb-menu__note--crit { border-left-color: var(--vermelho); background: rgba(255,84,112,0.06); }
+.tb-menu__note--info { border-left-color: var(--azul-principal); background: rgba(0,191,255,0.05); }
