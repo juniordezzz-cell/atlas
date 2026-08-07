@@ -232,6 +232,16 @@
       ".aa-name{font-size:12px;color:var(--aa-dim,#8595B2);margin-left:2px}" +
       ".aa-meta{margin-left:auto;font-size:10px;color:var(--aa-dim,#8595B2);white-space:nowrap}" +
       ".aa-empty{padding:12px 10px;font-size:12px;color:var(--aa-dim,#8595B2)}" +
+      /* Linha de "buscando": a lista local aparece na hora, mas a busca
+         online leva um tempo variável. Sem este aviso o usuário não
+         sabe se o ativo dele simplesmente não existe ou se ainda está
+         chegando — e, offline, esperava por algo que nunca vem. */
+      ".aa-loading{display:flex;align-items:center;gap:8px;padding:9px 10px;font-size:11.5px;" +
+      "color:var(--aa-dim,#8595B2);border-top:1px solid var(--aa-border,#1F2A3A);margin-top:3px}" +
+      ".aa-spin{width:11px;height:11px;flex:none;border-radius:50%;border:1.5px solid var(--aa-border,#1F2A3A);" +
+      "border-top-color:var(--aa-accent,#22D3EE);animation:aaSpin .7s linear infinite}" +
+      "@keyframes aaSpin{to{transform:rotate(360deg)}}" +
+      "@media (prefers-reduced-motion:reduce){.aa-spin{animation:none}}" +
       ".aa-drop::-webkit-scrollbar{width:8px}" +
       ".aa-drop::-webkit-scrollbar-thumb{background:var(--aa-border,#1F2A3A);border-radius:6px}";
     var s = document.createElement("style");
@@ -317,11 +327,17 @@
       if (coin.thumb) return '<span class="aa-badge"><img src="' + coin.thumb + '" alt=""></span>';
       return '<span class="aa-badge">' + (coin.symbol || "?").slice(0, 2) + "</span>";
     }
-    function render(items) {
+    /* `buscando` acrescenta a linha de progresso da consulta online. A
+       lista local já está na tela nesse meio-tempo: o usuário lê e
+       escolhe enquanto o resto chega, em vez de encarar um vazio. */
+    function render(items, buscando) {
       ensureDrop();
       rows = items; active = -1;
+      var rodape = buscando
+        ? '<div class="aa-loading"><span class="aa-spin"></span>Buscando mais ativos online…</div>'
+        : "";
       if (!items.length) {
-        drop.innerHTML = '<div class="aa-empty">Nenhum ativo encontrado.</div>';
+        drop.innerHTML = (buscando ? "" : '<div class="aa-empty">Nenhum ativo encontrado.</div>') + rodape;
         return;
       }
       drop.innerHTML = items.map(function (c, i) {
@@ -330,7 +346,7 @@
           '<span class="aa-sym">' + esc(c.symbol) + '</span>' +
           '<span class="aa-name">' + esc(c.name) + '</span>' +
           (meta ? '<span class="aa-meta">' + meta + '</span>' : "") + '</div>';
-      }).join("");
+      }).join("") + rodape;
       Array.prototype.forEach.call(drop.querySelectorAll(".aa-row"), function (el) {
         el.addEventListener("mousedown", function (e) {
           e.preventDefault();
@@ -350,13 +366,18 @@
       if (q !== pickedValue) pickedValue = null; // usuário editou → libera de novo
       lastQ = q;
       if (q.length < minChars) { close(); return; }
-      // 1) instantâneo (local)
-      render(localSearch(q, max));
+      // 1) instantâneo (local), já anunciando que a busca online vem
+      render(localSearch(q, max), true);
       // 2) live com debounce, mescla se ainda for a mesma query
       clearTimeout(debTimer);
       debTimer = setTimeout(function () {
         search(q, max).then(function (items) {
-          if (drop && input.value.trim() === lastQ && items.length) render(items);
+          if (!drop || input.value.trim() !== lastQ) return;
+          /* Sempre repinta ao terminar, mesmo sem resultado novo: antes
+             a condição era `items.length`, então uma busca sem retorno
+             (rede fora, CORS em file://, símbolo inexistente) deixava a
+             lista congelada e agora deixaria o "buscando…" para sempre. */
+          render(items.length ? items : localSearch(q, max), false);
         });
       }, 400);
     }
