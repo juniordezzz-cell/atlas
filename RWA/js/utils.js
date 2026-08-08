@@ -122,6 +122,12 @@
         drop: '<path d="M12 3s6 6 6 10a6 6 0 0 1-12 0c0-4 6-10 6-10Z"/>',
         bank: '<path d="M3 10 12 4l9 6"/><path d="M5 10v9M19 10v9M9 10v9M15 10v9M3 21h18"/>'
       };
+      /* Biblioteca única primeiro (core/ui/atlas-icons.js); a tabela
+         acima fica como reserva para o que só o RWA tem. */
+      if (window.AtlasIcons) {
+        var s = AtlasIcons.get(name, { strokeWidth: 1.7 });
+        if (s) return s;
+      }
       return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (p[name] || p.info) + '</svg>';
     }
   };

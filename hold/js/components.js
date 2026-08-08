@@ -60,8 +60,27 @@
     filter: '<polygon points="22 3 2 3 10 12.5 10 19 14 21 14 12.5 22 3"/>',
     coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="M16.71 13.88.7.71-.71"/>'
   };
+  /* Ícone — delegado à biblioteca única (core/ui/atlas-icons.js).
+     ------------------------------------------------------------------
+     A assinatura do Hold é icon(nome, CLASSE), mas a do Trade é
+     icon(nome, TAMANHO) — e alguém já chamou U.icon("plus", 13) aqui.
+     O 13 virava class="ico 13", o SVG saía sem width/height, esticava e
+     transformava o botão "Nova carteira" num bloco de 226x220px (o caso
+     está documentado em wallets/walletSelector.js).
+
+     Agora um número no segundo argumento é entendido como TAMANHO, que
+     é o que quem escreveu quis dizer. A tabela local continua como
+     reserva para os nomes que só o Hold tem. */
   function icon(name, cls) {
-    return '<svg class="ico ' + (cls || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    if (window.AtlasIcons) {
+      var opts = (typeof cls === "number")
+        ? { size: cls, "class": "ico", strokeWidth: 2 }
+        : { "class": ("ico " + (cls || "")).trim(), strokeWidth: 2 };
+      var s = AtlasIcons.get(name, opts);
+      if (s) return s;
+    }
+    return '<svg class="ico ' + (typeof cls === "number" ? "" : (cls || "")) +
+      '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
       'stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (PATHS[name] || "") + '</svg>';
   }
   function iconEl(name, cls) {

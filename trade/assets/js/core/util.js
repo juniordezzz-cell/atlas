@@ -52,8 +52,10 @@
     },
 
     // ---- Ícones (stroke currentColor) -------------------
-    icon: function (name, size) {
-      size = size || 20;
+    icon: function (name, tamanhoOuClasse) {
+      /* o valor cru é repassado à biblioteca, que decide se é tamanho
+         (número) ou classe (string); aqui só o número serve de medida */
+      var size = (typeof tamanhoOuClasse === "number" ? tamanhoOuClasse : 0) || 20;
       var p = {
         dashboard: '<path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/>',
         estudos:   '<path d="M4 4h11a3 3 0 013 3v13a2.5 2.5 0 00-2.5-2.5H4z"/><path d="M4 4v13.5A2.5 2.5 0 016.5 20H18"/>',
@@ -80,6 +82,21 @@
         dot:       '<circle cx="12" cy="12" r="4"/>',
         edit:      '<path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>'
       };
+      /* Biblioteca única primeiro (core/ui/atlas-icons.js); a tabela
+         acima fica como reserva para o que só o Trade tem.
+         A assinatura daqui é icon(nome, TAMANHO), mas a do Hold é
+         icon(nome, CLASSE) — uma string no segundo argumento passa a ser
+         entendida como classe, em vez de virar width="ico". */
+      if (window.AtlasIcons) {
+        /* O Trade SEMPRE emitiu width/height (20 por padrão) e o CSS
+           dele conta com isso. Por isso a medida vai sempre, mesmo sem
+           segundo argumento — sem ela, um ícone sem regra de tamanho no
+           CSS estica pela caixa toda. */
+        var opts = { size: size };
+        if (typeof tamanhoOuClasse === "string") opts["class"] = tamanhoOuClasse;
+        var s = window.AtlasIcons.get(name, opts);
+        if (s) return s;
+      }
       var body = p[name] || "";
       return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size +
         '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +

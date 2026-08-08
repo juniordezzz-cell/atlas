@@ -147,6 +147,12 @@
         inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13l3.5 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6Z"/>',
         oracle: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>'
       };
+      /* Biblioteca única primeiro (core/ui/atlas-icons.js); a tabela
+         acima fica como reserva para o que só o DeFi tem. */
+      if (window.AtlasIcons) {
+        var s = AtlasIcons.get(name, { strokeWidth: 1.8 });
+        if (s) return s;
+      }
       var body = p[name] || p.info;
       return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + body + '</svg>';
     }
