@@ -58,7 +58,28 @@
 
   var ALLOWED = {
     theme: ["dark", "light"],
-    lang: ["pt-BR", "en"],
+
+    /* ------------------------------------------------------------------
+       IDIOMA — só português, por decisão consciente.
+
+       O motor de tradução (core/i18n.js) está inteiro e as traduções
+       feitas estão guardadas. O que não existe é COBERTURA: o dicionário
+       alcança a navegação e alguns rótulos, enquanto o conteúdo dos
+       módulos — milhares de textos escritos direto no código — continua
+       em português. "English" entregava uma tela metade traduzida, que
+       promete o que não cumpre.
+
+       Deixar "en" fora desta lista não é só esconder o botão: validate()
+       coage qualquer valor de fora da lista para o padrão, então quem já
+       tinha "en" gravado no navegador volta sozinho para pt-BR, sem
+       código de migração e sem ficar preso numa tela pela metade.
+
+       PARA LIGAR UM IDIOMA DEPOIS: acrescente o código aqui, devolva a
+       linha "Idioma" em configuracoes.html e complete o dicionário. Não
+       há nada a reescrever.
+       ------------------------------------------------------------------ */
+    lang: ["pt-BR"],
+
     currency: ["BRL", "USD", "EUR"],
     dateFormat: ["dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd"],
     numberFormat: ["pt-BR", "en-US"],
@@ -94,9 +115,23 @@
   function load() {
     var saved = read();
     state = {};
+    var corrigiu = false;
     Object.keys(DEFAULTS).forEach(function (k) {
-      state[k] = (k in saved) ? validate(k, saved[k]) : DEFAULTS[k];
+      if (!(k in saved)) { state[k] = DEFAULTS[k]; return; }
+      state[k] = validate(k, saved[k]);
+      if (state[k] !== saved[k]) corrigiu = true;
     });
+
+    /* Valor gravado que a lista não aceita mais é REESCRITO no disco,
+       não só corrigido em memória.
+
+       O caso concreto: quem tinha lang "en" salvo de quando o idioma
+       era oferecido. Sem isto, o "en" ficaria guardado para sempre — e
+       no dia em que um idioma voltasse a ALLOWED, essa pessoa seria
+       jogada nele sem ter pedido. Corrigir na leitura e deixar o disco
+       mentindo é o tipo de estado fantasma que reaparece meses depois
+       parecendo bug do nada. */
+    if (corrigiu) write();
   }
 
   /* ---------- aplicação no documento ---------- */

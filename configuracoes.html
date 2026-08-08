@@ -122,24 +122,22 @@
         </div>
       </div>
 
-      <!-- ===== Idioma e Região ===== -->
+      <!-- ===== Região e formatos =====
+           O seletor de idioma foi RETIRADO daqui, e não por descuido.
+           O dicionário cobria a navegação e alguns rótulos; o conteúdo
+           dos módulos — milhares de textos — continuava em português.
+           Escolher "English" entregava uma tela metade traduzida, que é
+           pior do que não oferecer inglês nenhum: promete o que não
+           cumpre.
+
+           O motor (core/i18n.js) continua inteiro e as traduções feitas
+           continuam guardadas. Ligar um idioma no futuro é acrescentá-lo
+           de volta em ALLOWED.lang (core/settings.js) e devolver esta
+           linha — nada precisa ser reescrito. -->
       <div class="set-card">
         <div class="set-card-head">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
-          <h3 data-i18n="Idioma e Região">Idioma e Região</h3>
-        </div>
-
-        <div class="set-row">
-          <div class="set-row-txt">
-            <div class="set-label" data-i18n="Idioma">Idioma</div>
-            <div class="set-desc" data-i18n="Muda o idioma de todo o sistema">Muda o idioma de todo o sistema</div>
-          </div>
-          <div class="set-row-ctrl">
-            <div class="seg" data-key="lang" role="group">
-              <button type="button" data-val="pt-BR" aria-pressed="true"><span data-i18n="Português">Português</span></button>
-              <button type="button" data-val="en" aria-pressed="false"><span data-i18n="English">English</span></button>
-            </div>
-          </div>
+          <h3 data-i18n="Região e formatos">Região e formatos</h3>
         </div>
 
         <div class="set-row">

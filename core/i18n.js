@@ -1,8 +1,31 @@
 /* ============================================================
    ATLAS · core/i18n.js
    ------------------------------------------------------------
-   Internacionalização (item 9): Português (Brasil) e Inglês.
+   Internacionalização — MOTOR PRONTO, DORMENTE POR DECISÃO.
 
+   ⚠ ESTADO ATUAL: o ATLAS é um sistema em PORTUGUÊS.
+
+   O seletor de idioma foi retirado das Configurações e "en" saiu de
+   ALLOWED.lang em core/settings.js. Não foi desistência nem descuido:
+   o motor abaixo funciona, mas a COBERTURA nunca existiu. O dicionário
+   alcança a navegação e alguns rótulos, enquanto o conteúdo dos
+   módulos — milhares de textos escritos direto no código — segue em
+   português. Oferecer "English" entregava uma tela metade traduzida,
+   que é pior do que não oferecer: promete o que não cumpre.
+
+   Este arquivo NÃO é código morto, e não deve ser apagado:
+
+     · continua servindo t() e formatação a quem já chama;
+     · guarda as traduções que já foram escritas;
+     · o observador de DOM se desliga sozinho enquanto houver um idioma
+       só (ver multiIdioma(), no fim do arquivo) — custo zero.
+
+   PARA LIGAR UM IDIOMA: acrescente o código em ALLOWED.lang
+   (core/settings.js), devolva a linha "Idioma" em configuracoes.html e
+   complete o dicionário. O motor volta a trabalhar sozinho, inclusive
+   o observador. Nada aqui precisa ser reescrito.
+
+   ------------------------------------------------------------
    O desafio real
    --------------
    O ATLAS tem ~18 mil linhas com texto em português cravado no
@@ -398,8 +421,25 @@
   var observer = null;
   var pendingSweep = null;
 
+  /* Existe mais de um idioma para o sistema oferecer?
+     Enquanto houver só português, o observador abaixo não tem o que
+     fazer — e ele custa: a callback dispara a CADA mutação do DOM, em
+     toda a subárvore. Hold, Trade e RWA re-renderizam a view inteira a
+     cada troca de rota e a cada mudança de estado, então era uma
+     chamada por render, o dia inteiro, para sair na primeira linha.
+
+     Ler de AtlasSettings.options("lang") amarra isto à mesma lista que
+     governa a tela de Configurações: acrescentar um idioma lá religa o
+     observador sozinho, sem ninguém precisar lembrar deste arquivo. */
+  function multiIdioma() {
+    if (!window.AtlasSettings || !AtlasSettings.options) return true;
+    try { return AtlasSettings.options("lang").length > 1; }
+    catch (e) { return true; }
+  }
+
   function watch() {
     if (observer || !window.MutationObserver || !document.body) return;
+    if (!multiIdioma()) return;
     observer = new MutationObserver(function (muts) {
       if (lang() === "pt-BR") return;
       var relevant = muts.some(function (m) { return m.addedNodes && m.addedNodes.length; });
