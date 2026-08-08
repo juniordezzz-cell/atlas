@@ -80,10 +80,46 @@
       if (!host || !window.WalletSelector || !window.AtlasWallets || !window.DeFiStore) return;
       var S = window.DeFiStore;
 
+      /* ---------------------------------------------------------------
+         Totais do DeFi numa carteira qualquer.
+
+         O DeFi NUNCA reportava ao ledger central. Resultado medido: com
+         uma pool de US$ 12.500 registrada, o seletor mostrava "US$ 0" —
+         na própria tela do DeFi. E no Dashboard a carteira aparecia sem
+         a fatia de DeFi nenhuma.
+
+         Esta função é a ÚNICA regra de cálculo do módulo: alimenta o
+         cache (feed) e responde a leitura ao vivo (registerLive). Sendo
+         uma só, as duas não têm como divergir. */
+      function totaisDe(walletId) {
+        var wd = null;
+        try { wd = (S.all().byWallet || {})[walletId]; } catch (e) { return null; }
+        if (!wd) return { id: walletId, module: "defi", capital: 0, saldo: 0, valorAtual: 0, assets: [] };
+
+        function soma(lista, campo) {
+          return (lista || []).reduce(function (a, x) { return a + (Number(x[campo]) || 0); }, 0);
+        }
+        var valor = soma(wd.pools, "currentValue") + soma(wd.staking, "value") + soma(wd.lending, "value");
+        var capital = soma(wd.pools, "capital") + soma(wd.staking, "value") + soma(wd.lending, "value");
+
+        return { id: walletId, module: "defi",
+                 capital: capital, saldo: valor, valorAtual: valor, assets: [] };
+      }
+
+      if (window.AtlasWallets.registerLive) {
+        window.AtlasWallets.registerLive("defi", totaisDe);
+      }
+
       window.WalletSelector.render(host, {
         module: "defi", scope: "module", reload: true,
         balanceModule: "defi",
         getActive: S.activeWallet,
+        /* reporta TODAS as carteiras do módulo, não só a ativa: é o que
+           mantém o cache útil quando o usuário estiver noutra tela */
+        feed: function () {
+          return window.AtlasWallets.forModule("defi").map(function (w) { return totaisDe(w.id); })
+                 .filter(Boolean);
+        },
         onSelect: function (id) { S.setWallet(id); },
         afterChange: function (w, acao) { if (acao === "create") S.setWallet(w.id); }
       });

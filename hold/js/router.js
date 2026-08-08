@@ -121,6 +121,21 @@
     tb.appendChild(actions);
   }
 
+  /* Totais do Hold numa carteira QUALQUER — não só a ativa.
+     S.get.portfolioValue() só sabe da carteira em uso, então aqui a
+     soma é feita direto sobre as posições daquela carteira, com os
+     mesmos cálculos por posição que o módulo já usa. É a única regra
+     de cálculo: alimenta o cache e responde à leitura ao vivo. */
+  function totaisDe(walletId) {
+    var pos = (S.state.carteira || []).filter(function (p) {
+      return (p.walletId || "principal") === walletId;
+    });
+    var valor = pos.reduce(function (a, p) { return a + S.get.positionValue(p); }, 0);
+    var custo = pos.reduce(function (a, p) { return a + S.get.positionCost(p); }, 0);
+    return { id: walletId, module: "hold",
+             capital: custo, saldo: valor, valorAtual: valor, assets: [] };
+  }
+
   function buildWalletSelector() {
     /* Delegado 100% ao componente compartilhado (/wallets). O Hold não
        monta markup, não liga clique e não tem CSS de seletor: o host é
@@ -128,6 +143,9 @@
        daqui que possa sobrescrever a aparência do componente. */
     var wrap = U.el("div");
     if (!window.AtlasWallets || !window.WalletSelector) return wrap;
+    if (window.AtlasWallets.registerLive) {
+      window.AtlasWallets.registerLive("hold", totaisDe);
+    }
     window.WalletSelector.render(wrap, {
       module: "hold", scope: "module",
       balanceModule: "hold",
@@ -135,13 +153,12 @@
          ela que a partição dos dados do módulo é feita */
       getActive: S.wallets.active,
       onSelect: function (id) { S.wallets.set(id); },   // Hold reage via emit()
-      /* alimenta o ledger central com o total da carteira ativa do Hold */
+      /* alimenta o ledger central. Antes reportava SÓ a carteira ativa,
+         então as outras ficavam com o valor da última vez que foram
+         abertas — ou com nada. Agora reporta todas as do módulo, com a
+         mesma função que responde à leitura ao vivo (totaisDe). */
       feed: function () {
-        var a = S.wallets.active();
-        return [{ id: a.id, module: "hold",
-                  capital: S.get.portfolioCost(),
-                  saldo: S.get.portfolioValue(),
-                  valorAtual: S.get.portfolioValue(), assets: [] }];
+        return window.AtlasWallets.forModule("hold").map(function (w) { return totaisDe(w.id); });
       },
       afterChange: function (w, acao) {
         if (acao === "create") {

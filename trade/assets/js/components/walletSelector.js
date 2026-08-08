@@ -19,6 +19,21 @@
       if (!el || !window.WalletSelector || !window.AtlasWallets) return;
       var u = ATLAS.util, app = ATLAS.app;
 
+      /* Totais do Trade numa carteira qualquer: o último ponto da curva
+         de equity. Única regra de cálculo do módulo — alimenta o cache
+         (feed) e responde à leitura ao vivo (registerLive), então as
+         duas não podem divergir. */
+      function totaisDe(walletId) {
+        var data = (app.allWalletData ? app.allWalletData() : (app.getState().data || {}));
+        var eq = data[walletId] && data[walletId].equity;
+        var v = (eq && eq.length) ? Number(eq[eq.length - 1]) || 0 : 0;
+        return { id: walletId, module: "trade", capital: v, saldo: v, valorAtual: v, assets: [] };
+      }
+
+      if (window.AtlasWallets.registerLive) {
+        window.AtlasWallets.registerLive("trade", totaisDe);
+      }
+
       window.WalletSelector.render(el, {
         module: "trade", scope: "module",
         money: u.money,
@@ -27,14 +42,9 @@
            que os dados do módulo são particionados */
         getActive: app.currentWallet,
         onSelect: function (id) { app.setWallet(id); },   // emite → assinantes atualizam
-        /* alimenta o ledger central com o equity de cada carteira */
         feed: function () {
           var data = (app.allWalletData ? app.allWalletData() : (app.getState().data || {}));
-          return Object.keys(data).map(function (id) {
-            var eq = data[id] && data[id].equity;
-            var v = (eq && eq.length) ? eq[eq.length - 1] : 0;
-            return { id: id, module: "trade", capital: v, saldo: v, valorAtual: v, assets: [] };
-          });
+          return Object.keys(data).map(totaisDe);
         },
         afterChange: function (w, acao) { if (acao === "create") app.setWallet(w.id); }
       });

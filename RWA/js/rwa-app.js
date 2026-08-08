@@ -115,11 +115,37 @@
     renderWallet: function () {
       var el = U.qs("#tbWallet"); if (!el) return;
       if (!window.WalletSelector || !window.AtlasWallets) return;
+
+      /* Totais do RWA numa carteira qualquer.
+         O RWA, como o DeFi, nunca reportava ao ledger central: a fatia
+         dele simplesmente não existia no saldo mostrado pelo seletor,
+         nem aqui nem no Dashboard.
+         Esta é a ÚNICA regra de cálculo do módulo — alimenta o cache
+         (feed) e responde a leitura ao vivo (registerLive), então as
+         duas não têm como divergir. */
+      function totaisDe(walletId) {
+        var wd = null;
+        try { wd = (S.all().byWallet || {})[walletId]; } catch (e) { return null; }
+        var ativos = (wd && wd.assets) || [];
+        var valor = ativos.reduce(function (a, x) { return a + (Number(x.current) || 0); }, 0);
+        var custo = ativos.reduce(function (a, x) { return a + (Number(x.entry) || 0); }, 0);
+        return { id: walletId, module: "rwa",
+                 capital: custo, saldo: valor, valorAtual: valor, assets: [] };
+      }
+
+      if (window.AtlasWallets.registerLive) {
+        window.AtlasWallets.registerLive("rwa", totaisDe);
+      }
+
       try {
         window.WalletSelector.render(el, {
           module: "rwa", scope: "module",
           balanceModule: "rwa",
           getActive: S.currentWallet,
+          feed: function () {
+            return window.AtlasWallets.forModule("rwa").map(function (w) { return totaisDe(w.id); })
+                   .filter(Boolean);
+          },
           /* Só o que é DO RWA: gravar a carteira em uso e redesenhar a
              view e a topbar. Redesenhar o seletor é com o componente. */
           onSelect: function (id) {

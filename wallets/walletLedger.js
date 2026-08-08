@@ -39,6 +39,42 @@
 
   function num(v) { v = Number(v); return isFinite(v) ? v : 0; }
 
+  /* ============================================================
+     LEITORES AO VIVO — a correção da fonte dupla
+     ------------------------------------------------------------
+     Este ledger é um CACHE ENTRE PÁGINAS, e precisa ser: dentro do
+     Hold não existe DeFiStore carregado, então a única forma de saber
+     quanto a carteira tem em DeFi é o que o DeFi gravou da última vez.
+
+     O problema era tratá-lo como VERDADE. Duas consequências reais,
+     medidas antes desta mudança:
+
+       · DeFi e RWA nunca chamavam report(). Com uma pool de US$ 12.500
+         registrada, o seletor mostrava "US$ 0" na própria tela do DeFi.
+       · Onde o cache existia, ele podia estar velho: valia o que o
+         módulo gravou na última visita, não o que ele sabe agora.
+
+     Agora cada módulo registra um LEITOR AO VIVO. Quando o store dele
+     está carregado na página atual, o número vem de lá; quando não
+     está, cai no cache. Verdade quando dá para saber, cache quando não
+     dá — e nunca cache por cima de verdade.
+
+     O mesmo leitor alimenta report(): a rotina que calcula o total de
+     um módulo passa a ser UMA, então cache e leitura ao vivo não têm
+     como divergir na regra de cálculo.
+     ============================================================ */
+
+  var live = {};   // módulo -> fn(walletId) -> {valorAtual, capital} | null
+
+  function lerAoVivo(module, walletId) {
+    var fn = live[module];
+    if (typeof fn !== "function") return null;
+    try {
+      var r = fn(walletId);
+      return (r && isFinite(Number(r.valorAtual))) ? r : null;
+    } catch (e) { return null; }
+  }
+
   function ledgerRoot() {
     var d = Store.load();
     if (!d.ledger || typeof d.ledger !== "object") d.ledger = {};
@@ -81,21 +117,56 @@
       return d.ledger[walletId] || {};
     },
 
-    /* valor atual: total (todos os módulos) ou de um módulo só */
+    /* Registra o leitor ao vivo de um módulo. Chamado pelo próprio
+       módulo, na página em que o store dele existe. */
+    registerLive: function (module, fn) {
+      if (module && typeof fn === "function") live[module] = fn;
+    },
+    hasLive: function (module) { return typeof live[module] === "function"; },
+
+    /* valor atual: total (todos os módulos) ou de um módulo só.
+       Ao vivo quando o módulo está carregado nesta página; cache quando
+       não está. */
     balanceOf: function (walletId, module) {
       var l = L.ledgerOf(walletId);
-      if (module) return l[module] ? num(l[module].valorAtual) : 0;
-      var sum = 0;
-      for (var m in l) if (l.hasOwnProperty(m)) sum += num(l[m].valorAtual);
+
+      if (module) {
+        var v = lerAoVivo(module, walletId);
+        if (v) return num(v.valorAtual);
+        return l[module] ? num(l[module].valorAtual) : 0;
+      }
+
+      /* soma a UNIÃO dos módulos: os que têm leitor ao vivo (mesmo sem
+         nada no cache ainda) e os que só existem no cache. Sem a união,
+         um módulo carregado e nunca reportado ficaria de fora do total. */
+      var vistos = {}, sum = 0, m;
+      for (m in l) if (l.hasOwnProperty(m)) vistos[m] = 1;
+      for (m in live) if (live.hasOwnProperty(m)) vistos[m] = 1;
+      for (m in vistos) if (vistos.hasOwnProperty(m)) {
+        var lv = lerAoVivo(m, walletId);
+        sum += lv ? num(lv.valorAtual) : (l[m] ? num(l[m].valorAtual) : 0);
+      }
       return sum;
     },
 
-    /* capital investido: total ou de um módulo */
+    /* capital investido: mesma regra do balanceOf */
     capitalOf: function (walletId, module) {
       var l = L.ledgerOf(walletId);
-      if (module) return l[module] ? num(l[module].capital) : 0;
-      var sum = 0;
-      for (var m in l) if (l.hasOwnProperty(m)) sum += num(l[m].capital);
+
+      if (module) {
+        var v = lerAoVivo(module, walletId);
+        if (v && v.capital != null) return num(v.capital);
+        return l[module] ? num(l[module].capital) : 0;
+      }
+
+      var vistos = {}, sum = 0, m;
+      for (m in l) if (l.hasOwnProperty(m)) vistos[m] = 1;
+      for (m in live) if (live.hasOwnProperty(m)) vistos[m] = 1;
+      for (m in vistos) if (vistos.hasOwnProperty(m)) {
+        var lv = lerAoVivo(m, walletId);
+        sum += (lv && lv.capital != null) ? num(lv.capital)
+             : (l[m] ? num(l[m].capital) : 0);
+      }
       return sum;
     },
 

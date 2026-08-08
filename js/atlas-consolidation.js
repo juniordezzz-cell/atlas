@@ -40,37 +40,135 @@
     return W && W.globals ? W.globals().map(function (w) { return w.id; }) : ["principal"];
   }
 
-  /* ---------- TOTAIS (US$) — null = módulo ausente ---------- */
-  function tradeTotal() {
-    return safe(function () {
-      var A = trade(); if (!A || !A.app || !A.app.getState) return null;
-      var st = A.app.getState(), sum = 0;
-      globalIds().forEach(function (id) {
-        var d = st.data && st.data[id];
-        var eq = d && d.equity && d.equity.length ? d.equity[d.equity.length - 1] : 0;
-        sum += n(eq);
+  /* ============================================================
+     LEITORES POR CARTEIRA — a fonte única de "quanto vale"
+     ------------------------------------------------------------
+     Havia DOIS caminhos para responder a mesma pergunta:
+
+       1. esta camada, lendo os stores ao vivo  → KPIs do Dashboard
+       2. wallets/walletLedger, lendo o que cada módulo reportou
+          → saldo mostrado no seletor de carteira
+
+     E eles divergiam. Medido antes desta mudança, com Hold em
+     US$ 60.000 e DeFi em US$ 12.500 na mesma carteira: o KPI dizia
+     US$ 72.500 e o seletor, dois centímetros ao lado, dizia US$ 0.
+
+     Duas causas somadas: DeFi e RWA nunca reportavam nada, e o cache
+     dos que reportavam ficava velho.
+
+     Agora existe UM leitor por módulo, aqui. Ele é usado:
+       · pelos totais desta camada (somando as carteiras globais);
+       · pelo ledger, registrado como leitor ao vivo — então na página
+         em que o store existe, o cache nunca fala mais alto que a
+         verdade.
+
+     Devolve null quando o módulo não está carregado nesta página; é
+     assim que o ledger sabe cair no cache.
+     ============================================================ */
+
+  function pacote(module, walletId, valor, capital) {
+    return { id: walletId, module: module,
+             capital: n(capital), saldo: n(valor), valorAtual: n(valor), assets: [] };
+  }
+
+  var LEITORES = {
+    hold: function (walletId) {
+      return safe(function () {
+        var S = hold(); if (!S || !S.get || !S.state) return null;
+        var pos = (S.state.carteira || []).filter(function (p) {
+          return (p.walletId || "principal") === walletId;
+        });
+        var v = pos.reduce(function (a, p) { return a + n(S.get.positionValue(p)); }, 0);
+        var c = pos.reduce(function (a, p) { return a + n(S.get.positionCost(p)); }, 0);
+        return pacote("hold", walletId, v, c);
+      }, null);
+    },
+
+    trade: function (walletId) {
+      return safe(function () {
+        var A = trade(); if (!A || !A.app || !A.app.getState) return null;
+        var d = (A.app.getState().data || {})[walletId];
+        var eq = d && d.equity;
+        var v = (eq && eq.length) ? n(eq[eq.length - 1]) : 0;
+        return pacote("trade", walletId, v, v);
+      }, null);
+    },
+
+    defi: function (walletId) {
+      return safe(function () {
+        if (!global.DeFiStore || !global.DeFiStore.all) return null;
+        var wd = (global.DeFiStore.all().byWallet || {})[walletId];
+        if (!wd) return pacote("defi", walletId, 0, 0);
+        function soma(l, campo) {
+          return (l || []).reduce(function (a, x) { return a + n(x[campo]); }, 0);
+        }
+        var v = soma(wd.pools, "currentValue") + soma(wd.staking, "value") + soma(wd.lending, "value");
+        var c = soma(wd.pools, "capital") + soma(wd.staking, "value") + soma(wd.lending, "value");
+        return pacote("defi", walletId, v, c);
+      }, null);
+    },
+
+    rwa: function (walletId) {
+      return safe(function () {
+        if (!global.RWAStore || !global.RWAStore.all) return null;
+        var wd = (global.RWAStore.all().byWallet || {})[walletId];
+        var ativos = (wd && wd.assets) || [];
+        var v = ativos.reduce(function (a, x) { return a + n(x.current); }, 0);
+        var c = ativos.reduce(function (a, x) { return a + n(x.entry); }, 0);
+        return pacote("rwa", walletId, v, c);
+      }, null);
+    }
+  };
+
+  /* Registra os leitores no ledger. O Dashboard carrega os quatro
+     stores, então aqui TODOS respondem ao vivo — era exatamente o que
+     faltava para o seletor parar de mostrar cache velho ao lado de um
+     KPI correto. */
+  (function registrarNoLedger() {
+    var W = global.AtlasWallets;
+    if (!W || !W.registerLive) return;
+
+    Object.keys(LEITORES).forEach(function (m) {
+      W.registerLive(m, LEITORES[m]);
+    });
+
+    /* E, de passagem, CURA o cache inteiro.
+
+       O cache é só tão fresco quanto a última visita ao módulo — dentro
+       do Hold não há DeFiStore para conferir, então a fatia de DeFi vale
+       o que o DeFi gravou por último. Como esta página é a única que
+       carrega os quatro stores ao mesmo tempo, ela é o único lugar onde
+       dá para reescrever tudo com valor conferido.
+
+       Custa quatro leituras por carteira, uma vez, no load. Em troca,
+       passar pelo Dashboard deixa o saldo certo em todos os módulos. */
+    safe(function () {
+      W.all().forEach(function (w) {
+        Object.keys(LEITORES).forEach(function (m) {
+          var r = LEITORES[m](w.id);
+          if (r) W.report(m, w.id, r);
+        });
       });
-      return sum;
+      return true;
     }, null);
+  })();
+
+  /* ---------- TOTAIS (US$) — null = módulo ausente ----------
+     Somam as carteiras GLOBAIS pelo mesmo leitor de cima. Antes cada
+     um destes tinha a sua própria forma de perguntar ao store. */
+  function totalGlobalDe(module) {
+    var algum = false, sum = 0;
+    globalIds().forEach(function (id) {
+      var r = LEITORES[module](id);
+      if (r) { algum = true; sum += n(r.valorAtual); }
+    });
+    return algum ? sum : null;      // null = módulo não carregado
   }
-  function holdTotal() {
-    return safe(function () {
-      var S = hold(); if (!S || !S.get) return null;
-      // soma só as carteiras globais (não a carteira ativa do módulo)
-      if (S.get.globalTotal) return n(S.get.globalTotal());
-      return S.get.portfolioValue ? n(S.get.portfolioValue()) : null;
-    }, null);
-  }
-  function defiTotal() {
-    return safe(function () {
-      if (!global.DeFiStore) return null;
-      if (global.DeFiStore.globalTotal) return n(global.DeFiStore.globalTotal());
-      return n(global.DeFiStore.kpis().total);
-    }, null);
-  }
-  function rwaTotal() {
-    return safe(function () { return global.RWAStore ? n(global.RWAStore.globalTotal()) : null; }, null);
-  }
+
+  function tradeTotal() { return totalGlobalDe("trade"); }
+  function holdTotal()  { return totalGlobalDe("hold"); }
+  function defiTotal()  { return totalGlobalDe("defi"); }
+  function rwaTotal()   { return totalGlobalDe("rwa"); }
 
   /* ---------- P&L por módulo (best-effort) ---------- */
   function tradePnl() {

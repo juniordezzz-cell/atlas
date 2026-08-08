@@ -231,6 +231,12 @@
     report: function (module, walletId, data) {
       return Ledger ? Ledger.report(module, walletId, data) : false;
     },
+    /* Um módulo declara COMO ler o total de uma carteira nele. Enquanto
+       o store do módulo estiver carregado na página, este leitor manda;
+       fora dela, vale o que ele gravou por último. */
+    registerLive: function (module, fn) {
+      return Ledger ? Ledger.registerLive(module, fn) : false;
+    },
     balanceOf: function (walletId, module) {
       return Ledger ? Ledger.balanceOf(walletId, module) : 0;
     },
