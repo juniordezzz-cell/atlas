@@ -34,12 +34,19 @@
   --secondary-14:  rgba(139, 92, 246, 0.14);
   --accent-14:     rgba(34, 211, 238, 0.14);
 
-  /* ---- Grid / spacing ---- */
+  /* ---- Grid / spacing ----
+     --sidebar-w-min é a largura do trilho de ícones (a sidebar colapsada
+     do Hold, também usada abaixo de 860px). Fica LOCAL de propósito:
+     nenhum outro módulo tem sidebar colapsável, então não há o que
+     centralizar — é medida deste módulo, não do sistema.
+
+     --sp: 8px foi removido daqui. Estava declarado e não era usado por
+     UMA regra sequer nos dois CSS do Hold; espaçamento real vem da
+     escala do tema. */
   --sidebar-w:     260px;
   --sidebar-w-min: 72px;
   --topbar-h:      60px;
   --maxw:          1400px;
-  --sp:            8px;
   --radius:        10px;
   --radius-sm:     7px;
   --radius-lg:     14px;

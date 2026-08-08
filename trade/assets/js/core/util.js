@@ -118,6 +118,12 @@
 
     sparkline: function (values, up) {
       var w = 120, h = 34;
+      /* Com UM ponto, stepX virava 120/0 = Infinity e x = 0*Infinity =
+         NaN — o SVG saía com d="MNaN 32.5" e o console enchia de
+         "Expected number". Acontecia sempre que uma série nascia com um
+         valor só, que é o caso comum num sistema de seeds vazios.
+         Com menos de dois pontos não há linha a traçar. */
+      if (!values || values.length < 2) return "";
       var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
       var span = (max - min) || 1, stepX = w / (values.length - 1);
       var line = values.map(function (v, i) {

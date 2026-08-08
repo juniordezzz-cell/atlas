@@ -87,15 +87,18 @@
 .regime .rd { width: 8px; height: 8px; border-radius: 50%; position: relative; }
 .regime .rd::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; opacity: 0.4; animation: rpulse 2.6s var(--ease) infinite; }
 .regime.small { padding: 4px 10px; font-size: 11.5px; }
-.regime-riskon  { color: var(--r-riskon);  border-color: rgba(34,197,94,0.3);  background: var(--pos-soft); }
+/* A borda de cada regime era um rgba() cravado — a mesma cor do texto,
+   escrita de novo à mão e presa ao tema escuro. Derivada do próprio
+   token, ela acompanha o tema junto com o texto e não pode dessincronizar. */
+.regime-riskon  { color: var(--r-riskon);  border-color: color-mix(in srgb, var(--r-riskon) 30%, transparent);  background: var(--pos-soft); }
 .regime-riskon .rd, .regime-riskon .rd::after { background: var(--r-riskon); }
-.regime-riskoff { color: var(--r-riskoff); border-color: rgba(239,68,68,0.3);  background: var(--neg-soft); }
+.regime-riskoff { color: var(--r-riskoff); border-color: color-mix(in srgb, var(--r-riskoff) 30%, transparent); background: var(--neg-soft); }
 .regime-riskoff .rd, .regime-riskoff .rd::after { background: var(--r-riskoff); }
-.regime-liqexp  { color: var(--r-liqexp);  border-color: rgba(79,140,255,0.3);  background: var(--accent-soft); }
+.regime-liqexp  { color: var(--r-liqexp);  border-color: color-mix(in srgb, var(--r-liqexp) 30%, transparent);  background: var(--accent-soft); }
 .regime-liqexp .rd, .regime-liqexp .rd::after { background: var(--r-liqexp); }
-.regime-liqcon  { color: var(--r-liqcon);  border-color: rgba(245,158,11,0.3);  background: var(--warn-soft); }
+.regime-liqcon  { color: var(--r-liqcon);  border-color: color-mix(in srgb, var(--r-liqcon) 30%, transparent);  background: var(--warn-soft); }
 .regime-liqcon .rd, .regime-liqcon .rd::after { background: var(--r-liqcon); }
-.regime-trans   { color: var(--r-trans);   border-color: rgba(139,92,246,0.3);  background: var(--accent2-soft); }
+.regime-trans   { color: var(--r-trans);   border-color: color-mix(in srgb, var(--r-trans) 30%, transparent);   background: var(--accent2-soft); }
 .regime-trans .rd, .regime-trans .rd::after { background: var(--r-trans); }
 
 /* ---------- Score ---------- */

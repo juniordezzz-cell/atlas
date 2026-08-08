@@ -25,6 +25,14 @@
     opts = opts || {};
     var w = opts.w || 90, h = opts.h || 30;
     var color = opts.color || cssVar("--primary");
+    /* Mesmo defeito do sparkline do Trade: com UM ponto, i/(length-1)
+       vira 0/0 = NaN e o SVG sai inválido. Devolve o quadro vazio, que
+       mantém o espaço no layout sem desenhar linha nenhuma. */
+    if (!data || data.length < 2) {
+      var vazio = svg(w, h);
+      vazio.style.width = w + "px"; vazio.style.height = h + "px";
+      return vazio;
+    }
     var min = Math.min.apply(null, data), max = Math.max.apply(null, data);
     var range = (max - min) || 1;
     var pts = data.map(function (v, i) {

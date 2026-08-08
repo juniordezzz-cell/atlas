@@ -57,6 +57,7 @@
   --atlas-sp-7: 32px;
   --atlas-sp-8: 40px;
   --atlas-sp-9: 56px;
+  --atlas-sp-10: 72px;   /* existia só na escala do Trade; subiu para cá */
 
   /* --- Geometria -------------------------------------------------- */
   --atlas-r-xs:   6px;
@@ -115,6 +116,11 @@ html[data-theme="dark"] {
   --atlas-warn-soft:   rgba(251, 191, 36, 0.14);
   --atlas-info:        #60A5FA;
   --atlas-info-soft:   rgba(96, 165, 250, 0.14);
+  /* Quinta cor semântica: usada quando "positivo/negativo/atenção/
+     informação" não descrevem o estado. Hoje é o regime "Transição" do
+     RWA — que não é bom nem ruim, é indefinido. */
+  --atlas-alt:         #A78BFA;
+  --atlas-alt-soft:    rgba(167, 139, 250, 0.14);
 
   --atlas-sh-1: 0 1px 2px rgba(0, 0, 0, 0.40);
   --atlas-sh-2: 0 10px 30px -12px rgba(0, 0, 0, 0.60);
@@ -143,14 +149,20 @@ html[data-theme="light"] {
   --atlas-text-mut:    #5C6980;
   --atlas-text-faint:  #8B97AC;
 
-  --atlas-pos:         #0F9D8E;
-  --atlas-pos-soft:    rgba(15, 157, 142, 0.12);
+  /* #0F9D8E dava contraste 3,17 sobre o fundo claro — abaixo do mínimo
+     de 4,5 para texto normal. E "lucro" é justamente um número que se
+     lê, não um enfeite. #0B7A6E dá 4,91 e fica na mesma faixa dos
+     vizinhos semânticos (neg 4,54 · warn 4,72 · info 6,30). */
+  --atlas-pos:         #0B7A6E;
+  --atlas-pos-soft:    rgba(11, 122, 110, 0.12);
   --atlas-neg:         #DC2626;
   --atlas-neg-soft:    rgba(220, 38, 38, 0.10);
   --atlas-warn:        #B45309;
   --atlas-warn-soft:   rgba(180, 83, 9, 0.10);
   --atlas-info:        #1D4ED8;
   --atlas-info-soft:   rgba(29, 78, 216, 0.10);
+  --atlas-alt:         #6D28D9;
+  --atlas-alt-soft:    rgba(109, 40, 217, 0.10);
 
   --atlas-sh-1: 0 1px 2px rgba(15, 30, 60, 0.08);
   --atlas-sh-2: 0 10px 28px -14px rgba(15, 30, 60, 0.28);
@@ -318,6 +330,46 @@ html[data-module="trade"] {
   --dur-fast:    var(--atlas-dur-fast);
   --dur:         var(--atlas-dur);
   --dur-slow:    var(--atlas-dur-slow);
+
+  /* ---- Sombras e brilho ----
+     ESTES TRÊS ERAM O BURACO MAIS GRAVE DA PONTE. Ficavam só em
+     trade/assets/css/tokens.css com preto cravado —
+     rgba(0,0,0,0.7) e rgba(0,0,0,0.85). No tema claro os cards do
+     Trade recebiam sombra preta pesada sobre fundo branco: quebrado.
+     Agora vêm da escala do tema, que já tem versão clara. */
+  --shadow-soft: var(--atlas-sh-2);
+  --shadow-card: var(--atlas-sh-3);
+  --glow-azure:  0 0 0 1px var(--atlas-accent-line),
+                 0 8px 34px -6px var(--atlas-accent-soft);
+
+  /* ---- Escala de espaçamento ----
+     Idêntica à do ATLAS valor por valor (4·8·12·16·20·24·32·40·56·72),
+     mas declarada em paralelo: mexer na escala do sistema não movia o
+     Trade. Agora move. */
+  --sp-1:  var(--atlas-sp-1);
+  --sp-2:  var(--atlas-sp-2);
+  --sp-3:  var(--atlas-sp-3);
+  --sp-4:  var(--atlas-sp-4);
+  --sp-5:  var(--atlas-sp-5);
+  --sp-6:  var(--atlas-sp-6);
+  --sp-7:  var(--atlas-sp-7);
+  --sp-8:  var(--atlas-sp-8);
+  --sp-9:  var(--atlas-sp-9);
+  --sp-10: var(--atlas-sp-10);
+
+  /* ---- Escala tipográfica ----
+     Também idêntica. Única diferença absorvida: --lh-tight era 1.10
+     aqui e 1.12 no sistema — meio pixel num título, e agora há um
+     valor só. */
+  --fs-display: var(--atlas-fs-display);
+  --fs-h2:      var(--atlas-fs-h2);
+  --fs-h3:      var(--atlas-fs-h3);
+  --fs-body:    var(--atlas-fs-body);
+  --fs-sm:      var(--atlas-fs-sm);
+  --fs-label:   var(--atlas-fs-label);
+  --lh-tight:   var(--atlas-lh-tight);
+  --lh-body:    var(--atlas-lh-body);
+  --track-label: var(--atlas-track-label);
 }
 
 /* ---------- DEFI (exceção estrutural: só cor e efeito mudam) ------- */
@@ -428,6 +480,25 @@ html[data-module="rwa"] {
   --ease:      var(--atlas-ease);
   --fast:      var(--atlas-dur-fast);
   --med:       var(--atlas-dur);
+
+  /* ---- Regimes de mercado ----
+     Cinco cores que ficavam só em RWA/css/tokens.css, cravadas e fora
+     da ponte. São usadas como COR DE TEXTO sobre fundo suave
+     (.regime-* em components.css): no tema claro, o verde #22C55E e o
+     azul #4F8CFF sobre um tinta clara ficam ilegíveis.
+
+     Cada regime mapeia para a cor semântica que ele já significa —
+     e essas o tema escurece sozinho no modo claro:
+       Risk-On      → positivo
+       Risk-Off     → negativo
+       Liquidez ↑   → informação
+       Liquidez ↓   → atenção
+       Transição    → alternativa (nem bom nem ruim: indefinido) */
+  --r-riskon:  var(--atlas-pos);
+  --r-riskoff: var(--atlas-neg);
+  --r-liqexp:  var(--atlas-info);
+  --r-liqcon:  var(--atlas-warn);
+  --r-trans:   var(--atlas-alt);
 }
 
 /* ---------- SHELL ATLAS (dashboard / login / boas-vindas / academy) ---------- */
