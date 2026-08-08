@@ -799,3 +799,29 @@ body {
   filter: none !important;
   perspective: none !important;
 }
+
+/* ===================================================================
+   17. TIPOGRAFIA DE TÍTULO
+   -------------------------------------------------------------------
+   O ATLAS usa UMA família (Inter) para texto e título. Com uma fonte
+   só, a hierarquia precisa vir de peso e espacejamento — senão o
+   título lê como corpo em tamanho maior.
+
+   Inter em corpo grande pede entressilha negativa: sem isso ela parece
+   a fonte padrão do navegador, não uma escolha. Esta é a única regra
+   do sistema que mexe em letter-spacing de título.
+
+   EXCEÇÕES, e o porquê de cada uma:
+     .brand        "A T L A S" do boot é letra espaçada de propósito
+     .logo-text    a marca na sidebar tem tracking largo por desenho
+     .brand-name   idem, no cabeçalho do DeFi
+   Essas três são marca, não título — tracking negativo as destruiria.
+   =================================================================== */
+
+h1:not(.brand):not(.logo-text),
+h2,
+.page-title,
+.card-title,
+.greet h1 {
+  letter-spacing: var(--atlas-track-display);
+}

@@ -24,7 +24,7 @@
 
 .brand {
   margin: 30px 0 6px;
-  font-family: var(--fonte-titulo, 'Poppins', sans-serif);
+  font-family: var(--fonte-titulo, 'Inter', sans-serif);
   font-size: clamp(22px, 4vmin, 30px); font-weight: 600;
   letter-spacing: 0.42em; text-indent: 0.42em; /* compensa a última letra */
   background: linear-gradient(92deg, #9FD9FF 0%, #E6F6FF 45%, #6FB9FF 100%);

@@ -28,8 +28,13 @@
   --glow-azul:  0 0 40px rgba(0, 191, 255, 0.45);
   --glow-ciano: 0 0 60px rgba(0, 240, 255, 0.35);
 
-  /* --- Tipografia (item 5) --- */
-  --fonte-titulo: 'Poppins', 'Inter', system-ui, sans-serif;
+  /* --- Tipografia (item 5) ---
+     Título e corpo são a MESMA família. Era Poppins no título; hoje o
+     ATLAS inteiro usa Inter, e a hierarquia vem de peso e entressilha
+     (--atlas-track-display), não de troca de fonte.
+     Estes dois valores são só reserva: themes/atlas-theme.css carrega
+     depois e reaponta os dois para os tokens do sistema. */
+  --fonte-titulo: 'Inter', system-ui, sans-serif;
   --fonte-corpo:  'Inter', system-ui, sans-serif;
 
   --fs-titulo:   32px;  --fw-titulo:   600;

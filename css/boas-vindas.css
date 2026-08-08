@@ -65,7 +65,7 @@
 }
 .welcome-title {
   margin: 0 0 12px;
-  font-family: var(--fonte-titulo, 'Poppins', sans-serif);
+  font-family: var(--fonte-titulo, 'Inter', sans-serif);
   font-size: clamp(26px, 5.4vmin, 42px); font-weight: 600;
   animation: riseIn 0.8s ease both 1.55s;
 }

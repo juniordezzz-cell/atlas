@@ -30,10 +30,26 @@
    1. CAMADA CANÔNICA — tokens estruturais (não dependem de tema)
    =================================================================== */
 :root {
-  /* --- Tipografia ------------------------------------------------ */
-  --atlas-font-display: "Space Grotesk", "Sora", "Poppins", "Segoe UI", system-ui, sans-serif;
+  /* --- Tipografia ------------------------------------------------
+     UMA família para texto e título: Inter.
+
+     Antes eram QUATRO fontes de título — Poppins na raiz e no Academy,
+     Space Grotesk no Trade, Sora no DeFi, Inter no Hold e no RWA — e a
+     cascata desta variável resolvia para uma diferente em CADA módulo,
+     dependendo de qual tinha sido baixada. Navegar entre módulos parecia
+     navegar entre produtos diferentes, e eram três downloads de fonte a
+     mais para dizer a mesma coisa.
+
+     Com uma família só, a hierarquia vem de PESO e ESPACEJAMENTO, não de
+     troca de fonte — que é como sistemas de design maduros funcionam.
+     Daí --atlas-track-display: Inter em corpo grande pede entressilha
+     negativa; sem isso ela parece a fonte padrão do navegador, e não uma
+     escolha. */
+  --atlas-font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --atlas-font-ui:      "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --atlas-font-mono:    "JetBrains Mono", "SF Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --atlas-track-display: -0.02em;
 
   --atlas-fs-display: clamp(1.55rem, 1.1rem + 1.6vw, 2.1rem);
   --atlas-fs-h1:      1.42rem;

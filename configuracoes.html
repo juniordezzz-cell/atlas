@@ -6,15 +6,14 @@
   <meta name="description" content="Configuracoes do ATLAS: tema, idioma, formato de data, preferencias por modulo, backup e restauracao de dados.">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <title>ATLAS — Configurações</title>
-  <!-- Inter e Poppins: estas páginas DECLARAVAM as duas em
-       css/variables.css e não carregavam nenhuma — o texto caía no
-       fallback do sistema, e o mesmo componente media diferente aqui
-       e nos módulos. O conjunto de pesos do Inter é o MESMO de todas
-       as páginas de propósito: pedir eixos diferentes faz o Google
-       servir instâncias com métricas ligeiramente diferentes. -->
+  <!-- Inter para texto E título, JetBrains Mono para números. A mesma
+       string de URL em todas as páginas de propósito: assim o navegador
+       reaproveita UMA entrada de cache no site inteiro, e pedir eixos
+       diferentes faria o Google servir instâncias com métricas
+       ligeiramente distintas. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;550;600;650;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/global.css">
   <link rel="stylesheet" href="css/dashboard.css">
