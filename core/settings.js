@@ -221,7 +221,24 @@
 
     /* Formatação de data respeitando a preferência */
     formatDate: function (value) {
-      var d = (value instanceof Date) ? value : new Date(value);
+      var d;
+      /* "2026-05-12" é uma DATA, não um instante. O JavaScript, porém,
+         manda a norma tratar a forma só-data como UTC: new Date("2026-05-12")
+         vira meia-noite em Greenwich, que em São Paulo (UTC-3) são 21h do
+         dia 11. Resultado: todo movimento aparecia um dia ANTES para
+         qualquer usuário a oeste de Greenwich — na tela, no relatório e
+         no CSV exportado.
+
+         Quebrar a string e usar o construtor de componentes força meia-
+         noite LOCAL, que é o que "12 de maio" significa. Só a forma
+         só-data entra aqui; carimbo com hora continua sendo instante e
+         é tratado como sempre. */
+      if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        var p = value.split("-");
+        d = new Date(+p[0], +p[1] - 1, +p[2]);
+      } else {
+        d = (value instanceof Date) ? value : new Date(value);
+      }
       if (isNaN(d.getTime())) return "—";
       var dd = String(d.getDate()).padStart(2, "0");
       var mm = String(d.getMonth() + 1).padStart(2, "0");

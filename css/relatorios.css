@@ -36,6 +36,38 @@
 }
 .rep-select:hover { border-color: var(--atlas-border-hi); }
 .rep-select:focus { outline: none; border-color: var(--atlas-accent-line); }
+
+/* ---- Exportar (CSV · PDF) ----
+   Empurrado para a direita da barra: são AÇÕES, não filtros. Misturar
+   as duas coisas no mesmo alinhamento faria o usuário procurar o
+   recorte onde está a saída. Herdam a altura do .rep-select para a
+   barra continuar numa linha só. */
+.rep-field--acoes { margin-left: auto; }
+.rep-acoes { display: flex; gap: 8px; }
+.rep-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: inherit; font-size: 13px; font-weight: 500;
+  color: var(--atlas-text);
+  background: var(--atlas-surface);
+  border: 1px solid var(--atlas-border);
+  border-radius: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: color .16s ease, border-color .16s ease, background .16s ease;
+}
+.rep-btn:hover {
+  color: var(--atlas-text-hi);
+  border-color: var(--atlas-border-hi);
+  background: var(--atlas-surface-hi);
+}
+.rep-btn:focus-visible { outline: 2px solid var(--atlas-accent); outline-offset: 2px; }
+.rep-btn svg { width: 16px; height: 16px; flex: none; }
+
+@media (max-width: 720px) {
+  .rep-field--acoes { margin-left: 0; width: 100%; }
+  .rep-acoes { width: 100%; }
+  .rep-btn { flex: 1; justify-content: center; }
+}
 /* O selo Global/Local da carteira agora é do próprio componente
    compartilhado (wallets/walletSelector.css) — aqui não há mais
    aparência de carteira. */
@@ -174,4 +206,14 @@
 @media (max-width: 900px) {
   .rep-kpis { grid-template-columns: repeat(2, 1fr); }
   .rep-grid { grid-template-columns: 1fr; }
+}
+
+.rep-btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.rep-btn[disabled]:hover {
+  color: var(--atlas-text);
+  border-color: var(--atlas-border);
+  background: var(--atlas-surface);
 }

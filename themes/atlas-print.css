@@ -93,6 +93,45 @@
   body::after { display: none !important; }
 
   /* ================================================================
+     1b. O CABEÇALHO DA FOLHA
+     ------------------------------------------------------------------
+     Um relatório sem carteira, período e data é uma folha anônima —
+     e folha anônima não se arquiva nem se manda para ninguém.
+     ================================================================ */
+  .atlas-printhead {
+    display: flex !important;
+    align-items: baseline;
+    gap: 12px;
+    margin: 0 0 10mm;
+    padding-bottom: 3mm;
+    border-bottom: 1.5pt solid #000;
+  }
+  .atlas-printhead__marca {
+    font-weight: 700;
+    font-size: 11pt;
+    letter-spacing: 0.18em;
+  }
+  .atlas-printhead__t { flex: 1; }
+  .atlas-printhead__t strong {
+    display: block;
+    font-size: 13pt;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .atlas-printhead__t span {
+    display: block;
+    font-size: 9pt;
+    color: #4A5364;
+    margin-top: 1mm;
+  }
+  .atlas-printhead__meta {
+    text-align: right;
+    font-size: 8.5pt;
+    color: #4A5364;
+  }
+  .atlas-printhead__meta span { display: block; }
+
+  /* ================================================================
      2. O QUE NÃO VAI PARA O PAPEL
      ------------------------------------------------------------------
      Navegação, ações e enfeite. Numa folha impressa nada disso pode

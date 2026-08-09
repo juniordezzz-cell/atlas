@@ -823,3 +823,17 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 .topnav-inner .atlas-theme-toggle { margin-left: var(--atlas-sp-3); }
 
 @media print { .atlas-theme-toggle { display: none; } }
+
+/* ============================================================
+   CABEÇALHO DE IMPRESSÃO — invisível em tela
+   Montado por core/atlas-export.js e estilizado em
+   themes/atlas-print.css. A regra de esconder tem de morar AQUI,
+   e não lá: atlas-print.css é carregado com media="print" e
+   portanto nunca vale na tela — pôr o display:none lá deixava o
+   cabeçalho aparecendo no alto da página.
+
+   Ele fica no DOM em vez de ser inserido e removido a cada
+   impressão: assim sai também quando o usuário imprime pelo
+   Ctrl+P do navegador, sem passar pelo botão do ATLAS.
+   ============================================================ */
+.atlas-printhead { display: none; }

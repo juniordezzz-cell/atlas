@@ -49,6 +49,9 @@
   var PERIODS = { month: "Mensal", quarter: "Trimestral", semester: "Semestral", year: "Anual" };
   var state = { walletId: null, period: "month" };
   var chart = null, calInst = null;
+  var ultimo = null;                 // último recorte renderizado (base da exportação)
+
+  var TIPO_ROTULO = { entrada: "Entrada", saida: "Saída", resultado: "Resultado" };
 
   /* ---------- projeção (regressão linear no net dos buckets) ---------- */
   function projectNext(nets) {
@@ -108,10 +111,16 @@
     var list = AtlasMovements.list({ walletId: state.walletId });
     var body = el("repBody"), empty = el("repEmpty");
 
+    /* Sem movimento não há o que exportar. Botão que não faz nada ao
+       clique é pior do que botão ausente: o usuário conclui que a
+       exportação está quebrada. */
+    habilitarExportacao(list.length > 0);
+
     if (!list.length) {
       if (body) body.style.display = "none";
       if (empty) empty.style.display = "block";
       if (chart) { chart.destroy(); chart = null; }
+      ultimo = null;
       return;
     }
     if (body) body.style.display = "";
@@ -119,6 +128,11 @@
 
     var sum = AtlasMovements.summarize(list);
     var buckets = AtlasMovements.compareBuckets(AtlasMovements.groupByPeriod(list, state.period));
+
+    /* A exportação sai do MESMO recorte que está na tela — mesma
+       carteira, mesmo período. Um CSV que não bate com o que o usuário
+       está vendo é pior do que nenhum CSV. */
+    ultimo = { list: list, buckets: buckets, sum: sum };
 
     renderKPIs(sum);
     renderChart(buckets);
@@ -266,11 +280,105 @@
   }
 
   /* ---------- eventos ---------- */
+
+  /* ============================================================
+     EXPORTAÇÃO
+     ------------------------------------------------------------
+     Duas saídas, porque são dois usos diferentes.
+
+     CSV é para CONTINUAR o trabalho: abre no Excel, entra numa
+     planilha de imposto, vai para o contador. Sai o recorte inteiro,
+     movimento a movimento, mais o resumo por período.
+
+     PDF é para ENTREGAR o trabalho: é a página como ela está, com
+     gráfico e tudo, impressa pelo navegador. Ver core/atlas-export.js
+     para por que não há biblioteca de PDF aqui.
+     ============================================================ */
+
+  function habilitarExportacao(ligado) {
+    ["repCsv", "repPdf"].forEach(function (id) {
+      var b = el(id);
+      if (!b) return;
+      b.disabled = !ligado;
+      b.title = ligado ? "" : t("Sem movimentos para exportar");
+    });
+  }
+
+  function nomeCarteira() {
+    if (!window.AtlasWallets) return "";
+    var w = AtlasWallets.get(state.walletId) || AtlasWallets.activeGlobal();
+    return w ? w.name : "";
+  }
+
+  function dataBr(iso) {
+    if (window.AtlasSettings && AtlasSettings.formatDate) return AtlasSettings.formatDate(iso);
+    var p = String(iso).split("-");
+    return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : String(iso);
+  }
+
+  function exportarCsv() {
+    if (!window.AtlasExport || !ultimo) return;
+    var X = AtlasExport;
+    var carteira = nomeCarteira();
+
+    /* Duas tabelas num arquivo só, separadas por uma linha em branco.
+       É o que o Excel aceita sem reclamar e evita obrigar o usuário a
+       juntar dois downloads para ter a foto completa. */
+    var linhas = [];
+
+    linhas.push(["Movimentos"]);
+    linhas.push(["Data", "Tipo", "Módulo", "Descrição", "Valor (USD)", "Origem"]);
+    ultimo.list.forEach(function (m) {
+      linhas.push([
+        dataBr(m.date),
+        TIPO_ROTULO[m.tipo] || m.tipo,
+        m.module || "",
+        m.label || "",
+        /* Sempre em USD, e o cabeçalho diz isso. Exportar já convertido
+           faria a planilha depender da cotação do dia da exportação —
+           um número que ninguém consegue auditar depois. */
+        X.numero(m.valorUSD),
+        m.origem || ""
+      ]);
+    });
+
+    linhas.push([]);
+    linhas.push(["Resumo por período (" + t(PERIODS[state.period]) + ")"]);
+    linhas.push(["Período", "Entradas (USD)", "Saídas (USD)", "Resultado (USD)", "Fluxo líquido (USD)", "Movimentos"]);
+    ultimo.buckets.forEach(function (b) {
+      linhas.push([b.label, X.numero(b.entrada), X.numero(b.saida), X.numero(b.resultado), X.numero(b.net), b.count]);
+    });
+
+    linhas.push([]);
+    linhas.push(["Total", X.numero(ultimo.sum.entrada), X.numero(ultimo.sum.saida),
+                 X.numero(ultimo.sum.resultado), X.numero(ultimo.sum.net), ultimo.sum.count]);
+
+    X.csv("atlas-relatorio-" + (carteira || "carteira"), null, linhas);
+
+    if (window.AtlasUI && AtlasUI.toast) {
+      AtlasUI.toast({ tipo: "ok", texto: t("CSV exportado") + " · " + ultimo.list.length + " " + t("movimentos") });
+    }
+  }
+
+  function exportarPdf() {
+    if (!window.AtlasExport) { window.print(); return; }
+    var carteira = nomeCarteira();
+    AtlasExport.imprimir({
+      titulo: t("Relatórios"),
+      subtitulo: (carteira ? carteira + " · " : "") + t(PERIODS[state.period]) +
+                 (ultimo ? " · " + ultimo.list.length + " " + t("movimentos") : "")
+    });
+  }
+
   function wire() {
     var p = el("repPeriod");
     /* a carteira não tem listener aqui: quem trata o clique é o
        componente compartilhado, que devolve por onSelect/afterChange */
     if (p) p.addEventListener("change", function () { state.period = p.value; render(); });
+
+    var bCsv = el("repCsv"), bPdf = el("repPdf");
+    if (bCsv) bCsv.addEventListener("click", exportarCsv);
+    if (bPdf) bPdf.addEventListener("click", exportarPdf);
     if (window.AtlasSettings && AtlasSettings.on) {
       AtlasSettings.on(function () { fillPeriods(); render(); });
     }

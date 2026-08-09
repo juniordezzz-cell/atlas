@@ -12,8 +12,9 @@
     view.appendChild(U.el("div", { class: "view-head" }, [
       U.el("div", { class: "row" }, [
         U.el("div", { class: "grow" }, [U.el("h1", { text: "Relatórios" }), U.el("p", { text: "Síntese consolidada do estado do portfólio para revisão periódica." })]),
+        U.button("Exportar CSV", { variant: "secondary", icon: "download", onClick: exportCSV }),
         U.button("Exportar JSON", { variant: "secondary", icon: "download", onClick: exportJSON }),
-        U.button("Imprimir / PDF", { variant: "primary", icon: "report", onClick: function () { window.print(); } })
+        U.button("Imprimir / PDF", { variant: "primary", icon: "report", onClick: imprimir })
       ])
     ]));
 
@@ -80,6 +81,41 @@
     r.appendChild(U.el("dt", { text: k }));
     r.appendChild(U.el("dd", { class: "num", text: v }));
     dl.appendChild(r);
+  }
+
+  /* CSV das posições — para continuar o trabalho numa planilha. O JSON
+     ao lado continua servindo a outro propósito: é o formato que o
+     próprio ATLAS relê. Ver core/atlas-export.js. */
+  function exportCSV() {
+    if (!window.AtlasExport) return;
+    var X = AtlasExport;
+    var linhas = [["Ativo", "Ticker", "Tese", "Convicção", "Quantidade",
+                   "Valor (USD)", "Custo (USD)", "PnL (USD)", "Peso (%)"]];
+    S.get.walletPositions().forEach(function (p) {
+      var a = S.get.asset(p.ativo_id) || {};
+      var t = S.get.thesisOfAsset(p.ativo_id);
+      linhas.push([
+        a.nome || "", a.ticker || "",
+        t ? t.status : "",
+        a.conviccao != null ? a.conviccao : "",
+        X.numero(p.quantidade),
+        X.numero(S.get.positionValue(p)),
+        X.numero(S.get.positionCost(p)),
+        X.numero(S.get.positionPnL(p)),
+        X.numero(S.get.positionWeight(p))
+      ]);
+    });
+    X.csv("atlas-hold-posicoes", null, linhas);
+    U.toast("Exportado", "CSV gerado com " + (linhas.length - 1) + " posições.", "success");
+  }
+
+  /* Passa pelo AtlasExport para a folha sair com cabeçalho — nome do
+     gestor, data e o que é o documento. window.print() cru produzia uma
+     folha anônima. */
+  function imprimir() {
+    if (window.AtlasExport) {
+      AtlasExport.imprimir({ titulo: "Hold · Relatórios", subtitulo: "Síntese do portfólio" });
+    } else { window.print(); }
   }
 
   function exportJSON() {
