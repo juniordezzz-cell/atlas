@@ -181,6 +181,27 @@
       passosBtn.disabled = true;
     }
 
+    /* Uso offline. A linha só aparece onde o service worker pode
+       existir: em file:// ele não registra, e oferecer "limpar" algo
+       que nunca foi criado é prometer um botão que não faz nada. */
+    var rowPwa = document.getElementById("rowPwa");
+    var btnPwa = document.getElementById("btnPwaLimpar");
+    if (rowPwa && btnPwa && window.AtlasPWA && AtlasPWA.disponivel()) {
+      rowPwa.hidden = false;
+      btnPwa.addEventListener("click", function () {
+        confirmar({
+          title: t("Limpar os arquivos guardados para uso offline?"),
+          message: t("O ATLAS voltará a precisar de internet até você abrir cada tela de novo. Nenhum dado seu é apagado — carteiras, teses e movimentos ficam onde estão."),
+          confirmLabel: t("Limpar")
+        }).then(function (ok) {
+          if (!ok) return;
+          AtlasPWA.limpar().then(function () {
+            toast(t("Arquivos guardados removidos"));
+          });
+        });
+      });
+    }
+
     // Reflete mudanças vindas de fora (outra aba, atalho, etc.)
     AtlasSettings.on(function () { syncControls(); });
   }

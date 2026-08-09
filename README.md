@@ -53,7 +53,11 @@ atlas/
 ├── wallets/              ★ CARTEIRAS — fonte única de verdade
 ├── themes/               Identidade visual e microinterações
 ├── css/  ·  js/          Estilos e scripts do shell da raiz
-├── assets/               Imagem do Oráculo (atena.webp) e favicon
+├── assets/               Imagem do Oráculo (atena.webp) e ícones
+│
+├── manifest.webmanifest  Instalação como aplicativo (PWA)
+├── sw.js                 Service worker: abrir sem internet
+├── offline.html          Tela para quem chega offline numa página nunca visitada
 │
 ├── hold/                 Módulo de investimento de longo prazo   (SPA)
 ├── trade/                Módulo de operações                     (SPA)
@@ -83,6 +87,7 @@ atlas/
 | `core/atlas-backup.js` | Exporta e restaura todos os dados em `.json` | `AtlasBackup` |
 | `core/atlas-export.js` | Planilha (CSV) e papel/PDF, com cabeçalho de folha | `AtlasExport` |
 | `core/atlas-notifications.js` | Alertas dos quatro módulos, com estado de lido | `AtlasNotifications` |
+| `core/atlas-pwa.js` | Registra o service worker (nunca em `file://`) | `AtlasPWA` |
 | `core/atlas-module-settings.js` | Configurações por módulo, numa tela só | `AtlasModuleSettings` |
 | `core/atlas-price.js` | Preço por símbolo, com cache e stablecoins | `AtlasPrice` |
 | `core/entities/theses.js` | Entidade compartilhada de Teses (versionada) | `AtlasTheses` |
@@ -149,6 +154,31 @@ dados de navegação ou trocar de navegador apaga **tudo**.
 
 Por isso existe **Configurações → Dados e Backup**: exporta um `.json` com todos
 os módulos e restaura de volta. Use com regularidade.
+
+---
+
+## Uso offline e instalação
+
+O ATLAS é instalável (Chrome/Edge: "Instalar aplicativo") e **abre sem
+internet**. Os dados já eram locais; o que faltava era servir os
+arquivos do site sem rede — trabalho de `sw.js`.
+
+A estratégia é **rede primeiro, cache como rede de segurança**. Servir
+do cache primeiro seria mais rápido e seria a decisão errada: num app
+que calcula dinheiro, rodar código velho depois de uma correção é risco
+real. O cache entra quando a rede falha.
+
+Uma tela só abre offline depois de ter sido visitada ao menos uma vez
+com conexão. Quem chega numa que nunca abriu vê `offline.html`, que não
+depende de nada — CSS inline, um link absoluto.
+
+Chamadas de API (preço, câmbio, pools) **não** são cacheadas pelo
+service worker: preço guardado é preço errado, e `core/http.js` já tem
+o próprio cache com TTL.
+
+Em `file://` o service worker **não** é registrado — origem insegura.
+Para limpar os arquivos guardados: **Configurações → Uso offline**.
+Isso não apaga nenhum dado seu.
 
 ---
 

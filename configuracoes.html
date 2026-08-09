@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Configuracoes do ATLAS: tema, idioma, formato de data, preferencias por modulo, backup e restauracao de dados.">
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ATLAS">
   <title>ATLAS — Configurações</title>
   <!-- Inter para texto E título, JetBrains Mono para números. A mesma
        string de URL em todas as páginas de propósito: assim o navegador
@@ -34,6 +38,7 @@
   <script src="core/i18n.js"></script>
   <script src="core/currency.js"></script>
   <script src="core/atlas-boot.js"></script>
+  <script src="core/atlas-pwa.js"></script>
   <script src="core/atlas-backup.js"></script>
   <script src="core/atlas-module-settings.js"></script>
 </head>
@@ -129,6 +134,20 @@
         <!-- Os primeiros passos perguntam nome, moeda e nome da carteira
              principal. Rodam uma vez; quem pulou (ou quer refazer) chega
              aqui, no mesmo cartão onde já se rege a apresentação. -->
+        <!-- O service worker guarda os ARQUIVOS do site para o ATLAS
+             abrir sem internet. Não guarda dado nenhum do usuário — por
+             isso limpar aqui é seguro, e é o primeiro remédio quando uma
+             tela insiste em aparecer desatualizada. -->
+        <div class="set-row" id="rowPwa" hidden>
+          <div class="set-row-txt">
+            <div class="set-label">Uso offline</div>
+            <div class="set-desc" id="pwaDesc">O ATLAS guarda seus arquivos para abrir sem internet. Seus dados não estão aqui — eles ficam no armazenamento do navegador.</div>
+          </div>
+          <div class="set-row-ctrl">
+            <button type="button" class="btn-ghost" id="btnPwaLimpar">Limpar arquivos guardados</button>
+          </div>
+        </div>
+
         <div class="set-row">
           <div class="set-row-txt">
             <div class="set-label">Primeiros passos</div>

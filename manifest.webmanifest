@@ -1,0 +1,49 @@
+{
+  "name": "ATLAS — Sistema operacional financeiro",
+  "short_name": "ATLAS",
+  "description": "Gestão de patrimônio em cripto e ativos reais: Hold, Trade, DeFi e RWA sob um mesmo painel.",
+  "id": "/",
+  "start_url": "dashboard.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05080F",
+  "theme_color": "#05080F",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Relatórios",
+      "short_name": "Relatórios",
+      "description": "Relatórios por carteira, com exportação em CSV e PDF",
+      "url": "relatorios.html"
+    },
+    {
+      "name": "Hold",
+      "short_name": "Hold",
+      "description": "Ativos de longo prazo",
+      "url": "hold/index.html"
+    },
+    {
+      "name": "Trade",
+      "short_name": "Trade",
+      "description": "Operações e registro de decisão",
+      "url": "trade/index.html"
+    }
+  ]
+}

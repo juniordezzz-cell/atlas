@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- ATLAS — ícone MASCARÁVEL (purpose: maskable).
+
+       O Android recorta o ícone instalado na forma do sistema do
+       usuário: círculo, squircle, gota. O que fica de fora do círculo
+       central de 80% pode ser cortado — por isso este arquivo existe
+       separado do favicon: mesma marca, globo menor, sem canto
+       arredondado próprio (quem arredonda é o sistema).
+
+       Sem ele, o ATLAS instalado apareceria com as bordas do globo
+       decepadas na tela inicial. -->
+  <rect width="32" height="32" fill="#05080F"/>
+  <g fill="none" stroke="#00BFFF" stroke-width="2" stroke-linecap="round">
+    <circle cx="16" cy="16" r="7"/>
+    <path d="M16 9a13 13 0 0 0 0 14M16 9a13 13 0 0 1 0 14M9 16h14"/>
+  </g>
+</svg>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLAS — sem conexão</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <meta name="theme-color" content="#05080F">
+  <!--
+    ESTA PÁGINA NÃO DEPENDE DE NADA.
+
+    É o que o service worker entrega quando o usuário navega, está sem
+    rede e a tela pedida nunca foi visitada — portanto não está no
+    cache. A primeira versão disso devolvia o dashboard.html; parecia
+    esperto e era pior: servido sob /trade/index.html, os caminhos
+    relativos dele (css/…, js/…) passavam a apontar para dentro de
+    /trade/ e a página chegava sem estilo e sem script. URL de um
+    módulo, conteúdo de outro, aparência de nada.
+
+    Aqui o CSS é inline e o único link é absoluto. Não há como quebrar.
+  -->
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid; place-items: center;
+      padding: 24px;
+      background: #05080F;
+      color: #C3CEE4;
+      font: 400 15px/1.6 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      text-align: center;
+    }
+    .caixa { max-width: 420px; }
+    .globo { width: 56px; height: 56px; margin: 0 auto 22px; display: block; }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 22px; font-weight: 600; letter-spacing: -0.02em;
+      color: #EAF0FB;
+    }
+    p { margin: 0 0 8px; }
+    .fraco { color: #808DA9; font-size: 13.5px; }
+    a.botao {
+      display: inline-block;
+      margin-top: 22px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      background: #00BFFF;
+      color: #04121e;
+      font-weight: 600; font-size: 14px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="caixa">
+    <svg class="globo" viewBox="0 0 32 32" fill="none" stroke="#00BFFF" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+      <circle cx="16" cy="16" r="12"/>
+      <path d="M16 4a22 22 0 0 0 0 24M16 4a22 22 0 0 1 0 24M4 16h24"/>
+    </svg>
+    <h1>Esta tela ainda não foi aberta offline</h1>
+    <p>O ATLAS funciona sem internet — mas só nas telas que você já visitou pelo menos uma vez com conexão. Esta ainda não foi.</p>
+    <p class="fraco">Seus dados estão intactos. Eles vivem neste navegador e não dependem de rede.</p>
+    <a class="botao" href="/dashboard.html">Ir para o Dashboard</a>
+  </div>
+</body>
+</html>
