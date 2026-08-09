@@ -114,6 +114,14 @@ html[data-theme="dark"] {
   --atlas-surface-solid: #121B31;
   --atlas-surface-hi:  rgba(31, 44, 74, 0.70);
 
+  /* Superfície REBAIXADA — o campo, o botão-select, o cartão do roteiro:
+     coisas que afundam em vez de subir. É uma cor-base, não a cor final:
+     cada uso escolhe a sua opacidade com color-mix, e por isso as três
+     telas que já usavam 0,45 · 0,6 · 0,7 continuam idênticas no escuro.
+     Existe porque esses fundos estavam escritos à mão em rgba(5,8,15) e
+     ficavam cinza-chumbo no tema claro. */
+  --atlas-sunken-base: #05080F;
+
   --atlas-border:      rgba(140, 170, 225, 0.13);
   --atlas-border-hi:   rgba(150, 185, 255, 0.28);
   --atlas-hairline:    rgba(150, 180, 235, 0.09);
@@ -138,6 +146,34 @@ html[data-theme="dark"] {
   --atlas-alt:         #A78BFA;
   --atlas-alt-soft:    rgba(167, 139, 250, 0.14);
 
+  /* O ouro do selo Premium. Vivia cravado em css/variables.css, fora da
+     ponte de tema: no tema claro, #FFD700 como texto dá 1,4. Aqui ele
+     ganha as duas versões e o módulo continua escrevendo --dourado. */
+  --atlas-gold:        #FFD700;
+  --atlas-gold-soft:   rgba(255, 215, 0, 0.12);
+
+  /* ------------------------------------------------------------------
+     O ACENTO COMO TEXTO — e por que precisa de um token próprio.
+
+     --atlas-accent é a cor de MARCA do módulo, e ela não muda com o
+     tema: o ciano #00BFFF do ATLAS é o mesmo no claro e no escuro.
+     Como superfície, borda ou ícone sobre fundo colorido, funciona nos
+     dois. Como TEXTO sobre fundo claro, não: dá contraste 2,0 — bem
+     abaixo do mínimo de 4,5.
+
+     No tema escuro os dois são a mesma cor. No claro, o acento é
+     escurecido 45% — derivado do próprio --atlas-accent, então cada
+     módulo ganha a sua versão legível sem ninguém escrever cinco
+     valores à mão. Medido: ATLAS 5,8 · Hold 6,7 · Trade 7,1 ·
+     DeFi 5,0 · RWA 6,6.
+
+     --atlas-on-accent é o contrário: a tinta que se lê EM CIMA do
+     acento. Como o acento é claro nos dois temas, é sempre escura.
+     ------------------------------------------------------------------ */
+  --atlas-accent-text:   var(--atlas-accent);
+  --atlas-accent-2-text: var(--atlas-accent-2);
+  --atlas-on-accent:     #04121e;
+
   --atlas-sh-1: 0 1px 2px rgba(0, 0, 0, 0.40);
   --atlas-sh-2: 0 10px 30px -12px rgba(0, 0, 0, 0.60);
   --atlas-sh-3: 0 22px 48px -20px rgba(0, 0, 0, 0.75);
@@ -154,6 +190,7 @@ html[data-theme="light"] {
   --atlas-surface:     rgba(255, 255, 255, 0.86);
   --atlas-surface-solid: #FFFFFF;
   --atlas-surface-hi:  rgba(255, 255, 255, 1);
+  --atlas-sunken-base: #DCE3ED;
 
   --atlas-border:      rgba(15, 30, 60, 0.12);
   --atlas-border-hi:   rgba(15, 30, 60, 0.26);
@@ -162,23 +199,65 @@ html[data-theme="light"] {
 
   --atlas-text-hi:     #0B1220;
   --atlas-text:        #2B3648;
-  --atlas-text-mut:    #5C6980;
-  --atlas-text-faint:  #8B97AC;
+  /* A escala de tinta do tema claro foi recalibrada na auditoria.
 
-  /* #0F9D8E dava contraste 3,17 sobre o fundo claro — abaixo do mínimo
-     de 4,5 para texto normal. E "lucro" é justamente um número que se
-     lê, não um enfeite. #0B7A6E dá 4,91 e fica na mesma faixa dos
-     vizinhos semânticos (neg 4,54 · warn 4,72 · info 6,30). */
-  --atlas-pos:         #0B7A6E;
-  --atlas-pos-soft:    rgba(11, 122, 110, 0.12);
-  --atlas-neg:         #DC2626;
-  --atlas-neg-soft:    rgba(220, 38, 38, 0.10);
-  --atlas-warn:        #B45309;
-  --atlas-warn-soft:   rgba(180, 83, 9, 0.10);
+     O "faint" original (#8B97AC) dava 2,77 sobre o fundo — e ele não
+     rotula enfeite, rotula campo ("Carteira", "Período") e contador de
+     aba. Texto que se lê precisa de 4,5.
+
+     Só que subir o faint colava ele no mut e a hierarquia de três níveis
+     virava dois. Então os dois desceram juntos, mantendo o intervalo:
+
+       hi    #0B1220  →  17,6   título e número
+       mut   #4A5568  →   7,1   texto secundário
+       faint #646E7D  →   4,9   rótulo e apoio
+
+     Medidos no PIOR caso, que é sobre --atlas-bg-deep (#EEF2F8), não
+     sobre branco: 16,7 · 6,7 · 4,59. Todos passam.
+
+     No tema ESCURO o faint dá 2,78 sobre cartão. Está anotado para o
+     item 4.10 (auditoria de acessibilidade), que é onde se decide se
+     esse nível é texto ou enfeite — mexer nele agora mudaria a aparência
+     do tema principal sem auditoria que sustente. */
+  --atlas-text-mut:    #4A5568;
+  --atlas-text-faint:  #646E7D;
+
+  /* As cores semânticas do tema claro passaram por duas correções.
+
+     A primeira: #0F9D8E dava 3,17 sobre o fundo claro, abaixo do mínimo
+     de 4,5 — e "lucro" é um número que se lê, não um enfeite.
+
+     A segunda veio da auditoria tela a tela: sobre FUNDO BRANCO os
+     valores passavam, mas quase nunca é esse o caso. Um selo (+2,4%,
+     "Em risco", "Vencido") fica sobre o PRÓPRIO tom suave da sua cor —
+     e aí pos caía para 4,43, neg para 3,90 e warn para 4,13. O pior
+     caso é esse, não o branco. Os três foram escurecidos até passar
+     medidos sobre o próprio tom suave: pos 5,20 · neg 5,15 · warn 5,20.
+     info (5,42) e alt (5,69) já passavam.
+
+     Os tons suaves ficaram todos em 10% para não voltarem a divergir. */
+  --atlas-pos:         #0A6B61;
+  --atlas-pos-soft:    rgba(10, 107, 97, 0.10);
+  --atlas-neg:         #B91C1C;
+  --atlas-neg-soft:    rgba(185, 28, 28, 0.10);
+  --atlas-warn:        #9A4708;
+  --atlas-warn-soft:   rgba(154, 71, 8, 0.10);
   --atlas-info:        #1D4ED8;
   --atlas-info-soft:   rgba(29, 78, 216, 0.10);
   --atlas-alt:         #6D28D9;
   --atlas-alt-soft:    rgba(109, 40, 217, 0.10);
+
+  /* #856A00 dá 4,61 no pior caso (sobre --atlas-bg-deep) e continua
+     lendo-se como ouro, não como marrom. */
+  --atlas-gold:        #856A00;
+  --atlas-gold-soft:   rgba(133, 106, 0, 0.10);
+
+  /* O acento vira texto legível escurecendo 45% — derivado do próprio
+     acento do módulo, então Hold, Trade, DeFi e RWA ganham a sua versão
+     sem valor escrito à mão. Ver a nota completa na camada canônica. */
+  --atlas-accent-text:   color-mix(in srgb, var(--atlas-accent) 55%, #000);
+  --atlas-accent-2-text: color-mix(in srgb, var(--atlas-accent-2) 50%, #000);
+  --atlas-on-accent:     #04121e;
 
   --atlas-sh-1: 0 1px 2px rgba(15, 30, 60, 0.08);
   --atlas-sh-2: 0 10px 28px -14px rgba(15, 30, 60, 0.28);
@@ -272,6 +351,11 @@ html[data-module="hold"] {
   --primary:       var(--atlas-accent);
   --secondary:     var(--atlas-accent-2);
   --accent:        var(--atlas-accent-2);
+  /* Versões LEGÍVEIS do acento, para quando ele é tinta e não superfície.
+     No tema escuro são a mesma cor de sempre; no claro o tema escurece.
+     Ver a nota longa em --atlas-accent-text. */
+  --primary-text:  var(--atlas-accent-text);
+  --accent-text:   var(--atlas-accent-2-text);
   --success:       var(--atlas-pos);
   --warning:       var(--atlas-warn);
   --danger:        var(--atlas-neg);
@@ -312,6 +396,10 @@ html[data-module="trade"] {
 
   --azure:          var(--atlas-accent);
   --azure-strong:   var(--atlas-accent-2);
+  /* Versões LEGÍVEIS do acento (tinta, não superfície). Iguais no tema
+     escuro; escurecidas no claro. Ver a nota em --atlas-accent-text. */
+  --azure-text:     var(--atlas-accent-text);
+  --cyan-text:      var(--atlas-accent-2-text);
   --azure-deep:     var(--atlas-accent-deep);
   --azure-soft:     var(--atlas-accent-soft);
   --cyan:           var(--atlas-accent-2);
@@ -403,6 +491,7 @@ html[data-module="defi"] {
      os valores agora são o verde do módulo. */
   --blue-500:  var(--atlas-accent);
   --blue-400:  var(--atlas-accent-2);
+  --blue-400-text: var(--atlas-accent-2-text);
   --blue-300:  color-mix(in srgb, var(--atlas-accent-2) 60%, #FFFFFF);
   --blue-600:  var(--atlas-accent-deep);
   --blue-glow: color-mix(in srgb, var(--atlas-accent) 35%, transparent);
@@ -410,6 +499,10 @@ html[data-module="defi"] {
   --violet-400: color-mix(in srgb, var(--atlas-accent-2) 70%, #FFFFFF);
   --cyan:      var(--atlas-accent-2);
   --cyan-400:  color-mix(in srgb, var(--atlas-accent-2) 60%, #FFFFFF);
+  /* Versões LEGÍVEIS do acento (tinta, não superfície). Iguais no tema
+     escuro; escurecidas no claro. Ver a nota em --atlas-accent-text. */
+  --cyan-text:      var(--atlas-accent-2-text);
+  --cyan-400-text:  var(--atlas-accent-2-text);
 
   --text-hi:   var(--atlas-text-hi);
   --text:      var(--atlas-text);
@@ -464,6 +557,11 @@ html[data-module="rwa"] {
 
   --accent:        var(--atlas-accent);
   --accent-2:      var(--atlas-accent-2);
+  /* Versões LEGÍVEIS do acento, para quando ele é tinta e não superfície.
+     No tema escuro são a mesma cor de sempre; no claro o tema escurece.
+     Ver a nota longa em --atlas-accent-text. */
+  --accent-text:   var(--atlas-accent-text);
+  --accent-2-text: var(--atlas-accent-2-text);
   --accent-soft:   var(--atlas-accent-soft);
   --accent2-soft:  color-mix(in srgb, var(--atlas-accent-2) 12%, transparent);
 
@@ -510,6 +608,7 @@ html[data-module="rwa"] {
        Liquidez ↑   → informação
        Liquidez ↓   → atenção
        Transição    → alternativa (nem bom nem ruim: indefinido) */
+  --info:      var(--atlas-info);
   --r-riskon:  var(--atlas-pos);
   --r-riskoff: var(--atlas-neg);
   --r-liqexp:  var(--atlas-info);
@@ -535,6 +634,7 @@ html[data-module="academy"] {
   --linha:          var(--atlas-hairline);
   --verde:          var(--atlas-pos);
   --vermelho:       var(--atlas-neg);
+  --dourado:        var(--atlas-gold);
   --glow-azul:      var(--atlas-glow);
   --glow-ciano:     var(--atlas-glow-strong);
   --fonte-titulo:   var(--atlas-font-display);

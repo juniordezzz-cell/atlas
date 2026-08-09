@@ -25,7 +25,7 @@
 }
 .side-brand .mark svg { width: 18px; height: 18px; color: #fff; }
 .side-brand .txt .n { font-weight: 700; font-size: 15px; letter-spacing: 0.2px; }
-.side-brand .txt .n b { color: var(--accent); }
+.side-brand .txt .n b { color: var(--accent-text); }
 .side-brand .txt .s { font-size: 10px; color: var(--text-3); letter-spacing: 1px; text-transform: uppercase; }
 
 .side-label { font-size: 10px; font-weight: 600; letter-spacing: 1.3px; text-transform: uppercase; color: var(--text-3); padding: 12px 10px 6px; }
@@ -54,7 +54,7 @@
 .topbar {
   position: sticky; top: 0; z-index: 50; height: var(--topbar-h);
   display: flex; align-items: center; gap: 16px; padding: 0 22px;
-  background: rgba(11, 15, 26, 0.82); backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--atlas-bg-raise) 82%, transparent); backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);
 }
 .topbar .search { position: relative; flex: 1; max-width: 420px; }

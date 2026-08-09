@@ -449,7 +449,7 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   text-transform: uppercase;
 }
 .awd__scope--global {
-  color: var(--atlas-accent);
+  color: var(--atlas-accent-text);
   background: var(--atlas-accent-soft);
   border: 1px solid var(--atlas-accent-line);
 }
@@ -764,7 +764,11 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   padding: 10px 20px;
   border-radius: 0 0 var(--atlas-r-md) var(--atlas-r-md);
   background: var(--atlas-accent);
-  color: var(--atlas-bg-deep);
+  /* Era --atlas-bg-deep: no tema ESCURO isso dá tinta escura sobre o
+     acento claro (certo), mas no CLARO o mesmo token é quase branco —
+     branco sobre ciano, contraste 1,9. --atlas-on-accent é fixo e
+     escuro porque o acento é claro nos dois temas. */
+  color: var(--atlas-on-accent);
   font-family: var(--atlas-font-ui);
   font-size: var(--atlas-fs-sm);
   font-weight: 650;
@@ -782,3 +786,40 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 /* o alvo recebe tabindex="-1" para poder ser focado; o anel padrão ali
    não informa nada (é a página inteira) e só polui */
 [data-atlas-ui="skip"] + * :focus:not(:focus-visible) { outline: none; }
+
+/* ============================================================
+   ALTERNADOR DE TEMA (barra superior)
+   Um botão só, montado pelo shell, igual em todos os módulos.
+   Herda a geometria dos ícones de barra que cada módulo já tem —
+   por isso usa tokens, não medidas próprias.
+   ============================================================ */
+.atlas-theme-toggle {
+  flex: none;
+  width: 36px; height: 36px;
+  display: inline-grid; place-items: center;
+  margin-left: var(--atlas-sp-2);
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-surface);
+  color: var(--atlas-text-mut);
+  cursor: pointer;
+  transition: color var(--atlas-dur-fast) var(--atlas-ease),
+              border-color var(--atlas-dur-fast) var(--atlas-ease),
+              background var(--atlas-dur-fast) var(--atlas-ease);
+}
+.atlas-theme-toggle:hover {
+  color: var(--atlas-text-hi);
+  border-color: var(--atlas-border-hi);
+  background: var(--atlas-surface-hi);
+}
+.atlas-theme-toggle:focus-visible {
+  outline: 2px solid var(--atlas-accent);
+  outline-offset: 2px;
+}
+.atlas-theme-toggle svg { width: 18px; height: 18px; }
+
+/* O DeFi organiza a barra em linha única com um espaçador flexível;
+   sem isto o botão cola no "Voltar ao Atlas". */
+.topnav-inner .atlas-theme-toggle { margin-left: var(--atlas-sp-3); }
+
+@media print { .atlas-theme-toggle { display: none; } }

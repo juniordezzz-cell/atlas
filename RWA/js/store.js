@@ -70,7 +70,7 @@
   function principalId() { return (W && W.activeGlobal) ? W.activeGlobal().id : "principal"; }
   function moduleWallets() {
     if (W && W.forModule) return W.forModule("rwa");
-    return [{ id: "principal", name: "Principal", type: "global", module: null, color: "#4F8CFF" }];
+    return [{ id: "principal", name: "Principal", type: "global", module: null, color: "var(--info)" }];
   }
   function globalIds() {
     if (W && W.globals) return W.globals().map(function (w) { return w.id; });
@@ -140,7 +140,7 @@
     };
   }
 
-  function scoreColor(s) { return s >= 85 ? "#22C55E" : s >= 70 ? "#4F8CFF" : s >= 50 ? "#F59E0B" : "#EF4444"; }
+  function scoreColor(s) { return s >= 85 ? "var(--pos)" : s >= 70 ? "var(--info)" : s >= 50 ? "var(--warn)" : "var(--neg)"; }
 
   var Store = {
     REGIMES: REGIMES,
@@ -155,7 +155,7 @@
     wallets: function () { return moduleWallets(); },
     currentWallet: function () {
       var id = _currentId();
-      return (W && W.get && W.get(id)) || { id: id, name: "Principal", type: "global", color: "#4F8CFF" };
+      return (W && W.get && W.get(id)) || { id: id, name: "Principal", type: "global", color: "var(--info)" };
     },
     currentWalletId: function () { return _currentId(); },
     isIsolated: function () { var w = this.currentWallet(); return !!(w && w.type === "isolada"); },
@@ -295,15 +295,15 @@
     }
   };
 
-  var PALETTE = ["#4F8CFF", "#22C55E", "#8B5CF6", "#F59E0B", "#22D3EE", "#EF4444", "#F472B6", "#A3E635", "#38BDF8", "#FB923C"];
+  var PALETTE = ["var(--info)", "var(--pos)", "#8B5CF6", "var(--warn)", "#22D3EE", "var(--neg)", "#F472B6", "#A3E635", "#38BDF8", "#FB923C"];
 
   var GROUP_COLORS = {
     // setores
-    "Government": "#4F8CFF", "Broad Equity": "#22C55E", "Technology": "#8B5CF6",
-    "Commodities": "#F59E0B", "Private Credit": "#22D3EE", "Real Estate": "#EF4444",
+    "Government": "var(--info)", "Broad Equity": "var(--pos)", "Technology": "#8B5CF6",
+    "Commodities": "var(--warn)", "Private Credit": "#22D3EE", "Real Estate": "var(--neg)",
     // classes
-    "Treasury": "#4F8CFF", "Bond": "#3B82F6", "Equity": "#22C55E",
-    "Commodity": "#F59E0B", "Credit": "#22D3EE"
+    "Treasury": "var(--info)", "Bond": "#3B82F6", "Equity": "var(--pos)",
+    "Commodity": "var(--warn)", "Credit": "#22D3EE"
   };
 
   function group(assets, field) {

@@ -151,7 +151,7 @@
   font: inherit;
   font-size: 12px;
   font-weight: 600;
-  color: var(--atlas-accent);
+  color: var(--atlas-accent-text);
   cursor: pointer;
   padding: 2px 4px;
 }

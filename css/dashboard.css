@@ -35,7 +35,7 @@ body {
 .logo-mark {
   width: 34px; height: 34px;
   display: grid; place-items: center;
-  color: var(--azul-principal);
+  color: var(--atlas-accent-text);
   border-radius: 9px;
   background: rgba(0,191,255,0.10);
   box-shadow: inset 0 0 12px rgba(0,191,255,0.25);
@@ -67,7 +67,7 @@ body {
   background: linear-gradient(90deg, rgba(0,191,255,0.16), rgba(0,191,255,0.02));
   box-shadow: inset 2px 0 0 var(--azul-principal);
 }
-.nav-item.active svg { color: var(--azul-principal); }
+.nav-item.active svg { color: var(--atlas-accent-text); }
 
 .premium {
   display: flex;
@@ -76,8 +76,8 @@ body {
   margin-top: 16px;
   padding: 14px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(255,215,0,0.10), rgba(0,191,255,0.05));
-  border: 1px solid rgba(255,215,0,0.18);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--atlas-gold) 12%, transparent), var(--atlas-accent-soft));
+  border: 1px solid color-mix(in srgb, var(--atlas-gold) 26%, transparent);
 }
 .crown { color: var(--dourado); display: grid; place-items: center; }
 .crown svg { width: 22px; height: 22px; }
@@ -142,7 +142,7 @@ body {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12.5px; font-weight: 500;
   color: var(--texto-suave);
-  background: rgba(5,8,15,0.6);
+  background: color-mix(in srgb, var(--atlas-sunken-base) 60%, transparent);
   border: 1px solid var(--card-borda);
   border-radius: 8px;
   padding: 6px 11px;
@@ -215,7 +215,7 @@ body {
 .mov-icon {
   width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
   display: grid; place-items: center;
-  background: rgba(0,191,255,0.10); color: var(--azul-principal);
+  background: rgba(0,191,255,0.10); color: var(--atlas-accent-text);
 }
 .mov-icon svg { width: 17px; height: 17px; }
 .mov-icon.neg { background: rgba(255,84,112,0.12); color: var(--vermelho); }
@@ -259,7 +259,7 @@ body {
 .alert-ic {
   width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
   display: grid; place-items: center;
-  background: rgba(255,215,0,0.12); color: var(--dourado);
+  background: var(--atlas-gold-soft); color: var(--dourado);
 }
 .alert-ic svg { width: 16px; height: 16px; }
 .alert-txt { font-size: 12.5px; line-height: 1.45; color: var(--texto-suave); }
@@ -333,7 +333,7 @@ body {
 }
 .tb-menu__item svg { width: 18px; height: 18px; flex-shrink: 0; }
 .tb-menu__item:hover { background: rgba(0, 191, 255, 0.08); color: var(--texto); }
-.tb-menu__item:hover svg { color: var(--azul-principal); }
+.tb-menu__item:hover svg { color: var(--atlas-accent-text); }
 .tb-menu__item--exit:hover { background: rgba(255, 84, 112, 0.10); color: var(--vermelho); }
 .tb-menu__item--exit:hover svg { color: var(--vermelho); }
 
@@ -357,7 +357,7 @@ body {
   padding: 9px 10px;
   border-radius: var(--raio-sm);
   border-left: 2px solid var(--dourado);
-  background: rgba(255, 215, 0, 0.05);
+  background: color-mix(in srgb, var(--atlas-gold) 8%, transparent);
 }
 .tb-menu__note + .tb-menu__note { margin-top: 3px; }
 .tb-menu__note-txt { font-size: 12.5px; line-height: 1.45; color: var(--texto-suave); }
@@ -380,10 +380,10 @@ body {
   border-top: 1px solid var(--linha);
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--azul-principal);
+  color: var(--atlas-accent-text);
   text-align: center;
 }
-.tb-menu__foot:hover { color: var(--ciano); }
+.tb-menu__foot:hover { color: var(--atlas-accent-2-text); }
 
 /* Perfil */
 .tb-menu__user {
@@ -526,7 +526,7 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
   font-weight: 650;
   text-transform: uppercase;
   letter-spacing: var(--atlas-track-label);
-  color: var(--azul-principal);
+  color: var(--atlas-accent-text);
 }
 .onboard-head h2 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
 .onboard-head p {
@@ -549,7 +549,7 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
   gap: 5px;
   padding: 16px 16px 18px;
   border-radius: var(--raio-sm);
-  background: rgba(5, 8, 15, 0.45);
+  background: color-mix(in srgb, var(--atlas-sunken-base) 45%, transparent);
   border: 1px solid var(--linha);
   transition: border-color .18s ease, transform .18s ease, background .18s ease;
 }
@@ -571,7 +571,7 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
   font-weight: 650;
   text-transform: uppercase;
   letter-spacing: var(--atlas-track-label);
-  color: var(--azul-principal);
+  color: var(--atlas-accent-text);
 }
 .onboard-card strong { font-size: 14px; font-weight: 600; line-height: 1.3; }
 .onboard-txt { font-size: 12.5px; line-height: 1.5; color: var(--texto-fraco); }
@@ -586,8 +586,8 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
   font-size: 12.5px;
   color: var(--texto-fraco);
 }
-.onboard-foot a { color: var(--azul-principal); font-weight: 500; }
-.onboard-foot a:hover { color: var(--ciano); }
+.onboard-foot a { color: var(--atlas-accent-text); font-weight: 500; }
+.onboard-foot a:hover { color: var(--atlas-accent-2-text); }
 
 @media (max-width: 1240px) { .onboard-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px)  { .onboard-grid { grid-template-columns: 1fr; }
@@ -599,8 +599,8 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
    triângulo amarelo igual para tudo achatava a diferença entre
    "concentração de 41%" e "posição investida sem tese". */
 .alert-item.nivel-crit .alert-ic { background: rgba(255,84,112,0.12); color: var(--vermelho); }
-.alert-item.nivel-warn .alert-ic { background: rgba(255,215,0,0.12);  color: var(--dourado); }
-.alert-item.nivel-info .alert-ic { background: rgba(0,191,255,0.10);  color: var(--azul-principal); }
+.alert-item.nivel-warn .alert-ic { background: var(--atlas-gold-soft);  color: var(--dourado); }
+.alert-item.nivel-info .alert-ic { background: rgba(0,191,255,0.10);  color: var(--atlas-accent-text); }
 
 .alert-mod {
   display: inline-block;
@@ -608,7 +608,7 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
   padding: 1px 6px;
   border-radius: 4px;
   background: rgba(0,191,255,0.10);
-  color: var(--azul-principal);
+  color: var(--atlas-accent-text);
   font-size: 9.5px;
   font-weight: 650;
   text-transform: uppercase;

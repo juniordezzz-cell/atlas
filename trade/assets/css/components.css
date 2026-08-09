@@ -94,7 +94,7 @@
   display: flex; flex-direction: column; gap: var(--sp-1);
   padding: var(--sp-5) var(--sp-3);
   border-right: 1px solid var(--glass-border);
-  background: rgba(8,12,22,0.4);
+  background: color-mix(in srgb, var(--atlas-bg-raise) 40%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
@@ -115,7 +115,7 @@
   border-bottom: 1px solid var(--glass-border);
   border-radius: var(--r-sm) var(--r-sm) 0 0;
 }
-.nav__back:hover { color: var(--cyan); background: rgba(34,211,238,0.08); }
+.nav__back:hover { color: var(--cyan-text); background: rgba(34,211,238,0.08); }
 .nav__back svg { opacity: 1; }
 .nav__item:hover { color: var(--text-hi); background: rgba(76,154,255,0.08); }
 .nav__item[aria-current="true"] { color: var(--text-hi); background: var(--azure-soft); }
@@ -149,7 +149,7 @@
 .badge--profit { color: var(--profit); background: var(--profit-soft); }
 .badge--loss   { color: var(--loss);   background: var(--loss-soft); }
 .badge--warn   { color: var(--warn);   background: var(--warn-soft); }
-.badge--azure  { color: var(--azure);  background: var(--azure-soft); }
+.badge--azure  { color: var(--azure-text);  background: var(--azure-soft); }
 .badge--dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* ---- Botões -------------------------------------------- */
@@ -182,7 +182,7 @@
   width: 66px; height: 66px; border-radius: var(--r-lg);
   display: grid; place-items: center;
   background: var(--glass-fill); border: 1px solid var(--glass-border);
-  color: var(--azure); box-shadow: var(--glow-azure);
+  color: var(--azure-text); box-shadow: var(--glow-azure);
 }
 .empty h2 { font-size: var(--fs-display); }
 .empty p { color: var(--text-mut); max-width: 42ch; }

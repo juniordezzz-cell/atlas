@@ -166,7 +166,7 @@ h3 { font-size: 16px; font-weight: 600; }
   position: relative;
 }
 .nav-item:hover { background: var(--surface-alt); color: var(--text); }
-.nav-item.active { background: var(--primary-14); color: var(--primary); }
+.nav-item.active { background: var(--primary-14); color: var(--primary-text); }
 .nav-item.active::before {
   content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
   width: 3px; height: 18px; border-radius: 0 3px 3px 0; background: var(--primary);
@@ -177,7 +177,7 @@ h3 { font-size: 16px; font-weight: 600; }
   background: var(--surface-alt); color: var(--text-dim);
   padding: 1px 7px; border-radius: 20px;
 }
-.nav-item.active .count { background: var(--primary-24); color: var(--primary); }
+.nav-item.active .count { background: var(--primary-24); color: var(--primary-text); }
 .collapsed .nav-item { justify-content: center; padding: 10px; }
 .collapsed .nav-item .label, .collapsed .nav-item .count { display: none; }
 
@@ -190,7 +190,7 @@ h3 { font-size: 16px; font-weight: 600; }
   border-radius: 8px 8px 0 0;
   transition: background 0.14s var(--ease), color 0.14s var(--ease);
 }
-.nav-back:hover { background: var(--surface-alt); color: var(--primary); }
+.nav-back:hover { background: var(--surface-alt); color: var(--primary-text); }
 .nav-back svg { width: 18px; height: 18px; flex-shrink: 0; stroke-width: 1.9; }
 .collapsed .nav-back { justify-content: center; padding: 10px; }
 .collapsed .nav-back .label { display: none; }
@@ -219,12 +219,15 @@ h3 { font-size: 16px; font-weight: 600; }
   display: flex; align-items: center; gap: 16px;
   padding: 0 24px;
   border-bottom: 1px solid var(--border);
-  background: rgba(17, 24, 35, 0.72);
+  background: color-mix(in srgb, var(--atlas-bg-raise) 72%, transparent);
   backdrop-filter: blur(14px) saturate(1.4);
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
 }
 .topbar .crumb { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.topbar .crumb .sep { color: var(--border); }
+/* --border é cor de LINHA (12% de opacidade): como tinta de texto dava
+   contraste 1,27 e a barra virava "Painel  Visão geral", sem separador
+   visível. O "/" é um caractere, não uma borda. */
+.topbar .crumb .sep { color: var(--atlas-text-mut); }
 .topbar .crumb .ctx { color: var(--text-dim); font-size: 12.5px; }
 .topbar h1 { font-size: 18px; }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }

@@ -19,7 +19,7 @@
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .section-head h2 { font-size: 18px; }
 .section-head .link {
-  font-size: 13px; color: var(--blue-400); font-weight: 600; display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--blue-400-text); font-weight: 600; display: inline-flex; align-items: center; gap: 5px;
   transition: gap var(--fast) var(--ease);
 }
 .section-head .link:hover { gap: 8px; }

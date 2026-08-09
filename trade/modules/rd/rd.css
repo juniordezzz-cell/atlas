@@ -29,7 +29,7 @@
 
 .rd__main { display: flex; flex-direction: column; gap: var(--sp-5); }
 .rd__conf-row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
-.rd__conf-num { color: var(--azure); font-size: var(--fs-sm); }
+.rd__conf-num { color: var(--azure-text); font-size: var(--fs-sm); }
 
 .rd__field { display: flex; flex-direction: column; gap: var(--sp-2); }
 .rd__field-lbl { font-size: var(--fs-label); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--text-faint); }

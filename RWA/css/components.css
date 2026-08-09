@@ -17,9 +17,9 @@
 .kpi { position: relative; overflow: hidden; padding: 16px 18px; }
 .kpi .kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .kpi .kpi-k { font-size: 11.5px; color: var(--text-2); letter-spacing: 0.2px; }
-.kpi .kpi-ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }
+.kpi .kpi-ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); flex: none; }
 .kpi .kpi-ic svg { width: 16px; height: 16px; }
-.kpi.a2 .kpi-ic { background: var(--accent2-soft); color: var(--accent-2); }
+.kpi.a2 .kpi-ic { background: var(--accent2-soft); color: var(--accent-2-text); }
 .kpi.apos .kpi-ic { background: var(--pos-soft); color: var(--pos); }
 .kpi.awarn .kpi-ic { background: var(--warn-soft); color: var(--warn); }
 .kpi .kpi-v { font-family: var(--mono); font-size: 24px; font-weight: 600; letter-spacing: -0.6px; }
@@ -39,7 +39,9 @@
 .btn svg { width: 15px; height: 15px; }
 .btn:hover { border-color: var(--border-hi); background: var(--atlas-inner); }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--accent); border-color: transparent; color: #fff; }
+/* Esmeralda #10B981 é clara: branco em cima dava 2,3. --atlas-on-accent
+   é a tinta escura reservada para ficar sobre o acento (8,1 aqui). */
+.btn-primary { background: var(--accent); border-color: transparent; color: var(--atlas-on-accent); }
 .btn-primary:hover { background: #3f7bef; }
 .btn-sm { padding: 6px 11px; font-size: 12px; }
 .btn-ghost { border-color: transparent; color: var(--text-2); }
@@ -69,8 +71,8 @@
 .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: var(--r-pill); border: 1px solid var(--border); color: var(--text-2); }
 .badge .d { width: 6px; height: 6px; border-radius: 50%; }
 .tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: var(--r-xs); background: var(--atlas-inner); color: var(--text-2); border: 1px solid var(--border); }
-.tag-accent { color: var(--accent); border-color: var(--border-accent); background: var(--accent-soft); }
-.tag-accent2 { color: var(--accent-2); border-color: rgba(139,92,246,0.3); background: var(--accent2-soft); }
+.tag-accent { color: var(--accent-text); border-color: var(--border-accent); background: var(--accent-soft); }
+.tag-accent2 { color: var(--accent-2-text); border-color: rgba(139,92,246,0.3); background: var(--accent2-soft); }
 
 /* status */
 .status { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; }
@@ -133,7 +135,7 @@
 .alert svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
 .alert.warn { border-color: rgba(245,158,11,0.3); background: var(--warn-soft); color: var(--warn); }
 .alert.neg { border-color: rgba(239,68,68,0.3); background: var(--neg-soft); color: var(--neg); }
-.alert.ok { border-color: rgba(34,197,94,0.3); background: var(--pos-soft); color: var(--pos); }
+.alert.ok { border-color: color-mix(in srgb, var(--pos) 30%, transparent); background: var(--pos-soft); color: var(--pos); }
 .alert .a-txt { color: var(--text); }
 .alert .a-txt b { color: inherit; }
 
@@ -152,7 +154,7 @@
 .tl-type { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 2px 7px; border-radius: var(--r-xs); }
 .tl-type.entrada { color: var(--pos); background: var(--pos-soft); }
 .tl-type.saida { color: var(--neg); background: var(--neg-soft); }
-.tl-type.tese { color: var(--accent-2); background: var(--accent2-soft); }
+.tl-type.tese { color: var(--accent-2-text); background: var(--accent2-soft); }
 .tl-type.revisao { color: var(--warn); background: var(--warn-soft); }
 .tl-type.manutencao { color: var(--text-2); background: var(--atlas-inner); }
 
@@ -161,7 +163,7 @@
   padding: 22px 24px; border-radius: var(--r-lg); position: relative; overflow: hidden;
   background: linear-gradient(135deg, rgba(79,140,255,0.10), rgba(139,92,246,0.10)); border: 1px solid var(--border-accent);
 }
-.narrative-hero .nh-label { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.narrative-hero .nh-label { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent-text); font-weight: 600; }
 .narrative-hero .nh-title { font-size: 26px; font-weight: 700; margin: 6px 0 4px; letter-spacing: -0.4px; }
 .narrative-hero .nh-impact { color: var(--text-2); font-size: 13.5px; }
 .nh-conf { margin-top: 16px; max-width: 320px; }
@@ -178,8 +180,8 @@
 .layer-card .lc-head { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
 .layer-card .lc-ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; }
 .layer-card .lc-ic svg { width: 15px; height: 15px; }
-.lc-fund .lc-ic { background: var(--accent-soft); color: var(--accent); }
-.lc-macro .lc-ic { background: var(--accent2-soft); color: var(--accent-2); }
+.lc-fund .lc-ic { background: var(--accent-soft); color: var(--accent-text); }
+.lc-macro .lc-ic { background: var(--accent2-soft); color: var(--accent-2-text); }
 .lc-token .lc-ic { background: var(--pos-soft); color: var(--pos); }
 .layer-card .lc-title { font-size: 13.5px; font-weight: 600; }
 .layer-card .lc-title .s { font-size: 11px; color: var(--text-3); font-weight: 400; }
@@ -223,7 +225,7 @@
 .loader-orbit span:nth-child(2) { border-right-color: var(--accent-2); inset: 6px; animation: spin 1.4s linear infinite reverse; }
 .loader-label { color: var(--text-3); font-size: 12.5px; letter-spacing: 0.4px; }
 .empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 56px 24px; }
-.empty-art { width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--accent); }
+.empty-art { width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--accent-text); }
 .empty-art svg { width: 26px; height: 26px; }
 .empty h3 { font-size: 16px; } .empty p { color: var(--text-2); font-size: 13px; max-width: 340px; }
 
@@ -231,7 +233,7 @@
 #toasts { position: fixed; bottom: 20px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 9px; }
 .toast { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: var(--r-sm); background: var(--surface-hi); border: 1px solid var(--border-hi); box-shadow: var(--sh-2); font-size: 13px; min-width: 220px; animation: slideIn var(--med) var(--ease); }
 .toast svg { width: 18px; height: 18px; flex: none; }
-.toast.ok svg { color: var(--pos); } .toast.info svg { color: var(--accent); } .toast.warn svg { color: var(--warn); }
+.toast.ok svg { color: var(--pos); } .toast.info svg { color: var(--accent-text); } .toast.warn svg { color: var(--warn); }
 
 /* ============================================================
    Integração Atlas — header maior "ATLAS RWA", menu descido,
@@ -292,7 +294,7 @@ textarea.rinput { resize: vertical; min-height: 90px; }
 .alerts { display: flex; flex-direction: column; gap: 8px; }
 .alert-row { background: var(--atlas-inner); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--text-2, #9CA3AF); }
 .alert-row b { color: var(--text, #E5E7EB); }
-.roo-track { position: relative; height: 10px; border-radius: 6px; background: linear-gradient(90deg, #EF4444, #F59E0B 40%, #22C55E); opacity: 0.9; }
+.roo-track { position: relative; height: 10px; border-radius: 6px; background: linear-gradient(90deg, var(--neg), var(--warn) 40%, var(--pos)); opacity: 0.9; }
 .roo-track i { position: absolute; top: -4px; width: 4px; height: 18px; border-radius: 2px; background: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.8); transform: translateX(-50%); }
 .jentry { margin-bottom: 10px; }
 .jdel { color: var(--text-3, #6B7280); background: none; border: none; cursor: pointer; margin-left: 8px; }

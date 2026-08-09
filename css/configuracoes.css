@@ -25,7 +25,7 @@
   gap: 10px;
   padding: 16px 20px 12px;
 }
-.set-card-head svg { width: 18px; height: 18px; color: var(--atlas-accent); }
+.set-card-head svg { width: 18px; height: 18px; color: var(--atlas-accent-text); }
 .set-card-head h3 { font-size: 15px; font-weight: 600; color: var(--atlas-text-hi); }
 .set-card-head .eyebrow {
   margin-left: auto;
@@ -78,7 +78,7 @@
 .seg button:hover { color: var(--atlas-text); }
 .seg button[aria-pressed="true"] {
   background: var(--atlas-accent-soft);
-  color: var(--atlas-accent);
+  color: var(--atlas-accent-text);
   box-shadow: inset 0 0 0 1px var(--atlas-accent-line);
 }
 
@@ -159,17 +159,17 @@
   background: var(--atlas-neg-soft);
 }
 .btn-ghost.accent {
-  color: var(--atlas-accent);
+  color: var(--atlas-accent-text);
   border-color: color-mix(in srgb, var(--atlas-accent) 45%, transparent);
 }
 .btn-ghost.accent:hover {
-  color: var(--atlas-accent);
+  color: var(--atlas-accent-text);
   border-color: var(--atlas-accent);
   background: color-mix(in srgb, var(--atlas-accent) 12%, transparent);
 }
 .set-foot .hint { font-size: 11.5px; color: var(--atlas-text-faint); }
 /* dica que é link (ex.: "Rever agora") — precisa se anunciar como clicável */
-.set-foot .hint-link { color: var(--atlas-accent); text-decoration: underline; text-underline-offset: 2px; }
+.set-foot .hint-link { color: var(--atlas-accent-text); text-decoration: underline; text-underline-offset: 2px; }
 .set-foot .hint-link:hover { color: var(--atlas-accent-2); }
 
 /* ---- Separador "Configurações por módulo" ---- */

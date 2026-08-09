@@ -10,6 +10,36 @@
    cena inteira. Só transform/opacity → GPU, sem reflow.
    ============================================================ */
 
+/* ------------------------------------------------------------------
+   ESTAS DUAS TELAS CARREGAM A PRÓPRIA NOITE.
+
+   O boot e as boas-vindas são uma cena espacial de fundo fixo — o céu
+   é #02040A nos dois temas, de propósito, porque é o palco do Oráculo.
+   Só que a TIPOGRAFIA seguia o tema do usuário: no tema claro o título
+   "Bem-vindo ao ATLAS" virava tinta quase preta sobre céu quase preto,
+   contraste 1,09. A tela ficava ilegível.
+
+   Como o fundo é fixo, a tinta também tem de ser. Fixamos aqui os
+   tokens de texto na versão escura — declarados no <body>, que é mais
+   próximo do que o <html> do tema, então vence por herança sem precisar
+   de !important e sem depender da ordem dos arquivos.
+   ------------------------------------------------------------------ */
+.welcome-body,
+.init-body {
+  --atlas-text-hi:    #EAF0FB;
+  --atlas-text:       #C3CEE4;
+  --atlas-text-mut:   #808DA9;
+  --atlas-text-faint: #56617F;
+
+  /* Os apelidos do shell (--texto e companhia) são declarados no <html>,
+     onde já resolveram para a cor clara antes de chegar aqui. Redeclarar
+     no <body> os reancora nos tokens acima — sem isso, o título continua
+     preto por vir de --texto, não de --atlas-text-hi. */
+  --texto:          var(--atlas-text-hi);
+  --texto-suave:    var(--atlas-text);
+  --texto-fraco:    var(--atlas-text-mut);
+}
+
 /* ---------------- Fundo espacial em camadas ---------------- */
 .sky {
   position: fixed; inset: 0; overflow: hidden; pointer-events: none;
@@ -221,7 +251,10 @@
   position: fixed; z-index: 40;
   font: 500 10.5px/1.6 'JetBrains Mono', 'Inter', monospace;
   letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(160, 200, 235, 0.55);
+  /* 0,55 dava contraste 3,98 sobre o céu — abaixo do mínimo de 4,5, e
+     o HUD é texto de 10,5px. 0,64 sobe para 4,55 sem tirar o ar de
+     leitura de instrumento. */
+  color: rgba(160, 200, 235, 0.64);
   display: flex; gap: 18px; align-items: center;
   animation: hudIn 1.2s ease both;
 }

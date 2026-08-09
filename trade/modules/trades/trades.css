@@ -36,7 +36,7 @@
   padding: var(--sp-3); border-radius: var(--r-sm);
   background: var(--bg-sunken); border: 1px solid var(--glass-hairline);
 }
-.tr__partial > b { color: var(--cyan); }
+.tr__partial > b { color: var(--cyan-text); }
 .tr__partial-note { flex: 1; color: var(--text-mut); font-size: var(--fs-sm); }
 
 @media (max-width: 640px) {

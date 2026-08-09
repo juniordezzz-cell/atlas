@@ -233,9 +233,16 @@ function criarGraficoEvolucao() {
   const canvas = document.getElementById('chartEvolucao');
   if (!canvas) return null;
   const ctx = canvas.getContext('2d');
+
+  // O canvas nao le variavel CSS: a cor do grafico ficava cravada em
+  // ciano de tema escuro e, no tema claro, a linha sumia no branco e o
+  // tooltip virava um retangulo preto. AtlasChartTheme traduz token ->
+  // cor no tema ativo; sem ele, tudo cai nos valores antigos.
+  const T = window.AtlasChartTheme;
+  const linha = T ? T.serie('var(--atlas-accent)') : '#00BFFF';
   const grad = ctx.createLinearGradient(0, 0, 0, 200);
-  grad.addColorStop(0, 'rgba(0,191,255,0.35)');
-  grad.addColorStop(1, 'rgba(0,191,255,0)');
+  grad.addColorStop(0, T ? T.alfa(linha, 0.35) : 'rgba(0,191,255,0.35)');
+  grad.addColorStop(1, T ? T.alfa(linha, 0)    : 'rgba(0,191,255,0)');
 
   const e0 = escala(D.evolucao.valores);
 
@@ -245,27 +252,27 @@ function criarGraficoEvolucao() {
       labels: D.evolucao.labelsCheios,
       datasets: [{
         data: D.evolucao.valores,
-        borderColor: '#00BFFF',
+        borderColor: linha,
         borderWidth: 2.4,
         backgroundColor: grad,
         fill: true,
         tension: 0.4,
         pointRadius: 0,
         pointHoverRadius: 5,
-        pointHoverBackgroundColor: '#00F0FF',
+        pointHoverBackgroundColor: T ? T.serie('var(--atlas-accent-2)') : '#00F0FF',
       }],
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: {
-        backgroundColor: '#0D1422', borderColor: 'rgba(0,191,255,0.3)', borderWidth: 1,
+        ...(T ? T.tooltip() : { backgroundColor: '#0D1422', borderColor: 'rgba(0,191,255,0.3)', borderWidth: 1 }),
         padding: 10, displayColors: false,
         callbacks: { label: (c) => 'US$ ' + c.parsed.y.toLocaleString('pt-BR') }
       }},
       scales: {
         y: {
-          grid: { color: 'rgba(160,174,192,0.08)' },
-          ticks: { callback: (v) => (v/1000) + 'K', stepSize: e0.yStep },
+          grid: { color: T ? T.grade() : 'rgba(160,174,192,0.08)' },
+          ticks: { color: T ? T.tick() : undefined, callback: (v) => (v/1000) + 'K', stepSize: e0.yStep },
           min: e0.yMin, max: e0.yMax, border: { display: false },
         },
         x: { grid: { display: false }, border: { display: false } },
@@ -285,11 +292,14 @@ function donut(canvasId, legendId, cfg) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
 
+  const T = window.AtlasChartTheme;
+  const cores = T ? cfg.cores.map((c) => T.serie(c)) : cfg.cores;
+
   if (donuts[canvasId]) {
     const c = donuts[canvasId];
     c.data.labels = cfg.labels;
     c.data.datasets[0].data = cfg.valores;
-    c.data.datasets[0].backgroundColor = cfg.cores;
+    c.data.datasets[0].backgroundColor = cores;
     c.update();
   } else {
     donuts[canvasId] = new Chart(canvas.getContext('2d'), {
@@ -298,7 +308,7 @@ function donut(canvasId, legendId, cfg) {
         labels: cfg.labels,
         datasets: [{
           data: cfg.valores,
-          backgroundColor: cfg.cores,
+          backgroundColor: cores,
           borderColor: 'transparent',
           borderWidth: 0,
           spacing: 3,
@@ -311,7 +321,7 @@ function donut(canvasId, legendId, cfg) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#0D1422', borderColor: 'rgba(0,191,255,0.3)', borderWidth: 1,
+            ...(T ? T.tooltip() : { backgroundColor: '#0D1422', borderColor: 'rgba(0,191,255,0.3)', borderWidth: 1 }),
             padding: 10, displayColors: false,
             callbacks: { label: (c) => c.label + ': ' + c.parsed + '%' }
           },
@@ -322,7 +332,7 @@ function donut(canvasId, legendId, cfg) {
 
   document.getElementById(legendId).innerHTML = cfg.labels.map((l, i) => `
     <li>
-      <span class="swatch" style="background:${cfg.cores[i]}"></span>
+      <span class="swatch" style="background:${cores[i]}"></span>
       <span class="nome">${l}</span>
       <span class="val">${cfg.valores[i].toString().replace('.', ',')}%</span>
     </li>`).join('');

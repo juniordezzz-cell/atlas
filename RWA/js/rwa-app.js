@@ -379,7 +379,7 @@
     var risk = S.riskEngine(), macro = S.macro(), curves = S.equityCurves();
     var hasAssets = S.assets().length > 0;
 
-    var riskColor = risk.totalRisk >= 66 ? "#EF4444" : risk.totalRisk >= 40 ? "#F59E0B" : "#22C55E";
+    var riskColor = risk.totalRisk >= 66 ? "var(--neg)" : risk.totalRisk >= 40 ? "var(--warn)" : "var(--pos)";
     var riskWord = risk.totalRisk >= 66 ? "Elevado" : risk.totalRisk >= 40 ? "Moderado" : "Controlado";
 
     function macroCell(id, mm) {
@@ -424,7 +424,7 @@
       '<div class="section">' +
         UI.panel("Alertas do Risk Engine",
           '<div class="alerts">' + risk.alerts.map(function (al) {
-            var c = al.level === "neg" ? "#EF4444" : al.level === "warn" ? "#F59E0B" : "#22C55E";
+            var c = al.level === "neg" ? "var(--neg)" : al.level === "warn" ? "var(--warn)" : "var(--pos)";
             return '<div class="alert-row" style="border-left:3px solid ' + c + '">' + al.text + '</div>';
           }).join("") + '</div>', '', "Monitoramento") +
       '</div>';
@@ -572,7 +572,7 @@
 
     var ch = C();
     if (ch) ["rates", "inflation", "dxy", "liquidity"].forEach(function (id) {
-      var mm = m[id]; if (mm && mm.series) ch.spark(U.qs("#mc_" + id), mm.series, "#4F8CFF");
+      var mm = m[id]; if (mm && mm.series) ch.spark(U.qs("#mc_" + id), mm.series, "var(--info)");
     });
   };
 
@@ -580,7 +580,7 @@
   V.risk = function () {
     var app = U.qs("#app");
     var r = S.riskEngine();
-    var color = r.totalRisk >= 66 ? "#EF4444" : r.totalRisk >= 40 ? "#F59E0B" : "#22C55E";
+    var color = r.totalRisk >= 66 ? "var(--neg)" : r.totalRisk >= 40 ? "var(--warn)" : "var(--pos)";
     var word = r.totalRisk >= 66 ? "Elevado" : r.totalRisk >= 40 ? "Moderado" : "Controlado";
 
     app.innerHTML =
@@ -599,7 +599,7 @@
       '</div>' +
       '<div class="section">' + UI.panel("Alertas",
         '<div class="alerts">' + r.alerts.map(function (al) {
-          var c = al.level === "neg" ? "#EF4444" : al.level === "warn" ? "#F59E0B" : "#22C55E";
+          var c = al.level === "neg" ? "var(--neg)" : al.level === "warn" ? "var(--warn)" : "var(--pos)";
           return '<div class="alert-row" style="border-left:3px solid ' + c + '">' + al.text + '</div>';
         }).join("") + '</div>', '', "Monitoramento") + '</div>';
   };

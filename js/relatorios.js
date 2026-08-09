@@ -150,9 +150,16 @@
     var canvas = el("repChart");
     if (!canvas || !window.Chart || !canvas.getContext) return;
 
-    var pos = tok("--atlas-pos", "#22c55e"), neg = tok("--atlas-neg", "#ef4444"),
-        acc = tok("--atlas-accent", "#00BFFF"), txt = tok("--atlas-text-mut", "#9fb0c9"),
-        grid = tok("--atlas-hairline", "rgba(150,170,200,.12)");
+    // Este gráfico já lia tokens — o que faltava era o acento. Ele não
+    // muda com o tema (é cor de marca) e, como LINHA sobre cartão branco,
+    // dava 2,0 de contraste. serie() escurece só no tema claro; no
+    // escuro devolve a mesma cor. Ver core/ui/atlas-chart-theme.js.
+    var T = window.AtlasChartTheme;
+    var serie = function (c) { return T ? T.serie(c) : c; };
+
+    var pos = serie(tok("--atlas-pos", "#22c55e")), neg = serie(tok("--atlas-neg", "#ef4444")),
+        acc = serie(tok("--atlas-accent", "#00BFFF")), txt = tok("--atlas-text-mut", "#9fb0c9"),
+        grid = T ? T.grade() : tok("--atlas-hairline", "rgba(150,170,200,.12)");
 
     var labels = buckets.map(function (b) { return b.label; });
     var entradas = buckets.map(function (b) { return Math.round(b.entrada); });
@@ -188,9 +195,10 @@
         interaction: { mode: "index", intersect: false },
         plugins: {
           legend: { labels: { color: txt, usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
-          tooltip: {
+          tooltip: Object.assign({}, T ? T.tooltip() : {}, {
+            displayColors: true,
             callbacks: { label: function (c) { return c.dataset.label + ": " + money(c.parsed.y || 0); } }
-          }
+          })
         },
         scales: {
           x: { grid: { color: grid }, ticks: { color: txt, font: { size: 11 } } },

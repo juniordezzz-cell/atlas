@@ -20,11 +20,18 @@
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#4DA3FF";
   }
 
+  /* Cor de SÉRIE (linha, fatia, ponto). O acento do módulo não muda com
+     o tema — é cor de marca — e sobre cartão branco dá 2,4 de contraste.
+     Como gráfico carrega informação, o mínimo é 3,0. serie() escurece só
+     no tema claro; no escuro devolve a mesma cor de sempre.
+     Ver core/ui/atlas-chart-theme.js. */
+  function serie(c) { var T = window.AtlasChartTheme; return T ? T.serie(c) : c; }
+
   /* ---- sparkline (para KPI) ---- */
   function sparkline(data, opts) {
     opts = opts || {};
     var w = opts.w || 90, h = opts.h || 30;
-    var color = opts.color || cssVar("--primary");
+    var color = serie(opts.color || cssVar("--primary"));
     /* Mesmo defeito do sparkline do Trade: com UM ponto, i/(length-1)
        vira 0/0 = NaN e o SVG sai inválido. Devolve o quadro vazio, que
        mantém o espaço no layout sem desenhar linha nenhuma. */
@@ -52,7 +59,7 @@
   function lineChart(data, opts) {
     opts = opts || {};
     var w = 720, h = 240, padB = 26, padL = 4;
-    var color = opts.color || cssVar("--primary");
+    var color = serie(opts.color || cssVar("--primary"));
     var min = Math.min.apply(null, data.map(function (d) { return d.v; }));
     var max = Math.max.apply(null, data.map(function (d) { return d.v; }));
     var range = (max - min) || 1;
@@ -125,7 +132,7 @@
   }
 
   var PALETTE = ["--primary", "--secondary", "--accent", "--success", "--warning", "--danger"];
-  function color(i) { return cssVar(PALETTE[i % PALETTE.length]); }
+  function color(i) { return serie(cssVar(PALETTE[i % PALETTE.length])); }
 
   window.Charts = { sparkline: sparkline, lineChart: lineChart, donut: donut, color: color };
 })();

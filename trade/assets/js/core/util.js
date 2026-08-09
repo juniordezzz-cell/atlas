@@ -120,15 +120,19 @@
       var area = line + " L" + pts[pts.length - 1][0].toFixed(1) + " " + h + " L" + pts[0][0].toFixed(1) + " " + h + " Z";
       var stroke = up ? "var(--profit)" : "var(--loss)";
       var gid = "g" + Math.random().toString(36).slice(2, 8);
-      var fillTop = up ? "rgba(45,212,191,0.28)" : "rgba(248,113,113,0.28)";
+      /* Eram rgba cravados do verde e do vermelho do tema escuro. Como
+         o traço já usa var(--profit)/var(--loss), o preenchimento passa a
+         usar a mesma variável com stop-opacity — assim o degradê segue o
+         tema em vez de ficar preso ao valor antigo. */
+      var fillTop = stroke;
       var last = pts[pts.length - 1];
       return '<svg class="banca__chart" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
         '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
-        '<stop offset="0" stop-color="' + fillTop + '"/><stop offset="1" stop-color="transparent"/>' +
+        '<stop offset="0" stop-color="' + fillTop + '" stop-opacity="0.28"/><stop offset="1" stop-color="' + fillTop + '" stop-opacity="0"/>' +
         '</linearGradient></defs>' +
         '<path d="' + area + '" fill="url(#' + gid + ')"/>' +
         '<path d="' + line + '" fill="none" stroke="' + stroke + '" stroke-width="2.4" ' +
-        'style="filter:drop-shadow(0 3px 10px ' + (up ? 'rgba(45,212,191,0.5)' : 'rgba(248,113,113,0.5)') + ')"/>' +
+        'style="filter:drop-shadow(0 3px 10px color-mix(in srgb, ' + stroke + ' 50%, transparent))"/>' +
         '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3.5" fill="' + stroke + '"/>' +
         '</svg>';
     },

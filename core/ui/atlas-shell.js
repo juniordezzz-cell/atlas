@@ -389,10 +389,82 @@
     document.body.insertBefore(a, document.body.firstChild);
   }
 
+
+  /* ============================================================
+     3b. ALTERNADOR DE TEMA NA BARRA SUPERIOR
+     ------------------------------------------------------------
+     O tema claro existia desde sempre, mas só se chegava a ele
+     por Configurações → Aparência. Um tema que custa três cliques
+     é um tema que ninguém experimenta — e, por consequência, um
+     tema que ninguém reporta quando quebra.
+
+     O botão entra pelo shell, e não por cada módulo, pela mesma
+     razão do "Voltar ao Atlas": um lugar só, um comportamento só.
+     Ele procura o agrupamento à direita da barra de cada módulo e,
+     se não achar, a própria barra. Página sem barra simplesmente
+     não recebe o botão — nada quebra.
+     ============================================================ */
+
+  var TOPBAR_SELECTORS = [
+    ".topbar-right", ".topnav-inner", ".tb-actions",
+    "header.topbar", "header.topnav", ".topbar", ".topnav"
+  ];
+
+  function findTopbar() {
+    for (var i = 0; i < TOPBAR_SELECTORS.length; i++) {
+      var el = document.querySelector(TOPBAR_SELECTORS[i]);
+      if (el) return el;
+    }
+    return null;
+  }
+
+  function icone(nome) {
+    if (window.AtlasIcons) return AtlasIcons.get(nome, { size: 18 });
+    return "";
+  }
+
+  function pintarBotaoTema(btn) {
+    var claro = document.documentElement.getAttribute("data-theme") === "light";
+    /* Mostra o DESTINO, não o estado atual: no claro exibe a lua, que é
+       para onde o clique leva. É a convenção que o usuário já conhece de
+       outros produtos, e evita a dúvida "isto indica ou executa?". */
+    btn.innerHTML = icone(claro ? "moon" : "sun");
+    btn.setAttribute("aria-label", claro ? t("Ativar tema escuro") : t("Ativar tema claro"));
+    btn.setAttribute("title", btn.getAttribute("aria-label"));
+    btn.setAttribute("aria-pressed", claro ? "true" : "false");
+  }
+
+  function mountThemeToggle() {
+    if (!window.AtlasSettings) return;              // sem estado, sem botão
+    if (document.querySelector('[data-atlas-ui="theme"]')) return;
+    var barra = findTopbar();
+    if (!barra) return;
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "atlas-theme-toggle";
+    btn.setAttribute("data-atlas-ui", "theme");
+    pintarBotaoTema(btn);
+    btn.addEventListener("click", function () {
+      AtlasSettings.toggleTheme();
+      pintarBotaoTema(btn);
+    });
+    barra.appendChild(btn);
+
+    /* Quem trocar o tema por outro caminho (Configurações, outra aba)
+       tem de ver o ícone acompanhar. AtlasSettings avisa. */
+    if (AtlasSettings.on) {
+      AtlasSettings.on(function (changed) {
+        if (!changed || changed.indexOf("theme") >= 0) pintarBotaoTema(btn);
+      });
+    }
+  }
+
   function mount() {
     if (!document.body) return;
 
     mountSkipLink();
+    mountThemeToggle();
 
     // A faixa escura no topo foi REMOVIDA (item 6). No lugar dela, cada
     // módulo recebe um "Voltar ao Atlas" no rodapé da própria sidebar.

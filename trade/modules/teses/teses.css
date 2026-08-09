@@ -23,7 +23,7 @@
   font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-faint);
   background: var(--bg-sunken); border-radius: var(--r-pill); padding: 1px 7px;
 }
-.est__tab[aria-current="true"] .est__tab-n { color: var(--azure); }
+.est__tab[aria-current="true"] .est__tab-n { color: var(--azure-text); }
 
 /* ---- Lista de estudos (grade de cards) ----------------- */
 .est__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--sp-4); }
@@ -39,7 +39,7 @@
 .est__card-top { display: flex; align-items: center; justify-content: space-between; }
 .est__ticker {
   font-family: var(--font-mono); font-weight: 600; font-size: 0.82rem;
-  color: var(--azure); background: var(--azure-soft);
+  color: var(--azure-text); background: var(--azure-soft);
   padding: 3px 9px; border-radius: var(--r-sm); letter-spacing: 0.02em;
 }
 .est__ticker--lg { font-size: 1rem; padding: 8px 12px; border-radius: var(--r-md); }
@@ -79,7 +79,7 @@
 .tl__dot { position: absolute; left: calc(-1 * var(--sp-5) + 1px); top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--text-faint); box-shadow: 0 0 0 3px var(--bg-deep); }
 .tl__item--now .tl__dot { background: var(--cyan); box-shadow: 0 0 0 3px var(--bg-deep), 0 0 12px var(--cyan); }
 .tl__time { font-size: var(--fs-label); color: var(--text-faint); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; }
-.tl__item--now .tl__time { color: var(--cyan); }
+.tl__item--now .tl__time { color: var(--cyan-text); }
 .tl__text { color: var(--text); font-size: var(--fs-body); line-height: 1.55; margin-top: 4px; }
 .tl__item--now .tl__text { color: var(--text-hi); }
 .tl__empty { color: var(--text-mut); font-size: var(--fs-sm); }
