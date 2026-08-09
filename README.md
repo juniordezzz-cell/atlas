@@ -88,6 +88,7 @@ atlas/
 | `core/entities/theses.js` | Entidade compartilhada de Teses (versionada) | `AtlasTheses` |
 | `core/ui/atlas-shell.js` | Oráculo e "Voltar ao Atlas", iguais em todo lugar | `AtlasShell`, `AtlasOraculo` |
 | `core/ui/atlas-onboarding.js` | Os três passos da primeira sessão | `AtlasOnboarding` |
+| `core/ui/atlas-flash.js` | Pisca o valor que mudou (verde sobe, vermelho desce) | `AtlasFlash` |
 | `core/ui/atlas-chart-theme.js` | Ponte de tema para dentro do `<canvas>` | `AtlasChartTheme` |
 | `core/ui/atlas-calendar.js` | Calendário compartilhado | `AtlasCalendar` |
 | `core/providers/*` | CoinGecko e DefiLlama por trás de um registro | `AtlasProviders` |

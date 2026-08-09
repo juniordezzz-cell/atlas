@@ -88,7 +88,7 @@
             '<div class="tb-sep hide-sm"></div>' +
             '<div class="tb-metric hide-sm"><span class="k">Regime</span><span id="tbRegime"></span></div>' +
             '<div class="tb-sep hide-sm"></div>' +
-            '<div class="tb-metric"><span class="k">Patrimônio</span><span class="v" id="tbTotal">—</span></div>' +
+            '<div class="tb-metric"><span class="k">Patrimônio</span><span class="v" id="tbTotal" data-atlas-flash="rwa:total">—</span></div>' +
           '</header>' +
           '<main id="app" class="view"></main>' +
         '</div>';

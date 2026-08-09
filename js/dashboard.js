@@ -130,7 +130,10 @@ function pintarKpis() {
     return `
       <div class="kpi">
         <div class="rotulo">${k.rotulo}</div>
-        <div class="${valorClass}">${k.valor}</div>
+        <!-- data-atlas-flash com CHAVE: este bloco é regerado inteiro a
+             cada repintura, então o valor anterior tem de viver fora do
+             nó para o número poder piscar. Ver core/ui/atlas-flash.js. -->
+        <div class="${valorClass}" data-atlas-flash="kpi:${k.rotulo}">${k.valor}</div>
         <div class="${subClass}">${k.variacao}${periodo}</div>
       </div>`;
   }).join('');
