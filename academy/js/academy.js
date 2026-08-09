@@ -53,7 +53,9 @@
     hold: "../hold/index.html#/teses",
     trade: "../trade/index.html#/teses",
     defi: "../defi/teses.html",
-    rwa: "../RWA/index.html"
+    /* apontava para a home do RWA porque rota de teses não existia lá.
+       Agora existe, e o Academy leva à tese como leva nos outros três. */
+    rwa: "../RWA/index.html#/teses"
   };
 
   /* ---------- menu ---------- */

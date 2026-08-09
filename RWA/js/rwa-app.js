@@ -41,6 +41,10 @@
     { id: "macro",     label: "Macro",       icon: "macro",     route: "#/macro" },
     { id: "risk",      label: "Risk Engine", icon: "risk",      route: "#/risk" },
     { id: "narrative", label: "Narrative",   icon: "narrative", route: "#/narrative" },
+    /* Teses vem ANTES do Journal de propósito: tese é o fundamento da
+       decisão, o Journal é o registro dela. A ordem do menu conta a
+       ordem do processo. */
+    { id: "teses",     label: "Teses",       icon: "doc",       route: "#/teses" },
     { id: "journal",   label: "Journal",     icon: "journal",   route: "#/journal" }
   ];
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
@@ -625,6 +629,265 @@
       '</div>';
   };
 
+  /* ============================================================
+     TESES — a entidade compartilhada, enfim também aqui
+     ------------------------------------------------------------
+     O RWA era o ÚNICO módulo fora de AtlasTheses. Hold, Trade e DeFi
+     já registravam teses lá, e o Academy se apresenta como "central de
+     conhecimento — todas as teses do ATLAS" enquanto,
+     estruturalmente, não podia incluir o RWA: o link do Academy para
+     este módulo apontava para a home, porque rota de teses não existia.
+
+     Por que NÃO reaproveitei Narrative/Journal
+     ------------------------------------------
+     São coisas diferentes, e fundi-las corromperia o significado das
+     duas. Narrative é leitura de mercado (o que o cenário está
+     dizendo). Journal é diário de decisões — um LOG, append-only.
+     Tese é um processo com estado, versão e conclusão: nasce
+     planejada, evolui, conclui, vai para o Academy e pode reabrir.
+     Cada uma continua fazendo o que fazia.
+
+     A view segue as convenções visuais do RWA (painéis, rform, rbtn) e
+     o mesmo conjunto de ações do DeFi, porque é a mesma entidade: o
+     usuário não deveria reaprender a tela ao trocar de módulo.
+     ============================================================ */
+
+  var STATUS_TESE = {
+    planejada: { label: "Planejada",    cor: "var(--text-2)" },
+    andamento: { label: "Em andamento", cor: "var(--accent)" },
+    concluida: { label: "Concluída",    cor: "var(--pos)" },
+    arquivada: { label: "Arquivada",    cor: "var(--warn)" }
+  };
+
+  var teseAberta = null;
+
+  function T() { return window.AtlasTheses || null; }
+
+  function tesesDoModulo(incluirConcluidas) {
+    var api = T();
+    if (!api) return [];
+    try { return api.byModule("rwa", { includeConcluded: !!incluirConcluidas }) || []; }
+    catch (e) { return []; }
+  }
+
+  function quandoFoi(ts) {
+    if (!ts) return "—";
+    var d = Math.round((Date.now() - ts) / 86400000);
+    if (d <= 0) return "hoje";
+    if (d === 1) return "ontem";
+    return "há " + d + " dias";
+  }
+
+  function formTese(t) {
+    t = t || {};
+    return '<div class="rform">' +
+      '<div class="rrow">' +
+        '<label class="rfield rfield-sm"><span>Ativo</span>' +
+          '<input class="rinput" data-rf="asset" value="' + esc(t.asset || "") + '" placeholder="Ex.: OUSG" /></label>' +
+        '<label class="rfield"><span>Título</span>' +
+          '<input class="rinput" data-rf="title" value="' + esc(t.title || "") + '" placeholder="Ex.: Treasuries tokenizados como piso de carteira" /></label>' +
+      '</div>' +
+      '<label class="rfield"><span>Tese</span>' +
+        '<textarea class="rinput" data-rf="content" rows="6" placeholder="Por que esta posição existe, o que a valida e o que a invalida…">' +
+        esc(t.content || "") + '</textarea></label>' +
+    '</div>';
+  }
+
+  function abrirFormTese(id) {
+    var api = T(); if (!api) return;
+    var t = id ? api.get(id) : null;
+    var m = openModal(t ? "Editar tese" : "Nova tese", formTese(t),
+      '<span class="grow"></span><button class="rbtn rbtn-ghost" data-close>Cancelar</button>' +
+      '<button class="rbtn rbtn-primary" data-save>Salvar</button>');
+
+    m.querySelector("[data-save]").addEventListener("click", function () {
+      var campo = function (k) { return m.querySelector('[data-rf="' + k + '"]'); };
+      var asset = campo("asset").value.trim();
+      var title = campo("title").value.trim();
+      /* marca o campo em falta em vez de um aviso solto — mesmo padrão
+         que o kit usa nos outros módulos */
+      if (!asset) { if (window.AtlasUI) AtlasUI.invalid(campo("asset"), "Informe o ativo."); return; }
+      if (!title) { if (window.AtlasUI) AtlasUI.invalid(campo("title"), "Informe o título."); return; }
+
+      var content = campo("content").value.trim();
+      if (t) api.update(t.id, { asset: asset, title: title, content: content }, "Editada no módulo RWA.");
+      else api.create({ module: "rwa", asset: asset, title: title, content: content, status: "planejada" });
+
+      U.toast(t ? "Tese atualizada." : "Tese criada.");
+      closeModal();
+      Router.resolve();
+    });
+  }
+
+  V.teses = function () {
+    var app = U.qs("#app");
+    var api = T();
+
+    if (!api) {
+      app.innerHTML =
+        '<div class="view-head"><div><div class="eyebrow">Fundamento</div>' +
+        '<h1 class="view-title">Teses</h1></div></div>' +
+        UI.empty({ icon: "alert", title: "Entidade de Teses indisponível",
+                   text: "core/entities/theses.js não foi carregado nesta página." });
+      return;
+    }
+
+    var todas = tesesDoModulo(true);
+    var n = { planejada: 0, andamento: 0, concluida: 0, arquivada: 0 };
+    todas.forEach(function (t) { if (n[t.status] != null) n[t.status]++; });
+
+    var visiveis = todas.filter(function (t) { return t.status !== "concluida"; });
+
+    app.innerHTML =
+      '<div class="view-head"><div><div class="eyebrow">Fundamento</div>' +
+        '<h1 class="view-title">Teses</h1>' +
+        '<div class="view-sub">Toda posição de RWA deveria nascer de uma tese. ' +
+        'Ao concluir, ela vai para o Academy e pode ser reaberta de lá.</div></div>' +
+        '<button class="rbtn rbtn-primary" id="btnNovaTese">' + U.icon("plus") + ' Nova tese</button>' +
+      '</div>' +
+
+      '<div class="grid g-4 section">' +
+        UI.kpi({ k: "Planejadas",  v: String(n.planejada), icon: "journal" }) +
+        UI.kpi({ k: "Em andamento", v: String(n.andamento), icon: "pulse", accent: "a2" }) +
+        UI.kpi({ k: "Concluídas",  v: String(n.concluida), icon: "check", accent: "apos",
+                 foot: '<span class="sub">no Academy</span>' }) +
+        UI.kpi({ k: "Arquivadas",  v: String(n.arquivada), icon: "layers", accent: "awarn" }) +
+      '</div>' +
+
+      '<div class="section" id="listaTeses">' +
+        (visiveis.length ? visiveis.map(cartaoTese).join("") :
+          UI.empty({ icon: "journal", title: "Nenhuma tese ainda",
+                     text: "Registre a primeira tese do RWA. As concluídas ficam na biblioteca do Academy." })) +
+      '</div>';
+
+    U.qs("#btnNovaTese").addEventListener("click", function () { abrirFormTese(null); });
+    ligarEventosTeses();
+  };
+
+  function cartaoTese(t) {
+    var s = STATUS_TESE[t.status] || STATUS_TESE.planejada;
+    var aberta = teseAberta === t.id;
+    var corpo = "";
+
+    if (aberta) {
+      var hist = (t.history || []).slice().sort(function (a, b) { return a.ts - b.ts; });
+      corpo =
+        '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px">' +
+          '<div class="eyebrow" style="margin-bottom:10px">Evolução da tese · versão ' + t.version + '</div>' +
+          (hist.length ? hist.map(function (h) {
+            return '<p style="margin:0 0 12px;font-size:13px">' +
+              '<span class="t2" style="display:block;font-size:11.5px">' +
+              new Date(h.ts).toLocaleString("pt-BR") + '</span>' + esc(h.text) + '</p>';
+          }).join("") : '<p class="t2" style="font-size:13px">Sem registros ainda.</p>') +
+          '<textarea class="rinput" data-nota="' + t.id + '" rows="3" ' +
+            'placeholder="Registrar nova visão…" style="margin-top:10px"></textarea>' +
+          '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+            '<button class="rbtn rbtn-primary" data-addnota="' + t.id + '">Registrar visão</button>' +
+            '<button class="rbtn rbtn-ghost" data-edit="' + t.id + '">Editar</button>' +
+            (t.status === "planejada" ? '<button class="rbtn rbtn-ghost" data-start="' + t.id + '">Iniciar</button>' : "") +
+            (t.status === "andamento" ? '<button class="rbtn rbtn-ghost" data-done="' + t.id + '">Concluir → Academy</button>' : "") +
+            (t.status !== "arquivada"
+              ? '<button class="rbtn rbtn-ghost" data-arch="' + t.id + '">Arquivar</button>'
+              : '<button class="rbtn rbtn-ghost" data-start="' + t.id + '">Reativar</button>') +
+            '<span class="grow"></span>' +
+            '<button class="rbtn rbtn-ghost" data-del="' + t.id + '" style="color:var(--neg)">Excluir</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    return '<div class="panel panel-pad" style="margin-bottom:12px;cursor:pointer" data-abrir="' + t.id + '">' +
+        '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+          '<div style="flex:1;min-width:180px">' +
+            '<b style="font-size:14px">' + esc(t.title) + '</b>' +
+            '<div class="t2" style="font-size:12px;margin-top:2px">' + esc(t.asset) +
+              ' · atualizada ' + quandoFoi(t.updatedAt) + (t.version > 1 ? ' · v' + t.version : "") + '</div>' +
+          '</div>' +
+          '<span class="tag" style="color:' + s.cor + '">' + s.label + '</span>' +
+        '</div>' +
+        (aberta ? "" : '<p class="t2" style="margin:10px 0 0;font-size:13px">' +
+          esc(t.content || "Sem tese registrada.") + '</p>') +
+        corpo +
+      '</div>';
+  }
+
+  function ligarEventosTeses() {
+    var api = T(); if (!api) return;
+    var host = U.qs("#listaTeses"); if (!host) return;
+
+    U.qsa("[data-abrir]", host).forEach(function (el) {
+      el.addEventListener("click", function (ev) {
+        if (ev.target.closest("button") || ev.target.closest("textarea")) return;
+        teseAberta = (teseAberta === el.dataset.abrir) ? null : el.dataset.abrir;
+        Router.resolve();
+      });
+    });
+
+    U.qsa("[data-addnota]", host).forEach(function (b) {
+      b.addEventListener("click", function () {
+        var ta = U.qs('[data-nota="' + b.dataset.addnota + '"]', host);
+        var v = ta && ta.value.trim();
+        if (!v) { if (ta) ta.focus(); return; }
+        api.addUpdate(b.dataset.addnota, v);
+        U.toast("Visão registrada.");
+        Router.resolve();
+      });
+    });
+
+    U.qsa("[data-edit]", host).forEach(function (b) {
+      b.addEventListener("click", function () { abrirFormTese(b.dataset.edit); });
+    });
+
+    U.qsa("[data-start]", host).forEach(function (b) {
+      b.addEventListener("click", function () {
+        var t = api.get(b.dataset.start);
+        if (t && t.status === "arquivada") api.reopen(t.id);
+        else api.setStatus(b.dataset.start, "andamento");
+        U.toast("Tese em andamento.");
+        Router.resolve();
+      });
+    });
+
+    U.qsa("[data-done]", host).forEach(function (b) {
+      b.addEventListener("click", function () {
+        var t = api.get(b.dataset.done);
+        perguntar({
+          title: "Concluir esta tese?",
+          message: "Fecha a versão " + (t ? t.version : "") + " e envia a tese automaticamente " +
+                   "para o Academy. De lá ela pode ser reaberta, criando uma nova versão.",
+          confirmLabel: "Concluir"
+        }, function () {
+          api.conclude(b.dataset.done);
+          U.toast("Tese concluída — disponível no Academy.");
+          teseAberta = null;
+          Router.resolve();
+        });
+      });
+    });
+
+    U.qsa("[data-arch]", host).forEach(function (b) {
+      b.addEventListener("click", function () {
+        api.archive(b.dataset.arch);
+        U.toast("Tese arquivada.");
+        Router.resolve();
+      });
+    });
+
+    U.qsa("[data-del]", host).forEach(function (b) {
+      b.addEventListener("click", function () {
+        perguntar({
+          title: "Excluir esta tese?",
+          message: "O histórico e todas as versões vão junto. Não há como desfazer.",
+          confirmLabel: "Excluir",
+          danger: true
+        }, function () {
+          api.remove(b.dataset.del);
+          teseAberta = null;
+          Router.resolve();
+        });
+      });
+    });
+  }
+
   /* ---------------- Journal ---------------- */
   V.journal = function () {
     var app = U.qs("#app");
@@ -688,6 +951,7 @@
       .register("macro", V.macro, "macro")
       .register("risk", V.risk, "risk")
       .register("narrative", V.narrative, "narrative")
+      .register("teses", V.teses, "teses")
       .register("journal", V.journal, "journal")
       .start();
 
