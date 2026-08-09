@@ -219,8 +219,24 @@
       '<div class="tb-menu__list">' +
         '<a class="tb-menu__item" role="menuitem" href="configuracoes.html">' + IC_GEAR + "<span>Configurações</span></a>" +
         '<a class="tb-menu__item" role="menuitem" href="relatorios.html">' + IC_REPORT + "<span>Relatórios</span></a>" +
-        '<a class="tb-menu__item tb-menu__item--exit" role="menuitem" href="login.html">' + IC_EXIT + "<span>Sair</span></a>" +
+        /* Era um link puro para login.html: navegava e não encerrava
+           nada, porque não havia sessão a encerrar. Agora chama
+           AtlasAuth.signOut() e SÓ ENTÃO navega — no dia em que houver
+           provedor real, o mesmo botão desloga de verdade. O href
+           continua ali para quem abrir em nova aba ou estiver sem JS. */
+        '<a class="tb-menu__item tb-menu__item--exit" role="menuitem" href="login.html" data-sair>' + IC_EXIT + "<span>Sair</span></a>" +
       "</div>";
+
+    var sair = raiz._pop.querySelector("[data-sair]");
+    if (sair) {
+      sair.addEventListener("click", function (e) {
+        if (!window.AtlasAuth) return;              // sem a camada, o href faz o trabalho
+        e.preventDefault();
+        AtlasAuth.signOut().then(function () {
+          window.location.href = "login.html";
+        });
+      });
+    }
   }
 
   /* ============================================================

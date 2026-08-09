@@ -67,7 +67,10 @@
   var DESCARTAVEIS = [
     "atlas.http.cache.v1",
     "atlas.assets.cache.v1",
-    "atlas.fx.v1"
+    "atlas.fx.v1",
+    /* A sessão é do DISPOSITIVO, não do patrimônio: restaurar um backup
+       noutra máquina não pode arrastar "quem estava logado" junto. */
+    "atlas.session.v1"
   ];
 
   /* Tudo o que o ATLAS possui, já com os nomes canônicos. É esta lista
@@ -82,6 +85,11 @@
     "atlas.intro.seen.v1",
     "atlas.onboarding.v1",
     "atlas.notifications.v1",
+    /* A sessão é do DISPOSITIVO, não do usuário: restaurar um backup
+       noutra máquina não deve arrastar "quem estava logado" junto. Fica
+       registrada aqui para o backup CONHECER a chave — e é descartável,
+       como os caches. */
+    "atlas.session.v1",
     /* módulos */
     "atlas.hold.state.v2",
     "atlas.hold.wallet.v1",

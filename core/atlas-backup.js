@@ -78,7 +78,11 @@
   var CACHE_KEYS = {
     "atlas.assets.cache.v1": 1,
     "atlas.http.cache.v1": 1,
-    "atlas.fx.v1": 1
+    "atlas.fx.v1": 1,
+    /* A sessão não é cache, mas é descartável pelo mesmo motivo: ela é
+       do DISPOSITIVO, não do patrimônio. Restaurar um backup noutra
+       máquina não pode arrastar "quem estava logado" junto. */
+    "atlas.session.v1": 1
   };
 
   /* Chaves descartáveis por PADRÃO de nome (a lista acima é exata).
