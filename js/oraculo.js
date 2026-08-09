@@ -34,7 +34,9 @@
 
   AtlasOraculo.registerBrain(function () {
     return {
-      chips: ["Como está meu patrimônio?", "O que preciso revisar?"],
+      /* Sem chips próprios: o cérebro-base do shell agora monta as
+         sugestões a partir do ESTADO (tem alerta? tem patrimônio?), e
+         uma lista fixa aqui só empurraria as boas para fora. */
 
       summary: function () { return WELCOME; },
 
@@ -47,9 +49,12 @@
                  "estatísticas. A decisão final é sempre sua.";
         }
 
-        if (/patrim|total|banca|quanto|evolu|resum|consolid/.test(q)) {
-          return WELCOME;
-        }
+        /* "Quanto eu tenho?" costumava cair aqui e receber a mensagem
+           de boas-vindas — um texto de apresentação no lugar de um
+           número, numa tela que mostrava o número logo acima. Hoje o
+           cérebro-base soma os quatro módulos e responde de verdade,
+           então esta interceptação SAIU. Só a recusa de previsão fica:
+           essa é postura do produto, não falta de dado. */
 
         // Devolve null → o cérebro-base do shell assume a resposta.
         return null;

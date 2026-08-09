@@ -171,22 +171,79 @@
 
   var extraBrains = [];
 
+  /* Dentro de um módulo, as teses DELE. No shell da raiz (Dashboard,
+     Relatórios, Configurações), TODAS — a raiz é a visão consolidada e
+     não tem teses próprias, então filtrar por module="atlas" devolvia
+     sempre lista vazia e o Oráculo respondia "nenhuma tese em aberto"
+     com quatro teses abertas no sistema. */
   function theses() {
-    if (!window.AtlasTheses || !AtlasTheses.byModule) return [];
-    try { return AtlasTheses.byModule(MODULE) || []; }
-    catch (e) { return []; }
+    if (!window.AtlasTheses) return [];
+    try {
+      if (MODULE === "atlas" || MODULE === "academy") {
+        return (AtlasTheses.all ? AtlasTheses.all() : []) || [];
+      }
+      return (AtlasTheses.byModule ? AtlasTheses.byModule(MODULE) : []) || [];
+    } catch (e) { return []; }
   }
 
   function countBy(list, status) {
     return list.filter(function (x) { return x && x.status === status; }).length;
   }
 
+  /* ============================================================
+     O CÉREBRO DO ORÁCULO
+     ------------------------------------------------------------
+     Ele nasceu sabendo uma coisa só: teses do módulo atual. Era
+     honesto e era pouco — perguntar "quanto eu tenho?" devolvia
+     "ainda não sei responder isso" numa tela que mostrava o número
+     dois centímetros acima.
+
+     O que mudou não foi o Oráculo: foi o resto do sistema. Hoje
+     existem AtlasConsolidation (soma os quatro módulos),
+     AtlasNotifications (alertas com estado de lido), AtlasMovements
+     (o livro-razão), AtlasWallets e AtlasCurrency — e todos são
+     carregados em toda página. O cérebro passa a ler tudo isso.
+
+     O QUE ELE NÃO É
+     ---------------
+     Não é um chat genérico e não inventa. Cada resposta sai de um
+     número que está no armazenamento do usuário; quando não sabe,
+     diz o que sabe em vez de improvisar. É a diferença entre um
+     assistente e um gerador de texto — e num sistema financeiro é a
+     única diferença que importa.
+     ============================================================ */
+
+  function dinheiro(v) {
+    if (window.AtlasCurrency && AtlasCurrency.format) return AtlasCurrency.format(v, { decimals: 0 });
+    return "US$ " + Math.round(v || 0).toLocaleString("pt-BR");
+  }
+
+  function consolidado() {
+    if (!window.AtlasConsolidation || !AtlasConsolidation.snapshot) return null;
+    try { return AtlasConsolidation.snapshot(); } catch (e) { return null; }
+  }
+
+  function alertasAbertos() {
+    if (window.AtlasNotifications && AtlasNotifications.list) {
+      try { return AtlasNotifications.list() || []; } catch (e) { return []; }
+    }
+    return [];
+  }
+
   var baseBrain = {
-    chips: [
-      "Como está o módulo?",
-      "Quais teses estão em aberto?",
-      "O que preciso revisar?"
-    ],
+    /* As sugestões mudam com o estado. Oferecer "o que precisa da minha
+       atenção" quando não há alerta nenhum é fazer o usuário gastar um
+       clique para ouvir "nada". */
+    chips: function () {
+      var c = [];
+      if (alertasAbertos().filter(function (a) { return !a.lido; }).length) {
+        c.push("O que precisa da minha atenção?");
+      }
+      c.push("Quanto eu tenho?");
+      c.push("Quais teses estão em aberto?");
+      c.push("Como está o módulo?");
+      return c.slice(0, 4);
+    },
 
     summary: function () {
       var list = theses();
@@ -213,9 +270,86 @@
       });
     },
 
+    /* ---- o que ele passou a saber ---- */
+
+    patrimonio: function () {
+      var s = consolidado();
+      if (!s) return L("Não consigo somar os módulos a partir desta tela.",
+                       "I can't consolidate the modules from this screen.");
+      if (!s.total) {
+        return L("Patrimônio zerado — nada registrado ainda em nenhum módulo. " +
+                 "Comece por Hold, Trade, DeFi ou RWA; o total se consolida sozinho.",
+                 "Net worth is zero — nothing recorded in any module yet.");
+      }
+      var partes = s.byModule.map(function (m) {
+        return m.label + " " + dinheiro(m.value) + " (" + Math.round((m.value / s.total) * 100) + "%)";
+      }).join(", ");
+      var sinal = s.pnl >= 0 ? "+" : "";
+      return L("Patrimônio total: " + dinheiro(s.total) + ". Resultado acumulado " +
+               sinal + dinheiro(s.pnl) + " (" + sinal + s.pnlPct.toFixed(1) + "%). " +
+               "Distribuição: " + partes + ".",
+               "Total net worth: " + dinheiro(s.total) + ". Accumulated result " +
+               sinal + dinheiro(s.pnl) + " (" + sinal + s.pnlPct.toFixed(1) + "%). " +
+               "Split: " + partes + ".");
+    },
+
+    atencao: function () {
+      var todos = alertasAbertos();
+      if (!todos.length) {
+        return L("Nada pedindo atenção agora — sem alerta em nenhum dos quatro módulos.",
+                 "Nothing needs attention right now.");
+      }
+      /* No máximo três: resposta de dez linhas é resposta que ninguém lê
+         até o fim, e o sino guarda a lista inteira. */
+      var texto = todos.slice(0, 3).map(function (a) {
+        return "• " + (a.module ? String(a.module).toUpperCase() + ": " : "") + a.texto;
+      }).join(" ");
+      var resto = todos.length > 3
+        ? L(" (+" + (todos.length - 3) + " no sino)", " (+" + (todos.length - 3) + " in the bell)")
+        : "";
+      return L(todos.length + " ponto(s) de atenção. " + texto + resto,
+               todos.length + " item(s) need attention. " + texto + resto);
+    },
+
+    carteiras: function () {
+      var W = window.AtlasWallets;
+      if (!W || !W.all) return L("Não consigo ler as carteiras daqui.", "Can't read wallets from here.");
+      var todas = W.all() || [];
+      var globais = todas.filter(function (w) { return w.type !== "isolada"; });
+      var locais = todas.length - globais.length;
+      var ativa = (W.activeGlobal ? W.activeGlobal() : null);
+      return L(todas.length + " carteira(s): " + globais.length + " global(is), que somam no " +
+               "patrimônio total, e " + locais + " isolada(s), que ficam dentro do módulo. " +
+               (ativa ? "Ativa agora: " + ativa.name + "." : ""),
+               todas.length + " wallet(s): " + globais.length + " global, " + locais + " isolated. " +
+               (ativa ? "Active: " + ativa.name + "." : ""));
+    },
+
+    fluxo: function () {
+      var M = window.AtlasMovements;
+      if (!M || !M.list) return L("O livro-razão não está disponível nesta tela.",
+                                  "The ledger isn't available on this screen.");
+      var lista = M.list({});
+      if (!lista.length) {
+        return L("Nenhum movimento registrado ainda. Entradas, saídas e resultados " +
+                 "aparecem em Relatórios assim que existirem.",
+                 "No movements recorded yet.");
+      }
+      var r = M.summarize(lista);
+      return L(r.count + " movimento(s): entradas " + dinheiro(r.entrada) + ", saídas " +
+               dinheiro(r.saida) + ", resultado " + dinheiro(r.resultado) +
+               ". Fluxo líquido " + dinheiro(r.net) + ".",
+               r.count + " movement(s): inflows " + dinheiro(r.entrada) + ", outflows " +
+               dinheiro(r.saida) + ", result " + dinheiro(r.resultado) +
+               ". Net flow " + dinheiro(r.net) + ".");
+    },
+
     answer: function (q) {
       q = (q || "").toLowerCase();
-      var list = theses();
+
+      /* A ordem importa: "quanto tenho em teses abertas" é pergunta
+         sobre teses, não sobre patrimônio. O padrão mais específico
+         vem primeiro. */
 
       if (/tese|thesis|estud|aberto|open|pendent|pending|andamento|progress/.test(q)) {
         var p = baseBrain.pending();
@@ -227,7 +361,7 @@
                  p.length + " open thesis(es): " + listStr + ".");
       }
 
-      if (/revis|review|pend|pending|atras|overdue|parad|stalled/.test(q)) {
+      if (/revis|review|atras|overdue|parad|stalled/.test(q)) {
         var old = baseBrain.pending().filter(function (x) {
           if (!x.createdAt) return false;
           return (Date.now() - new Date(x.createdAt).getTime()) > 72 * 3600 * 1000;
@@ -236,6 +370,26 @@
                                   "Nothing past the 72h mark. Process is on track.");
         return L(old.length + " tese(s) abertas há mais de 72h — vale concluir ou arquivar.",
                  old.length + " thesis(es) open for over 72h — worth completing or archiving.");
+      }
+
+      if (/aten|alerta|alert|risco|risk|problema|urgent/.test(q)) return baseBrain.atencao();
+
+      if (/quanto|patrim|total|net worth|saldo|worth|vale/.test(q)) return baseBrain.patrimonio();
+
+      if (/carteira|wallet|conta/.test(q)) return baseBrain.carteiras();
+
+      if (/movimento|fluxo|flow|entrada|sa.da|aporte|retirada|extrato/.test(q)) return baseBrain.fluxo();
+
+      if (/lucro|resultado|pnl|rentab|performance|ganho|preju/.test(q)) {
+        var s = consolidado();
+        if (!s || !s.total) return baseBrain.patrimonio();
+        var sinal = s.pnl >= 0 ? "+" : "";
+        return L("Resultado acumulado: " + sinal + dinheiro(s.pnl) + " (" + sinal +
+                 s.pnlPct.toFixed(1) + "%) sobre o capital investido. " +
+                 "Renda passiva estimada: " + dinheiro(s.passiveIncome) + ".",
+                 "Accumulated result: " + sinal + dinheiro(s.pnl) + " (" + sinal +
+                 s.pnlPct.toFixed(1) + "%). Estimated passive income: " +
+                 dinheiro(s.passiveIncome) + ".");
       }
 
       if (/modul|module|resum|summary|status|como est|how is/.test(q)) return baseBrain.summary();
@@ -247,20 +401,38 @@
                  "in USD — currency is only the display layer.");
       }
 
-      return L("Ainda não sei responder isso. Pergunte sobre teses, pendências " +
-               "ou o resumo do módulo — o que eu sei vem dos seus próprios dados, " +
-               "não de um chat genérico.",
-               "I can't answer that yet. Ask about theses, pending items " +
-               "or the module summary — what I know comes from your own data, " +
-               "not a generic chat.");
+      if (/backup|export|salvar|perder|guardar/.test(q)) {
+        return L("Seus dados vivem no armazenamento deste navegador — trocar de máquina " +
+                 "ou limpar os dados de navegação apaga tudo. Exporte em Configurações → " +
+                 "Dados e Backup, ou pelo Ctrl+K.",
+                 "Your data lives in this browser's storage. Export it in " +
+                 "Settings → Data and Backup, or via Ctrl+K.");
+      }
+
+      /* Não saber é aceitável; deixar o usuário no escuro não é. A
+         resposta padrão ENSINA o que dá para perguntar. */
+      return L("Ainda não sei responder isso. Sei falar de patrimônio, resultado, teses, " +
+               "pendências, carteiras, movimentos e moeda — sempre a partir dos seus " +
+               "próprios dados, nunca de um chat genérico. " +
+               "Ctrl+K abre a paleta, se você quiser ir direto a uma tela.",
+               "I can't answer that yet. I can talk about net worth, result, theses, " +
+               "pending items, wallets, movements and currency — always from your own " +
+               "data. Ctrl+K opens the command palette.");
     },
 
-    alerts: function () { return baseBrain.pending().length; }
+    alerts: function () {
+      var naoLidos = alertasAbertos().filter(function (a) { return !a.lido; }).length;
+      return naoLidos || baseBrain.pending().length;
+    }
   };
 
   function resolveBrain() {
     var brain = {
-      chips: baseBrain.chips.slice(),
+      /* chips virou FUNÇÃO no cérebro base porque as sugestões mudam com
+         o estado (ter ou não alerta). Aqui vira lista de novo, avaliada
+         na hora de montar — os cérebros de módulo continuam podendo
+         entregar um array simples, como sempre entregaram. */
+      chips: (typeof baseBrain.chips === "function") ? baseBrain.chips() : baseBrain.chips.slice(),
       answer: baseBrain.answer,
       summary: baseBrain.summary,
       alerts: baseBrain.alerts
