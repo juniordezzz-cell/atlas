@@ -82,6 +82,7 @@ atlas/
 | `core/atlas-boot.js` | Identifica o módulo e coordena repintura | `AtlasBoot` |
 | `core/atlas-backup.js` | Exporta e restaura todos os dados em `.json` | `AtlasBackup` |
 | `core/atlas-export.js` | Planilha (CSV) e papel/PDF, com cabeçalho de folha | `AtlasExport` |
+| `core/atlas-notifications.js` | Alertas dos quatro módulos, com estado de lido | `AtlasNotifications` |
 | `core/atlas-module-settings.js` | Configurações por módulo, numa tela só | `AtlasModuleSettings` |
 | `core/atlas-price.js` | Preço por símbolo, com cache e stablecoins | `AtlasPrice` |
 | `core/entities/theses.js` | Entidade compartilhada de Teses (versionada) | `AtlasTheses` |

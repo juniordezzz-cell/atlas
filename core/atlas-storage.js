@@ -81,6 +81,7 @@
     "atlas.movements.v1",
     "atlas.intro.seen.v1",
     "atlas.onboarding.v1",
+    "atlas.notifications.v1",
     /* módulos */
     "atlas.hold.state.v2",
     "atlas.hold.wallet.v1",

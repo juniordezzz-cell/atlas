@@ -149,58 +149,19 @@
   }
 
   /* ============================================================
-     2. NOTIFICAÇÕES — os alertas que o Dashboard já calcula
+     2. NOTIFICAÇÕES — mudaram de casa
      ------------------------------------------------------------
-     A bolinha de não-lido ficava acesa SEMPRE, sem nada por trás.
-     Agora ela só acende quando existe alerta de verdade, e o sino
-     abre a lista.
+     O sino saiu daqui e foi para core/ui/atlas-shell.js. O motivo é
+     o mesmo do "Voltar ao Atlas" e do alternador de tema: montado
+     pelo shell, ele existe em TODOS os módulos, e não só nas três
+     páginas da raiz. De quebra, ganhou estado de lido e passou a ler
+     AtlasNotifications, que soma os quatro módulos — a versão que
+     morava aqui lia window.ATLAS_DATA, que só o Dashboard monta, e
+     por isso chegava vazia em Relatórios e em Configurações.
+
+     O shell ADOTA o botão nativo desta barra (remove e põe o dele no
+     lugar), então nada some da tela.
      ============================================================ */
-
-  function alertasDoSistema() {
-    try {
-      var d = window.ATLAS_DATA;
-      return (d && Array.isArray(d.alertas)) ? d.alertas : [];
-    } catch (e) { return []; }
-  }
-
-  function montarNotificacoes() {
-    var btn = document.querySelector('.topbar-right .icon-btn[title="Notificações"]');
-    if (!btn) return;
-
-    var alertas = alertasDoSistema();
-    var dot = btn.querySelector(".dot");
-
-    /* honestidade visual: sem alerta, sem bolinha */
-    if (dot && !alertas.length) dot.remove();
-
-    var raiz = envolver(btn, { id: "notificacoes" });
-    if (!raiz) return;
-
-    var corpo;
-    if (alertas.length) {
-      /* Sem rodapé "ver todos": os alertas vêm dos quatro módulos e não
-         existe uma página que os reúna. Apontar para o motor de risco do
-         RWA mandaria o usuário para o lugar errado na maioria das vezes. */
-      corpo = '<div class="tb-menu__list">' + alertas.map(function (a) {
-        return '<div class="tb-menu__note tb-menu__note--' + esc(a.level || "warn") + '" ' +
-               'role="menuitem" tabindex="-1">' +
-          '<div class="tb-menu__note-txt">' + esc(a.texto) + "</div>" +
-          '<div class="tb-menu__note-when">' +
-            (a.module ? '<span class="alert-mod">' + esc(a.module) + "</span>" : "") +
-            esc(a.quando) +
-          "</div>" +
-        "</div>";
-      }).join("") + "</div>";
-    } else {
-      /* estado vazio de verdade, em vez de um menu em branco */
-      corpo = '<div class="tb-menu__empty">' +
-        "<strong>Nenhum alerta</strong>" +
-        "<span>Os alertas aparecem quando uma posição ou tese pedir atenção.</span>" +
-      "</div>";
-    }
-
-    raiz._pop.innerHTML = '<div class="tb-menu__head">Alertas</div>' + corpo;
-  }
 
   /* ============================================================
      3. PERFIL (avatar)
@@ -265,7 +226,6 @@
     if (!document.querySelector(".topbar-right")) return;   // shell diferente
 
     montarAplicativos();
-    montarNotificacoes();
     montarPerfil();
 
     /* instala o utilitário único de fechar-ao-clicar-fora. Idempotente:

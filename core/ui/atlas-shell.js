@@ -434,6 +434,140 @@
     btn.setAttribute("aria-pressed", claro ? "true" : "false");
   }
 
+
+  /* ============================================================
+     3c. O SINO — central de alertas, em todos os módulos
+     ------------------------------------------------------------
+     O sino existia só no shell da raiz, lia uma lista que só o
+     Dashboard montava, e não tinha estado de lido: a bolinha
+     acendia enquanto o alerta existisse. Um alerta permanente
+     deixava a bolinha acesa para sempre, e bolinha que nunca
+     apaga é bolinha que ninguém olha.
+
+     Agora ele nasce aqui, como o "Voltar ao Atlas" e o alternador
+     de tema: um lugar, um comportamento. Se a página já tem um
+     botão de notificações (o shell da raiz tem), ele é ADOTADO em
+     vez de duplicado. Os dados vêm de AtlasNotifications, que soma
+     os quatro módulos e funciona em qualquer página.
+     ============================================================ */
+
+  var IC_SINO =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>' +
+    '<path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
+
+  function notificacoes() { return window.AtlasNotifications; }
+
+  function pintarSino(raiz) {
+    var N = notificacoes();
+    var lista = N ? N.list() : [];
+    var naoLidos = lista.filter(function (a) { return !a.lido; }).length;
+
+    var btn = raiz.querySelector(".atlas-bell__btn");
+    btn.setAttribute("aria-label",
+      naoLidos ? (naoLidos + " " + t(naoLidos === 1 ? "alerta não lido" : "alertas não lidos"))
+               : t("Alertas"));
+    /* A contagem entra no próprio selo, não numa bolinha muda: "3" diz
+       mais do que um ponto aceso, e some quando não há nada. */
+    var selo = raiz.querySelector(".atlas-bell__n");
+    selo.textContent = naoLidos > 9 ? "9+" : String(naoLidos || "");
+    selo.hidden = !naoLidos;
+
+    var pop = raiz.querySelector(".atlas-bell__pop");
+    var corpo;
+    if (lista.length) {
+      corpo = '<div class="atlas-bell__list" role="list">' + lista.map(function (a) {
+        return '<div class="atlas-bell__item' + (a.lido ? "" : " is-new") +
+                 ' atlas-bell__item--' + esc(a.level) + '" role="listitem">' +
+          '<span class="atlas-bell__dot" aria-hidden="true"></span>' +
+          '<div class="atlas-bell__txt">' + esc(a.texto) + '</div>' +
+          '<div class="atlas-bell__meta">' +
+            (a.module ? '<span class="atlas-bell__mod">' + esc(a.module) + "</span>" : "") +
+            "<span>" + esc(a.quando) + "</span>" +
+          "</div>" +
+        "</div>";
+      }).join("") + "</div>" +
+      (naoLidos ? '<button type="button" class="atlas-bell__all" data-lidas>' +
+                    esc(t("Marcar todas como lidas")) + "</button>" : "");
+    } else {
+      corpo = '<div class="atlas-bell__empty">' +
+        "<strong>" + esc(t("Nenhum alerta")) + "</strong>" +
+        "<span>" + esc(t("Os alertas aparecem quando uma posição ou tese pedir atenção.")) + "</span>" +
+      "</div>";
+    }
+    pop.innerHTML = '<div class="atlas-bell__head">' + esc(t("Alertas")) + "</div>" + corpo;
+
+    var todas = pop.querySelector("[data-lidas]");
+    if (todas) {
+      todas.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (notificacoes()) AtlasNotifications.markAllRead();
+      });
+    }
+  }
+
+  function mountBell() {
+    if (!notificacoes()) return;                 // sem serviço, sem sino
+    if (document.querySelector('[data-atlas-ui="bell"]')) return;
+    var barra = findTopbar();
+    if (!barra) return;
+
+    var raiz = document.createElement("div");
+    raiz.className = "atlas-bell";
+    raiz.setAttribute("data-atlas-ui", "bell");
+    raiz.innerHTML =
+      '<button type="button" class="atlas-bell__btn">' + IC_SINO +
+        '<span class="atlas-bell__n" hidden></span>' +
+      "</button>" +
+      '<div class="atlas-bell__pop" role="dialog" aria-label="' + esc(t("Alertas")) + '"></div>';
+
+    /* Adota o botão nativo do shell da raiz em vez de somar um segundo
+       sino ao lado dele. */
+    var nativo = document.querySelector('.icon-btn[title="Notificações"], .icon-btn[aria-label="Notificações"]');
+    if (nativo && nativo.parentNode) nativo.parentNode.removeChild(nativo);
+
+    /* Antes do alternador de tema, se ele já estiver montado: alerta é
+       conteúdo, tema é preferência — conteúdo vem primeiro. */
+    var tema = barra.querySelector('[data-atlas-ui="theme"]');
+    if (tema) barra.insertBefore(raiz, tema); else barra.appendChild(raiz);
+
+    pintarSino(raiz);
+
+    var btn = raiz.querySelector(".atlas-bell__btn");
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var abrindo = !raiz.hasAttribute("data-open");
+      fecharSinos();
+      if (abrindo) {
+        raiz.setAttribute("data-open", "");
+        /* Abrir É ler. Marcar ao fechar faria a bolinha continuar acesa
+           enquanto o usuário lê, e apagar só depois — confuso. */
+        if (notificacoes()) AtlasNotifications.markAllRead();
+      }
+    });
+    document.addEventListener("click", function (ev) {
+      if (!raiz.contains(ev.target)) raiz.removeAttribute("data-open");
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") raiz.removeAttribute("data-open");
+    });
+
+    if (notificacoes()) {
+      AtlasNotifications.onChange(function () { pintarSino(raiz); });
+    }
+    /* Alertas mudam quando um movimento entra ou uma tese muda de
+       estado. Repintar nesses eventos evita um sino que só acerta
+       depois de recarregar a página. */
+    document.addEventListener("atlas:movement", function () { pintarSino(raiz); });
+    document.addEventListener("atlas:theses", function () { pintarSino(raiz); });
+  }
+
+  function fecharSinos() {
+    var abertos = document.querySelectorAll('[data-atlas-ui="bell"][data-open]');
+    Array.prototype.forEach.call(abertos, function (n) { n.removeAttribute("data-open"); });
+  }
+
   function mountThemeToggle() {
     if (!window.AtlasSettings) return;              // sem estado, sem botão
     if (document.querySelector('[data-atlas-ui="theme"]')) return;
@@ -464,6 +598,7 @@
     if (!document.body) return;
 
     mountSkipLink();
+    mountBell();
     mountThemeToggle();
 
     // A faixa escura no topo foi REMOVIDA (item 6). No lugar dela, cada
