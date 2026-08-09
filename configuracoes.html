@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="themes/atlas-effects.css">
   <link rel="stylesheet" href="themes/atlas-print.css" media="print">
   <link rel="stylesheet" href="core/ui/atlas-shell.css">
+  <link rel="stylesheet" href="core/ui/atlas-onboarding.css">
 
   <!-- PRIMEIRO de todos: migra as chaves antigas do localStorage
        para a convencao unica, antes de qualquer store abrir. -->
@@ -121,6 +122,19 @@
               <button type="button" data-val="sempre" aria-pressed="false"><span data-i18n="Sempre">Sempre</span></button>
             </div>
             <a class="hint hint-link" href="index.html?intro=1" data-i18n="Rever agora">Rever agora</a>
+          </div>
+        </div>
+
+        <!-- Os primeiros passos perguntam nome, moeda e nome da carteira
+             principal. Rodam uma vez; quem pulou (ou quer refazer) chega
+             aqui, no mesmo cartão onde já se rege a apresentação. -->
+        <div class="set-row">
+          <div class="set-row-txt">
+            <div class="set-label">Primeiros passos</div>
+            <div class="set-desc">As três perguntas da primeira sessão: seu nome, a moeda de leitura e o nome da carteira principal.</div>
+          </div>
+          <div class="set-row-ctrl">
+            <button type="button" class="btn-ghost" id="btnPrimeirosPassos">Responder de novo</button>
           </div>
         </div>
       </div>
@@ -260,6 +274,7 @@
 <script src="core/ui/atlas-icons.js"></script>
 <script src="core/ui/atlas-ui.js"></script>
 <script src="core/ui/atlas-shell.js"></script>
+<script src="core/ui/atlas-onboarding.js"></script>
 <script src="js/configuracoes.js"></script>
 </body>
 </html>

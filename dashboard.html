@@ -28,6 +28,7 @@
 
   <!-- Oráculo compartilhado (mesmo componente dos módulos) -->
   <link rel="stylesheet" href="core/ui/atlas-shell.css">
+  <link rel="stylesheet" href="core/ui/atlas-onboarding.css">
   <!-- Seletor de carteira: componente compartilhado (um CSS para todo o ATLAS) -->
   <link rel="stylesheet" href="wallets/walletSelector.css">
 
@@ -210,5 +211,20 @@
 <script src="core/ui/atlas-ui.js"></script>
 <script src="core/ui/atlas-shell.js"></script>
 <script src="js/oraculo.js"></script>
+
+<!-- ===== Primeiros passos (só na primeira sessão) =====
+     Entra por ÚLTIMO de propósito: precisa de AtlasSettings (moeda),
+     AtlasWallets (carteira), AtlasUI (foco preso e toast) e do
+     Dashboard já pintado, para poder repintar quando o usuário
+     responde. maybeStart() não faz nada da segunda vez em diante. -->
+<script src="core/ui/atlas-onboarding.js"></script>
+<script>
+  (function () {
+    function abrir() { if (window.AtlasOnboarding) AtlasOnboarding.maybeStart(); }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", abrir);
+    } else { abrir(); }
+  })();
+</script>
 </body>
 </html>

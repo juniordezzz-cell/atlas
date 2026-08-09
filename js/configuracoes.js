@@ -168,6 +168,19 @@
       });
     }
 
+    /* Refazer os primeiros passos. Não usa reset() + reload: abre o
+       fluxo aqui mesmo, com os valores atuais já preenchidos, e ao
+       concluir sincroniza os controles desta página — a moeda é uma das
+       três perguntas e ela aparece logo abaixo. */
+    var passosBtn = document.getElementById("btnPrimeirosPassos");
+    if (passosBtn && window.AtlasOnboarding) {
+      passosBtn.addEventListener("click", function () {
+        AtlasOnboarding.start();
+      });
+    } else if (passosBtn) {
+      passosBtn.disabled = true;
+    }
+
     // Reflete mudanças vindas de fora (outra aba, atalho, etc.)
     AtlasSettings.on(function () { syncControls(); });
   }

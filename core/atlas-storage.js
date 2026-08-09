@@ -80,6 +80,7 @@
     "atlas.future_studies.v1",
     "atlas.movements.v1",
     "atlas.intro.seen.v1",
+    "atlas.onboarding.v1",
     /* módulos */
     "atlas.hold.state.v2",
     "atlas.hold.wallet.v1",

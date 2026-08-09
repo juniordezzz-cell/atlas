@@ -1,0 +1,172 @@
+/* ============================================================
+   ATLAS · core/ui/atlas-onboarding.css
+   Os três passos da primeira sessão.
+
+   Sem cor própria: tudo sai dos tokens do tema, então o painel
+   nasce certo no claro e no escuro e acompanha o sotaque do
+   módulo sem uma linha a mais.
+   ============================================================ */
+.aonb {
+  position: fixed; inset: 0; z-index: 5000;
+  display: grid; place-items: center;
+  padding: var(--atlas-sp-5);
+}
+.aonb__scrim {
+  position: absolute; inset: 0;
+  background: var(--atlas-scrim, rgba(4, 7, 14, 0.72));
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.aonb__box {
+  position: relative;
+  width: 100%; max-width: 520px;
+  padding: var(--atlas-sp-7) var(--atlas-sp-6) var(--atlas-sp-6);
+  border-radius: var(--atlas-r-lg);
+  background: var(--atlas-surface-solid);
+  border: 1px solid var(--atlas-border);
+  box-shadow: var(--atlas-sh-3);
+  animation: aonbEntra var(--atlas-dur) var(--atlas-ease) both;
+}
+@keyframes aonbEntra {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aonb__box { animation: none; }
+}
+
+/* Trilha de progresso: três marcas, porque são três passos. Mostra
+   onde se está sem gastar uma linha de texto dizendo. */
+.aonb__trilha { display: flex; gap: 6px; margin-bottom: var(--atlas-sp-5); }
+.aonb__marca {
+  height: 3px; flex: 1;
+  border-radius: var(--atlas-r-pill);
+  background: var(--atlas-inner);
+  transition: background var(--atlas-dur) var(--atlas-ease);
+}
+.aonb__marca.is-on { background: var(--atlas-accent); }
+
+.aonb__eyebrow {
+  display: block;
+  font-size: var(--atlas-fs-label);
+  font-weight: 600;
+  letter-spacing: var(--atlas-track-label);
+  text-transform: uppercase;
+  color: var(--atlas-accent-text);
+}
+.aonb__titulo {
+  margin: var(--atlas-sp-2) 0 var(--atlas-sp-3);
+  font-family: var(--atlas-font-display);
+  font-size: 1.32rem; font-weight: 600;
+  letter-spacing: var(--atlas-track-display);
+  color: var(--atlas-text-hi);
+}
+.aonb__lead {
+  margin: 0 0 var(--atlas-sp-5);
+  font-size: var(--atlas-fs-body);
+  line-height: var(--atlas-lh-body);
+  color: var(--atlas-text);
+}
+
+.aonb__campo { display: block; }
+.aonb__campo > span {
+  display: block; margin-bottom: 6px;
+  font-size: var(--atlas-fs-sm);
+  color: var(--atlas-text-mut);
+}
+.aonb__campo input {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid var(--atlas-border);
+  background: color-mix(in srgb, var(--atlas-sunken-base) 45%, transparent);
+  color: var(--atlas-text-hi);
+  font: inherit;
+  font-size: var(--atlas-fs-body);
+}
+.aonb__campo input:focus {
+  outline: none;
+  border-color: var(--atlas-accent);
+  box-shadow: 0 0 0 3px var(--atlas-accent-soft);
+}
+
+/* Moeda: mostra um EXEMPLO em cada opção. "US$ 1.000,00" responde a
+   pergunta que o rótulo "Dólar" deixa em aberto — como vai ficar. */
+.aonb__opcoes { display: grid; gap: var(--atlas-sp-2); }
+.aonb__opcao {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center; gap: var(--atlas-sp-3);
+  padding: 11px 13px;
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid var(--atlas-border);
+  background: transparent;
+  color: var(--atlas-text);
+  font: inherit; text-align: left; cursor: pointer;
+  transition: border-color var(--atlas-dur-fast) var(--atlas-ease),
+              background var(--atlas-dur-fast) var(--atlas-ease);
+}
+.aonb__opcao:hover { border-color: var(--atlas-border-hi); }
+.aonb__opcao[aria-checked="true"] {
+  border-color: var(--atlas-accent);
+  background: var(--atlas-accent-soft);
+}
+.aonb__opcao-cod {
+  font-family: var(--atlas-font-mono);
+  font-size: var(--atlas-fs-sm); font-weight: 600;
+  color: var(--atlas-accent-text);
+}
+.aonb__opcao-nome { color: var(--atlas-text-hi); font-size: var(--atlas-fs-body); }
+.aonb__opcao-ex {
+  font-family: var(--atlas-font-mono);
+  font-size: var(--atlas-fs-sm);
+  color: var(--atlas-text-mut);
+}
+
+.aonb__nota {
+  margin: var(--atlas-sp-3) 0 0;
+  font-size: var(--atlas-fs-sm);
+  color: var(--atlas-text-mut);
+}
+
+.aonb__foot {
+  display: flex; align-items: center; gap: var(--atlas-sp-2);
+  margin-top: var(--atlas-sp-6);
+}
+.aonb__pular {
+  margin-right: auto;
+  padding: 8px 2px;
+  background: none; border: 0;
+  color: var(--atlas-text-mut);
+  font: inherit; font-size: var(--atlas-fs-sm);
+  cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.aonb__pular:hover { color: var(--atlas-text-hi); }
+.aonb__btn {
+  padding: 9px 16px;
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid var(--atlas-border-hi);
+  background: transparent;
+  color: var(--atlas-text);
+  font: inherit; font-size: var(--atlas-fs-sm); font-weight: 500;
+  cursor: pointer;
+}
+.aonb__btn:hover { color: var(--atlas-text-hi); }
+.aonb__btn--go {
+  border-color: transparent;
+  background: var(--atlas-accent);
+  color: var(--atlas-on-accent);
+  font-weight: 600;
+}
+.aonb__btn:focus-visible, .aonb__pular:focus-visible, .aonb__opcao:focus-visible {
+  outline: 2px solid var(--atlas-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .aonb__box { padding: var(--atlas-sp-6) var(--atlas-sp-4) var(--atlas-sp-5); }
+  .aonb__opcao { grid-template-columns: 38px 1fr; }
+  .aonb__opcao-ex { grid-column: 2; }
+}
+
+@media print { .aonb { display: none; } }
