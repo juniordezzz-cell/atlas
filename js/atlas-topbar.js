@@ -210,7 +210,7 @@
      ============================================================ */
 
   /* Leitor único do perfil, em core/settings.js. Esta função já foi uma
-     segunda cópia da leitura de HOLD_STATE_V2.config.nome_gestor — o
+     segunda cópia da leitura de atlas.hold.state.v2 → config.nome_gestor — o
      tipo de duplicata que faz um lugar mostrar o nome novo e o outro o
      antigo. Agora só delega. */
   function perfil() {

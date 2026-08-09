@@ -245,7 +245,7 @@
 
     /* ---------- Quem está usando o sistema ----------
        O nome do gestor NÃO é guardado aqui. Ele pertence às
-       configurações do módulo Hold (HOLD_STATE_V2.config.nome_gestor),
+       configurações do módulo Hold (atlas.hold.state.v2 → config.nome_gestor),
        que é onde a tela de Configurações grava — via o schema de
        core/atlas-module-settings.js.
 
@@ -257,7 +257,7 @@
     profile: function () {
       var nome = "";
       try {
-        var raw = localStorage.getItem("HOLD_STATE_V2");
+        var raw = localStorage.getItem("atlas.hold.state.v2");
         if (raw) nome = String((JSON.parse(raw).config || {}).nome_gestor || "").trim();
       } catch (e) { /* storage bloqueado: cai no padrão */ }
 

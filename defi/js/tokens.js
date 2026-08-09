@@ -32,7 +32,7 @@
 (function () {
   "use strict";
 
-  var KEY_OVERRIDE = "atlas_defi_token_overrides";
+  var KEY_OVERRIDE = "atlas.defi.tokens.v1";
 
   /* ------------------------------------------------------------
      Tabela curada.

@@ -13,8 +13,8 @@
    Cada módulo já lê as preferências dele de um lugar no
    localStorage. Em vez de reescrever os módulos, este arquivo
    grava EXATAMENTE no mesmo lugar. O Hold continua lendo
-   HOLD_STATE_V2.config, o Trade continua lendo
-   atlas.state.v1.prefs — eles nem sabem que a tela mudou.
+   atlas.hold.state.v2 -> config, o Trade continua lendo
+   atlas.trade.state.v1 → prefs — eles nem sabem que a tela mudou.
 
    Para adicionar uma opção nova: acrescente um campo no SCHEMA
    abaixo. A tela se monta sozinha. Nenhum HTML precisa mudar.
@@ -40,7 +40,7 @@
       label: "Hold",
       desc: "Investimento de longo prazo",
       icon: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="3.5"/>',
-      storage: { key: "HOLD_STATE_V2", path: "config" },
+      storage: { key: "atlas.hold.state.v2", path: "config" },
       fields: [
         { k: "nome_gestor", type: "text", def: "",
           label: "Nome do gestor",
@@ -64,7 +64,7 @@
       label: "Trade",
       desc: "Operações e ciclo de trade",
       icon: '<path d="M3 17l6-6 4 4 7-8"/><path d="M21 7v5M21 7h-5"/>',
-      storage: { key: "atlas.state.v1", path: "prefs" },
+      storage: { key: "atlas.trade.state.v1", path: "prefs" },
       fields: [
         { k: "operatorName", type: "text", def: "operador",
           label: "Nome do operador",
@@ -149,7 +149,7 @@
      inteiro (store, router, módulos) só para mexer no arquivo.
      ------------------------------------------------------------ */
 
-  var TRADE_KEY = "atlas.state.v1";
+  var TRADE_KEY = "atlas.trade.state.v1";
 
   function tradeArchiveCount() {
     var blob = readBlob(TRADE_KEY);

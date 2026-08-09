@@ -43,7 +43,7 @@
   if (!window.AtlasProviders) return;
 
   var URL_POOLS = "https://yields.llama.fi/pools";
-  var KEY_CACHE = "atlas_pools_registry_v1";
+  var KEY_CACHE = "atlas.defi.pools.v1";
 
   /* Chains que o ATLAS exibe, no nome que o DefiLlama usa ->
      nome que o ATLAS usa (a paleta do DeFi chama BSC de BNB). */

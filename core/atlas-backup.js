@@ -49,17 +49,29 @@
     /^HOLD_/             // HOLD_STATE_V2 · HOLD_SIDEBAR
   ];
 
-  var EXPLICIT = [
-    "atlas.settings.v1",
-    "atlas.wallets.v2",
-    "atlas.state.v1",
-    "atlas.theses.v1",
-    "atlas.movements.v1",
-    "atlas.future_studies.v1",
-    "atlas_defi_state_v3",
-    "atlas_rwa_state_v3",
-    "HOLD_STATE_V2"
-  ];
+  /* A lista explícita agora vem do REGISTRO ÚNICO de chaves
+     (core/atlas-storage.js), em vez de ser mantida à mão aqui.
+
+     Antes eram duas listas para sincronizar, e a daqui já estava
+     defasada: trazia atlas.state.v1, atlas_defi_state_v3,
+     atlas_rwa_state_v3 e HOLD_STATE_V2 — nomes que a migração do 3.6
+     aposentou. Uma chave nova continua coberta pelos PATTERNS, e
+     AtlasStorage.orphans() denuncia o que escapar dos dois. */
+  var EXPLICIT = (window.AtlasStorage && window.AtlasStorage.KEYS)
+    ? window.AtlasStorage.KEYS.slice()
+    : [
+        /* reserva, para o backup nunca depender de outro arquivo ter
+           carregado — se AtlasStorage faltar, o essencial ainda entra */
+        "atlas.settings.v1",
+        "atlas.wallets.v2",
+        "atlas.theses.v1",
+        "atlas.movements.v1",
+        "atlas.future_studies.v1",
+        "atlas.hold.state.v2",
+        "atlas.trade.state.v1",
+        "atlas.defi.state.v3",
+        "atlas.rwa.state.v3"
+      ];
 
   /* Caches são descartáveis: o site refaz sozinho na primeira
      conexão. Ficam de fora para o arquivo não inchar à toa. */
@@ -94,20 +106,34 @@
     return false;
   }
 
-  /* Rótulo humano por chave — usado no resumo da tela */
+  /* Rótulo humano por chave — usado no resumo da tela.
+     Os nomes antigos continuam aqui: um arquivo de backup EXPORTADO
+     antes do 3.6 traz as chaves velhas, e ao inspecioná-lo o usuário
+     precisa entender o que está restaurando. */
   var LABELS = {
+    /* convenção atual */
     "atlas.settings.v1":       "Configurações",
     "atlas.wallets.v2":        "Carteiras",
-    "atlas.state.v1":          "Trade",
     "atlas.theses.v1":         "Teses",
     "atlas.movements.v1":      "Movimentações",
     "atlas.future_studies.v1": "Estudos",
+    "atlas.intro.seen.v1":     "Apresentação já vista",
+    "atlas.hold.state.v2":     "Hold",
+    "atlas.hold.wallet.v1":    "Hold · carteira local",
+    "atlas.trade.state.v1":    "Trade",
+    "atlas.defi.state.v3":     "DeFi",
+    "atlas.defi.wallet.v1":    "DeFi · carteira local",
+    "atlas.defi.tokens.v1":    "DeFi · tokens",
+    "atlas.defi.pools.v1":     "DeFi · catálogo de pools",
+    "atlas.rwa.state.v3":      "RWA",
     "atlas.assets.cg_key.v1":  "Chave da API CoinGecko",
-    "atlas_defi_state_v3":     "DeFi",
+    /* nomes aposentados — só aparecem em arquivos antigos */
+    "atlas.state.v1":          "Trade (nome antigo)",
+    "atlas_defi_state_v3":     "DeFi (nome antigo)",
     "atlas_defi_state_v2":     "DeFi (versão antiga)",
-    "atlas_rwa_state_v3":      "RWA",
+    "atlas_rwa_state_v3":      "RWA (nome antigo)",
     "atlas_rwa_state_v2":      "RWA (versão antiga)",
-    "HOLD_STATE_V2":           "Hold",
+    "HOLD_STATE_V2":           "Hold (nome antigo)",
     "HOLD_SIDEBAR":            "Hold · barra lateral",
     "atlas:currency":          "Moeda",
     "atlas:movement":          "Movimento",

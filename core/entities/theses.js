@@ -140,7 +140,7 @@
 
   function migrateHold() {
     if (state.meta.migrated.hold_v2) return;
-    var hold = readJSON("HOLD_STATE_V2");
+    var hold = readJSON("atlas.hold.state.v2");
     if (!hold) { state.meta.migrated.hold_v2 = true; rawSet(KEY, JSON.stringify(state)); return; }
 
     var tick = {};
@@ -201,7 +201,7 @@
 
   function migrateTrade() {
     if (state.meta.migrated.trade_v1) return;
-    var trade = readJSON("atlas.state.v1");
+    var trade = readJSON("atlas.trade.state.v1");
     if (!trade || !trade.data) { state.meta.migrated.trade_v1 = true; rawSet(KEY, JSON.stringify(state)); return; }
 
     var mapStatus = { futuro: "planejada", andamento: "andamento", concluido: "concluida" };

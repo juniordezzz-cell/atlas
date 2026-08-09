@@ -6,7 +6,7 @@
    ============================================================ */
 (function () {
   "use strict";
-  var KEY = "atlas_rwa_state_v3";
+  var KEY = "atlas.rwa.state.v3";
 
   /* ---------- Regimes de mercado (core) ---------- */
   var REGIMES = {

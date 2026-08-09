@@ -12,7 +12,12 @@
 (function (ATLAS) {
   "use strict";
 
-  var STATE_KEY = "state.v1";
+  /* O store do Trade prefixa com "atlas.", então a chave final é
+     "atlas.trade.state.v1". Era "state.v1" → "atlas.state.v1", nome que
+     parecia estado GLOBAL do sistema e não do módulo. Renomear aqui é o
+     que fecha a convenção atlas.<módulo>.<coisa>.v<N>; a migração do
+     dado já gravado está em core/atlas-storage.js. */
+  var STATE_KEY = "trade.state.v1";
   var subscribers = [];
   var state = null;
 

@@ -21,7 +21,10 @@
         document.body.appendChild(el);
       }
       el.innerHTML = "<b>Erro no módulo RWA:</b> " + String(msg) +
-        ' &nbsp;·&nbsp; <a href="#" style="color:#FCA5A5" onclick="try{localStorage.removeItem(\'atlas_rwa_state_v3\')}catch(e){};location.reload();return false;">Resetar dados e recarregar</a>';
+        /* A chave TEM de acompanhar o rename do 3.6: este é o caminho de
+           recuperação de quem já está com a tela quebrada. Apagar o nome
+           antigo não faria nada e o usuário ficaria preso no erro. */
+        ' &nbsp;·&nbsp; <a href="#" style="color:#FCA5A5" onclick="try{localStorage.removeItem(\'atlas.rwa.state.v3\')}catch(e){};location.reload();return false;">Resetar dados e recarregar</a>';
     } catch (e) {}
   }
   window.addEventListener("error", function (e) { panic(e.message || "erro desconhecido"); });

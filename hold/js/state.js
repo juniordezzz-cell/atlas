@@ -11,7 +11,7 @@
 (function () {
   "use strict";
 
-  var LS_KEY = "HOLD_STATE_V2";
+  var LS_KEY = "atlas.hold.state.v2";
 
   /* ---- Ponte com a Central de Carteiras (AtlasWallets) ----
      As POSIÇÕES do Hold passam a pertencer a uma carteira (o dinheiro
@@ -22,7 +22,7 @@
      persiste. O Hold é SPA e re-renderiza sem recarregar, então uma
      variável de memória "funcionava" durante a sessão e sumia no F5 —
      era um bug silencioso, mais difícil de notar que o do DeFi. */
-  var KEY_LOCAL = "atlas_hold_local_wallet";
+  var KEY_LOCAL = "atlas.hold.wallet.v1";
   var localWalletId = (function () {
     try { return localStorage.getItem(KEY_LOCAL) || null; } catch (e) { return null; }
   })();

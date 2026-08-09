@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  var KEY = "atlas_defi_state_v3";
+  var KEY = "atlas.defi.state.v3";
   var KEY_OLD = "atlas_defi_state_v2"; // migração de dados existentes
 
   /* ---- Ponte com a Central de Carteiras (AtlasWallets) ----
@@ -20,7 +20,7 @@
      depois de trocar — se isto fosse só uma variável de memória, a
      seleção morreria no próprio reload e a Local nunca poderia ser
      escolhida. Foi exatamente o bug. */
-  var KEY_LOCAL = "atlas_defi_local_wallet";
+  var KEY_LOCAL = "atlas.defi.wallet.v1";
   var _localWalletId = (function () {
     try { return localStorage.getItem(KEY_LOCAL) || null; } catch (e) { return null; }
   })();
