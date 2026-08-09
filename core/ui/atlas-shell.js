@@ -53,8 +53,9 @@
   // Profundidade da página → caminho correto para o dashboard e para os assets.
   // Módulos vivem um nível abaixo da raiz (hold/, trade/, defi/, RWA/, academy/);
   // o Dashboard raiz está na própria raiz.
-  var BACK_HREF  = "../dashboard.html";
-  var ORACULO_AVATAR = (MODULE === "atlas") ? "assets/atena.webp" : "../assets/atena.webp";
+  var RAIZ       = (MODULE === "atlas") ? "" : "../";
+  var BACK_HREF  = RAIZ + "dashboard.html";
+  var ORACULO_AVATAR = RAIZ + "assets/atena.webp";
 
   function t(s) { return (window.AtlasI18n ? AtlasI18n.t(s) : s); }
   // Escolhe a frase pronta conforme o idioma ativo (respostas dinâmicas do Oráculo)
@@ -98,6 +99,38 @@
   //   hold/academy → .sidebar    ·  RWA → #sidebar    ·  trade → nav.nav
   // O DeFi usa barra horizontal no topo, não tem sidebar: nesse caso o
   // botão nativo dele continua valendo (ver CSS).
+
+  /* ============================================================
+     OS DESTINOS DO ATLAS — uma definição, quinze páginas
+     ------------------------------------------------------------
+     Estes oito itens já estiveram escritos por extenso em três HTMLs
+     (com o SVG inteiro de cada ícone), depois viveram em
+     js/atlas-nav.js, que só as páginas da raiz carregam. A paleta de
+     comandos precisa deles em TODO módulo, e o shell é a única camada
+     que roda em todo lugar — então é aqui que a lista mora.
+
+     js/atlas-nav.js consome daqui para desenhar a sidebar.
+     ============================================================ */
+
+  var DESTINOS = [
+    { id: "dashboard", label: "Dashboard", href: "dashboard.html",
+      icon: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>' },
+    { id: "hold", label: "Hold", href: "hold/index.html",
+      icon: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="3.5"/>' },
+    { id: "trade", label: "Trade", href: "trade/index.html",
+      icon: '<path d="M3 17l6-6 4 4 7-8"/><path d="M21 7v5M21 7h-5"/>' },
+    { id: "defi", label: "DeFi", href: "defi/index.html",
+      icon: '<path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/>' },
+    { id: "rwa", label: "RWA", href: "RWA/index.html",
+      icon: '<path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>' },
+    { id: "academy", label: "Academy", href: "academy/index.html",
+      icon: '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"/>' },
+    { id: "relatorios", label: "Relatórios", href: "relatorios.html",
+      icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>' },
+    { id: "configuracoes", label: "Configurações", href: "configuracoes.html",
+      icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 12.6a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.4 6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8"/>' }
+  ];
+
   var SIDEBAR_SELECTORS = [
     "#sidebar", ".sidebar", "aside.side", ".rail", "nav.nav", ".nav"
   ];
@@ -568,6 +601,37 @@
     Array.prototype.forEach.call(abertos, function (n) { n.removeAttribute("data-open"); });
   }
 
+
+  /* ============================================================
+     3d. A DICA DO Ctrl+K
+     ------------------------------------------------------------
+     Atalho que ninguém descobre é atalho que não existe. Um botão
+     discreto na barra abre a mesma paleta e, de quebra, ENSINA a
+     tecla — que é o trabalho de verdade dele. Some no celular,
+     onde não há teclado para o atalho.
+     ============================================================ */
+
+  function mountPaletteHint() {
+    if (!window.AtlasPalette) return;
+    if (document.querySelector('[data-atlas-ui="palettehint"]')) return;
+    var barra = findTopbar();
+    if (!barra) return;
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "atlas-cmdk";
+    btn.setAttribute("data-atlas-ui", "palettehint");
+    btn.setAttribute("aria-label", t("Abrir comandos"));
+    btn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' +
+      "<kbd>Ctrl</kbd><kbd>K</kbd>";
+    btn.addEventListener("click", function () { AtlasPalette.open(); });
+
+    var sino = barra.querySelector('[data-atlas-ui="bell"]');
+    if (sino) barra.insertBefore(btn, sino); else barra.appendChild(btn);
+  }
+
   function mountThemeToggle() {
     if (!window.AtlasSettings) return;              // sem estado, sem botão
     if (document.querySelector('[data-atlas-ui="theme"]')) return;
@@ -598,6 +662,7 @@
     if (!document.body) return;
 
     mountSkipLink();
+    mountPaletteHint();
     mountBell();
     mountThemeToggle();
 
@@ -811,7 +876,14 @@
   window.AtlasShell = {
     module: function () { return MODULE; },
     label: function () { return LABEL; },
-    remount: mount
+    remount: mount,
+    /* Cópia, não a lista viva: quem consome não tem como alterar o
+       menu de todo mundo por descuido. */
+    destinos: function () { return DESTINOS.slice(); },
+    /* Caminho relativo daqui para a raiz do ATLAS. Dentro de um módulo
+       é "../", na raiz é "". A paleta precisa disto para montar links
+       que funcionem dos dois lugares. */
+    raiz: function () { return RAIZ; }
   };
 
   window.AtlasOraculo = {

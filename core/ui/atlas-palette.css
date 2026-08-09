@@ -1,0 +1,124 @@
+/* ============================================================
+   ATLAS · core/ui/atlas-palette.css
+   Paleta de comandos (Ctrl+K).
+
+   Sem cor própria: tudo vem dos tokens do tema, então nasce certa
+   no claro e no escuro e herda o sotaque do módulo.
+   ============================================================ */
+.apal {
+  position: fixed; inset: 0; z-index: 6000;
+  display: flex; justify-content: center;
+  /* Alto, não centrado: a paleta é ferramenta de passagem e o olho
+     já está no topo da tela quando o atalho é apertado. */
+  padding: 12vh var(--atlas-sp-5) var(--atlas-sp-5);
+}
+.apal__scrim {
+  position: absolute; inset: 0;
+  background: var(--atlas-scrim, rgba(4, 7, 14, 0.72));
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.apal__box {
+  position: relative;
+  width: 100%; max-width: 560px;
+  max-height: 70vh;
+  display: flex; flex-direction: column;
+  border-radius: var(--atlas-r-lg);
+  border: 1px solid var(--atlas-border-hi);
+  background: var(--atlas-surface-solid);
+  box-shadow: var(--atlas-sh-3);
+  overflow: hidden;
+  animation: apalEntra var(--atlas-dur-fast) var(--atlas-ease) both;
+}
+@keyframes apalEntra {
+  from { opacity: 0; transform: translateY(-8px) scale(0.99); }
+}
+@media (prefers-reduced-motion: reduce) { .apal__box { animation: none; } }
+
+.apal__campo {
+  display: flex; align-items: center; gap: var(--atlas-sp-3);
+  padding: var(--atlas-sp-4) var(--atlas-sp-5);
+  border-bottom: 1px solid var(--atlas-hairline);
+  flex: none;
+}
+.apal__campo svg { width: 18px; height: 18px; flex: none; color: var(--atlas-text-mut); }
+.apal__campo input {
+  flex: 1; min-width: 0;
+  border: 0; background: none; outline: none;
+  font: inherit; font-size: 1rem;
+  color: var(--atlas-text-hi);
+}
+.apal__campo input::placeholder { color: var(--atlas-text-faint); }
+
+.apal__list { overflow-y: auto; padding: var(--atlas-sp-2) var(--atlas-sp-2) var(--atlas-sp-3); }
+
+.apal__grupo {
+  padding: var(--atlas-sp-3) var(--atlas-sp-3) var(--atlas-sp-1);
+  font-size: var(--atlas-fs-label);
+  font-weight: 600;
+  letter-spacing: var(--atlas-track-label);
+  text-transform: uppercase;
+  color: var(--atlas-text-faint);
+}
+.apal__item {
+  display: flex; align-items: center; gap: var(--atlas-sp-3);
+  padding: 9px var(--atlas-sp-3);
+  border-radius: var(--atlas-r-sm);
+  cursor: pointer;
+}
+.apal__item svg { width: 16px; height: 16px; flex: none; color: var(--atlas-text-mut); }
+.apal__titulo {
+  flex: 1; min-width: 0;
+  font-size: var(--atlas-fs-body);
+  color: var(--atlas-text-hi);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.apal__nota {
+  flex: none;
+  font-size: var(--atlas-fs-sm);
+  color: var(--atlas-text-mut);
+}
+/* Só a marcação de teclado acende. Hover NÃO pinta: o mouse passeando
+   pela lista competiria com a seta do teclado por "qual é a escolhida",
+   e a paleta é primeiro um instrumento de teclado. */
+.apal__item.is-on {
+  background: var(--atlas-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--atlas-accent-line);
+}
+.apal__item.is-on svg { color: var(--atlas-accent-text); }
+
+.apal__vazio {
+  padding: var(--atlas-sp-6) var(--atlas-sp-3);
+  text-align: center;
+  font-size: var(--atlas-fs-sm);
+  color: var(--atlas-text-mut);
+}
+
+.apal__pe {
+  flex: none;
+  display: flex; gap: var(--atlas-sp-5);
+  padding: var(--atlas-sp-2) var(--atlas-sp-5);
+  border-top: 1px solid var(--atlas-hairline);
+  font-size: var(--atlas-fs-label);
+  color: var(--atlas-text-faint);
+}
+.apal kbd {
+  display: inline-block;
+  min-width: 16px;
+  padding: 1px 5px;
+  margin-right: 3px;
+  border-radius: 5px;
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-inner);
+  font-family: var(--atlas-font-mono);
+  font-size: 10px;
+  color: var(--atlas-text-mut);
+}
+.apal__campo kbd { flex: none; margin: 0; }
+
+@media (max-width: 560px) {
+  .apal { padding: 6vh var(--atlas-sp-3) var(--atlas-sp-3); }
+  .apal__pe { display: none; }
+}
+
+@media print { .apal { display: none; } }

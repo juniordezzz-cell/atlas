@@ -968,3 +968,45 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 .atlas-bell__empty span { font-size: var(--atlas-fs-sm); color: var(--atlas-text-mut); line-height: 1.5; }
 
 @media print { .atlas-bell { display: none; } }
+
+/* ============================================================
+   DICA DO Ctrl+K
+   Atalho que ninguém descobre é atalho que não existe. Este botão
+   abre a paleta e ensina a tecla — é essa a função dele.
+   ============================================================ */
+.atlas-cmdk {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--atlas-r-sm);
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-surface);
+  color: var(--atlas-text-mut);
+  font: inherit;
+  cursor: pointer;
+  transition: color var(--atlas-dur-fast) var(--atlas-ease),
+              border-color var(--atlas-dur-fast) var(--atlas-ease),
+              background var(--atlas-dur-fast) var(--atlas-ease);
+}
+.atlas-cmdk:hover {
+  color: var(--atlas-text-hi);
+  border-color: var(--atlas-border-hi);
+  background: var(--atlas-surface-hi);
+}
+.atlas-cmdk:focus-visible { outline: 2px solid var(--atlas-accent); outline-offset: 2px; }
+.atlas-cmdk svg { width: 15px; height: 15px; }
+.atlas-cmdk kbd {
+  padding: 1px 5px;
+  border-radius: 5px;
+  border: 1px solid var(--atlas-border);
+  background: var(--atlas-inner);
+  font-family: var(--atlas-font-mono);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* Sem teclado não há atalho a ensinar, e a barra do celular é
+   estreita demais para gastar espaço com isto. */
+@media (max-width: 720px) { .atlas-cmdk { display: none; } }
+@media print { .atlas-cmdk { display: none; } }

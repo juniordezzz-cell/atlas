@@ -89,13 +89,14 @@ atlas/
 | `core/ui/atlas-shell.js` | Oráculo e "Voltar ao Atlas", iguais em todo lugar | `AtlasShell`, `AtlasOraculo` |
 | `core/ui/atlas-onboarding.js` | Os três passos da primeira sessão | `AtlasOnboarding` |
 | `core/ui/atlas-flash.js` | Pisca o valor que mudou (verde sobe, vermelho desce) | `AtlasFlash` |
+| `core/ui/atlas-palette.js` | Paleta de comandos (Ctrl+K): ir, buscar, executar | `AtlasPalette` |
 | `core/ui/atlas-chart-theme.js` | Ponte de tema para dentro do `<canvas>` | `AtlasChartTheme` |
 | `core/ui/atlas-calendar.js` | Calendário compartilhado | `AtlasCalendar` |
 | `core/providers/*` | CoinGecko e DefiLlama por trás de um registro | `AtlasProviders` |
 | `wallets/*` | Carteiras: criar, renomear, excluir, ordenar, ledger | `AtlasWallets` |
 | `js/atlas-movements.js` | Livro-razão de movimentos por carteira | `AtlasMovements` |
 | `js/atlas-consolidation.js` | Soma os quatro módulos para o Dashboard | `AtlasConsolidation` |
-| `js/atlas-nav.js` | Navegação móvel do shell da raiz | `AtlasNav` |
+| `js/atlas-nav.js` | Navegação móvel do shell da raiz (consome `AtlasShell.destinos()`) | `AtlasNav` |
 | `js/atlas-topbar.js` | Menus da barra superior (apps, alertas, perfil) | `AtlasTopbar` |
 
 ### Ordem de carga obrigatória em cada HTML
