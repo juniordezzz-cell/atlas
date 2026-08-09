@@ -57,10 +57,14 @@ atlas/
 │
 ├── hold/                 Módulo de investimento de longo prazo   (SPA)
 ├── trade/                Módulo de operações                     (SPA)
-├── defi/                 Módulo de pools, staking e lending      (MPA)
+├── defi/                 Módulo de pools, staking e lending      (MPA ¹)
 ├── RWA/                  Módulo de ativos do mundo real          (SPA)
 └── academy/              Central de conhecimento (teses)         (SPA)
 ```
+
+> ¹ O DeFi é o único módulo multipágina, **por decisão** — não por atraso. O
+> porquê, o que custa e os três critérios para revisitar estão em
+> [`defi/README.md`](defi/README.md#por-que-este-módulo-é-multipágina-e-os-outros-não).
 
 ---
 

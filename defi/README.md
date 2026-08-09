@@ -30,6 +30,50 @@ O botão "Atlas" no canto superior direito volta para `../index.html`.
 
 ---
 
+## Por que este módulo é multipágina (e os outros não)
+
+**Decisão de arquitetura, tomada conscientemente.** O DeFi é o único módulo do
+ATLAS em MPA: sete páginas HTML, cada uma com o próprio script de entrada. Hold,
+Trade, RWA e Academy são SPA de hash (`#/rota`), trocam de tela sem recarregar.
+
+### O que custa manter assim
+
+- **Navegar entre as sete telas recarrega a página.** Flash branco, perda da
+  posição de rolagem, e os scripts compartilhados são reavaliados a cada vez.
+- **Trocar de carteira também recarrega** (`reload: true` em
+  `js/components.js`). É o único `reload` que sobrou no sistema — o do Dashboard
+  foi removido. Aqui ele é *correto*: os dados do DeFi são particionados por
+  carteira (`DeFiStore.byWallet[id]`), então trocar muda pools, staking,
+  lending, KPIs e gráficos de uma vez.
+
+### O que custaria converter
+
+Tornar o módulo reativo exige extrair a renderização de **sete** arquivos de
+entrada (`dashboard.js`, `pools.js`, `pool.js`, `staking.js`, `lending.js`,
+`analytics.js`, `history.js`, `teses.js`) para funções re-executáveis, mais um
+roteador e a unificação dos sete `<head>`. É refatoração de módulo inteiro, com
+risco espalhado por toda a superfície que o usuário mais usa.
+
+### Por que fica como está
+
+Recarregar **é** o mecanismo de troca de contexto de uma aplicação
+multipágina — não é gambiarra, é a arquitetura funcionando. O custo é o flash;
+o que não se pode perder é o número certo. E o módulo hoje está correto.
+
+### Quando revisitar
+
+Converta quando **uma** destas passar a valer:
+
+1. o usuário reclamar da navegação entre as telas do DeFi (sintoma real, não
+   hipótese);
+2. uma tela do DeFi precisar de atualização ao vivo (preço em tempo real,
+   posição mudando sozinha) — aí o reload deixa de ser suficiente;
+3. o módulo passar a compartilhar estado de tela com outro módulo.
+
+Até lá, a consistência com os outros três não justifica o risco.
+
+---
+
 ## Arquitetura
 
 Totalmente modular. Cada página tem HTML próprio, CSS próprio e JS próprio,
