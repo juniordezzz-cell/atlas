@@ -147,12 +147,25 @@
        paleta chegava ao módulo mas não a nenhuma tela dentro dele.
        Só links de navegação, só do mesmo diretório, e a página atual
        fica de fora — ela não é destino. */
+
+    /* A sidebar do shell da raiz também casa com os seletores de
+       navegação, e os oito destinos dela JÁ estão no grupo "Ir para" —
+       sem esta lista, Relatórios e Configurações apareciam duas vezes
+       na mesma paleta. */
+    var jaSaoDestino = {};
+    if (window.AtlasShell && AtlasShell.destinos) {
+      AtlasShell.destinos().forEach(function (d) {
+        jaSaoDestino[d.href] = 1;
+        jaSaoDestino[d.href.split("/").pop()] = 1;
+      });
+    }
+
     containersDeNav().forEach(function (nav) {
       Array.prototype.forEach.call(nav.querySelectorAll("a[href]"), function (a) {
         var href = a.getAttribute("href");
         if (!href || !/\.html$/.test(href)) return;
         if (href.indexOf("/") >= 0 || href.indexOf(":") >= 0) return;   // outro módulo ou externo
-        if (href === aquiArquivo) return;
+        if (href === aquiArquivo || jaSaoDestino[href]) return;
         registrar(href, a.textContent, function () { location.href = href; });
       });
     });
