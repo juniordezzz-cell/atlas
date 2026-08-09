@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ATLAS — sistema operacional financeiro para patrimônio em cripto e ativos reais. Hold, Trade, DeFi e RWA sob um painel só, com toda decisão nascendo de uma tese.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ATLAS">
+  <title>ATLAS — Sistema operacional financeiro</title>
+
+  <meta property="og:title" content="ATLAS — Sistema operacional financeiro">
+  <meta property="og:description" content="Hold, Trade, DeFi e RWA sob um painel só. Toda decisão nasce de uma tese, e os dados são seus.">
+  <meta property="og:type" content="website">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/landing.css">
+
+  <link rel="stylesheet" href="themes/atlas-theme.css">
+  <link rel="stylesheet" href="themes/atlas-effects.css">
+  <link rel="stylesheet" href="themes/atlas-print.css" media="print">
+  <script src="core/atlas-storage.js"></script>
+  <script src="core/settings.js"></script>
+  <script src="core/i18n.js"></script>
+  <script src="core/currency.js"></script>
+  <script src="core/atlas-boot.js"></script>
+  <script src="core/atlas-pwa.js"></script>
+</head>
+<body class="lp-body">
+
+<!-- ============================================================
+     ESTA PÁGINA NÃO VENDE NADA QUE NÃO EXISTE.
+
+     Cada afirmação abaixo corresponde a algo que está implementado
+     e verificável no produto: os quatro módulos, a entidade de
+     teses compartilhada, as carteiras global/isolada, o
+     armazenamento local com backup, a exportação em CSV e PDF, o
+     uso offline. Nenhuma métrica inventada, nenhum depoimento
+     fabricado, nenhum "usado por milhares".
+
+     Landing de produto financeiro que exagera é a coisa mais fácil
+     de escrever e a mais cara de sustentar.
+     ============================================================ -->
+
+<header class="lp-nav">
+  <a class="lp-brand" href="landing.html" aria-label="ATLAS — início">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="7" fill="var(--atlas-bg-deep)"/>
+      <g fill="none" stroke="var(--atlas-accent)" stroke-width="2.4" stroke-linecap="round">
+        <circle cx="16" cy="16" r="9"/>
+        <path d="M16 7a17 17 0 0 0 0 18M16 7a17 17 0 0 1 0 18M7 16h18"/>
+      </g>
+    </svg>
+    <span>ATLAS</span>
+  </a>
+  <nav class="lp-nav__links" aria-label="Seções">
+    <a href="#modulos">Módulos</a>
+    <a href="#metodo">Método</a>
+    <a href="#dados">Seus dados</a>
+  </nav>
+  <a class="lp-btn lp-btn--go" href="login.html">Entrar</a>
+</header>
+
+<main class="lp-main">
+
+  <!-- ---------- Herói ---------- -->
+  <section class="lp-hero">
+    <p class="lp-eyebrow">Sistema operacional financeiro</p>
+    <h1 class="lp-title">
+      Quatro frentes de investimento.<br>
+      <span class="lp-title__accent">Um patrimônio só.</span>
+    </h1>
+    <p class="lp-lead">
+      Hold, Trade, DeFi e RWA vivem em módulos separados porque exigem
+      disciplinas diferentes — e somam num número só, porque é assim que
+      o seu patrimônio existe de verdade.
+    </p>
+    <div class="lp-cta">
+      <a class="lp-btn lp-btn--go lp-btn--lg" href="login.html">Abrir o ATLAS</a>
+      <a class="lp-btn lp-btn--lg" href="#modulos">Ver o que ele faz</a>
+    </div>
+    <p class="lp-note">
+      Roda no seu navegador. Sem cadastro, sem servidor, sem mensalidade
+      para começar.
+    </p>
+  </section>
+
+  <!-- ---------- Módulos ---------- -->
+  <section class="lp-sec" id="modulos">
+    <h2 class="lp-sec__title">Cada disciplina no seu lugar</h2>
+    <p class="lp-sec__lead">
+      Misturar posição de longo prazo com operação de swing na mesma tela
+      é como uma carteira boa vira uma decisão ruim. Aqui elas convivem
+      sem se confundir.
+    </p>
+
+    <div class="lp-grid">
+      <article class="lp-card" data-mod="hold">
+        <span class="lp-card__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="3.5"/></svg>
+        </span>
+        <h3>Hold</h3>
+        <p>Posições de longo prazo com a tese que justifica cada uma, convicção declarada e histórico de decisão.</p>
+      </article>
+
+      <article class="lp-card" data-mod="trade">
+        <span class="lp-card__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 17l6-6 4 4 7-8"/><path d="M21 7v5M21 7h-5"/></svg>
+        </span>
+        <h3>Trade</h3>
+        <p>O ciclo completo: estudo, registro de decisão e operação. Winrate e resultado saem do que você registrou, não de estimativa.</p>
+      </article>
+
+      <article class="lp-card" data-mod="defi">
+        <span class="lp-card__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/></svg>
+        </span>
+        <h3>DeFi</h3>
+        <p>Pools, staking e lending com APR realizado, diário de posição e histórico do que foi encerrado — e por quê.</p>
+      </article>
+
+      <article class="lp-card" data-mod="rwa">
+        <span class="lp-card__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+        </span>
+        <h3>RWA</h3>
+        <p>Ativos do mundo real, leitura de ambiente macro e um motor de risco que aponta concentração antes de ela doer.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ---------- Método ---------- -->
+  <section class="lp-sec lp-sec--alt" id="metodo">
+    <h2 class="lp-sec__title">Toda decisão nasce de uma tese</h2>
+    <p class="lp-sec__lead">
+      É a regra que organiza o sistema inteiro. Comprar sem tese é
+      apostar; o ATLAS torna a tese o passo natural, não a burocracia.
+    </p>
+
+    <ol class="lp-passos">
+      <li>
+        <span class="lp-passo__n">1</span>
+        <h3>Você escreve a tese</h3>
+        <p>Dentro do módulo, junto da posição. Ativo, argumento e o que precisaria acontecer para você mudar de ideia.</p>
+      </li>
+      <li>
+        <span class="lp-passo__n">2</span>
+        <h3>O sistema cobra</h3>
+        <p>Tese aberta há mais de 72 horas vira alerta. Decisão adiada é o problema que o ATLAS existe para combater.</p>
+      </li>
+      <li>
+        <span class="lp-passo__n">3</span>
+        <h3>Ela vira acervo</h3>
+        <p>Ao concluir, a tese vai para o Academy e pode ser reaberta — gerando nova versão, sem perder o histórico.</p>
+      </li>
+    </ol>
+
+    <p class="lp-honesto">
+      <strong>O Oráculo não prevê mercado.</strong> Ele lê os seus dados —
+      patrimônio, resultado, pendências, fluxo — e responde com número, não
+      com palpite. Um assistente que adivinha preço é um gerador de texto
+      com cara de consultor.
+    </p>
+  </section>
+
+  <!-- ---------- Dados ---------- -->
+  <section class="lp-sec" id="dados">
+    <h2 class="lp-sec__title">Os dados são seus, literalmente</h2>
+
+    <div class="lp-grid lp-grid--3">
+      <article class="lp-card">
+        <h3>Ficam no seu navegador</h3>
+        <p>Não existe servidor guardando o seu patrimônio, porque não existe servidor. Nada sai da sua máquina sem você mandar.</p>
+      </article>
+      <article class="lp-card">
+        <h3>Saem quando você quiser</h3>
+        <p>Backup completo em <code>.json</code>, relatórios em CSV para a planilha e PDF para entregar. Sem formato preso.</p>
+      </article>
+      <article class="lp-card">
+        <h3>Abrem sem internet</h3>
+        <p>Instale como aplicativo e o ATLAS abre no avião, no elevador, no interior. Conexão só é preciso para cotação.</p>
+      </article>
+    </div>
+
+    <p class="lp-honesto lp-honesto--aviso">
+      <strong>E o que isso custa:</strong> dado no navegador some se você
+      limpar os dados de navegação, formatar a máquina ou trocar de
+      computador. Por isso o backup existe — e por isso ele fica a um
+      clique, não escondido.
+    </p>
+  </section>
+
+  <!-- ---------- Fechamento ---------- -->
+  <section class="lp-fim">
+    <h2>Comece com uma posição. O total se consolida sozinho.</h2>
+    <a class="lp-btn lp-btn--go lp-btn--lg" href="login.html">Abrir o ATLAS</a>
+  </section>
+</main>
+
+<footer class="lp-rodape">
+  <span>ATLAS · sistema operacional financeiro</span>
+  <span class="lp-rodape__nota">
+    Ferramenta de organização e registro. Não é recomendação de
+    investimento — a decisão é sempre sua.
+  </span>
+</footer>
+
+</body>
+</html>

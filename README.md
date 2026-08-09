@@ -31,6 +31,9 @@ Depois acesse `http://localhost:8777`.
 ```
 index.html  →  boas-vindas.html  →  login.html  →  dashboard.html
    boot          apresentação        entrada        painel consolidado
+
+landing.html — página pública, fora do fluxo. Explica o produto para
+quem ainda não entrou; o login aponta para ela.
 ```
 
 > O login é **simulado**: qualquer submit entra. Autenticação real é uma etapa
@@ -45,6 +48,7 @@ atlas/
 ├── index.html            Boot animado
 ├── boas-vindas.html      Apresentação
 ├── login.html            Entrada (simulada)
+├── landing.html          Página pública (o que o ATLAS é e faz)
 ├── dashboard.html        Painel consolidado dos quatro módulos
 ├── relatorios.html       Relatórios por carteira
 ├── configuracoes.html    Preferências, backup e restauração

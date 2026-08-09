@@ -48,11 +48,18 @@
         <input type="password" id="senha" placeholder="••••••••••" autocomplete="current-password">
       </label>
 
-      <a href="#" class="forgot">Esqueceu sua senha?</a>
+      <!-- "Esqueceu sua senha?" apontava para href="#". Enquanto o
+           login é simulado (qualquer submit entra) e não há
+           autenticação real, não existe senha a recuperar: o link
+           prometia um fluxo inexistente. Volta junto com o item 4.1. -->
 
       <button type="submit" class="btn-entrar">Entrar</button>
 
-      <p class="signup">Não tem conta? <a href="#">Cadastre-se</a></p>
+      <!-- O "Cadastre-se" apontava para href="#": um link que promete
+           uma tela e não leva a lugar nenhum. Enquanto não há
+           autenticação real (item 4.1), ele aponta para a página que
+           explica o produto — que é o que alguém sem conta procura. -->
+      <p class="signup">Primeira vez por aqui? <a href="landing.html">Conheça o ATLAS</a></p>
     </form>
   </div>
 
