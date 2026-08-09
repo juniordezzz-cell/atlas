@@ -326,7 +326,7 @@ h1, h2, h3, h4 { font-family: var(--font-display); color: var(--text-hi); font-w
   background: var(--surface); border: 1px solid var(--glass-border); color: var(--blue-400-text);
 }
 .empty-art svg { width: 34px; height: 34px; }
-.empty h3 { font-size: 18px; }
+.empty h3, .empty h2 { font-size: 18px; font-weight: 600; margin: 0; letter-spacing: 0; }
 .empty p { color: var(--text-mut); font-size: 14px; max-width: 380px; }
 
 /* ============================================================

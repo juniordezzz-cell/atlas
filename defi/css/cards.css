@@ -14,7 +14,9 @@
 }
 .panel-pad { padding: 22px; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.panel-head h3 { font-size: 15.5px; }
+/* O título do painel virou <h2> pela árvore de títulos (item 4.10);
+   a medida continua a mesma. */
+.panel-head h3, .panel-head h2 { font-size: 15.5px; font-weight: 600; margin: 0; letter-spacing: 0; }
 .panel-head .eyebrow { margin-bottom: 3px; }
 
 /* ============================================================

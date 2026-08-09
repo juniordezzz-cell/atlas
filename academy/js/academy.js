@@ -127,7 +127,7 @@
 
     var recent = T.all().slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 5);
     var recentHtml = recent.length ? recent.map(thesisRow).join("") :
-      '<div class="empty"><h3>Nenhuma tese ainda</h3><p>Crie teses nos módulos Hold, Trade ou DeFi — elas aparecem aqui automaticamente.</p></div>';
+      '<div class="empty"><h2>Nenhuma tese ainda</h2><p>Crie teses nos módulos Hold, Trade ou DeFi — elas aparecem aqui automaticamente.</p></div>';
 
     return '<div class="grid g-3">' + cards + '</div>' +
       '<div class="section-title">Atividade recente</div>' + recentHtml;
@@ -149,7 +149,7 @@
   }
 
   function listCards(items, emptyMsg) {
-    if (!items.length) return '<div class="empty"><h3>Nada por aqui</h3><p>' + esc(emptyMsg) + '</p></div>';
+    if (!items.length) return '<div class="empty"><h2>Nada por aqui</h2><p>' + esc(emptyMsg) + '</p></div>';
     return items.map(thesisRow).join("");
   }
 
@@ -183,9 +183,9 @@
   function viewPesquisar() {
     var results = searchQuery ? T.search(searchQuery) : [];
     var body = !searchQuery
-      ? '<div class="empty"><h3>Busque em todo o conhecimento</h3><p>Digite acima para pesquisar por ativo, título ou conteúdo das teses.</p></div>'
+      ? '<div class="empty"><h2>Busque em todo o conhecimento</h2><p>Digite acima para pesquisar por ativo, título ou conteúdo das teses.</p></div>'
       : (results.length ? results.map(thesisRow).join("")
-        : '<div class="empty"><h3>Nada encontrado</h3><p>Nenhuma tese corresponde a “' + esc(searchQuery) + '”.</p></div>');
+        : '<div class="empty"><h2>Nada encontrado</h2><p>Nenhuma tese corresponde a “' + esc(searchQuery) + '”.</p></div>');
     return '<div class="field"><input class="input" id="pesqInput" placeholder="Ex.: SOL, Kamino, range…" value="' + esc(searchQuery) + '"></div>' +
       (searchQuery ? '<div class="thesis-meta" style="margin:4px 0 10px">' + results.length + ' resultado(s)</div>' : '') +
       body;
@@ -209,7 +209,7 @@
           '<button class="btn btn-sm btn-danger" data-rmfut="' + f.id + '" style="margin-left:auto">Remover</button>' +
         '</div>' +
       '</div>';
-    }).join("") : '<div class="empty"><h3>Fila vazia</h3><p>Adicione ativos que você quer estudar no futuro.</p></div>';
+    }).join("") : '<div class="empty"><h2>Fila vazia</h2><p>Adicione ativos que você quer estudar no futuro.</p></div>';
 
     return '<div class="card gradient-border">' +
         '<div class="eyebrow">Adicionar à fila</div>' +
@@ -225,7 +225,7 @@
   function viewRelatorios() {
     var s = T.stats();
     var mods = Object.keys(s.porModulo);
-    if (!mods.length) return '<div class="empty"><h3>Sem dados ainda</h3><p>Crie teses nos módulos para ver os relatórios de produção.</p></div>';
+    if (!mods.length) return '<div class="empty"><h2>Sem dados ainda</h2><p>Crie teses nos módulos para ver os relatórios de produção.</p></div>';
     var max = Math.max.apply(null, mods.map(function (m) { return s.porModulo[m].total; }).concat([1]));
     var bars = mods.map(function (m) {
       var pm = s.porModulo[m];
@@ -396,9 +396,9 @@
         var field = host.querySelector(".field");
         var results = searchQuery ? T.search(searchQuery) : [];
         var body = !searchQuery
-          ? '<div class="empty"><h3>Busque em todo o conhecimento</h3><p>Digite acima para pesquisar por ativo, título ou conteúdo das teses.</p></div>'
+          ? '<div class="empty"><h2>Busque em todo o conhecimento</h2><p>Digite acima para pesquisar por ativo, título ou conteúdo das teses.</p></div>'
           : (results.length ? results.map(thesisRow).join("")
-            : '<div class="empty"><h3>Nada encontrado</h3><p>Nenhuma tese corresponde a "' + esc(searchQuery) + '".</p></div>');
+            : '<div class="empty"><h2>Nada encontrado</h2><p>Nenhuma tese corresponde a "' + esc(searchQuery) + '".</p></div>');
         // reescreve tudo abaixo do campo, preservando o input (e seu foco)
         Array.prototype.slice.call(host.children).forEach(function (c) { if (c !== field) c.remove(); });
         field.insertAdjacentHTML("afterend",
@@ -440,7 +440,7 @@
 
   /* ---------- boot ---------- */
   if (!T) {
-    qs("#view").innerHTML = '<div class="empty"><h3>Entidade de teses não carregada</h3><p>Verifique se core/entities/theses.js está acessível.</p></div>';
+    qs("#view").innerHTML = '<div class="empty"><h2>Entidade de teses não carregada</h2><p>Verifique se core/entities/theses.js está acessível.</p></div>';
     return;
   }
   window.addEventListener("hashchange", render);

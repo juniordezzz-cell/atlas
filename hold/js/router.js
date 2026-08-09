@@ -102,7 +102,11 @@
     if (!tb) return;
     tb.innerHTML = "";
     var crumb = U.el("div", { class: "crumb" });
-    crumb.appendChild(U.el("h1", { text: meta.title }));
+    /* Era um <h1>, e a view abaixo tem outro com o mesmo texto: o
+       leitor de tela anunciava o título duas vezes e a página ficava
+       com dois "títulos do documento". A migalha é LOCALIZAÇÃO, não
+       título — vira <p>, e o CSS continua valendo pela classe. */
+    crumb.appendChild(U.el("p", { class: "crumb__atual", text: meta.title }));
     if (meta.crumb) {
       crumb.appendChild(U.el("span", { class: "sep", text: "/" }));
       crumb.appendChild(U.el("span", { class: "ctx", text: meta.crumb }));

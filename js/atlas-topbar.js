@@ -83,6 +83,11 @@
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternar(); }
       });
     }
+    /* Nome acessível. Sem ele o avatar era anunciado pelas iniciais —
+       "GA", que não diz a ninguém que ali mora o menu de perfil. */
+    if (!gatilho.getAttribute("aria-label") && opts.label) {
+      gatilho.setAttribute("aria-label", opts.label);
+    }
     gatilho.setAttribute("aria-haspopup", "menu");
     gatilho.setAttribute("aria-expanded", "false");
 
@@ -200,7 +205,7 @@
     avatar.textContent = p.initials;
     avatar.setAttribute("title", p.name);
 
-    var raiz = envolver(avatar, { id: "perfil" });
+    var raiz = envolver(avatar, { id: "perfil", label: "Perfil de " + p.name });
     if (!raiz) return;
 
     raiz._pop.innerHTML =

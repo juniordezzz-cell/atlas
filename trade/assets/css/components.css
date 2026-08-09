@@ -66,7 +66,11 @@
   z-index: 30;
 }
 .topbar__greeting { display: flex; flex-direction: column; line-height: 1.15; }
-.topbar__greeting b { color: var(--text-hi); font-weight: 600; font-size: var(--fs-body); }
+/* O <b> virou <h1> (a tela não tinha nenhum título de documento). A
+   medida é a mesma de antes: hierarquia de leitor de tela e hierarquia
+   visual não precisam coincidir. */
+.topbar__greeting b,
+.topbar__greeting h1 { color: var(--text-hi); font-weight: 600; font-size: var(--fs-body); margin: 0; letter-spacing: 0; }
 .topbar__spacer { flex: 1; }
 
 .status {

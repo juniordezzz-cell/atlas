@@ -18,7 +18,7 @@
 
     panel: function (title, bodyHtml, headRight, eyebrow) {
       return '<div class="panel panel-pad">' +
-        '<div class="panel-head"><div>' + (eyebrow ? '<div class="eyebrow">' + eyebrow + '</div>' : '') + '<h3>' + title + '</h3></div>' + (headRight || '') + '</div>' +
+        '<div class="panel-head"><div>' + (eyebrow ? '<div class="eyebrow">' + eyebrow + '</div>' : '') + '<h2>' + title + '</h2></div>' + (headRight || '') + '</div>' +
         bodyHtml + '</div>';
     },
 
@@ -39,7 +39,7 @@
     },
 
     empty: function (o) {
-      return '<div class="empty"><div class="empty-art">' + U.icon(o.icon || "info") + '</div><h3>' + o.title + '</h3><p>' + o.text + '</p></div>';
+      return '<div class="empty"><div class="empty-art">' + U.icon(o.icon || "info") + '</div><h2>' + o.title + '</h2><p>' + o.text + '</p></div>';
     }
   };
 

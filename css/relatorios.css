@@ -122,7 +122,8 @@
   justify-content: space-between;
   margin-bottom: 14px;
 }
-.rep-card__head h3 { font-size: 14.5px; font-weight: 600; color: var(--atlas-text-hi); }
+.rep-card__head h3,
+.rep-card__head h2 { font-size: 14.5px; font-weight: 600; color: var(--atlas-text-hi); margin: 0; letter-spacing: 0; }
 .rep-card__head .eyebrow { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--atlas-text-faint); }
 .rep-chart-wrap { position: relative; height: 300px; }
 .rep-cal-wrap { display: flex; justify-content: center; }
@@ -200,7 +201,8 @@
   color: var(--atlas-text-mut);
 }
 .rep-empty svg { width: 40px; height: 40px; color: var(--atlas-text-faint); margin-bottom: 12px; }
-.rep-empty h3 { font-size: 15px; color: var(--atlas-text-hi); margin-bottom: 6px; }
+.rep-empty h3,
+.rep-empty h2 { font-size: 15px; font-weight: 600; color: var(--atlas-text-hi); margin: 0 0 6px; letter-spacing: 0; }
 .rep-empty p { font-size: 13px; }
 
 @media (max-width: 900px) {

@@ -157,7 +157,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 
 /* ---------- Empty ---------- */
 .empty { text-align: center; padding: 54px 24px; color: var(--texto-suave); }
-.empty h3 { font-family: var(--fonte-titulo); margin: 0 0 8px; color: var(--texto); }
+.empty h3, .empty h2 { font-family: var(--fonte-titulo); font-size: 17px; font-weight: 600; margin: 0 0 8px; color: var(--texto); letter-spacing: 0; }
 
 /* ---------- Report bars ---------- */
 .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }

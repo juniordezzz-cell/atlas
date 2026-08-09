@@ -221,7 +221,7 @@
       var app = document.getElementById("app");
       try { m.route.handler({ params: m.params, query: p.query }); }
       catch (e) {
-        if (app) app.innerHTML = '<div class="empty"><div class="empty-art">' + U.icon("alert") + '</div><h3>Erro ao carregar a view</h3><p>' + esc(e.message || e) + '</p></div>';
+        if (app) app.innerHTML = '<div class="empty"><div class="empty-art">' + U.icon("alert") + '</div><h2>Erro ao carregar a view</h2><p>' + esc(e.message || e) + '</p></div>';
         panic((e && e.message) || e);
       }
       Shell.refreshTopbar();

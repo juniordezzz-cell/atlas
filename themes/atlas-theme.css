@@ -129,8 +129,26 @@ html[data-theme="dark"] {
 
   --atlas-text-hi:     #EAF0FB;
   --atlas-text:        #C3CEE4;
-  --atlas-text-mut:    #808DA9;
-  --atlas-text-faint:  #56617F;
+  /* A escala de tinta do tema ESCURO, recalibrada na auditoria de
+     acessibilidade (item 4.10).
+
+     O "faint" original (#56617F) dava 2,78 sobre cartão — e ele não
+     rotula enfeite: rotula o KPI do Trade ("Winrate"), o grupo da
+     navegação ("Operação") e o eyebrow de cada tela. Texto que se lê
+     precisa de 4,5.
+
+     Subir só o faint colava ele no mut e a hierarquia de três níveis
+     virava dois. Os dois subiram juntos, mantendo o intervalo — o mesmo
+     tratamento que o tema claro recebeu no 4.2:
+
+       hi    #EAF0FB  →  15,0   título e número
+       mut   #9AA5BD  →   6,9   texto secundário
+       faint #7A86A6  →   4,7   rótulo e apoio
+
+     Medidos no PIOR caso, que é sobre a superfície mais clara do tema
+     (--atlas-surface-solid, #121B31), não sobre o fundo da página. */
+  --atlas-text-mut:    #9AA5BD;
+  --atlas-text-faint:  #7A86A6;
 
   --atlas-pos:         #2DD4BF;
   --atlas-pos-soft:    rgba(45, 212, 191, 0.14);
@@ -215,10 +233,8 @@ html[data-theme="light"] {
      Medidos no PIOR caso, que é sobre --atlas-bg-deep (#EEF2F8), não
      sobre branco: 16,7 · 6,7 · 4,59. Todos passam.
 
-     No tema ESCURO o faint dá 2,78 sobre cartão. Está anotado para o
-     item 4.10 (auditoria de acessibilidade), que é onde se decide se
-     esse nível é texto ou enfeite — mexer nele agora mudaria a aparência
-     do tema principal sem auditoria que sustente. */
+     O tema escuro recebeu o mesmo tratamento no item 4.10, que é a
+     auditoria que faltava para justificar mexer no tema principal. */
   --atlas-text-mut:    #4A5568;
   --atlas-text-faint:  #646E7D;
 

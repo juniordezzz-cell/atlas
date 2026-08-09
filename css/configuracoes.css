@@ -26,7 +26,8 @@
   padding: 16px 20px 12px;
 }
 .set-card-head svg { width: 18px; height: 18px; color: var(--atlas-accent-text); }
-.set-card-head h3 { font-size: 15px; font-weight: 600; color: var(--atlas-text-hi); }
+.set-card-head h3,
+.set-card-head h2 { font-size: 15px; font-weight: 600; color: var(--atlas-text-hi); margin: 0; letter-spacing: 0; }
 .set-card-head .eyebrow {
   margin-left: auto;
   font-size: 10.5px;

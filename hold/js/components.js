@@ -196,7 +196,10 @@
       var head = el("div", { class: "card-head" });
       var titleWrap = el("div", { class: "grow", style: "margin-right:auto" });
       if (opts.eyebrow) titleWrap.appendChild(el("div", { class: "eyebrow", text: opts.eyebrow }));
-      if (opts.title) titleWrap.appendChild(el("h3", { text: opts.title }));
+      /* h2, não h3: o cartão é seção de primeiro nível abaixo do <h1>
+         da tela. Pular de h1 para h3 quebra a árvore que o leitor de
+         tela usa para navegar por títulos. */
+      if (opts.title) titleWrap.appendChild(el("h2", { text: opts.title }));
       head.appendChild(titleWrap);
       if (opts.action) head.appendChild(opts.action);
       c.appendChild(head);
@@ -265,7 +268,7 @@
   function empty(iconName, title, msg, action) {
     var e = el("div", { class: "empty" });
     e.innerHTML = icon(iconName || "layers");
-    e.appendChild(el("h3", { text: title }));
+    e.appendChild(el("h2", { text: title }));   /* mesmo motivo do card() */
     if (msg) e.appendChild(el("p", { text: msg }));
     if (action) e.appendChild(action);
     return e;

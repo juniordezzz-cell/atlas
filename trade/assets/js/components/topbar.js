@@ -31,7 +31,11 @@
       el.innerHTML =
         '<div class="topbar__greeting">' +
           '<span class="eyebrow">ATLAS Trade</span>' +
-          '<b>Painel · ' + ATLAS.util.escape(wallet.name) + '</b>' + isoTag +
+          /* Era um <b>. A tela do Trade inteira não tinha NENHUM <h1>:
+             quem navega por títulos com leitor de tela chegava numa
+             página sem âncora de onde estava. <b> é peso visual, <h1>
+             é estrutura — o CSS continua valendo pela classe do pai. */
+          '<h1>Painel · ' + ATLAS.util.escape(wallet.name) + '</h1>' + isoTag +
         '</div>' +
         '<div class="topbar__spacer"></div>' +
         '<div class="status"><span class="status__dot"></span>Sistema ativo</div>' +

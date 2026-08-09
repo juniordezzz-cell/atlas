@@ -188,7 +188,7 @@
       return '' +
         '<div class="empty">' +
           '<div class="empty-art">' + U.icon(o.icon || "inbox") + '</div>' +
-          '<h3>' + o.title + '</h3>' +
+          '<h2>' + o.title + '</h2>' +
           '<p>' + o.text + '</p>' +
           btn +
         '</div>';

@@ -1010,3 +1010,16 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
    estreita demais para gastar espaço com isto. */
 @media (max-width: 720px) { .atlas-cmdk { display: none; } }
 @media print { .atlas-cmdk { display: none; } }
+
+/* ============================================================
+   FOCO DO AVATAR (menu de perfil)
+   O avatar é um <div> promovido a botão por js/atlas-topbar.js
+   (role + tabindex + Enter/Espaço). O que faltava era o ANEL: ele
+   recebia foco de teclado e nada aparecia na tela, o que na prática
+   é o mesmo que não ser focável. Auditoria do item 4.10.
+   ============================================================ */
+[data-atlas-menu] > .avatar:focus-visible,
+.avatar[role="button"]:focus-visible {
+  outline: 2px solid var(--atlas-accent);
+  outline-offset: 2px;
+}

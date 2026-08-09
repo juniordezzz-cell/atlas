@@ -273,6 +273,11 @@
     } else {
       var inp = document.createElement("input");
       inp.className = "set-input";
+      /* O rótulo do campo é um <div class="set-label"> ao lado, não um
+         <label for>: o leitor de tela anunciava só "campo numérico",
+         sem dizer de quê. O interruptor vizinho já usava aria-label —
+         o campo de texto tinha ficado de fora. */
+      inp.setAttribute("aria-label", t(f.label));
       inp.type = f.type === "number" ? "number" : "text";
       if (f.min != null) inp.min = String(f.min);
       if (f.placeholder) inp.placeholder = f.placeholder;
