@@ -16,9 +16,21 @@ function buildAtlasData() {
   function n(v) { return (typeof v === "number" && isFinite(v)) ? v : 0; }
   /* Dinheiro — delegado ao AtlasCurrency. Os totais consolidados estão
      em USD (regra de armazenamento); a conversão é camada de exibição. */
+  /* ------------------------------------------------------------
+     Casas decimais adaptativas — a mesma régua do core/currency.js
+
+     Estava cravado em `decimals: 0`. Num patrimônio de seis dígitos
+     ninguém sente falta dos centavos; num de US$ 27,21 o Dashboard
+     escrevia "US$ 27" ao lado do módulo DeFi mostrando "US$ 27,21",
+     e a movimentação de US$ 18,46 virava "+US$ 18". Quem está
+     começando — que é justamente quem tem valores pequenos — via o
+     sistema errar todos os números da tela inicial.
+     ------------------------------------------------------------ */
   function usd(v) {
-    if (window.AtlasCurrency) return AtlasCurrency.format(n(v), { decimals: 0 });
-    return "US$ " + Math.round(n(v)).toLocaleString("pt-BR");
+    const x = n(v);
+    const dec = Math.abs(x) >= 1000 ? 0 : 2;
+    if (window.AtlasCurrency) return AtlasCurrency.format(x, { decimals: dec });
+    return "US$ " + x.toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
   function usdC(v) {
     if (window.AtlasCurrency) return AtlasCurrency.format(n(v), { decimals: 2 });
@@ -128,16 +140,40 @@ function buildAtlasData() {
       }));
   } catch (e) { movimentacoes = []; }
 
-  /* Pools / posições ativas (staking + lending do DeFi) */
+  /* ------------------------------------------------------------
+     POOLS ATIVAS — e as pools de verdade
+
+     O card se chama "Pools Ativas", tem um link "Ver todas as pools"
+     e montava a lista com STAKING + LENDING apenas. As posições de
+     liquidez — as únicas que o ATLAS de fato chama de pool, as que a
+     tela de Pools cria e a página da posição detalha — ficavam de
+     fora. Com uma pool ativa registrada, o card do Dashboard aparecia
+     vazio; com só staking, aparecia cheio de coisa que não é pool.
+
+     Agora as pools vêm primeiro, com o resultado real (poolSummary),
+     e staking/lending completam o espaço que sobrar.
+     ------------------------------------------------------------ */
   let pools = [];
   try {
-    const st = (window.DeFiStore ? window.DeFiStore.staking() : []).map(s => ({
-      par: s.token, dex: s.protocol, apr: n(s.apr).toFixed(2).replace(".", ",") + "%", lucro: usdC(s.value * s.apr / 100 / 12)
+    const S = window.DeFiStore;
+    const liq = S ? S.activePools().map(p => {
+      const r = S.poolSummary(p);
+      return {
+        par: p.base + "/" + p.quote,
+        dex: p.protocol,
+        apr: n(r ? r.aprReal : p.apr).toFixed(2).replace(".", ",") + "%",
+        lucro: usdC(r ? r.resultado : 0)
+      };
+    }) : [];
+    const st = (S ? S.staking() : []).map(s => ({
+      par: s.token, dex: s.protocol, apr: n(s.apr).toFixed(2).replace(".", ",") + "%",
+      lucro: usdC(n(s.value) * n(s.apr) / 100 / 12)
     }));
-    const ln = (window.DeFiStore ? window.DeFiStore.lending() : []).map(l => ({
-      par: l.token, dex: l.protocol, apr: n(l.apy).toFixed(2).replace(".", ",") + "%", lucro: usdC(n(l.earned))
+    const ln = (S ? S.lending() : []).map(l => ({
+      par: l.token, dex: l.protocol, apr: n(l.apy).toFixed(2).replace(".", ",") + "%",
+      lucro: usdC(n(l.earned))
     }));
-    pools = st.concat(ln).slice(0, 4);
+    pools = liq.concat(st).concat(ln).slice(0, 4);
   } catch (e) { pools = []; }
 
   /* Alertas inteligentes — QUATRO MÓDULOS

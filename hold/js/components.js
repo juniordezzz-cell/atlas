@@ -115,7 +115,14 @@
     if (Math.abs(n) >= 1e3) return "$" + (n / 1e3).toFixed(1) + "K";
     return "$" + n.toFixed(0);
   }
-  function pct(v, dp) { var n = +v || 0; return (n >= 0 ? "+" : "") + n.toFixed(dp == null ? 2 : dp) + "%"; }
+  /* toFixed imprime PONTO decimal: num produto em pt-BR o percentual
+     saía "10.00%" ao lado de valores em "US$ 1.234,56". Mesma tela,
+     duas convenções de número. */
+  function pct(v, dp) {
+    var n = +v || 0, d = dp == null ? 2 : dp;
+    return (n >= 0 ? "+" : "") +
+      n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+  }
   function signClass(v) { return v > 0 ? "pos" : v < 0 ? "neg" : "neu"; }
   function qty(v) { return (+v || 0).toLocaleString("en-US", { maximumFractionDigits: 6 }); }
   function dateShort(iso) {

@@ -31,7 +31,7 @@
    sobre a cotação é como um sistema financeiro mente sem querer.
    ============================================================ */
 
-var VERSAO = "atlas-v2";
+var VERSAO = "atlas-v3";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
@@ -96,8 +96,30 @@ self.addEventListener("fetch", function (e) {
      seria preço errado servido como certo. */
   if (new URL(url).origin !== self.location.origin || ehApi(url)) return;
 
+  /* ------------------------------------------------------------
+     REDE PRIMEIRO DE VERDADE — o detalhe que faltava
+
+     `fetch(req)` cru NÃO garante ida à rede: ele passa pelo cache HTTP
+     do navegador antes. Um servidor estático que não manda
+     Cache-Control (o `python -m http.server` do desenvolvimento é
+     exatamente isso) faz o navegador aplicar cache heurístico, e a
+     resposta vem do disco sem nem tocar no servidor.
+
+     Foi um erro MEDIDO durante a auditoria: com o data.js do DeFi já
+     corrigido em disco e servido corretamente por HTTP, a página
+     continuou executando a versão anterior mesmo depois de recarregar.
+     Ou seja: a estratégia documentada aqui como "rede primeiro,
+     porque rodar código velho num app que calcula dinheiro é risco
+     real" não estava valendo — o cache-first que este arquivo diz
+     recusar acontecia uma camada abaixo dele.
+
+     `cache: "no-cache"` não desliga o cache: obriga uma REVALIDAÇÃO
+     condicional. Arquivo sem mudança volta como 304, quase sem custo;
+     arquivo alterado volta inteiro. O offline continua funcionando —
+     revalidação sem rede falha, e o .catch() abaixo serve o cache.
+     ------------------------------------------------------------ */
   e.respondWith(
-    fetch(req).then(function (res) {
+    fetch(req, { cache: "no-cache" }).then(function (res) {
       /* Guarda uma cópia do que veio bem. Resposta de erro não entra:
          cachear um 404 é transformar um problema momentâneo em
          permanente. */

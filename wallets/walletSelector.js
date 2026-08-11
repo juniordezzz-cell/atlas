@@ -98,9 +98,16 @@
   }
   function money(opts, v) {
     if (opts.money) { try { return opts.money(v); } catch (e) {} }
-    /* saldo da carteira na moeda de exibição — o ledger guarda em USD */
-    if (global.AtlasCurrency) return global.AtlasCurrency.format(v, { decimals: 0 });
-    return "US$ " + (Math.round(v * 100) / 100).toLocaleString("en-US");
+    /* Saldo da carteira na moeda de exibição — o ledger guarda em USD.
+
+       As casas seguem a régua do core/currency.js (centavos abaixo de
+       mil). Estava cravado em zero: a carteira com US$ 27,21 aparecia
+       como "US$ 27" no seletor, ao lado do card do módulo dizendo
+       "US$ 27,21". Mesmo dado, duas telas, dois números. */
+    var dec = Math.abs(Number(v) || 0) >= 1000 ? 0 : 2;
+    if (global.AtlasCurrency) return global.AtlasCurrency.format(v, { decimals: dec });
+    return "US$ " + (Number(v) || 0).toLocaleString("pt-BR",
+      { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
   function saldo(opts, id) {
     return money(opts, W.balanceOf(id, opts.balanceModule || null));

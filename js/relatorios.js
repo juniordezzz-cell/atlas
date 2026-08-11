@@ -34,12 +34,22 @@
   /* ---------- helpers ---------- */
   /* Dinheiro — delegado ao AtlasCurrency. O valor está sempre em USD
      (regra de armazenamento); a conversão é camada de exibição. */
+  /* Casas adaptativas, como o resto do ATLAS: centavos abaixo de mil.
+     Cravado em zero, um relatório de US$ 27,21 em entradas e US$ 0,68
+     em taxas virava "US$ 27" e "US$ 1" — e o CSV exportado batia com o
+     dado, enquanto a tela não. */
   function money(v) {
-    if (window.AtlasCurrency) return AtlasCurrency.format(v, { decimals: 0 });
+    var dec = Math.abs(Number(v) || 0) >= 1000 ? 0 : 2;
+    if (window.AtlasCurrency) return AtlasCurrency.format(v, { decimals: dec });
     var sign = v < 0 ? "-" : "";
-    return sign + "US$ " + Math.abs(Math.round(v)).toLocaleString(locale());
+    return sign + "US$ " + Math.abs(Number(v) || 0)
+      .toLocaleString(locale(), { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
-  function pct(v) { return (v > 0 ? "+" : "") + v.toFixed(1) + "%"; }
+  /* Vírgula decimal, como todo o resto do ATLAS em pt-BR. */
+  function pct(v) {
+    return (v > 0 ? "+" : "") +
+      (Number(v) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+  }
   function tok(name, fb) {
     try { var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fb; }
     catch (e) { return fb; }
@@ -269,8 +279,14 @@
     if (!host) return;
     var recent = list.slice().reverse().slice(0, 8);
     host.innerHTML = recent.map(function (m) {
+      /* "resultado" agora preserva o sinal (um prejuízo entrava como
+         lucro no livro-razão — ver atlas-movements.js). O prefixo
+         acompanha: só o positivo ganha "+", porque o negativo já vem
+         com o "−" do formatador de moeda. */
       var signCls = m.tipo === "entrada" ? "entrada" : m.tipo === "saida" ? "saida" : "resultado";
-      var prefix = m.tipo === "saida" ? "-" : m.tipo === "entrada" ? "+" : "";
+      var prefix = m.tipo === "saida" ? "-"
+                 : m.tipo === "entrada" ? "+"
+                 : (m.valorUSD > 0 ? "+" : "");
       return '<div class="rep-move"><span class="rep-move__dot ' + signCls + '"></span>' +
         '<div class="rep-move__main"><div class="rep-move__label">' + escapeHtml(m.label || t(PERIODS[state.period])) + "</div>" +
         '<div class="rep-move__meta">' + escapeHtml((m.module || "").toUpperCase()) + " · " +

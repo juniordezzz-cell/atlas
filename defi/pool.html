@@ -66,19 +66,12 @@
   <div class="modal-overlay" id="modalEdit">
     <div class="modal">
       <div class="modal-head"><h3>Editar posição</h3><button class="modal-close" data-close="modalEdit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
-      <div class="modal-body">
-        <div class="col-2" style="gap:0 16px">
-          <div class="field"><label>Valor atual</label><div class="input-money"><span>US$</span><input class="input" id="eVal" type="number" /></div></div>
-          <div class="field"><label>APR</label><input class="input" id="eApr" type="number" /></div>
-        </div>
-        <div class="field"><label>Status</label>
-          <select class="select" id="eStatus">
-            <option value="ativa">Ativa</option>
-            <option value="range">Fora do Range</option>
-            <option value="analise">Em análise</option>
-          </select>
-        </div>
-      </div>
+      <!-- O corpo é montado por defi/js/pool.js: ele precisa mostrar o
+           ESTADO CONHECIDO da posição (quantidades, preços, taxas,
+           fonte de cada dado) antes de pedir qualquer correção. Um
+           formulário fixo aqui não teria como dizer de onde veio cada
+           número — e era justamente isso que faltava. -->
+      <div class="modal-body" id="editBody"></div>
       <div class="modal-foot">
         <button class="btn btn-cancel" data-close="modalEdit">Cancelar</button>
         <button class="btn btn-primary" id="saveEdit">Salvar</button>

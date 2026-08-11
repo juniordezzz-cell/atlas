@@ -41,11 +41,14 @@
     }
     list.innerHTML = items.map(function (c) {
       var cls = c.profit > 0 ? "up" : (c.profit < 0 ? "down" : "flat");
+      /* daysBetween devolve null quando falta uma das datas — antes
+         virava NaN e a linha exibia "NaN dias". */
       var dur = U.daysBetween(c.openedAt, c.closedAt);
+      var durTxt = dur == null ? "duração desconhecida" : dur + " dia(s)";
       return '<div class="hist-row" title="' + (c.reason || "") + '">' +
         '<div class="h-pair"><div class="pair-icons">' + U.coin(c.base) + U.coin(c.quote) + '</div>' +
         '<div><div class="h-name">' + c.base + ' / ' + c.quote + '</div>' +
-        '<div class="h-meta">' + U.date(c.openedAt) + ' → ' + U.date(c.closedAt) + ' · ' + dur + ' dias</div></div></div>' +
+        '<div class="h-meta">' + U.date(c.openedAt) + ' → ' + U.date(c.closedAt) + ' · ' + durTxt + '</div></div></div>' +
         '<div class="h-tags"><span class="tag tag-chain"><span class="dot" style="background:' + S.colorOf("chain", c.chain) + '"></span>' + c.chain + '</span>' +
         '<span class="tag tag-proto">' + c.protocol + '</span><span class="tag tag-cat">' + c.category + '</span></div>' +
         '<div class="h-result"><div class="r delta ' + cls + '">' + U.pct(c.profitPct, true) + '</div><div class="p">' + U.signedMoney(c.profit) + '</div></div>' +

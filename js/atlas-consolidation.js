@@ -96,15 +96,17 @@
 
     defi: function (walletId) {
       return safe(function () {
-        if (!global.DeFiStore || !global.DeFiStore.all) return null;
-        var wd = (global.DeFiStore.all().byWallet || {})[walletId];
+        var S = global.DeFiStore;
+        if (!S || !S.all) return null;
+        var wd = (S.all().byWallet || {})[walletId];
         if (!wd) return pacote("defi", walletId, 0, 0);
-        function soma(l, campo) {
-          return (l || []).reduce(function (a, x) { return a + n(x[campo]); }, 0);
-        }
-        var v = soma(wd.pools, "currentValue") + soma(wd.staking, "value") + soma(wd.lending, "value");
-        var c = soma(wd.pools, "capital") + soma(wd.staking, "value") + soma(wd.lending, "value");
-        return pacote("defi", walletId, v, c);
+        /* Delegado a DeFiStore.walletValue/walletCapital. A cópia que
+           existia aqui somava só currentValue e esquecia a TAXA
+           PENDENTE — dinheiro do usuário parado na pool, ausente do
+           patrimônio consolidado. E "capital" somava p.capital, que
+           depois dos eventos de fluxo passou a incluir reinvestimento:
+           dinheiro que nunca saiu do bolso entrava como aporte. */
+        return pacote("defi", walletId, S.walletValue(wd), S.walletCapital(wd));
       }, null);
     },
 
@@ -183,7 +185,19 @@
     }, 0);
   }
   function holdPnl() { return safe(function () { var S = hold(); return (S && S.get && S.get.portfolioPnL) ? n(S.get.portfolioPnL()) : 0; }, 0); }
-  function defiPnl() { return safe(function () { return global.DeFiStore ? n(global.DeFiStore.kpis().profit) : 0; }, 0); }
+  /* O resultado do DeFi vinha de kpis().profit, que olha SÓ a carteira
+     ATIVA no módulo. O patrimônio ao lado somava TODAS as globais: o
+     card mostrava um total de quatro carteiras com o lucro de uma. Com
+     duas carteiras globais, o mesmo painel exibia US$ 30.000 de
+     patrimônio e o resultado de apenas uma delas, sem nada indicando
+     que as réguas eram diferentes. */
+  function defiPnl() {
+    return safe(function () {
+      var S = global.DeFiStore;
+      if (!S) return 0;
+      return n(S.globalProfit ? S.globalProfit() : S.kpis().profit);
+    }, 0);
+  }
   function rwaPnl()  { return safe(function () { return global.RWAStore ? n(global.RWAStore.kpis().pnlAbs) : 0; }, 0); }
 
   function moduleList() {
@@ -200,15 +214,43 @@
      módulo (reconcilia o endpoint com o KPI). Módulos sem série viram
      linha plana no total atual. Soma tudo elemento a elemento. */
   function vals(arr) { return (arr || []).map(function (p) { return typeof p === "number" ? p : n(p.value); }); }
+
+  /* ------------------------------------------------------------
+     SÉRIE DEGENERADA NÃO É SÉRIE
+
+     A normalização (`k = totalAtual / último`) supõe que a série
+     termina num valor comparável ao total de hoje. O RWA guarda
+     equityCurves geradas com valor inicial ZERO — 90 zeros. Nesse
+     caso `último` virava 1 pelo `|| 1`, k virava o total, e o
+     resultado era 90 zeros vezes qualquer coisa: zero.
+
+     Efeito na tela: o módulo entrava com o valor cheio no
+     "Patrimônio Total" e com ZERO na curva de evolução — inclusive
+     no ponto de HOJE. O gráfico terminava num número diferente do
+     KPI logo acima dele.
+
+     Série ausente ou degenerada agora vira linha reta no total atual:
+     não é histórico (o módulo não mede), mas ao menos não contradiz
+     o número ao lado.
+     ------------------------------------------------------------ */
   function moduleHistory(key, currentTotal, days) {
     var series = null;
     if (key === "rwa")  series = safe(function () { return global.RWAStore ? vals(global.RWAStore.equityCurves().total) : null; }, null);
-    if (key === "defi") series = safe(function () { return global.DeFiStore ? vals(global.DeFiStore.portfolioHistory()) : null; }, null);
-    var out = [];
-    if (!series || !series.length) { for (var j = 0; j < days; j++) out.push(currentTotal); return out; }
+    if (key === "defi") series = safe(function () { return global.DeFiStore ? vals(global.DeFiStore.portfolioHistory(days)) : null; }, null);
+
+    var out = [], j;
+    function plana() {
+      var f = []; for (j = 0; j < days; j++) f.push(currentTotal); return f;
+    }
+    if (!series || !series.length) return plana();
+
     var tail = series.slice(-days);
-    var last = tail[tail.length - 1] || 1;
-    var k = currentTotal / last;
+    var last = tail[tail.length - 1];
+    /* último ponto zerado com total diferente de zero = série sem
+       relação com a realidade do módulo */
+    if (!isFinite(last) || (last === 0 && currentTotal !== 0)) return plana();
+
+    var k = last ? (currentTotal / last) : 1;
     out = tail.map(function (v) { return v * k; });
     while (out.length < days) out.unshift(out[0]);
     return out.slice(-days);
@@ -271,21 +313,57 @@
     });
 
     var byModule = present
-      .map(function (m) { return { label: m.name, value: Math.round(n(m.total)), color: m.color }; })
+      .map(function (m) { return { label: m.name, value: n(m.total), color: m.color }; })
       .filter(function (x) { return x.value > 0; });
 
     var W = global.AtlasWallets;
     var wallets = W ? { total: safe(function () { return W.all().length; }, 0), globals: globalIds().length } : { total: 0, globals: 0 };
 
-    var cost = total - pnl;
+    /* ------------------------------------------------------------
+       ARREDONDAMENTO É TRABALHO DA TELA, NÃO DA CAMADA DE DADOS
+
+       total, pnl, passiveIncome e a série inteira saíam daqui já
+       passados por Math.round(). Num patrimônio de seis dígitos não
+       faz diferença; num de US$ 27,21 o snapshot devolvia 27 e TODA
+       tela que consome a consolidação — Dashboard, Oráculo,
+       Relatórios — passava a operar com o número truncado, sem chance
+       de recuperar os centavos. Pior: o percentual era calculado
+       depois, sobre os valores cheios, e não fechava com os inteiros
+       exibidos ao lado.
+
+       Aqui sai o valor cheio. Quem exibe decide as casas.
+       ------------------------------------------------------------ */
+    /* ------------------------------------------------------------
+       O CAPITAL INVESTIDO É LIDO, NÃO DEDUZIDO
+
+       `cost = total − pnl` é uma identidade contábil que só vale se
+       "pnl" for exatamente "valor menos custo" em todos os módulos —
+       e não é: no DeFi o resultado inclui taxa coletada, que já saiu
+       da posição. A dedução dava 23,44 onde o capital real era 23,46,
+       e a rentabilidade da tela principal não fechava com a da página
+       da posição por uma diferença que ninguém saberia explicar.
+
+       Os leitores por módulo já devolvem `capital`. Usar o número
+       lido, com a dedução só como reserva para módulo que não informa.
+       ------------------------------------------------------------ */
+    var capital = 0, temCapital = false;
+    present.forEach(function (m) {
+      globalIds().forEach(function (id) {
+        var r = LEITORES[m.key](id);
+        if (r && isFinite(Number(r.capital))) { capital += n(r.capital); temCapital = true; }
+      });
+    });
+    var cost = temCapital ? capital : (total - pnl);
+
     return {
-      total: Math.round(total),
-      pnl: Math.round(pnl),
+      capital: cost,
+      total: total,
+      pnl: pnl,
       pnlPct: cost > 0 ? (pnl / cost) * 100 : 0,
-      passiveIncome: Math.round(passiveIncome()),
+      passiveIncome: passiveIncome(),
       protocols: protocolsCount(),
       byModule: byModule,
-      evolution: evo.map(function (v) { return Math.round(v); }),
+      evolution: evo,
       wallets: wallets,
       modules: mods
     };

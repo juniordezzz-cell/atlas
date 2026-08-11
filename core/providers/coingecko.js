@@ -81,8 +81,26 @@
       });
     },
 
-    /* Lote: vários ids em uma única chamada (economiza rate limit) */
-    prices: function (ids) {
+    /* ------------------------------------------------------------
+       Lote: vários ids em uma única chamada (economiza rate limit)
+
+       DUAS VERSÕES, e a diferença é o ponto
+
+         pricesRaw   PROPAGA o erro. Quem chama decide o que dizer ao
+                     usuário — e o AtlasHttp já entrega a mensagem
+                     pronta ("Limite de requisições atingido", "Tempo
+                     de resposta esgotado", "Serviço indisponível").
+         prices      engole e devolve {}. Continua existindo para quem
+                     só quer enfeitar a tela e não se importa.
+
+       Só havia a segunda. Num 429 do CoinGecko — que na versão sem
+       chave acontece com facilidade — o DeFi recebia um mapa vazio,
+       concluía "sem preço para estes tokens" e mantinha na tela o
+       último valor gravado, sem nenhum aviso. Falha de rede virava
+       número velho com aparência de número atual, que é exatamente o
+       tipo de mentira que este sistema não pode contar.
+       ------------------------------------------------------------ */
+    pricesRaw: function (ids) {
       ids = (ids || []).filter(Boolean);
       if (!ids.length) return Promise.resolve({});
       var joined = ids.slice().sort().join(",");
@@ -95,7 +113,11 @@
           if (d && d[id] && typeof d[id].usd === "number") out[id] = d[id].usd;
         });
         return out;
-      }).catch(function () { return {}; });
+      });
+    },
+
+    prices: function (ids) {
+      return CoinGecko.pricesRaw(ids).catch(function () { return {}; });
     },
 
     setApiKey: function (k) { try { localStorage.setItem(KEY_LS, k || ""); } catch (e) {} }

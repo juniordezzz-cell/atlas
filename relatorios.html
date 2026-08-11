@@ -163,6 +163,25 @@
 <script src="wallets/walletDialog.js"></script>
 <script src="wallets/walletSelector.js"></script>
 <script src="core/atlas-price.js"></script>
+<!-- ===== Stores dos quatro módulos =========================================
+     O livro-razão (js/atlas-movements.js) tem duas fontes: os movimentos
+     GRAVADOS em localStorage e os DERIVADOS por adaptadores que leem o
+     store de cada módulo. Sem os stores carregados, os adaptadores de
+     DeFi e Trade devolvem lista vazia — e esta página, que é o relatório
+     financeiro da carteira, omitia em silêncio metade dos módulos:
+     nenhuma pool, nenhum aporte, nenhuma taxa coletada, nenhum resultado
+     de trade. O KPI "Resultado" ficava em US$ 0,00 com posições abertas.
+
+     O Dashboard já carregava os quatro (ver dashboard.html); aqui
+     faltava. Mesma ordem, pelas mesmas dependências. -->
+<script src="RWA/js/store.js"></script>
+<script src="defi/js/data.js"></script>
+<script src="hold/data/seed.js"></script>
+<script src="hold/js/state.js"></script>
+<script src="trade/assets/js/core/util.js"></script>
+<script src="trade/assets/js/core/store.js"></script>
+<script src="trade/assets/js/core/seed.js"></script>
+<script src="trade/assets/js/core/state.js"></script>
 <script src="js/atlas-movements.js"></script>
 <script src="core/ui/atlas-calendar.js"></script>
 <script src="js/atlas-nav.js"></script>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="defi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Bateria de testes matematicos do modulo DeFi do ATLAS: fluxos de capital, taxas, PnL, faixa de preco e formatacao.">
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <title>Testes · ATLAS DeFi</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/cards.css" />
+  <link rel="stylesheet" href="css/forms.css" />
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+
+  <script src="../core/atlas-storage.js"></script>
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <style>
+    .t-wrap { max-width: 940px; margin: 0 auto; padding: 32px 20px 80px; }
+    .t-head h1 { font-size: 24px; margin: 0 0 6px; }
+    .t-head p { color: var(--text-mut); font-size: 13.5px; margin: 0 0 20px; line-height: 1.6; }
+    .t-score { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0 24px; }
+    .t-pill { padding: 10px 16px; border-radius: 10px; font-family: var(--font-mono, monospace); font-size: 14px; font-weight: 650; }
+    .t-pill.ok { background: rgba(0,200,83,.14); color: #00c853; }
+    .t-pill.bad { background: rgba(255,86,86,.16); color: #ff7676; }
+    .t-pill.neutro { background: var(--surface); color: var(--text-mut); }
+    .t-grupo { margin-bottom: 22px; }
+    .t-grupo h2 { font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-mut); margin: 0 0 10px; }
+    .t-caso { display: grid; grid-template-columns: 22px 1fr auto auto; gap: 10px; align-items: center;
+              padding: 7px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .t-caso:last-child { border-bottom: 0; }
+    .t-caso .st { font-weight: 700; }
+    .t-caso.pass .st { color: #00c853; }
+    .t-caso.fail .st { color: #ff7676; }
+    .t-caso .val { font-family: var(--font-mono, monospace); font-size: 12px; color: var(--text-mut); }
+    .t-caso.fail .val { color: #ff7676; }
+    .t-nota { font-size: 12px; color: var(--text-faint); padding: 8px 12px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+<main class="app">
+  <div class="t-wrap">
+    <div class="t-head">
+      <h1>Testes do módulo DeFi</h1>
+      <p>
+        Bateria de verificação matemática. Cada caso reconstrói o resultado esperado à mão e compara
+        com o que o ATLAS calcula — a interface não participa. Roda contra um estado
+        <b>isolado</b>: o conteúdo real do seu <code>localStorage</code> é salvo antes, e devolvido
+        ao final, inclusive se um teste quebrar.
+      </p>
+    </div>
+    <div class="t-score" id="score"></div>
+    <div id="saida"></div>
+  </div>
+</main>
+
+<script src="../core/http.js"></script>
+<script src="../core/providers/registry.js"></script>
+<script src="../core/providers/coingecko.js"></script>
+<script src="../core/atlas-price.js"></script>
+<script src="js/tokens.js"></script>
+<script src="js/performance.js"></script>
+<script src="js/data.js"></script>
+<script src="js/utils.js"></script>
+<script>
+/* ============================================================
+   ATLAS · DeFi — bateria de testes
+
+   POR QUE ESTE ARQUIVO EXISTE
+   ---------------------------
+   Os erros que a segunda auditoria encontrou tinham todos a mesma
+   assinatura: o número aparecia plausível na tela. Uma variação de
+   ativos de −US$ 0,06 numa posição lucrativa, uma taxa de US$ 0,68
+   exibida como "US$ 1", uma faixa de preço sempre "fora" — nada
+   disso quebra a interface, e por isso nada disso era percebido.
+
+   A única defesa contra esse tipo de erro é afirmar o resultado
+   ESPERADO por fora e comparar. É o que esta página faz.
+
+   ISOLAMENTO
+   ----------
+   DeFiStore persiste em localStorage. Os testes salvam as chaves do
+   módulo antes de rodar e restauram no `finally` — inclusive se um
+   caso lançar exceção. Nenhuma posição real é criada, alterada ou
+   apagada.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var CHAVES = ["atlas.defi.state.v3", "atlas.defi.wallet.v1", "atlas.defi.poolDraft.v1"];
+  var grupos = [], atual = null, passou = 0, falhou = 0;
+
+  function grupo(nome) { atual = { nome: nome, casos: [] }; grupos.push(atual); }
+  function nota(txt) { if (atual) atual.casos.push({ nota: txt }); }
+
+  /* Comparação numérica com tolerância — ponto flutuante binário não
+     representa 0,1 exatamente, e exigir igualdade estrita produziria
+     falhas que não são erros de cálculo. */
+  function eq(nome, obtido, esperado, tol) {
+    tol = tol == null ? 0.005 : tol;
+    var ok = typeof obtido === "number" && isFinite(obtido) && Math.abs(obtido - esperado) <= tol;
+    registrar(nome, ok, fmt(obtido), fmt(esperado));
+  }
+  function is(nome, obtido, esperado) {
+    registrar(nome, obtido === esperado, String(obtido), String(esperado));
+  }
+  /* Intl.NumberFormat separa símbolo e número com ESPAÇO NÃO SEPARÁVEL
+     (U+00A0), não com espaço comum. Comparar com string literal falha
+     por um caractere invisível — normaliza os dois lados. */
+  function isTexto(nome, obtido, esperado) {
+    /* NBSP (160) e NARROW NBSP (8239) escritos por codigo: como caractere
+       literal eles ficam invisiveis no fonte e o proximo a ler o arquivo
+       nao tem como saber o que a expressao esta casando. */
+    var INVIS = new RegExp("[" + String.fromCharCode(160) + String.fromCharCode(8239) + "]", "g");
+    function norm(x) { return String(x).replace(INVIS, " "); }
+    registrar(nome, norm(obtido) === norm(esperado), norm(obtido), norm(esperado));
+  }
+  function ok(nome, cond, detalhe) {
+    registrar(nome, !!cond, detalhe || (cond ? "sim" : "não"), "sim");
+  }
+  function fmt(v) {
+    if (typeof v !== "number") return String(v);
+    return (Math.round(v * 10000) / 10000).toString();
+  }
+  function registrar(nome, passouCaso, obtido, esperado) {
+    atual.casos.push({ nome: nome, pass: passouCaso, obtido: obtido, esperado: esperado });
+    if (passouCaso) passou++; else falhou++;
+  }
+
+  /* ---------------- casos ---------------- */
+
+  function rodar() {
+    var S = window.DeFiStore, U = window.U, P = window.DeFiPerf;
+    S.reset();
+
+    /* ============ 1. Cenário real relatado na auditoria ============
+       Pool criada com US$ 18,46. Raydium mostrava US$ 19,29 de posição
+       e US$ 0,68 em taxas pendentes. O ATLAS exibia variação de ativos
+       NEGATIVA — porque subtraía a taxa de um valor que nunca a
+       continha. Este caso existe para que isso não volte. */
+    grupo("1 · Pool da Raydium (o caso que originou a auditoria)");
+    var p1 = S.addPool(base({
+      base: "SOL", quote: "RAY", protocol: "Raydium",
+      qtyBase: 0.10, qtyQuote: 30, priceBase: 138.00, priceQuote: 0.15533,
+      capital: 18.46, currentValue: 18.46, openedAt: diasAtras(9)
+    }));
+    S.addFee(p1.id, { amount: 0.68, status: "pendente", date: hoje() });
+    S.updatePool(p1.id, { currentValue: 19.29 });
+    var r1 = S.poolSummary(p1.id);
+    eq("capital colocado", r1.aportado, 18.46);
+    eq("valor da posição (sem taxa)", r1.valorPosicao, 19.29);
+    eq("valor total (com taxa pendente)", r1.valorTotal, 19.97);
+    eq("variação dos ativos = 19,29 − 18,46", r1.varAtivos, 0.83);
+    ok("variação dos ativos NÃO é negativa", r1.varAtivos > 0, fmt(r1.varAtivos));
+    eq("taxas totais", r1.taxasTotal, 0.68);
+    eq("resultado = ativos + taxas", r1.resultado, 1.51);
+    eq("conferência pelo fluxo de caixa", r1._conferencia, 1.51);
+    eq("dias em operação", r1.dias, 9, 0.001);
+    isTexto("taxa de US$ 0,68 exibida com centavos", U.signedMoney(r1.taxasTotal), "+US$ 0,68");
+    isTexto("variação de US$ 0,83 exibida com centavos", U.signedMoney(r1.varAtivos), "+US$ 0,83");
+
+    /* ============ 2. Juros compostos e aporte (briefing §9, §10, §11) ============ */
+    grupo("2 · Reinvestimento e aporte: capital de 50 que vira 60");
+    var p2 = S.addPool(base({
+      base: "SOL", quote: "USDC", protocol: "Orca",
+      qtyBase: 0.25, qtyQuote: 25, priceBase: 100, priceQuote: 1,
+      capital: 50, currentValue: 50, openedAt: diasAtras(40)
+    }));
+    S.addFee(p2.id, { amount: 5, status: "coletada", date: diasAtras(20) });
+    S.addEvent(p2.id, { type: "reinvest", amountUSD: 5, date: diasAtras(20) });
+    S.addEvent(p2.id, { type: "aporte", amountUSD: 5, date: diasAtras(15) });
+    S.updatePool(p2.id, { currentValue: 62 });
+    var r2 = S.poolSummary(p2.id);
+    nota("Do bolso saíram 50 + 5 = 55. A base da posição é 60, porque " +
+         "os 5 de taxa reinvestida voltaram para dentro dela — mas esse dinheiro " +
+         "já era lucro, então não pode contar como capital investido.");
+    eq("capital do bolso (aportado)", r2.aportado, 55);
+    eq("reinvestido", r2.reinvestido, 5);
+    eq("base da posição", r2.baseInvestida, 60);
+    eq("variação dos ativos = 62 − 60", r2.varAtivos, 2);
+    eq("taxas geradas", r2.taxasTotal, 5);
+    eq("resultado NÃO é 62 − 50 = 12", r2.resultado, 7);
+    eq("conferência pelo fluxo de caixa", r2._conferencia, 7);
+    eq("capital gravado acompanha a base", S.pool(p2.id).capital, 60);
+
+    /* ============ 3. Retirada ============ */
+    grupo("3 · Retirada de principal");
+    var p3 = S.addPool(base({
+      base: "ETH", quote: "USDC", protocol: "Aerodrome", chain: "Base",
+      qtyBase: 0.05, qtyQuote: 100, priceBase: 2000, priceQuote: 1,
+      capital: 200, currentValue: 200, openedAt: diasAtras(70)
+    }));
+    S.addEvent(p3.id, { type: "retirada", amountUSD: 50, date: diasAtras(40) });
+    S.updatePool(p3.id, { currentValue: 160 });
+    var r3 = S.poolSummary(p3.id);
+    eq("aportado (bruto)", r3.aportado, 200);
+    eq("retirado", r3.retirado, 50);
+    eq("base após retirada", r3.baseInvestida, 150);
+    eq("variação dos ativos = 160 − 150", r3.varAtivos, 10);
+    eq("resultado", r3.resultado, 10);
+    eq("conferência pelo fluxo de caixa", r3._conferencia, 10);
+
+    /* ============ 4. Invariantes do modelo ============ */
+    grupo("4 · O que o store precisa recusar");
+    is("aporte negativo", S.addEvent(p3.id, { type: "aporte", amountUSD: -5 }), null);
+    is("aporte zerado", S.addEvent(p3.id, { type: "aporte", amountUSD: 0 }), null);
+    is("valor não numérico", S.addEvent(p3.id, { type: "aporte", amountUSD: "abc" }), null);
+    is("tipo de evento inexistente", S.addEvent(p3.id, { type: "magia", amountUSD: 5 }), null);
+    is("reinvestir mais do que foi coletado", S.addEvent(p3.id, { type: "reinvest", amountUSD: 999 }), null);
+    is("retirar mais do que a posição vale", S.addEvent(p3.id, { type: "retirada", amountUSD: 1e9 }), null);
+    is("apagar o evento de abertura", S.removeEvent(p3.id, S.events(p3.id)[0].id), null);
+    nota("Estas regras vivem no store, não no formulário: um store que aceita " +
+         "o que a tela recusa tem duas versões da verdade.");
+
+    /* ============ 5. Extremos e divisões por zero ============ */
+    grupo("5 · Valores extremos");
+    var p4 = S.addPool(base({
+      base: "AAA", quote: "BBB", protocol: "X",
+      qtyBase: 0, qtyQuote: 0, priceBase: 0, priceQuote: 0,
+      capital: 0, currentValue: 0, openedAt: hoje()
+    }));
+    var r4 = S.poolSummary(p4.id);
+    eq("percentual com capital zero", r4.resultadoPct, 0);
+    eq("APR com capital zero", r4.aprReal, 0);
+    ok("nenhum NaN ou Infinity",
+       [r4.resultado, r4.varAtivos, r4.aprReal, r4.resultadoPct, r4.dias, r4.valorTotal].every(isFinite));
+
+    var p5 = S.addPool(base({
+      base: "SOL", quote: "USDC", protocol: "Orca",
+      qtyBase: 0.0001, qtyQuote: 0.01, priceBase: 100, priceQuote: 1,
+      capital: 0.02, currentValue: 0.0234, openedAt: diasAtras(3)
+    }));
+    var r5 = S.poolSummary(p5.id);
+    eq("posição de centavos: variação", r5.varAtivos, 0.0034, 1e-9);
+    isTexto("valores abaixo de um centavo não somem na exibição",
+            U.money(r5.varAtivos), "US$ 0,0034");
+
+    var p6 = S.addPool(base({
+      base: "BTC", quote: "USDC", protocol: "Orca",
+      qtyBase: 10, qtyQuote: 900000, priceBase: 90000, priceQuote: 1,
+      capital: 1800000, currentValue: 1500000, openedAt: diasAtras(200)
+    }));
+    var r6 = S.poolSummary(p6.id);
+    eq("prejuízo grande", r6.varAtivos, -300000);
+    eq("percentual negativo", r6.resultadoPct, -300000 / 1800000 * 100);
+    ok("prejuízo exibido com sinal", U.signedMoney(r6.resultado).charAt(0) === "-",
+       U.signedMoney(r6.resultado));
+
+    /* ============ 6. Faixa de preço (denominação) ============ */
+    grupo("6 · Faixa de preço — a razão que a corretora mostra");
+    nota("A Orca escreve \"SOL per ORCA\": quantos SOL vale 1 ORCA, ou seja " +
+         "preço do ORCA dividido pelo do SOL. O cálculo fazia o inverso, e toda " +
+         "pool com faixa cadastrada caía \"fora do range\".");
+    var m1 = P.calcular({
+      base: "SOL", quote: "ORCA", qtyBase: 1, qtyQuote: 100,
+      priceBase: 100, priceQuote: 1.5,
+      rangeLow: 0.010, rangeHigh: 0.020, rangeDenom: "base_por_quote"
+    }, { SOL: 142.5, ORCA: 1.5 });
+    eq("razão BASE por PAR = preçoPar / preçoBase", m1.razao, 1.5 / 142.5, 1e-9);
+    is("posição dentro da faixa", m1.dentroDaFaixa, true);
+    var m2 = P.calcular({
+      base: "SOL", quote: "ORCA", qtyBase: 1, qtyQuote: 100,
+      priceBase: 100, priceQuote: 1.5,
+      rangeLow: 50, rangeHigh: 90, rangeDenom: "quote_por_base"
+    }, { SOL: 142.5, ORCA: 1.5 });
+    eq("razão PAR por BASE = preçoBase / preçoPar", m2.razao, 142.5 / 1.5, 1e-9);
+    is("fora da faixa quando a razão passa do topo", m2.dentroDaFaixa, false);
+    var m3 = P.calcular({
+      base: "SOL", quote: "ORCA", qtyBase: 1, qtyQuote: 100,
+      priceBase: 100, priceQuote: 1.5, rangeLow: 0, rangeHigh: 0
+    }, { SOL: 142.5, ORCA: 1.5 });
+    is("sem faixa cadastrada não inventa veredito", m3.dentroDaFaixa, null);
+
+    /* ============ 7. Motor de mercado ============ */
+    grupo("7 · Benchmark HODL, composição real e impermanent loss");
+    var mh = P.calcular({
+      base: "SOL", quote: "USDC", qtyBase: 1, qtyQuote: 100,
+      priceBase: 100, priceQuote: 1, feesColetadas: 0, feesPendentes: 0
+    }, { SOL: 150, USDC: 1 });
+    eq("custo de entrada", mh.custo, 200);
+    eq("benchmark HODL a preço de hoje", mh.hodl, 250);
+    is("modo sem composição informada", mh.modo, "hodl");
+    eq("PnL de mercado", mh.pnlMercado, 50);
+    eq("variação do lado base", mh.varBase, 50);
+
+    var mr = P.calcular({
+      base: "SOL", quote: "USDC", qtyBase: 1, qtyQuote: 100,
+      priceBase: 100, priceQuote: 1,
+      qtyBaseNow: 0.8, qtyQuoteNow: 130,
+      feesColetadas: 2, feesPendentes: 1
+    }, { SOL: 150, USDC: 1 });
+    is("modo com composição informada", mr.modo, "real");
+    eq("valor real da posição", mr.real, 0.8 * 150 + 130);
+    eq("impermanent loss = real − HODL", mr.il, 250 - 250, 0.001);
+    eq("PnL como na corretora (mercado + coletadas)", mr.pnlTotal, 50 + 2);
+    eq("PnL econômico (soma pendente, desconta reinvestido)", mr.pnlEconomico, 50 + 2 + 1);
+
+    var mp = P.calcular({
+      base: "SOL", quote: "USDC", qtyBase: 1, qtyQuote: 100,
+      priceBase: 100, priceQuote: 1, qtyBaseNow: 0.8
+    }, { SOL: 150, USDC: 1 });
+    ok("um lado em branco levanta bandeira", mp.composicaoParcial === true);
+
+    var ms = P.calcular({
+      base: "XYZ", quote: "USDC", qtyBase: 10, qtyQuote: 100,
+      priceBase: 5, priceQuote: 1
+    }, { USDC: 1 });
+    is("sem preço de um lado, precoOk é falso", ms.precoOk, false);
+    ok("diz qual token faltou", ms.faltando.join(",") === "XYZ", ms.faltando.join(","));
+
+    /* ============ 8. Agregados da carteira ============ */
+    grupo("8 · Somatórios da carteira");
+    S.reset();
+    var a = S.addPool(base({ base: "SOL", quote: "USDC", capital: 100, currentValue: 120, apr: 10, openedAt: diasAtras(30) }));
+    var b = S.addPool(base({ base: "ETH", quote: "USDC", capital: 900, currentValue: 880, apr: 30, openedAt: diasAtras(30) }));
+    S.addFee(a.id, { amount: 5, status: "pendente", date: hoje() });
+    var k = S.kpis();
+    eq("patrimônio soma taxa pendente", k.total, 120 + 5 + 880);
+    eq("resultado = soma dos resumos", k.profit, (120 - 100 + 5) + (880 - 900));
+    eq("APR médio ponderado pelo valor", k.avgApr, (10 * 125 + 30 * 880) / (125 + 880), 0.01);
+    nota("A média simples daria 20% — o número que a tela mostrava antes. " +
+         "Com US$ 125 a 10% e US$ 880 a 30%, o rendimento esperado da carteira " +
+         "é muito mais próximo de 30% do que de 20%.");
+
+    var dist = S.distribution("token");
+    var somaPct = dist.reduce(function (s, x) { return s + x.pct; }, 0);
+    eq("distribuição por token soma 100%", somaPct, 100, 0.01);
+
+    /* ============ 9. Datas e fuso ============ */
+    grupo("9 · Datas");
+    is("hoje é a data LOCAL, não a UTC", U.hoje(), localIso(new Date()));
+    is("data inválida não vira NaN", U.daysBetween(undefined), null);
+    is("data inválida não vira NaN (texto)", U.daysBetween("nao-e-data"), null);
+    eq("dias completos, sem arredondar para cima",
+       U.daysBetween(localIso(new Date(Date.now() - 9.6 * 86400000))), 9, 0.001);
+    nota("Com toISOString() a data vinha em UTC: depois das 21h no Brasil, " +
+         "tudo que fosse registrado nascia com a data de amanhã.");
+
+    /* ============ 10. Formatação de dinheiro ============ */
+    grupo("10 · Dinheiro na tela");
+    isTexto("taxa de 68 centavos", U.money(0.68), "US$ 0,68");
+    isTexto("taxa de 68 centavos, com sinal", U.signedMoney(0.68), "+US$ 0,68");
+    isTexto("valor de US$ 150,50 mantém centavos", U.money(150.5), "US$ 150,50");
+    isTexto("valor abaixo de um centavo não some", U.money(0.0034), "US$ 0,0034");
+    is("percentual não numérico vira travessão", U.pct(NaN), "—");
+    nota("signedMoney formatava com ZERO casas: US$ 0,68 virava \"+US$ 1\" e " +
+         "US$ 0,15 virava \"+US$ 0\". Numa pool pequena, nenhum número da tela " +
+         "tinha relação com o valor calculado.");
+  }
+
+  /* ---------------- utilidades dos casos ---------------- */
+  function localIso(d) {
+    var mm = String(d.getMonth() + 1), dd = String(d.getDate());
+    return d.getFullYear() + "-" + (mm.length < 2 ? "0" + mm : mm) + "-" + (dd.length < 2 ? "0" + dd : dd);
+  }
+  function hoje() { return localIso(new Date()); }
+  function diasAtras(n) { return localIso(new Date(Date.now() - n * 86400000)); }
+  function base(o) {
+    var d = {
+      base: "AAA", quote: "BBB", protocol: "Orca", chain: "Solana", category: "Liquidez",
+      qtyBase: 0, qtyQuote: 0, priceBase: 0, priceQuote: 0,
+      capital: 0, currentValue: 0, profit: 0, profitPct: 0, apr: 0, status: "ativa",
+      rangeLow: 0, rangeHigh: 0, rangeDenom: "base_por_quote",
+      fees: [], objectives: [], objectiveLabels: [], goal: "teste"
+    };
+    for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) d[k] = o[k];
+    d.createdAt = d.openedAt = d.openedAt || hoje();
+    return d;
+  }
+
+  /* ---------------- execução isolada ---------------- */
+  var backup = {};
+  CHAVES.forEach(function (k) {
+    try { backup[k] = localStorage.getItem(k); } catch (e) { backup[k] = null; }
+  });
+
+  var erroFatal = null;
+  try {
+    rodar();
+  } catch (e) {
+    erroFatal = e;
+  } finally {
+    /* Restaura SEMPRE — inclusive se um caso lançou. Uma bateria de
+       testes que apaga os dados do usuário ao falhar é pior que a
+       ausência de testes. */
+    CHAVES.forEach(function (k) {
+      try {
+        if (backup[k] == null) localStorage.removeItem(k);
+        else localStorage.setItem(k, backup[k]);
+      } catch (e) {}
+    });
+    /* Devolver o localStorage não basta: o DeFiStore guarda o estado
+       em memória e qualquer gravação posterior o mandaria de volta ao
+       disco, desfazendo a restauração. _reload() joga fora o cache e
+       relê o que acabou de ser devolvido. */
+    try { if (window.DeFiStore && DeFiStore._reload) DeFiStore._reload(); } catch (e) {}
+  }
+
+  /* ---------------- saída ---------------- */
+  var score = document.getElementById("score");
+  score.innerHTML =
+    '<span class="t-pill ' + (falhou ? "bad" : "ok") + '">' + passou + " passaram</span>" +
+    '<span class="t-pill ' + (falhou ? "bad" : "neutro") + '">' + falhou + " falharam</span>" +
+    '<span class="t-pill neutro">' + (passou + falhou) + " casos</span>" +
+    (erroFatal ? '<span class="t-pill bad">exceção: ' + esc(erroFatal.message) + "</span>" : "");
+
+  document.getElementById("saida").innerHTML = grupos.map(function (g) {
+    return '<div class="panel panel-pad t-grupo"><h2>' + esc(g.nome) + "</h2>" +
+      g.casos.map(function (c) {
+        if (c.nota) return '<div class="t-nota">' + esc(c.nota) + "</div>";
+        return '<div class="t-caso ' + (c.pass ? "pass" : "fail") + '">' +
+          '<span class="st">' + (c.pass ? "✓" : "✕") + "</span>" +
+          "<span>" + esc(c.nome) + "</span>" +
+          '<span class="val">' + esc(c.obtido) + "</span>" +
+          '<span class="val">' + (c.pass ? "" : "esperado " + esc(c.esperado)) + "</span>" +
+        "</div>";
+      }).join("") + "</div>";
+  }).join("");
+
+  if (erroFatal && window.console) console.error(erroFatal);
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+})();
+</script>
+</body>
+</html>

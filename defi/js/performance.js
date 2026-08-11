@@ -86,6 +86,12 @@
     /* Valor real, só se a pessoa informou a composição atual. */
     var nB = n(pos.qtyBaseNow), nQ = n(pos.qtyQuoteNow);
     var temReal = (nB > 0 || nQ > 0);
+
+    /* Um lado informado e o outro em branco numa pool que TINHA os
+       dois: quase sempre é esquecimento, não posição de um lado só —
+       e o valor sai pela metade sem nenhum aviso. A tela pergunta. */
+    var composicaoParcial = temReal &&
+      ((nB <= 0 && qB > 0) || (nQ <= 0 && qQ > 0));
     var real = temReal
       ? (temB ? nB * aB : nB * eB) + (temQ ? nQ * aQ : nQ * eQ)
       : null;
@@ -96,19 +102,51 @@
 
     var coletadas = n(pos.feesColetadas);
     var pendentes = n(pos.feesPendentes);
+    var reinvestido = n(pos.reinvestido);
 
-    /* Mesma composição da Orca: mercado + taxa realizada.
-       Pendente fica fora, mostrado separado. */
+    /* DUAS composições, e a diferença entre elas importa:
+
+         pnlTotal          mercado + taxa JÁ realizada. É a conta da
+                           Orca/Raydium, para os números baterem lado a
+                           lado com a corretora.
+         pnlEconomico      soma também a taxa pendente e desconta o que
+                           foi reinvestido (esse dinheiro voltou para
+                           dentro da posição e já está em valorAtual —
+                           contar de novo seria contar duas vezes).
+
+       A tela do ATLAS usa a segunda, porque é o resultado real do
+       usuário; o painel de Mercado mostra a primeira, rotulada, para
+       poder ser conferida contra o print da corretora. */
     var pnlTotal = pnlMercado + coletadas;
+    var pnlEconomico = pnlMercado + coletadas + pendentes - reinvestido;
 
     /* ---- Faixa de preço ----
-       A pool cota uma razão, não um preço em dólar. No print da Orca
-       é "SOL per ORCA" = preço do ORCA dividido pelo preço do SOL.
-       Guardamos qual token é o numerador para não inverter a faixa. */
+       A pool cota uma RAZÃO, não um preço em dólar. No print da Orca é
+       "SOL per ORCA": quantos SOL vale 1 ORCA — ou seja, preço do ORCA
+       DIVIDIDO pelo preço do SOL.
+
+       O CÓDIGO FAZIA O INVERSO
+       ------------------------
+       "base_por_quote" (o rótulo da tela diz literalmente "SOL por
+       ORCA") calculava aB/aQ = preçoSOL/preçoORCA. Com SOL a US$ 142 e
+       ORCA a US$ 1,50 isso dá 94,7 — que é quantos ORCA cabem em 1
+       SOL, exatamente a razão contrária. O campo da faixa pede um
+       número como 0,01444382; a comparação era feita contra 94,7.
+
+       Resultado: TODA pool com faixa cadastrada caía fora do
+       intervalo. O selo dizia "fora da faixa", o status da posição era
+       reescrito para "range" pelo dashboard, e a consolidação da raiz
+       emitia um alerta CRÍTICO ("pool fora da faixa de preço") para
+       posições que estavam dentro. Um sinal de erro em cima de um dado
+       correto — pior que não ter sinal nenhum.
+
+         base_por_quote  →  quantos BASE por 1 QUOTE  =  aQ / aB
+         quote_por_base  →  quantos QUOTE por 1 BASE  =  aB / aQ
+       ---------------------------------------------------------------- */
     var razao = null, dentro = null;
     var denom = pos.rangeDenom || "base_por_quote";
-    if (temB && temQ) {
-      razao = denom === "quote_por_base" ? (aQ / aB) : (aB / aQ);
+    if (temB && temQ && aB > 0 && aQ > 0) {
+      razao = denom === "quote_por_base" ? (aB / aQ) : (aQ / aB);
     }
     var low = n(pos.rangeLow), high = n(pos.rangeHigh);
     var temFaixa = low > 0 && high > 0 && high > low;
@@ -133,6 +171,7 @@
       hodl: hodl,
       real: real,
       modo: temReal ? "real" : "hodl",
+      composicaoParcial: composicaoParcial,
       valorAtual: valorAtual,
 
       pnlMercado: pnlMercado,
@@ -146,6 +185,8 @@
 
       pnlTotal: pnlTotal,
       pnlTotalPct: custo > 0 ? (pnlTotal / custo) * 100 : 0,
+      pnlEconomico: pnlEconomico,
+      pnlEconomicoPct: custo > 0 ? (pnlEconomico / custo) * 100 : 0,
 
       razao: razao,
       rangeLow: low, rangeHigh: high,

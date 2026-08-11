@@ -17,6 +17,60 @@ As alterações (novas pools, anotações, etc.) ficam salvas no navegador
 > Gráficos e fontes usam CDN (Chart.js + Google Fonts), então mantenha conexão
 > na primeira carga.
 
+---
+
+## O modelo financeiro de uma posição
+
+Uma pool **não** é "um capital e um valor atual". É um conjunto de fluxos
+datados, e é isso que permite responder à única pergunta que importa: o capital
+cresceu porque você colocou mais dinheiro, porque reinvestiu a taxa, ou porque a
+posição valorizou?
+
+| Conceito | O que é | Onde mora |
+|---|---|---|
+| **Capital colocado** (`aportado`) | tudo que saiu do seu bolso — abertura + aportes | eventos `abertura` e `aporte` |
+| **Retirado** | principal sacado de volta | evento `retirada` |
+| **Reinvestido** | taxa já coletada devolvida à pool (juros compostos) | evento `reinvest` |
+| **Base da posição** | `aportado + reinvestido − retirado` — o custo da posição hoje | derivado |
+| **Valor da posição** | valor de mercado, **sem** a taxa pendente (é o que a corretora mostra) | `currentValue` |
+| **Taxas** | coletadas (saíram para a carteira) e pendentes (ainda na pool) | `p.fees[]` |
+
+O resultado fecha por **dois caminhos independentes**, e o objeto devolvido por
+`DeFiStore.poolSummary()` carrega os dois para poderem ser conferidos:
+
+```
+resultado = (valorPosição + taxaPendente + taxaColetada − reinvestido + retirado) − aportado
+resultado = variaçãoDosAtivos + taxasGeradas
+```
+
+O campo `_conferencia` traz a primeira conta; se ela divergir de `resultado`,
+há um erro no modelo — e o teste afirma sobre isso.
+
+> **Reinvestimento não é aporte.** O dinheiro já era seu: ele aumenta a base da
+> posição sem aumentar o capital colocado. Somar os dois faria o sistema
+> mostrar menos lucro do que houve.
+
+### Duas medidas de PnL, de propósito
+
+- **"PnL como na corretora"** (painel Mercado) = mercado + taxa coletada. Serve
+  para conferir número a número contra o print da Orca ou da Raydium.
+- **Resultado** (painel Performance da pool) = inclui a taxa pendente e desconta
+  o reinvestimento. É o resultado econômico real da posição.
+
+Os dois aparecem com rótulos diferentes justamente porque **são** diferentes.
+
+---
+
+## Testes
+
+`defi/testes.html` — bateria de verificação matemática do módulo. Cada caso
+reconstrói o resultado esperado à mão e compara com o que o sistema calcula.
+Roda contra um estado isolado: as chaves do módulo são salvas antes e devolvidas
+ao final, inclusive se um caso quebrar.
+
+Rode depois de qualquer alteração em `js/data.js`, `js/performance.js` ou
+`js/utils.js`.
+
 ## Plugar no Atlas
 
 O ponto de entrada do módulo é `defi/index.html`. Basta o botão **DeFi** do

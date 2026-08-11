@@ -98,6 +98,12 @@
         <button class="modal-close" id="closeNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
       <div class="modal-body">
+        <!-- Faixa de rascunho: aparece só quando o wizard foi reaberto
+             com dados de uma tentativa anterior. Restaurar em silêncio
+             faria a pessoa criar uma posição com dados que ela acha
+             que apagou. -->
+        <div class="draft-bar" id="draftBar" style="display:none"></div>
+
         <div class="wizard-steps" id="wsteps">
           <div class="wstep active" data-s="0"><span class="dot">1</span><span class="lbl">Blockchain</span><span class="line"></span></div>
           <div class="wstep" data-s="1"><span class="dot">2</span><span class="lbl">Protocolo</span><span class="line"></span></div>
@@ -211,8 +217,8 @@
                  Orca é "SOL per ORCA". Sem saber qual token é o numerador,
                  a faixa inverte e o selo dentro/fora sai errado. -->
             <select class="select" id="rngDenom" style="margin-top:8px">
-              <option value="base_por_quote">a faixa está em BASE por PAR (ex.: SOL por ORCA)</option>
-              <option value="quote_por_base">a faixa está em PAR por BASE (ex.: ORCA por SOL)</option>
+              <option value="base_por_quote">a faixa está em BASE por PAR — quantos BASE valem 1 PAR (ex.: SOL por ORCA, 0,0144)</option>
+              <option value="quote_por_base">a faixa está em PAR por BASE — quantos PAR valem 1 BASE (ex.: ORCA por SOL, 69,3)</option>
             </select>
             <div class="hint">Copie os dois números da sua corretora. Dá para preencher depois, na página da posição.</div>
           </div>

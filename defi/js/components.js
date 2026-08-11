@@ -96,14 +96,16 @@
         try { wd = (S.all().byWallet || {})[walletId]; } catch (e) { return null; }
         if (!wd) return { id: walletId, module: "defi", capital: 0, saldo: 0, valorAtual: 0, assets: [] };
 
-        function soma(lista, campo) {
-          return (lista || []).reduce(function (a, x) { return a + (Number(x[campo]) || 0); }, 0);
-        }
-        var valor = soma(wd.pools, "currentValue") + soma(wd.staking, "value") + soma(wd.lending, "value");
-        var capital = soma(wd.pools, "capital") + soma(wd.staking, "value") + soma(wd.lending, "value");
-
+        /* A soma tinha uma cópia própria da regra e esquecia a TAXA
+           PENDENTE — dinheiro do usuário parado dentro da pool. Agora
+           delega a DeFiStore.walletValue/walletCapital, que é a mesma
+           função usada pelos KPIs, pelo globalTotal e pela consolidação
+           da raiz. Uma regra, quatro leitores. */
         return { id: walletId, module: "defi",
-                 capital: capital, saldo: valor, valorAtual: valor, assets: [] };
+                 capital: S.walletCapital(wd),
+                 saldo: S.walletValue(wd),
+                 valorAtual: S.walletValue(wd),
+                 assets: [] };
       }
 
       if (window.AtlasWallets.registerLive) {
@@ -143,16 +145,34 @@
         '</div>';
     },
 
-    /* ---------- Card de pool / posição ---------- */
+    /* ---------- Card de pool / posição ----------
+       Os números vêm de DeFiStore.poolSummary, não dos campos gravados
+       na pool. O card mostrava "Capital" (p.capital) e "Valor atual"
+       (p.currentValue) lidos direto do objeto: com aporte e
+       reinvestimento no meio, os dois passaram a ter significado
+       diferente do que o rótulo prometia, e a taxa pendente ficava
+       fora do valor. Ler pelo resumo é a mesma conta da página da
+       posição — os dois não têm como divergir. */
     poolCard: function (p) {
-      var st = U.status(p.status);
+      var r = (window.DeFiStore && DeFiStore.poolSummary) ? DeFiStore.poolSummary(p) : null;
+      /* "Capital" no card = o que saiu do BOLSO (aportado), o mesmo
+         número que a página da posição chama de "Capital colocado". A
+         base investida inclui reinvestimento, e mostrar uma no card e
+         outra na página fazia o mesmo rótulo valer duas coisas — e o
+         percentual ao lado, medido sobre o aportado, não fechava com o
+         capital exibido. */
+      var capital = r ? r.aportado : (Number(p.capital) || 0);
+      var valor   = r ? r.valorTotal    : (Number(p.currentValue) || 0);
+      var lucro   = r ? r.resultado     : (Number(p.profit) || 0);
+      var lucroPct = r ? r.resultadoPct : (Number(p.profitPct) || 0);
+
       var rangeOut = p.status === "range";
       var rangeHtml = "";
       if ((p.status === "ativa" || p.status === "range") && p.rangeHigh > 0) {
         var pos = Math.max(4, Math.min(96, (p.rangePos || 0.5) * 100));
         rangeHtml = '<div class="range-bar' + (rangeOut ? " out" : "") + '"><i style="left:0;width:' + pos + '%"></i></div>';
       }
-      var profitCls = p.profit > 0 ? "up" : (p.profit < 0 ? "down" : "flat");
+      var profitCls = lucro > 0 ? "up" : (lucro < 0 ? "down" : "flat");
 
       return '' +
         '<a class="pos-card" href="pool.html?id=' + p.id + '">' +
@@ -172,9 +192,9 @@
             '<span class="tag tag-cat">' + p.category + '</span>' +
           '</div>' +
           '<div class="pos-metrics">' +
-            '<div class="pos-metric"><div class="k">Capital</div><div class="v">' + U.money(p.capital) + '</div></div>' +
-            '<div class="pos-metric"><div class="k">Lucro</div><div class="v delta ' + profitCls + '">' + U.pct(p.profitPct, true) + '</div></div>' +
-            '<div class="pos-metric"><div class="k">Valor atual</div><div class="v">' + U.money(p.currentValue) + '</div></div>' +
+            '<div class="pos-metric"><div class="k">Capital</div><div class="v">' + U.money(capital) + '</div></div>' +
+            '<div class="pos-metric"><div class="k">Resultado</div><div class="v delta ' + profitCls + '">' + U.pct(lucroPct, true) + '</div></div>' +
+            '<div class="pos-metric"><div class="k">Valor atual</div><div class="v">' + U.money(valor) + '</div></div>' +
             '<div class="pos-metric"><div class="k">APR</div><div class="v">' + (p.apr ? U.pct(p.apr) : "—") + '</div></div>' +
           '</div>' +
           rangeHtml +

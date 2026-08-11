@@ -196,6 +196,25 @@ camada de *apresentação*: converte na hora de exibir, nunca ao gravar. Mistura
 bases de moeda no armazenamento é como um sistema financeiro se corrompe em
 silêncio.
 
+**Arredondamento é trabalho da tela, nunca da camada de dados.** As casas seguem
+uma régua só em todo o sistema: sem centavos a partir de mil, com centavos abaixo
+disso, e quatro casas para valores menores que um centavo (a taxa de pool que uma
+posição pequena gera). Camadas de cálculo devolvem o número cheio — quem exibe
+decide como mostrar.
+
+---
+
+## Testes
+
+`defi/testes.html` roda a bateria de verificação matemática do módulo DeFi: fluxos
+de capital, taxas, PnL, impermanent loss, faixa de preço, datas e formatação. Cada
+caso reconstrói o resultado esperado à mão e compara com o que o sistema calcula —
+a interface não participa.
+
+Rode depois de mexer em `defi/js/data.js`, `performance.js` ou `utils.js`. A página
+salva as chaves do módulo antes de rodar e as devolve ao final, inclusive se um
+caso quebrar: **nenhuma posição real é criada, alterada ou apagada**.
+
 ---
 
 ## Identidade visual

@@ -218,17 +218,42 @@
        um por um. Stablecoin não vai à rede.
        ------------------------------------------------------------ */
     precos: function (simbolos) {
+      return Tokens.precosDetalhado(simbolos).then(function (d) {
+        /* Rejeita quando NENHUM preço veio e houve erro de rede. Antes
+           esta função engolia toda falha e devolvia {} — o chamador não
+           tinha como distinguir "token sem preço" de "CoinGecko fora do
+           ar", e a tela seguia mostrando o valor gravado dias atrás com
+           cara de valor de agora. */
+        if (d.erro && !Object.keys(d.valores).length) throw d.erro;
+        return d.valores;
+      });
+    },
+
+    /* ------------------------------------------------------------
+       A MESMA BUSCA, COM O DIAGNÓSTICO JUNTO
+
+         valores  { SIMBOLO: precoUSD }
+         faltando [SIMBOLO...]   pedidos que não voltaram com preço
+         erro     Error|null     falha de rede/limite (AtlasHttp já dá
+                                 a mensagem pronta: 429, timeout, etc.)
+         fonte    { SIMBOLO: "stable"|"registro"|"busca" }
+                  de onde saiu cada preço — é o que permite a tela
+                  responder "de onde veio esse número?"
+       ------------------------------------------------------------ */
+    precosDetalhado: function (simbolos) {
       var alvos = (simbolos || []).map(norm).filter(Boolean);
       var unicos = [], visto = {};
       alvos.forEach(function (s) { if (!visto[s]) { visto[s] = 1; unicos.push(s); } });
 
-      var resultado = {};
+      var valores = {}, fonte = {}, erro = null;
       var porId = {};   // cgId -> [símbolos]
       var ids = [];
       var desconhecidos = [];
 
       unicos.forEach(function (s) {
-        if (window.AtlasPrice && AtlasPrice.isStable(s)) { resultado[s] = 1; return; }
+        if (window.AtlasPrice && AtlasPrice.isStable(s)) {
+          valores[s] = 1; fonte[s] = "stable"; return;
+        }
         var id = Tokens.cgId(s);
         if (id) {
           if (!porId[id]) { porId[id] = []; ids.push(id); }
@@ -241,25 +266,46 @@
       var prov = (window.AtlasProviders && AtlasProviders.get)
         ? AtlasProviders.get("coingecko") : null;
 
-      var pLote = (ids.length && prov && prov.prices)
-        ? prov.prices(ids).then(function (mapa) {
+      if (unicos.length && !prov && !ids.length && !desconhecidos.length) {
+        // só stablecoins: não precisa de provedor
+      } else if ((ids.length || desconhecidos.length) && !prov) {
+        erro = new Error("Provedor de preços não carregado nesta página.");
+      }
+
+      /* pricesRaw é a versão que PROPAGA o erro. prices (que engole) fica
+         como reserva: um provedor antigo em cache não pode fazer a busca
+         desaparecer em silêncio — foi o que aconteceu durante a auditoria,
+         com o painel dizendo "sem preço" sem nenhum erro para mostrar. */
+      var lote = null;
+      if (ids.length && prov) {
+        if (prov.pricesRaw) lote = prov.pricesRaw(ids);
+        else if (prov.prices) lote = prov.prices(ids);
+      }
+      var pLote = lote
+        ? lote.then(function (mapa) {
             ids.forEach(function (id) {
               var v = mapa[id];
               if (typeof v === "number" && isFinite(v)) {
-                porId[id].forEach(function (s) { resultado[s] = v; });
+                porId[id].forEach(function (s) { valores[s] = v; fonte[s] = "registro"; });
               }
             });
-          }).catch(function () {})
+          }).catch(function (e) { erro = erro || e; })
         : Promise.resolve();
+      if (ids.length && !lote) {
+        erro = erro || new Error("Provedor de preços sem capacidade de cotação nesta página.");
+      }
 
       var pSoltos = desconhecidos.map(function (s) {
         if (!window.AtlasPrice) return Promise.resolve();
         return AtlasPrice.bySymbol(s).then(function (r) {
-          if (r && typeof r.usd === "number") resultado[s] = r.usd;
-        }).catch(function () {});
+          if (r && typeof r.usd === "number") { valores[s] = r.usd; fonte[s] = "busca"; }
+        }).catch(function (e) { erro = erro || e; });
       });
 
-      return Promise.all([pLote].concat(pSoltos)).then(function () { return resultado; });
+      return Promise.all([pLote].concat(pSoltos)).then(function () {
+        var faltando = unicos.filter(function (s) { return valores[s] == null; });
+        return { valores: valores, faltando: faltando, erro: erro, fonte: fonte, em: new Date().toISOString() };
+      });
     }
   };
 

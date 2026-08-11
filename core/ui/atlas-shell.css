@@ -63,6 +63,30 @@
 }
 .atlas-backfoot:active { transform: translateY(1px); }
 
+/* ------------------------------------------------------------------
+   Módulo sem sidebar (DeFi): o mesmo botão, ancorado no canto inferior
+   ESQUERDO — a posição equivalente à do rodapé da sidebar nos outros
+   módulos. Espelha o Oráculo, que mora no canto oposto.
+   ------------------------------------------------------------------ */
+.atlas-backfoot--solto {
+  position: fixed;
+  left: var(--atlas-sp-6, 24px);
+  bottom: var(--atlas-sp-6, 24px);
+  z-index: 60;
+  margin: 0;
+  background: var(--atlas-bg-raise, var(--atlas-surface));
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(8px);
+}
+@media (max-width: 720px) {
+  .atlas-backfoot--solto {
+    left: var(--atlas-sp-4, 16px);
+    bottom: var(--atlas-sp-4, 16px);
+  }
+}
+/* Impressão não tem para onde voltar */
+@media print { .atlas-backfoot--solto { display: none; } }
+
 /* Sidebar recolhida (Hold/Trade): mostra só o ícone */
 .collapsed .atlas-backfoot span,
 [data-collapsed="true"] .atlas-backfoot span { display: none; }

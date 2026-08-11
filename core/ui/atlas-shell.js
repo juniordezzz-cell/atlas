@@ -152,12 +152,31 @@
     return a;
   }
 
+  /* ------------------------------------------------------------
+     O DeFi não tem sidebar — e ficava com o botão fora do padrão
+
+     Hold, Trade, RWA e Academy recebem o "Voltar ao Atlas" no RODAPÉ
+     da sidebar: canto inferior esquerdo, o mesmo lugar em todos. O
+     DeFi, por ser o único de barra horizontal, ficava sem substituto e
+     mantinha o botão nativo na PONTA DIREITA DO TOPO — a única tela do
+     sistema com a saída num canto diferente, que é exatamente a
+     inconsistência que este componente existe para eliminar.
+
+     Sem sidebar onde encaixar, o botão vira uma âncora fixa no canto
+     inferior esquerdo: mesma posição relativa, mesmo desenho, mesmo
+     rótulo. A ancoragem é a mesma ideia do Oráculo, do outro lado.
+     ------------------------------------------------------------ */
   function mountBackFoot() {
     if (document.querySelector('[data-atlas-ui="backfoot"]')) return;
+    var el = buildBackFoot();
     var side = findSidebar();
-    if (!side) return;                       // DeFi: sem sidebar, usa o próprio
-    side.setAttribute("data-atlas-sidebar", "on");
-    side.appendChild(buildBackFoot());
+    if (side) {
+      side.setAttribute("data-atlas-sidebar", "on");
+      side.appendChild(el);
+    } else {
+      el.classList.add("atlas-backfoot--solto");
+      document.body.appendChild(el);
+    }
     // Só agora é seguro esconder os botões nativos: existe um substituto.
     document.documentElement.setAttribute("data-atlas-backfoot", "on");
   }

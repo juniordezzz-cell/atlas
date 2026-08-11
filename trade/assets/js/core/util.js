@@ -23,7 +23,11 @@
         }).format(n);
       } catch (e) { return "$" + Math.round(n).toLocaleString("pt-BR"); }
     },
-    pct: function (n) { return (n >= 0 ? "+" : "") + n.toFixed(2) + "%"; },
+    /* Vírgula decimal: toFixed usa ponto e destoava do resto do ATLAS. */
+    pct: function (n) {
+      return (n >= 0 ? "+" : "") +
+        (Number(n) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+    },
     signClass: function (n) { return n >= 0 ? "up" : "down"; },
     // horas -> "Xh" ou "Xd Yh"
     dur: function (h) {

@@ -83,7 +83,13 @@
         '<div class="an__kpis reveal">' +
           kpi("Winrate", s.winrate + "%", s.wins + "V · " + s.losses + "D", s.winrate >= 50 ? "up" : "down") +
           kpi("Profit factor", pf, "lucro / prejuízo", s.profitFactor >= 1.5 ? "up" : "") +
-          kpi("Resultado líq.", u.pct(s.net), "acumulado", netCls) +
+          /* s.net é a SOMA DOS PERCENTUAIS dos trades encerrados — não
+             um retorno de carteira. A soma só equivale ao retorno real
+             se todas as posições tiverem o mesmo tamanho; com tamanhos
+             diferentes, um +50% numa posição minúscula pesa igual a um
+             −50% na maior. O rótulo diz o que o número é, em vez de
+             deixar "Resultado líq." sugerir dinheiro. */
+          kpi("Resultado líq.", u.pct(s.net), "soma dos % por trade", netCls) +
           kpi("Trades", String(s.count), "encerrados") +
           kpi("Tempo médio", u.dur(Math.round(s.avgHoldH)), "por trade") +
           kpi("Disciplina", s.reviewed ? s.avgDiscipline.toFixed(1) + "/5" : "—", s.reviewed + " avaliados") +

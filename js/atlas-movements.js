@@ -83,11 +83,25 @@
     if (!TIPOS[tipo]) return null;
     var valor = num(mv.valorUSD != null ? mv.valorUSD : (mv.amount != null ? mv.amount : mv.value));
     if (!day || !valor) return null;               // sem data ou sem valor → não é movimento útil
+
+    /* ------------------------------------------------------------
+       O SINAL DO "RESULTADO" NÃO PODE SER DESCARTADO
+
+       Math.abs() estava aplicado a TODOS os tipos. Para entrada e
+       saída faz sentido: o sinal está no tipo, e uma entrada de −100
+       seria só um jeito confuso de escrever uma saída.
+
+       Para "resultado" era destrutivo: um prejuízo de US$ 500 entrava
+       no livro-razão como US$ 500 de LUCRO. Nos Relatórios, uma
+       carteira que perdeu dinheiro aparecia com resultado positivo, e
+       quanto pior o prejuízo, melhor o número. O sinal aqui é a
+       informação inteira.
+       ------------------------------------------------------------ */
     return {
       id: mv.id || genId(),
       date: day,
       tipo: tipo,
-      valorUSD: Math.abs(valor),
+      valorUSD: tipo === "resultado" ? valor : Math.abs(valor),
       module: mv.module || null,
       walletId: mv.walletId || (global.AtlasWallets ? AtlasWallets.activeGlobalId() : "principal"),
       origem: mv.origem || "manual",
@@ -276,15 +290,52 @@
     Object.keys(state.byWallet).forEach(function (wid) {
       if (opts && opts.walletId && wid !== opts.walletId) return;
       var wd = state.byWallet[wid] || {};
+
+      /* ------------------------------------------------------------
+         A fonte é p.events, não p.movements
+
+         p.movements era escrito UMA vez, na criação da pool, com o
+         aporte inicial — e nunca mais. Aporte, reinvestimento e
+         retirada registrados depois não apareciam em lugar nenhum
+         fora da página da posição: nem no Dashboard, nem nos
+         Relatórios, nem no extrato da carteira. O livro-razão do
+         ATLAS ignorava justamente os fluxos de capital.
+
+         p.events é o registro vivo (ver defi/js/data.js). O
+         reinvestimento entra como "resultado", não como entrada: o
+         dinheiro não veio de fora, veio da própria pool — tratá-lo
+         como aporte inflaria o capital investido da carteira.
+         ------------------------------------------------------------ */
+      var TIPO_MV = { abertura: "entrada", aporte: "entrada", retirada: "saida", reinvest: "resultado" };
+      var ROTULO = { abertura: "Abertura", aporte: "Aporte", retirada: "Retirada", reinvest: "Reinvestimento" };
+
       (wd.pools || []).forEach(function (p) {
         var par = (p.base || "") + (p.quote ? "/" + p.quote : "");
-        (p.movements || []).forEach(function (mv, idx) {
+        var evs = (p.events && p.events.length)
+          ? p.events
+          : [{ id: "e0", date: p.createdAt || p.openedAt, type: "abertura", amountUSD: p.capital }];
+
+        evs.forEach(function (e, idx) {
+          var tipo = TIPO_MV[e.type];
+          if (!tipo) return;
           out.push({
-            id: "der:defi:" + (p.id || "p") + ":" + idx,
-            date: mv.date, tipo: mv.type, valorUSD: mv.amount,
+            id: "der:defi:" + (p.id || "p") + ":" + (e.id || idx),
+            date: e.date, tipo: tipo, valorUSD: e.amountUSD,
             module: "defi", walletId: p.walletId || wid,
             origem: "derivado",
-            label: (mv.label || "Movimento") + (par ? " · " + par : "")
+            label: (ROTULO[e.type] || "Movimento") + (par ? " · " + par : "")
+          });
+        });
+
+        /* Taxa coletada é receita realizada da carteira — ela saiu da
+           pool e entrou no seu bolso. Ficava fora do livro-razão. */
+        (p.fees || []).forEach(function (f) {
+          if (f.status !== "coletada") return;
+          out.push({
+            id: "der:defi:fee:" + (p.id || "p") + ":" + (f.id || f.date),
+            date: f.collectedAt || f.date, tipo: "resultado", valorUSD: f.amount,
+            module: "defi", walletId: p.walletId || wid, origem: "derivado",
+            label: "Taxa coletada" + (par ? " · " + par : "")
           });
         });
       });
@@ -350,11 +401,40 @@
     var out = [];
     Object.keys(data).forEach(function (wid) {
       if (opts && opts.walletId && wid !== opts.walletId) return;
+      /* ------------------------------------------------------------
+         t.pnl DO TRADE É PERCENTUAL, NÃO DÓLAR
+
+         O módulo Trade grava o resultado de cada operação em % (veja
+         closeTrade em trade/assets/js/core/state.js, que escreve
+         "Trade encerrado (+8%)"). Este adaptador jogava esse número
+         direto no campo valorUSD do livro-razão: um trade de +8%
+         entrava nos Relatórios como "resultado US$ 8,00", somado a
+         entradas e saídas que são dólares de verdade.
+
+         Somar porcentagem com dinheiro não dá um número errado — dá um
+         número sem significado. Sem o tamanho da posição não há como
+         converter, e INVENTAR uma base seria pior.
+
+         A conversão só é feita quando o próprio trade traz um valor em
+         dólar (pnlUSD ou size numérico); nos demais casos o trade fica
+         FORA do livro-razão, e o relatório deixa de exibir um valor
+         que ele não tem como afirmar.
+         ------------------------------------------------------------ */
       (data[wid].trades || []).forEach(function (t) {
         if (!t.closedAt || t.pnl == null) return;
+
+        var usd = null;
+        if (t.pnlUSD != null && isFinite(Number(t.pnlUSD))) {
+          usd = Number(t.pnlUSD);
+        } else {
+          var tamanho = Number(String(t.size == null ? "" : t.size).replace(",", "."));
+          if (isFinite(tamanho) && tamanho > 0) usd = tamanho * (Number(t.pnl) / 100);
+        }
+        if (usd == null || !isFinite(usd) || !usd) return;
+
         out.push({
           id: "der:trade:" + (t.id || Math.random().toString(36).slice(2)),
-          date: t.closedAt, tipo: "resultado", valorUSD: t.pnl,
+          date: t.closedAt, tipo: "resultado", valorUSD: usd,
           module: "trade", walletId: wid, origem: "derivado",
           label: "Resultado " + (t.asset || t.ticker || t.side || "trade")
         });

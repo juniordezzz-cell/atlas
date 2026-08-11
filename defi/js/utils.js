@@ -25,26 +25,61 @@
     return (v < 0 ? "-" : "") + (SYMBOL.USD) + " " + n;
   }
 
+  /* ------------------------------------------------------------
+     CASAS DECIMAIS — uma regra só, para dinheiro
+
+     Havia duas, e as duas erravam:
+
+       money()        2 casas abaixo de 100, ZERO acima. Uma pool de
+                      US$ 150,50 aparecia como "US$ 151".
+       signedMoney()  ZERO casas SEMPRE. Uma taxa de US$ 0,68 virava
+                      "+US$ 1" e uma variação de US$ 0,15 virava
+                      "+US$ 0". Em pool pequena — que é o caso real de
+                      quem está começando — o valor mostrado não tinha
+                      relação nenhuma com o valor calculado.
+
+     Agora é a mesma régua do core/currency.js (>= 1000 sem centavos),
+     com uma faixa a mais para os centavos que a pool gera: abaixo de
+     um centavo, 4 casas, senão "US$ 0,00" esconderia a taxa em vez de
+     mostrá-la.
+     ------------------------------------------------------------ */
+  function casas(v) {
+    /* Decide sobre o valor JÁ ARREDONDADO a 4 casas: 0,00999999 —
+       poeira de ponto flutuante em cima de um centavo — cairia na
+       faixa "menor que um centavo" e apareceria como "US$ 0,0100",
+       quatro casas para exibir exatamente um centavo. */
+    var abs = Math.round(Math.abs(Number(v) || 0) * 10000) / 10000;
+    if (abs === 0) return 2;
+    if (abs < 0.01) return 4;
+    return abs >= 1000 ? 0 : 2;
+  }
+
   var U = {
     /* ---------- Formatação ---------- */
     money: function (v, opts) {
       opts = opts || {};
-      var abs = Math.abs(v);
-      var dec = opts.dec != null ? opts.dec : (abs < 100 && abs !== 0 ? 2 : 0);
+      var dec = opts.dec != null ? opts.dec : casas(v);
       return fmt(v, dec);
     },
     /* o "+" é do DeFi (lucro/prejuízo), não da moeda: o negativo já vem
        do próprio formatador */
-    signedMoney: function (v) {
-      return (v > 0 ? "+" : "") + fmt(v, 0);
+    signedMoney: function (v, opts) {
+      opts = opts || {};
+      var dec = opts.dec != null ? opts.dec : casas(v);
+      return (v > 0 ? "+" : "") + fmt(v, dec);
     },
     num: function (v, dec) {
       dec = dec == null ? 2 : dec;
       return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
     },
-    pct: function (v, withSign) {
-      var s = (withSign && v > 0) ? "+" : "";
-      return s + Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+    /* Percentual. Valor não-numérico vira "—", nunca "NaN%": um campo
+       vazio virando NaN na tela é indistinguível de um cálculo quebrado. */
+    pct: function (v, withSign, dec) {
+      var n = Number(v);
+      if (!isFinite(n)) return "—";
+      dec = dec == null ? 1 : dec;
+      var s = (withSign && n > 0) ? "+" : "";
+      return s + n.toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec }) + "%";
     },
     date: function (iso) {
       if (!iso) return "—";
@@ -56,9 +91,34 @@
       var d = new Date(iso + (iso.length === 10 ? "T00:00:00" : ""));
       return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
     },
+    /* Dias entre duas datas. Data ausente ou inválida devolve null —
+       antes virava NaN, e "NaN dias em operação" chegava à tela.
+       Datas "YYYY-MM-DD" são lidas como HORA LOCAL (T00:00:00): sem
+       isso o navegador assume UTC e, a leste de Greenwich, a posição
+       criada hoje nascia com "1 dia". */
     daysBetween: function (a, b) {
-      var d1 = new Date(a), d2 = new Date(b || Date.now());
-      return Math.max(0, Math.round((d2 - d1) / 86400000));
+      var d1 = U.parseDate(a);
+      if (!d1) return null;
+      var d2 = b ? U.parseDate(b) : new Date();
+      if (!d2) return null;
+      /* dias COMPLETOS: arredondar fazia o contador virar ao meio-dia */
+      return Math.max(0, Math.floor((d2 - d1) / 86400000));
+    },
+    /* Data de HOJE no fuso do usuário, "YYYY-MM-DD".
+       toISOString() devolve UTC: no Brasil, depois das 21h ele já
+       aponta para amanhã — e os formulários abriam com a data errada,
+       os registros nasciam um dia à frente. */
+    hoje: function (d) {
+      d = d || new Date();
+      var mm = String(d.getMonth() + 1), dd = String(d.getDate());
+      return d.getFullYear() + "-" + (mm.length < 2 ? "0" + mm : mm) + "-" + (dd.length < 2 ? "0" + dd : dd);
+    },
+    parseDate: function (v) {
+      if (!v) return null;
+      if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+      var s = String(v);
+      var d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? s + "T00:00:00" : s);
+      return isNaN(d.getTime()) ? null : d;
     },
 
     /* ---------- DOM ---------- */

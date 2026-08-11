@@ -75,12 +75,19 @@
         desc: "Aceito ficar mais exposto a " + b + " se o preço cair." },
       { id: "acc_quote", label: "Acumular mais " + q,
         desc: "Aceito ficar mais exposto a " + q + " se o preço cair." },
+      { id: "acc_ambos", label: "Adicionar os dois ativos",
+        desc: "Quero aumentar a posição em " + b + " e " + q + " ao mesmo tempo." },
       { id: "fees",      label: "Foco 100% em taxas",
         desc: "O que importa é a taxa coletada, não a variação dos ativos." },
       { id: "apr_fast",  label: "APR alto — entrar, coletar e sair",
         desc: "Posição curta, aproveitando um pico de rendimento." },
       { id: "hedge",     label: "Manter exposição / hedge",
-        desc: "Quero seguir posicionado sem aumentar risco direcional." }
+        desc: "Quero seguir posicionado sem aumentar risco direcional." },
+      /* Declarar a intenção de compor importa: é o que permite, depois,
+         comparar "eu disse que reinvestiria" com os eventos de
+         reinvestimento realmente registrados na posição. */
+      { id: "compor",    label: "Fazer juros compostos",
+        desc: "Pretendo reinvestir as taxas na própria pool." }
     ];
   }
 
@@ -419,8 +426,72 @@
     return true;
   }
 
-  function openWizard() {
-    wz = { step: 0, chain: "", proto: "" };
+  /* ============================================================
+     RASCUNHO DO WIZARD
+
+     São cinco passos, com par de tokens, quantidades, preços, faixa e
+     objetivos. Um clique fora do modal — ou fechar a aba no meio —
+     apagava tudo, sem aviso e sem volta. Formulário longo que perde o
+     que foi digitado é formulário que a pessoa não preenche duas
+     vezes.
+
+     O rascunho é gravado a cada mudança e restaurado ao abrir. Ele só
+     é apagado quando a posição é criada, ou quando o usuário escolhe
+     descartar — fechar não descarta.
+     ============================================================ */
+  var KEY_DRAFT = "atlas.defi.poolDraft.v1";
+  var CAMPOS = ["tkBase", "tkQuote", "qtyBase", "qtyQuote", "prBase", "prQuote",
+                "capital", "apr", "goal", "poolQ", "rngLow", "rngHigh",
+                "rngDenom", "openedAt", "tkCat"];
+
+  function lerRascunho() {
+    try { return JSON.parse(localStorage.getItem(KEY_DRAFT) || "null"); }
+    catch (e) { return null; }
+  }
+  function gravarRascunho() {
+    if (!U.qs("#modalNew") || !U.qs("#modalNew").classList.contains("open")) return;
+    var d = { step: wz.step, chain: wz.chain, proto: wz.proto, range: wz.range, campos: {}, objetivos: [] };
+    CAMPOS.forEach(function (id) { var e = U.qs("#" + id); if (e) d.campos[id] = e.value; });
+    U.qsa("#objList .obj-item.on").forEach(function (n) { d.objetivos.push(n.dataset.id); });
+    d.em = Date.now();
+    try { localStorage.setItem(KEY_DRAFT, JSON.stringify(d)); } catch (e) { /* sem storage: segue sem rascunho */ }
+  }
+  function limparRascunho() {
+    try { localStorage.removeItem(KEY_DRAFT); } catch (e) {}
+  }
+  function temRascunho() {
+    var d = lerRascunho();
+    if (!d) return false;
+    /* rascunho só conta se tiver ALGO preenchido — abrir e fechar o
+       modal sem digitar nada não deve gerar "restaurar rascunho" */
+    if (d.chain || d.proto || (d.objetivos && d.objetivos.length)) return true;
+    return CAMPOS.some(function (id) {
+      return d.campos && d.campos[id] && String(d.campos[id]).trim() &&
+             id !== "openedAt" && id !== "tkCat" && id !== "rngDenom";
+    });
+  }
+
+  function aplicarRascunho(d) {
+    if (!d) return;
+    CAMPOS.forEach(function (id) {
+      var e = U.qs("#" + id);
+      if (e && d.campos && d.campos[id] != null) e.value = d.campos[id];
+    });
+    wz.chain = d.chain || "";
+    wz.proto = d.proto || "";
+    wz.range = d.range || "dentro";
+    U.qsa("#optChain .opt").forEach(function (x) { x.classList.toggle("selected", x.dataset.v === wz.chain); });
+    U.qsa("#optProto .opt").forEach(function (x) { x.classList.toggle("selected", x.dataset.v === wz.proto); });
+    U.qsa("#rngOpts .rng-opt").forEach(function (x) { x.classList.toggle("on", x.dataset.v === wz.range); });
+    pintarObjetivos();
+    (d.objetivos || []).forEach(function (oid) {
+      var n = U.qs('#objList .obj-item[data-id="' + oid + '"]');
+      if (n) n.classList.add("on");
+    });
+    showStep(Math.max(0, Math.min(4, d.step || 0)));
+  }
+
+  function limparFormulario() {
     U.qsa(".opt").forEach(function (x) { x.classList.remove("selected"); });
     ["tkBase", "tkQuote", "qtyBase", "qtyQuote", "prBase", "prQuote", "capital", "apr", "goal",
      "poolQ", "rngLow", "rngHigh"]
@@ -428,20 +499,53 @@
     var pr = U.qs("#poolResults"); if (pr) pr.innerHTML = "";
     var rd = U.qs("#rngDenom"); if (rd) rd.value = "base_por_quote";
     precoBuscado = { base: null, quote: null };
-    wz.range = "dentro";
+    wz = { step: 0, chain: "", proto: "", range: "dentro" };
     U.qsa("#rngOpts .rng-opt").forEach(function (x, i) { x.classList.toggle("on", i === 0); });
     var dt = U.qs("#openedAt");
-    if (dt) dt.value = new Date().toISOString().slice(0, 10);
+    if (dt) dt.value = U.hoje();
     U.qsa("#objList .obj-item.on").forEach(function (n) { n.classList.remove("on"); });
     var st = U.qs("#capStatus"); if (st) st.textContent = "";
     U.qs("#tkCat").value = "Liquidez";
-    showStep(0);
+  }
+
+  function openWizard() {
+    limparFormulario();
+    var d = temRascunho() ? lerRascunho() : null;
+    if (d) aplicarRascunho(d); else showStep(0);
+    pintarAvisoRascunho(!!d, d);
     U.openModal("#modalNew");
   }
 
+  /* Restaurar em silêncio seria pior que perder: a pessoa abriria o
+     wizard achando que está começando do zero e criaria uma posição
+     com dados de outra tentativa. A faixa diz o que aconteceu e dá a
+     saída para descartar. */
+  function pintarAvisoRascunho(mostrar, d) {
+    var host = U.qs("#draftBar");
+    if (!host) return;
+    if (!mostrar) { host.innerHTML = ""; host.style.display = "none"; return; }
+    var quando = d && d.em ? new Date(d.em).toLocaleString("pt-BR") : "";
+    host.style.display = "";
+    host.innerHTML = '<span>Rascunho restaurado' + (quando ? " de " + esc(quando) : "") + '.</span>' +
+      '<button type="button" class="btn btn-cancel btn-sm" id="draftDrop">Descartar e começar do zero</button>';
+    var b = U.qs("#draftDrop");
+    if (b) b.addEventListener("click", function () {
+      limparRascunho(); limparFormulario(); showStep(0); pintarAvisoRascunho(false);
+    });
+  }
+
   U.qs("#btnNew").addEventListener("click", openWizard);
-  U.qs("#closeNew").addEventListener("click", function () { U.closeModal("#modalNew"); });
-  U.qs("#modalNew").addEventListener("click", function (e) { if (e.target.id === "modalNew") U.closeModal("#modalNew"); });
+  U.qs("#closeNew").addEventListener("click", function () { gravarRascunho(); U.closeModal("#modalNew"); });
+  U.qs("#modalNew").addEventListener("click", function (e) {
+    if (e.target.id === "modalNew") { gravarRascunho(); U.closeModal("#modalNew"); }
+  });
+  /* Fechar a aba no meio do preenchimento também preserva. */
+  window.addEventListener("beforeunload", gravarRascunho);
+  /* Qualquer digitação ou clique dentro do modal grava — inclusive a
+     troca de passo, a seleção de chain/protocolo e os objetivos. */
+  ["input", "change", "click"].forEach(function (ev) {
+    U.qs("#modalNew").addEventListener(ev, function () { setTimeout(gravarRascunho, 0); });
+  });
 
   U.qs("#wPrev").addEventListener("click", function () { if (wz.step > 0) showStep(wz.step - 1); });
   U.qs("#wNext").addEventListener("click", function () {
@@ -455,7 +559,7 @@
     var rotulos  = U.qsa("#objList .obj-item.on").map(function (n) {
       return n.querySelector("b").textContent;
     });
-    var hoje = new Date().toISOString().slice(0, 10);
+    var hoje = U.hoje();
     /* A data que a pessoa informou manda. Sem isso, uma pool aberta mês
        passado entraria como criada hoje e o APR realizado sairia errado. */
     var dtAbertura = (U.qs("#openedAt") && U.qs("#openedAt").value) || hoje;
@@ -495,6 +599,9 @@
       objectiveLabels: rotulos,
       goal: goal || (rotulos.length ? rotulos.join(" · ") : "Sem objetivo definido ainda.")
     });
+    /* Criou: o rascunho cumpriu o papel e sai de cena. */
+    limparRascunho();
+    pintarAvisoRascunho(false);
     U.closeModal("#modalNew");
     U.toast("Pool " + p.base + "/" + p.quote + " criada.", "ok");
     rerun();
