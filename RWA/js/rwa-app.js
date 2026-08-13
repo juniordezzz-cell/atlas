@@ -549,7 +549,20 @@
         : '<div class="section">' + UI.panel("Portfólio", UI.empty({ icon: "portfolio", title: "Nenhum ativo ainda", text: 'Clique em "+ Adicionar ativo" para registrar sua primeira posição RWA.' }), '', "Começar") + '</div>') +
 
       '<div class="section">' +
-        UI.panel("Equity Curve", '<div class="chart-box h-lg"><canvas id="chartEquity"></canvas></div>', '<div class="t3" style="font-size:11.5px">RWA · 90d</div>', "Performance") +
+        /* A curva é MEDIDA, um ponto por dia em que o módulo é aberto.
+           Menos de dois pontos não é curva — é uma linha reta com
+           moldura de gráfico. A versão anterior desenhava 90 zeros
+           gerados por um pseudoaleatório e chamava de Equity Curve. */
+        UI.panel("Equity Curve",
+          ((curves.rwa || []).length > 1
+            ? '<div class="chart-box h-lg"><canvas id="chartEquity"></canvas></div>'
+            : '<p class="t2" style="font-size:13px;line-height:1.6;margin:0">' +
+              ((curves.rwa || []).length
+                ? 'Primeira medição registrada hoje. A curva aparece a partir do segundo dia.'
+                : 'Sem histórico ainda. O ATLAS mede o patrimônio do RWA uma vez por dia, ' +
+                  'a cada vez que você abre o módulo.') + '</p>'),
+          '<div class="t3" style="font-size:11.5px">' +
+            ((curves.rwa || []).length + ' dia(s) medidos') + '</div>', "Performance") +
       '</div>' +
 
       '<div class="section"><div class="grid g-4">' +
@@ -575,7 +588,9 @@
         ch.donut(U.qs("#chartClass"), byClass);
         ch.donut(U.qs("#chartSector"), bySector);
       }
-      ch.line(U.qs("#chartEquity"), curves.rwa || []);
+      /* só desenha quando o canvas existe — com menos de dois dias
+         medidos o painel traz texto no lugar dele */
+      if ((curves.rwa || []).length > 1) ch.line(U.qs("#chartEquity"), curves.rwa);
       ["rates", "inflation", "dxy", "liquidity"].forEach(function (id) {
         var mm = macro[id]; if (mm && mm.series) ch.spark(U.qs("#spark_" + id), mm.series);
       });

@@ -183,14 +183,75 @@
       persist(); emit();
     },
 
-    balance: function () {
-      var eq = app.walletData().equity;
-      return eq.length ? eq[eq.length - 1] : 0;
+    /* ============================================================
+       A BANCA — caixa mais o que está dentro das operações
+
+       Era o último ponto de `equity`, o array [0,0] que ninguém
+       escrevia: o painel mostrava "Banca US$ 0" com dinheiro na
+       carteira, e changePct fazia (0 − 0) / 0 = NaN, exibido como
+       percentual ao lado.
+
+       Agora é o que existe de verdade: o caixa da carteira (livro de
+       eventos) mais o capital dentro das operações abertas.
+       ============================================================ */
+    balance: function (walletId) {
+      var wid = walletId || state.currentWallet;
+      var caixa = global.AtlasCaixa ? global.AtlasCaixa.saldo(wid) : 0;
+      return caixa + app.valorEmPosicoes(wid);
     },
-    changePct: function () {
-      var eq = app.walletData().equity;
-      if (eq.length < 2) return 0;
-      return ((eq[eq.length - 1] - eq[0]) / eq[0]) * 100;
+
+    /* Resultado realizado sobre o que foi depositado. Não é "variação
+       no período" — para isso seria preciso uma série MEDIDA, que o
+       Trade não tem. Afirmar um período sem medir é o que a versão
+       anterior fazia. */
+    changePct: function (walletId) {
+      var wid = walletId || state.currentWallet;
+      if (!global.AtlasCaixa) return 0;
+      var base = global.AtlasCaixa.patrimonioExterno();
+      if (!(base > 0)) return 0;
+      return (app.resultadoRealizado(wid) / base) * 100;
+    },
+
+    resultadoRealizado: function (walletId) {
+      var d = (state.data || {})[walletId || state.currentWallet];
+      if (!d || !d.trades) return 0;
+      return d.trades.reduce(function (a, t) {
+        return a + (t.status === "encerrado" ? (Number(t.pnlUSD) || 0) : 0);
+      }, 0);
+    },
+
+    /* ------------------------------------------------------------
+       KPIs CALCULADOS DAS OPERAÇÕES
+
+       walletData().kpis era { winrate: 0, trades: 0, avgHold: "—",
+       profitFactor: 0 } — escrito na semente e NUNCA atualizado. O
+       painel exibia winrate 0% e profit factor 0,00 para quem tinha
+       operações encerradas com lucro.
+       ------------------------------------------------------------ */
+    kpisReais: function (walletId) {
+      var d = (state.data || {})[walletId || state.currentWallet];
+      var fechados = (d && d.trades ? d.trades : []).filter(function (t) {
+        return t.status === "encerrado";
+      });
+      if (!fechados.length) {
+        return { winrate: 0, trades: 0, avgHold: "—", profitFactor: 0, medidos: 0 };
+      }
+      var ganhos = 0, somaG = 0, somaP = 0, horas = 0;
+      fechados.forEach(function (t) {
+        var v = Number(t.pnlUSD) || 0;
+        if (v > 0) { ganhos++; somaG += v; } else { somaP += Math.abs(v); }
+        horas += app.tradeAgeHours(t);
+      });
+      var media = horas / fechados.length;
+      return {
+        trades: fechados.length,
+        winrate: Math.round((ganhos / fechados.length) * 100),
+        /* sem prejuízo nenhum o fator é infinito — mostrar o número de
+           ganhos é mais honesto que exibir Infinity */
+        profitFactor: somaP > 0 ? (somaG / somaP) : (somaG > 0 ? Infinity : 0),
+        avgHold: media >= 24 ? Math.round(media / 24) + "d" : Math.round(media) + "h",
+        medidos: fechados.length
+      };
     },
 
     // ---- Teses (entidade compartilhada AtlasTheses) ------------

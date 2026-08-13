@@ -22,18 +22,13 @@
     nenhum:  { id: "nenhum",  label: "Sem leitura",      tag: "sem fonte",    cls: "regime-trans" }
   };
 
-  /* ---------- Gerador determinístico de séries ---------- */
-  function series(days, start, drift, vol, seed) {
-    var out = [], v = start, s = seed || 7, today = new Date();
-    for (var i = days - 1; i >= 0; i--) {
-      var d = new Date(today); d.setDate(today.getDate() - i);
-      s = (s * 9301 + 49297) % 233280; var r = s / 233280;
-      v = v * (1 + drift / 100 + (r - 0.5) * vol / 100);
-      out.push({ date: d.toISOString().slice(0, 10), value: +v.toFixed(2) });
-    }
-    return out;
-  }
-  function vals(days, start, drift, vol, seed) { return series(days, start, drift, vol, seed).map(function (p) { return p.value; }); }
+  /* O GERADOR PSEUDOALEATÓRIO DE SÉRIES FOI REMOVIDO.
+
+     series() e vals() produziam as curvas de patrimônio e as
+     sparklines da macro a partir de uma semente fixa. Com a macro
+     esvaziada e a curva passando a ser MEDIDA, ninguém mais os
+     chamava — e um gerador de números com aparência de dado, parado
+     dentro de um sistema que calcula dinheiro, é um convite. */
 
   function seed() {
     var assets = []; /* estado inicial LIMPO — sem dados de demonstração */
@@ -43,11 +38,9 @@
          "riskon", fixo, e virava o KPI "Macro Regime · Risk-On" do
          Dashboard — leitura de mercado que ninguém fez. */
       meta: { updatedAt: new Date().toISOString(), regime: "nenhum" },
-      equityCurves: {
-        rwa:   series(90, 0, 0, 0, 21),
-        hold:  series(90, 0, 0, 0, 33),
-        total: series(90, 0, 0, 0, 44)
-      },
+      /* Sem série gerada: a curva agora é MEDIDA (snapshots), um
+         ponto por dia em que o módulo é aberto. Ver equityCurves(). */
+      snapshots: [],
       /* ============================================================
          MACRO E NARRATIVA — ESVAZIADOS NA TERCEIRA AUDITORIA
          ------------------------------------------------------------
@@ -113,11 +106,11 @@
   function emptyWallet() {
     return {
       assets: [],
-      equityCurves: { rwa: series(90, 0, 0, 0, 21), hold: series(90, 0, 0, 0, 33), total: series(90, 0, 0, 0, 44) },
+      snapshots: [],
       journal: []
     };
   }
-  function seededWallet(full) { return { assets: full.assets, equityCurves: full.equityCurves, journal: full.journal }; }
+  function seededWallet(full) { return { assets: full.assets, snapshots: [], journal: full.journal }; }
 
   /* ---------- Persistência (estado multi-carteira) ---------- */
   var _mem = null;
@@ -192,7 +185,6 @@
       macro: s.macro || {},
       narrative: s.narrative || {},
       assets: Array.isArray(wd.assets) ? wd.assets : [],
-      equityCurves: wd.equityCurves || { rwa: [], hold: [], total: [] },
       journal: Array.isArray(wd.journal) ? wd.journal : []
     };
   }
@@ -362,7 +354,61 @@
     allocationByClass: function () { return group(this.assets(), "type"); },
     allocationBySector: function () { return group(this.assets(), "sector"); },
 
-    equityCurves: function () { return _read().equityCurves; },
+    /* ============================================================
+       A CURVA DO RWA — MEDIDA, não gerada
+
+       equityCurves vinha de series(90, 0, 0, 0, 21): o mesmo gerador
+       pseudoaleatório de semente fixa que produzia a macro inventada,
+       com valor inicial ZERO. Ou seja, 90 zeros. O gráfico "Equity
+       Curve" do dashboard desenhava isso, e a consolidação da raiz
+       tem um desvio explícito para essa série degenerada — a prova de
+       que ela nunca significou nada.
+
+       Agora é medida, um ponto por dia em que o módulo é aberto, no
+       mesmo modelo que o DeFi já usa (DeFiStore.recordSnapshot). Uma
+       curva com menos de dois pontos não é curva: a tela diz quantos
+       dias foram medidos em vez de desenhar uma linha reta.
+       ============================================================ */
+    MAX_SNAPS: 400,
+
+    _snaps: function () {
+      var wd = _ensureWallet(_currentId());
+      if (!Array.isArray(wd.snapshots)) wd.snapshots = [];
+      return wd.snapshots;
+    },
+
+    recordSnapshot: function () {
+      var snaps = Store._snaps();
+      var hoje = new Date();
+      var mm = String(hoje.getMonth() + 1), dd = String(hoje.getDate());
+      var dia = hoje.getFullYear() + "-" + (mm.length < 2 ? "0" + mm : mm) +
+                "-" + (dd.length < 2 ? "0" + dd : dd);
+
+      var k = Store.kpis();
+      var ultimo = snaps[snaps.length - 1];
+      if (ultimo && ultimo.d === dia) {
+        if (ultimo.v === k.total) return snaps;
+        ultimo.v = k.total;
+      } else {
+        snaps.push({ d: dia, v: k.total });
+        if (snaps.length > Store.MAX_SNAPS) snaps.splice(0, snaps.length - Store.MAX_SNAPS);
+      }
+      _persist();
+      return snaps;
+    },
+
+    /* Formato { rwa, hold, total } mantido para não quebrar quem já
+       lê daqui. `hold` sai vazio: o RWA nunca mediu o Hold, e a série
+       que ele devolvia era ficção com nome de outro módulo. */
+    equityCurves: function () {
+      var snaps = Store.recordSnapshot();
+      var serie = snaps.map(function (p) { return { date: p.d, value: p.v }; });
+      return { rwa: serie, hold: [], total: serie };
+    },
+
+    /* quantos dias foram REALMENTE medidos — a tela usa para decidir
+       entre desenhar a curva e explicar que ainda não há curva */
+    snapshotCount: function () { return Store._snaps().length; },
     macro: function () { return _read().macro; },
     narrative: function () { return _read().narrative; },
     journal: function () { return _read().journal.slice(); },

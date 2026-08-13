@@ -25,18 +25,43 @@
       '</div>';
   }
 
+  /* ------------------------------------------------------------
+     A BANCA — três números que existem, e nenhum gráfico inventado
+
+     Este cartão mostrava a "Banca" a partir do array `equity` [0,0],
+     que ninguém escrevia: US$ 0 com dinheiro na carteira, e um
+     percentual que era (0 − 0) / 0 = NaN. O gráfico de área desenhava
+     esse mesmo array — dois zeros — e o eixo dizia "US$ 0 → agora".
+
+     Agora a banca é caixa mais capital em operação, e o percentual é
+     resultado REALIZADO sobre o depositado. O gráfico saiu: o Trade
+     não mede uma série ao longo do tempo, e desenhar uma linha sem
+     medição é a mentira mais convincente que uma tela pode contar.
+     ------------------------------------------------------------ */
   function bancaCard() {
     var u = ATLAS.util, app = ATLAS.app;
-    var eq = app.walletData().equity, chg = app.changePct(), up = chg >= 0;
     var w = app.currentWallet();
+    var caixa = window.AtlasCaixa ? AtlasCaixa.saldo(w.id) : 0;
+    var emPos = app.valorEmPosicoes(w.id);
+    var chg = app.changePct(), up = chg >= 0;
+    var res = app.resultadoRealizado(w.id);
+
     return '<div class="card reveal" style="animation-delay:.06s">' +
       '<div class="card__head"><span class="eyebrow">Patrimônio · ' + u.escape(w.name) + '</span>' +
-        '<span class="badge ' + (up ? 'badge--profit' : 'badge--loss') + ' badge--dot">' + (up ? 'Alta' : 'Baixa') + '</span></div>' +
-      '<div class="banca__value mono">' + u.money(app.balance()) + '</div>' +
-      '<div class="banca__delta"><span class="' + u.signClass(chg) + ' mono">' + u.pct(chg) + '</span>' +
-        '<span style="color:var(--text-faint)">nos últimos 30 pontos</span></div>' +
-      u.areaChart(eq, { up: up }) +
-      '<div class="banca__axis"><span>' + u.money(eq[0]) + '</span><span>agora</span></div>' +
+        (res ? '<span class="badge ' + (up ? 'badge--profit' : 'badge--loss') + ' badge--dot">' +
+               (up ? 'Ganho' : 'Perda') + '</span>' : '') +
+      '</div>' +
+      '<div class="banca__value mono">' + u.money(app.balance(w.id)) + '</div>' +
+      '<div class="banca__delta">' +
+        (res
+          ? '<span class="' + u.signClass(chg) + ' mono">' + u.money(res) + '</span>' +
+            '<span style="color:var(--text-faint)">realizado · ' + u.pct(chg) + ' do depositado</span>'
+          : '<span style="color:var(--text-faint)">Nenhuma operação encerrada ainda.</span>') +
+      '</div>' +
+      '<div class="banca__axis" style="margin-top:14px">' +
+        '<span>' + u.money(caixa) + ' em caixa</span>' +
+        '<span>' + u.money(emPos) + ' em operação</span>' +
+      '</div>' +
       '</div>';
   }
 
@@ -49,13 +74,30 @@
       '</div>';
   }
 
+  /* ------------------------------------------------------------
+     OS KPIs, CALCULADOS DAS OPERAÇÕES
+
+     Vinham de walletData().kpis — { winrate: 0, trades: 0, avgHold:
+     "—", profitFactor: 0 }, escrito na semente e nunca atualizado.
+     Quem tinha dez operações lucrativas via winrate 0% e profit
+     factor 0,00.
+
+     E as faíscas eram desenho: a do Winrate era `equity.map(v, i =>
+     v + Math.sin(i) * 50)` — uma SENOIDE, exibida com a mesma
+     aparência de um gráfico de dados. As três saíram; o Trade não
+     tem série medida para desenhar, e a ausência é a informação.
+     ------------------------------------------------------------ */
   function kpisBlock() {
-    var k = ATLAS.app.walletData().kpis, eq = ATLAS.app.walletData().equity;
-    var half = eq.slice(Math.floor(eq.length / 2));
+    var k = ATLAS.app.kpisReais();
+    var pf = k.profitFactor === Infinity ? "∞"
+           : (k.profitFactor ? k.profitFactor.toFixed(2) : "—");
+    var sub = k.medidos
+      ? k.medidos + (k.medidos === 1 ? " operação encerrada" : " operações encerradas")
+      : "sem operação encerrada";
     return '<div class="dash__kpis">' +
-      kpiCard("Winrate", k.winrate + "%", "acertos", eq.map(function (v, i) { return v + Math.sin(i) * 50; }), k.winrate >= 55, 0.10) +
-      kpiCard("Profit factor", k.profitFactor.toFixed(2), "lucro / prejuízo", half, k.profitFactor >= 1.5, 0.14) +
-      kpiCard("Trades", String(k.trades), "no período", eq, true, 0.18) +
+      kpiCard("Winrate", k.medidos ? k.winrate + "%" : "—", sub, null, k.winrate >= 55, 0.10) +
+      kpiCard("Profit factor", pf, "lucro / prejuízo", null, k.profitFactor >= 1.5, 0.14) +
+      kpiCard("Encerradas", String(k.trades), "com resultado em dólar", null, true, 0.18) +
       kpiCard("Tempo médio", k.avgHold, "por operação", null, true, 0.22) +
       '</div>';
   }
