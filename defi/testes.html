@@ -67,6 +67,7 @@
 <script src="../wallets/walletLedger.js"></script>
 <script src="../wallets/walletCaixa.js"></script>
 <script src="../wallets/walletManager.js"></script>
+<script src="../core/atlas-vocabulario.js"></script>
 <script src="js/tokens.js"></script>
 <script src="js/performance.js"></script>
 <script src="js/data.js"></script>
@@ -795,6 +796,77 @@
 
       try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
       if (window.AtlasCaixa) AtlasCaixa._reload();
+    }
+
+    /* ============ 21. O vocabulário do Oráculo ============
+       Ele decompõe a pergunta em métrica × módulo × período ×
+       carteira. Os casos abaixo testam a LEITURA da pergunta, que é
+       pura lógica de texto e não depende de tela nem de dado. */
+    grupo("21 · Vocabulário: a pergunta vira consulta");
+    if (!window.AtlasVocabulario) {
+      nota("core/atlas-vocabulario.js não carregado — casos pulados.");
+    } else {
+      var V = window.AtlasVocabulario;
+      function leu(q) { return V.interpretar(q); }
+
+      /* --- métrica --- */
+      is("reconhece patrimônio", leu("quanto eu tenho").metrica, "patrimonio");
+      is("reconhece caixa", leu("quanto tenho de caixa").metrica, "caixa");
+      is("reconhece resultado", leu("qual meu lucro").metrica, "resultado");
+      is("reconhece taxas", leu("quanto de taxa gerei").metrica, "taxas");
+      is("reconhece movimentos", leu("meu extrato").metrica, "movimentos");
+
+      /* A ordem entre métricas é o que impede "quanto tenho de caixa"
+         de cair em patrimônio só porque contém "quanto tenho". */
+      is("caixa vence patrimônio na mesma frase",
+         leu("quanto eu tenho de caixa disponível").metrica, "caixa");
+      is("e taxa vence resultado",
+         leu("qual o resultado das minhas taxas").metrica, "taxas");
+
+      /* --- módulo, pelo vocabulário do usuário --- */
+      is("'pool' é DeFi", leu("quanto rendi em pool").modulo, "defi");
+      is("'staking' é DeFi", leu("meu staking").modulo, "defi");
+      is("'operação' é Trade", leu("resultado das operacoes").modulo, "trade");
+      is("'ativo real' é RWA", leu("quanto tenho em ativo real").modulo, "rwa");
+      is("sem módulo citado, fica nulo", leu("quanto eu tenho").modulo, null);
+
+      /* --- período --- */
+      ok("reconhece 'mês passado'", !!leu("resultado no mes passado").periodo, "sim");
+      ok("reconhece 'últimos 30 dias'", !!leu("movimentos nos ultimos 30 dias").periodo, "sim");
+      ok("reconhece mês por nome", !!leu("quanto rendi em agosto").periodo, "sim");
+      is("sem período citado, fica nulo", leu("quanto eu tenho").periodo, null);
+
+      var p30 = V._periodo("ultimos 30 dias");
+      ok("o período tem começo e fim", !!(p30 && p30.de && p30.ate), p30 ? p30.rotulo : "null");
+      ok("e o começo vem antes do fim", p30.de < p30.ate, p30.de + " → " + p30.ate);
+
+      /* --- acento e caixa não atrapalham --- */
+      is("acento não atrapalha", leu("qual meu PATRIMÔNIO").metrica, "patrimonio");
+      is("maiúscula não atrapalha", leu("QUANTO TENHO EM CAIXA").metrica, "caixa");
+
+      /* --- as quatro dimensões de uma vez --- */
+      var q4 = leu("quanto rendi em pool no mes passado");
+      is("cruza métrica…", q4.metrica, "resultado");
+      is("…com módulo…", q4.modulo, "defi");
+      ok("…e com período", !!q4.periodo, q4.periodo ? q4.periodo.rotulo : "null");
+      nota("Uma expressão regular reconhece UMA dimensão. É por isso que a cadeia de " +
+           "`if (/regex/)` do Oráculo tinha teto: nenhuma delas cruza métrica, módulo, " +
+           "período e carteira sem virar combinatória.");
+
+      /* --- carteira: exige a central carregada --- */
+      if (window.AtlasWallets && AtlasWallets.all) {
+        var atual = AtlasWallets.activeGlobal();
+        if (atual && atual.name && atual.name.length > 2) {
+          var qc = leu("quanto tenho na " + atual.name);
+          ok("reconhece a carteira pelo nome", !!qc.carteira, qc.carteira ? qc.carteira.nome : "null");
+          is("e traz o id certo", qc.carteira ? qc.carteira.id : null, atual.id);
+        }
+        is("nome que não existe não vira carteira",
+           leu("quanto tenho na Carteira Que Nao Existe").carteira, null);
+        nota("A correspondência é por palavra inteira e da mais longa para a mais curta: " +
+             "com 'Reserva' e 'Reserva Longa', perguntar pela segunda não pode casar com " +
+             "a primeira. Nomes de até dois caracteres são ignorados — casariam com tudo.");
+      }
     }
 
     /* ============ 20. A trava do caixa ============

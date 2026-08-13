@@ -462,6 +462,35 @@
     answer: function (q) {
       q = (q || "").toLowerCase();
 
+      /* ------------------------------------------------------------
+         O VOCABULÁRIO TENTA PRIMEIRO
+
+         core/atlas-vocabulario.js decompõe a pergunta em métrica ×
+         módulo × período × carteira e responde cruzando as quatro. É o
+         que permite "quanto rendi em pool no mês passado na Principal"
+         — uma pergunta que nenhuma cadeia de `if (/regex/)` alcança,
+         porque uma expressão regular reconhece UMA dimensão.
+
+         Ele devolve null quando não reconhece a métrica ou quando a
+         métrica não tem como responder nesta tela, e aí a cadeia
+         abaixo assume. Ela continua sendo a dona de teses, alertas,
+         moeda e backup — coisas que não são cruzamento de dimensão.
+         ------------------------------------------------------------ */
+      if (window.AtlasVocabulario) {
+        var estruturada = null;
+        try { estruturada = AtlasVocabulario.responder(q); } catch (e) { estruturada = null; }
+        /* Só assume quando a pergunta trouxe MAIS de uma dimensão, ou
+           uma métrica que a cadeia antiga não cobre. Para "quanto eu
+           tenho" seco, a resposta do cérebro base é mais rica —
+           inclui distribuição e resultado acumulado. */
+        if (estruturada) {
+          var Q = AtlasVocabulario.interpretar(q);
+          var especifica = Q.carteira || Q.modulo || Q.periodo ||
+                           Q.metrica === "taxas" || Q.metrica === "movimentos";
+          if (especifica) return estruturada;
+        }
+      }
+
       /* A ordem importa: "quanto tenho em teses abertas" é pergunta
          sobre teses, não sobre patrimônio. O padrão mais específico
          vem primeiro. */

@@ -113,6 +113,7 @@ atlas/
 | `core/providers/*` | CoinGecko (primária) e GeckoTerminal (secundária) por trás de um registro | `AtlasProviders` |
 | `core/atlas-precos.js` | A cadeia de preço do sistema: manual → id curado → busca → DEX | `AtlasPrecos` |
 | `core/atlas-tokens.js` | Registro de ativos: símbolo → id da API | `AtlasTokens` |
+| `core/atlas-vocabulario.js` | Pergunta do Oráculo → consulta (métrica × módulo × período × carteira) | `AtlasVocabulario` |
 | `wallets/*` | Carteiras: criar, renomear, excluir, ordenar, ledger | `AtlasWallets` |
 | `wallets/walletCaixa.js` | Livro de caixa: o saldo é a soma dos eventos | `AtlasCaixa` |
 | `js/atlas-movements.js` | Movimentos derivados das posições, para os Relatórios | `AtlasMovements` |
