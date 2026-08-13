@@ -62,6 +62,12 @@ o autopreenchimento escrevia preço unitário em campo de valor total.
 **Caixa** passou a existir: `wallets/walletCaixa.js` e a tela
 `carteiras.html`.
 
+**Staking e Lending** ganharam o modelo das pools. Eram duas abas que
+somavam no patrimônio a partir de um campo `value` gravado e não tinham
+como ser criadas — sem função no store, sem formulário, sem botão. Agora
+o valor é derivado de quantidade × preço, o capital sai do caixa e volta
+ao encerrar, e o rendimento tem os mesmos estados da taxa de pool.
+
 ---
 
 ## Fases futuras

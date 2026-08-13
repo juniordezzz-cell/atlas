@@ -63,6 +63,12 @@
           <h1 class="page-title">Lending</h1>
           <p class="page-sub">Ativos fornecidos, rendimento e saúde das posições.</p>
         </div>
+        <div class="head-actions">
+          <button class="btn btn-primary" id="btnNovoLend">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Nova posição
+          </button>
+        </div>
       </div>
       <div class="fin-grid" id="lendKpis" style="grid-template-columns:repeat(3,1fr)"></div>
       <div class="section"><div class="section-head"><h2>Posições de lending</h2></div>
@@ -70,6 +76,23 @@
       </div>
     </div>
   </main>
+
+  <!-- Modal compartilhado: nova posição e registro de rendimento.
+       O corpo é montado por defi/js/rendimentos.js, porque muda
+       conforme a ação e conforme o vocabulário da tela. -->
+  <div class="modal-overlay" id="modalRend">
+    <div class="modal">
+      <div class="modal-head"><h3 id="rendTitulo"></h3>
+        <button class="modal-close" data-close="modalRend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal-body" id="rendBody"></div>
+      <div class="modal-foot">
+        <button class="btn btn-cancel" data-close="modalRend">Cancelar</button>
+        <button class="btn btn-primary" id="rendSalvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toasts"></div>
   <script src="../wallets/walletStore.js"></script>
   <script src="../wallets/walletTypes.js"></script>
@@ -80,9 +103,19 @@
   <script src="../wallets/walletDialog.js"></script>
   <script src="../wallets/walletSelector.js"></script>
   <script src="../core/atlas-price.js"></script>
+  <script src="../core/http.js"></script>
+  <script src="../core/providers/registry.js"></script>
+  <script src="../core/providers/coingecko.js"></script>
+  <script src="../core/providers/geckoterminal.js"></script>
+  <script src="../core/atlas-precos.js"></script>
+  <script src="../core/atlas-tokens.js"></script>
+  <script src="../js/atlas-assets.js"></script>
+  <script src="js/tokens.js"></script>
+  <script src="js/performance.js"></script>
   <script src="js/data.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/components.js"></script>
+  <script src="js/rendimentos.js"></script>
   <script src="js/lending.js"></script>
 </body>
 </html>

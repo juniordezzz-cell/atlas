@@ -694,6 +694,78 @@
       try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
       CX._reload();
     }
+
+    /* ============ 19. Staking e Lending ============
+       As duas abas que somavam no patrimônio a partir de um campo
+       `value` gravado e não tinham como ser criadas. */
+    grupo("19 · Staking e Lending: valor derivado, não gravado");
+    if (!S.addRendimento) {
+      nota("modelo de rendimentos não carregado — casos pulados.");
+    } else {
+      try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
+      if (window.AtlasCaixa) AtlasCaixa._reload();
+
+      var stk = S.addRendimento("staking", {
+        token: "SOL", amount: 5, precoEntrada: 100,
+        protocol: "Marinade", chain: "Solana", apr: 7, openedAt: diasAtras(30)
+      });
+      ok("dá para criar uma posição de staking", !!stk, stk ? stk.id : "null");
+
+      S.setPrecos({ SOL: 100 }, { SOL: "registro" });
+      var r19 = S.rendimentoSummary("staking", stk.id);
+      eq("capital = quantidade × preço de entrada", r19.capital, 500);
+      eq("valor sem variação de preço = capital", r19.valorAtual, 500);
+
+      /* o preço sobe: o valor acompanha SOZINHO — era um campo gravado */
+      S.setPrecos({ SOL: 120 }, { SOL: "registro" });
+      var r20 = S.rendimentoSummary("staking", stk.id);
+      eq("preço sobe 20% → valor acompanha", r20.valorAtual, 600);
+      eq("e a variação do ativo aparece separada", r20.varAtivo, 100);
+
+      /* rendimento: mesma mecânica das taxas de pool */
+      S.addRendimentoReward("staking", stk.id, { amount: 12, status: "pendente" });
+      S.addRendimentoReward("staking", stk.id, { amount: 8, status: "coletada" });
+      var r21 = S.rendimentoSummary("staking", stk.id);
+      eq("rendimento pendente fica na posição", r21.rendimentoPendente, 12);
+      eq("rendimento coletado já saiu para o caixa", r21.rendimentoColetado, 8);
+      eq("valor total inclui só o pendente", r21.valorTotal, 612);
+      eq("resultado = variação do ativo + rendimento", r21.resultado, 120);
+
+      if (window.AtlasCaixa) {
+        var wid = stk.walletId;
+        eq("abrir tirou o capital do caixa",
+           AtlasCaixa.eventos({ tipo: "aporte", refId: stk.id }).length, 1);
+        eq("e o rendimento coletado entrou nele",
+           AtlasCaixa.saldo(wid), -500 + 8, 0.001);
+      }
+
+      var vAntes = S.rendValue(stk);
+      S.closeRendimento("staking", stk.id, "teste");
+      eq("encerrar devolve valor do ativo + rendimento pendente", vAntes, 612);
+      is("e a posição sai da lista de abertas", S.rendimentos("staking").length, 0);
+      if (window.AtlasCaixa) {
+        eq("com o dinheiro no caixa", AtlasCaixa.saldo(stk.walletId), -500 + 8 + 612, 0.001);
+      }
+
+      /* lending usa exatamente o mesmo motor */
+      var lnd = S.addRendimento("lending", {
+        token: "USDC", amount: 300, precoEntrada: 1, protocol: "Aave", apy: 5
+      });
+      var rl = S.rendimentoSummary("lending", lnd.id);
+      eq("lending roda no mesmo motor", rl.capital, 300);
+      is("e recusa quantidade zero",
+         S.addRendimento("lending", { token: "USDC", amount: 0, precoEntrada: 1 }), null);
+      is("e recusa preço zero",
+         S.addRendimento("lending", { token: "USDC", amount: 10, precoEntrada: 0 }), null);
+
+      nota("Antes destes casos, staking e lending somavam no patrimônio a partir " +
+           "de um campo `value` gravado — e não existia addStaking, addLending, " +
+           "formulário nem botão. As telas abriam vazias para sempre, e o caminho " +
+           "de soma existia para um dado que não tinha como nascer.");
+
+      try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
+      if (window.AtlasCaixa) AtlasCaixa._reload();
+    }
   }
 
   /* ---------------- utilidades dos casos ---------------- */

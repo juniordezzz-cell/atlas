@@ -264,11 +264,30 @@
       }, 0);
       return v + pend;
     },
+    /* Valor de uma posição de rendimento: quantidade × preço de hoje,
+       mais o rendimento que ainda está dentro dela. Substitui o campo
+       `value` gravado, que ninguém sabia quem escrevia. */
+    rendValue: function (it) {
+      var r = Store.rendimentoSummary(it && it.tipo ? it.tipo : "staking", it);
+      return r ? r.valorTotal : 0;
+    },
+    rendCapital: function (it) {
+      var r = Store.rendimentoSummary(it && it.tipo ? it.tipo : "staking", it);
+      return r ? r.capital : 0;
+    },
+    /* soma só as ABERTAS: encerrada já devolveu o dinheiro ao caixa e
+       contá-la de novo somaria o mesmo dinheiro duas vezes */
+    _somaRend: function (lista, fn) {
+      return (lista || []).reduce(function (a, x) {
+        return x.status === "encerrada" ? a : a + fn(x);
+      }, 0);
+    },
+
     walletValue: function (wd) {
       if (!wd) return 0;
       var t = (wd.pools || []).reduce(function (a, p) { return a + Store.poolValue(p); }, 0);
-      t += (wd.staking || []).reduce(function (a, x) { return a + (Number(x.value) || 0); }, 0);
-      t += (wd.lending || []).reduce(function (a, x) { return a + (Number(x.value) || 0); }, 0);
+      t += Store._somaRend(wd.staking, Store.rendValue);
+      t += Store._somaRend(wd.lending, Store.rendValue);
       return t;
     },
     walletCapital: function (wd) {
@@ -277,8 +296,8 @@
         var f = Store.capitalFlows(p);
         return a + (f ? f.aportadoLiquido : (Number(p.capital) || 0));
       }, 0);
-      t += (wd.staking || []).reduce(function (a, x) { return a + (Number(x.value) || 0); }, 0);
-      t += (wd.lending || []).reduce(function (a, x) { return a + (Number(x.value) || 0); }, 0);
+      t += Store._somaRend(wd.staking, Store.rendCapital);
+      t += Store._somaRend(wd.lending, Store.rendCapital);
       return t;
     },
 
@@ -1128,17 +1147,221 @@
       _persist(); return p;
     },
 
-    /* histórico / staking / lending */
+    /* histórico */
     closed: function () { return _wallet(_read()).closed.slice(); },
-    staking: function () { return _wallet(_read()).staking.slice(); },
-    lending: function () { return _wallet(_read()).lending.slice(); },
+
+    /* ============================================================
+       STAKING E LENDING — as duas abas que somavam sem existir
+
+       Elas apareciam no menu, tinham tela, e somavam no patrimônio a
+       partir de um campo `value` gravado. Mas não havia addStaking,
+       addLending, formulário nem botão: era impossível criar uma. As
+       telas abriam vazias para sempre, e o caminho de soma existia
+       para um dado que não tinha como nascer.
+
+       Ganham aqui o MESMO modelo das pools, porque são a mesma coisa
+       com outro nome — capital que sai do caixa, rende, e volta:
+
+         capital     = quantidade × preço de entrada  (saiu do bolso)
+         valorAtual  = quantidade × preço de hoje     (derivado)
+         rendimentos = lista datada, pendente ou coletada
+         resultado   = variação do ativo + rendimentos
+
+       Uma implementação só para os dois. A diferença entre staking e
+       lending é vocabulário (APR/APY, recompensa/juros) e mora na
+       tela; a mecânica do dinheiro é idêntica, e duplicá-la seria
+       criar dois lugares para divergir.
+       ============================================================ */
+    RENDIMENTOS: ["staking", "lending"],
+
+    _rendOk: function (tipo) { return Store.RENDIMENTOS.indexOf(tipo) !== -1; },
+    _rendLista: function (tipo, s) {
+      var wd = _wallet(s || _read());
+      if (!wd[tipo]) wd[tipo] = [];
+      return wd[tipo];
+    },
+
+    staking: function () { return Store._rendLista("staking").slice(); },
+    lending: function () { return Store._rendLista("lending").slice(); },
+
+    rendimentos: function (tipo) {
+      if (!Store._rendOk(tipo)) return [];
+      return Store._rendLista(tipo).filter(function (x) { return x.status !== "encerrada"; });
+    },
+
+    rendimento: function (tipo, id) {
+      return Store._rendLista(tipo).filter(function (x) { return x.id === id; })[0] || null;
+    },
+
+    addRendimento: function (tipo, data) {
+      if (!Store._rendOk(tipo) || !data) return null;
+      var s = _read(), lista = Store._rendLista(tipo, s);
+
+      var qtd = Number(data.amount) || 0;
+      var preco = Number(data.precoEntrada) || 0;
+      if (!(qtd > 0) || !(preco > 0)) return null;
+
+      var item = {
+        id: Store._uid(tipo === "staking" ? "st" : "ln"),
+        tipo: tipo,
+        token: String(data.token || "").toUpperCase(),
+        protocol: data.protocol || "",
+        chain: data.chain || "",
+        amount: qtd,
+        precoEntrada: preco,
+        /* staking fala em APR, lending em APY. Guardamos os dois campos
+           para as telas não precisarem traduzir. */
+        apr: Number(data.apr) || 0,
+        apy: Number(data.apy) || Number(data.apr) || 0,
+        rewards: [],
+        status: "aberta",
+        openedAt: data.openedAt || _hoje(),
+        closedAt: null,
+        note: data.note || ""
+      };
+      if (W && W.stamp) Object.assign(item, W.stamp("defi", "manual", s.currentWalletId));
+      else { item.walletId = s.currentWalletId; item.module = "defi"; }
+
+      lista.unshift(item);
+      _persist();
+      Store._caixaAporte(item, qtd * preco,
+        (tipo === "staking" ? "Staking de " : "Lending de ") + item.token);
+      return item;
+    },
+
+    /* ------------------------------------------------------------
+       O resumo, na mesma régua de poolSummary.
+
+       `valorAtual` é DERIVADO do preço — não é mais um campo gravado
+       que ninguém sabia quem escrevia. Sem cotação, vale o preço de
+       entrada: a posição não "perde valor" por falta de preço.
+       ------------------------------------------------------------ */
+    rendimentoSummary: function (tipo, id) {
+      var it = (typeof id === "object" && id) ? id : Store.rendimento(tipo, id);
+      if (!it) return null;
+
+      var precoAgora = Store.precoDe(it.token);
+      var preco = (precoAgora != null && precoAgora > 0) ? precoAgora : Number(it.precoEntrada) || 0;
+
+      var capital = (Number(it.amount) || 0) * (Number(it.precoEntrada) || 0);
+      var valorAtual = (Number(it.amount) || 0) * preco;
+
+      var rw = it.rewards || [];
+      var coletados = rw.filter(function (r) { return r.status === "coletada"; })
+                        .reduce(function (a, r) { return a + (Number(r.amount) || 0); }, 0);
+      var pendentes = rw.filter(function (r) { return r.status === "pendente"; })
+                        .reduce(function (a, r) { return a + (Number(r.amount) || 0); }, 0);
+
+      var varAtivo = valorAtual - capital;
+      return {
+        capital: capital,
+        valorAtual: valorAtual,
+        /* patrimônio da posição: o ativo mais o rendimento que ainda
+           não foi retirado. O coletado já está no caixa. */
+        valorTotal: valorAtual + pendentes,
+        precoAtual: preco,
+        precoOk: precoAgora != null && precoAgora > 0,
+        varAtivo: varAtivo,
+        varAtivoPct: capital > 0 ? (varAtivo / capital) * 100 : 0,
+        rendimentoColetado: coletados,
+        rendimentoPendente: pendentes,
+        rendimentoTotal: coletados + pendentes,
+        resultado: varAtivo + coletados + pendentes,
+        /* dias COMPLETOS desde a abertura — mesma régua do capitalFlows
+           das pools: Math.floor, não round, senão o contador vira ao
+           meio-dia e o rendimento anualizado muda sozinho no almoço. */
+        dias: (function () {
+          var ini = _dia(it.openedAt);
+          if (!ini) return 1;
+          return Math.max(1, Math.floor((new Date() - ini) / 86400000));
+        })()
+      };
+    },
+
+    /* Rendimento recebido. Mesma mecânica das taxas de pool: pendente
+       fica na posição, coletado entra no caixa. */
+    addRendimentoReward: function (tipo, id, entry) {
+      var it = Store.rendimento(tipo, id);
+      if (!it || !entry) return null;
+      var v = Number(entry.amount) || 0;
+      if (!(v > 0)) return null;
+      it.rewards = it.rewards || [];
+      var r = {
+        id: Store._uid("r"),
+        date: entry.date || _hoje(),
+        amount: v,
+        status: entry.status === "pendente" ? "pendente" : "coletada",
+        note: entry.note || ""
+      };
+      if (r.status === "coletada") r.collectedAt = r.date;
+      it.rewards.unshift(r);
+      _persist();
+      if (r.status === "coletada") Store._caixaRendimento(it, r);
+      return r;
+    },
+
+    collectRendimentoReward: function (tipo, id, rewId) {
+      var it = Store.rendimento(tipo, id);
+      if (!it || !it.rewards) return null;
+      var alvo = null;
+      it.rewards.forEach(function (r) {
+        if (r.id === rewId && r.status !== "coletada") {
+          r.status = "coletada"; r.collectedAt = _hoje(); alvo = r;
+        }
+      });
+      _persist();
+      if (alvo) Store._caixaRendimento(it, alvo);
+      return it;
+    },
+
+    _caixaRendimento: function (it, r) {
+      if (!global_.AtlasCaixa || !(Number(r.amount) > 0)) return null;
+      return global_.AtlasCaixa.registrar({
+        tipo: "retorno", valorUSD: Number(r.amount),
+        walletId: it.walletId || _read().currentWalletId,
+        module: "defi", refId: "rw:" + it.id + ":" + r.id,
+        data: r.collectedAt || r.date,
+        obs: "Rendimento · " + it.token
+      });
+    },
+
+    /* Encerrar devolve ao caixa o valor do ativo mais o rendimento que
+       ainda estava dentro. O já coletado saiu na hora da coleta. */
+    closeRendimento: function (tipo, id, motivo) {
+      var s = _read(), lista = Store._rendLista(tipo, s);
+      var it = Store.rendimento(tipo, id);
+      if (!it) return null;
+      var r = Store.rendimentoSummary(tipo, it);
+
+      it.status = "encerrada";
+      it.closedAt = _hoje();
+      it.reason = motivo || "Encerramento manual.";
+      it.finalValue = r ? r.valorTotal : 0;
+      it.closeSummary = r || null;
+      _persist();
+
+      Store._caixaRetorno(it, it.finalValue,
+        "Encerramento de " + (tipo === "staking" ? "staking" : "lending") + " · " + it.token);
+      return it;
+    },
+
+    removeRendimento: function (tipo, id) {
+      var s = _read(), lista = Store._rendLista(tipo, s);
+      var it = Store.rendimento(tipo, id);
+      if (!it) return false;
+      if (global_.AtlasCaixa) global_.AtlasCaixa.removerPorRef("defi", it.id);
+      var i = lista.map(function (x) { return x.id; }).indexOf(id);
+      if (i > -1) lista.splice(i, 1);
+      _persist();
+      return true;
+    },
 
     /* ---------- KPIs agregados ---------- */
     kpis: function () {
       var root = _read(), s = _wallet(root);
       var poolsVal = s.pools.reduce(function (a, p) { return a + Store.poolValue(p); }, 0);
-      var stakeVal = s.staking.reduce(function (a, p) { return a + (Number(p.value) || 0); }, 0);
-      var lendVal = s.lending.reduce(function (a, p) { return a + (Number(p.value) || 0); }, 0);
+      var stakeVal = Store._somaRend(s.staking, Store.rendValue);
+      var lendVal = Store._somaRend(s.lending, Store.rendValue);
       var total = poolsVal + stakeVal + lendVal;
 
       /* O lucro vem do resumo, não de p.profit. p.profit é um campo
@@ -1219,17 +1442,22 @@
           else { add(p.base, v / 2); add(p.quote, v / 2); }
         }
       });
+      /* Mesma regra dos somatórios: valor DERIVADO, e só as abertas. */
       s.staking.forEach(function (p) {
-        if (by === "chain") add(p.chain, p.value);
-        else if (by === "protocol") add(p.protocol, p.value);
-        else if (by === "category") add("Staking", p.value);
-        else if (by === "token") add(p.token, p.value);
+        if (p.status === "encerrada") return;
+        var v = Store.rendValue(p);
+        if (by === "chain") add(p.chain, v);
+        else if (by === "protocol") add(p.protocol, v);
+        else if (by === "category") add("Staking", v);
+        else if (by === "token") add(p.token, v);
       });
       s.lending.forEach(function (p) {
-        if (by === "chain") add(p.chain, p.value);
-        else if (by === "protocol") add(p.protocol, p.value);
-        else if (by === "category") add("Lending", p.value);
-        else if (by === "token") add(p.token, p.value);
+        if (p.status === "encerrada") return;
+        var v = Store.rendValue(p);
+        if (by === "chain") add(p.chain, v);
+        else if (by === "protocol") add(p.protocol, v);
+        else if (by === "category") add("Lending", v);
+        else if (by === "token") add(p.token, v);
       });
       var kind = (by === "chain") ? "chain" : (by === "protocol") ? "proto" : (by === "token") ? "token" : "category";
       /* Sem Math.round por fatia: numa pool de US$ 18 as duas metades
