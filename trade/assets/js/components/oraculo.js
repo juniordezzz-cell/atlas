@@ -87,7 +87,11 @@
       var aw = app.studiesAwaitingRd ? app.studiesAwaitingRd().length : 0;
       var pr = app.tradesAwaitingReview ? app.tradesAwaitingReview().length : 0;
       var parts = [];
-      parts.push("Banca em " + u.money(app.balance()) + " (" + u.pct(chg) + " no período).");
+      /* "no período" descrevia uma variação medida ao longo do tempo,
+         que o Trade nunca teve. changePct virou resultado REALIZADO
+         sobre o depositado — o texto tinha de acompanhar, senão o
+         número certo continua contando a história errada. */
+      parts.push("Banca em " + u.money(app.balance()) + " (" + u.pct(chg) + " do depositado, realizado).");
       if (st) parts.push(st + " tese(s) parada(s) além do limite.");
       if (aw) parts.push(aw + " tese(s) aguardando Registro de Decisão.");
       if (tr) parts.push(tr + " trade(s) aguardando revisão.");

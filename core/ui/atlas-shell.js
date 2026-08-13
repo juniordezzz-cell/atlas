@@ -248,6 +248,33 @@
     try { return AtlasConsolidation.snapshot(); } catch (e) { return null; }
   }
 
+  /* ------------------------------------------------------------
+     O CAIXA — o que o Oráculo não sabia que existia
+
+     Ele respondia "quanto eu tenho?" com AtlasConsolidation.snapshot(),
+     que soma só POSIÇÕES. Depois que o livro de caixa passou a existir,
+     metade do dinheiro pode estar parado — e a resposta ficava menor
+     que a verdade sem nada indicando.
+
+     Medido: US$ 700 em caixa e US$ 600 em posições, e o Oráculo dizia
+     "Patrimônio total: US$ 600". Cinquenta e quatro por cento do
+     dinheiro fora da resposta, na pergunta mais direta que existe.
+     ------------------------------------------------------------ */
+  function caixaGlobal() {
+    if (!window.AtlasCaixa || !AtlasCaixa.caixaGlobal) return 0;
+    try { return AtlasCaixa.caixaGlobal() || 0; } catch (e) { return 0; }
+  }
+
+  function caixaPorCarteira() {
+    var W = window.AtlasWallets;
+    if (!window.AtlasCaixa || !W || !W.globals) return [];
+    try {
+      return W.globals().map(function (w) {
+        return { nome: w.name, id: w.id, saldo: AtlasCaixa.saldo(w.id) };
+      }).filter(function (x) { return x.saldo !== 0; });
+    } catch (e) { return []; }
+  }
+
   function alertasAbertos() {
     if (window.AtlasNotifications && AtlasNotifications.list) {
       try { return AtlasNotifications.list() || []; } catch (e) { return []; }
@@ -265,6 +292,13 @@
         c.push("O que precisa da minha atenção?");
       }
       c.push("Quanto eu tenho?");
+      /* O caixa decide se dá para abrir posição, então ele é a segunda
+         pergunta mais útil — e quando está zerado, é a PRIMEIRA: sem
+         ele o sistema inteiro fica travado, e o usuário merece saber
+         disso antes de tentar. */
+      if (window.AtlasCaixa) {
+        c.push(caixaGlobal() ? "Quanto tenho em caixa?" : "Por que não consigo abrir posição?");
+      }
       c.push("Quais teses estão em aberto?");
       c.push("Como está o módulo?");
       return c.slice(0, 4);
@@ -297,25 +331,74 @@
 
     /* ---- o que ele passou a saber ---- */
 
+    /* Patrimônio = CAIXA + POSIÇÕES. Ver caixaGlobal() acima sobre o
+       que esta função respondia antes. */
     patrimonio: function () {
       var s = consolidado();
       if (!s) return L("Não consigo somar os módulos a partir desta tela.",
                        "I can't consolidate the modules from this screen.");
-      if (!s.total) {
-        return L("Patrimônio zerado — nada registrado ainda em nenhum módulo. " +
-                 "Comece por Hold, Trade, DeFi ou RWA; o total se consolida sozinho.",
-                 "Net worth is zero — nothing recorded in any module yet.");
+      var caixa = caixaGlobal();
+      var total = s.total + caixa;
+
+      if (!total) {
+        return L("Patrimônio zerado — nada registrado ainda. O dinheiro entra no ATLAS " +
+                 "por um Depósito em Carteiras & Movimentações; a partir dele você abre " +
+                 "posição em Hold, Trade, DeFi ou RWA.",
+                 "Net worth is zero. Money enters ATLAS through a Deposit in Wallets.");
       }
+
       var partes = s.byModule.map(function (m) {
-        return m.label + " " + dinheiro(m.value) + " (" + Math.round((m.value / s.total) * 100) + "%)";
-      }).join(", ");
+        return m.label + " " + dinheiro(m.value) + " (" + Math.round((m.value / total) * 100) + "%)";
+      });
+      if (caixa) {
+        partes.unshift(L("caixa livre ", "free cash ") + dinheiro(caixa) +
+                       " (" + Math.round((caixa / total) * 100) + "%)");
+      }
       var sinal = s.pnl >= 0 ? "+" : "";
-      return L("Patrimônio total: " + dinheiro(s.total) + ". Resultado acumulado " +
+      return L("Patrimônio total: " + dinheiro(total) + " — " + dinheiro(caixa) +
+               " em caixa e " + dinheiro(s.total) + " alocado. Resultado acumulado " +
                sinal + dinheiro(s.pnl) + " (" + sinal + s.pnlPct.toFixed(1) + "%). " +
-               "Distribuição: " + partes + ".",
-               "Total net worth: " + dinheiro(s.total) + ". Accumulated result " +
+               "Distribuição: " + partes.join(", ") + ".",
+               "Total net worth: " + dinheiro(total) + " — " + dinheiro(caixa) +
+               " in cash and " + dinheiro(s.total) + " allocated. Accumulated result " +
                sinal + dinheiro(s.pnl) + " (" + sinal + s.pnlPct.toFixed(1) + "%). " +
-               "Split: " + partes + ".");
+               "Split: " + partes.join(", ") + ".");
+    },
+
+    /* ------------------------------------------------------------
+       CAIXA — a pergunta que o sistema passou a permitir
+
+       "Quanto tenho disponível?" caía na regex de patrimônio e recebia
+       o número das posições: a resposta exata do contrário do que foi
+       perguntado. E o caixa é agora o que decide se dá para abrir
+       posição, então é a pergunta mais operacional do ATLAS.
+       ------------------------------------------------------------ */
+    caixa: function () {
+      if (!window.AtlasCaixa) {
+        return L("O livro de caixa não está disponível nesta tela.",
+                 "The cash ledger isn't available on this screen.");
+      }
+      var total = caixaGlobal();
+      var porCarteira = caixaPorCarteira();
+
+      if (!total && !porCarteira.length) {
+        return L("Nenhum caixa disponível. Nenhuma posição pode ser aberta até entrar " +
+                 "dinheiro: registre um Depósito em Carteiras & Movimentações.",
+                 "No cash available. No position can be opened until money comes in.");
+      }
+      var det = porCarteira.map(function (c) {
+        return c.nome + " " + dinheiro(c.saldo);
+      }).join(", ");
+      var negativa = porCarteira.filter(function (c) { return c.saldo < 0; });
+
+      return L("Caixa disponível: " + dinheiro(total) +
+               (det ? " — " + det + "." : ".") +
+               " É daqui que sai o capital de qualquer posição nova." +
+               (negativa.length
+                 ? " ⚠ " + negativa.length + " carteira(s) com caixa negativo — há posição " +
+                   "aberta sem depósito que a cubra."
+                 : ""),
+               "Available cash: " + dinheiro(total) + (det ? " — " + det + "." : "."));
     },
 
     atencao: function () {
@@ -354,14 +437,21 @@
       var M = window.AtlasMovements;
       if (!M || !M.list) return L("O livro-razão não está disponível nesta tela.",
                                   "The ledger isn't available on this screen.");
-      var lista = M.list({});
+      /* Sem walletId, list() soma TODAS as carteiras — e a pessoa está
+         olhando uma. O extrato da tela de Relatórios é por carteira;
+         responder o consolidado aqui seria outro número com o mesmo
+         nome. */
+      var W = window.AtlasWallets;
+      var ativa = (W && W.activeGlobal) ? W.activeGlobal() : null;
+      var lista = M.list(ativa ? { walletId: ativa.id } : {});
       if (!lista.length) {
         return L("Nenhum movimento registrado ainda. Entradas, saídas e resultados " +
                  "aparecem em Relatórios assim que existirem.",
                  "No movements recorded yet.");
       }
       var r = M.summarize(lista);
-      return L(r.count + " movimento(s): entradas " + dinheiro(r.entrada) + ", saídas " +
+      var onde = ativa ? L(" em " + ativa.name, " in " + ativa.name) : "";
+      return L(r.count + " movimento(s)" + onde + ": entradas " + dinheiro(r.entrada) + ", saídas " +
                dinheiro(r.saida) + ", resultado " + dinheiro(r.resultado) +
                ". Fluxo líquido " + dinheiro(r.net) + ".",
                r.count + " movement(s): inflows " + dinheiro(r.entrada) + ", outflows " +
@@ -399,7 +489,32 @@
 
       if (/aten|alerta|alert|risco|risk|problema|urgent/.test(q)) return baseBrain.atencao();
 
+      /* ------------------------------------------------------------
+         CAIXA VEM ANTES DE PATRIMÔNIO
+
+         "saldo" estava na regex de patrimônio, então "qual é o meu
+         saldo?" respondia com o valor das POSIÇÕES — o número que
+         justamente não é saldo. O padrão mais específico tem de vir
+         primeiro, mesma regra que já vale para "tese" acima.
+         ------------------------------------------------------------ */
+      if (/caixa|dispon|livre|parado|cash|free|deposit|dep.sit|sacar|saque|withdraw|transfer/.test(q)) {
+        return baseBrain.caixa();
+      }
+
       if (/quanto|patrim|total|net worth|saldo|worth|vale/.test(q)) return baseBrain.patrimonio();
+
+      /* "por que não consigo abrir?" é a dúvida que a trava do caixa
+         cria, e o Oráculo é onde a pessoa pergunta antes de procurar
+         documentação. */
+      if (/n.o consigo|nao consigo|por que n|why can|bloque|recus|insuficien|abrir posi/.test(q)) {
+        var c = caixaGlobal();
+        return L("Toda posição sai do caixa de uma carteira, e carteira sem caixa não abre " +
+                 "posição — em módulo nenhum. Você tem " + dinheiro(c) + " disponível. " +
+                 "Se faltar, registre um Depósito em Carteiras & Movimentações; se o dinheiro " +
+                 "estiver em outra carteira, use Transferência.",
+                 "Every position comes out of a wallet's cash, and a wallet with no cash " +
+                 "can't open one. You have " + dinheiro(c) + " available.");
+      }
 
       if (/carteira|wallet|conta/.test(q)) return baseBrain.carteiras();
 
@@ -436,18 +551,26 @@
 
       /* Não saber é aceitável; deixar o usuário no escuro não é. A
          resposta padrão ENSINA o que dá para perguntar. */
-      return L("Ainda não sei responder isso. Sei falar de patrimônio, resultado, teses, " +
-               "pendências, carteiras, movimentos e moeda — sempre a partir dos seus " +
-               "próprios dados, nunca de um chat genérico. " +
+      return L("Ainda não sei responder isso. Sei falar de patrimônio, caixa disponível, " +
+               "resultado, teses, pendências, carteiras, movimentos e moeda — sempre a " +
+               "partir dos seus próprios dados, nunca de um chat genérico. " +
                "Ctrl+K abre a paleta, se você quiser ir direto a uma tela.",
                "I can't answer that yet. I can talk about net worth, result, theses, " +
                "pending items, wallets, movements and currency — always from your own " +
                "data. Ctrl+K opens the command palette.");
     },
 
+    /* ------------------------------------------------------------
+       O SELO CONTA ALERTA, E SÓ ALERTA
+
+       Era `naoLidos || pending().length`: sem nenhum alerta, o número
+       no selo virava a quantidade de TESES ABERTAS. Duas grandezas
+       diferentes no mesmo lugar — o usuário via "3" e não tinha como
+       saber se eram três problemas ou três teses em andamento, que é
+       estado normal e saudável.
+       ------------------------------------------------------------ */
     alerts: function () {
-      var naoLidos = alertasAbertos().filter(function (a) { return !a.lido; }).length;
-      return naoLidos || baseBrain.pending().length;
+      return alertasAbertos().filter(function (a) { return !a.lido; }).length;
     }
   };
 
