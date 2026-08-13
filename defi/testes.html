@@ -348,8 +348,26 @@
     is("hoje é a data LOCAL, não a UTC", U.hoje(), localIso(new Date()));
     is("data inválida não vira NaN", U.daysBetween(undefined), null);
     is("data inválida não vira NaN (texto)", U.daysBetween("nao-e-data"), null);
-    eq("dias completos, sem arredondar para cima",
-       U.daysBetween(localIso(new Date(Date.now() - 9.6 * 86400000))), 9, 0.001);
+    /* ------------------------------------------------------------
+       UM TESTE QUE FALHAVA CONFORME A HORA DO DIA
+
+       Era `daysBetween(localIso(agora − 9,6 dias))`, comparando com 9.
+       localIso trunca para a DATA, e a data em que "agora − 9,6 dias"
+       cai depende da hora: às 20h ela cai 9 dias atrás, às 8h cai 10.
+       O caso passava à noite e falhava de manhã — e foi assim que ele
+       apareceu vermelho aqui, sem nada no código ter mudado.
+
+       Teste que muda de resposta com o relógio é pior que teste
+       nenhum: ele ensina quem lê a ignorar o vermelho. Agora as duas
+       pontas são fixas, e a distância entre elas é exatamente 9 dias e
+       14,4 horas — floor dá 9, arredondamento daria 10, que é o que o
+       caso existe para pegar.
+       ------------------------------------------------------------ */
+    var t0 = new Date(2026, 0, 1, 0, 0, 0);
+    var t1 = new Date(t0.getTime() + 9.6 * 86400000);
+    eq("dias completos, sem arredondar para cima", U.daysBetween(t0, t1), 9, 0.001);
+    eq("e a véspera de completar um dia ainda é zero",
+       U.daysBetween(t0, new Date(t0.getTime() + 0.99 * 86400000)), 0, 0.001);
     nota("Com toISOString() a data vinha em UTC: depois das 21h no Brasil, " +
          "tudo que fosse registrado nascia com a data de amanhã.");
 

@@ -204,7 +204,29 @@
     regimeMeta: function (id) { return REGIMES[id] || REGIMES.nenhum; },
     scoreColor: scoreColor,
 
+    /* Visão MESCLADA da carteira atual: dados de mercado + o portfólio
+       dela. É o que as telas do RWA consomem. */
     all: function () { return _read(); },
+
+    /* ------------------------------------------------------------
+       O ESTADO CRU, POR CARTEIRA — e o bug que a ausência dele causava
+
+       `all()` devolve a visão mesclada e NÃO tem `byWallet`. Mesmo
+       assim, três leitores de fora do módulo faziam
+       `RWAStore.all().byWallet[walletId]` — que é `undefined` sempre:
+
+         js/atlas-consolidation.js   o RWA entrava com ZERO no
+                                     patrimônio consolidado do
+                                     Dashboard e no saldo do seletor
+                                     de carteira, com o módulo cheio
+         js/atlas-movements.js       nenhum movimento de RWA era
+                                     derivado para os Relatórios
+
+       Não quebrava nada visivelmente: `(undefined || {})[id]` é
+       `undefined`, o código seguia com lista vazia e somava zero. O
+       módulo inteiro sumia da consolidação em silêncio.
+       ------------------------------------------------------------ */
+    byWallet: function () { return _load().byWallet || {}; },
     meta: function () { return _read().meta; },
     reset: function () { _mem = _bootstrap(); _persist(); return _read(); },
 

@@ -111,10 +111,14 @@
       }, null);
     },
 
+    /* Lê RWAStore.byWallet(), não all().byWallet — `all()` devolve a
+       visão MESCLADA da carteira atual e nunca teve `byWallet`. O
+       resultado era o RWA entrando com zero no patrimônio consolidado,
+       com o módulo cheio. Ver o comentário em RWA/js/store.js. */
     rwa: function (walletId) {
       return safe(function () {
-        if (!global.RWAStore || !global.RWAStore.all) return null;
-        var wd = (global.RWAStore.all().byWallet || {})[walletId];
+        if (!global.RWAStore || !global.RWAStore.byWallet) return null;
+        var wd = global.RWAStore.byWallet()[walletId];
         var ativos = (wd && wd.assets) || [];
         var v = ativos.reduce(function (a, x) { return a + n(x.current); }, 0);
         var c = ativos.reduce(function (a, x) { return a + n(x.entry); }, 0);

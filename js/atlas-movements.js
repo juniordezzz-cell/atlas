@@ -451,14 +451,17 @@
      ============================================================ */
   API.registerAdapter(function (opts) {
     var S = global.RWAStore;
-    if (!S || !S.all) return [];
-    var state = safe(function () { return S.all(); }, null);
-    if (!state || !state.byWallet) return [];
+    /* byWallet(), não all().byWallet: `all()` é a visão mesclada da
+       carteira atual e nunca teve essa chave, então este adaptador
+       saía cedo e NENHUM movimento de RWA chegava aos Relatórios. */
+    if (!S || !S.byWallet) return [];
+    var byWallet = safe(function () { return S.byWallet(); }, null);
+    if (!byWallet) return [];
     var refs = API.recordedRefs("rwa");
     var out = [];
-    Object.keys(state.byWallet).forEach(function (wid) {
+    Object.keys(byWallet).forEach(function (wid) {
       if (opts && opts.walletId && wid !== opts.walletId) return;
-      (state.byWallet[wid].assets || []).forEach(function (a) {
+      (byWallet[wid].assets || []).forEach(function (a) {
         var aid = a.id || a.ticker;
         if (refs["rwa:" + aid + ":" + wid]) return;   // já gravado → não deriva
         var when = a.date || a.buyDate || a.openedAt || a.createdAt;

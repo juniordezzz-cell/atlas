@@ -541,9 +541,66 @@
   }
 
   /* ============================================================
+     ABERTURA DE SALDO
+
+     As posições do usuário são anteriores ao livro de caixa. Sem um
+     registro da entrada delas, o primeiro encerramento credita o caixa
+     sem nunca ter debitado — e o patrimônio passa a contradizer o
+     "depositado − sacado" sem que nada tenha rendido.
+
+     A faixa mostra o que a migração VAI fazer antes de fazer. Uma
+     correção de contabilidade aplicada em silêncio é uma mudança que
+     ninguém consegue conferir depois.
+     ============================================================ */
+  function pintarMigracao() {
+    var host = qs("#cxMigracao");
+    if (!host) return;
+    var M = window.AtlasCaixaMigracao;
+    if (!M || !M.pendente || !M.pendente()) { host.innerHTML = ""; return; }
+
+    var p = M.previa();
+    if (!p || !p.posicoes) { host.innerHTML = ""; return; }
+
+    host.innerHTML =
+      '<div class="panel" style="margin-bottom:20px;border-color:rgba(94,234,212,.28)">' +
+        '<div style="padding:16px 18px">' +
+          '<div class="eyebrow">Abertura de saldo</div>' +
+          '<h2 style="margin:2px 0 8px">O livro de caixa começa hoje, suas posições não</h2>' +
+          '<p class="cx-linha__sub" style="margin:0 0 12px;font-size:12.5px;line-height:1.65">' +
+            'Encontrei <b>' + p.posicoes + ' posição(ões)</b> abertas, somando <b>' +
+            money(p.total) + '</b> de capital, criadas antes deste livro existir. ' +
+            'Sem registrá-las, a primeira que você fechar vai <b>creditar</b> o caixa sem ' +
+            'nunca ter <b>debitado</b>.<br><br>' +
+            'A abertura registra um depósito com esse valor e, junto, o aporte de cada ' +
+            'posição — o caixa termina em <b>zero</b>, que é o estado de quem está com tudo ' +
+            'alocado. Nenhum dinheiro é criado: o capital já está gravado em cada módulo, ' +
+            'o que faltava era o registro da entrada dele.' +
+            (p.posicoes ? '' : '') +
+          '</p>' +
+          '<div class="cx-taxa__acoes" style="margin:0">' +
+            '<button type="button" class="cx-btn cx-btn--in" id="cxMigrar">Registrar abertura de ' + money(p.total) + '</button>' +
+            '<button type="button" class="cx-btn" id="cxMigrarNao">Agora não</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    var b = qs("#cxMigrar");
+    if (b) b.addEventListener("click", function () {
+      var r = M.migrar();
+      if (!r.ok) { toast(r.motivo || "Não consegui registrar a abertura.", "warn"); return; }
+      toast("Abertura registrada: " + money(r.total) + " em " + r.posicoes +
+            " posição(ões), " + r.carteiras + " carteira(s).", "ok");
+      render();
+    });
+    var n = qs("#cxMigrarNao");
+    if (n) n.addEventListener("click", function () { host.innerHTML = ""; });
+  }
+
+  /* ============================================================
      MONTAGEM
      ============================================================ */
   function render() {
+    pintarMigracao();
     if (guiaAtual === "taxas") { pintarTaxas(); return; }
     pintarDistribuicao();
     pintarCarteiras();

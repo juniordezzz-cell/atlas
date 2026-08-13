@@ -64,6 +64,12 @@
          caixa; "Taxas de pool" é a receita das posições de liquidez,
          que tem ciclo próprio (gerada → disponível → destinada) e por
          isso não cabe numa linha de extrato. -->
+    <!-- Faixa da abertura de saldo. Aparece só quando há posição
+         anterior ao livro de caixa e ele ainda está vazio. Uma
+         migração que mexe em dinheiro não pode ser silenciosa: ela
+         diz o que vai fazer antes, e o usuário decide. -->
+    <div id="cxMigracao"></div>
+
     <div class="cx-guias" role="tablist">
       <button type="button" class="cx-guia is-on" role="tab" data-guia="movimentacoes" aria-selected="true">Movimentações</button>
       <button type="button" class="cx-guia" role="tab" data-guia="taxas" aria-selected="false">Taxas de pool</button>
@@ -218,6 +224,9 @@
 <script src="core/ui/atlas-palette.js"></script>
 <script src="core/ui/atlas-shell.js"></script>
 <script src="core/atlas-backup.js"></script>
+<!-- Abertura de saldo: só faz sentido onde os QUATRO stores estão
+     carregados, que é aqui e no Dashboard. Ver o arquivo. -->
+<script src="wallets/walletCaixaMigracao.js"></script>
 <script src="js/carteiras.js"></script>
 </body>
 </html>
