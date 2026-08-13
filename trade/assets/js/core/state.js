@@ -396,6 +396,12 @@
       var t = now();
       var capital = Number(data.sizeUSD);
       if (!isFinite(capital) || capital < 0) capital = 0;
+      /* Sem caixa a operação nem nasce. O livro recusaria o débito de
+         qualquer forma, mas aí sobraria um trade aberto sem dinheiro
+         por trás — patrimônio do nada. A tela checa antes para poder
+         dizer quanto falta; esta é a trava de qualquer caminho. */
+      if (capital > 0 && global.AtlasCaixa &&
+          !global.AtlasCaixa.podeGastar(state.currentWallet, capital).ok) return null;
       var tr = {
         id: genId("t"),
         asset: (data.asset || "").toUpperCase(),

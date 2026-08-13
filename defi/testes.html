@@ -150,6 +150,28 @@
     var S = window.DeFiStore, U = window.U, P = window.DeFiPerf;
     S.reset();
 
+    /* ------------------------------------------------------------
+       CAIXA PARA A BATERIA RODAR
+
+       Desde que "sem caixa a posição nem nasce" virou regra do store,
+       criar uma pool sem depósito devolve null — e é assim que tem de
+       ser. Os casos abaixo modelam uso real, e uso real começa com
+       dinheiro entrando.
+
+       O depósito é grande de propósito: nenhum caso deve falhar por
+       falta de saldo, senão o teste passaria a medir o caixa em vez do
+       que ele foi escrito para medir. A chave atlas.caixa.v1 está no
+       backup lá embaixo, então isto não toca no dinheiro real.
+       ------------------------------------------------------------ */
+    if (window.AtlasCaixa) {
+      try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
+      AtlasCaixa._reload();
+      var _cart = (window.AtlasWallets && AtlasWallets.activeGlobalId)
+        ? AtlasWallets.activeGlobalId() : "principal";
+      AtlasCaixa.registrar({ tipo: "deposito", valorUSD: 1e7, walletId: _cart,
+                             obs: "Caixa da bateria de testes" });
+    }
+
     /* ============ 1. Cenário real relatado na auditoria ============
        Pool criada com US$ 18,46. Raydium mostrava US$ 19,29 de posição
        e US$ 0,68 em taxas pendentes. O ATLAS exibia variação de ativos
@@ -702,8 +724,16 @@
     if (!S.addRendimento) {
       nota("modelo de rendimentos não carregado — casos pulados.");
     } else {
+      /* Caixa limpo E recarregado com um depósito: o grupo mede o
+         SALDO em pontos exatos, então precisa partir de um valor
+         conhecido — e, desde a trava do store, precisa de saldo para a
+         posição existir. */
       try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
-      if (window.AtlasCaixa) AtlasCaixa._reload();
+      if (window.AtlasCaixa) {
+        AtlasCaixa._reload();
+        AtlasCaixa.registrar({ tipo: "deposito", valorUSD: 1000,
+                               walletId: AtlasWallets.activeGlobalId() });
+      }
 
       var stk = S.addRendimento("staking", {
         token: "SOL", amount: 5, precoEntrada: 100,
@@ -736,7 +766,7 @@
         eq("abrir tirou o capital do caixa",
            AtlasCaixa.eventos({ tipo: "aporte", refId: stk.id }).length, 1);
         eq("e o rendimento coletado entrou nele",
-           AtlasCaixa.saldo(wid), -500 + 8, 0.001);
+           AtlasCaixa.saldo(wid), 1000 - 500 + 8, 0.001);
       }
 
       var vAntes = S.rendValue(stk);
@@ -744,7 +774,7 @@
       eq("encerrar devolve valor do ativo + rendimento pendente", vAntes, 612);
       is("e a posição sai da lista de abertas", S.rendimentos("staking").length, 0);
       if (window.AtlasCaixa) {
-        eq("com o dinheiro no caixa", AtlasCaixa.saldo(stk.walletId), -500 + 8 + 612, 0.001);
+        eq("com o dinheiro no caixa", AtlasCaixa.saldo(stk.walletId), 1000 - 500 + 8 + 612, 0.001);
       }
 
       /* lending usa exatamente o mesmo motor */
@@ -765,6 +795,64 @@
 
       try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
       if (window.AtlasCaixa) AtlasCaixa._reload();
+    }
+
+    /* ============ 20. A trava do caixa ============
+       "Carteira sem caixa não abre posição" é a regra central do
+       modelo financeiro. Ela estava só nas TELAS, e o RWA nem isso —
+       adicionar um ativo furava o caixa em silêncio. Pior: quando o
+       livro passou a recusar o débito, a posição continuava nascendo,
+       e sobrava posição sem dinheiro por trás.
+
+       Estes casos existem para que a trava nunca volte a ser só da
+       interface. Eles chamam os STORES direto, sem passar por tela
+       nenhuma — que é o caminho de uma importação, de uma restauração
+       de backup ou de uma tela futura. */
+    grupo("20 · Sem caixa, a posição nem nasce");
+    if (!window.AtlasCaixa) {
+      nota("livro de caixa não carregado — casos pulados.");
+    } else {
+      var CX2 = window.AtlasCaixa;
+      var w20 = AtlasWallets.activeGlobalId();
+      try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
+      CX2._reload();
+      S.reset();
+
+      eq("o caixa começa zerado", CX2.saldo(w20), 0);
+
+      is("pool não nasce sem caixa",
+         S.addPool(base({ capital: 50, currentValue: 50 })), null);
+      is("staking não nasce sem caixa",
+         S.addRendimento("staking", { token: "SOL", amount: 5, precoEntrada: 100 }), null);
+      is("lending não nasce sem caixa",
+         S.addRendimento("lending", { token: "USDC", amount: 300, precoEntrada: 1 }), null);
+      is("nem o livro aceita um aporte solto",
+         CX2.registrar({ tipo: "aporte", valorUSD: 500, walletId: w20, module: "x", refId: "x" }), null);
+
+      eq("e nada foi criado", S.pools().length, 0);
+      eq("nem em staking", S.rendimentos("staking").length, 0);
+      eq("o caixa continua zerado", CX2.saldo(w20), 0);
+
+      /* com depósito, tudo passa — a trava não pode travar o uso real */
+      CX2.registrar({ tipo: "deposito", valorUSD: 1000, walletId: w20 });
+      var p20 = S.addPool(base({ capital: 200, currentValue: 200 }));
+      ok("com caixa, a pool nasce", !!p20, p20 ? "sim" : "não");
+      eq("e o capital saiu do caixa", CX2.saldo(w20), 800);
+
+      var s20 = S.addRendimento("staking", { token: "SOL", amount: 5, precoEntrada: 100 });
+      ok("com caixa, o staking nasce", !!s20, s20 ? "sim" : "não");
+      eq("caixa depois dos dois", CX2.saldo(w20), 300);
+
+      is("e o que passa do saldo continua recusado",
+         S.addPool(base({ capital: 500, currentValue: 500 })), null);
+      eq("sem mexer no caixa", CX2.saldo(w20), 300);
+
+      nota("A verificação vive no STORE, não na tela. As telas checam também, " +
+           "mas só para poder dizer quanto falta — a garantia é do store, e vale " +
+           "para importação, restauração de backup e qualquer tela futura.");
+
+      try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
+      CX2._reload();
     }
   }
 

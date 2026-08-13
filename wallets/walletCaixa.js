@@ -147,21 +147,59 @@
 
     /* ---------------- escrita ---------------- */
 
+    /* ------------------------------------------------------------
+       A TRAVA DE VERDADE — no livro, não na tela
+
+       "Carteira sem caixa não abre posição" estava implementado em
+       CINCO telas: o wizard de pool, o de staking/lending, o formulário
+       de trade, a compra do Hold e as ações desta tela. O RWA não
+       tinha, e por isso adicionar um ativo furava o caixa em silêncio.
+
+       Regra espalhada por tela é regra que um caminho novo esquece —
+       importação, restauração de backup, uma tela futura. Aqui ela
+       fica no lugar por onde TODO aporte passa, e as telas continuam
+       verificando antes só para poder dar uma mensagem melhor: elas
+       explicam quanto falta, o livro apenas recusa.
+
+       Só o APORTE é travado. Saque e transferência são gastos também,
+       mas quem os registra é esta tela, que já confere — e travá-los
+       aqui impediria de corrigir um lançamento errado registrando o
+       oposto.
+       ------------------------------------------------------------ */
     registrar: function (ev) {
       var n = normalizar(ev);
       if (!n) return null;
+      if (n.tipo === "aporte" && !API.podeGastar(n.walletId, n.valorUSD).ok) return null;
       var arr = ler().slice();
       arr.push(n);
       gravar(arr);
       return n;
     },
 
-    /* Vários de uma vez, tudo ou nada. Usado pelo fechamento de
-       posição, que precisa registrar o retorno como um ato só. */
+    /* ------------------------------------------------------------
+       Vários de uma vez, tudo ou nada.
+
+       Aplica em SEQUÊNCIA, não em bloco: a abertura de saldo registra
+       o depósito e os aportes que ele financia na mesma chamada, e um
+       saldo conferido contra o estado ANTERIOR recusaria todos os
+       aportes — o depósito ainda não teria entrado. Sequencial, cada
+       evento vê o efeito do anterior, que é como o dinheiro funciona.
+       ------------------------------------------------------------ */
     registrarVarios: function (lista) {
       var normalizados = (lista || []).map(normalizar);
       if (normalizados.some(function (x) { return !x; })) return null;
-      var arr = ler().slice().concat(normalizados);
+
+      var original = ler().slice();
+      var arr = original.slice();
+      for (var i = 0; i < normalizados.length; i++) {
+        var n = normalizados[i];
+        if (n.tipo === "aporte") {
+          _mem = arr;                                   // saldo do estado parcial
+          if (!API.podeGastar(n.walletId, n.valorUSD).ok) { _mem = original; return null; }
+        }
+        arr.push(n);
+      }
+      _mem = original;
       gravar(arr);
       return normalizados;
     },

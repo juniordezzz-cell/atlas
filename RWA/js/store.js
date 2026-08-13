@@ -405,8 +405,33 @@
       a.date = a.date || new Date().toISOString().slice(0, 10);
       /* quantidade × preço manda; sem quantidade, valem os totais */
       Store.normalizar(a);
-      s.assets.push(a); _persist();
       var widA = _currentId();
+
+      /* ------------------------------------------------------------
+         SEM CAIXA NÃO COMPRA — o RWA era o único que não conferia
+
+         Ele DEBITAVA o caixa (logo abaixo) mas não verificava antes:
+         adicionar um ativo de US$ 5.000 numa carteira com US$ 100
+         deixava o caixa negativo em silêncio. Os outros quatro módulos
+         recusavam; este passava.
+
+         A recusa devolve null, e a tela avisa. O livro de caixa também
+         recusa por conta própria (wallets/walletCaixa.js) — mas se a
+         checagem ficasse só lá, o ativo seria criado e o débito não,
+         o que é pior que recusar: posição sem dinheiro por trás.
+         ------------------------------------------------------------ */
+      if (window.AtlasCaixa && a.entry > 0) {
+        var podeRWA = window.AtlasCaixa.podeGastar(widA, a.entry);
+        if (!podeRWA.ok) {
+          Store._ultimoErro = "Caixa insuficiente: há US$ " + podeRWA.saldo.toFixed(2) +
+            " e o ativo custa US$ " + Number(a.entry).toFixed(2) +
+            ". Registre um depósito em Carteiras & Movimentações.";
+          return null;
+        }
+      }
+      Store._ultimoErro = null;
+
+      s.assets.push(a); _persist();
       /* O custo sai do caixa da carteira: a posição não nasce do nada. */
       if (window.AtlasCaixa && a.entry > 0) {
         window.AtlasCaixa.registrar({

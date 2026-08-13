@@ -648,6 +648,10 @@
       objectiveLabels: rotulos,
       goal: goal || (rotulos.length ? rotulos.join(" · ") : "Sem objetivo definido ainda.")
     });
+    if (!p) {
+      U.toast("Caixa insuficiente — a posição não foi criada.", "warn");
+      return;
+    }
     /* Criou: o rascunho cumpriu o papel e sai de cena. */
     limparRascunho();
     pintarAvisoRascunho(false);

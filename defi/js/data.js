@@ -468,6 +468,8 @@
          restauração de backup ou importação em laço, é o caso comum.
          ------------------------------------------------------------ */
       p.id = Store._uid("p");
+      /* recusa antes de criar: ver _temCaixa */
+      if (!Store._temCaixa(s.currentWalletId, Number(p.capital) || 0)) return null;
       if (W && W.stamp) Object.assign(p, W.stamp("defi", p.origem || "manual", s.currentWalletId));
       else { p.walletId = s.currentWalletId; p.module = "defi"; p.data = new Date().toISOString(); }
       var abertura = p.openedAt || p.createdAt || _hoje();
@@ -502,6 +504,25 @@
        continua funcionando sozinho numa página que não trouxe a
        central, só sem registrar o fluxo.
        ============================================================ */
+
+    /* ------------------------------------------------------------
+       SEM CAIXA A POSIÇÃO NEM NASCE
+
+       O livro de caixa recusa o aporte que fura o saldo, mas isso
+       sozinho é PIOR do que nada: a posição era criada e o débito
+       recusado, e sobrava uma posição sem dinheiro nenhum por trás —
+       patrimônio saindo do nada, que é exatamente o que este modelo
+       veio impedir.
+
+       A verificação tem de vir ANTES de criar. As telas checam também,
+       para poder dizer quanto falta; aqui é a trava que vale para
+       qualquer caminho, inclusive importação e restauração de backup.
+       ------------------------------------------------------------ */
+    _temCaixa: function (walletId, valor) {
+      if (!global_.AtlasCaixa || !(valor > 0)) return true;
+      return global_.AtlasCaixa.podeGastar(walletId, valor).ok;
+    },
+
     _caixaAporte: function (p, valor, obs) {
       if (!global_.AtlasCaixa || !(valor > 0)) return null;
       return global_.AtlasCaixa.registrar({
@@ -1200,6 +1221,8 @@
       var qtd = Number(data.amount) || 0;
       var preco = Number(data.precoEntrada) || 0;
       if (!(qtd > 0) || !(preco > 0)) return null;
+
+      if (!Store._temCaixa(s.currentWalletId, qtd * preco)) return null;
 
       var item = {
         id: Store._uid(tipo === "staking" ? "st" : "ln"),

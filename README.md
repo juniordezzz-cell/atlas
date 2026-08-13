@@ -166,8 +166,14 @@ retorno        + caixa    posição → caixa               = patrimônio
 ```
 
 Só **depósito** e **saque** mudam o patrimônio total; todo o resto redistribui.
-Abrir posição debita o caixa e **carteira sem caixa não abre posição**; fechar
-devolve capital mais resultado. A tela é [`carteiras.html`](carteiras.html).
+Abrir posição debita o caixa e fechar devolve capital mais resultado. A tela é
+[`carteiras.html`](carteiras.html).
+
+**Carteira sem caixa não abre posição — em módulo nenhum.** A verificação vive
+nos *stores* (`addPool`, `addRendimento`, `openTrade`, `executeBuy`, `addAsset`)
+e no próprio livro, não nas telas: elas checam também, mas só para poder dizer
+quanto falta. Assim a regra vale para importação, restauração de backup e
+qualquer tela futura — e o primeiro passo do sistema é sempre um **depósito**.
 
 ---
 

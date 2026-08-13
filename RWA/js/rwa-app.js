@@ -457,7 +457,18 @@
         score: parseInt(fv("score"), 10) || 0, regimeSens: fv("regimeSens") || "Neutral", status: fv("status") || "core"
       };
       if (isEdit) { S.updateAsset(existing.id, data); U.toast("Ativo atualizado."); }
-      else { S.addAsset(data); U.toast("Ativo adicionado."); }
+      else {
+        /* addAsset devolve null quando não há caixa que cubra a compra.
+           Sem este ramo, o botão "Adicionar" não faria nada e o usuário
+           não teria como saber por quê — falha silenciosa é o modo de
+           errar que esta auditoria passou inteira removendo. */
+        var criado = S.addAsset(data);
+        if (!criado) {
+          U.toast(S._ultimoErro || "Não consegui adicionar o ativo.", "warn");
+          return;
+        }
+        U.toast("Ativo adicionado.");
+      }
       closeModal(); Router.resolve();
     });
     var del = m.querySelector("[data-del]");

@@ -424,6 +424,14 @@
         sizeUSD: capital,
         size: val("size"), leverage: val("leverage"), note: val("note")
       });
+      /* openTrade devolve null quando o caixa não cobre. A tela já
+         checou acima e deu a mensagem com o valor que falta; este ramo
+         cobre o caso de o saldo ter mudado noutra aba entre a
+         verificação e o clique. */
+      if (!tr) {
+        return ATLAS.util.invalido(mount.querySelector('[data-f="sizeUSD"]'),
+          "Caixa insuficiente para abrir esta operação.");
+      }
       selectedId = tr.id; show("detail");
     });
   }
