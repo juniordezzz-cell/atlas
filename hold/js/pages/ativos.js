@@ -11,11 +11,53 @@
     return listView();
   };
 
+  /* Botão "Atualizar preços": busca pela cadeia única do ATLAS e
+     relata o que não foi reconhecido, em vez de deixar o preço velho
+     com aparência de preço de agora. */
+  function botaoPrecos() {
+    var b = U.button("Atualizar preços", { icon: "refresh" });
+    b.addEventListener("click", function () {
+      if (!S.actions.refreshPrices) return;
+      b.disabled = true;
+      var rotulo = b.textContent;
+      b.textContent = "Buscando…";
+      S.actions.refreshPrices().then(function (r) {
+        b.disabled = false; b.textContent = rotulo;
+        var partes = [];
+        if (r.atualizados) partes.push(r.atualizados + " preço(s) atualizado(s)");
+        if (r.faltando.length) {
+          partes.push("nenhuma fonte reconheceu " + r.faltando.join(", ") +
+                      " — informe o preço na mão em Editar");
+        }
+        /* U.toast do Hold é (título, mensagem, tipo) — assinatura
+           diferente da do DeFi, que é (mensagem, tipo). */
+        (r.divergentes || []).forEach(function (x) {
+          U.toast("Preços divergentes em " + x.simbolo,
+                  "API US$ " + x.primaria.toFixed(2) + " x DEX US$ " + x.secundaria.toFixed(2) +
+                  " (" + x.pct.toFixed(1) + "% de diferença). Confira antes de usar.", "warn");
+        });
+        U.toast("Preços",
+                partes.join(" · ") || "Todos os preços já estavam atualizados.",
+                r.atualizados ? "ok" : "");
+        window.Router.rerender();
+      }).catch(function (e) {
+        b.disabled = false; b.textContent = rotulo;
+        U.toast("Preços", (e && e.message) || "Não consegui buscar os preços agora.", "warn");
+      });
+    });
+    return b;
+  }
+
   function listView() {
     var view = U.el("div");
     view.appendChild(U.el("div", { class: "view-head" }, [
       U.el("div", { class: "row" }, [
         U.el("div", { class: "grow" }, [U.el("h1", { text: "Ativos" }), U.el("p", { text: "Universo completo de ativos do sistema, de watchlist a investidos." })]),
+        /* O Hold nunca teve como atualizar preço: a ação existia no
+           store e não era chamada por tela nenhuma. Sem ela, todo
+           valor de posição do módulo era calculado com o preço
+           digitado no dia do cadastro. */
+        botaoPrecos(),
         U.button("Adicionar ativo", { variant: "primary", icon: "plus", onClick: F.newAsset })
       ])
     ]));

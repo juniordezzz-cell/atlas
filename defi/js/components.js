@@ -162,15 +162,36 @@
          percentual ao lado, medido sobre o aportado, não fechava com o
          capital exibido. */
       var capital = r ? r.aportado : (Number(p.capital) || 0);
-      var valor   = r ? r.valorTotal    : (Number(p.currentValue) || 0);
+      /* "Valor atual" era r.valorTotal — mercado MAIS taxa pendente.
+         Numa pool de 50 que valorizou para 52 e gerou 3 de taxa, o
+         card dizia 55, como se a posição tivesse valorizado 10%. Aqui
+         é o valor da POSIÇÃO; a taxa tem linha própria na página. */
+      var valor   = r ? r.valorPosicao  : (Number(p.currentValue) || 0);
       var lucro   = r ? r.resultado     : (Number(p.profit) || 0);
       var lucroPct = r ? r.resultadoPct : (Number(p.profitPct) || 0);
+      var taxas   = r ? r.taxasGeradas  : 0;
 
-      var rangeOut = p.status === "range";
+      /* ------------------------------------------------------------
+         O SELO VEM DO CÁLCULO, NÃO DO CAMPO GRAVADO
+
+         Este bloco lia p.status e p.rangePos — dois campos escritos à
+         mão no wizard ("Dentro do range" / "Fora do range", com
+         rangePos: 1 fixo) e reescritos só pela tela do Dashboard,
+         quando houvesse preço dos dois lados. Na tela de Pools, que
+         nunca cotava nada, o card mostrava a escolha de meses atrás
+         com aparência de leitura de agora.
+
+         Agora vem de DeFiStore.statusDe(), a mesma função que a
+         página da posição, o KPI e o alerta do Dashboard usam. Sem
+         preço não existe barra nem selo de faixa: existe "Faixa não
+         avaliada", que é o que de fato se sabe. */
+      var st = (window.DeFiStore && DeFiStore.statusDe) ? DeFiStore.statusDe(p) : null;
+      var status = st ? st.status : "naoavaliada";
       var rangeHtml = "";
-      if ((p.status === "ativa" || p.status === "range") && p.rangeHigh > 0) {
-        var pos = Math.max(4, Math.min(96, (p.rangePos || 0.5) * 100));
-        rangeHtml = '<div class="range-bar' + (rangeOut ? " out" : "") + '"><i style="left:0;width:' + pos + '%"></i></div>';
+      if (st && st.dentro !== null && p.rangeHigh > 0) {
+        var pos = Math.max(4, Math.min(96, (st.posFaixa != null ? st.posFaixa : 0.5) * 100));
+        rangeHtml = '<div class="range-bar' + (st.dentro ? "" : " out") +
+                    '"><i style="left:0;width:' + pos + '%"></i></div>';
       }
       var profitCls = lucro > 0 ? "up" : (lucro < 0 ? "down" : "flat");
 
@@ -184,7 +205,7 @@
                 '<div class="pair-proto">' + p.protocol + '</div>' +
               '</div>' +
             '</div>' +
-            U.statusDot(p.status) +
+            U.statusDot(status, "pool") +
           '</div>' +
           '<div class="pos-tags">' +
             '<span class="tag tag-chain"><span class="dot" style="background:' + DeFiStore.colorOf("chain", p.chain) + '"></span>' + p.chain + '</span>' +
@@ -193,9 +214,9 @@
           '</div>' +
           '<div class="pos-metrics">' +
             '<div class="pos-metric"><div class="k">Capital</div><div class="v">' + U.money(capital) + '</div></div>' +
+            '<div class="pos-metric"><div class="k">Posição</div><div class="v">' + U.money(valor) + '</div></div>' +
+            '<div class="pos-metric"><div class="k">Taxas</div><div class="v delta up">' + U.money(taxas) + '</div></div>' +
             '<div class="pos-metric"><div class="k">Resultado</div><div class="v delta ' + profitCls + '">' + U.pct(lucroPct, true) + '</div></div>' +
-            '<div class="pos-metric"><div class="k">Valor atual</div><div class="v">' + U.money(valor) + '</div></div>' +
-            '<div class="pos-metric"><div class="k">APR</div><div class="v">' + (p.apr ? U.pct(p.apr) : "—") + '</div></div>' +
           '</div>' +
           rangeHtml +
         '</a>';

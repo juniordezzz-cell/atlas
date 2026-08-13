@@ -11,8 +11,17 @@
    Capacidades (capability) conhecidas:
      "prices"  → preço/market data de ativos   (ex.: coingecko)
      "search"  → busca de ativos               (ex.: coingecko)
-     "pools"   → pools de liquidez por chain+DEX (Fase 2: defillama)
-     "lending" → mercados de empréstimo         (Fase 2: defillama)
+
+   A capacidade "pools" existiu e foi RETIRADA na terceira auditoria,
+   junto com o provedor defillama que a implementava. O catálogo dele
+   era filtrado por TVL mínimo e não continha a maior parte das pools
+   reais do usuário; o campo de busca que ele alimentava respondia
+   "nenhuma pool encontrada" para pools que existem, e reordenava o par
+   quando encontrava. O par passou a ser 100% manual, na ordem digitada
+   (ver defi/pools.html, passo 3).
+
+   Registrar uma nova capacidade continua sendo só chamar register() —
+   a arquitetura não mudou, só saiu um provedor que não entregava.
 
    API:
      AtlasProviders.register(name, impl)       impl.capabilities = ["prices",...]

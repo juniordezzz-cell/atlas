@@ -370,9 +370,32 @@
 
     tradesForStudy: function (studyId) { return app.trades().filter(function (t) { return t.studyId === studyId; }); },
 
+    /* ============================================================
+       PONTE COM O CAIXA DA CARTEIRA
+
+       Era aqui que estava o buraco descrito no briefing. O Trade
+       guardava `equity: [0, 0]` — um array escrito UMA vez, na criação
+       da carteira, e nunca mais tocado. Abrir um trade não tirava
+       dinheiro de lugar nenhum; fechar não devolvia. O "saldo que some
+       ao fechar" nunca existiu para sumir.
+
+       Agora o trade tem capital em dólar (sizeUSD): ele sai do caixa
+       ao abrir e volta, com o resultado embutido, ao fechar.
+       ============================================================ */
+    _caixa: function (tipo, tr, valor, obs) {
+      if (!global.AtlasCaixa || !(valor > 0)) return null;
+      return global.AtlasCaixa.registrar({
+        tipo: tipo, valorUSD: valor,
+        walletId: state.currentWallet,
+        module: "trade", refId: tr.id, obs: obs || ""
+      });
+    },
+
     /** Abre um trade — normalmente a partir de um RD "entrar" */
     openTrade: function (data) {
       var t = now();
+      var capital = Number(data.sizeUSD);
+      if (!isFinite(capital) || capital < 0) capital = 0;
       var tr = {
         id: genId("t"),
         asset: (data.asset || "").toUpperCase(),
@@ -383,9 +406,15 @@
         entry: data.entry != null ? data.entry : null,
         stop: data.stop != null ? data.stop : null,
         target: data.target != null ? data.target : null,
+        /* sizeUSD é o CAPITAL, numérico. `size` continua sendo a regra
+           de risco em texto ("2% risco") — descrevem coisas
+           diferentes, e juntá-las num campo só foi o que impediu o
+           módulo de participar do fluxo de caixa. */
+        sizeUSD: capital,
         size: data.size || "",
         leverage: data.leverage || "",
         pnl: 0,
+        pnlUSD: 0,
         openedAt: t,
         updatedAt: t,
         events: [{ ts: t, type: "abertura", text: data.note || "Trade aberto." }],
@@ -393,7 +422,9 @@
       };
       app.walletData().trades.unshift(tr);
       if (tr.rdId) { var rd = app.getRd(tr.rdId); if (rd) { rd.status = "convertido"; } }
-      persist(); emit();
+      persist();
+      app._caixa("aporte", tr, capital, "Abertura de trade " + tr.asset);
+      emit();
       return tr;
     },
 
@@ -438,15 +469,72 @@
       tr.result = data.result || (tr.pnl > 0 ? "gain" : (tr.pnl < 0 ? "loss" : "be"));
       tr.closedAt = t;
       tr.updatedAt = t;
-      tr.events.push({ ts: t, type: "encerramento", text: data.note || ("Trade encerrado (" + (tr.pnl >= 0 ? "+" : "") + tr.pnl + "%).") });
-      persist(); emit();
+
+      /* ------------------------------------------------------------
+         O RESULTADO EM DÓLAR, E POR QUE ELE É DERIVADO DO PERCENTUAL
+
+         `tr.pnl` é percentual — é assim que o módulo sempre registrou,
+         e é como o trader pensa ("fiz +8%"). O caixa precisa de
+         dólares. Com o capital conhecido, a conversão é uma conta, não
+         um chute: 8% de US$ 250 são US$ 20.
+
+         Se quem chamou já tem o valor em dólar (fechamento parcial,
+         importação), ele manda pnlUSD e essa conta não acontece.
+         ------------------------------------------------------------ */
+      var capital = Number(tr.sizeUSD) || 0;
+      var resultado = (data.pnlUSD != null && isFinite(Number(data.pnlUSD)))
+        ? Number(data.pnlUSD)
+        : capital * (Number(tr.pnl) || 0) / 100;
+      tr.pnlUSD = Math.round(resultado * 100) / 100;
+
+      tr.events.push({ ts: t, type: "encerramento",
+        text: data.note || ("Trade encerrado (" + (tr.pnl >= 0 ? "+" : "") + tr.pnl + "%" +
+              (capital ? ", " + (tr.pnlUSD >= 0 ? "+" : "") + "US$ " + Math.abs(tr.pnlUSD).toFixed(2) : "") + ").") });
+      persist();
+
+      /* Capital + resultado voltam ao caixa. Um trade que perdeu tudo
+         devolve zero — e devolver zero é diferente de não devolver:
+         o primeiro é um evento no livro, o segundo é dinheiro que
+         some sem rastro. */
+      var devolver = Math.max(0, capital + tr.pnlUSD);
+      app._caixa("retorno", tr, devolver,
+        "Encerramento de " + tr.asset + " · resultado US$ " + tr.pnlUSD.toFixed(2));
+
+      emit();
       return tr;
+    },
+
+    /* Excluir um trade ABERTO desfaz o aporte: o dinheiro nunca chegou
+       a ser operado. Trade encerrado já teve o retorno registrado, e
+       apagar os dois lançamentos manteria o livro coerente. */
+    _desfazerCaixa: function (tr) {
+      if (!global.AtlasCaixa || !tr) return 0;
+      return global.AtlasCaixa.removerPorRef("trade", tr.id);
     },
 
     removeTrade: function (id) {
       var arr = app.walletData().trades;
       var i = arr.map(function (t) { return t.id; }).indexOf(id);
-      if (i > -1) { arr.splice(i, 1); persist(); emit(); }
+      if (i > -1) {
+        app._desfazerCaixa(arr[i]);
+        arr.splice(i, 1); persist(); emit();
+      }
+    },
+
+    /* ------------------------------------------------------------
+       QUANTO O TRADE VALE NUMA CARTEIRA
+
+       Era o último ponto da curva de `equity` — um array decorativo.
+       Agora é o capital que está DENTRO das operações abertas: é o
+       que o módulo de fato tem alocado, e o que sobra em dinheiro
+       está no caixa, que tem casa própria.
+       ------------------------------------------------------------ */
+    valorEmPosicoes: function (walletId) {
+      var d = (state.data || {})[walletId];
+      if (!d || !d.trades) return 0;
+      return d.trades.reduce(function (a, t) {
+        return a + (t.status === "aberto" ? (Number(t.sizeUSD) || 0) : 0);
+      }, 0);
     },
 
     /** Grava a pós-análise de um trade encerrado */

@@ -320,6 +320,21 @@
             '<label class="field"><span>Alvo</span><input class="input" data-f="target" placeholder="Preço"></label>' +
           '</div>' +
           '<div class="field-row">' +
+            /* ------------------------------------------------------------
+               CAPITAL EM DÓLAR — o campo que faltava para o dinheiro voltar
+
+               "Tamanho" era texto livre ("2% risco", "meia posição") e
+               o resultado era gravado em PERCENTUAL. Com isso o Trade
+               não tinha como devolver nada ao caixa ao fechar: não
+               existia um valor em dólar em lugar nenhum. Era esse o
+               "bug estrutural do Trade" do briefing — o saldo não sumia
+               ao fechar, ele nunca existiu.
+
+               "Tamanho" continua, porque descreve a REGRA de risco que
+               a pessoa usou. O capital é outro campo, numérico, e é
+               ele que sai do caixa.
+               ------------------------------------------------------------ */
+            '<label class="field"><span>Capital (US$)</span><input class="input" data-f="sizeUSD" type="number" step="any" min="0" placeholder="Quanto sai do caixa"></label>' +
             '<label class="field"><span>Tamanho</span><input class="input" data-f="size" value="' + u.escape(pre.size) + '" placeholder="Ex.: 2% risco"></label>' +
             '<label class="field field--sm"><span>Alavancagem</span><input class="input" data-f="leverage" value="' + u.escape(pre.leverage) + '" placeholder="2x"></label>' +
             '<label class="field"><span>Nota de abertura</span><input class="input" data-f="note" placeholder="Contexto da entrada"></label>' +
@@ -330,19 +345,30 @@
 
     pending = null;
 
-    // Autocomplete de ativos (CoinGecko) + preço de mercado sugerido na Entrada
+    /* Autocomplete de ativos + preço de mercado sugerido na Entrada.
+       Passa pela cadeia única (core/atlas-precos.js) em vez de falar
+       direto com a CoinGecko: assim o preço informado à mão pelo
+       usuário vale aqui também, e um ativo que a CoinGecko não lista
+       ainda pode ser cotado pela fonte secundária. A origem entra no
+       placeholder — num campo que a pessoa vai editar, saber de onde
+       veio o número sugerido é o que permite confiar ou corrigir. */
     if (window.AtlasAssets) {
       var assetInput = mount.querySelector('[data-f="asset"]');
       if (assetInput) AtlasAssets.attach(assetInput, { value: "symbol", onSelect: function (coin) {
         var entryEl = mount.querySelector('[data-f="entry"]');
-        if (coin.id && entryEl && !entryEl.value && AtlasAssets.priceFull) {
-          AtlasAssets.priceFull(coin.id).then(function (info) {
-            if (info && info.usd != null && !entryEl.value) {
-              entryEl.value = info.usd;
-              entryEl.placeholder = "Preço (mercado: " + info.usd + ")";
-            }
-          }).catch(function () { /* silencioso: campo continua manual */ });
-        }
+        if (!entryEl || entryEl.value) return;
+
+        var pedir = window.AtlasPrecos
+          ? AtlasPrecos.de(coin.symbol)
+          : (AtlasAssets.priceFull ? AtlasAssets.priceFull(coin.id) : Promise.resolve(null));
+
+        pedir.then(function (r) {
+          if (!r || r.usd == null || entryEl.value) return;
+          entryEl.value = r.usd;
+          var origem = (window.AtlasPrecos && r.fonte)
+            ? AtlasPrecos.fonteLabel(r.fonte, true) : "mercado";
+          entryEl.placeholder = "Preço (" + origem + ": " + r.usd + ")";
+        }).catch(function () { /* silencioso: campo continua manual */ });
       } });
     }
 
@@ -372,9 +398,30 @@
     mount.querySelector("[data-save]").addEventListener("click", function () {
       var asset = val("asset");
       if (!asset) return ATLAS.util.invalido(mount.querySelector('[data-f="asset"]'), "Informe o ativo.");
+
+      var capital = parseFloat(String(val("sizeUSD")).replace(",", "."));
+      if (!(capital > 0)) {
+        return ATLAS.util.invalido(mount.querySelector('[data-f="sizeUSD"]'),
+          "Informe quanto capital sai do caixa. É ele que volta quando o trade fecha.");
+      }
+
+      /* Sem caixa não abre. A mensagem diz quanto falta — mandar a
+         pessoa procurar o saldo noutra tela é o que fazia o número
+         parecer arbitrário. */
+      if (window.AtlasCaixa && window.AtlasWallets) {
+        var w = app.currentWallet();
+        var conf = AtlasCaixa.podeGastar(w.id, capital);
+        if (!conf.ok) {
+          return ATLAS.util.invalido(mount.querySelector('[data-f="sizeUSD"]'),
+            "Caixa insuficiente em " + w.name + ": há US$ " + conf.saldo.toFixed(2) +
+            " e faltam US$ " + conf.falta.toFixed(2) + ".");
+        }
+      }
+
       var tr = app.openTrade({
         asset: asset, side: sideState.side, rdId: val("rdId") || null, studyId: val("studyId") || null,
         entry: numOr("entry"), stop: numOr("stop"), target: numOr("target"),
+        sizeUSD: capital,
         size: val("size"), leverage: val("leverage"), note: val("note")
       });
       selectedId = tr.id; show("detail");

@@ -180,12 +180,25 @@
 <script src="wallets/walletStore.js"></script>
 <script src="wallets/walletTypes.js"></script>
 <script src="wallets/walletLedger.js"></script>
+<script src="wallets/walletCaixa.js"></script>
 <script src="wallets/walletManager.js"></script>
 <script src="wallets/walletMenus.js"></script>
 <script src="wallets/walletDialog.js"></script>
 <script src="wallets/walletSelector.js"></script>
+<script src="core/http.js"></script>
+<script src="core/providers/registry.js"></script>
+<script src="core/providers/coingecko.js"></script>
 <script src="core/atlas-price.js"></script>
+<script src="core/providers/geckoterminal.js"></script>
+<script src="core/atlas-precos.js"></script>
+<script src="core/atlas-tokens.js"></script>
 <script src="RWA/js/store.js"></script>
+<!-- tokens.js + performance.js: o alerta "pool fora da faixa" passou a
+     ser CALCULADO (DeFiStore.statusDe) em vez de lido de um campo
+     gravado. Sem o registro de ids e sem o motor da faixa, esta tela
+     não teria como avaliar nada e o alerta sumiria daqui. -->
+<script src="defi/js/tokens.js"></script>
+<script src="defi/js/performance.js"></script>
 <script src="defi/js/data.js"></script>
 <script src="hold/data/seed.js"></script>
 <script src="hold/js/state.js"></script>

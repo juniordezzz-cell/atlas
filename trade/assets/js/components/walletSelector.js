@@ -23,10 +23,12 @@
          de equity. Única regra de cálculo do módulo — alimenta o cache
          (feed) e responde à leitura ao vivo (registerLive), então as
          duas não podem divergir. */
+      /* Era o último ponto de `equity`, um array escrito uma vez na
+         criação da carteira e nunca mais tocado — o seletor mostrava
+         US$ 0 com operações abertas. Agora é o capital dentro dos
+         trades abertos; o dinheiro parado está no caixa. */
       function totaisDe(walletId) {
-        var data = (app.allWalletData ? app.allWalletData() : (app.getState().data || {}));
-        var eq = data[walletId] && data[walletId].equity;
-        var v = (eq && eq.length) ? Number(eq[eq.length - 1]) || 0 : 0;
+        var v = app.valorEmPosicoes ? app.valorEmPosicoes(walletId) : 0;
         return { id: walletId, module: "trade", capital: v, saldo: v, valorAtual: v, assets: [] };
       }
 

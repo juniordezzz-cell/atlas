@@ -390,6 +390,30 @@ function repintar() {
 
 window.AtlasDashboard = { repintar: repintar };
 
+/* ------------------------------------------------------------
+   O ALERTA DE FAIXA PRECISA DE PREÇO PARA EXISTIR
+
+   "Pool fora da faixa" deixou de ser lido de um campo gravado e passou
+   a ser calculado (DeFiStore.statusDe). Esta tela não busca cotação
+   nenhuma, então na primeira pintura nenhuma pool tem veredito e o
+   alerta não aparece — o que é correto, mas incompleto.
+
+   Aqui a cotação é pedida à camada de consolidação e a lista de
+   alertas é repintada quando ela chega. Falha de rede não faz nada:
+   fica a tela sem o alerta de faixa, que é a verdade quando não se
+   sabe o preço.
+   ------------------------------------------------------------ */
+(function revisarAlertasComPreco() {
+  if (!window.AtlasConsolidation || !AtlasConsolidation.cotarDeFi) return;
+  AtlasConsolidation.cotarDeFi().then(function (d) {
+    if (!d) return;
+    try {
+      D = window.buildAtlasData ? window.buildAtlasData() : D;
+      pintarAlertas();
+    } catch (e) { /* a tela anterior continua coerente */ }
+  });
+})();
+
 /* Trocar a moeda (ou o formato de data/número) nas Configurações exige
    repintar todos os valores. AtlasBoot já coordena isso — repintar() foi
    escrita para a troca de carteira e serve igual aqui. */

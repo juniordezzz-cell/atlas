@@ -59,6 +59,14 @@
 <script src="../core/providers/registry.js"></script>
 <script src="../core/providers/coingecko.js"></script>
 <script src="../core/atlas-price.js"></script>
+<script src="../core/providers/geckoterminal.js"></script>
+  <script src="../core/atlas-precos.js"></script>
+  <script src="../core/atlas-tokens.js"></script>
+<script src="../wallets/walletStore.js"></script>
+<script src="../wallets/walletTypes.js"></script>
+<script src="../wallets/walletLedger.js"></script>
+<script src="../wallets/walletCaixa.js"></script>
+<script src="../wallets/walletManager.js"></script>
 <script src="js/tokens.js"></script>
 <script src="js/performance.js"></script>
 <script src="js/data.js"></script>
@@ -88,7 +96,15 @@
 (function () {
   "use strict";
 
-  var CHAVES = ["atlas.defi.state.v3", "atlas.defi.wallet.v1", "atlas.defi.poolDraft.v1"];
+  /* atlas.precos.manual.v1 entra na lista porque os casos do grupo 12
+     gravam e apagam preços manuais. Sem ele no backup, rodar a bateria
+     apagaria os preços que o usuário informou à mão. */
+  /* atlas.caixa.v1 é OBRIGATÓRIO nesta lista: criar e encerrar pools
+     agora registra aporte e retorno no livro de caixa, então rodar a
+     bateria sem restaurar essa chave mexeria no dinheiro real do
+     usuário. */
+  var CHAVES = ["atlas.defi.state.v3", "atlas.defi.wallet.v1", "atlas.defi.poolDraft.v1",
+                "atlas.precos.manual.v1", "atlas.caixa.v1"];
   var grupos = [], atual = null, passou = 0, falhou = 0;
 
   function grupo(nome) { atual = { nome: nome, casos: [] }; grupos.push(atual); }
@@ -347,6 +363,319 @@
     nota("signedMoney formatava com ZERO casas: US$ 0,68 virava \"+US$ 1\" e " +
          "US$ 0,15 virava \"+US$ 0\". Numa pool pequena, nenhum número da tela " +
          "tinha relação com o valor calculado.");
+
+    /* ============ 11. O selo dentro/fora ============
+       A terceira auditoria: o status era um CAMPO, escolhido em dois
+       formulários e reescrito por uma tela só. Estes casos existem
+       para que ele nunca mais seja lido de um campo. */
+    grupo("11 · Status da faixa — calculado, nunca lido");
+
+    var pf = S.addPool(base({
+      base: "SOL", quote: "USDC", qtyBase: 1, qtyQuote: 100,
+      priceBase: 100, priceQuote: 1, capital: 200, currentValue: 200,
+      rangeLow: 120, rangeHigh: 180, rangeDenom: "quote_por_base",
+      /* o campo gravado MENTE de propósito: diz "range" (fora) */
+      status: "range"
+    }));
+
+    S.setPrecos({ SOL: 150, USDC: 1 }, { SOL: "registro", USDC: "stable" });
+    var st1 = S.statusDe(pf.id);
+    is("preço dentro da faixa → status ativa", st1.status, "ativa");
+    is("veredito é booleano, não nulo", st1.dentro, true);
+    is("o campo gravado dizia o contrário e foi ignorado", S.pool(pf.id).status, "range");
+    eq("posição relativa na faixa", st1.posFaixa, (150 - 120) / (180 - 120), 1e-9);
+
+    S.setPrecos({ SOL: 200 }, { SOL: "registro" });
+    is("preço acima do topo → status range", S.statusDe(pf.id).status, "range");
+
+    var psf = S.addPool(base({
+      base: "AAA", quote: "USDC", capital: 10, currentValue: 10,
+      rangeLow: 0, rangeHigh: 0, status: "range"
+    }));
+    is("sem faixa cadastrada não é 'fora'", S.statusDe(psf.id).status, "analise");
+    is("e não inventa veredito", S.statusDe(psf.id).dentro, null);
+
+    var pnp = S.addPool(base({
+      base: "ZZQX9", quote: "USDC", capital: 10, currentValue: 10,
+      rangeLow: 15, rangeHigh: 25, rangeDenom: "quote_por_base",
+      /* era exatamente este caso: token que nenhuma API reconhece,
+         com o veredito digitado no wizard congelado para sempre */
+      status: "range"
+    }));
+    is("token sem preço → faixa não avaliada", S.statusDe(pnp.id).status, "naoavaliada");
+    is("sem preço não vira 'fora do range'", S.statusDe(pnp.id).dentro, null);
+    ok("o motivo nomeia o token que falta",
+       S.statusDe(pnp.id).motivo.indexOf("ZZQX9") !== -1, S.statusDe(pnp.id).motivo);
+    nota("Antes, este caso exibia 'Fora do Range' no card, na lista e num " +
+         "alerta CRÍTICO do Dashboard — sem que conta nenhuma tivesse sido feita.");
+
+    /* preço informado à mão devolve o veredito */
+    if (window.AtlasPrecos) {
+      AtlasPrecos.definirManual("ZZQX9", 22);
+      is("preço manual dá veredito ao que a API não conhece",
+         S.statusDe(pnp.id).status, "ativa");
+      AtlasPrecos.limparManual("ZZQX9");
+      is("apagar o preço manual devolve o estado sem veredito",
+         S.statusDe(pnp.id).status, "naoavaliada");
+    }
+
+    /* ============ 12. A cadeia de preço ============ */
+    grupo("12 · Preço: API primeiro, manual quando ninguém reconhece");
+    if (!window.AtlasPrecos) {
+      nota("core/atlas-precos.js não carregado nesta página — casos pulados.");
+    } else {
+      AtlasPrecos.limparManual("SOL");
+      AtlasPrecos.limparManual("USDC");
+
+      is("sem manual gravado, manual() devolve nulo", AtlasPrecos.manual("SOL"), null);
+      is("símbolo conhecido resolve para o id do registro", AtlasPrecos.idDe("SOL"), "solana");
+      is("símbolo desconhecido não inventa id", AtlasPrecos.idDe("ZZQX9"), null);
+
+      AtlasPrecos.definirManual("SOL", 123.45);
+      eq("preço manual gravado", AtlasPrecos.manual("SOL").usd, 123.45);
+      is("preço manual nasce válido", AtlasPrecos.manual("SOL").vencido, false);
+
+      /* MANDA sobre a stablecoin, que é o caso mais extremo: se vence
+         a regra "USDC = 1 por definição", vence qualquer API. */
+      AtlasPrecos.definirManual("USDC", 0.98);
+      eq("manual manda até sobre stablecoin", AtlasPrecos.manual("USDC").usd, 0.98);
+
+      /* envelhecimento: grava com data antiga e confere a marca */
+      AtlasPrecos.definirManual("SOL", 100, {
+        em: new Date(Date.now() - (AtlasPrecos.VALIDADE_DIAS + 2) * 86400000).toISOString()
+      });
+      is("preço manual antigo vem marcado como vencido", AtlasPrecos.manual("SOL").vencido, true);
+      ok("mas continua valendo — é o único que existe",
+         AtlasPrecos.manual("SOL").usd === 100, String(AtlasPrecos.manual("SOL").usd));
+
+      AtlasPrecos.limparManual("SOL");
+      AtlasPrecos.limparManual("USDC");
+      is("limpar remove de verdade", AtlasPrecos.manual("SOL"), null);
+      nota("A regra do ATLAS: a API é o caminho principal; quando nenhuma " +
+           "fonte reconhece o ativo, o usuário informa o preço, e a partir daí " +
+           "a API não passa por cima até ele mandar.");
+    }
+
+    /* ============ 13. A inversão do par ============ */
+    grupo("13 · Denominação da faixa — o par não pode inverter");
+    var fxA = P.faixa({ base: "ORCA", quote: "SOL", rangeLow: 50, rangeHigh: 90,
+                        rangeDenom: "base_por_quote" }, { ORCA: 1.032, SOL: 75.92 });
+    eq("BASE por PAR = preçoPar / preçoBase", fxA.razao, 75.92 / 1.032, 1e-9);
+    is("73,5 está dentro de 50–90", fxA.dentro, true);
+
+    var fxB = P.faixa({ base: "ORCA", quote: "SOL", rangeLow: 0.010, rangeHigh: 0.030,
+                        rangeDenom: "quote_por_base" }, { ORCA: 1.032, SOL: 75.92 });
+    eq("PAR por BASE = preçoBase / preçoPar", fxB.razao, 1.032 / 75.92, 1e-9);
+    is("0,0136 está dentro de 0,010–0,030", fxB.dentro, true);
+    ok("as duas denominações são recíprocas",
+       Math.abs(fxA.razao * fxB.razao - 1) < 1e-9, fmt(fxA.razao * fxB.razao));
+    nota("O seletor do wizard trazia exemplos INVERTIDOS em relação à própria " +
+         "definição: 'quantos BASE valem 1 PAR (ex.: SOL por ORCA, 0,0144)'. " +
+         "Quem escolhia pelo exemplo — que é o que se parece com o print da " +
+         "corretora — gravava a faixa na denominação oposta e a posição ficava " +
+         "'fora do range' para sempre, com todos os dados certos.");
+
+    /* ============ 14. A ordem do par ============
+       Fase 2: o par passou a ser 100% manual, na ordem digitada. O
+       store nunca reordenou — quem reordenava era a busca do DefiLlama,
+       que foi removida. Estes casos travam a garantia no lugar onde ela
+       precisa valer para sempre: a gravação. */
+    grupo("14 · A ordem do par é a ordem digitada");
+    var pOrdA = S.addPool(base({ base: "ORCA", quote: "SOL", capital: 10, currentValue: 10 }));
+    var pOrdB = S.addPool(base({ base: "SOL", quote: "ORCA", capital: 10, currentValue: 10 }));
+    is("ORCA digitado primeiro → base é ORCA", S.pool(pOrdA.id).base, "ORCA");
+    is("ORCA digitado primeiro → par é ORCA/SOL", S.pool(pOrdA.id).quote, "SOL");
+    is("SOL digitado primeiro → base é SOL", S.pool(pOrdB.id).base, "SOL");
+    is("SOL digitado primeiro → par é SOL/ORCA", S.pool(pOrdB.id).quote, "ORCA");
+    ok("os dois pares coexistem sem se fundir num só",
+       S.pool(pOrdA.id).id !== S.pool(pOrdB.id).id, "ids distintos");
+
+    /* A ordem não é cosmética: ela É a denominação da faixa. Inverter o
+       par sem inverter a faixa troca o veredito de lado. */
+    var fxOrdA = P.faixa({ base: "ORCA", quote: "SOL", rangeLow: 50, rangeHigh: 90,
+                           rangeDenom: "base_por_quote" }, { ORCA: 1, SOL: 70 });
+    var fxOrdB = P.faixa({ base: "SOL", quote: "ORCA", rangeLow: 50, rangeHigh: 90,
+                           rangeDenom: "base_por_quote" }, { ORCA: 1, SOL: 70 });
+    is("ORCA/SOL na faixa 50–90", fxOrdA.dentro, true);
+    is("SOL/ORCA na MESMA faixa cai fora", fxOrdB.dentro, false);
+    nota("É por isso que a busca do DefiLlama foi removida em vez de corrigida: " +
+         "ela reescrevia base e quote na ordem do catálogo dela, e a ordem do par " +
+         "define a denominação da faixa. Uma conveniência de preenchimento estava " +
+         "trocando o significado do dado.");
+
+    /* ============ 15. Registro de ativos (Fase 3) ============
+       A auditoria de RWA: estes símbolos caíam na busca por texto e
+       traziam o preço de outro ativo. Agora resolvem por id conferido. */
+    grupo("15 · Registro de ativos — o id certo, não o parecido");
+    if (!window.AtlasTokens) {
+      nota("core/atlas-tokens.js não carregado nesta página — casos pulados.");
+    } else {
+      is("CRCLX resolve para o Circle xStock", AtlasTokens.cgId("CRCLX"), "circle-xstock");
+      is("SPYX resolve para o SP500 xStock", AtlasTokens.cgId("SPYX"), "sp500-xstock");
+      is("SKHYX resolve para o SK Hynix xStock", AtlasTokens.cgId("SKHYX"), "sk-hynix-xstock");
+
+      /* Os DOIS SpaceX: emissores diferentes, tokens diferentes,
+         preços diferentes. Resolver "SpaceX" por texto escolheria um
+         dos dois na sorte. */
+      is("SPCXB é o SpaceX da bStocks", AtlasTokens.cgId("SPCXB"), "spacex-bstocks-tokenized-stock");
+      is("SPCXX é o SpaceX da xStocks", AtlasTokens.cgId("SPCXX"), "spacex-xstocks");
+      ok("e os dois são ativos distintos",
+         AtlasTokens.cgId("SPCXB") !== AtlasTokens.cgId("SPCXX"), "ids diferentes");
+
+      /* As variantes que a busca por símbolo confundia */
+      ok("ETH e WETH não compartilham id",
+         AtlasTokens.cgId("ETH") !== AtlasTokens.cgId("WETH"), "ids diferentes");
+      ok("SOL e mSOL não compartilham id",
+         AtlasTokens.cgId("SOL") !== AtlasTokens.cgId("MSOL"), "ids diferentes");
+
+      is("símbolo fora da tabela não inventa id", AtlasTokens.cgId("ZZQX9"), null);
+
+      /* override do usuário tem prioridade sobre a tabela */
+      AtlasTokens.definir("SOL", "id-de-teste");
+      is("override do usuário manda sobre a tabela", AtlasTokens.cgId("SOL"), "id-de-teste");
+      AtlasTokens.definir("SOL", "");
+      is("remover o override devolve a tabela", AtlasTokens.cgId("SOL"), "solana");
+
+      nota("Estes ids foram conferidos contra a listagem da CoinGecko e tiveram o " +
+           "preço cruzado com a fonte secundária (pools reais com liquidez). " +
+           "As duas fontes ficaram entre 0,2% e 0,4% de diferença.");
+    }
+
+    /* ============ 16. Fonte secundária (Fase 3) ============ */
+    grupo("16 · Fonte secundária e divergência entre fontes");
+    if (!window.AtlasProviders) {
+      nota("registry não carregado — casos pulados.");
+    } else {
+      var sec = AtlasProviders.get("geckoterminal");
+      ok("o provedor secundário está registrado", !!sec, sec ? "sim" : "não");
+      if (sec) {
+        is("e está MARCADO como secundário", sec.secundario, true);
+        ok("com liquidez mínima definida", sec.MIN_LIQUIDEZ > 0, String(sec.MIN_LIQUIDEZ));
+        nota("A marca `secundario` é o que impede a ordem das tags <script> de " +
+             "decidir qual fonte manda no dinheiro: AtlasPrecos procura por ela, " +
+             "não pelo nome nem pela ordem de registro.");
+      }
+      if (window.AtlasPrecos) {
+        ok("o limite de divergência é conservador",
+           AtlasPrecos.LIMITE_DIVERGENCIA > 0 && AtlasPrecos.LIMITE_DIVERGENCIA <= 5,
+           AtlasPrecos.LIMITE_DIVERGENCIA + "%");
+        nota("Preço de DEX e de agregador nunca batem exatamente — um é a última " +
+             "negociação numa pool, o outro é média entre mercados. Três por cento " +
+             "não grita à toa e ainda pega ativo trocado, que erra por ordem de " +
+             "grandeza e não por decimal.");
+      }
+    }
+
+    /* ============ 17. Estados e destinos da taxa (Fase 4) ============
+       O exemplo literal do briefing: pool de 50 que vale 52 e gerou 3
+       de taxa NUNCA pode mostrar 55 como valor da posição. */
+    grupo("17 · Pool × valorização × taxas — os três separados");
+    var pt = S.addPool(base({
+      base: "SOL", quote: "USDC", qtyBase: 0.5, qtyQuote: 25,
+      priceBase: 50, priceQuote: 1, capital: 50, currentValue: 52
+    }));
+    S.addFee(pt.id, { amount: 3, status: "coletada", date: hoje() });
+    var rt = S.poolSummary(pt.id);
+
+    eq("capital colocado", rt.aportado, 50);
+    eq("valor da POSIÇÃO é só o mercado", rt.valorPosicao, 52);
+    eq("valorização é só a variação dos ativos", rt.varAtivos, 2);
+    eq("taxas geradas ficam à parte", rt.taxasGeradas, 3);
+    ok("o valor da posição NÃO é 55", Math.abs(rt.valorPosicao - 55) > 0.001, fmt(rt.valorPosicao));
+    eq("resultado é a soma dos dois, e só no resultado", rt.resultado, 5);
+    eq("taxa disponível = gerada − destinada", rt.taxasDisponiveis, 3);
+
+    /* reinvestir: os 3 saem de disponível e viram capital da pool */
+    S.addEvent(pt.id, { type: "reinvest", amountUSD: 3, note: "juros compostos" });
+    var rt2 = S.poolSummary(pt.id);
+    eq("reinvestido entra na base investida", rt2.baseInvestida, 53);
+    eq("e zera a taxa disponível", rt2.taxasDisponiveis, 0);
+    eq("mas NÃO conta como dinheiro novo do bolso", rt2.aportado, 50);
+    is("reinvestir de novo é recusado — não há taxa livre",
+       S.addEvent(pt.id, { type: "reinvest", amountUSD: 1 }), null);
+
+    /* taxa que sai para outro destino não aumenta a pool */
+    var pd = S.addPool(base({ base: "SOL", quote: "USDC", capital: 40, currentValue: 40 }));
+    S.addFee(pd.id, { amount: 6, status: "coletada", date: hoje() });
+    S.addEvent(pd.id, { type: "taxa_saida", amountUSD: 6, destino: "hold" });
+    var rd = S.poolSummary(pd.id);
+    eq("taxa mandada para outro lugar NÃO vira capital da pool", rd.baseInvestida, 40);
+    eq("e some das disponíveis", rd.taxasDisponiveis, 0);
+    eq("mas continua contando como receita gerada", rd.taxasGeradas, 6);
+    is("e não dá para reinvestir o que já saiu",
+       S.addEvent(pd.id, { type: "reinvest", amountUSD: 1 }), null);
+    nota("Antes o teto do reinvestimento era 'coletadas − reinvestido', que ignorava " +
+         "a taxa já mandada para fora: dava para reinvestir dinheiro que já tinha " +
+         "saído da pool, criando capital do nada.");
+
+    /* ============ 18. Caixa — saldo é consequência (Fase 5) ============ */
+    grupo("18 · Caixa: o saldo é a soma do histórico");
+    if (!window.AtlasCaixa) {
+      nota("wallets/walletCaixa.js não carregado — casos pulados.");
+    } else {
+      var CX = window.AtlasCaixa;
+      try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
+      CX._reload();
+
+      var wA = "cxTesteA", wB = "cxTesteB";
+
+      CX.registrar({ tipo: "deposito", valorUSD: 100, walletId: wA });
+      eq("depósito entra no caixa", CX.saldo(wA), 100);
+      eq("e é a única coisa que aumenta o patrimônio", CX.patrimonioExterno(), 100);
+
+      CX.registrar({ tipo: "aporte", valorUSD: 20, walletId: wA, module: "trade", refId: "t1" });
+      eq("abrir posição tira do caixa", CX.saldo(wA), 80);
+      eq("mas não muda o patrimônio", CX.patrimonioExterno(), 100);
+
+      CX.registrar({ tipo: "retorno", valorUSD: 25, walletId: wA, module: "trade", refId: "t1" });
+      eq("fechar posição devolve capital + resultado", CX.saldo(wA), 105);
+      eq("e o patrimônio segue sendo o depositado", CX.patrimonioExterno(), 100);
+      nota("Este é o bug estrutural do Trade descrito no briefing: fechar uma " +
+           "operação não devolvia nada a lugar nenhum, porque não havia lugar nenhum " +
+           "para devolver.");
+
+      CX.registrar({ tipo: "transferencia", valorUSD: 25, walletId: wA, contraWalletId: wB });
+      eq("transferência sai da origem", CX.saldo(wA), 80);
+      eq("e entra no destino", CX.saldo(wB), 25);
+      eq("sem mudar o patrimônio total", CX.saldo(wA) + CX.saldo(wB), 105);
+
+      CX.registrar({ tipo: "saque", valorUSD: 30, walletId: wA });
+      eq("saque reduz o caixa", CX.saldo(wA), 50);
+      eq("e reduz o patrimônio", CX.patrimonioExterno(), 70);
+
+      /* o que o livro precisa RECUSAR */
+      is("valor zero não é movimento",
+         CX.registrar({ tipo: "deposito", valorUSD: 0, walletId: wA }), null);
+      is("valor negativo é erro de entrada, não saque disfarçado",
+         CX.registrar({ tipo: "deposito", valorUSD: -50, walletId: wA }), null);
+      is("tipo desconhecido é recusado",
+         CX.registrar({ tipo: "presente", valorUSD: 10, walletId: wA }), null);
+      is("transferência sem destino é recusada",
+         CX.registrar({ tipo: "transferencia", valorUSD: 10, walletId: wA }), null);
+      is("transferência para a própria carteira é recusada",
+         CX.registrar({ tipo: "transferencia", valorUSD: 10, walletId: wA, contraWalletId: wA }), null);
+
+      var pg = CX.podeGastar(wA, 999);
+      is("gastar mais que o caixa é bloqueado", pg.ok, false);
+      eq("e a tela sabe quanto falta", pg.falta, 949);
+
+      /* swap não muda dinheiro, só a forma dele */
+      var antes = CX.saldo(wA);
+      CX.registrar({ tipo: "swap", valorUSD: 40, walletId: wA,
+                     ativo: "USDT", ativoDestino: "SOL", qtdOrigem: 40, qtdDestino: 0.5 });
+      eq("swap não altera o caixa em dólar", CX.saldo(wA), antes);
+      eq("nem o patrimônio", CX.patrimonioExterno(), 70);
+
+      /* ---- a invariante central ---- */
+      var alocado = CX.alocadoPorModulo(wA);
+      eq("o que saiu para posições é rastreável por módulo", alocado.trade, -5);
+      nota("−5 significa que a posição devolveu 5 a mais do que levou: é o lucro. " +
+           "O livro não guarda 'lucro' em lugar nenhum — ele é a diferença entre " +
+           "o que saiu e o que voltou.");
+
+      try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
+      CX._reload();
+    }
   }
 
   /* ---------------- utilidades dos casos ---------------- */
@@ -395,6 +724,7 @@
        disco, desfazendo a restauração. _reload() joga fora o cache e
        relê o que acabou de ser devolvido. */
     try { if (window.DeFiStore && DeFiStore._reload) DeFiStore._reload(); } catch (e) {}
+    try { if (window.AtlasCaixa && AtlasCaixa._reload) AtlasCaixa._reload(); } catch (e) {}
   }
 
   /* ---------------- saída ---------------- */

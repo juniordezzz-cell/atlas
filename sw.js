@@ -31,7 +31,31 @@
    sobre a cotação é como um sistema financeiro mente sem querer.
    ============================================================ */
 
-var VERSAO = "atlas-v3";
+/* Sobe a cada mudança que precise chegar a quem já abriu o ATLAS: a
+   ativação apaga todo cache de versão diferente (ver o "activate"
+   abaixo). v4 = terceira auditoria, fase 1 — o status da faixa deixou
+   de ser um campo gravado, e as telas passaram a carregar arquivos
+   novos (core/atlas-precos.js). Sem o bump, o dashboard continuaria
+   servindo o HTML antigo, sem esses <script>, e o alerta de faixa
+   simplesmente não apareceria.
+
+   v5 = fases 2 e 3. Saiu o provedor do DefiLlama, entraram a fonte
+   secundária de preço (core/providers/geckoterminal.js) e o registro
+   central de ativos (core/atlas-tokens.js), e o RWA mudou de modelo.
+   O HTML de cinco telas ganhou <script> novo — sem o bump, elas
+   continuariam sendo servidas do cache sem esses arquivos, e o
+   sintoma seria "a correção não pegou".
+
+   v6 = fases 4 e 5. Entraram o livro de caixa (wallets/walletCaixa.js)
+   e a tela Carteiras & Movimentações, e TODA página que tem carteira
+   passou a carregar o livro. Sem o bump, a tela nova abriria sem o
+   arquivo que produz o saldo dela.
+
+   v7 = fechamento das fases 4 e 5. Trade, Hold e RWA passaram a
+   debitar e creditar o caixa, e o Trade ganhou capital em dólar
+   (sizeUSD/pnlUSD). Quem rodasse a versão anterior de um desses
+   stores abriria posição sem tirar dinheiro do caixa. */
+var VERSAO = "atlas-v7";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

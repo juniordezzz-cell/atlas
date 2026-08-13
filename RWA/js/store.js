@@ -14,7 +14,12 @@
     riskoff: { id: "riskoff", label: "Risk-Off", tag: "Hedge Mode",            cls: "regime-riskoff" },
     liqexp:  { id: "liqexp",  label: "Liquidity Expansion", tag: "Easing",     cls: "regime-liqexp" },
     liqcon:  { id: "liqcon",  label: "Liquidity Contraction", tag: "Tightening", cls: "regime-liqcon" },
-    trans:   { id: "trans",   label: "Transition Phase", tag: "Uncertain",     cls: "regime-trans" }
+    trans:   { id: "trans",   label: "Transition Phase", tag: "Uncertain",     cls: "regime-trans" },
+    /* Sem provedor de macro, o ATLAS não tem como afirmar regime
+       nenhum. "Risk-On · Tech Expansion" era o valor fixo que vinha na
+       semente e aparecia como KPI no Dashboard, com selo verde — uma
+       leitura de mercado que ninguém fez. */
+    nenhum:  { id: "nenhum",  label: "Sem leitura",      tag: "sem fonte",    cls: "regime-trans" }
   };
 
   /* ---------- Gerador determinístico de séries ---------- */
@@ -34,26 +39,54 @@
     var assets = []; /* estado inicial LIMPO — sem dados de demonstração */
 
     return {
-      meta: { updatedAt: new Date().toISOString(), regime: "riskon" },
+      /* regime: "nenhum" enquanto não houver provedor de macro. Era
+         "riskon", fixo, e virava o KPI "Macro Regime · Risk-On" do
+         Dashboard — leitura de mercado que ninguém fez. */
+      meta: { updatedAt: new Date().toISOString(), regime: "nenhum" },
       equityCurves: {
         rwa:   series(90, 0, 0, 0, 21),
         hold:  series(90, 0, 0, 0, 33),
         total: series(90, 0, 0, 0, 44)
       },
+      /* ============================================================
+         MACRO E NARRATIVA — ESVAZIADOS NA TERCEIRA AUDITORIA
+         ------------------------------------------------------------
+         Aqui havia números inventados, fixos no código, exibidos na
+         tela como leitura de mercado:
+
+           Juros (Fed Funds)   4,50%   com seta de −0,25
+           Inflação (CPI)      2,9%    com seta de −0,10
+           DXY (Dólar)         103,4
+           Índice de Liquidez  62/100
+           "AI Expansion Cycle", confiança 82%
+           "+US$ 1,8B / sem" de fluxo institucional
+
+         Nenhum deles vinha de fonte nenhuma, e os gráficos de apoio
+         eram séries de um gerador pseudoaleatório com semente fixa.
+         Um painel de macro decorativo dentro de um sistema que decide
+         alocação é pior que painel nenhum: ele convida a decidir com
+         base num dado que não existe.
+
+         A regra de ouro do ATLAS é explícita — zero dado fictício em
+         fluxo real. Os campos ficam, com valor nulo, e a tela mostra
+         que não há fonte conectada. Quando entrar um provedor de
+         macro de verdade (capacidade "macro" no registry), ele
+         preenche isto e a tela volta a desenhar sozinha.
+         ============================================================ */
       macro: {
-        rates:     { k: "Juros (Fed Funds)", v: 4.50, unit: "%", delta: -0.25, series: vals(60, 5.3, -0.1, 0.3, 12), good: "down" },
-        inflation: { k: "Inflação (CPI)",    v: 2.9,  unit: "%", delta: -0.10, series: vals(60, 3.4, -0.15, 0.4, 14), good: "down" },
-        dxy:       { k: "DXY (Dólar)",       v: 103.4, unit: "", delta: 0.60, series: vals(60, 101.5, 0.03, 0.5, 16), good: "flat" },
-        liquidity: { k: "Índice de Liquidez", v: 62, unit: "/100", delta: 3, series: vals(60, 54, 0.2, 1.2, 18), good: "up" },
-        riskOnOff: 38, /* -100..100 */
-        regime: "riskon"
+        rates:     { k: "Juros (Fed Funds)",  v: null, unit: "%",    delta: null, series: [], good: "down" },
+        inflation: { k: "Inflação (CPI)",     v: null, unit: "%",    delta: null, series: [], good: "down" },
+        dxy:       { k: "DXY (Dólar)",        v: null, unit: "",     delta: null, series: [], good: "flat" },
+        liquidity: { k: "Índice de Liquidez", v: null, unit: "/100", delta: null, series: [], good: "up" },
+        riskOnOff: null,
+        regime: "nenhum"
       },
       narrative: {
-        current: "AI Expansion Cycle", confidence: 82, impact: "Risk-On / Tech Leadership",
-        liquidityCycle:      { v: "Expansion", dir: "up" },
-        hedgeCycle:          { v: "Baixo", dir: "down" },
-        cryptoRotation:      { v: "Rotação p/ Majors", dir: "up" },
-        institutionalInflows:{ v: "+US$ 1,8B / sem", dir: "up" }
+        current: null, confidence: null, impact: null,
+        liquidityCycle:      { v: null, dir: "flat" },
+        hedgeCycle:          { v: null, dir: "flat" },
+        cryptoRotation:      { v: null, dir: "flat" },
+        institutionalInflows:{ v: null, dir: "flat" }
       },
       journal: [],
       assets: assets
@@ -104,6 +137,30 @@
     if (!_mem || typeof _mem !== "object" || !_mem.byWallet || typeof _mem.byWallet !== "object" || !_mem.meta) {
       _mem = _bootstrap(); _persist();
     }
+
+    /* ------------------------------------------------------------
+       MACRO E NARRATIVA NÃO SÃO DADO DO USUÁRIO
+
+       São leitura de MERCADO: ninguém as edita nesta tela, e elas não
+       pertencem a carteira nenhuma. Estavam sendo persistidas junto
+       com o portfólio, e por isso os valores inventados (Fed Funds
+       4,50%, "AI Expansion Cycle") sobreviveriam à correção — ficariam
+       gravados no localStorage de quem já abriu o RWA, e a tela
+       continuaria mostrando o número fixo mesmo com o código limpo.
+
+       Vêm sempre do código, nunca do disco. No dia em que um provedor
+       de macro existir, é ele quem preenche — e continua não sendo
+       coisa para guardar em estado de carteira.
+       ------------------------------------------------------------ */
+    var fresco = seed();
+    _mem.macro = fresco.macro;
+    _mem.narrative = fresco.narrative;
+    /* O regime é conclusão da macro, e vive em meta por acidente
+       histórico. Sem macro não há regime — e sem esta linha o
+       "Risk-On" gravado continuaria sendo o KPI do Dashboard. */
+    if (!_mem.meta) _mem.meta = fresco.meta;
+    _mem.meta.regime = fresco.meta.regime;
+
     return _mem;
   }
   function _persist() { try { localStorage.setItem(KEY, JSON.stringify(_mem)); } catch (e) {} }
@@ -131,7 +188,7 @@
     var s = _load();
     var wd = _ensureWallet(_currentId());
     return {
-      meta: s.meta || { updatedAt: new Date().toISOString(), regime: "trans" },
+      meta: s.meta || { updatedAt: new Date().toISOString(), regime: "nenhum" },
       macro: s.macro || {},
       narrative: s.narrative || {},
       assets: Array.isArray(wd.assets) ? wd.assets : [],
@@ -144,7 +201,7 @@
 
   var Store = {
     REGIMES: REGIMES,
-    regimeMeta: function (id) { return REGIMES[id] || REGIMES.trans; },
+    regimeMeta: function (id) { return REGIMES[id] || REGIMES.nenhum; },
     scoreColor: scoreColor,
 
     all: function () { return _read(); },
@@ -179,15 +236,92 @@
     /* reage a trocas de carteira feitas em qualquer módulo/aba */
     onWalletChange: function (fn) { if (W && W.subscribe) W.subscribe(fn); },
 
+    /* ============================================================
+       QUANTIDADE × PREÇO — o erro de categoria que o RWA tinha
+       ------------------------------------------------------------
+       O ativo guardava só dois números: `entry` e `current`, ambos
+       TOTAIS em dólar. O autopreenchimento do CoinGecko, porém,
+       escrevia no campo "Valor atual (US$)" o PREÇO UNITÁRIO do
+       token. Uma posição de US$ 5.000 em SKY virava US$ 153 de
+       patrimônio — e o número seguia para o Dashboard, para a
+       consolidação e para os relatórios sem nada acusando.
+
+       Não era um bug de conta: era um campo significando duas coisas.
+       Sem quantidade, "preço do ativo" não existia como conceito, e a
+       regra do ATLAS ("quando a API não reconhece, o usuário informa o
+       preço") não tinha onde ser aplicada.
+
+       O modelo agora tem os três, e os totais são DERIVADOS:
+
+         quantidade × precoMedio  = entry     (custo)
+         quantidade × precoAtual  = current   (valor de mercado)
+
+       MIGRAÇÃO SEM INVENTAR NADA
+       Ativo cadastrado antes disto não tem quantidade, e o sistema não
+       tem como adivinhá-la. Ele continua valendo pelos TOTAIS que a
+       pessoa informou — `quantidade: null` é um estado legítimo, não um
+       defeito — e a tela pede a quantidade para poder acompanhar o
+       preço sozinha. Preencher um "1" no lugar da quantidade faria os
+       totais baterem e todo o resto mentir.
+       ============================================================ */
+    normalizar: function (a) {
+      if (!a) return a;
+      var q = Number(a.quantidade);
+      if (isFinite(q) && q > 0) {
+        a.quantidade = q;
+        var pm = Number(a.precoMedio), pa = Number(a.precoAtual);
+        if (isFinite(pm) && pm >= 0) a.entry = q * pm;
+        if (isFinite(pa) && pa >= 0) a.current = q * pa;
+      } else {
+        a.quantidade = null;
+        /* sem quantidade, preço unitário não significa nada e some —
+           deixá-lo gravado criaria um segundo número disputando com o
+           total informado */
+        a.precoMedio = null;
+        a.precoAtual = null;
+      }
+      a.entry = Number(a.entry) || 0;
+      a.current = Number(a.current) || 0;
+      return a;
+    },
+
     assets: function () {
       var s = _read(), total = s.assets.reduce(function (a, x) { return a + x.current; }, 0) || 1;
       return s.assets.map(function (a) {
+        Store.normalizar(a);
         var pnl = a.current - a.entry;
         return Object.assign({}, a, {
           pnlAbs: pnl, pnlPct: a.entry ? (pnl / a.entry) * 100 : 0,
-          weight: (a.current / total) * 100
+          weight: (a.current / total) * 100,
+          /* a tela usa para pedir a quantidade e para saber se dá
+             para atualizar o preço deste ativo automaticamente */
+          acompanhaPreco: a.quantidade != null && a.quantidade > 0
         });
       });
+    },
+
+    /* ------------------------------------------------------------
+       Atualiza o PREÇO UNITÁRIO de um ativo e deixa o total seguir.
+
+       Só funciona para ativo com quantidade: sem ela não há como
+       transformar preço em valor de posição, e escrever o preço no
+       campo de total seria repetir exatamente o erro que este modelo
+       veio corrigir.
+       ------------------------------------------------------------ */
+    setPrecoAtual: function (id, preco) {
+      var s = _read();
+      for (var i = 0; i < s.assets.length; i++) {
+        if (s.assets[i].id !== id) continue;
+        var a = s.assets[i];
+        var p = Number(preco);
+        if (!(a.quantidade > 0) || !isFinite(p) || p < 0) return null;
+        a.precoAtual = p;
+        a.precoEm = new Date().toISOString();
+        Store.normalizar(a);
+        _persist();
+        return a;
+      }
+      return null;
     },
     asset: function (id) { return this.assets().filter(function (a) { return a.id === id; })[0] || null; },
 
@@ -245,15 +379,25 @@
       var s = _read();
       a.id = a.id || (String(a.ticker || "ast").toLowerCase().replace(/[^a-z0-9]/g, "") + "_" + Date.now().toString(36));
       a.color = a.color || PALETTE[s.assets.length % PALETTE.length];
-      a.entry = +a.entry || 0; a.current = +a.current || 0; a.score = Math.max(0, Math.min(100, +a.score || 0));
+      a.score = Math.max(0, Math.min(100, +a.score || 0));
       a.date = a.date || new Date().toISOString().slice(0, 10);
+      /* quantidade × preço manda; sem quantidade, valem os totais */
+      Store.normalizar(a);
       s.assets.push(a); _persist();
+      var widA = _currentId();
       if (window.AtlasMovements && a.entry) {
-        var wid = s.currentWalletId || "principal";
         window.AtlasMovements.record({
           date: a.date, tipo: "entrada", valorUSD: a.entry, module: "rwa",
-          walletId: wid, origem: "compra", ref: "rwa:" + a.id + ":" + wid,
+          walletId: widA, origem: "compra", ref: "rwa:" + a.id + ":" + widA,
           label: "Ativo " + (a.ticker || a.name || "RWA")
+        });
+      }
+      /* O custo sai do caixa da carteira: a posição não nasce do nada. */
+      if (window.AtlasCaixa && a.entry > 0) {
+        window.AtlasCaixa.registrar({
+          tipo: "aporte", valorUSD: a.entry, walletId: widA,
+          module: "rwa", refId: "rwa:" + a.id, data: a.date,
+          obs: "Compra de " + (a.ticker || a.name || "RWA")
         });
       }
       return a;
@@ -263,7 +407,7 @@
       for (var i = 0; i < s.assets.length; i++) {
         if (s.assets[i].id === id) {
           Object.keys(patch).forEach(function (k) { s.assets[i][k] = patch[k]; });
-          s.assets[i].entry = +s.assets[i].entry || 0; s.assets[i].current = +s.assets[i].current || 0;
+          Store.normalizar(s.assets[i]);
           _persist(); return s.assets[i];
         }
       }
@@ -274,13 +418,22 @@
       for (var i = 0; i < s.assets.length; i++) {
         if (s.assets[i].id === id) {
           var sold = s.assets[i];
+          var widR = _currentId();
           if (window.AtlasMovements && sold.current) {
-            var wid = s.currentWalletId || "principal";
             window.AtlasMovements.record({
               date: new Date().toISOString().slice(0, 10), tipo: "saida",
-              valorUSD: sold.current, module: "rwa", walletId: wid, origem: "venda",
-              ref: "rwa:" + id + ":" + wid,
+              valorUSD: sold.current, module: "rwa", walletId: widR, origem: "venda",
+              ref: "rwa:" + id + ":" + widR,
               label: "Venda " + (sold.ticker || sold.name || "RWA")
+            });
+          }
+          /* Vender devolve o valor ao CAIXA da carteira — não retira
+             do ATLAS. Sair do sistema é um saque, que é outro evento. */
+          if (window.AtlasCaixa && sold.current > 0) {
+            window.AtlasCaixa.registrar({
+              tipo: "retorno", valorUSD: sold.current, walletId: widR,
+              module: "rwa", refId: "rwa:" + id,
+              obs: "Venda de " + (sold.ticker || sold.name || "RWA")
             });
           }
           s.assets.splice(i, 1); _persist(); return true;

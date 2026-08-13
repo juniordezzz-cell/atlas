@@ -7,6 +7,8 @@
 (function () {
   "use strict";
 
+  var global_ = (typeof window !== "undefined") ? window : this;
+
   var KEY = "atlas.defi.state.v3";
   var KEY_OLD = "atlas_defi_state_v2"; // migração de dados existentes
 
@@ -180,6 +182,22 @@
     try { localStorage.setItem(KEY, JSON.stringify(_mem)); } catch (e) { /* memória apenas */ }
   }
 
+  /* ------------------------------------------------------------
+     COTAÇÃO CONHECIDA NESTA PÁGINA
+
+     { SIMBOLO: precoUSD }. Não é persistido de propósito: preço
+     guardado em disco vira preço velho com cara de preço de agora —
+     exatamente o defeito que esta auditoria veio corrigir. Cada
+     página busca e alimenta aqui; quem não buscou, não sabe, e o
+     status diz "não avaliada" em vez de inventar veredito.
+
+     A exceção é o preço MANUAL: esse é do usuário, tem data, e vem
+     direto do AtlasPrecos a cada leitura — por isso uma pool com
+     preço informado na mão já nasce avaliada, antes de qualquer
+     ida à rede.
+     ------------------------------------------------------------ */
+  var _precos = {};
+
   /* ---------- API pública ---------- */
   var Store = {
     palette: PALETTE,
@@ -292,9 +310,126 @@
       return total;
     },
 
+    /* ============================================================
+       PREÇO E STATUS — a fonte única do veredito dentro/fora
+       ============================================================ */
+
+    /* ------------------------------------------------------------
+       A página buscou preços: guarda para quem for desenhar.
+
+       O QUE NÃO ENTRA AQUI: PREÇO MANUAL
+
+       A resolução devolve os manuais junto com os de API, e guardá-los
+       aqui parecia inofensivo. Não é: este cache é por sessão de
+       página e não tem como saber que o usuário APAGOU o preço manual
+       depois. O número apagado continuava respondendo até o próximo
+       F5 — e agora como se fosse cotação, sem o carimbo "informado por
+       você" e sem envelhecer.
+
+       Preço manual tem uma casa só (AtlasPrecos) e é lido de lá a cada
+       consulta, em precoDe(). Aqui ficam só API e stablecoin.
+       ------------------------------------------------------------ */
+    setPrecos: function (mapa, fonte) {
+      if (!mapa) return _precos;
+      fonte = fonte || {};
+      Object.keys(mapa).forEach(function (s) {
+        var k = String(s).toUpperCase();
+        if (fonte[k] === "manual") { delete _precos[k]; return; }
+        var v = Number(mapa[s]);
+        if (isFinite(v) && v > 0) _precos[k] = v;
+      });
+      return _precos;
+    },
+
+    /* Preço de um símbolo: manual do usuário primeiro (é o que a
+       regra do ATLAS manda), senão o que esta página cotou. */
+    precoDe: function (sim) {
+      var s = String(sim || "").toUpperCase();
+      if (!s) return null;
+      if (window.AtlasPrecos) {
+        var m = window.AtlasPrecos.manual(s);
+        if (m) return m.usd;
+        if (window.AtlasPrecos.isStable(s)) return 1;
+      }
+      return _precos[s] != null ? _precos[s] : null;
+    },
+
+    /* Mapa completo para alimentar o DeFiPerf sem cada tela remontar. */
+    precos: function (simbolos) {
+      var out = {};
+      (simbolos || Object.keys(_precos)).forEach(function (s) {
+        var k = String(s || "").toUpperCase();
+        var v = Store.precoDe(k);
+        if (v != null) out[k] = v;
+      });
+      return out;
+    },
+
+    /* ------------------------------------------------------------
+       statusDe(pool) — O SELO, CALCULADO. NUNCA LIDO.
+
+       Antes o selo era o campo p.status, escolhido a dedo em dois
+       formulários ("Dentro do range" / "Fora do range") e reescrito
+       só na tela do Dashboard, quando houvesse preço dos dois lados.
+       Um token sem cotação congelava a escolha manual para sempre —
+       e era exatamente o caso das pools de ações tokenizadas, que
+       apareciam "Fora do Range" sem que ninguém tivesse calculado
+       nada.
+
+       Agora p.status guarda só o CICLO DE VIDA (aberta/encerrada). O
+       veredito da faixa sai daqui, e sai igual para o card, a lista,
+       a página da posição, o KPI e o alerta do Dashboard.
+
+       Devolve:
+         status   "encerrada" | "ativa" | "range" | "analise" | "naoavaliada"
+         dentro   true | false | null   (null = sem veredito)
+         motivo   por que não há veredito, quando não há
+         faltando símbolos sem preço — a tela usa para PEDIR o valor
+       ------------------------------------------------------------ */
+    statusDe: function (id) {
+      var p = (typeof id === "object" && id) ? id : Store.pool(id);
+      if (!p) return null;
+
+      function saida(status, extra) {
+        var o = { status: status, dentro: null, razao: null, posFaixa: null,
+                  temFaixa: false, precoOk: false, faltando: [], motivo: "" };
+        return Object.assign(o, extra || {});
+      }
+
+      if (p.status === "encerrada" || p.closedAt) {
+        return saida("encerrada", { motivo: "Posição encerrada." });
+      }
+      if (!window.DeFiPerf || !window.DeFiPerf.faixa) {
+        return saida("naoavaliada", { motivo: "Motor de performance não carregado nesta página." });
+      }
+
+      var fx = window.DeFiPerf.faixa(p, Store.precos([p.base, p.quote]));
+
+      if (!fx.temFaixa) {
+        return saida("analise", {
+          motivo: "Faixa de preço não cadastrada — sem mínima e máxima não há dentro nem fora."
+        });
+      }
+      if (fx.dentro === null) {
+        return saida("naoavaliada", {
+          temFaixa: true, faltando: fx.faltando,
+          motivo: "Sem preço de " + fx.faltando.join(" e ") + " — informe na posição para avaliar a faixa."
+        });
+      }
+      return {
+        status: fx.dentro ? "ativa" : "range",
+        dentro: fx.dentro, razao: fx.razao, posFaixa: fx.posFaixa,
+        temFaixa: true, precoOk: true, faltando: [], motivo: ""
+      };
+    },
+
     /* pools */
     pools: function () { return _wallet(_read()).pools.slice(); },
-    activePools: function () { return _wallet(_read()).pools.filter(function (p) { return p.status !== "encerrada"; }); },
+    activePools: function () {
+      return _wallet(_read()).pools.filter(function (p) {
+        return p.status !== "encerrada" && !p.closedAt;
+      });
+    },
     pool: function (id) {
       return _wallet(_read()).pools.filter(function (p) { return p.id === id; })[0] || null;
     },
@@ -329,7 +464,42 @@
         amountUSD: Number(p.capital) || 0, note: "Capital inicial da posição.",
         origem: "externo"
       }];
-      wd.pools.unshift(p); _persist(); return p;
+      wd.pools.unshift(p);
+      _persist();
+      /* O dinheiro sai do caixa da carteira: a posição não nasce do
+         nada. Ver wallets/walletCaixa.js. */
+      Store._caixaAporte(p, Number(p.capital) || 0, "Abertura da pool " + p.base + "/" + p.quote);
+      return p;
+    },
+
+    /* ============================================================
+       PONTE COM O CAIXA DA CARTEIRA
+
+       Toda posição consome caixa ao nascer e devolve caixa ao morrer.
+       Estas duas funções são o único lugar do módulo que fala com o
+       livro de caixa — se um dia o caixa mudar de casa, muda aqui.
+
+       Silenciosas quando AtlasCaixa não está carregado: o DeFi
+       continua funcionando sozinho numa página que não trouxe a
+       central, só sem registrar o fluxo.
+       ============================================================ */
+    _caixaAporte: function (p, valor, obs) {
+      if (!global_.AtlasCaixa || !(valor > 0)) return null;
+      return global_.AtlasCaixa.registrar({
+        tipo: "aporte", valorUSD: valor,
+        walletId: p.walletId || _read().currentWalletId,
+        module: "defi", refId: p.id, data: p.openedAt || p.createdAt,
+        obs: obs || ""
+      });
+    },
+    _caixaRetorno: function (p, valor, obs) {
+      if (!global_.AtlasCaixa || !(valor > 0)) return null;
+      return global_.AtlasCaixa.registrar({
+        tipo: "retorno", valorUSD: valor,
+        walletId: p.walletId || _read().currentWalletId,
+        module: "defi", refId: p.id,
+        obs: obs || ""
+      });
     },
     updatePool: function (id, patch) {
       var p = this.pool(id); if (!p) return null;
@@ -396,36 +566,99 @@
       return prefixo + Date.now().toString(36) + Store._seq.toString(36);
     },
 
+    /* ------------------------------------------------------------
+       TAXA COLETADA É DINHEIRO QUE CHEGOU NA CARTEIRA
+
+       "Pendente" está acumulada dentro da pool, exposta ao preço.
+       "Coletada" saiu da pool e entrou na carteira — e era aí que o
+       dinheiro sumia: o registro da coleta ficava só dentro da
+       posição, o caixa não sabia de nada, e uma pool que gerou US$ 3
+       de taxa recebida deixava esses três dólares fora do patrimônio.
+
+       Cada coleta credita o caixa; desfazer a coleta estorna. O
+       identificador do evento é o da própria taxa, para o estorno
+       achar exatamente o lançamento que precisa apagar.
+       ------------------------------------------------------------ */
+    _refTaxa: function (p, feeId) { return "fee:" + p.id + ":" + feeId; },
+
+    _caixaTaxa: function (p, fee) {
+      if (!global_.AtlasCaixa || !fee || !(Number(fee.amount) > 0)) return null;
+      return global_.AtlasCaixa.registrar({
+        tipo: "retorno", valorUSD: Number(fee.amount),
+        walletId: p.walletId || _read().currentWalletId,
+        module: "defi", refId: Store._refTaxa(p, fee.id),
+        data: fee.collectedAt || fee.date,
+        obs: "Taxa coletada · " + p.base + "/" + p.quote
+      });
+    },
+    _estornaTaxa: function (p, feeId) {
+      if (!global_.AtlasCaixa) return 0;
+      return global_.AtlasCaixa.removerPorRef("defi", Store._refTaxa(p, feeId));
+    },
+
     addFee: function (id, entry) {
       var p = this.pool(id); if (!p) return null;
       p.fees = p.fees || [];
-      p.fees.unshift({
+      var f = {
         id: Store._uid("f"),
         date: entry.date || _hoje(),
         amount: Number(entry.amount) || 0,
         status: entry.status === "pendente" ? "pendente" : "coletada",
         note: entry.note || ""
-      });
+      };
+      if (f.status === "coletada") f.collectedAt = f.date;
+      p.fees.unshift(f);
       p.updatedAt = _hoje();
       Store._syncDerivados(p);
-      _persist(); return p;
+      _persist();
+      if (f.status === "coletada") Store._caixaTaxa(p, f);
+      return p;
     },
     removeFee: function (id, feeId) {
       var p = this.pool(id); if (!p || !p.fees) return null;
+      Store._estornaTaxa(p, feeId);   // se não havia lançamento, não faz nada
       p.fees = p.fees.filter(function (f) { return f.id !== feeId; });
       p.updatedAt = _hoje();
       Store._syncDerivados(p);
       _persist(); return p;
     },
-    /* marca uma taxa pendente como recebida */
+    /* ------------------------------------------------------------
+       TODAS AS POOLS, DE TODAS AS CARTEIRAS
+
+       O módulo inteiro trabalha sobre a carteira ATIVA (_wallet()), o
+       que é certo dentro do DeFi. A tela de Carteiras precisa do
+       oposto: ver a taxa de toda pool, em qualquer carteira, sem
+       obrigar a pessoa a trocar de carteira quatro vezes para coletar
+       quatro taxas.
+       ------------------------------------------------------------ */
+    poolsDeTodasCarteiras: function () {
+      var s = _read(), out = [];
+      Object.keys(s.byWallet || {}).forEach(function (wid) {
+        (s.byWallet[wid].pools || []).forEach(function (p) {
+          if (p.status === "encerrada" || p.closedAt) return;
+          out.push({ walletId: wid, pool: p });
+        });
+      });
+      return out;
+    },
+
+    /* marca uma taxa pendente como recebida.
+       Aceita o OBJETO da pool além do id: é assim que a tela de
+       Carteiras coleta taxa de uma pool que está noutra carteira. */
     collectFee: function (id, feeId) {
-      var p = this.pool(id); if (!p || !p.fees) return null;
+      var p = (typeof id === "object" && id) ? id : this.pool(id);
+      if (!p || !p.fees) return null;
+      var alvo = null;
       p.fees.forEach(function (f) {
-        if (f.id === feeId) { f.status = "coletada"; f.collectedAt = _hoje(); }
+        if (f.id === feeId && f.status !== "coletada") {
+          f.status = "coletada"; f.collectedAt = _hoje(); alvo = f;
+        }
       });
       p.updatedAt = _hoje();
       Store._syncDerivados(p);
-      _persist(); return p;
+      _persist();
+      if (alvo) Store._caixaTaxa(p, alvo);
+      return p;
     },
 
     /* ============================================================
@@ -450,7 +683,29 @@
        Taxas continuam em p.fees[] — são de outra natureza (receita,
        não fluxo de capital) e têm o próprio painel.
        ============================================================ */
-    EVENT_TYPES: ["abertura", "aporte", "reinvest", "retirada"],
+    /* ------------------------------------------------------------
+       "taxa_saida" entrou na terceira auditoria, e fecha o modelo.
+
+       Antes só existia UM destino para taxa coletada: reinvestir na
+       própria pool. Mandar a taxa para outra pool, para o Trade, para
+       o Hold ou sacá-la não tinha como ser registrado — o dinheiro
+       simplesmente continuava contando como "taxa coletada disponível"
+       para sempre, e a pool podia reinvestir duas vezes o mesmo real.
+
+       Agora toda taxa tem estado e destino rastreável:
+
+         gerada → disponível → [ reinvest | taxa_saida ]
+
+       reinvest    volta para dentro da pool (juros compostos): a base
+                   investida sobe, e o valor da posição também.
+         taxa_saida  sai da pool para qualquer outro lugar: a pool NÃO
+                   aumenta, e o destino fica registrado no evento.
+       ------------------------------------------------------------ */
+    EVENT_TYPES: ["abertura", "aporte", "reinvest", "retirada", "taxa_saida"],
+
+    /* Destinos possíveis de uma taxa que sai da pool. "caixa" é o
+       padrão: a taxa volta para o dinheiro disponível da carteira. */
+    DESTINOS_TAXA: ["caixa", "outra_pool", "trade", "hold", "rwa", "saque"],
 
     /* Toda pool responde com uma lista de eventos, mesmo as criadas
        antes deste modelo: a abertura é derivada de capital+createdAt.
@@ -475,8 +730,12 @@
       });
     },
 
+    /* Aceita o OBJETO da pool além do id, pela mesma razão de
+       collectFee: a tela de Carteiras destina taxa de pool que está
+       noutra carteira. */
     addEvent: function (id, entry) {
-      var p = this.pool(id); if (!p || !entry) return null;
+      var p = (typeof id === "object" && id) ? id : this.pool(id);
+      if (!p || !entry) return null;
       var tipo = String(entry.type || "").toLowerCase();
       if (Store.EVENT_TYPES.indexOf(tipo) === -1) return null;
 
@@ -508,7 +767,13 @@
          ------------------------------------------------------------ */
       var r = Store.poolSummary(p);
       if (r) {
-        if (tipo === "reinvest" && valor > (r.taxasColetadas - r.reinvestido) + 1e-9) return null;
+        /* reinvest e taxa_saida disputam a MESMA bolsa: a taxa coletada
+           que ainda não teve destino. Antes o teto do reinvest era
+           "coletadas − reinvestido", o que ignorava a taxa já mandada
+           para outro lugar — dava para reinvestir dinheiro que já tinha
+           saído da pool. */
+        if ((tipo === "reinvest" || tipo === "taxa_saida") &&
+            valor > r.taxasDisponiveis + 1e-9) return null;
         if (tipo === "retirada" && valor > r.valorTotal + 1e-9) return null;
       }
 
@@ -525,10 +790,40 @@
         note: entry.note || "",
         /* reinvestimento aponta para a origem do dinheiro: é o que
            permite auditar "de onde vieram estes cinco dólares" */
-        origem: tipo === "reinvest" ? "taxas" : (entry.origem || "externo")
+        /* reinvest e taxa_saida apontam para a origem do dinheiro: é o
+           que permite auditar "de onde vieram estes cinco dólares" */
+        origem: (tipo === "reinvest" || tipo === "taxa_saida") ? "taxas" : (entry.origem || "externo"),
+        /* para onde a taxa foi — só faz sentido em taxa_saida */
+        destino: tipo === "taxa_saida"
+          ? (Store.DESTINOS_TAXA.indexOf(entry.destino) !== -1 ? entry.destino : "caixa")
+          : null
       };
       p.events.push(ev);
       p.updatedAt = _hoje();
+
+      /* Aporte tira do caixa; retirada devolve ao caixa. Reinvest não
+         toca no caixa — o dinheiro já estava dentro da pool como taxa
+         e continua dentro, agora como capital. taxa_saida devolve ao
+         caixa, porque a taxa efetivamente sai da posição. */
+      /* ------------------------------------------------------------
+         O CICLO DA TAXA NO CAIXA — e o furo que o teste encontrou
+
+         A taxa COLETADA já saiu da pool e entrou na carteira: é
+         creditada no caixa por addFee/collectFee, não aqui.
+
+         Reinvestir é o caminho de volta — o dinheiro sai do caixa e
+         vira capital da pool. Este débito estava faltando: sem ele, os
+         mesmos três dólares apareciam no caixa E dentro da posição ao
+         mesmo tempo, e o patrimônio total crescia sozinho.
+
+         taxa_saida NÃO mexe no caixa de propósito. A taxa já está lá
+         desde a coleta; mandá-la para outra pool é um APORTE naquela
+         outra posição, que registra o próprio débito. Creditar aqui
+         seria contar a mesma taxa duas vezes.
+         ------------------------------------------------------------ */
+      if (tipo === "aporte") Store._caixaAporte(p, valor, ev.note || "Aporte na pool");
+      else if (tipo === "retirada") Store._caixaRetorno(p, valor, ev.note || "Retirada de principal");
+      else if (tipo === "reinvest") Store._caixaAporte(p, valor, "Reinvestimento de taxa");
 
       /* O capital REGISTRADO da pool acompanha a base investida. É o
          número que o card da lista mostra como "Capital", e ele tem de
@@ -573,17 +868,24 @@
       var evs = Store.events(p);
       var hoje = new Date();
 
-      var A = 0, W = 0, R = 0;
+      var A = 0, W = 0, R = 0, TS = 0;
       evs.forEach(function (e) {
         var v = Math.abs(Number(e.amountUSD) || 0);
         if (e.type === "abertura" || e.type === "aporte") A += v;
         else if (e.type === "retirada") W += v;
         else if (e.type === "reinvest") R += v;
+        /* taxa que saiu da pool para outro destino: NÃO entra na base
+           investida (não virou capital da pool) nem sai dela (nunca
+           esteve lá). Só consome taxa disponível. */
+        else if (e.type === "taxa_saida") TS += v;
       });
 
-      /* integral capital×dias, percorrendo a linha do tempo */
+      /* integral capital×dias, percorrendo a linha do tempo.
+         taxa_saida é ignorada aqui: ela nunca foi capital da pool, e
+         somá-la inflaria o denominador do APR realizado. */
       var capitalDias = 0, corrente = 0, anterior = null;
       evs.forEach(function (e) {
+        if (e.type === "taxa_saida") return;
         var d = _dia(e.date);
         if (anterior && d) capitalDias += corrente * Math.max(0, (d - anterior) / 86400000);
         var v = Math.abs(Number(e.amountUSD) || 0);
@@ -603,6 +905,7 @@
         aportadoBruto: A,
         retirado: W,
         reinvestido: R,
+        taxaSaida: TS,
         aportadoLiquido: A - W,
         baseInvestida: A + R - W,
         capitalDias: capitalDias,
@@ -655,7 +958,7 @@
       var totalTaxas = coletadas + pendentes;
 
       var f = Store.capitalFlows(p);
-      var A = f.aportadoBruto, W = f.retirado, R = f.reinvestido;
+      var A = f.aportadoBruto, W = f.retirado, R = f.reinvestido, TS = f.taxaSaida;
       var base = f.baseInvestida;
 
       /* V = valor de MERCADO da posição, sem a taxa pendente.
@@ -703,10 +1006,26 @@
         varAtivos: resultadoAtivos,
         varAtivosPct: base > 0 ? (resultadoAtivos / base) * 100 : 0,
 
-        /* --- taxas --- */
+        /* --- taxas ---
+           A separação que a terceira auditoria exige. "Geradas" é
+           receita da pool desde o primeiro dia; "disponíveis" é o que
+           ainda não teve destino — e é essa a bolsa de onde saem
+           reinvestimento e qualquer outra destinação. Somar as duas
+           num número só (era o que havia) esconde a diferença entre
+           dinheiro que ainda é seu para decidir e dinheiro que já foi
+           decidido. */
         taxasColetadas: coletadas,
         taxasPendentes: pendentes,
         taxasTotal: totalTaxas,
+        taxasGeradas: totalTaxas,
+        taxasReinvestidas: R,
+        taxasSaidas: TS,
+        taxasDestinadas: R + TS,
+        /* disponível = coletada que ainda não foi para lugar nenhum.
+           A pendente NÃO entra: ela ainda está dentro da pool, exposta
+           ao preço, e destinar o que não foi coletado seria mover
+           dinheiro que ainda não existe na carteira. */
+        taxasDisponiveis: Math.max(0, coletadas - R - TS),
 
         dias: dias,
         aprReal: aprReal,
@@ -772,7 +1091,26 @@
       });
 
       wd.closed.unshift(arquivo);
-      _persist(); return true;
+      _persist();
+
+      /* ------------------------------------------------------------
+         NENHUM DINHEIRO PODE DESAPARECER
+
+         A posição saía da lista ativa e o valor dela simplesmente
+         deixava de existir no patrimônio: US$ 52 de pool viravam zero,
+         sem nada dizendo para onde foram. Agora o valor final —
+         mercado + taxa que ainda estava dentro — volta ao caixa da
+         carteira de origem, com o resultado já embutido.
+
+         A taxa JÁ COLETADA não entra aqui: ela saiu da pool quando foi
+         coletada, e somá-la agora seria contar duas vezes. Só a que
+         ainda estava dentro da posição no momento do encerramento.
+         ------------------------------------------------------------ */
+      Store._caixaRetorno(arquivo, arquivo.finalValue,
+        "Encerramento da pool " + arquivo.base + "/" + arquivo.quote +
+        (resumo ? " · resultado " + resumo.resultado.toFixed(2) : ""));
+
+      return true;
     },
 
     /* reabre uma pool encerrada por engano, com o histórico intacto */
@@ -782,7 +1120,7 @@
       if (!a) return null;
       wd.closed = wd.closed.filter(function (x) { return x.id !== id; });
       var p = JSON.parse(JSON.stringify(a));
-      p.status = "ativa";
+      p.status = "aberta";   // ciclo de vida; o selo da faixa é calculado
       p.closedAt = null;
       p.updatedAt = _hoje();
       delete p.closeSummary;
@@ -814,7 +1152,14 @@
         if (r) { profit += r.resultado; capital += r.aportadoLiquido; }
       });
 
-      var active = s.pools.filter(function (p) { return p.status === "ativa" || p.status === "range"; });
+      /* "Pools Ativas" = posições ABERTAS. O filtro era
+         `status === "ativa" || status === "range"` — lendo o campo
+         que o usuário escolhia à mão. Uma pool marcada "Em análise"
+         no wizard sumia do KPI e do APR médio mesmo com capital
+         dentro dela, e agora que o status virou consequência do
+         preço, uma pool sem cotação sumiria também. Posição aberta é
+         posição aberta; o veredito da faixa é outro assunto. */
+      var active = s.pools.filter(function (p) { return p.status !== "encerrada" && !p.closedAt; });
       /* APR médio PONDERADO pelo valor da posição. A média simples
          dizia que uma pool de US$ 10 a 300% e uma de US$ 10.000 a 5%
          rendiam 152% — número que não existe em lugar nenhum. */

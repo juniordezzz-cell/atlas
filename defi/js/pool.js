@@ -39,6 +39,8 @@
   var _perf = null;      // último cálculo de mercado
   var _mercadoErro = null;
   var _precoFonte = {};
+  var _semPreco = [];    // símbolos que nenhuma fonte reconheceu
+  var _vencidos = [];    // preço manual mais velho que a validade
   var charts = {};
 
   function esc(t) {
@@ -61,6 +63,24 @@
   }
   function cls(v) { return v > 0 ? "up" : v < 0 ? "down" : ""; }
 
+  /* ------------------------------------------------------------
+     O SELO DESTA PÁGINA É O MESMO DO CARD
+
+     Aqui existiam DOIS veredictos convivendo: o cabeçalho mostrava
+     U.statusDot(p.status) — o campo gravado, escolhido no wizard — e
+     o painel de Mercado, dez centímetros abaixo, mostrava "na faixa"
+     calculado do preço. A mesma tela podia dizer as duas coisas ao
+     mesmo tempo, e dizia.
+
+     Agora tudo passa por DeFiStore.statusDe(), que é o que o card, a
+     lista, o KPI e o alerta do Dashboard também usam.
+     ------------------------------------------------------------ */
+  function statusAtual() {
+    var st = S.statusDe && S.statusDe(p);
+    return st || { status: "naoavaliada", dentro: null, posFaixa: null,
+                   faltando: [], motivo: "", temFaixa: false };
+  }
+
   /* ============================================================
      CABEÇALHO
      ============================================================ */
@@ -76,7 +96,12 @@
           '<div class="pair-icons" style="transform:scale(1.25);transform-origin:left">' + U.coin(p.base) + U.coin(p.quote) + '</div>' +
           '<div>' +
             '<div class="ph-title">' + esc(p.base) + ' / ' + esc(p.quote) + '</div>' +
-            '<div class="row" style="gap:10px;margin-top:2px">' + U.statusDot(p.status) +
+            /* O selo tem hospedeiro próprio porque agora ele MUDA: o
+               veredito da faixa depende da cotação, que chega depois do
+               primeiro desenho, e volta a mudar quando o usuário informa
+               um preço na mão. O cabeçalho era pintado uma vez só. */
+            '<div class="row" style="gap:10px;margin-top:2px">' +
+              '<span id="poolStatus">' + U.statusDot(statusAtual().status, "pool") + '</span>' +
               '<span class="dot-sep">·</span><span class="muted" style="font-size:13px">' + dias + ' dia(s) em operação</span></div>' +
             '<div class="ph-tags">' +
               '<span class="tag tag-chain"><span class="dot" style="background:' + S.colorOf("chain", p.chain) + '"></span>' + esc(p.chain) + '</span>' +
@@ -98,18 +123,41 @@
      de campos gravados na pool (p.capital, p.currentValue, p.profit) —
      três valores escritos por rotinas diferentes, que passaram a
      divergir assim que existiram aporte e reinvestimento. */
+  /* ------------------------------------------------------------
+     OS QUATRO NÚMEROS, SEPARADOS — a regra central da Fase 4
+
+     O card "Valor atual" mostrava r.valorTotal, que é mercado MAIS
+     taxa pendente. Numa pool de US$ 50 que valorizou para 52 e gerou
+     3 de taxa, ele exibia US$ 55 — exatamente o número que o briefing
+     proíbe, porque lido de relance ele diz "a posição valorizou de 50
+     para 55". A legenda embaixo ("inclui US$ 3 de taxa") não desfaz
+     isso: o olho lê o número grande.
+
+     Valorização de ativo e receita de taxa são coisas de naturezas
+     diferentes. Numa pool dá para ganhar taxa e perder em ativo ao
+     mesmo tempo — somar as duas num número só esconde o impermanent
+     loss, que é justamente o risco que se está correndo.
+
+       Capital colocado        o que saiu do bolso
+       Valor da posição        só os ativos dentro da pool (mercado)
+       Valorização             variação desses ativos
+       Taxas geradas           receita da pool, com o que sobra livre
+     ------------------------------------------------------------ */
   function miniHtml() {
     var r = S.poolSummary(p.id);
     if (!r) return "";
-    var c = cls(r.resultado);
     return miniCard("Capital colocado", U.money(r.aportado),
-                    r.reinvestido ? "+" + U.money(r.reinvestido) + " reinvestido" : "") +
-           miniCard("Valor atual", U.money(r.valorTotal),
-                    r.taxasPendentes ? "inclui " + U.money(r.taxasPendentes) + " de taxa" : "") +
-           miniCard("Resultado", '<span class="delta ' + c + '">' + U.signedMoney(r.resultado) + '</span>',
-                    U.pct(r.resultadoPct, true)) +
-           miniCard("APR realizado", r.aprReal ? U.pct(r.aprReal) : "—",
-                    p.apr ? "declarado " + U.pct(p.apr) : "");
+                    r.reinvestido ? "+" + U.money(r.reinvestido) + " de taxa reinvestida" : "do seu bolso") +
+           miniCard("Valor da posição", U.money(r.valorPosicao),
+                    "só os ativos, sem taxa") +
+           miniCard("Valorização",
+                    '<span class="delta ' + cls(r.varAtivos) + '">' + U.signedMoney(r.varAtivos) + '</span>',
+                    U.pct(r.varAtivosPct, true) + " sobre a base") +
+           miniCard("Taxas geradas",
+                    '<span class="delta up">' + U.signedMoney(r.taxasGeradas) + '</span>',
+                    r.taxasDisponiveis > 0
+                      ? U.money(r.taxasDisponiveis) + " disponível"
+                      : (r.taxasPendentes > 0 ? U.money(r.taxasPendentes) + " ainda na pool" : "tudo destinado"));
   }
   function miniCard(k, v, sub) {
     return '<div class="mini-stat"><div class="k">' + k + '</div><div class="v">' + v + '</div>' +
@@ -201,9 +249,10 @@
         '<h3>Performance dos ativos</h3></div></div>' + corpo + '</div>';
     }
 
+    var st = statusAtual();
     var selo = "";
-    if (r.temFaixa && r.dentroDaFaixa !== null) {
-      selo = r.dentroDaFaixa
+    if (st.dentro !== null) {
+      selo = st.dentro
         ? '<span class="tag" style="background:rgba(0,200,83,.14);color:#00c853">na faixa</span>'
         : '<span class="tag" style="background:rgba(255,86,86,.14);color:#ff7676">fora da faixa</span>';
     }
@@ -212,9 +261,19 @@
     if (!r.precoOk) {
       avisos += '<div class="hint" style="margin-top:9px">⚠ Sem preço de <b>' +
         esc(r.faltando.join(" e ")) + '</b> — usei o preço de entrada para esse lado, então o ' +
-        'resultado deste painel está incompleto. ' +
+        'resultado deste painel está incompleto e a faixa fica sem veredito. ' +
         (_mercadoErro ? esc(_mercadoErro) + ' ' : '') +
-        'Se o token existe no CoinGecko com outro id, cadastre o id em Configurações.</div>';
+        'Informe o preço na mão em <b>Editar</b> — é a regra do ATLAS quando nenhuma ' +
+        'fonte reconhece o ativo.</div>';
+    }
+    /* Preço informado por você, e velho. Continua valendo (é o único
+       que existe), mas o painel diz a idade em vez de exibir o número
+       com cara de cotação de agora. */
+    if (_vencidos && _vencidos.length) {
+      avisos += '<div class="hint" style="margin-top:9px">⚠ Preço de <b>' +
+        esc(_vencidos.join(" e ")) + '</b> foi informado por você há mais de ' +
+        (window.AtlasPrecos ? AtlasPrecos.VALIDADE_DIAS : 7) +
+        ' dias. Os números deste painel usam esse preço.</div>';
     }
     if (r.composicaoParcial) {
       avisos += '<div class="hint" style="margin-top:9px">⚠ Você informou a quantidade atual de um lado só. ' +
@@ -516,25 +575,37 @@
     '</div>';
   }
 
-  /* ---------- Faixa de preço ---------- */
+  /* ---------- Faixa de preço ----------
+     A barra caía em p.rangePos quando não havia cálculo — e p.rangePos
+     era gravado pelo wizard como 1 (topo) ou 0,5 (meio), conforme o
+     botão que o usuário apertou. Uma barra desenhada a partir de um
+     palpite, com aparência de medição. Sem veredito, agora não há
+     barra: há o motivo de não haver. */
   function rangePanel() {
     if (!(p.rangeLow > 0 && p.rangeHigh > 0)) return "";
-    var pos = _perf && _perf.posFaixa != null ? _perf.posFaixa : (p.rangePos != null ? p.rangePos : 0.5);
-    var largura = Math.max(4, Math.min(96, pos * 100));
-    var fora = _perf && _perf.dentroDaFaixa === false;
+    var st = statusAtual();
     var denom = (p.rangeDenom === "quote_por_base")
       ? esc(p.quote) + " por " + esc(p.base)
       : esc(p.base) + " por " + esc(p.quote);
 
+    var corpo;
+    if (st.dentro === null) {
+      corpo = '<div class="hint">' + esc(st.motivo) + '</div>';
+    } else {
+      var largura = Math.max(4, Math.min(96, (st.posFaixa != null ? st.posFaixa : 0.5) * 100));
+      corpo =
+        '<div class="spread" style="font-family:var(--font-mono);font-size:13px;color:var(--text-mut)">' +
+          '<span>' + p.rangeLow + '</span><span>' + p.rangeHigh + '</span></div>' +
+        '<div class="range-bar' + (st.dentro ? "" : " out") + '" style="height:8px;margin-top:8px">' +
+          '<i style="left:0;width:' + largura + '%"></i></div>' +
+        '<div class="hint" style="margin-top:8px">Faixa em <b>' + denom + '</b>' +
+          (st.razao != null ? ' · cotação agora: <b>' + st.razao.toFixed(8) + '</b>' : '') + '</div>';
+    }
+
     return '<div class="panel panel-pad" style="margin-top:18px">' +
       '<div class="panel-head"><h3>Faixa de preço</h3>' +
-        (fora ? U.statusChip("range") : U.statusChip("ativa")) + '</div>' +
-      '<div class="spread" style="font-family:var(--font-mono);font-size:13px;color:var(--text-mut)">' +
-        '<span>' + p.rangeLow + '</span><span>' + p.rangeHigh + '</span></div>' +
-      '<div class="range-bar' + (fora ? " out" : "") + '" style="height:8px;margin-top:8px">' +
-        '<i style="left:0;width:' + largura + '%"></i></div>' +
-      '<div class="hint" style="margin-top:8px">Faixa em <b>' + denom + '</b>' +
-        (_perf && _perf.razao != null ? ' · cotação agora: <b>' + _perf.razao.toFixed(8) + '</b>' : '') + '</div>' +
+        U.statusChip(st.status, "pool") + '</div>' +
+      corpo +
     '</div>';
   }
 
@@ -548,6 +619,13 @@
     DeFiTokens.precosDetalhado([p.base, p.quote]).then(function (d) {
       _precoFonte = d.fonte || {};
       _mercadoErro = d.erro ? d.erro.message : null;
+      _semPreco = d.faltando || [];
+      _vencidos = d.vencidos || [];
+
+      /* O store passa a conhecer a cotação: é dela que sai o selo da
+         faixa, aqui e no card da lista — a mesma função, o mesmo
+         número. */
+      S.setPrecos(d.valores, d.fonte);
 
       _perf = DeFiPerf.calcular({
         base: p.base, quote: p.quote,
@@ -558,7 +636,7 @@
         reinvestido: r.reinvestido,
         rangeLow: p.rangeLow, rangeHigh: p.rangeHigh,
         rangeDenom: p.rangeDenom || "base_por_quote"
-      }, d.valores);
+      }, S.precos([p.base, p.quote]));
 
       /* Grava o valor de mercado — e SÓ ele. O resultado é recalculado
          por DeFiStore.poolSummary a partir dos fluxos.
@@ -567,13 +645,21 @@
          valor menor que o real, e um patrimônio que encolhe sozinho
          assusta mais do que um campo vazio.
 
-         E não grava por cima de um valor que o usuário digitou: quem
-         informou a posição na mão tem prioridade sobre a estimativa,
-         até mandar atualizar. */
-      if (_perf && _perf.precoOk && p.precoFonte !== "manual") {
+         A PRIORIDADE DO MANUAL MUDOU DE LUGAR
+
+         Antes a proteção era aqui: `p.precoFonte !== "manual"` impedia
+         a API de sobrescrever um valor TOTAL digitado no modal. Com o
+         preço manual por ATIVO (core/atlas-precos.js), quem tem
+         prioridade é o preço, não o total — e a proteção vive lá, na
+         cadeia de resolução. Aqui o valor volta a ser o que sempre
+         deveria ter sido: quantidade × preço, seja o preço de onde
+         for. O campo precoFonte agora só REGISTRA a origem dominante. */
+      if (_perf && _perf.precoOk) {
+        var fB = _precoFonte[String(p.base).toUpperCase()];
+        var fQ = _precoFonte[String(p.quote).toUpperCase()];
         S.updatePool(p.id, {
           currentValue: Math.round(_perf.valorAtual * 100) / 100,
-          precoFonte: "api",
+          precoFonte: (fB === "manual" || fQ === "manual") ? "manual" : "api",
           precoEm: new Date().toISOString(),
           updatedAt: U.hoje()
         });
@@ -605,12 +691,47 @@
     var host = U.qs("#editBody");
     if (!host) return;
 
-    var pb = _perf && _perf.precoAtualBase, pq = _perf && _perf.precoAtualQuote;
+    var pb = S.precoDe(p.base), pq = S.precoDe(p.quote);
     var fonteB = _precoFonte[String(p.base).toUpperCase()];
     var fonteQ = _precoFonte[String(p.quote).toUpperCase()];
     function fonteTxt(f) {
-      return f === "stable" ? "stablecoin" : f === "registro" ? "API · id do registro"
-           : f === "busca" ? "API · busca por símbolo" : "sem preço";
+      return window.AtlasPrecos ? AtlasPrecos.fonteLabel(f) : (f || "sem preço");
+    }
+    /* preço manual já gravado para cada lado (se houver) */
+    function manual(sim) {
+      return window.AtlasPrecos ? AtlasPrecos.manual(sim) : null;
+    }
+    var manB = manual(p.base), manQ = manual(p.quote);
+
+    /* " — hoje ≈ 73.57". Mesma conta de DeFiPerf.faixa: a razão da
+       denominação "X por Y" é preço(Y) / preço(X). */
+    function razaoTxt(numerador, denominador) {
+      if (!(numerador > 0 && denominador > 0)) return "";
+      var v = numerador / denominador;
+      return " — hoje ≈ " + (v >= 1 ? v.toFixed(2) : v.toFixed(8));
+    }
+
+    /* Campo de preço manual de um lado. Vem VAZIO quando não há
+       manual gravado — com o preço da API só de placeholder. Assim
+       abrir o modal e salvar não transforma a cotação da API em
+       "informado por você" sem o usuário ter digitado nada. */
+    function campoPreco(sim, id, man, precoApi, fonte) {
+      var temApi = precoApi != null && !man;
+      return '<div class="field"><label>Preço de ' + esc(sim) + ' (US$)</label>' +
+        '<div class="input-money"><span>US$</span>' +
+        '<input class="input" id="' + id + '" type="number" step="any" min="0" ' +
+        'value="' + (man ? man.usd : "") + '" ' +
+        'placeholder="' + (temApi ? precoApi : "informe o preço") + '" /></div>' +
+        '<div class="hint">' +
+          (man
+            ? "Informado por você" + (man.em ? " em " + new Date(man.em).toLocaleDateString("pt-BR") : "") +
+              (man.vencido ? " — <b>há mais de " + AtlasPrecos.VALIDADE_DIAS + " dias</b>" : "") +
+              ". Apague o campo para voltar a usar a API."
+            : (temApi
+                ? "Vindo da API (" + esc(fonteTxt(fonte)) + "). Preencha só se estiver errado."
+                : "<b>Nenhuma fonte reconheceu " + esc(sim) + ".</b> Sem este preço a posição não tem " +
+                  "valor de mercado nem veredito de faixa.")) +
+        '</div></div>';
     }
 
     host.innerHTML =
@@ -660,30 +781,49 @@
         '<div class="field"><label>Máxima</label>' +
           '<input class="input" id="eRHigh" type="number" step="any" min="0" value="' + (p.rangeHigh || "") + '" /></div>' +
       '</div>' +
+      /* As duas denominações com a cotação de HOJE ao lado. Escolher a
+         errada não produz erro visível: a faixa é gravada, a razão é
+         calculada de cabeça para baixo, e a posição fica "fora do
+         range" para sempre com todos os dados certos. Comparar com o
+         número da corretora é o que desfaz a ambiguidade. */
       '<div class="field"><label>Denominação da faixa</label>' +
         '<select class="select" id="eRDenom">' +
           '<option value="base_por_quote"' + (p.rangeDenom !== "quote_por_base" ? " selected" : "") + '>' +
-            esc(p.base) + ' por ' + esc(p.quote) + '</option>' +
+            esc(p.base) + ' por ' + esc(p.quote) + razaoTxt(pq, pb) + '</option>' +
           '<option value="quote_por_base"' + (p.rangeDenom === "quote_por_base" ? " selected" : "") + '>' +
-            esc(p.quote) + ' por ' + esc(p.base) + '</option>' +
-        '</select></div>' +
+            esc(p.quote) + ' por ' + esc(p.base) + razaoTxt(pb, pq) + '</option>' +
+        '</select>' +
+        '<div class="hint">Escolha a que bate com o número da sua corretora.</div></div>' +
 
-      '<div class="eyebrow" style="margin:6px 0 8px">Correção manual</div>' +
+      /* ------------------------------------------------------------
+         PREÇO DOS ATIVOS — a regra do ATLAS, aplicada aqui
+
+         O campo antigo era um só: "Valor da posição (sem taxas), US$".
+         Um TOTAL digitado. Com ele o sistema não conseguia calcular
+         nada — nem a variação de cada lado, nem a razão do par, que é
+         o que decide dentro/fora da faixa. Uma pool sem cotação ficava
+         eternamente sem veredito mesmo com o usuário sabendo o preço.
+
+         Agora o que se informa é o PREÇO DE CADA ATIVO. Dele saem o
+         valor da posição (quantidade × preço), a valorização em US$ e
+         em %, e o selo da faixa. Valor volta a ser consequência.
+
+         A API continua sendo o caminho principal: estes campos só
+         precisam ser preenchidos quando nenhuma fonte reconhece o
+         token — e, uma vez preenchidos, mandam até serem apagados.
+         ------------------------------------------------------------ */
+      '<div class="eyebrow" style="margin:6px 0 8px">Preço dos ativos</div>' +
       '<div class="col-2" style="gap:0 16px">' +
-        '<div class="field"><label>Valor da posição (sem taxas)</label>' +
-          '<div class="input-money"><span>US$</span>' +
-          '<input class="input" id="eVal" type="number" step="any" placeholder="' + r.valorPosicao.toFixed(2) + '" /></div>' +
-          '<div class="hint">Preencha só se a API estiver errada ou indisponível. Fica marcado como manual e para de ser sobrescrito.</div></div>' +
-        '<div class="field"><label>APR declarado (%)</label>' +
-          '<input class="input" id="eApr" type="number" step="any" value="' + (p.apr || "") + '" />' +
-          '<div class="hint">É o APR da corretora. O APR realizado o ATLAS calcula das taxas.</div></div>' +
+        campoPreco(p.base, "ePrBase", manB, pb, fonteB) +
+        campoPreco(p.quote, "ePrQuote", manQ, pq, fonteQ) +
       '</div>' +
-      '<div class="field"><label>Status</label>' +
-        '<select class="select" id="eStatus">' +
-          '<option value="ativa"' + (p.status === "ativa" ? " selected" : "") + '>Ativa</option>' +
-          '<option value="range"' + (p.status === "range" ? " selected" : "") + '>Fora do Range</option>' +
-          '<option value="analise"' + (p.status === "analise" ? " selected" : "") + '>Em análise</option>' +
-        '</select></div>';
+
+      '<div class="field"><label>APR declarado (%)</label>' +
+        '<input class="input" id="eApr" type="number" step="any" value="' + (p.apr || "") + '" />' +
+        '<div class="hint">É o APR da corretora. O APR realizado o ATLAS calcula das taxas.</div></div>';
+      /* O <select> de Status saiu daqui. Dentro ou fora da faixa é
+         conclusão do preço contra a faixa, não uma opção de menu —
+         ver DeFiStore.statusDe(). */
 
     var bt = U.qs("#eRefresh");
     if (bt) bt.addEventListener("click", function () {
@@ -710,24 +850,27 @@
       rangeLow: lo, rangeHigh: hi,
       rangeDenom: U.qs("#eRDenom").value,
       apr: num(U.qs("#eApr")),
-      status: U.qs("#eStatus").value,
       updatedAt: U.hoje()
     };
 
-    /* Campo vazio = "não mexi". Antes o modal fazia
-       `parseFloat(valor) || p.currentValue`, o que parecia proteger e
-       na prática impedia zerar. E, sobretudo, o valor digitado era
-       gravado sem marcar a origem — na atualização seguinte a API
-       passava por cima em silêncio. */
-    var vTxt = String(U.qs("#eVal").value || "").trim();
-    if (vTxt !== "") {
-      var v = parseFloat(vTxt.replace(",", "."));
-      if (isFinite(v) && v >= 0) {
-        patch.currentValue = v;
-        patch.precoFonte = "manual";
-        patch.precoEm = new Date().toISOString();
-      }
+    /* ------------------------------------------------------------
+       PREÇO MANUAL — campo vazio APAGA, campo preenchido MANDA
+
+       O preço é do ativo, não da posição: fica no AtlasPrecos, e vale
+       para qualquer pool que use o mesmo token (e, na Fase 3, para
+       Hold, Trade e RWA). Apagar o campo devolve o token à API.
+       ------------------------------------------------------------ */
+    function aplicarPreco(sim, id) {
+      if (!window.AtlasPrecos) return;
+      var el = U.qs("#" + id);
+      if (!el) return;
+      var txt = String(el.value || "").trim();
+      if (txt === "") { AtlasPrecos.limparManual(sim); return; }
+      var v = parseFloat(txt.replace(",", "."));
+      if (isFinite(v) && v > 0) AtlasPrecos.definirManual(sim, v);
     }
+    aplicarPreco(p.base, "ePrBase");
+    aplicarPreco(p.quote, "ePrQuote");
 
     S.updatePool(p.id, patch);
     p = S.pool(p.id) || p;
@@ -866,6 +1009,8 @@
     host.innerHTML = resumoPanel();
     var mini = U.qs("#poolMini");
     if (mini) mini.innerHTML = miniHtml();
+    var selo = U.qs("#poolStatus");
+    if (selo) selo.innerHTML = U.statusDot(statusAtual().status, "pool");
     ligarResumo();
     desenharResumoChart();
   }

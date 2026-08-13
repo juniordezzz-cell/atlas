@@ -293,6 +293,35 @@
           '<label class="rfield"><span>Setor</span><input class="rinput" data-rf="sector" list="rwaSectors" value="' + esc(a.sector || "") + '" placeholder="Ex.: Government" />' +
             '<datalist id="rwaSectors">' + SECTORS.map(function (s) { return '<option value="' + s + '">'; }).join("") + '</datalist></label>' +
         '</div>' +
+        /* ------------------------------------------------------------
+           QUANTIDADE E PREÇO UNITÁRIO — não mais dois totais soltos
+
+           Os campos eram "Valor investido (US$)" e "Valor atual (US$)",
+           os dois TOTAIS. E o autopreenchimento do CoinGecko escrevia
+           no segundo o PREÇO UNITÁRIO do token: uma posição de
+           US$ 5.000 em SKY entrava no patrimônio como US$ 153.
+
+           Com quantidade, "preço" passa a existir de verdade — e é ele
+           que a API preenche, que o usuário corrige quando nenhuma
+           fonte reconhece o ativo, e do qual o total é consequência.
+
+           Quem já tem ativo cadastrado sem quantidade continua
+           informando os totais na mão (o bloco de baixo), até
+           preencher a quantidade. Nada é convertido no chute.
+           ------------------------------------------------------------ */
+        '<div class="rrow">' +
+          '<label class="rfield rfield-sm"><span>Quantidade</span>' +
+            '<input class="rinput" data-rf="quantidade" type="number" step="any" min="0" value="' +
+            (a.quantidade != null ? a.quantidade : "") + '" placeholder="ex.: 12,5" /></label>' +
+          '<label class="rfield"><span>Preço médio de compra (US$)</span>' +
+            '<input class="rinput" data-rf="precoMedio" type="number" step="any" min="0" value="' +
+            (a.precoMedio != null ? a.precoMedio : "") + '" placeholder="por unidade" /></label>' +
+          '<label class="rfield"><span>Preço atual (US$)</span>' +
+            '<input class="rinput" data-rf="precoAtual" type="number" step="any" min="0" value="' +
+            (a.precoAtual != null ? a.precoAtual : "") + '" placeholder="por unidade" /></label>' +
+        '</div>' +
+        '<div class="rhint" data-rf-hint="derivado">Com a quantidade preenchida, os valores abaixo são calculados ' +
+          '(quantidade × preço) e o preço atual é buscado sozinho.</div>' +
         '<div class="rrow">' +
           '<label class="rfield"><span>Valor investido (US$)</span><input class="rinput" data-rf="entry" type="number" step="any" min="0" value="' + (a.entry != null ? a.entry : "") + '" placeholder="0" /></label>' +
           '<label class="rfield"><span>Valor atual (US$)</span><input class="rinput" data-rf="current" type="number" step="any" min="0" value="' + (a.current != null ? a.current : "") + '" placeholder="0" /></label>' +
@@ -319,22 +348,94 @@
 
     function fv(f) { var el = m.querySelector('[data-rf="' + f + '"]'); return el ? el.value.trim() : ""; }
 
-    // Autocomplete CoinGecko (opcional) — Nome + Ticker com preenchimento cruzado
+    /* ------------------------------------------------------------
+       Totais derivados enquanto se digita.
+
+       Sem isto a pessoa preencheria quantidade e preço e continuaria
+       vendo os campos de total vazios, sem saber qual dos dois manda.
+       Com isto a regra fica evidente na tela: preencheu quantidade, os
+       totais deixam de ser editáveis porque passaram a ser resultado.
+       ------------------------------------------------------------ */
+    function nv(f) {
+      var el = m.querySelector('[data-rf="' + f + '"]');
+      if (!el) return NaN;
+      var v = parseFloat(String(el.value).replace(",", "."));
+      return isFinite(v) ? v : NaN;
+    }
+    function sincronizarTotais() {
+      var q = nv("quantidade");
+      var entryEl = m.querySelector('[data-rf="entry"]');
+      var curEl = m.querySelector('[data-rf="current"]');
+      var hint = m.querySelector('[data-rf-hint="derivado"]');
+      var temQtd = isFinite(q) && q > 0;
+
+      [entryEl, curEl].forEach(function (el) {
+        if (!el) return;
+        el.readOnly = temQtd;
+        el.style.opacity = temQtd ? "0.65" : "";
+      });
+      if (temQtd) {
+        var pm = nv("precoMedio"), pa = nv("precoAtual");
+        if (isFinite(pm)) entryEl.value = +(q * pm).toFixed(2);
+        if (isFinite(pa)) curEl.value = +(q * pa).toFixed(2);
+        if (hint) hint.innerHTML = "Valores calculados: <b>quantidade × preço</b>. " +
+          "O preço atual é atualizado sozinho quando alguma fonte reconhecer o ticker.";
+      } else if (hint) {
+        hint.innerHTML = "Sem quantidade, informe os totais na mão abaixo. " +
+          "Preencha a quantidade para o ATLAS acompanhar o preço sozinho.";
+      }
+    }
+    ["quantidade", "precoMedio", "precoAtual"].forEach(function (f) {
+      var el = m.querySelector('[data-rf="' + f + '"]');
+      if (el) el.addEventListener("input", sincronizarTotais);
+    });
+    sincronizarTotais();
+
+    // Autocomplete de ativo — Nome + Ticker com preenchimento cruzado
     if (window.AtlasAssets) {
       var nameEl = m.querySelector('[data-rf="name"]'), tkEl = m.querySelector('[data-rf="ticker"]');
       var fillBoth = function (coin) {
         nameEl.value = coin.name; tkEl.value = coin.symbol;
         var typeEl = m.querySelector('[data-rf="type"]'); if (typeEl && !isEdit) typeEl.value = "Crypto";
         var secEl = m.querySelector('[data-rf="sector"]'); if (secEl && !isEdit && !secEl.value) secEl.value = "Technology";
-        // preço atual em tempo real via provedor (CoinGecko)
-        var curEl = m.querySelector('[data-rf="current"]');
-        if (coin.id && curEl && !curEl.value && AtlasAssets.priceFull) {
-          AtlasAssets.priceFull(coin.id).then(function (info) {
-            if (info && info.usd != null && !curEl.value) curEl.value = info.usd;
-          }).catch(function (err) {
-            U.toast((err && err.message) || "Preço indisponível agora — preencha manualmente.", "warn");
-          });
-        }
+
+        /* ------------------------------------------------------------
+           O PREÇO VAI PARA O CAMPO DE PREÇO
+
+           Esta é a linha que continha o defeito: o preço unitário
+           vindo da API era escrito em `current`, o campo de VALOR
+           TOTAL da posição. Agora vai para `precoAtual`, e o total
+           sai de quantidade × preço.
+
+           Passa pela cadeia do ATLAS (AtlasPrecos) em vez de ir
+           direto ao provedor: assim vale o preço manual do usuário
+           quando existir, a fonte secundária entra quando a primária
+           não reconhece, e a origem do número fica registrada.
+           ------------------------------------------------------------ */
+        var precoEl = m.querySelector('[data-rf="precoAtual"]');
+        if (!precoEl || precoEl.value) return;
+
+        var pedir = window.AtlasPrecos
+          ? AtlasPrecos.de(coin.symbol).then(function (r) { return r; })
+          : (AtlasAssets.priceFull ? AtlasAssets.priceFull(coin.id).then(function (i) {
+              return i && i.usd != null ? { usd: i.usd, fonte: "registro" } : null;
+            }) : Promise.resolve(null));
+
+        pedir.then(function (r) {
+          if (r && r.usd != null && !precoEl.value) {
+            precoEl.value = r.usd;
+            sincronizarTotais();
+            var hint = m.querySelector('[data-rf-hint="derivado"]');
+            if (hint && window.AtlasPrecos) {
+              hint.innerHTML = "Preço atual de <b>" + esc(coin.symbol) + "</b>: " +
+                AtlasPrecos.fonteLabel(r.fonte) + ". Corrija se estiver errado.";
+            }
+          } else if (!r) {
+            U.toast("Nenhuma fonte reconheceu " + coin.symbol + " — informe o preço na mão.", "warn");
+          }
+        }).catch(function (err) {
+          U.toast((err && err.message) || "Preço indisponível agora — preencha manualmente.", "warn");
+        });
       };
       AtlasAssets.attach(nameEl, { value: "name", onSelect: fillBoth });
       AtlasAssets.attach(tkEl, { value: "symbol", onSelect: fillBoth });
@@ -343,8 +444,15 @@
     m.querySelector("[data-save]").addEventListener("click", function () {
       var name = fv("name"), ticker = fv("ticker").toUpperCase();
       if (!name || !ticker) { U.toast("Preencha nome e ticker.", "warn"); return; }
+      var q = parseFloat(String(fv("quantidade")).replace(",", "."));
       var data = {
         name: name, ticker: ticker, type: fv("type") || "Treasury", sector: fv("sector") || "Outros",
+        /* quantidade e preços mandam quando existem; o store deriva os
+           totais (RWAStore.normalizar). Sem quantidade, os totais
+           digitados continuam valendo como antes. */
+        quantidade: isFinite(q) && q > 0 ? q : null,
+        precoMedio: parseFloat(String(fv("precoMedio")).replace(",", ".")) || null,
+        precoAtual: parseFloat(String(fv("precoAtual")).replace(",", ".")) || null,
         entry: parseFloat(fv("entry")) || 0, current: parseFloat(fv("current")) || 0,
         score: parseInt(fv("score"), 10) || 0, regimeSens: fv("regimeSens") || "Neutral", status: fv("status") || "core"
       };
@@ -382,12 +490,27 @@
     var riskColor = risk.totalRisk >= 66 ? "var(--neg)" : risk.totalRisk >= 40 ? "var(--warn)" : "var(--pos)";
     var riskWord = risk.totalRisk >= 66 ? "Elevado" : risk.totalRisk >= 40 ? "Moderado" : "Controlado";
 
+    /* Uma célula de indicador macro. Com `v` nulo ela diz que não há
+       fonte — em vez de desenhar um número que ninguém mediu. Ver o
+       comentário em RWA/js/store.js sobre por que estes valores foram
+       esvaziados. */
     function macroCell(id, mm) {
-      mm = mm || { k: "—", v: 0, unit: "", delta: 0, series: [] };
+      mm = mm || { k: "—", v: null, unit: "", delta: null, series: [] };
+      var temValor = mm.v != null && isFinite(Number(mm.v));
+
+      if (!temValor) {
+        return '<div class="panel panel-pad" style="padding:14px 16px">' +
+          '<div class="spread"><span style="font-size:12px;color:var(--text-2)">' + mm.k + '</span></div>' +
+          '<div class="mono" style="font-size:21px;font-weight:600;margin:6px 0 8px;color:var(--text-3)">—</div>' +
+          '<div style="font-size:11px;color:var(--text-3);line-height:1.5">sem fonte conectada</div></div>';
+      }
+
       var goodColor = (mm.good === "up" && mm.delta > 0) || (mm.good === "down" && mm.delta < 0) ? "var(--pos)" : (mm.good === "flat" ? "var(--text-2)" : "var(--neg)");
+      var temDelta = mm.delta != null && isFinite(Number(mm.delta));
       return '<div class="panel panel-pad" style="padding:14px 16px">' +
         '<div class="spread"><span style="font-size:12px;color:var(--text-2)">' + mm.k + '</span>' +
-        '<span style="color:' + goodColor + ';font-size:12px;font-weight:600">' + (mm.delta > 0 ? "+" : "") + U.num(mm.delta, 2) + (mm.unit === "%" ? "pp" : "") + '</span></div>' +
+        (temDelta ? '<span style="color:' + goodColor + ';font-size:12px;font-weight:600">' + (mm.delta > 0 ? "+" : "") + U.num(mm.delta, 2) + (mm.unit === "%" ? "pp" : "") + '</span>' : '') +
+        '</div>' +
         '<div class="mono" style="font-size:21px;font-weight:600;margin:6px 0 8px">' + U.num(mm.v, mm.unit === "/100" ? 0 : 2) + '<span style="font-size:12px;color:var(--text-3)"> ' + (mm.unit || "") + '</span></div>' +
         '<div class="chart-box h-xs"><canvas id="spark_' + id + '"></canvas></div></div>';
     }
@@ -395,7 +518,9 @@
     app.innerHTML =
       '<div class="view-head"><div><div class="eyebrow">Terminal</div><h1 class="view-title">Dashboard</h1>' +
         '<div class="view-sub">Leitura macro + fluxo global do seu patrimônio RWA.</div></div>' +
-        '<div class="vh-right">' + U.regime(k.regime) + ' <button class="rbtn rbtn-primary" id="btnAdd">+ Adicionar ativo</button></div>' +
+        '<div class="vh-right">' + U.regime(k.regime) +
+          (hasAssets ? ' <button class="rbtn rbtn-ghost" id="btnPrecos">Atualizar preços</button>' : '') +
+          ' <button class="rbtn rbtn-primary" id="btnAdd">+ Adicionar ativo</button></div>' +
       '</div>' +
 
       '<div class="grid g-4">' +
@@ -430,6 +555,8 @@
       '</div>';
 
     U.qs("#btnAdd").addEventListener("click", function () { openAssetModal(); });
+    var btnP = U.qs("#btnPrecos");
+    if (btnP) btnP.addEventListener("click", function () { atualizarPrecos(btnP); });
 
     var ch = C();
     if (ch) {
@@ -443,6 +570,69 @@
       });
     }
   };
+
+  /* ============================================================
+     ATUALIZAR PREÇOS — a regra do ATLAS, agora também no RWA
+
+     O RWA não tinha caminho nenhum de atualização de preço: os
+     valores eram digitados uma vez e envelheciam em silêncio. E o
+     único autopreenchimento que existia escrevia o preço unitário no
+     campo de valor TOTAL, o que tornava o número pior que velho.
+
+     Aqui o preço passa pela cadeia única (core/atlas-precos.js):
+     preço manual do usuário → CoinGecko pelo id → busca por símbolo
+     → DEX (fonte secundária). Só entra em ativo COM quantidade —
+     sem ela, "preço" não tem como virar valor de posição.
+
+     O que a API não reconhece não vira zero nem fica escondido: volta
+     na mensagem, com o nome do ticker, para a pessoa informar na mão.
+     ============================================================ */
+  function atualizarPrecos(btn) {
+    if (!window.AtlasPrecos) { U.toast("Camada de preços não carregada.", "warn"); return; }
+
+    var comQtd = S.assets().filter(function (a) { return a.acompanhaPreco && a.ticker; });
+    var semQtd = S.assets().filter(function (a) { return !a.acompanhaPreco; });
+
+    if (!comQtd.length) {
+      U.toast(semQtd.length
+        ? "Nenhum ativo tem quantidade cadastrada — sem ela o preço não vira valor de posição."
+        : "Nenhum ativo para atualizar.", "warn");
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = "Buscando…"; }
+
+    AtlasPrecos.deVarios(comQtd.map(function (a) { return a.ticker; })).then(function (d) {
+      var atualizados = 0;
+      comQtd.forEach(function (a) {
+        var tk = String(a.ticker).toUpperCase();
+        var p = d.valores[tk];
+        if (p == null) return;
+        if (S.setPrecoAtual(a.id, p)) atualizados++;
+      });
+
+      if (btn) { btn.disabled = false; btn.textContent = "Atualizar preços"; }
+
+      var partes = [];
+      if (atualizados) partes.push(atualizados + " ativo(s) atualizado(s)");
+      if (d.faltando.length) {
+        partes.push("nenhuma fonte reconheceu " + d.faltando.join(", ") +
+                    " — informe o preço na mão em Editar");
+      }
+      if (d.divergentes.length) {
+        d.divergentes.forEach(function (x) {
+          U.toast("⚠ " + x.simbolo + ": a API diz US$ " + x.primaria.toFixed(2) +
+                  " e a DEX diz US$ " + x.secundaria.toFixed(2) +
+                  " (" + x.pct.toFixed(1) + "% de diferença). Confira antes de usar.", "warn");
+        });
+      }
+      U.toast(partes.join(" · ") || "Nada mudou.", atualizados ? "ok" : "warn");
+      Router.resolve();
+    }).catch(function (err) {
+      if (btn) { btn.disabled = false; btn.textContent = "Atualizar preços"; }
+      U.toast((err && err.message) || "Não consegui buscar os preços agora.", "warn");
+    });
+  }
 
   /* ---------------- Portfolio ---------------- */
   V.portfolio = function (ctx) {
@@ -549,30 +739,70 @@
   V.macro = function () {
     var app = U.qs("#app");
     var m = S.macro(), k = S.kpis();
+
+    /* ------------------------------------------------------------
+       "VALORES DE REFERÊNCIA — API REAL EM BREVE"
+
+       Era esta a etiqueta que esta tela exibia, ao lado de Fed Funds
+       4,50%, CPI 2,9% e DXY 103,4 — números escritos no código, com
+       gráficos gerados por um pseudoaleatório de semente fixa.
+       "Valor de referência" é um jeito educado de dizer inventado, e
+       a etiqueta ficava numa linha de subtítulo que ninguém lê antes
+       de olhar o número grande em fonte monoespaçada.
+
+       Agora não há número: há o estado real, que é "não conectado". A
+       tela continua inteira, pronta para receber um provedor de macro
+       (capacidade "macro" no registry) — e no dia em que ele existir,
+       ela desenha sozinha, sem nada aqui mudar.
+       ------------------------------------------------------------ */
     function block(id, mm) {
-      mm = mm || { k: "—", v: 0, unit: "", delta: 0, series: [] };
+      mm = mm || { k: "—", v: null, unit: "", delta: null, series: [] };
+      var tem = mm.v != null && isFinite(Number(mm.v));
+      if (!tem) {
+        return UI.panel(mm.k,
+          '<div class="mono" style="font-size:26px;font-weight:600;margin:2px 0 10px;color:var(--text-3)">—</div>' +
+          '<div class="t2" style="font-size:12.5px">Nenhuma fonte de dados macro está conectada ao ATLAS.</div>',
+          '<span style="font-size:12px;color:var(--text-3)">sem fonte</span>', "Indicador");
+      }
+      var temDelta = mm.delta != null && isFinite(Number(mm.delta));
       return UI.panel(mm.k,
         '<div class="mono" style="font-size:26px;font-weight:600;margin:2px 0 10px">' + U.num(mm.v, 2) + '<span style="font-size:13px;color:var(--text-3)"> ' + (mm.unit || "") + '</span></div>' +
         '<div class="chart-box" style="height:120px"><canvas id="mc_' + id + '"></canvas></div>',
-        '<span style="font-size:12px;color:var(--text-2)">' + (mm.delta > 0 ? "+" : "") + U.num(mm.delta, 2) + (mm.unit === "%" ? "pp" : "") + ' no período</span>', "Indicador");
+        temDelta ? '<span style="font-size:12px;color:var(--text-2)">' + (mm.delta > 0 ? "+" : "") + U.num(mm.delta, 2) + (mm.unit === "%" ? "pp" : "") + ' no período</span>' : '',
+        "Indicador");
     }
-    var roo = (m.riskOnOff != null ? m.riskOnOff : 0); // -100..100
+
+    var temRoo = m.riskOnOff != null && isFinite(Number(m.riskOnOff));
+    var roo = temRoo ? Number(m.riskOnOff) : 0;
     var rooPct = (roo + 100) / 2;
 
     app.innerHTML =
       '<div class="view-head"><div><div class="eyebrow">Macro</div><h1 class="view-title">Leitura Macro</h1>' +
-        '<div class="view-sub">Indicadores de referência do regime vigente. <span class="tag">valores de referência — API real em breve</span></div></div>' +
+        '<div class="view-sub">Indicadores de referência do regime vigente.</div></div>' +
         '<div>' + U.regime(k.regime) + '</div></div>' +
-      '<div class="section">' + UI.panel("Risk-On ↔ Risk-Off",
+
+      (temRoo ? '' :
+        '<div class="section">' + UI.panel("Nenhuma fonte macro conectada",
+          '<p class="t2" style="font-size:13px;line-height:1.6;margin:0">' +
+          'Esta tela mostrava juros, inflação, dólar e liquidez com valores fixos escritos no código, ' +
+          'acompanhados de gráficos gerados artificialmente. Eles foram removidos na terceira auditoria: ' +
+          'um painel de macro decorativo dentro de um sistema que decide alocação convida a decidir ' +
+          'com base num dado que não existe.<br><br>' +
+          'A estrutura continua pronta. Quando um provedor de dados macro for registrado, os indicadores ' +
+          'voltam a aparecer aqui — com fonte, data e a possibilidade de conferir.</p>', '', "Estado") + '</div>') +
+
+      (temRoo ? '<div class="section">' + UI.panel("Risk-On ↔ Risk-Off",
         '<div class="roo-track"><i style="left:' + rooPct + '%"></i></div>' +
         '<div class="spread" style="margin-top:8px"><span class="t3" style="font-size:11px">RISK-OFF</span><span class="t3" style="font-size:11px">RISK-ON</span></div>',
-        '<span class="mono" style="font-weight:600;color:' + (roo >= 0 ? "var(--pos)" : "var(--neg)") + '">' + (roo > 0 ? "+" : "") + roo + '</span>', "Barômetro") + '</div>' +
+        '<span class="mono" style="font-weight:600;color:' + (roo >= 0 ? "var(--pos)" : "var(--neg)") + '">' + (roo > 0 ? "+" : "") + roo + '</span>', "Barômetro") + '</div>' : '') +
+
       '<div class="grid g-2 section">' + block("rates", m.rates) + block("inflation", m.inflation) + '</div>' +
       '<div class="grid g-2 section">' + block("dxy", m.dxy) + block("liquidity", m.liquidity) + '</div>';
 
     var ch = C();
     if (ch) ["rates", "inflation", "dxy", "liquidity"].forEach(function (id) {
-      var mm = m[id]; if (mm && mm.series) ch.spark(U.qs("#mc_" + id), mm.series, "var(--info)");
+      var mm = m[id];
+      if (mm && mm.series && mm.series.length) ch.spark(U.qs("#mc_" + id), mm.series, "var(--info)");
     });
   };
 
@@ -609,20 +839,37 @@
     var app = U.qs("#app");
     var n = S.narrative();
     function cyc(label, o) {
-      o = o || { v: "—", dir: "flat" };
+      o = o || { v: null, dir: "flat" };
+      var vazio = o.v == null || o.v === "";
       var ic = o.dir === "up" ? U.icon("up") : o.dir === "down" ? U.icon("down") : U.icon("info");
-      var c = o.dir === "up" ? "var(--pos)" : o.dir === "down" ? "var(--neg)" : "var(--text-2)";
+      var c = vazio ? "var(--text-3)" : (o.dir === "up" ? "var(--pos)" : o.dir === "down" ? "var(--neg)" : "var(--text-2)");
       return '<div class="panel panel-pad" style="display:flex;align-items:center;gap:12px">' +
         '<span style="color:' + c + ';display:inline-flex;width:18px">' + ic + '</span>' +
-        '<div><div style="font-size:12px;color:var(--text-2)">' + label + '</div><div style="font-weight:600;margin-top:2px">' + esc(o.v) + '</div></div></div>';
+        '<div><div style="font-size:12px;color:var(--text-2)">' + label + '</div>' +
+        '<div style="font-weight:600;margin-top:2px' + (vazio ? ';color:var(--text-3)' : '') + '">' +
+        (vazio ? "sem fonte" : esc(o.v)) + '</div></div></div>';
     }
+
+    /* Mesma correção da Leitura Macro: "AI Expansion Cycle" com 82% de
+       confiança e "+US$ 1,8B / sem" de fluxo institucional eram texto
+       fixo no código. Ver o comentário em RWA/js/store.js. */
+    var temNarrativa = !!n.current;
+
     app.innerHTML =
       '<div class="view-head"><div><div class="eyebrow">Narrativa</div><h1 class="view-title">Narrative Engine</h1>' +
-        '<div class="view-sub">Qual história o mercado está contando agora. <span class="tag">valores de referência — API real em breve</span></div></div></div>' +
+        '<div class="view-sub">Qual história o mercado está contando agora.</div></div></div>' +
       '<div class="section">' + UI.panel("Narrativa dominante",
-        '<div style="font-size:24px;font-weight:700;margin:2px 0 6px">' + esc(n.current || "—") + '</div>' +
-        '<div class="t2" style="font-size:13px">' + esc(n.impact || "") + '</div>' +
-        '<div style="margin-top:14px">' + UI.meter({ k: "Confiança", v: (n.confidence || 0) + "%", pct: n.confidence || 0, color: "#8B5CF6" }) + '</div>', '', "Atual") + '</div>' +
+        (temNarrativa
+          ? '<div style="font-size:24px;font-weight:700;margin:2px 0 6px">' + esc(n.current) + '</div>' +
+            '<div class="t2" style="font-size:13px">' + esc(n.impact || "") + '</div>' +
+            '<div style="margin-top:14px">' + UI.meter({ k: "Confiança", v: (n.confidence || 0) + "%", pct: n.confidence || 0, color: "#8B5CF6" }) + '</div>'
+          : '<p class="t2" style="font-size:13px;line-height:1.6;margin:0">' +
+            'Nenhuma fonte de narrativa está conectada. Esta tela trazia uma narrativa fixa escrita no ' +
+            'código ("AI Expansion Cycle", 82% de confiança, fluxo institucional de US$ 1,8B por semana), ' +
+            'que não vinha de lugar nenhum e não mudava nunca.<br><br>' +
+            'Enquanto não houver fonte, o lugar de registrar a sua leitura de mercado é o ' +
+            '<b>Diário</b> e as <b>Teses</b> — que são suas, datadas e versionadas.</p>'),
+        '', "Atual") + '</div>' +
       '<div class="grid g-2 section">' +
         cyc("Ciclo de liquidez", n.liquidityCycle) + cyc("Demanda por hedge", n.hedgeCycle) +
         cyc("Rotação cripto", n.cryptoRotation) + cyc("Fluxo institucional", n.institutionalInflows) +

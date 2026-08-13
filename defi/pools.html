@@ -78,11 +78,14 @@
         </div>
         <div class="filter-select"><select class="select" id="fChain"><option value="">Blockchain</option></select></div>
         <div class="filter-select"><select class="select" id="fProto"><option value="">Protocolo</option></select></div>
+        <!-- Filtra pelo status CALCULADO (DeFiStore.statusDe), não pelo
+             campo gravado: o campo agora só guarda ciclo de vida. -->
         <div class="filter-select"><select class="select" id="fStatus">
-          <option value="">Status</option>
-          <option value="ativa">Ativa</option>
+          <option value="">Faixa de preço</option>
+          <option value="ativa">Dentro do range</option>
           <option value="range">Fora do Range</option>
-          <option value="analise">Em análise</option>
+          <option value="analise">Sem faixa cadastrada</option>
+          <option value="naoavaliada">Faixa não avaliada</option>
         </select></div>
       </div>
 
@@ -127,30 +130,37 @@
         <!-- Passo 3: Tokens -->
         <div class="wizard-panel" data-panel="2">
 
-          <!-- Autopreenchimento a partir das pools reais (DefiLlama).
-               Busca na lista já baixada; o botão atualiza pela rede. -->
-          <div class="field">
-            <label>Buscar a pool <span class="muted" style="font-weight:400">— opcional, preenche o par sozinho</span></label>
-            <div class="tk-row">
-              <input class="input" id="poolQ" placeholder="ex.: SOL-USDC, ORCA, ETH" autocomplete="off" />
-              <button class="btn btn-secondary" id="poolRefresh" type="button">Atualizar lista</button>
-            </div>
-            <div class="hint" id="poolHint"></div>
-            <div id="poolResults"></div>
-          </div>
+          <!-- A BUSCA DE POOL NO DEFILLAMA FOI REMOVIDA (3ª auditoria)
 
-          <div class="field"><label>Token base</label>
+               Havia aqui um campo "Buscar a pool" que consultava o
+               catálogo do DefiLlama e preenchia o par sozinho. Não
+               achava a maior parte das pools reais: o catálogo é
+               filtrado por TVL mínimo, e pool nova, pequena ou de
+               protocolo fora da lista simplesmente não aparecia. O
+               resultado prático era um campo que na maioria das vezes
+               respondia "nenhuma pool encontrada" para uma pool que
+               existe — e que, quando achava, REORDENAVA o par para a
+               ordem do DefiLlama, desfazendo a que o usuário quis.
+
+               O par agora é 100% manual e sai exatamente na ordem
+               digitada: o 1º token é o primeiro do par. -->
+
+          <div class="field"><label>1º token do par</label>
             <div class="tk-row">
-              <input class="input" id="tkBase" placeholder="ex.: SOL" data-atlas-asset="symbol" list="dlTokens" autocomplete="off" />
+              <input class="input" id="tkBase" placeholder="ex.: ORCA" data-atlas-asset="symbol" list="dlTokens" autocomplete="off" />
               <input class="input tk-qty" id="qtyBase" type="number" step="any" min="0" placeholder="quantidade" />
             </div>
           </div>
-          <div class="field"><label>Token par</label>
+          <div class="field"><label>2º token do par</label>
             <div class="tk-row">
-              <input class="input" id="tkQuote" placeholder="ex.: USDC" data-atlas-asset="symbol" list="dlTokens" autocomplete="off" />
+              <input class="input" id="tkQuote" placeholder="ex.: SOL" data-atlas-asset="symbol" list="dlTokens" autocomplete="off" />
               <input class="input tk-qty" id="qtyQuote" type="number" step="any" min="0" placeholder="quantidade" />
             </div>
           </div>
+          <!-- Espelho da ordem digitada. Existe para a ordem ser uma
+               decisão visível, e não algo que só aparece depois que a
+               posição está criada. -->
+          <div class="hint" id="parEspelho">O par vai ficar exatamente na ordem que você digitar.</div>
 
           <!-- Preenchida por pools.js a partir do DeFiTokens. Datalist
                nativo de propósito: zero CSS, zero dropdown para depurar,
@@ -201,26 +211,39 @@
             <input class="input" id="openedAt" type="date" />
             <div class="hint">Se você abriu a posição antes de hoje, coloque a data real — é dela que sai o APR realizado.</div>
           </div>
-          <div class="field"><label>Situação do range</label>
-            <div class="rng-opts" id="rngOpts">
-              <button type="button" class="rng-opt on" data-v="dentro">Dentro do range</button>
-              <button type="button" class="rng-opt" data-v="fora">Fora do range</button>
-              <button type="button" class="rng-opt" data-v="analise">Ainda em análise</button>
-            </div>
-          </div>
+          <!-- "Situação do range" (Dentro / Fora / Em análise) foi
+               REMOVIDO aqui. Era um veredito digitado: virava p.status,
+               p.status virava o selo do card, e o selo sobrevivia meses
+               sem ninguém recalcular. Dentro ou fora é consequência do
+               preço contra a faixa abaixo — ver DeFiStore.statusDe(). -->
           <div class="field"><label>Faixa de preço <span class="opt-tag">opcional</span></label>
             <div class="tk-row">
-              <input class="input" id="rngLow" type="number" step="any" min="0" placeholder="mínima — ex.: 0.01444382" />
+              <input class="input" id="rngLow" type="number" step="any" min="0" placeholder="mínima" />
               <input class="input" id="rngHigh" type="number" step="any" min="0" placeholder="máxima" />
             </div>
             <!-- A pool cota uma RAZÃO, não um preço em dólar. No print da
                  Orca é "SOL per ORCA". Sem saber qual token é o numerador,
-                 a faixa inverte e o selo dentro/fora sai errado. -->
+                 a faixa inverte e o selo dentro/fora sai errado.
+
+                 OS EXEMPLOS DESTE SELETOR ESTAVAM INVERTIDOS
+                 As opções diziam "quantos BASE valem 1 PAR (ex.: SOL por
+                 ORCA, 0,0144)" — a definição e o exemplo apontavam para
+                 lados opostos. Numa pool ORCA/SOL, "quantos BASE valem 1
+                 PAR" é ORCA por SOL (~73), não SOL por ORCA (~0,0136).
+                 Quem conferia pelo exemplo (que é o que se faz, porque o
+                 número da corretora se parece com ele) escolhia a opção
+                 errada, e a posição caía "fora do range" com a faixa
+                 certa cadastrada.
+
+                 O texto fixo saiu. pools.js reescreve estas opções com os
+                 tokens que a pessoa digitou E com a cotação de agora de
+                 cada lado, para ela escolher a que bate com o print. -->
             <select class="select" id="rngDenom" style="margin-top:8px">
-              <option value="base_por_quote">a faixa está em BASE por PAR — quantos BASE valem 1 PAR (ex.: SOL por ORCA, 0,0144)</option>
-              <option value="quote_por_base">a faixa está em PAR por BASE — quantos PAR valem 1 BASE (ex.: ORCA por SOL, 69,3)</option>
+              <option value="base_por_quote">quantos BASE valem 1 PAR</option>
+              <option value="quote_por_base">quantos PAR valem 1 BASE</option>
             </select>
-            <div class="hint">Copie os dois números da sua corretora. Dá para preencher depois, na página da posição.</div>
+            <div class="hint" id="rngDenomHint">Copie os dois números da sua corretora e escolha acima a opção cuja
+              ordem bate com a dela. Dá para preencher depois, na página da posição.</div>
           </div>
         </div>
         <!-- Passo 5: Objetivo -->
@@ -247,17 +270,24 @@
   <script src="../core/http.js"></script>
   <script src="../core/providers/registry.js"></script>
   <script src="../core/providers/coingecko.js"></script>
-  <script src="../core/providers/defillama.js"></script>
   <script src="../core/atlas-price.js"></script>
+  <script src="../core/providers/geckoterminal.js"></script>
+  <script src="../core/atlas-precos.js"></script>
+  <script src="../core/atlas-tokens.js"></script>
   <script src="../js/atlas-assets.js"></script>
   <script src="../wallets/walletStore.js"></script>
   <script src="../wallets/walletTypes.js"></script>
   <script src="../wallets/walletLedger.js"></script>
+  <script src="../wallets/walletCaixa.js"></script>
   <script src="../wallets/walletManager.js"></script>
   <script src="../wallets/walletMenus.js"></script>
   <script src="../wallets/walletDialog.js"></script>
   <script src="../wallets/walletSelector.js"></script>
   <script src="js/tokens.js"></script>
+  <!-- performance.js entra aqui porque esta tela passou a cotar e a
+       calcular o selo da faixa (DeFiPerf.faixa). Antes ela desenhava
+       o status sem nunca ter buscado um preço. -->
+  <script src="js/performance.js"></script>
   <script src="js/data.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/components.js"></script>

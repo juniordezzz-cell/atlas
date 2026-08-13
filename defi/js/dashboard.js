@@ -124,7 +124,12 @@
     var pools = S.activePools();
     if (!pools.length) return;
 
-    DeFiTokens.precos(DeFiPerf.simbolos(pools)).then(function (precos) {
+    DeFiTokens.precosDetalhado(DeFiPerf.simbolos(pools)).then(function (d) {
+      /* A cotação vira conhecimento do store ANTES de qualquer
+         desenho: é dela que DeFiStore.statusDe tira o veredito da
+         faixa, no card e em todo o resto. */
+      S.setPrecos(d.valores, d.fonte);
+
       var mudou = false;
 
       pools.forEach(function (p) {
@@ -138,7 +143,7 @@
           reinvestido: r.reinvestido,
           rangeLow: p.rangeLow, rangeHigh: p.rangeHigh,
           rangeDenom: p.rangeDenom || "base_por_quote"
-        }, precos);
+        }, S.precos([p.base, p.quote]));
 
         /* Só grava com preço dos DOIS lados. Meio preço produziria um
            patrimônio menor que o real e assustaria à toa. */
@@ -149,41 +154,47 @@
            partir dos fluxos de capital e das taxas. Esta função
            gravava "mercado + taxa coletada", o modal de edição gravava
            "valor − capital", e o card mostrava o que tivesse sobrado
-           por último. Uma métrica com três autores não é uma métrica. */
-        var novo = Math.round(m.valorAtual * 100) / 100;
-        var mudouValor = novo !== p.currentValue;
-        var mudouFaixa = m.temFaixa && m.dentroDaFaixa !== null &&
-                         p.status !== "analise" &&
-                         p.status !== (m.dentroDaFaixa ? "ativa" : "range");
-        if (!mudouValor && !mudouFaixa) return;
+           por último. Uma métrica com três autores não é uma métrica.
 
-        var patch = {
+           E NÃO grava mais status nem rangePos. O selo da faixa deixou
+           de ser um campo persistido: é calculado na hora de desenhar,
+           por DeFiStore.statusDe. Enquanto era gravado aqui, esta era
+           a ÚNICA tela que o corrigia — a lista de Pools mostrava o
+           valor antigo indefinidamente, e um token sem cotação (o `return`
+           logo acima) congelava a escolha manual do wizard para sempre. */
+        var novo = Math.round(m.valorAtual * 100) / 100;
+        if (novo === p.currentValue) return;
+
+        var fB = d.fonte[String(p.base).toUpperCase()];
+        var fQ = d.fonte[String(p.quote).toUpperCase()];
+        S.updatePool(p.id, {
           currentValue: novo,
-          precoFonte: "api",
+          precoFonte: (fB === "manual" || fQ === "manual") ? "manual" : "api",
           precoEm: new Date().toISOString(),
           updatedAt: U.hoje()
-        };
-        /* faixa cadastrada: o status acompanha a realidade do preço */
-        if (m.temFaixa && m.dentroDaFaixa !== null && p.status !== "analise") {
-          patch.status = m.dentroDaFaixa ? "ativa" : "range";
-          patch.rangePos = m.posFaixa;
-        }
-        S.updatePool(p.id, patch);
+        });
         mudou = true;
       });
 
-      if (!mudou) return;
-
-      /* O valor de mercado mudou → a medição do dia tem de acompanhar,
-         senão o snapshot guardaria o valor de antes da atualização e a
-         curva ficaria um dia atrasada em relação aos cards. */
-      S.recordSnapshot();
-      pintarKpis();
-
+      /* Repinta SEMPRE, mesmo sem mudança de valor: o veredito da
+         faixa depende da cotação que acabou de chegar, e antes dela os
+         cards estavam desenhados como "Faixa não avaliada". */
       var h = U.qs("#positions");
       if (h) h.innerHTML = S.activePools().map(C.poolCard).join("");
-      drawDist(U.qs("#dist-toggle .active") ? U.qs("#dist-toggle .active").dataset.d : "chain");
-      drawEvo(janelaAtual);
+
+      if (mudou) {
+        /* O valor de mercado mudou → a medição do dia tem de acompanhar,
+           senão o snapshot guardaria o valor de antes da atualização e a
+           curva ficaria um dia atrasada em relação aos cards. */
+        S.recordSnapshot();
+        pintarKpis();
+        drawDist(U.qs("#dist-toggle .active") ? U.qs("#dist-toggle .active").dataset.d : "chain");
+        drawEvo(janelaAtual);
+      }
+
+      if (d.erro) avisarMercado(d.erro);
+      else if (d.faltando && d.faltando.length) avisarSemPreco(d.faltando);
+      else if (d.vencidos && d.vencidos.length) avisarVencidos(d.vencidos);
     }).catch(function (err) {
       /* ---------------------------------------------------------
          API FALHA EM SILÊNCIO É PIOR QUE API FORA DO AR
@@ -199,10 +210,11 @@
   }
 
   /* Faixa de aviso sobre o estado da cotação. Aparece só quando há o
-     que dizer: preço velho, limite atingido, ou sem rede. */
-  function avisarMercado(err) {
+     que dizer: preço velho, limite atingido, sem rede, ou ativo que
+     nenhuma fonte reconhece. */
+  function faixaAviso() {
     var host = U.qs("#kpis");
-    if (!host) return;
+    if (!host) return null;
     var el = U.qs("#mercadoAviso");
     if (!el) {
       el = document.createElement("div");
@@ -211,10 +223,45 @@
       el.style.marginTop = "10px";
       host.parentNode.insertBefore(el, host.nextSibling);
     }
+    return el;
+  }
+
+  function avisarMercado(err) {
+    var el = faixaAviso();
+    if (!el) return;
     var msg = (err && err.message) ? err.message : "Não consegui atualizar os preços agora.";
     var quando = S.ultimaCotacao();
     el.innerHTML = "⚠ " + msg + " Os valores abaixo são os da última atualização" +
       (quando ? " (" + U.date(quando.slice(0, 10)) + ")" : "") + ", não os de agora.";
+  }
+
+  /* ------------------------------------------------------------
+     ATIVO QUE NENHUMA FONTE RECONHECE
+
+     É o caso das ações tokenizadas (CRCLX, SKHYX, SPCXB) e de
+     qualquer token novo demais para o catálogo. Antes isso não
+     produzia aviso nenhum: a pool simplesmente parava de ser
+     recalculada e continuava exibindo o selo escolhido no wizard.
+
+     A regra do ATLAS é explícita — API primeiro, e quando nenhuma
+     API reconhece, quem informa o preço é o usuário. Este aviso é o
+     convite para fazer isso, com o nome dos tokens que faltam.
+     ------------------------------------------------------------ */
+  function avisarSemPreco(faltando) {
+    var el = faixaAviso();
+    if (!el) return;
+    el.innerHTML = "⚠ Nenhuma fonte reconheceu <b>" + faltando.join("</b>, <b>") +
+      "</b>. Abra a posição e informe o preço na mão em <b>Atualizar pool</b> — " +
+      "enquanto isso, a faixa dessas posições fica sem veredito.";
+  }
+
+  function avisarVencidos(vencidos) {
+    var el = faixaAviso();
+    if (!el) return;
+    el.innerHTML = "⚠ O preço de <b>" + vencidos.join("</b>, <b>") +
+      "</b> foi informado por você há mais de " +
+      (window.AtlasPrecos ? AtlasPrecos.VALIDADE_DIAS : 7) +
+      " dias. Os números abaixo usam esse preço — vale conferir.";
   }
 
   atualizarMercado();

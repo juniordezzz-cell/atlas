@@ -44,6 +44,66 @@
   }
 
   /* ------------------------------------------------------------
+     faixa(pos, precos) — O VEREDITO DENTRO/FORA, EM UM LUGAR SÓ
+
+     Esta função existe porque o veredito estava em três lugares: o
+     card lia um campo GRAVADO (p.status, escolhido a dedo pelo
+     usuário no wizard), a página da posição recalculava aqui, e o
+     alerta do Dashboard lia o campo gravado de novo. As três telas
+     podiam discordar sobre a mesma pool, e discordavam.
+
+     Agora ninguém decide sozinho: card, lista, página da posição,
+     KPI e alerta chamam DeFiStore.statusDe(), que chama isto.
+
+     A pool cota uma RAZÃO, não um preço em dólar. No print da Orca é
+     "SOL per ORCA": quantos SOL vale 1 ORCA — ou seja, preço do ORCA
+     DIVIDIDO pelo preço do SOL.
+
+       base_por_quote  →  quantos BASE por 1 QUOTE  =  aQ / aB
+       quote_por_base  →  quantos QUOTE por 1 BASE  =  aB / aQ
+
+     Devolve `dentro: null` quando não dá para saber — sem faixa
+     cadastrada ou sem preço de algum lado. null NÃO é "fora": é a
+     ausência de veredito, e a tela mostra isso em vez de inventar.
+     ------------------------------------------------------------ */
+  function faixa(pos, precos) {
+    var vazio = {
+      low: 0, high: 0, temFaixa: false, razao: null, dentro: null,
+      posFaixa: null, precoOk: false, faltando: [], denom: "base_por_quote"
+    };
+    if (!pos) return vazio;
+    precos = precos || {};
+
+    var sB = String(pos.base || "").toUpperCase();
+    var sQ = String(pos.quote || "").toUpperCase();
+    var aB = precos[sB], aQ = precos[sQ];
+    var temB = typeof aB === "number" && isFinite(aB) && aB > 0;
+    var temQ = typeof aQ === "number" && isFinite(aQ) && aQ > 0;
+
+    var low = n(pos.rangeLow), high = n(pos.rangeHigh);
+    var temFaixa = low > 0 && high > 0 && high > low;
+    var denom = pos.rangeDenom === "quote_por_base" ? "quote_por_base" : "base_por_quote";
+
+    var razao = null;
+    if (temB && temQ) razao = denom === "quote_por_base" ? (aB / aQ) : (aQ / aB);
+
+    var dentro = null, posFaixa = null;
+    if (temFaixa && razao != null) {
+      dentro = (razao >= low && razao <= high);
+      posFaixa = (razao - low) / (high - low);
+      if (posFaixa < 0) posFaixa = 0;
+      if (posFaixa > 1) posFaixa = 1;
+    }
+
+    return {
+      low: low, high: high, temFaixa: temFaixa, denom: denom,
+      razao: razao, dentro: dentro, posFaixa: posFaixa,
+      precoOk: temB && temQ,
+      faltando: [].concat(temB ? [] : [sB]).concat(temQ ? [] : [sQ])
+    };
+  }
+
+  /* ------------------------------------------------------------
      calcular(pos, precos)
 
      pos = {
@@ -121,44 +181,14 @@
     var pnlEconomico = pnlMercado + coletadas + pendentes - reinvestido;
 
     /* ---- Faixa de preço ----
-       A pool cota uma RAZÃO, não um preço em dólar. No print da Orca é
-       "SOL per ORCA": quantos SOL vale 1 ORCA — ou seja, preço do ORCA
-       DIVIDIDO pelo preço do SOL.
-
-       O CÓDIGO FAZIA O INVERSO
-       ------------------------
-       "base_por_quote" (o rótulo da tela diz literalmente "SOL por
-       ORCA") calculava aB/aQ = preçoSOL/preçoORCA. Com SOL a US$ 142 e
-       ORCA a US$ 1,50 isso dá 94,7 — que é quantos ORCA cabem em 1
-       SOL, exatamente a razão contrária. O campo da faixa pede um
-       número como 0,01444382; a comparação era feita contra 94,7.
-
-       Resultado: TODA pool com faixa cadastrada caía fora do
-       intervalo. O selo dizia "fora da faixa", o status da posição era
-       reescrito para "range" pelo dashboard, e a consolidação da raiz
-       emitia um alerta CRÍTICO ("pool fora da faixa de preço") para
-       posições que estavam dentro. Um sinal de erro em cima de um dado
-       correto — pior que não ter sinal nenhum.
-
-         base_por_quote  →  quantos BASE por 1 QUOTE  =  aQ / aB
-         quote_por_base  →  quantos QUOTE por 1 BASE  =  aB / aQ
-       ---------------------------------------------------------------- */
-    var razao = null, dentro = null;
-    var denom = pos.rangeDenom || "base_por_quote";
-    if (temB && temQ && aB > 0 && aQ > 0) {
-      razao = denom === "quote_por_base" ? (aB / aQ) : (aQ / aB);
-    }
-    var low = n(pos.rangeLow), high = n(pos.rangeHigh);
-    var temFaixa = low > 0 && high > 0 && high > low;
-    if (temFaixa && razao != null) dentro = (razao >= low && razao <= high);
-
-    /* posição relativa dentro da faixa, 0..1 — alimenta a barra */
-    var posFaixa = null;
-    if (temFaixa && razao != null) {
-      posFaixa = (razao - low) / (high - low);
-      if (posFaixa < 0) posFaixa = 0;
-      if (posFaixa > 1) posFaixa = 1;
-    }
+       Delegada a faixa(), no topo do arquivo. A conta estava aqui
+       dentro e era invisível para quem só queria o veredito — foi
+       assim que o card acabou lendo um campo gravado em vez desta
+       conta. Agora existe uma função pública, e ela é a única. */
+    var fx = faixa(pos, precos);
+    var razao = fx.razao, dentro = fx.dentro;
+    var low = fx.low, high = fx.high;
+    var temFaixa = fx.temFaixa, posFaixa = fx.posFaixa;
 
     return {
       precoOk: temB && temQ,
@@ -214,5 +244,5 @@
     return out;
   }
 
-  window.DeFiPerf = { calcular: calcular, simbolos: simbolos };
+  window.DeFiPerf = { calcular: calcular, simbolos: simbolos, faixa: faixa };
 })();

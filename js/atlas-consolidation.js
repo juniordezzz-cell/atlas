@@ -84,12 +84,13 @@
       }, null);
     },
 
+    /* O Trade valia o último ponto de `equity` — um array decorativo,
+       zerado desde a semente. Agora vale o capital dentro das
+       operações abertas. Ver trade/assets/js/core/state.js. */
     trade: function (walletId) {
       return safe(function () {
-        var A = trade(); if (!A || !A.app || !A.app.getState) return null;
-        var d = (A.app.getState().data || {})[walletId];
-        var eq = d && d.equity;
-        var v = (eq && eq.length) ? n(eq[eq.length - 1]) : 0;
+        var A = trade(); if (!A || !A.app || !A.app.valorEmPosicoes) return null;
+        var v = n(A.app.valorEmPosicoes(walletId));
         return pacote("trade", walletId, v, v);
       }, null);
     },
@@ -173,13 +174,18 @@
   function rwaTotal()   { return totalGlobalDe("rwa"); }
 
   /* ---------- P&L por módulo (best-effort) ---------- */
+  /* Resultado do Trade = soma dos pnlUSD realizados. Era a diferença
+     entre o primeiro e o último ponto de `equity` — dois zeros, para
+     sempre, em qualquer carteira. */
   function tradePnl() {
     return safe(function () {
       var A = trade(); if (!A || !A.app || !A.app.getState) return 0;
       var st = A.app.getState(), p = 0;
       globalIds().forEach(function (id) {
         var d = st.data && st.data[id];
-        if (d && d.equity && d.equity.length > 1) p += d.equity[d.equity.length - 1] - d.equity[0];
+        (d && d.trades ? d.trades : []).forEach(function (t) {
+          if (t.status === "encerrado") p += n(t.pnlUSD);
+        });
       });
       return p;
     }, 0);
@@ -431,12 +437,27 @@
 
     /* ---- DeFi: posição fora da faixa de preço ----
        Pool fora do range para de render taxa e começa a acumular
-       perda impermanente. O módulo já marca esse estado; faltava
-       alguém avisar fora da tela do DeFi. */
+       perda impermanente.
+
+       ALERTA CRÍTICO EM CIMA DE UM CAMPO DIGITADO
+
+       A condição era `p.status === "range"` — o campo que o usuário
+       escolhia num botão do wizard ("Dentro do range" / "Fora do
+       range") e que só a tela do Dashboard do DeFi reescrevia, e só
+       quando havia cotação dos dois lados. Um token que nenhuma API
+       reconhece congelava a escolha original, e o ATLAS passava a
+       emitir alerta CRÍTICO, para sempre, sobre uma posição que
+       ninguém tinha avaliado.
+
+       Agora pergunta a quem calcula. Sem veredito (sem preço, sem
+       faixa cadastrada) não há alerta: a ausência de conclusão não é
+       uma conclusão ruim. */
     safe(function () {
-      if (!global.DeFiStore || !global.DeFiStore.activePools) return null;
-      global.DeFiStore.activePools().forEach(function (p) {
-        if (p.status === "range") {
+      var S = global.DeFiStore;
+      if (!S || !S.activePools || !S.statusDe) return null;
+      S.activePools().forEach(function (p) {
+        var st = S.statusDe(p);
+        if (st && st.status === "range") {
           add("crit", "defi", "Pool " + p.base + "/" + p.quote + " (" + p.protocol +
                               ") está fora da faixa de preço.");
         }
@@ -475,10 +496,47 @@
     return out.sort(function (a, b) { return PESO[a.level] - PESO[b.level]; });
   }
 
+  /* ============================================================
+     COTAÇÃO DO DEFI — para o alerta de faixa poder existir AQUI
+
+     O alerta "pool fora da faixa" passou a perguntar a quem calcula
+     (DeFiStore.statusDe) em vez de ler um campo gravado. Só que
+     calcular exige preço, e o Dashboard da raiz não busca preço
+     nenhum: sem isto, todo alerta de faixa desapareceria desta tela —
+     trocar um alerta errado por alerta nenhum não é conserto.
+
+     Esta função cota as pools de todas as carteiras GLOBAIS e entrega
+     ao store. Quem chama redesenha depois. Devolve null quando o DeFi
+     não está carregado na página, e nunca rejeita: falha de cotação
+     não pode derrubar o Dashboard inteiro.
+     ============================================================ */
+  function cotarDeFi() {
+    var S = global.DeFiStore;
+    if (!S || !S.setPrecos || !global.DeFiTokens || !global.DeFiPerf) {
+      return Promise.resolve(null);
+    }
+    var pools = safe(function () {
+      var out = [];
+      var byWallet = (S.all() || {}).byWallet || {};
+      globalIds().forEach(function (id) {
+        ((byWallet[id] || {}).pools || []).forEach(function (p) {
+          if (p.status !== "encerrada" && !p.closedAt) out.push(p);
+        });
+      });
+      return out;
+    }, []);
+    if (!pools.length) return Promise.resolve(null);
+
+    return global.DeFiTokens.precosDetalhado(global.DeFiPerf.simbolos(pools))
+      .then(function (d) { S.setPrecos(d.valores, d.fonte); return d; })
+      .catch(function () { return null; });
+  }
+
   global.AtlasConsolidation = {
     snapshot: snapshot,
     moduleList: moduleList,
     blockchain: blockchain,
-    alerts: alerts
+    alerts: alerts,
+    cotarDeFi: cotarDeFi
   };
 })(window);

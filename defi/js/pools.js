@@ -14,7 +14,17 @@
   function render() {
     var items = S.pools();
     items = Sr.match(items, state.q, ["base", "quote", "protocol", "chain", "category"]);
-    items = F.apply(items, { chain: state.chain, protocol: state.protocol, status: state.status });
+    items = F.apply(items, { chain: state.chain, protocol: state.protocol });
+    /* O filtro de status compara com o status CALCULADO. Passar
+       `status` ao F.apply compararia com o campo gravado, que agora
+       vale só "aberta"/"encerrada" — o filtro devolveria vazio
+       sempre. */
+    if (state.status) {
+      items = items.filter(function (p) {
+        var st = S.statusDe(p);
+        return st && st.status === state.status;
+      });
+    }
 
     var filtering = state.q || state.chain || state.protocol || state.status;
     if (!items.length) {
@@ -50,11 +60,78 @@
   render();
 
   /* ============================================================
+     COTAÇÃO — esta tela decidia sem dado
+
+     A lista de Pools nunca buscou preço. Desenhava o selo a partir
+     do campo p.status, gravado no wizard e reescrito só quando o
+     usuário passava pelo Dashboard. Uma pool podia dizer "Fora do
+     Range" aqui e "na faixa" na própria página dela, no mesmo
+     minuto, e as duas telas estariam sendo fiéis à sua fonte.
+
+     Agora a origem é a mesma das outras telas: cota, entrega ao
+     store, redesenha. Sem cotação os cards nascem "Faixa não
+     avaliada" e mudam quando o preço chega — em vez de exibirem uma
+     conclusão que ninguém calculou.
+     ============================================================ */
+  function cotar() {
+    if (!window.DeFiTokens || !window.DeFiPerf) return;
+    var abertas = S.activePools();
+    if (!abertas.length) return;
+
+    DeFiTokens.precosDetalhado(DeFiPerf.simbolos(abertas)).then(function (d) {
+      S.setPrecos(d.valores, d.fonte);
+      render();
+      avisar(d);
+    }).catch(function (err) {
+      avisar({ erro: err, faltando: [], vencidos: [] });
+    });
+  }
+
+  /* Uma faixa de aviso acima da grade, só quando há o que dizer. */
+  function avisar(d) {
+    var host = U.qs("#poolsGrid");
+    if (!host) return;
+    var el = U.qs("#poolsAviso");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "poolsAviso";
+      el.className = "hint";
+      el.style.margin = "0 0 12px";
+      host.parentNode.insertBefore(el, host);
+    }
+    if (d.erro) {
+      el.innerHTML = "⚠ " + esc(d.erro.message || "Não consegui buscar os preços agora.") +
+        " Os selos de faixa das posições sem preço ficam sem veredito.";
+    } else if (d.faltando && d.faltando.length) {
+      el.innerHTML = "⚠ Nenhuma fonte reconheceu <b>" + d.faltando.map(esc).join("</b>, <b>") +
+        "</b>. Abra a posição e informe o preço na mão em <b>Atualizar pool</b>.";
+    } else if (d.vencidos && d.vencidos.length) {
+      el.innerHTML = "⚠ Preço de <b>" + d.vencidos.map(esc).join("</b>, <b>") +
+        "</b> informado por você há mais de " +
+        (window.AtlasPrecos ? AtlasPrecos.VALIDADE_DIAS : 7) + " dias.";
+    } else {
+      el.innerHTML = "";
+      el.style.display = "none";
+      return;
+    }
+    el.style.display = "";
+  }
+
+  cotar();
+
+  /* ============================================================
      WIZARD — Nova Pool
      ============================================================ */
   var CHAINS = ["Solana", "Ethereum", "Base", "Arbitrum", "Polygon", "Optimism"];
   var PROTOS = ["Kamino", "Meteora", "Orca", "Raydium", "Aerodrome", "Aave", "Pendle"];
-  var wz = { step: 0, chain: "", proto: "", range: "dentro" };
+  /* wz.range NÃO existe mais. Havia três botões no passo 4 ("Dentro do
+     range" / "Fora do range" / "Em análise") cuja escolha era gravada
+     como p.status e virava o selo do card — um veredito digitado por
+     quem não tinha como conferir, que sobrevivia meses sem ninguém
+     recalcular. O selo agora sai de DeFiStore.statusDe(); o que o
+     usuário informa é a FAIXA (mínima, máxima, denominação), que é
+     dado, não conclusão. */
+  var wz = { step: 0, chain: "", proto: "" };
 
   /* ------------------------------------------------------------
      Objetivos da estratégia
@@ -152,7 +229,52 @@
     U.qs("#subQuote").textContent = fmtUSD(sq);
     U.qs("#capTotal").textContent = fmtUSD(sb + sq);
     U.qs("#capital").value = String(sb + sq);
+    pintarDenom(simB, simQ, pb, pq);
     return sb + sq;
+  }
+
+  /* ------------------------------------------------------------
+     A DENOMINAÇÃO DA FAIXA, COM OS TOKENS E OS NÚMEROS DE VERDADE
+
+     O seletor tinha dois rótulos fixos cujos exemplos contradiziam a
+     própria definição (ver o comentário em pools.html). Escolher
+     errado ali não dá erro nenhum: a faixa é gravada, a razão é
+     calculada na denominação oposta, e a posição aparece
+     permanentemente "fora do range" — com todos os dados corretos.
+
+     Agora cada opção mostra o par na ordem certa e, quando já há
+     preço, QUANTO dá hoje nessa denominação. A pessoa compara com o
+     número da corretora e escolhe o que se parece. Não sobra
+     ambiguidade para interpretar.
+     ------------------------------------------------------------ */
+  function pintarDenom(simB, simQ, precoB, precoQ) {
+    var sel = U.qs("#rngDenom");
+    if (!sel) return;
+    var b = simB && simB !== "—" ? simB : "BASE";
+    var q = simQ && simQ !== "—" ? simQ : "PAR";
+    var escolhido = sel.value;
+
+    /* mesma conta de DeFiPerf.faixa: base_por_quote = aQ/aB */
+    var rBQ = (precoB > 0 && precoQ > 0) ? (precoQ / precoB) : null;
+    var rQB = (precoB > 0 && precoQ > 0) ? (precoB / precoQ) : null;
+
+    function fmt(v) {
+      if (v == null) return "";
+      return " — hoje ≈ " + (v >= 1 ? v.toFixed(2) : v.toFixed(8));
+    }
+
+    sel.innerHTML =
+      '<option value="base_por_quote">' + esc(b) + ' por ' + esc(q) +
+        ' (quantos ' + esc(b) + ' valem 1 ' + esc(q) + ')' + fmt(rBQ) + '</option>' +
+      '<option value="quote_por_base">' + esc(q) + ' por ' + esc(b) +
+        ' (quantos ' + esc(q) + ' valem 1 ' + esc(b) + ')' + fmt(rQB) + '</option>';
+    sel.value = escolhido || "base_por_quote";
+
+    var hint = U.qs("#rngDenomHint");
+    if (hint && rBQ != null) {
+      hint.innerHTML = "Escolha a opção cujo número de hoje se parece com o da sua corretora — " +
+        "é o que garante que a faixa seja lida na mesma ordem em que você a copiou.";
+    }
   }
 
   function buscarPrecos() {
@@ -199,27 +321,34 @@
   }
 
   /* ============================================================
-     AUTOPREENCHIMENTO — tokens e pools
+     AUTOPREENCHIMENTO — só o TOKEN, nunca a pool
 
-     Duas fontes, dois papéis distintos:
+     Existiam duas fontes aqui, e uma delas saiu na terceira auditoria.
 
-       · DeFiTokens  → símbolo -> id do CoinGecko. É o que faz o
-         PREÇO sair certo (ETH x WETH, BTC x WBTC x cbBTC). Offline.
+       · DeFiTokens (fica)  → símbolo -> id do CoinGecko. É o que faz o
+         PREÇO sair certo (ETH x WETH, BTC x WBTC x cbBTC). Offline,
+         instantâneo, e alimenta o datalist dos dois campos de token.
 
-       · provedor "defillama" → catálogo de pools REAIS por chain e
-         protocolo. É o que faz a DESCOBERTA (Orca, Uniswap,
-         Aerodrome, PancakeSwap, Curve...). Precisa de rede uma vez;
-         depois fica em localStorage.
+       · DefiLlama (saiu)   → catálogo de pools por chain e protocolo,
+         com um campo "Buscar a pool" que preenchia o par sozinho.
 
-     O DefiLlama não devolve id do CoinGecko, por isso os dois
-     existem. Escolher a pool preenche o par; o par resolve o preço
-     pelo DeFiTokens.
+     POR QUE A BUSCA DE POOL SAIU
+
+     Ela não achava a maioria das pools reais. O catálogo é filtrado
+     por TVL mínimo (250 mil dólares) e cortado em 60 por chain — pool
+     nova, pequena ou de protocolo fora da lista nunca aparecia. Um
+     campo que responde "nenhuma pool encontrada" para uma pool que
+     existe ensina o usuário a desconfiar da ferramenta inteira.
+
+     E quando achava, era pior: escolherPool() gravava base e quote na
+     ordem do DefiLlama, DESFAZENDO a ordem que a pessoa tinha
+     digitado. ORCA/SOL virava SOL/ORCA sem aviso — e a ordem do par é
+     o que define a denominação da faixa, que por sua vez decide o selo
+     dentro/fora. Uma conveniência que reordenava dado.
+
+     O par agora é 100% manual, na ordem digitada. Ver validate() e o
+     espelho do par abaixo.
      ============================================================ */
-
-  function llama() {
-    return (window.AtlasProviders && AtlasProviders.get)
-      ? AtlasProviders.get("defillama") : null;
-  }
 
   /* datalist do autocomplete de token */
   function pintarDatalist() {
@@ -230,137 +359,37 @@
     }).join("");
   }
 
-  function pintarHintPool(msg) {
-    var h = U.qs("#poolHint");
-    if (h) h.innerHTML = msg || "";
-  }
+  /* ------------------------------------------------------------
+     ESPELHO DO PAR — a ordem digitada, visível enquanto se digita
 
-  /* Resultados da busca de pool, filtrados pela chain e protocolo já
-     escolhidos nos passos anteriores — se ele escolheu Solana + Orca,
-     não faz sentido oferecer pool de Uniswap. */
-  function pintarPools() {
-    var host = U.qs("#poolResults");
-    if (!host) return;
-    var L = llama();
-    if (!L) { host.innerHTML = ""; return; }
-
-    var q = (U.qs("#poolQ") && U.qs("#poolQ").value.trim()) || "";
-    if (!q) { host.innerHTML = ""; return; }
-
-    var achadas = L.buscar({ q: q, chain: wz.chain || null, limite: 8 });
-
-    if (!achadas.length) {
-      var total = L.cached().length;
-      host.innerHTML = '<div class="hint">' + (total
-        ? 'Nenhuma pool com "' + esc(q) + '"' + (wz.chain ? " em " + esc(wz.chain) : "") +
-          '. Digite o par na mão abaixo.'
-        : 'Lista de pools vazia — clique em "Atualizar lista" para baixar do DefiLlama.') +
-        '</div>';
+     A regra "o 1º token é o primeiro do par" só vale se a pessoa
+     puder conferir antes de criar. Sem isso a ordem seria uma
+     convenção invisível, e trocar dois campos de lugar mudaria
+     silenciosamente a denominação da faixa lá na frente.
+     ------------------------------------------------------------ */
+  function pintarEspelhoPar() {
+    var el = U.qs("#parEspelho");
+    if (!el) return;
+    var b = (U.qs("#tkBase") && U.qs("#tkBase").value.trim().toUpperCase()) || "";
+    var q = (U.qs("#tkQuote") && U.qs("#tkQuote").value.trim().toUpperCase()) || "";
+    if (!b && !q) {
+      el.innerHTML = "O par vai ficar exatamente na ordem que você digitar.";
       return;
     }
-
-    host.innerHTML = '<div class="fee-list" style="margin-top:8px">' +
-      achadas.map(function (p) {
-        return '<button type="button" class="fee-item" data-pool="' + esc(p.id) + '" style="width:100%;text-align:left;cursor:pointer">' +
-          '<span class="fee-amt" style="min-width:120px">' + esc(p.symbol) + '</span>' +
-          '<span class="fee-tag">' + esc(p.protocol) + '</span>' +
-          '<span class="fee-date">' + esc(p.chain) + '</span>' +
-          '<span class="muted" style="font-size:11px;margin-left:auto">' +
-            (p.apr ? p.apr.toFixed(1) + '% APR · ' : '') +
-            'TVL ' + U.money(p.tvl) +
-          '</span>' +
-        '</button>';
-      }).join("") + '</div>';
-
-    U.qsa("#poolResults [data-pool]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        var esc_id = b.dataset.pool;
-        var achada = null;
-        L.cached().some(function (x) { if (x.id === esc_id) { achada = x; return true; } return false; });
-        if (!achada) return;
-        escolherPool(achada);
-      });
-    });
-  }
-
-  /* Aplica a pool escolhida no formulário. Também alinha chain e
-     protocolo dos passos anteriores, senão a posição sairia gravada
-     com um protocolo que não é o da pool. */
-  function escolherPool(pool) {
-    U.qs("#tkBase").value = pool.base;
-    U.qs("#tkQuote").value = pool.quote;
-
-    wz.chain = pool.chain;
-    U.qsa("#optChain .opt").forEach(function (x) {
-      x.classList.toggle("selected", x.dataset.v === pool.chain);
-    });
-
-    /* O protocolo só é aplicado se existir na lista fixa do wizard.
-       Protocolo que o DefiLlama conhece e o ATLAS não fica registrado
-       como texto, sem forçar uma opção errada. */
-    var temNaLista = PROTOS.indexOf(pool.protocol) !== -1;
-    if (temNaLista) {
-      wz.proto = pool.protocol;
-      U.qsa("#optProto .opt").forEach(function (x) {
-        x.classList.toggle("selected", x.dataset.v === pool.protocol);
-      });
-    } else {
-      wz.proto = pool.protocol;
-    }
-
-    if (pool.apr && U.qs("#apr") && !U.qs("#apr").value) {
-      U.qs("#apr").value = pool.apr;
-    }
-
-    U.qs("#poolResults").innerHTML = "";
-    U.qs("#poolQ").value = pool.symbol;
-    pintarHintPool('Par preenchido: <b>' + esc(pool.symbol) + '</b> · ' +
-      esc(pool.protocol) + ' · ' + esc(pool.chain) +
-      (pool.meta ? ' · ' + esc(pool.meta) : '') +
-      '. O APR do DefiLlama é média recente, confira antes de usar.');
-    recalcularCapital();
+    el.innerHTML = "O par vai ficar como <b>" + esc(b || "…") + " / " + esc(q || "…") +
+      "</b> — na ordem que você digitou. Para inverter, troque o conteúdo dos dois campos.";
   }
 
   function ligarAutopreenchimento() {
     pintarDatalist();
-
-    var L = llama();
-    var q = U.qs("#poolQ");
-    if (q) {
-      q.addEventListener("input", pintarPools);
-      q.addEventListener("focus", pintarPools);
-    }
-
-    if (L) {
-      var ts = L.atualizadoEm();
-      var n = L.cached().length;
-      if (n) {
-        var dias = Math.floor((Date.now() - ts) / 86400000);
-        pintarHintPool(n + " pools em cache" +
-          (dias >= 1 ? " · atualizado há " + dias + " dia(s)" : " · atualizado hoje") + ".");
-      } else {
-        pintarHintPool('Nenhuma pool baixada ainda. "Atualizar lista" busca as principais de todas as chains no DefiLlama.');
+    ["#tkBase", "#tkQuote"].forEach(function (sel) {
+      var el = U.qs(sel);
+      if (el) {
+        el.addEventListener("input", pintarEspelhoPar);
+        el.addEventListener("change", pintarEspelhoPar);
       }
-    } else {
-      pintarHintPool("Provedor de pools não carregado nesta página.");
-    }
-
-    var btn = U.qs("#poolRefresh");
-    if (btn) btn.addEventListener("click", function () {
-      var L2 = llama();
-      if (!L2) { pintarHintPool("Provedor de pools não carregado."); return; }
-      btn.disabled = true;
-      pintarHintPool("Baixando o catálogo do DefiLlama… são milhares de pools, pode levar alguns segundos.");
-      L2.refresh().then(function (lista) {
-        btn.disabled = false;
-        pintarHintPool("Pronto: <b>" + lista.length + "</b> pools guardadas em " +
-          L2.chains().length + " chains. Digite o par acima.");
-        pintarPools();
-      }).catch(function (err) {
-        btn.disabled = false;
-        pintarHintPool(esc(err && err.message ? err.message : "Falha ao atualizar."));
-      });
     });
+    pintarEspelhoPar();
   }
 
   function swatch(kind, name) {
@@ -388,14 +417,6 @@
     });
   });
 
-  U.qsa("#rngOpts .rng-opt").forEach(function (o) {
-    o.addEventListener("click", function () {
-      U.qsa("#rngOpts .rng-opt").forEach(function (x) { x.classList.remove("on"); });
-      o.classList.add("on");
-      wz.range = o.dataset.v;
-    });
-  });
-
   function showStep(n) {
     wz.step = n;
     U.qsa(".wizard-panel").forEach(function (p) { p.classList.toggle("active", +p.dataset.panel === n); });
@@ -417,6 +438,12 @@
     if (n === 0 && !wz.chain) { U.toast("Selecione a blockchain.", "warn"); return false; }
     if (n === 1 && !wz.proto) { U.toast("Selecione o protocolo.", "warn"); return false; }
     if (n === 2 && (!U.qs("#tkBase").value.trim() || !U.qs("#tkQuote").value.trim())) { U.toast("Informe os dois tokens.", "warn"); return false; }
+    /* Com o par 100% manual não há mais um catálogo para conferir o
+       que foi digitado. O mesmo token nos dois campos produziria uma
+       razão de 1 para sempre, e a faixa nunca faria sentido. */
+    if (n === 2 && U.qs("#tkBase").value.trim().toUpperCase() === U.qs("#tkQuote").value.trim().toUpperCase()) {
+      U.toast("Os dois tokens do par não podem ser o mesmo.", "warn"); return false;
+    }
     if (n === 2 && !(num(U.qs("#qtyBase")) > 0) && !(num(U.qs("#qtyQuote")) > 0)) {
       U.toast("Informe a quantidade de pelo menos um token.", "warn"); return false;
     }
@@ -440,8 +467,11 @@
      descartar — fechar não descarta.
      ============================================================ */
   var KEY_DRAFT = "atlas.defi.poolDraft.v1";
+  /* "poolQ" saiu com a busca de pool do DefiLlama. Rascunho antigo que
+     ainda tenha a chave é ignorado: aplicarRascunho() só escreve em
+     campos que existem no DOM. */
   var CAMPOS = ["tkBase", "tkQuote", "qtyBase", "qtyQuote", "prBase", "prQuote",
-                "capital", "apr", "goal", "poolQ", "rngLow", "rngHigh",
+                "capital", "apr", "goal", "rngLow", "rngHigh",
                 "rngDenom", "openedAt", "tkCat"];
 
   function lerRascunho() {
@@ -450,7 +480,7 @@
   }
   function gravarRascunho() {
     if (!U.qs("#modalNew") || !U.qs("#modalNew").classList.contains("open")) return;
-    var d = { step: wz.step, chain: wz.chain, proto: wz.proto, range: wz.range, campos: {}, objetivos: [] };
+    var d = { step: wz.step, chain: wz.chain, proto: wz.proto, campos: {}, objetivos: [] };
     CAMPOS.forEach(function (id) { var e = U.qs("#" + id); if (e) d.campos[id] = e.value; });
     U.qsa("#objList .obj-item.on").forEach(function (n) { d.objetivos.push(n.dataset.id); });
     d.em = Date.now();
@@ -479,33 +509,31 @@
     });
     wz.chain = d.chain || "";
     wz.proto = d.proto || "";
-    wz.range = d.range || "dentro";
     U.qsa("#optChain .opt").forEach(function (x) { x.classList.toggle("selected", x.dataset.v === wz.chain); });
     U.qsa("#optProto .opt").forEach(function (x) { x.classList.toggle("selected", x.dataset.v === wz.proto); });
-    U.qsa("#rngOpts .rng-opt").forEach(function (x) { x.classList.toggle("on", x.dataset.v === wz.range); });
     pintarObjetivos();
     (d.objetivos || []).forEach(function (oid) {
       var n = U.qs('#objList .obj-item[data-id="' + oid + '"]');
       if (n) n.classList.add("on");
     });
+    pintarEspelhoPar();
     showStep(Math.max(0, Math.min(4, d.step || 0)));
   }
 
   function limparFormulario() {
     U.qsa(".opt").forEach(function (x) { x.classList.remove("selected"); });
     ["tkBase", "tkQuote", "qtyBase", "qtyQuote", "prBase", "prQuote", "capital", "apr", "goal",
-     "poolQ", "rngLow", "rngHigh"]
+     "rngLow", "rngHigh"]
       .forEach(function (id) { var e = U.qs("#" + id); if (e) e.value = ""; });
-    var pr = U.qs("#poolResults"); if (pr) pr.innerHTML = "";
     var rd = U.qs("#rngDenom"); if (rd) rd.value = "base_por_quote";
     precoBuscado = { base: null, quote: null };
-    wz = { step: 0, chain: "", proto: "", range: "dentro" };
-    U.qsa("#rngOpts .rng-opt").forEach(function (x, i) { x.classList.toggle("on", i === 0); });
+    wz = { step: 0, chain: "", proto: "" };
     var dt = U.qs("#openedAt");
     if (dt) dt.value = U.hoje();
     U.qsa("#objList .obj-item.on").forEach(function (n) { n.classList.remove("on"); });
     var st = U.qs("#capStatus"); if (st) st.textContent = "";
     U.qs("#tkCat").value = "Liquidez";
+    pintarEspelhoPar();
   }
 
   function openWizard() {
@@ -565,9 +593,28 @@
     var dtAbertura = (U.qs("#openedAt") && U.qs("#openedAt").value) || hoje;
     if (dtAbertura > hoje) dtAbertura = hoje;      // nada de data no futuro
 
-    var statusPool = wz.range === "fora" ? "range"
-                   : wz.range === "analise" ? "analise"
-                   : (apr > 0 ? "ativa" : "analise");
+    /* ------------------------------------------------------------
+       SÓ ABRE POSIÇÃO QUEM TEM CAIXA
+
+       Antes, criar uma pool de US$ 50 não perguntava nada a ninguém: o
+       dinheiro aparecia do nada dentro da posição e o patrimônio total
+       subia sozinho. Agora o capital sai do caixa da carteira ativa, e
+       carteira sem caixa não abre posição.
+
+       A mensagem diz QUANTO falta e onde depositar — "saldo
+       insuficiente" sem número obriga a pessoa a sair da tela para
+       descobrir o que fazer.
+       ------------------------------------------------------------ */
+    if (window.AtlasCaixa) {
+      var carteira = S.activeWallet();
+      var conf = AtlasCaixa.podeGastar(carteira.id, cap);
+      if (!conf.ok) {
+        U.toast("Caixa insuficiente em " + carteira.name + ": há " +
+                U.money(conf.saldo) + " e a posição pede " + U.money(cap) +
+                ". Registre um depósito em Carteiras & Movimentações.", "warn");
+        return;
+      }
+    }
 
     var p = S.addPool({
       base: U.qs("#tkBase").value.trim().toUpperCase(),
@@ -582,13 +629,15 @@
       priceQuote:num(U.qs("#prQuote")),
 
       capital: cap, currentValue: cap, profit: 0, profitPct: 0, apr: apr,
-      status: statusPool,
+      /* status guarda só o CICLO DE VIDA da posição. O selo
+         dentro/fora sai de DeFiStore.statusDe(), calculado do preço
+         contra a faixa — não é mais um campo. */
+      status: "aberta",
       /* faixa numérica, quando informada — é o que permite o selo
          dentro/fora da faixa e a barra de posição na página da pool */
       rangeLow: num(U.qs("#rngLow")),
       rangeHigh: num(U.qs("#rngHigh")),
       rangeDenom: (U.qs("#rngDenom") && U.qs("#rngDenom").value) || "base_por_quote",
-      rangePos: wz.range === "fora" ? 1 : 0.5,
       openedAt: dtAbertura, closedAt: null,
 
       /* acompanhamento */
@@ -605,6 +654,10 @@
     U.closeModal("#modalNew");
     U.toast("Pool " + p.base + "/" + p.quote + " criada.", "ok");
     rerun();
+    /* Cota de novo: a posição recém-criada traz tokens que talvez não
+       estivessem na última busca, e sem isso o card dela nasceria
+       "Faixa não avaliada" até o próximo F5. */
+    cotar();
   });
 
   ligarAutopreenchimento();

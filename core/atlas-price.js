@@ -50,14 +50,31 @@
 
   /* Escolhe o candidato certo entre os resultados da busca.
      O CoinGecko devolve muita moeda de nome parecido; o critério
-     é: símbolo idêntico primeiro, e entre esses, o mais bem
-     ranqueado (que é o de maior capitalização). */
+     é: símbolo IDÊNTICO, e entre esses, o mais bem ranqueado (que é
+     o de maior capitalização).
+
+     O FALLBACK QUE ACEITAVA QUALQUER UM
+     -----------------------------------
+     A linha era `var lista = exatos.length ? exatos : itens;` — sem
+     nenhum símbolo idêntico, valia o primeiro resultado da busca,
+     fosse ele qual fosse. Buscar um token tokenizado de ação (CRCLX,
+     SKHYX, SPCXB) devolvia alguma moeda de nome parecido, e o ATLAS
+     adotava o preço dela: US$ 0,004 no lugar de US$ 61.
+
+     O estrago não parava no preço. A razão do par saía errada, a
+     posição caía "fora da faixa", o Dashboard emitia alerta crítico,
+     e nada na tela indicava que o número era de outro ativo — a
+     definição de erro plausível.
+
+     Sem símbolo idêntico, a resposta certa é NÃO SEI. A partir daí a
+     regra do sistema assume: o usuário informa o preço na mão
+     (ver core/atlas-precos.js). */
   function melhorCandidato(itens, sym) {
     if (!itens || !itens.length) return null;
-    var exatos = itens.filter(function (c) {
+    var lista = itens.filter(function (c) {
       return normalizar(c.symbol) === sym;
     });
-    var lista = exatos.length ? exatos : itens;
+    if (!lista.length) return null;
     lista = lista.slice().sort(function (a, b) {
       var ra = a.rank == null ? 1e9 : a.rank;
       var rb = b.rank == null ? 1e9 : b.rank;

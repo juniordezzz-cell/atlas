@@ -333,9 +333,52 @@
     updatePrice: function (id, price) {
       var a = asset(id); if (!a) return;
       a.preco_atual = num(price);
+      a.precoEm = new Date().toISOString();
       logHistory(EVENTS.POSITION_UPDATED, "price", id, a.tese_id,
         "Atualização de preço de mercado.", a.ticker + " marcado a " + price + ".");
       emit(EVENTS.POSITION_UPDATED, a); persist();
+    },
+
+    /* ============================================================
+       ATUALIZAR TODOS OS PREÇOS — a regra do ATLAS também aqui
+
+       updatePrice() existia e NUNCA era chamada por tela nenhuma: o
+       preço do Hold era digitado no cadastro do ativo e envelhecia em
+       silêncio para sempre. Uma carteira de longo prazo marcada a
+       preço de meses atrás não é uma carteira de longo prazo — é uma
+       fotografia antiga com moldura de painel ao vivo.
+
+       Passa pela cadeia única (core/atlas-precos.js): preço manual do
+       usuário → id curado → busca → DEX. O que nenhuma fonte
+       reconhecer volta em `faltando`, para a tela pedir o valor —
+       nunca vira zero, nunca fica escondido.
+
+       Devolve Promise<{ atualizados, faltando, divergentes }>.
+       ============================================================ */
+    refreshPrices: function () {
+      if (!window.AtlasPrecos) {
+        return Promise.reject(new Error("Camada de preços não carregada nesta página."));
+      }
+      var comTicker = HOLD_STATE.ativos.filter(function (a) { return a.ticker; });
+      if (!comTicker.length) {
+        return Promise.resolve({ atualizados: 0, faltando: [], divergentes: [] });
+      }
+
+      return window.AtlasPrecos.deVarios(comTicker.map(function (a) { return a.ticker; }))
+        .then(function (d) {
+          var n = 0;
+          comTicker.forEach(function (a) {
+            var p = d.valores[String(a.ticker).toUpperCase()];
+            if (p == null || !(p > 0)) return;
+            if (a.preco_atual === p) return;
+            a.preco_atual = p;
+            a.precoFonte = d.fonte[String(a.ticker).toUpperCase()] || null;
+            a.precoEm = new Date().toISOString();
+            n++;
+          });
+          if (n) { persist(); emit(EVENTS.STATE_CHANGED, { evt: "prices_refreshed" }); }
+          return { atualizados: n, faltando: d.faltando, divergentes: d.divergentes };
+        });
     },
 
     /* -- Tese (delegado à entidade compartilhada AtlasTheses) -- */
@@ -434,6 +477,24 @@
       var qty = num(data.quantidade), price = num(data.preco);
       if (qty <= 0 || price <= 0) return { error: "Quantidade e preço devem ser positivos." };
 
+      /* ------------------------------------------------------------
+         SÓ COMPRA QUEM TEM CAIXA
+
+         A compra criava a posição do nada: o patrimônio subia sozinho
+         e nenhum dinheiro saía de lugar nenhum. Agora o custo sai do
+         caixa da carteira ativa, e carteira sem caixa não compra.
+         ------------------------------------------------------------ */
+      var custo = qty * price;
+      var widC = activeWalletId();
+      if (window.AtlasCaixa) {
+        var conf = window.AtlasCaixa.podeGastar(widC, custo);
+        if (!conf.ok) {
+          return { error: "Caixa insuficiente: há " + fmtMoney(conf.saldo) +
+                          " e a compra custa " + fmtMoney(custo) +
+                          ". Registre um depósito em Carteiras & Movimentações." };
+        }
+      }
+
       var pos = positionOf(a.id);
       if (pos) {
         var newQty = pos.quantidade + qty;
@@ -453,13 +514,21 @@
       emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "buy" });
       emit(EVENTS.POSITION_UPDATED, pos); persist();
       if (window.AtlasMovements) {
-        var widB = activeWalletId();
         window.AtlasMovements.record({
           date: data.data || new Date().toISOString().slice(0, 10),
-          tipo: "entrada", valorUSD: qty * price, module: "hold",
-          walletId: widB, origem: data.origem || "compra",
-          ref: "hold:" + a.id + ":" + widB,
+          tipo: "entrada", valorUSD: custo, module: "hold",
+          walletId: widC, origem: data.origem || "compra",
+          ref: "hold:" + a.id + ":" + widC,
           label: "Compra " + (a.ticker || "")
+        });
+      }
+      /* O dinheiro sai do caixa e vira posição. */
+      if (window.AtlasCaixa) {
+        window.AtlasCaixa.registrar({
+          tipo: "aporte", valorUSD: custo, walletId: widC,
+          module: "hold", refId: "hold:" + a.id,
+          data: data.data,
+          obs: "Compra de " + qty + " " + (a.ticker || "")
         });
       }
       return { position: pos };
@@ -484,14 +553,32 @@
         "Venda de " + qty + " " + a.ticker + " a " + fmtMoney(price) + ".");
       emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "sell" });
       emit(EVENTS.POSITION_UPDATED, pos); persist();
+      var widS = activeWalletId();
+      var apurado = qty * price;
       if (window.AtlasMovements) {
-        var widS = activeWalletId();
         window.AtlasMovements.record({
           date: data.data || new Date().toISOString().slice(0, 10),
-          tipo: "saida", valorUSD: qty * price, module: "hold",
+          tipo: "saida", valorUSD: apurado, module: "hold",
           walletId: widS, origem: data.origem || "venda",
           ref: "hold:" + a.id + ":" + widS,
           label: "Venda " + (a.ticker || "")
+        });
+      }
+      /* ------------------------------------------------------------
+         VENDER NÃO É TIRAR DINHEIRO DO ATLAS
+
+         A venda removia a posição e registrava uma "saída" — e o
+         dinheiro sumia do sistema. Mas vender não é sacar: o apurado
+         vira CAIXA da mesma carteira, disponível para a próxima
+         decisão. Quem quiser tirar do ATLAS registra um saque, que é
+         outro evento e reduz o patrimônio de propósito.
+         ------------------------------------------------------------ */
+      if (window.AtlasCaixa) {
+        window.AtlasCaixa.registrar({
+          tipo: "retorno", valorUSD: apurado, walletId: widS,
+          module: "hold", refId: "hold:" + a.id,
+          data: data.data,
+          obs: "Venda de " + qty + " " + (a.ticker || "")
         });
       }
       return { position: pos };

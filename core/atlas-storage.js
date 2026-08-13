@@ -59,8 +59,13 @@
      HOLD_SIDEBAR guardava o estado da sidebar colapsada do Hold, que o
      próprio router já removia a cada carga.
      atlas_defi_state_v2 é o formato pré-carteiras do DeFi; defi/js/data.js
-     já leu e converteu para a v3 quando existia. */
-  var ABANDONADAS = ["HOLD_SIDEBAR", "atlas_defi_state_v2"];
+     já leu e converteu para a v3 quando existia.
+     atlas.defi.pools.v1 era o catálogo de pools do DefiLlama, que
+     alimentava a busca removida na terceira auditoria. Sem quem leia,
+     ficaria ocupando espaço — e não era pouco: milhares de pools, na
+     casa dos megabytes, dentro de uma cota de 5 MB compartilhada com
+     todo o resto do ATLAS. */
+  var ABANDONADAS = ["HOLD_SIDEBAR", "atlas_defi_state_v2", "atlas.defi.pools.v1"];
 
   /* Chaves descartáveis: cache que o sistema refaz sozinho. Ficam fora
      do backup (ver core/atlas-backup.js). */
@@ -82,6 +87,16 @@
     "atlas.theses.v1",
     "atlas.future_studies.v1",
     "atlas.movements.v1",
+    /* ------------------------------------------------------------
+       O LIVRO DE CAIXA — a chave mais importante do backup
+
+       Todo saldo de carteira é DERIVADO deste arquivo. Deixá-lo de
+       fora significaria restaurar um backup com as posições intactas
+       e o caixa em zero — e, como o caixa é consequência do
+       histórico, não haveria como reconstruí-lo a partir de mais
+       nada. Ver wallets/walletCaixa.js.
+       ------------------------------------------------------------ */
+    "atlas.caixa.v1",
     "atlas.intro.seen.v1",
     "atlas.onboarding.v1",
     "atlas.notifications.v1",
@@ -97,8 +112,17 @@
     "atlas.defi.state.v3",
     "atlas.defi.wallet.v1",
     "atlas.defi.tokens.v1",
-    "atlas.defi.pools.v1",
     "atlas.rwa.state.v3",
+    /* ------------------------------------------------------------
+       PREÇOS INFORMADOS À MÃO — isto é DADO DO USUÁRIO, não cache
+
+       Quando nenhuma API reconhece um ativo, o preço passa a ser o que
+       o usuário digitou (ver core/atlas-precos.js). Fora desta lista,
+       um backup/restauração levaria as posições e deixaria os preços
+       para trás — e as posições voltariam sem valor de mercado e sem
+       veredito de faixa, sem nada explicando o porquê.
+       ------------------------------------------------------------ */
+    "atlas.precos.manual.v1",
     /* caches (descartáveis) */
     "atlas.http.cache.v1",
     "atlas.assets.cache.v1",

@@ -137,21 +137,52 @@
     },
 
     /* ---------- Status ---------- */
-    status: function (st) {
+    status: function (st, ctx) {
       var m = {
+        /* Rótulos genéricos: este mapa também veste staking e lending,
+           que têm "ativa"/"range" próprios. Trocar "Ativa" por "Dentro
+           do range" aqui carimbaria uma posição de staking com um
+           vocabulário de pool de liquidez. */
         ativa:     { label: "Ativa",         cls: "status-ativa",     chip: "chip-ativa" },
         range:     { label: "Fora do Range", cls: "status-range",     chip: "chip-range" },
         encerrada: { label: "Encerrada",     cls: "status-encerrada", chip: "chip-encerrada" },
-        analise:   { label: "Em análise",    cls: "status-analise",   chip: "chip-analise" }
+        analise:   { label: "Em análise",    cls: "status-analise",   chip: "chip-analise" },
+        /* ------------------------------------------------------------
+           O ESTADO QUE FALTAVA
+
+           Sem preço de algum dos lados, o sistema não sabe se a
+           posição está dentro ou fora — e antes ele dizia "Fora do
+           Range" mesmo assim, porque exibia a última escolha manual
+           gravada. Erro plausível: o selo mais alarmante da tela,
+           aceso sem nenhuma conta por trás.
+
+           "Faixa não avaliada" é a verdade, e vem com o que falta
+           para virar veredito (o preço do token). Cinza, não
+           vermelho: é ausência de informação, não alerta.
+           ------------------------------------------------------------ */
+        naoavaliada: { label: "Faixa não avaliada", cls: "status-encerrada", chip: "chip-encerrada" }
       };
-      return m[st] || m.ativa;
+      var base = m[st] || m.naoavaliada;
+
+      /* Numa POOL o selo fala de faixa de preço, e o vocabulário
+         genérico fica vago: "Ativa" ao lado de "Fora do Range" sugere
+         que o contrário de fora do range é a posição existir. Em
+         contexto de pool os rótulos são explícitos. */
+      var POOL = {
+        ativa:   "Dentro do range",
+        analise: "Sem faixa cadastrada"
+      };
+      if (ctx === "pool" && POOL[st]) {
+        return { label: POOL[st], cls: base.cls, chip: base.chip };
+      }
+      return base;
     },
-    statusDot: function (st) {
-      var m = U.status(st);
+    statusDot: function (st, ctx) {
+      var m = U.status(st, ctx);
       return '<span class="status ' + m.cls + '"><span class="pulse"></span>' + m.label + '</span>';
     },
-    statusChip: function (st) {
-      var m = U.status(st);
+    statusChip: function (st, ctx) {
+      var m = U.status(st, ctx);
       return '<span class="status-chip ' + m.chip + '">' + m.label + '</span>';
     },
     delta: function (pct) {

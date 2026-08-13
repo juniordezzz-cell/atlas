@@ -53,20 +53,44 @@
     U.modal({ eyebrow: "Novo registro", title: "Adicionar ativo", body: body,
       footer: [U.button("Cancelar", { variant: "ghost", onClick: U.closeModal }), U.el("div", { class: "spacer" }), save] });
 
-    // Autocomplete de ativos (CoinGecko) — preenche Nome + Ticker juntos
+    // Autocomplete de ativos — preenche Nome + Ticker juntos
     if (window.AtlasAssets) {
       var fillBoth = function (coin) {
         nome.value = coin.name;
         ticker.value = coin.symbol;
-        // preço + market cap em tempo real via provedor (CoinGecko)
-        if (coin.id && AtlasAssets.priceFull) {
+
+        /* ------------------------------------------------------------
+           O PREÇO VEM PELA CADEIA, NÃO DIRETO DO PROVEDOR
+
+           Chamava AtlasAssets.priceFull(), que fala com a CoinGecko e
+           mais ninguém. Consequências: um preço que o usuário já tinha
+           informado à mão era ignorado, e um ativo que a CoinGecko não
+           lista voltava vazio sem explicação — mesmo quando existe uma
+           pool com liquidez cotando ele.
+
+           AtlasPrecos aplica a ordem do sistema: manual do usuário →
+           id curado → busca → DEX. O market cap continua vindo do
+           provedor, porque só ele tem esse número.
+           ------------------------------------------------------------ */
+        var pedir = window.AtlasPrecos
+          ? AtlasPrecos.de(coin.symbol)
+          : (AtlasAssets.priceFull ? AtlasAssets.priceFull(coin.id) : Promise.resolve(null));
+
+        pedir.then(function (r) {
+          if (r && r.usd != null && !preco.value) preco.value = r.usd;
+          if (!r) {
+            U.toast("Sem preço para " + coin.symbol,
+                    "Nenhuma fonte reconheceu este ativo. Informe o preço na mão — " +
+                    "ele passa a valer até você mandar atualizar.", "warning");
+          }
+        }).catch(function (err) {
+          U.toast("Preço indisponível", (err && err.message) || "Não foi possível buscar o preço agora. Preencha manualmente.", "warning");
+        });
+
+        if (coin.id && mcap && !mcap.value && AtlasAssets.priceFull) {
           AtlasAssets.priceFull(coin.id).then(function (info) {
-            if (!info) return;
-            if (info.usd != null && !preco.value) preco.value = info.usd;
-            if (info.marketCap != null && mcap && !mcap.value) mcap.value = info.marketCap;
-          }).catch(function (err) {
-            U.toast("Preço indisponível", (err && err.message) || "Não foi possível buscar o preço agora. Preencha manualmente.", "warning");
-          });
+            if (info && info.marketCap != null && !mcap.value) mcap.value = info.marketCap;
+          }).catch(function () { /* market cap é acessório */ });
         }
       };
       AtlasAssets.attach(nome, { value: "name", onSelect: fillBoth });
