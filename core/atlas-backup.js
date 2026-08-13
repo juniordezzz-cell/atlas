@@ -119,7 +119,14 @@
     "atlas.settings.v1":       "Configurações",
     "atlas.wallets.v2":        "Carteiras",
     "atlas.theses.v1":         "Teses",
-    "atlas.movements.v1":      "Movimentações",
+    /* O livro de caixa é a chave mais importante do backup: todo saldo
+       de carteira é derivado dele, e não há como reconstruí-lo a partir
+       de mais nada. Ver wallets/walletCaixa.js. */
+    "atlas.caixa.v1":          "Caixa e movimentações",
+    "atlas.precos.manual.v1":  "Preços informados por você",
+    /* aposentada: atlas-movements virou uma vista sobre o caixa e não
+       grava mais nada. Só aparece em arquivos antigos. */
+    "atlas.movements.v1":      "Movimentações (nome antigo)",
     "atlas.future_studies.v1": "Estudos",
     "atlas.intro.seen.v1":     "Apresentação já vista",
     "atlas.hold.state.v2":     "Hold",

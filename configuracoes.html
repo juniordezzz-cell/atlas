@@ -258,6 +258,32 @@
             <div class="set-desc" id="bkList">—</div>
           </div>
         </div>
+
+        <!-- ============================================================
+             COMEÇAR DO ZERO
+
+             Fica no cartão de Dados, logo ABAIXO de exportar e importar,
+             e não no de Sistema — onde mora o "restaurar padrões", que
+             mexe só em preferências. Quem chega aqui já passou os olhos
+             pelo botão de backup, que é o que se quer que aconteça.
+
+             É a única ação do ATLAS que destrói dado do usuário sem
+             volta, então ela exige digitar a palavra. Um clique com
+             confirmação de "tem certeza?" é fácil demais para o que ela
+             faz — e não existe desfazer.
+             ============================================================ -->
+        <div class="set-row set-row--perigo">
+          <div class="set-row-txt">
+            <div class="set-label" data-i18n="Começar do zero">Começar do zero</div>
+            <div class="set-desc" id="zeroDesc">Apaga <b>todos</b> os seus dados deste navegador: carteiras, caixa, posições, teses, histórico e preços informados à mão. Não há como desfazer — exporte um backup antes.</div>
+          </div>
+          <div class="set-row-ctrl set-foot">
+            <button type="button" id="btnZerar" class="btn-ghost danger">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+              <span data-i18n="Apagar tudo">Apagar tudo</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- ===== Sistema ===== -->

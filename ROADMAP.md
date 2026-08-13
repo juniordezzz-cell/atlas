@@ -171,13 +171,21 @@ Coisas que **não** são para "consertar" sem antes ler o porquê:
 
 ---
 
-## Dívida conhecida, ainda em aberto
+## Dados anteriores à terceira auditoria
 
-Levantada na terceira auditoria e **não** resolvida nela:
+O dono do produto optou por **apagar e recomeçar** em vez de conviver
+com dado anterior ao livro de caixa. Para isso existe **Configurações →
+Dados e Backup → Começar do zero**: apaga tudo o que o backup enxerga,
+com a lista do que vai sumir na frente e o convite a exportar antes.
 
-- **Posições anteriores ao caixa** precisam da *abertura de saldo*
-  (`wallets/walletCaixaMigracao.js`), oferecida na tela de Carteiras.
-  Enquanto ela não for aceita, uma posição criada antes do livro
-  devolve dinheiro ao fechar sem nunca ter debitado.
-- **Trades anteriores não têm `sizeUSD`.** Fecham devolvendo zero ao
-  caixa. É honesto (o sistema não sabe quanto foi) e inútil.
+Duas coisas ficam de pé mesmo assim, e não são dívida:
+
+- **`wallets/walletCaixaMigracao.js` continua no lugar.** Ele não é só
+  para quem tinha posições antigas hoje: importar um backup gerado
+  ANTES desta auditoria recria exatamente aquele estado — posições sem
+  nenhum evento de caixa que as explique. A abertura de saldo é a
+  resposta para isso, e some sozinha quando não há o que migrar.
+- **`sizeUSD` nos trades.** Trade aberto sem capital em dólar fecha
+  devolvendo zero ao caixa. É honesto (o sistema não sabe quanto foi) e
+  o formulário agora exige o campo, então só alcança operação criada
+  antes da auditoria — ou seja, nenhuma, neste caso.

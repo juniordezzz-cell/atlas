@@ -168,6 +168,73 @@
       });
     }
 
+    /* ============================================================
+       COMEÇAR DO ZERO — a única ação que destrói dado sem volta
+
+       O ATLAS tinha "restaurar padrões" (que mexe só em preferências) e
+       "limpar arquivos offline" (que não toca em dado nenhum). Não
+       tinha como apagar os DADOS — quem quisesse recomeçar precisava
+       abrir o painel do navegador e limpar o armazenamento na mão, o
+       que também derruba a sessão e as preferências, e é fácil errar
+       de site.
+
+       A lista do que vai sumir é lida de AtlasBackup.scan(), a MESMA
+       varredura que o backup usa. Assim o diálogo não pode prometer
+       apagar uma coisa e apagar outra: se uma chave nova entrar no
+       sistema, ela aparece nos dois lugares ao mesmo tempo.
+
+       O diálogo mostra quantos itens e quanto ocupam, e oferece o
+       backup antes — porque a hora de lembrar do backup é esta, não
+       depois.
+       ============================================================ */
+    var zerarBtn = document.getElementById("btnZerar");
+    if (zerarBtn && window.AtlasBackup) {
+      zerarBtn.addEventListener("click", function () {
+        var itens = AtlasBackup.scan().filter(function (i) { return i.group === "dados"; });
+        var bytes = itens.reduce(function (a, i) { return a + i.bytes; }, 0);
+
+        if (!itens.length) {
+          avisar({
+            title: t("Não há dados para apagar"),
+            message: t("Este navegador já está limpo — o ATLAS vai começar do zero na próxima tela que você abrir.")
+          });
+          return;
+        }
+
+        var nomes = itens.slice(0, 8).map(function (i) { return i.label || i.key; });
+        if (itens.length > nomes.length) nomes.push("e mais " + (itens.length - nomes.length));
+
+        confirmar({
+          title: t("Apagar todos os seus dados deste navegador?"),
+          message: t("Vão embora: ") + nomes.join(", ") + ". " +
+                   t("São ") + itens.length + t(" itens, ") + AtlasBackup.human(bytes) + ". " +
+                   t("Não há como desfazer. Se você não exportou um backup ainda, cancele e exporte primeiro — o botão está logo acima."),
+          confirmLabel: t("Apagar tudo"),
+          danger: true
+        }).then(function (ok) {
+          if (!ok) return;
+
+          /* Apaga TUDO que a varredura conhece, inclusive os caches:
+             deixar cache de preço para trás faria a tela recém-zerada
+             abrir com cotação de uma carteira que não existe mais. */
+          var todas = AtlasBackup.scan();
+          todas.forEach(function (i) {
+            try { localStorage.removeItem(i.key); } catch (e) {}
+          });
+          /* A marca da abertura de saldo também sai: sem ela, um
+             sistema zerado ofereceria "registrar abertura" para
+             posições que não existem mais. */
+          try { localStorage.removeItem("atlas.caixa.migrado.v1"); } catch (e) {}
+
+          toast(t("Dados apagados"));
+          /* Recarrega em vez de repintar: os stores dos módulos guardam
+             estado em memória, e uma tela que continua exibindo o que
+             acabou de ser apagado é a pior confirmação possível. */
+          setTimeout(function () { location.replace("dashboard.html"); }, 700);
+        });
+      });
+    }
+
     /* Refazer os primeiros passos. Não usa reset() + reload: abre o
        fluxo aqui mesmo, com os valores atuais já preenchidos, e ao
        concluir sincroniza os controles desta página — a moeda é uma das
