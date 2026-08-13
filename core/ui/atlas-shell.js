@@ -123,6 +123,12 @@
       icon: '<path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/>' },
     { id: "rwa", label: "RWA", href: "RWA/index.html",
       icon: '<path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>' },
+    /* Carteiras & Movimentações entra ABAIXO de RWA e ACIMA do
+       Academy: os cinco primeiros itens são onde o dinheiro está, e
+       esta tela é a que responde onde ele está no total. Academy e
+       Relatórios são leitura, não operação. */
+    { id: "carteiras", label: "Carteiras", href: "carteiras.html",
+      icon: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><path d="M3 8.5h15"/><circle cx="17" cy="13.5" r="1.4"/>' },
     { id: "academy", label: "Academy", href: "academy/index.html",
       icon: '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"/>' },
     { id: "relatorios", label: "Relatórios", href: "relatorios.html",
