@@ -157,6 +157,13 @@ Coisas que **não** são para "consertar" sem antes ler o porquê:
   Ativo cadastrado antes da terceira auditoria não tem quantidade, e o
   sistema não tem como adivinhá-la — preencher "1" faria os totais
   baterem e todo o resto mentir.
+- **Um livro-razão só.** `wallets/walletCaixa.js` é a fonte da verdade
+  do dinheiro; `js/atlas-movements.js` é uma VISTA sobre ele, no
+  vocabulário dos Relatórios (entrada/saída/resultado) mais o
+  agrupamento por período. Ele não grava nada e não deriva das
+  posições — se voltar a ter armazenamento próprio, volta a divergir.
+  A invariante que prova a unificação: o `net` do relatório de uma
+  carteira é igual ao saldo de caixa dela.
 - **Preço manual vence a API.** Ele só existe quando nenhuma fonte
   reconheceu o ativo, e uma API que volta a responder com o ativo
   ERRADO (símbolo colidindo) é pior que não responder. Envelhece e
@@ -168,11 +175,6 @@ Coisas que **não** são para "consertar" sem antes ler o porquê:
 
 Levantada na terceira auditoria e **não** resolvida nela:
 
-- **Dois livros-razão convivendo.** `wallets/walletCaixa.js` é a fonte
-  da verdade do dinheiro; `js/atlas-movements.js` continua derivando
-  movimentos das posições para os Relatórios. São duas respostas para
-  "que movimentos existem". O caminho é os Relatórios lerem o caixa, e
-  o `atlas-movements` virar só a camada de apresentação por período.
 - **Posições anteriores ao caixa** precisam da *abertura de saldo*
   (`wallets/walletCaixaMigracao.js`), oferecida na tela de Carteiras.
   Enquanto ela não for aceita, uma posição criada antes do livro

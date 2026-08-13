@@ -407,13 +407,6 @@
       Store.normalizar(a);
       s.assets.push(a); _persist();
       var widA = _currentId();
-      if (window.AtlasMovements && a.entry) {
-        window.AtlasMovements.record({
-          date: a.date, tipo: "entrada", valorUSD: a.entry, module: "rwa",
-          walletId: widA, origem: "compra", ref: "rwa:" + a.id + ":" + widA,
-          label: "Ativo " + (a.ticker || a.name || "RWA")
-        });
-      }
       /* O custo sai do caixa da carteira: a posição não nasce do nada. */
       if (window.AtlasCaixa && a.entry > 0) {
         window.AtlasCaixa.registrar({
@@ -441,14 +434,6 @@
         if (s.assets[i].id === id) {
           var sold = s.assets[i];
           var widR = _currentId();
-          if (window.AtlasMovements && sold.current) {
-            window.AtlasMovements.record({
-              date: new Date().toISOString().slice(0, 10), tipo: "saida",
-              valorUSD: sold.current, module: "rwa", walletId: widR, origem: "venda",
-              ref: "rwa:" + id + ":" + widR,
-              label: "Venda " + (sold.ticker || sold.name || "RWA")
-            });
-          }
           /* Vender devolve o valor ao CAIXA da carteira — não retira
              do ATLAS. Sair do sistema é um saque, que é outro evento. */
           if (window.AtlasCaixa && sold.current > 0) {

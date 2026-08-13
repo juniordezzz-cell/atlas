@@ -65,7 +65,13 @@
      ficaria ocupando espaço — e não era pouco: milhares de pools, na
      casa dos megabytes, dentro de uma cota de 5 MB compartilhada com
      todo o resto do ATLAS. */
-  var ABANDONADAS = ["HOLD_SIDEBAR", "atlas_defi_state_v2", "atlas.defi.pools.v1"];
+  var ABANDONADAS = ["HOLD_SIDEBAR", "atlas_defi_state_v2", "atlas.defi.pools.v1",
+                     /* atlas.movements.v1 era o armazenamento do SEGUNDO
+                        livro-razão. js/atlas-movements.js virou uma vista
+                        sobre o livro de caixa e não grava mais nada — o que
+                        estiver lá é cópia do que o caixa já sabe, e mantê-lo
+                        seria manter a divergência de pé. */
+                     "atlas.movements.v1"];
 
   /* Chaves descartáveis: cache que o sistema refaz sozinho. Ficam fora
      do backup (ver core/atlas-backup.js). */
@@ -86,7 +92,6 @@
     "atlas.wallets.v2",
     "atlas.theses.v1",
     "atlas.future_studies.v1",
-    "atlas.movements.v1",
     /* ------------------------------------------------------------
        O LIVRO DE CAIXA — a chave mais importante do backup
 

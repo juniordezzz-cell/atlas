@@ -513,16 +513,11 @@
         "Compra de " + qty + " " + a.ticker + " a " + fmtMoney(price) + ".");
       emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "buy" });
       emit(EVENTS.POSITION_UPDATED, pos); persist();
-      if (window.AtlasMovements) {
-        window.AtlasMovements.record({
-          date: data.data || new Date().toISOString().slice(0, 10),
-          tipo: "entrada", valorUSD: custo, module: "hold",
-          walletId: widC, origem: data.origem || "compra",
-          ref: "hold:" + a.id + ":" + widC,
-          label: "Compra " + (a.ticker || "")
-        });
-      }
-      /* O dinheiro sai do caixa e vira posição. */
+      /* O dinheiro sai do caixa e vira posição. Era gravado TAMBÉM em
+         AtlasMovements.record() — a mesma compra virava um movimento
+         gravado ali, um movimento derivado das posições e um evento de
+         caixa aqui. O AtlasMovements passou a ser uma vista do caixa,
+         então este é o único registro. */
       if (window.AtlasCaixa) {
         window.AtlasCaixa.registrar({
           tipo: "aporte", valorUSD: custo, walletId: widC,
@@ -555,15 +550,6 @@
       emit(EVENTS.POSITION_UPDATED, pos); persist();
       var widS = activeWalletId();
       var apurado = qty * price;
-      if (window.AtlasMovements) {
-        window.AtlasMovements.record({
-          date: data.data || new Date().toISOString().slice(0, 10),
-          tipo: "saida", valorUSD: apurado, module: "hold",
-          walletId: widS, origem: data.origem || "venda",
-          ref: "hold:" + a.id + ":" + widS,
-          label: "Venda " + (a.ticker || "")
-        });
-      }
       /* ------------------------------------------------------------
          VENDER NÃO É TIRAR DINHEIRO DO ATLAS
 

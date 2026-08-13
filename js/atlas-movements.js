@@ -1,58 +1,74 @@
 /* ============================================================
-   ATLAS · js/atlas-movements.js  (Etapa 3 — 3A)
+   ATLAS · js/atlas-movements.js
    ------------------------------------------------------------
-   LIVRO-RAZÃO ÚNICO DE MOVIMENTOS DATADOS — o coração dos
-   Relatórios. Todo relatório é POR CARTEIRA: escolhe-se um
-   walletId (global OU local) e a query devolve só os movimentos
-   daquela carteira, no período pedido.
+   APRESENTAÇÃO DOS MOVIMENTOS — não mais uma segunda fonte deles.
 
-   Formato canônico de um movimento
-   --------------------------------
-     {
-       id,                       // único
-       date,     "YYYY-MM-DD"    // normalizado
-       tipo,     "entrada"|"saida"|"resultado"
-       valorUSD, Number          // sempre em USD (regra do sistema)
-       module,   "hold"|"trade"|"defi"|"rwa"|null
-       walletId,                 // a que carteira pertence
-       origem,   "manual"|"derivado"|...
-       label                     // rótulo humano
-     }
+   O QUE ESTE ARQUIVO ERA, E POR QUE MUDOU
+   ---------------------------------------
+   Ele era um SEGUNDO livro-razão. Tinha armazenamento próprio
+   (atlas.movements.v1), uma função record() que os módulos chamavam, e
+   quatro adaptadores que DERIVAVAM movimentos lendo as posições de
+   cada módulo — pool.events, carteira do Hold, trades encerrados,
+   ativos do RWA.
 
-   Duas fontes que convivem (design híbrido)
-   -----------------------------------------
-     1. GRAVADOS  — record()/recordMany() persistem em localStorage
-        (atlas.movements.v1). Fonte da verdade, precisa, POR CARTEIRA.
-        É o que os módulos passam a alimentar (3C).
-     2. DERIVADOS — adaptadores extraem movimentos do que cada módulo
-        já guarda hoje (backfill best-effort). Isolados aqui → o dia
-        que virar Firebase, troca-se só esta camada.
+   Fazia sentido enquanto o ATLAS não tinha um livro de dinheiro. Na
+   terceira auditoria ele passou a ter: wallets/walletCaixa.js, onde o
+   saldo de cada carteira é a soma de eventos e nada é gravado duas
+   vezes.
 
-   API
-   ---
-     AtlasMovements.record(mv) / recordMany(arr) / remove(id) / clearRecorded()
-     AtlasMovements.registerAdapter(fn)         // fn(opts) -> [mv...]
-     AtlasMovements.list(opts)                  // {walletId, from, to, module, tipo, includeDerived}
-     AtlasMovements.summarize(list)             // {entrada, saida, resultado, net, count}
-     AtlasMovements.groupByPeriod(list, period) // "month"|"quarter"|"semester"|"year"
-     AtlasMovements.compareBuckets(buckets)     // anota delta vs bucket anterior
-     AtlasMovements.walletsWithActivity()       // [walletId...]
+   A partir daí havia DUAS respostas para "que movimentos existem" — e
+   elas discordavam por construção. O Hold gravava aqui via record() E
+   registrava um aporte no caixa; a mesma compra aparecia como um
+   movimento gravado, um movimento derivado e um evento de caixa. Somar
+   errado era questão de tempo, e a Regra de Ouro do projeto é explícita:
+   uma fonte única por conceito.
+
+   O QUE ELE É AGORA
+   -----------------
+   Uma VISTA sobre o livro de caixa, no vocabulário que os Relatórios
+   já falam (entrada / saída / resultado), mais as funções de
+   agrupamento por período que só existem para apresentar. Zero
+   armazenamento próprio, zero adaptador, zero record().
+
+   COMO O CAIXA VIRA ENTRADA E SAÍDA
+   ---------------------------------
+   O sinal é o do CAIXA da carteira que está sendo olhada:
+
+     deposito                  → entrada
+     retorno de posição        → entrada
+     transferência recebida    → entrada
+     saque                     → saída
+     aporte em posição         → saída
+     transferência enviada     → saída
+     swap                      → fica fora: não move dinheiro, só troca
+                                 a forma dele
+
+   E O "RESULTADO"
+   ---------------
+   Nenhum evento de caixa é lucro — o lucro está EMBUTIDO no retorno,
+   que devolve capital mais resultado num valor só. Mas ele é derivável
+   sem ambiguidade: para cada posição, resultado = tudo que voltou
+   menos tudo que saiu (Σ retorno − Σ aporte, pelo refId). Uma linha
+   por posição que já devolveu algo, datada no último retorno.
+
+   Isso é derivação de UMA fonte, não uma segunda fonte: some o caixa,
+   e não sobra nada aqui para discordar dele.
+
+   API (inalterada para quem consome)
+   ----------------------------------
+     AtlasMovements.list(opts)                  {walletId, from, to, module, tipo}
+     AtlasMovements.summarize(list)
+     AtlasMovements.groupByPeriod(list, period) "month"|"quarter"|"semester"|"year"
+     AtlasMovements.compareBuckets(buckets)
+     AtlasMovements.walletsWithActivity()
    ============================================================ */
 (function (global) {
   "use strict";
   if (global.AtlasMovements) return;
 
-  var LS_KEY = "atlas.movements.v1";
-  var TIPOS = { entrada: 1, saida: 1, resultado: 1 };
-  var adapters = [];
-
-  /* ---------- utilidades ---------- */
-
   function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
-
   function safe(fn, fb) { try { return fn(); } catch (e) { return fb; } }
 
-  // Normaliza date (epoch ms, Date, ISO ou "YYYY-MM-DD") -> "YYYY-MM-DD"
   function toDay(v) {
     if (v == null || v === "") return null;
     var d;
@@ -60,87 +76,112 @@
     else if (typeof v === "number") d = new Date(v);
     else {
       var s = String(v);
-      // já é YYYY-MM-DD
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
       d = new Date(s);
     }
     if (isNaN(d.getTime())) return null;
-    var mm = String(d.getMonth() + 1).padStart(2, "0");
-    var dd = String(d.getDate()).padStart(2, "0");
-    return d.getFullYear() + "-" + mm + "-" + dd;
+    var mm = String(d.getMonth() + 1), dd = String(d.getDate());
+    return d.getFullYear() + "-" + (mm.length < 2 ? "0" + mm : mm) + "-" + (dd.length < 2 ? "0" + dd : dd);
   }
 
-  function genId() {
-    return "mv_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  function caixa() { return global.AtlasCaixa || null; }
+
+  var NOME_MODULO = { hold: "Hold", trade: "Trade", defi: "DeFi", rwa: "RWA" };
+
+  function nomeCarteira(id) {
+    return safe(function () {
+      var w = global.AtlasWallets && global.AtlasWallets.get ? global.AtlasWallets.get(id) : null;
+      return w ? w.name : id;
+    }, id);
   }
 
-  function normalize(mv) {
-    if (!mv) return null;
-    var day = toDay(mv.date != null ? mv.date : (mv.data != null ? mv.data : mv.ts));
-    var tipo = String(mv.tipo || mv.type || "").toLowerCase();
-    if (tipo === "in") tipo = "entrada";
-    if (tipo === "out") tipo = "saida";
-    if (!TIPOS[tipo]) return null;
-    var valor = num(mv.valorUSD != null ? mv.valorUSD : (mv.amount != null ? mv.amount : mv.value));
-    if (!day || !valor) return null;               // sem data ou sem valor → não é movimento útil
+  /* ------------------------------------------------------------
+     Um evento de caixa vira (ou não) um movimento de relatório.
 
-    /* ------------------------------------------------------------
-       O SINAL DO "RESULTADO" NÃO PODE SER DESCARTADO
+     `walletId` do filtro importa: numa transferência, a MESMA linha é
+     saída para uma carteira e entrada para a outra. Sem esse cuidado,
+     o relatório da carteira que RECEBEU mostraria uma saída.
+     ------------------------------------------------------------ */
+  function comoMovimento(ev, walletIdFiltro) {
+    var CX = caixa();
+    var def = CX && CX.TIPOS ? CX.TIPOS[ev.tipo] : null;
+    if (!def || !def.sinal) return null;          // swap não é fluxo
 
-       Math.abs() estava aplicado a TODOS os tipos. Para entrada e
-       saída faz sentido: o sinal está no tipo, e uma entrada de −100
-       seria só um jeito confuso de escrever uma saída.
+    var sinal = def.sinal;
+    var carteira = ev.walletId;
+    if (def.contra && walletIdFiltro && ev.contraWalletId === walletIdFiltro) {
+      sinal = -sinal;
+      carteira = ev.contraWalletId;
+    }
 
-       Para "resultado" era destrutivo: um prejuízo de US$ 500 entrava
-       no livro-razão como US$ 500 de LUCRO. Nos Relatórios, uma
-       carteira que perdeu dinheiro aparecia com resultado positivo, e
-       quanto pior o prejuízo, melhor o número. O sinal aqui é a
-       informação inteira.
-       ------------------------------------------------------------ */
+    var rotulo = CX.rotulo(ev.tipo);
+    if (ev.tipo === "transferencia") {
+      rotulo = sinal > 0
+        ? "Transferência de " + nomeCarteira(ev.walletId)
+        : "Transferência para " + nomeCarteira(ev.contraWalletId);
+    } else if (ev.obs) {
+      rotulo = ev.obs;
+    }
+
     return {
-      id: mv.id || genId(),
-      date: day,
-      tipo: tipo,
-      valorUSD: tipo === "resultado" ? valor : Math.abs(valor),
-      module: mv.module || null,
-      walletId: mv.walletId || (global.AtlasWallets ? AtlasWallets.activeGlobalId() : "principal"),
-      origem: mv.origem || "manual",
-      label: mv.label || "",
-      ref: mv.ref || null
+      id: "cx:" + ev.id,
+      date: ev.data,
+      tipo: sinal > 0 ? "entrada" : "saida",
+      valorUSD: ev.valorUSD,
+      module: ev.module || null,
+      walletId: carteira,
+      origem: "caixa",
+      label: rotulo,
+      ref: ev.refId || null
     };
   }
 
-  /* ---------- persistência dos GRAVADOS ---------- */
+  /* ------------------------------------------------------------
+     RESULTADO POR POSIÇÃO — derivado, não gravado
 
-  function readStore() {
-    return safe(function () {
-      var raw = global.localStorage.getItem(LS_KEY);
-      var arr = raw ? JSON.parse(raw) : [];
-      return Array.isArray(arr) ? arr : [];
-    }, []);
-  }
-
-  function writeStore(arr) {
-    safe(function () { global.localStorage.setItem(LS_KEY, JSON.stringify(arr)); });
-  }
-
-  /* ---------- derivação via adaptadores ---------- */
-
-  function derived(opts) {
-    var out = [];
-    adapters.forEach(function (fn) {
-      var got = safe(function () { return fn(opts) || []; }, []);
-      for (var i = 0; i < got.length; i++) {
-        var mv = normalize(got[i]);
-        if (mv) { mv.origem = mv.origem === "manual" ? "derivado" : mv.origem; out.push(mv); }
+     Σ retorno − Σ aporte de um mesmo refId. Só entra quando a posição
+     já devolveu alguma coisa: enquanto ela está aberta, o resultado
+     ainda não foi realizado e afirmá-lo seria inventar.
+     ------------------------------------------------------------ */
+  function resultados(eventos) {
+    var porRef = {};
+    eventos.forEach(function (e) {
+      if (e.tipo !== "aporte" && e.tipo !== "retorno") return;
+      if (!e.refId) return;
+      var r = porRef[e.refId] || (porRef[e.refId] = {
+        aporte: 0, retorno: 0, ultima: null, module: e.module,
+        walletId: e.walletId, rotulo: e.obs || ""
+      });
+      if (e.tipo === "aporte") r.aporte += e.valorUSD;
+      else {
+        r.retorno += e.valorUSD;
+        if (!r.ultima || e.data > r.ultima) { r.ultima = e.data; r.rotulo = e.obs || r.rotulo; }
       }
+    });
+
+    var out = [];
+    Object.keys(porRef).forEach(function (ref) {
+      var r = porRef[ref];
+      if (!r.retorno || !r.ultima) return;
+      var valor = Math.round((r.retorno - r.aporte) * 1e6) / 1e6;
+      if (!valor) return;
+      out.push({
+        id: "res:" + ref,
+        date: r.ultima,
+        tipo: "resultado",
+        valorUSD: valor,
+        module: r.module || null,
+        walletId: r.walletId,
+        origem: "derivado",
+        label: "Resultado" + (r.module && NOME_MODULO[r.module] ? " · " + NOME_MODULO[r.module] : "") +
+               (r.rotulo ? " — " + r.rotulo : ""),
+        ref: ref
+      });
     });
     return out;
   }
 
-  /* ---------- filtros ---------- */
-
-  function pass(mv, o) {
+  function passa(mv, o) {
     if (o.walletId && mv.walletId !== o.walletId) return false;
     if (o.module && mv.module !== o.module) return false;
     if (o.tipo && mv.tipo !== o.tipo) return false;
@@ -149,78 +190,37 @@
     return true;
   }
 
-  /* ---------- períodos ---------- */
-
   function periodKey(day, period) {
     var y = day.slice(0, 4), m = parseInt(day.slice(5, 7), 10);
     switch (period) {
       case "year":     return { key: y, label: y };
       case "semester": var s = m <= 6 ? 1 : 2; return { key: y + "-S" + s, label: "S" + s + "/" + y };
       case "quarter":  var q = Math.ceil(m / 3); return { key: y + "-Q" + q, label: "Q" + q + "/" + y };
-      default:         return { key: day.slice(0, 7), label: day.slice(0, 7) }; // month YYYY-MM
+      default:         return { key: day.slice(0, 7), label: day.slice(0, 7) };
     }
   }
 
-  /* ---------- API ---------- */
-
   var API = {
-
-    record: function (mv) {
-      var n = normalize(mv);
-      if (!n) return null;
-      var arr = readStore();
-      arr.push(n); writeStore(arr);
-      safe(function () {
-        global.document.dispatchEvent(new global.CustomEvent("atlas:movement", { detail: n }));
-      });
-      return n;
-    },
-
-    recordMany: function (list) {
-      var arr = readStore(), added = [];
-      (list || []).forEach(function (mv) {
-        var n = normalize(mv);
-        if (n) { arr.push(n); added.push(n); }
-      });
-      if (added.length) writeStore(arr);
-      return added;
-    },
-
-    remove: function (id) {
-      var arr = readStore(), next = arr.filter(function (m) { return m.id !== id; });
-      if (next.length !== arr.length) { writeStore(next); return true; }
-      return false;
-    },
-
-    clearRecorded: function () { writeStore([]); },
-
-    /* Só os GRAVADOS (sem rodar adaptadores) — usado no dedup dos adaptadores. */
-    recorded: function () { return readStore().map(normalize).filter(Boolean); },
-
-    /* Conjunto de refs já gravados por módulo (p/ adaptador pular a fonte). */
-    recordedRefs: function (module) {
-      var set = {};
-      readStore().forEach(function (m) {
-        if (m && m.ref && (!module || m.module === module)) set[m.ref] = 1;
-      });
-      return set;
-    },
-
-    registerAdapter: function (fn) { if (typeof fn === "function") adapters.push(fn); return fn; },
-
-    /* Lista mesclada (gravados + derivados), filtrada e ordenada por data. */
     list: function (opts) {
       opts = opts || {};
-      var recorded = readStore().map(normalize).filter(Boolean);
-      var all = recorded;
-      if (opts.includeDerived !== false) {
-        var seen = {};
-        recorded.forEach(function (m) { seen[m.id] = 1; });
-        derived(opts).forEach(function (m) { if (!seen[m.id]) { seen[m.id] = 1; all.push(m); } });
-      }
-      all = all.filter(function (m) { return pass(m, opts); });
-      all.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-      return all;
+      var CX = caixa();
+      if (!CX) return [];
+
+      /* Todos os eventos: o filtro por carteira acontece DEPOIS de
+         decidir o sinal, senão a transferência recebida seria
+         descartada por estar gravada na carteira de origem. */
+      var eventos = safe(function () { return CX.eventos({}); }, []);
+
+      var out = [];
+      eventos.forEach(function (e) {
+        var mv = comoMovimento(e, opts.walletId);
+        if (mv) out.push(mv);
+      });
+      resultados(eventos).forEach(function (r) { out.push(r); });
+
+      out = out.filter(function (m) { return passa(m, opts); });
+      out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+      return out;
     },
 
     summarize: function (list) {
@@ -230,7 +230,9 @@
         else if (m.tipo === "saida") r.saida += m.valorUSD;
         else if (m.tipo === "resultado") r.resultado += m.valorUSD;
       });
-      // net do fluxo de caixa: entradas - saídas (resultado é performance, não fluxo)
+      /* net é fluxo de caixa: entradas menos saídas. Resultado é
+         performance e não entra — ele já está dentro das entradas de
+         retorno, e somá-lo de novo contaria duas vezes. */
       r.net = r.entrada - r.saida;
       return r;
     },
@@ -254,7 +256,6 @@
       return order.map(function (k) { var b = map[k]; b.net = b.entrada - b.saida; return b; });
     },
 
-    /* Anota cada bucket com a variação vs o anterior (comparação mês/ano). */
     compareBuckets: function (buckets) {
       (buckets || []).forEach(function (b, i) {
         if (i === 0) { b.deltaNet = null; b.deltaPct = null; b.positivo = b.net >= 0; return; }
@@ -266,216 +267,28 @@
       return buckets;
     },
 
-    /* Carteiras que têm QUALQUER movimento (para o seletor do relatório). */
+    /* ------------------------------------------------------------
+       Lê os EVENTOS, não a lista já montada.
+
+       list({}) sem filtro de carteira resolve a transferência do ponto
+       de vista da ORIGEM — é a única leitura possível quando não se
+       pergunta por uma carteira específica. Consequência: uma carteira
+       que só recebeu transferências não aparecia em lugar nenhum, e o
+       seletor do relatório não a oferecia. Aqui os dois lados contam.
+       ------------------------------------------------------------ */
     walletsWithActivity: function () {
+      var CX = caixa();
+      if (!CX) return [];
       var ids = {};
-      API.list({ includeDerived: true }).forEach(function (m) { ids[m.walletId] = 1; });
+      safe(function () { return CX.eventos({}); }, []).forEach(function (e) {
+        if (e.walletId) ids[e.walletId] = 1;
+        if (e.contraWalletId) ids[e.contraWalletId] = 1;
+      });
       return Object.keys(ids);
     },
 
-    _normalize: normalize,   // exposto p/ testes
     _toDay: toDay
   };
-
-  /* ============================================================
-     ADAPTADOR: DeFi  (o módulo com livro-razão mais completo)
-     Lê DeFiStore.all().byWallet[*] — pool.movements[] + closed[].
-     ============================================================ */
-  API.registerAdapter(function (opts) {
-    var S = global.DeFiStore;
-    if (!S || !S.all) return [];
-    var state = safe(function () { return S.all(); }, null);
-    if (!state || !state.byWallet) return [];
-    var out = [];
-    Object.keys(state.byWallet).forEach(function (wid) {
-      if (opts && opts.walletId && wid !== opts.walletId) return;
-      var wd = state.byWallet[wid] || {};
-
-      /* ------------------------------------------------------------
-         A fonte é p.events, não p.movements
-
-         p.movements era escrito UMA vez, na criação da pool, com o
-         aporte inicial — e nunca mais. Aporte, reinvestimento e
-         retirada registrados depois não apareciam em lugar nenhum
-         fora da página da posição: nem no Dashboard, nem nos
-         Relatórios, nem no extrato da carteira. O livro-razão do
-         ATLAS ignorava justamente os fluxos de capital.
-
-         p.events é o registro vivo (ver defi/js/data.js). O
-         reinvestimento entra como "resultado", não como entrada: o
-         dinheiro não veio de fora, veio da própria pool — tratá-lo
-         como aporte inflaria o capital investido da carteira.
-         ------------------------------------------------------------ */
-      var TIPO_MV = { abertura: "entrada", aporte: "entrada", retirada: "saida", reinvest: "resultado" };
-      var ROTULO = { abertura: "Abertura", aporte: "Aporte", retirada: "Retirada", reinvest: "Reinvestimento" };
-
-      (wd.pools || []).forEach(function (p) {
-        var par = (p.base || "") + (p.quote ? "/" + p.quote : "");
-        var evs = (p.events && p.events.length)
-          ? p.events
-          : [{ id: "e0", date: p.createdAt || p.openedAt, type: "abertura", amountUSD: p.capital }];
-
-        evs.forEach(function (e, idx) {
-          var tipo = TIPO_MV[e.type];
-          if (!tipo) return;
-          out.push({
-            id: "der:defi:" + (p.id || "p") + ":" + (e.id || idx),
-            date: e.date, tipo: tipo, valorUSD: e.amountUSD,
-            module: "defi", walletId: p.walletId || wid,
-            origem: "derivado",
-            label: (ROTULO[e.type] || "Movimento") + (par ? " · " + par : "")
-          });
-        });
-
-        /* Taxa coletada é receita realizada da carteira — ela saiu da
-           pool e entrou no seu bolso. Ficava fora do livro-razão. */
-        (p.fees || []).forEach(function (f) {
-          if (f.status !== "coletada") return;
-          out.push({
-            id: "der:defi:fee:" + (p.id || "p") + ":" + (f.id || f.date),
-            date: f.collectedAt || f.date, tipo: "resultado", valorUSD: f.amount,
-            module: "defi", walletId: p.walletId || wid, origem: "derivado",
-            label: "Taxa coletada" + (par ? " · " + par : "")
-          });
-        });
-      });
-      (wd.closed || []).forEach(function (c) {
-        if (c.profit == null || !c.closedAt) return;
-        out.push({
-          id: "der:defi:closed:" + (c.id || Math.random().toString(36).slice(2)),
-          date: c.closedAt, tipo: "resultado", valorUSD: c.profit,
-          module: "defi", walletId: c.walletId || wid, origem: "derivado",
-          label: "Resultado " + (c.base || "pool") + (c.quote ? "/" + c.quote : "")
-        });
-      });
-    });
-    return out;
-  });
-
-  /* ============================================================
-     ADAPTADOR: Hold
-     Lê Store.state.carteira[] (todas as carteiras). Cada posição
-     vira uma "entrada" = custo investido (qtd × preço médio), na
-     data em que a posição nasceu (stamp .data). Vendas precisas
-     virão via record() (3C) — o histórico do Hold não guarda valor.
-     ============================================================ */
-  API.registerAdapter(function (opts) {
-    var S = global.Store;
-    if (!S || !S.state || !Array.isArray(S.state.carteira)) return [];
-    var rec = API.recorded();               // gravados (fonte da verdade)
-    var out = [];
-    S.state.carteira.forEach(function (p) {
-      var wid = p.walletId || "principal";
-      if (opts && opts.walletId && wid !== opts.walletId) return;
-      var custo = num(p.quantidade) * num(p.preco_medio);
-      if (!custo) return;
-      // quanto dessa posição já está GRAVADO (entrada − saída) → deriva só o resto
-      var ref = "hold:" + (p.ativo_id || "a") + ":" + wid, recNet = 0;
-      rec.forEach(function (m) {
-        if (m.ref === ref) recNet += (m.tipo === "saida" ? -m.valorUSD : m.valorUSD);
-      });
-      var resto = custo - recNet;
-      if (resto <= 0.01) return;             // já coberto pelos movimentos gravados
-      var tk = safe(function () { var a = S.get.asset(p.ativo_id); return a ? a.ticker : ""; }, "");
-      out.push({
-        id: "der:hold:" + (p.ativo_id || "a") + ":" + wid,
-        date: p.data || p.createdAt, tipo: "entrada", valorUSD: resto,
-        module: "hold", walletId: wid, origem: "derivado",
-        label: "Posição" + (tk ? " " + tk : "")
-      });
-    });
-    return out;
-  });
-
-  /* ============================================================
-     ADAPTADOR: Trade
-     Lê ATLAS.app.allWalletData() → data[walletId].trades[].
-     Trade fechado (closedAt) vira "resultado" = pnl na data de
-     fechamento. Aportes/saques de banca virão via record() (3C).
-     ============================================================ */
-  API.registerAdapter(function (opts) {
-    var A = global.ATLAS;
-    if (!A || !A.app || !A.app.allWalletData) return [];
-    var data = safe(function () { return A.app.allWalletData(); }, null);
-    if (!data) return [];
-    var out = [];
-    Object.keys(data).forEach(function (wid) {
-      if (opts && opts.walletId && wid !== opts.walletId) return;
-      /* ------------------------------------------------------------
-         t.pnl DO TRADE É PERCENTUAL, NÃO DÓLAR
-
-         O módulo Trade grava o resultado de cada operação em % (veja
-         closeTrade em trade/assets/js/core/state.js, que escreve
-         "Trade encerrado (+8%)"). Este adaptador jogava esse número
-         direto no campo valorUSD do livro-razão: um trade de +8%
-         entrava nos Relatórios como "resultado US$ 8,00", somado a
-         entradas e saídas que são dólares de verdade.
-
-         Somar porcentagem com dinheiro não dá um número errado — dá um
-         número sem significado. Sem o tamanho da posição não há como
-         converter, e INVENTAR uma base seria pior.
-
-         A conversão só é feita quando o próprio trade traz um valor em
-         dólar (pnlUSD ou size numérico); nos demais casos o trade fica
-         FORA do livro-razão, e o relatório deixa de exibir um valor
-         que ele não tem como afirmar.
-         ------------------------------------------------------------ */
-      (data[wid].trades || []).forEach(function (t) {
-        if (!t.closedAt || t.pnl == null) return;
-
-        var usd = null;
-        if (t.pnlUSD != null && isFinite(Number(t.pnlUSD))) {
-          usd = Number(t.pnlUSD);
-        } else {
-          var tamanho = Number(String(t.size == null ? "" : t.size).replace(",", "."));
-          if (isFinite(tamanho) && tamanho > 0) usd = tamanho * (Number(t.pnl) / 100);
-        }
-        if (usd == null || !isFinite(usd) || !usd) return;
-
-        out.push({
-          id: "der:trade:" + (t.id || Math.random().toString(36).slice(2)),
-          date: t.closedAt, tipo: "resultado", valorUSD: usd,
-          module: "trade", walletId: wid, origem: "derivado",
-          label: "Resultado " + (t.asset || t.ticker || t.side || "trade")
-        });
-      });
-    });
-    return out;
-  });
-
-  /* ============================================================
-     ADAPTADOR: RWA
-     Lê RWAStore.all().byWallet[*].assets[]. Onde o ativo tem data
-     de compra, vira "entrada" = custo (entry). Sem data, ignora —
-     a precisão vem de record() (3C).
-     ============================================================ */
-  API.registerAdapter(function (opts) {
-    var S = global.RWAStore;
-    /* byWallet(), não all().byWallet: `all()` é a visão mesclada da
-       carteira atual e nunca teve essa chave, então este adaptador
-       saía cedo e NENHUM movimento de RWA chegava aos Relatórios. */
-    if (!S || !S.byWallet) return [];
-    var byWallet = safe(function () { return S.byWallet(); }, null);
-    if (!byWallet) return [];
-    var refs = API.recordedRefs("rwa");
-    var out = [];
-    Object.keys(byWallet).forEach(function (wid) {
-      if (opts && opts.walletId && wid !== opts.walletId) return;
-      (byWallet[wid].assets || []).forEach(function (a) {
-        var aid = a.id || a.ticker;
-        if (refs["rwa:" + aid + ":" + wid]) return;   // já gravado → não deriva
-        var when = a.date || a.buyDate || a.openedAt || a.createdAt;
-        if (!when || a.entry == null) return;
-        out.push({
-          id: "der:rwa:" + (aid || Math.random().toString(36).slice(2)) + ":" + wid,
-          date: when, tipo: "entrada", valorUSD: a.entry,
-          module: "rwa", walletId: wid, origem: "derivado",
-          label: "Ativo " + (a.ticker || a.name || "RWA")
-        });
-      });
-    });
-    return out;
-  });
 
   global.AtlasMovements = API;
 })(typeof window !== "undefined" ? window : this);
