@@ -33,12 +33,13 @@
           U.el("h1", { text: "Painel" }),
           U.el("p", { text: "Visão consolidada da carteira, teses e decisões de longo prazo." })
         ]),
-        U.button("Nova tese", { variant: "secondary", icon: "doc", onClick: function () { F.newThesis(); } }),
-        U.button("Registrar operação", { variant: "primary", icon: "wallet", onClick: function () {
-          var inv = S.state.ativos.filter(function (a) { return S.get.thesisOfAsset(a.id); });
-          if (!inv.length) return U.toast("Sem ativos com tese", "Crie uma tese antes de operar.", "warning");
-          F.trade(inv[0].id, "buy");
-        }})
+        U.button("Nova tese", { variant: "secondary", icon: "doc", onClick: function () { F.newThesis(); } })
+        /* "Registrar operação" saiu daqui: ele abria a compra do
+           PRIMEIRO ativo com tese da lista — `inv[0]` —, e não do ativo
+           que a pessoa queria operar. Num painel, um botão que escolhe
+           sozinho em qual ativo você vai colocar dinheiro é pior que
+           nenhum. A compra continua onde ela tem contexto: na página do
+           ativo (Ativos → o ativo → Comprar). */
       ])
     ]));
 
