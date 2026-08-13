@@ -5,7 +5,10 @@ reais. Reúne quatro frentes de investimento — **Hold · Trade · DeFi · RWA*
 sob um mesmo shell, com carteiras, teses, relatórios e consolidação de
 patrimônio compartilhados.
 
-HTML, CSS e JavaScript puro. **Sem build, sem dependências, sem backend.**
+HTML, CSS e JavaScript puro. **Sem build, sem backend e sem CDN** — a única
+biblioteca de terceiros é o Chart.js, servido de `assets/vendor/`, e as fontes
+vêm de `assets/fonts/`. O ATLAS não faz nenhuma requisição a domínio externo
+para desenhar a interface; só as cotações vão à rede.
 Os dados vivem no `localStorage` do navegador.
 
 > Este arquivo descreve o ATLAS inteiro. Cada módulo tem o seu próprio README
@@ -18,7 +21,8 @@ Os dados vivem no `localStorage` do navegador.
 
 Abra `index.html` no navegador. Funciona em `file://`, mas o recomendado é
 servir a pasta — em `file://` o navegador bloqueia as chamadas de API por CORS
-(preços do CoinGecko, catálogo de pools do DefiLlama, câmbio):
+(preços do CoinGecko e do GeckoTerminal, câmbio). A interface em si não precisa
+de rede: fontes e Chart.js são servidos do próprio projeto.
 
 ```bash
 py -3 -m http.server 8777
@@ -60,7 +64,8 @@ atlas/
 ├── wallets/              ★ CARTEIRAS — fonte única de verdade
 ├── themes/               Identidade visual e microinterações
 ├── css/  ·  js/          Estilos e scripts do shell da raiz
-├── assets/               Imagem do Oráculo (atena.webp) e ícones
+├── assets/               Imagem do Oráculo, ícones,
+│                        fonts/ (Inter e JetBrains Mono) e vendor/ (Chart.js)
 │
 ├── manifest.webmanifest  Instalação como aplicativo (PWA)
 ├── sw.js                 Service worker: abrir sem internet

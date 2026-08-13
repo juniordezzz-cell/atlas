@@ -10,9 +10,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ATLAS">
   <title>ATLAS · RWA — Macro Intelligence</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <!-- Inter e JetBrains Mono servidas pelo proprio ATLAS.
+       Vinham do fonts.googleapis.com em vinte paginas, num sistema que
+       se declara sem dependencias e promete abrir sem internet.
+       Ver themes/atlas-fonts.css. -->
+  <link rel="stylesheet" href="../themes/atlas-fonts.css">
   <link rel="stylesheet" href="css/tokens.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/layout.css" />
@@ -55,11 +57,17 @@
   <div class="app-shell" id="shell"></div>
   <div id="toasts"></div>
 
-  <!-- Chart.js (CDN — carrega async para não travar em file://) -->
+  <!-- Chart.js, servido pelo próprio ATLAS. Carrega async e redesenha
+       ao chegar: o RWA monta as views antes do gráfico existir, e o
+       onload é o que faz o canvas ser preenchido depois.
+
+       Vinha do jsdelivr. Assíncrono e com onerror vazio, a falha era
+       invisível: sem internet o módulo abria inteiro e simplesmente
+       não desenhava gráfico nenhum, sem uma linha explicando. -->
   <script>
     (function(){
       var s=document.createElement("script");
-      s.src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js";
+      s.src="../assets/vendor/chart-4.4.1.min.js";
       s.async=true;
       s.onload=function(){if(window.Router&&Router.resolve)Router.resolve();};
       s.onerror=function(){};

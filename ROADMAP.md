@@ -168,18 +168,14 @@ Coisas que **não** são para "consertar" sem antes ler o porquê:
 
 Levantada na terceira auditoria e **não** resolvida nela:
 
-- **O ATLAS usa CDN, e o README diz que não.** Chart.js vem do jsdelivr
-  em seis páginas e o Google Fonts em vinte. Em `file://` ou sem
-  internet os gráficos não desenham, e o service worker deixa essas
-  chamadas passarem de propósito. São ~200 KB para servir localmente.
 - **Dois livros-razão convivendo.** `wallets/walletCaixa.js` é a fonte
   da verdade do dinheiro; `js/atlas-movements.js` continua derivando
   movimentos das posições para os Relatórios. São duas respostas para
   "que movimentos existem". O caminho é os Relatórios lerem o caixa, e
   o `atlas-movements` virar só a camada de apresentação por período.
-- **Posições anteriores ao caixa não têm lastro.** O livro nasceu
-  zerado, então uma posição criada antes dele devolve dinheiro ao
-  fechar sem nunca ter debitado. A tela mostra caixa negativo — que é o
-  aviso correto, não o estado desejado.
+- **Posições anteriores ao caixa** precisam da *abertura de saldo*
+  (`wallets/walletCaixaMigracao.js`), oferecida na tela de Carteiras.
+  Enquanto ela não for aceita, uma posição criada antes do livro
+  devolve dinheiro ao fechar sem nunca ter debitado.
 - **Trades anteriores não têm `sizeUSD`.** Fecham devolvendo zero ao
   caixa. É honesto (o sistema não sabe quanto foi) e inútil.

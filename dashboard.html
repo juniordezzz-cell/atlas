@@ -10,14 +10,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ATLAS">
   <title>ATLAS — Dashboard</title>
-  <!-- Inter para texto E título, JetBrains Mono para números. A mesma
-       string de URL em todas as páginas de propósito: assim o navegador
-       reaproveita UMA entrada de cache no site inteiro, e pedir eixos
-       diferentes faria o Google servir instâncias com métricas
-       ligeiramente distintas. -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <!-- Inter para texto E titulo, JetBrains Mono para numeros. As duas
+       sao fontes VARIAVEIS servidas pelo proprio ATLAS: um arquivo por
+       familia cobre todos os pesos. Ver themes/atlas-fonts.css. -->
+  <!-- Inter e JetBrains Mono servidas pelo proprio ATLAS.
+       Vinham do fonts.googleapis.com em vinte paginas, num sistema que
+       se declara sem dependencias e promete abrir sem internet.
+       Ver themes/atlas-fonts.css. -->
+  <link rel="stylesheet" href="themes/atlas-fonts.css">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/global.css">
   <link rel="stylesheet" href="css/dashboard.css">
@@ -174,7 +174,7 @@
      Antes esta página usava cdnjs e as outras jsDelivr: o mesmo arquivo
      baixado duas vezes, dois DNS, dois handshakes e dois pontos de
      falha externos. Ao trocar de módulo o navegador já tem em cache. -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/vendor/chart-4.4.1.min.js"></script>
 
 <!-- ===== Camadas de dados dos módulos (consolidação real em US$) ===== -->
 <script src="wallets/walletStore.js"></script>

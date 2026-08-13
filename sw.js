@@ -25,10 +25,16 @@
 
    O QUE NÃO É CACHEADO
    --------------------
-   Chamadas de API (CoinGecko, DefiLlama, câmbio) passam direto. Preço
-   guardado é preço errado — e o AtlasHttp já tem o próprio cache com
-   TTL, que sabe o que está velho. Duas camadas de cache discordando
-   sobre a cotação é como um sistema financeiro mente sem querer.
+   Chamadas de API (CoinGecko, GeckoTerminal, câmbio) passam direto.
+   Preço guardado é preço errado — e o AtlasHttp já tem o próprio cache
+   com TTL, que sabe o que está velho. Duas camadas de cache
+   discordando sobre a cotação é como um sistema financeiro mente sem
+   querer.
+
+   Fontes e Chart.js NÃO são mais exceção: eles passaram a ser
+   servidos pelo próprio ATLAS (assets/fonts, assets/vendor), então
+   caem na regra normal e entram no cache offline como qualquer
+   arquivo nosso.
    ============================================================ */
 
 /* Sobe a cada mudança que precise chegar a quem já abriu o ATLAS: a
@@ -55,7 +61,7 @@
    debitar e creditar o caixa, e o Trade ganhou capital em dólar
    (sizeUSD/pnlUSD). Quem rodasse a versão anterior de um desses
    stores abriria posição sem tirar dinheiro do caixa. */
-var VERSAO = "atlas-v8";
+var VERSAO = "atlas-v9";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
@@ -68,6 +74,14 @@ var CASCA = [
   "offline.html",
   "manifest.webmanifest",
   "assets/favicon.svg",
+  /* As fontes entram na casca agora que são NOSSAS. Enquanto vinham do
+     Google, o fetch abaixo as deixava passar por serem de outra origem
+     — e a promessa de "abre sem internet" valia para o layout mas não
+     para a tipografia: as colunas de números perdiam a monoespaçada e
+     desalinhavam. */
+  "themes/atlas-fonts.css",
+  "assets/fonts/inter-latin.woff2",
+  "assets/fonts/jetbrains-mono-latin.woff2",
   "themes/atlas-theme.css",
   "themes/atlas-effects.css",
   "core/atlas-storage.js",
@@ -115,7 +129,7 @@ self.addEventListener("fetch", function (e) {
 
   var url = req.url;
 
-  /* Fora da origem: fonte, CDN do Chart.js, API. Deixa passar — o
+  /* Fora da origem: só sobra API agora. Deixa passar — o
      navegador já sabe cachear o que é cacheável, e API cacheada aqui
      seria preço errado servido como certo. */
   if (new URL(url).origin !== self.location.origin || ehApi(url)) return;

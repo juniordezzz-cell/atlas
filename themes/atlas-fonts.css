@@ -1,0 +1,67 @@
+/* ============================================================
+   ATLAS · themes/atlas-fonts.css
+   ------------------------------------------------------------
+   AS FONTES, SERVIDAS DAQUI — não do Google.
+
+   Vinte páginas carregavam Inter e JetBrains Mono do
+   fonts.googleapis.com, e o README afirma "sem build, sem
+   dependências, sem backend" enquanto o ATLAS dependia de dois
+   domínios externos para desenhar texto.
+
+   O custo não era só filosófico:
+
+     · em file:// e sem internet, o sistema caía nas fontes do
+       sistema operacional — e o alinhamento das colunas de números,
+       que depende de fonte monoespaçada, ia junto;
+     · cada abertura anunciava ao Google que aquele navegador abriu
+       um painel de patrimônio, com IP e horário;
+     · o service worker deixa passar tudo que é de outra origem, de
+       propósito — então essas fontes nunca entraram no cache
+       offline, e a promessa de "abre sem internet" era parcial.
+
+   São fontes VARIÁVEIS: um arquivo por família cobre todos os pesos
+   que o ATLAS usa (Inter 400–800, JetBrains Mono 500–600), em vez
+   de um arquivo por peso. Só os subconjuntos latin e latin-ext —
+   pt-BR não precisa de cirílico nem grego, e eles dobrariam o
+   tamanho.
+   ============================================================ */
+
+/* Inter · latin-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url(../assets/fonts/inter-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Inter · latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url(../assets/fonts/inter-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* JetBrains Mono · latin-ext */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500 600;
+  font-display: swap;
+  src: url(../assets/fonts/jetbrains-mono-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* JetBrains Mono · latin */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500 600;
+  font-display: swap;
+  src: url(../assets/fonts/jetbrains-mono-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
