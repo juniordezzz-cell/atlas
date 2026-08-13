@@ -38,6 +38,30 @@ alertas com estado de lido · flash no valor que muda · paleta de
 comandos (Ctrl+K) · Oráculo lendo os dados reais · instalável e abrindo
 offline · auditoria de acessibilidade · página pública.
 
+### Terceira auditoria — o dado tem de ter origem, fórmula e destino
+
+Cinco fases, a partir da pergunta "qual a fonte deste número, que conta
+o produziu, e o que a tela mostrou?".
+
+**Status da faixa** deixou de ser um campo escolhido em formulário e
+virou consequência do preço (`DeFiStore.statusDe`). Sem cotação, a
+posição diz *"faixa não avaliada"* — antes ela dizia "Fora do Range" e
+o Dashboard emitia alerta crítico sobre uma conta que ninguém tinha
+feito.
+
+**Preço** ganhou uma cadeia única para os quatro módulos
+(`core/atlas-precos.js`): manual do usuário → stablecoin → id curado →
+busca por símbolo idêntico → DEX. A regra é do sistema inteiro: a API é
+o caminho principal, e quando nenhuma fonte reconhece o ativo quem
+informa o preço é o usuário.
+
+**Busca de pool do DefiLlama** foi removida, e o par passou a ser 100%
+manual na ordem digitada. **RWA** ganhou quantidade e preço unitário —
+o autopreenchimento escrevia preço unitário em campo de valor total.
+**Taxa** ganhou estados e destino, separada da valorização dos ativos.
+**Caixa** passou a existir: `wallets/walletCaixa.js` e a tela
+`carteiras.html`.
+
 ---
 
 ## Fases futuras
@@ -120,3 +144,42 @@ Coisas que **não** são para "consertar" sem antes ler o porquê:
   módulos em português, o que entregava tela metade traduzida.
 - **Sem biblioteca de PDF.** O navegador imprime melhor do que jsPDF e
   não custa centenas de KB de CDN. Ver `core/atlas-export.js`.
+- **Macro e narrativa do RWA ficam vazias.** Os valores que estavam lá
+  (Fed Funds 4,50%, CPI 2,9%, DXY 103,4, "AI Expansion Cycle") eram
+  fixos no código, com gráficos de um gerador pseudoaleatório, exibidos
+  como leitura de mercado. Um painel macro decorativo num sistema que
+  decide alocação convida a decidir com base em dado que não existe. A
+  estrutura continua pronta: quando um provedor de macro for registrado,
+  as telas voltam a desenhar sozinhas.
+- **O RWA tem dois modelos de ativo convivendo, de propósito.** Com
+  quantidade, os totais são derivados de quantidade × preço e o preço é
+  acompanhado sozinho. Sem quantidade, valem os totais informados à mão.
+  Ativo cadastrado antes da terceira auditoria não tem quantidade, e o
+  sistema não tem como adivinhá-la — preencher "1" faria os totais
+  baterem e todo o resto mentir.
+- **Preço manual vence a API.** Ele só existe quando nenhuma fonte
+  reconheceu o ativo, e uma API que volta a responder com o ativo
+  ERRADO (símbolo colidindo) é pior que não responder. Envelhece e
+  avisa, mas não é sobrescrito sem ordem.
+
+---
+
+## Dívida conhecida, ainda em aberto
+
+Levantada na terceira auditoria e **não** resolvida nela:
+
+- **O ATLAS usa CDN, e o README diz que não.** Chart.js vem do jsdelivr
+  em seis páginas e o Google Fonts em vinte. Em `file://` ou sem
+  internet os gráficos não desenham, e o service worker deixa essas
+  chamadas passarem de propósito. São ~200 KB para servir localmente.
+- **Dois livros-razão convivendo.** `wallets/walletCaixa.js` é a fonte
+  da verdade do dinheiro; `js/atlas-movements.js` continua derivando
+  movimentos das posições para os Relatórios. São duas respostas para
+  "que movimentos existem". O caminho é os Relatórios lerem o caixa, e
+  o `atlas-movements` virar só a camada de apresentação por período.
+- **Posições anteriores ao caixa não têm lastro.** O livro nasceu
+  zerado, então uma posição criada antes dele devolve dinheiro ao
+  fechar sem nunca ter debitado. A tela mostra caixa negativo — que é o
+  aviso correto, não o estado desejado.
+- **Trades anteriores não têm `sizeUSD`.** Fecham devolvendo zero ao
+  caixa. É honesto (o sistema não sabe quanto foi) e inútil.

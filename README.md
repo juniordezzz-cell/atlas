@@ -52,6 +52,7 @@ atlas/
 ├── login.html            Entrada (simulada)
 ├── landing.html          Página pública (o que o ATLAS é e faz)
 ├── dashboard.html        Painel consolidado dos quatro módulos
+├── carteiras.html        Caixa por carteira, movimentações e taxas de pool
 ├── relatorios.html       Relatórios por carteira
 ├── configuracoes.html    Preferências, backup e restauração
 │
@@ -104,9 +105,12 @@ atlas/
 | `core/ui/atlas-palette.js` | Paleta de comandos (Ctrl+K): ir, buscar, executar | `AtlasPalette` |
 | `core/ui/atlas-chart-theme.js` | Ponte de tema para dentro do `<canvas>` | `AtlasChartTheme` |
 | `core/ui/atlas-calendar.js` | Calendário compartilhado | `AtlasCalendar` |
-| `core/providers/*` | CoinGecko e DefiLlama por trás de um registro | `AtlasProviders` |
+| `core/providers/*` | CoinGecko (primária) e GeckoTerminal (secundária) por trás de um registro | `AtlasProviders` |
+| `core/atlas-precos.js` | A cadeia de preço do sistema: manual → id curado → busca → DEX | `AtlasPrecos` |
+| `core/atlas-tokens.js` | Registro de ativos: símbolo → id da API | `AtlasTokens` |
 | `wallets/*` | Carteiras: criar, renomear, excluir, ordenar, ledger | `AtlasWallets` |
-| `js/atlas-movements.js` | Livro-razão de movimentos por carteira | `AtlasMovements` |
+| `wallets/walletCaixa.js` | Livro de caixa: o saldo é a soma dos eventos | `AtlasCaixa` |
+| `js/atlas-movements.js` | Movimentos derivados das posições, para os Relatórios | `AtlasMovements` |
 | `js/atlas-consolidation.js` | Soma os quatro módulos para o Dashboard | `AtlasConsolidation` |
 | `js/atlas-nav.js` | Navegação móvel do shell da raiz (consome `AtlasShell.destinos()`) | `AtlasNav` |
 | `js/atlas-topbar.js` | Menus da barra superior (apps, alertas, perfil) | `AtlasTopbar` |
@@ -139,6 +143,26 @@ O componente de seleção é **um só** (`wallets/walletSelector.js` +
 sempre com as mesmas funções: trocar, criar global, criar local, renomear e
 excluir. Nenhum CSS de módulo tem regra de carteira — foi assim que o sistema
 acabou com cinco aparências diferentes antes, e não deve voltar.
+
+### Caixa
+
+Cada carteira tem **caixa** — dinheiro parado, disponível para alocar — e ele é
+**consequência de eventos, nunca uma variável**. Não existe `setSaldo`: o caixa é
+sempre a soma do livro (`wallets/walletCaixa.js`), recalculada na leitura, e por
+isso não tem como divergir do extrato que o produziu.
+
+```
+deposito       + caixa    mundo externo → carteira     ↑ patrimônio
+saque          − caixa    carteira → mundo externo     ↓ patrimônio
+transferencia  − origem / + destino                     = patrimônio
+swap           troca de ativo na mesma carteira         = patrimônio
+aporte         − caixa    caixa → posição               = patrimônio
+retorno        + caixa    posição → caixa               = patrimônio
+```
+
+Só **depósito** e **saque** mudam o patrimônio total; todo o resto redistribui.
+Abrir posição debita o caixa e **carteira sem caixa não abre posição**; fechar
+devolve capital mais resultado. A tela é [`carteiras.html`](carteiras.html).
 
 ---
 
