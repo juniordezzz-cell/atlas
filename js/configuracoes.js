@@ -417,3 +417,96 @@
     document.addEventListener("DOMContentLoaded", init);
   } else { init(); }
 })();
+
+/* ===================================================================
+   SUPERVISÃO DAS CONTAS
+
+   Liga o painel ao core/atlas-supervisor.js. Esta tela não sabe
+   nenhuma regra de negócio: ela pede a auditoria, mostra o que voltou
+   e — só quando houver cópia velha de saldo — oferece atualizá-la.
+
+   O botão de correção aparece SOMENTE quando existe algo corrigível.
+   Um botão "consertar" sempre visível ensina a apertá-lo sem ler, e o
+   que este supervisor pode consertar é uma coisa só: cache derivado.
+   =================================================================== */
+(function () {
+  "use strict";
+  var btn = document.getElementById("btnSupervisionar");
+  if (!btn) return;
+
+  var status    = document.getElementById("supStatus");
+  var linha     = document.getElementById("supResultadoLinha");
+  var resumo    = document.getElementById("supResumo");
+  var detalhe   = document.getElementById("supDetalhe");
+  var relatorio = document.getElementById("supRelatorio");
+  var linhaCorr = document.getElementById("supCorrigirLinha");
+  var btnCorr   = document.getElementById("btnSupCorrigir");
+
+  function pintar(res) {
+    linha.hidden = false;
+    var temErro = res.erros > 0;
+
+    /* `ok === null` significa que NÃO DEU para conferir — nenhuma
+       fonte disponível para comparar. Dizer "tudo certo" aí seria a
+       mentira mais cara desta tela. */
+    if (res.ok === null) {
+      var falta = (res.cobertura && res.cobertura.faltando) || [];
+      status.textContent = "não conferido";
+      status.style.color = "var(--warn, #F59E0B)";
+      resumo.textContent = "Não foi possível conferir.";
+      detalhe.textContent = "Falta o que comparar nesta página: " + falta.join("; ") +
+        ". Abra o painel principal, que carrega os quatro módulos, e confira de lá.";
+      relatorio.hidden = true;
+      linhaCorr.hidden = true;
+      return;
+    }
+
+    status.textContent = res.ok ? "tudo fecha" : (res.erros + " erro(s)");
+    status.style.color = res.ok ? "var(--pos, #22C55E)"
+                       : temErro ? "var(--neg, #EF4444)" : "var(--warn, #F59E0B)";
+
+    if (res.ok) {
+      var mods = (res.cobertura && res.cobertura.modulosVivos) || [];
+      resumo.textContent = "Tudo fecha.";
+      detalhe.textContent = "Conferidos: " + (mods.length ? mods.join(", ") : "nenhum módulo") +
+        ". O caixa, as posições e as carteiras contam a mesma história.";
+      relatorio.hidden = true;
+    } else {
+      resumo.textContent = res.erros + " erro(s) e " + res.avisos + " aviso(s).";
+      detalhe.textContent = temErro
+        ? "Erro é incoerência entre fontes: um número não tem como ser verdade junto com o outro."
+        : "Aviso é divergência esperada em alguns casos — leia o detalhe antes de agir.";
+      relatorio.hidden = false;
+      relatorio.textContent = window.AtlasSupervisor.relatorio(res);
+    }
+
+    /* Só oferece o que ele realmente pode fazer. */
+    linhaCorr.hidden = !res.corrigiveis;
+    if (res.corrigiveis) {
+      btnCorr.querySelector("span").textContent =
+        "Atualizar " + res.corrigiveis + " cópia(s)";
+    }
+  }
+
+  function rodar() {
+    if (!window.AtlasSupervisor) {
+      status.textContent = "indisponível";
+      return;
+    }
+    /* A tela do Dashboard não existe aqui; conferir o DOM de outra
+       página seria comparar com o que não está na frente do usuário. */
+    pintar(window.AtlasSupervisor.auditar({ tela: false }));
+  }
+
+  btn.addEventListener("click", rodar);
+
+  btnCorr.addEventListener("click", function () {
+    var r = window.AtlasSupervisor.corrigir();
+    if (window.AtlasUI && AtlasUI.toast) {
+      AtlasUI.toast(r.corrigidos
+        ? r.corrigidos + " cópia(s) de saldo atualizada(s) a partir do módulo."
+        : "Nada a atualizar.", "success");
+    }
+    rodar();
+  });
+})();

@@ -177,6 +177,12 @@ Coisas que **não** são para "consertar" sem antes ler o porquê:
   dinheiro a compra não acontece — é aritmética). Bloquear pela tese
   fazia o ATLAS recusar o registro de uma compra que ocorreu no mundo
   real, e não registrar um fato é pior que registrá-lo incompleto.
+- **O supervisor não calcula, confere.** `core/atlas-supervisor.js`
+  pergunta a cada módulo e cruza as respostas entre si, com as
+  carteiras e com a tela. Ele conserta UMA coisa: cache derivado,
+  reescrito a partir da fonte. Ajustar número para fechar conta é
+  mascarar, e a regra de ouro nº 1 proíbe. E ele declara quando não
+  pôde conferir, em vez de dizer que está tudo bem.
 - **Toda conta passa pelo núcleo.** `core/atlas-contabilidade.js` é
   onde "patrimônio", "custo", "resultado" e "rentabilidade" são
   definidos. Ele não é calculadora — somar dois números não precisa de

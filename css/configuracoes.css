@@ -265,3 +265,21 @@
 .btn-ghost:disabled:hover { color: var(--atlas-text-mut); border-color: var(--atlas-border); background: transparent; }
 /* procedência do câmbio (Configurações → Moeda) */
 .set-foot .hint-warn { color: var(--atlas-warn); }
+
+/* Relatório da supervisão: texto pré-formatado, monoespaçado e
+   rolável. Os números têm de ficar alinhados para a diferença entre
+   dois valores parecidos saltar aos olhos. */
+.sup-relatorio {
+  margin-top: 12px;
+  padding: 12px 14px;
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 10px;
+  background: var(--atlas-bg-deep, rgba(0,0,0,.28));
+  border: 1px solid var(--atlas-border, rgba(140,170,225,.13));
+  font-family: var(--atlas-mono, ui-monospace, "JetBrains Mono", monospace);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: var(--atlas-text-mut, #9AA5BD);
+}

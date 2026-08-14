@@ -16,6 +16,9 @@
   <script src="../core/atlas-snapshots.js"></script>
 
   <script src="../core/atlas-contabilidade.js"></script>
+<script src="../core/atlas-supervisor.js"></script>
+
+  <script src="../core/atlas-supervisor.js"></script>
   <script src="../core/settings.js"></script>
   <script src="../core/i18n.js"></script>
   <script src="../core/currency.js"></script>
@@ -1391,6 +1394,95 @@
          K.conferir.somaBate([10.005, 20.005, 30], 60.01).ok, "dentro da tolerância");
       ok("fatias de distribuição fecham em 100",
          K.conferir.fatiasFecham([33.3, 33.3, 33.4]).ok, "100,0");
+    }
+    /* ============================================================
+       O supervisor não recalcula nada: ele pergunta a cada módulo e
+       confere se as respostas fecham entre si. Um verificador que
+       nunca acusa é pior que nenhum — dá a sensação de vigilância sem
+       a vigilância. Por isso cada caso aqui QUEBRA o sistema de
+       propósito e cobra a detecção.
+       ============================================================ */
+    grupo("25 · Supervisão: quebrar de propósito e ser pego");
+    if (!window.AtlasSupervisor || !window.AtlasCaixa || !window.AtlasWallets) {
+      nota("supervisor, caixa ou carteiras ausentes — casos pulados.");
+    } else {
+      var SUP = window.AtlasSupervisor, V = SUP._verificacoes;
+      var CXs = window.AtlasCaixa, Ws = window.AtlasWallets;
+      try {
+        localStorage.removeItem("atlas.caixa.v1");
+        localStorage.removeItem("atlas.snapshots.v1");
+      } catch (e) {}
+      CXs._reload();
+      var w25 = Ws.activeGlobalId();
+
+      /* Um módulo fictício que responde AO VIVO. É o que permite
+         exercitar as verificações sem depender de qual store está
+         carregado nesta página. */
+      var falso = { valor: 0, capital: 0 };
+      Ws.registerLive("hold", function (id) {
+        return { id: id, module: "hold", valorAtual: falso.valor,
+                 saldo: falso.valor, capital: falso.capital, assets: [] };
+      });
+
+      /* -- cenário íntegro: depósito e aporte coerentes -- */
+      CXs.registrar({ tipo: "deposito", valorUSD: 10000, walletId: w25 });
+      CXs.registrar({ tipo: "aporte", valorUSD: 4000, walletId: w25, module: "hold", refId: "p1" });
+      falso.valor = 4000; falso.capital = 4000;
+      eq("cenário coerente não gera achado de capital", V.capitalContraCaixa().length, 0);
+
+      /* -- posição sem dinheiro que a explique -- */
+      falso.valor = 9000; falso.capital = 9000;
+      var f25 = V.capitalContraCaixa();
+      eq("posição inflada sem aporte é pega", f25.length, 1);
+      is("e classificada como erro", f25.length ? f25[0].nivel : "—", "erro");
+      eq("com a diferença exata", f25.length ? f25[0].diferenca : 0, 5000);
+      ok("dizendo de que lado está a sobra",
+         f25.length && f25[0].detalhe.indexOf("posição a mais") >= 0, "posição a mais");
+
+      /* -- dinheiro que saiu e não virou posição -- */
+      falso.valor = 1000; falso.capital = 1000;
+      var f25b = V.capitalContraCaixa();
+      eq("o inverso também é pego", f25b.length, 1);
+      ok("com o texto do outro lado",
+         f25b.length && f25b[0].detalhe.indexOf("não virou posição") >= 0, "não virou posição");
+      falso.valor = 4000; falso.capital = 4000;
+      eq("voltando ao coerente, silencia", V.capitalContraCaixa().length, 0);
+
+      /* -- carteira apagada com dinheiro dentro -- */
+      CXs.registrar({ tipo: "deposito", valorUSD: 500, walletId: "carteira_que_nao_existe" });
+      var f25c = V.carteiras().filter(function (x) { return x.carteiraId === "carteira_que_nao_existe"; });
+      eq("lançamento em carteira inexistente é pego", f25c.length, 1);
+      nota("Sem esta verificação o saldo simplesmente não aparece em " +
+           "lugar nenhum: a carteira sumiu e o dinheiro dela ficou órfão.");
+
+      /* -- caixa negativo -- */
+      CXs.registrar({ tipo: "saque", valorUSD: 999999, walletId: w25 });
+      var f25d = V.carteiras().filter(function (x) { return String(x.o_que).indexOf("negativo") >= 0; });
+      eq("caixa negativo é pego", f25d.length, 1);
+      ok("o store recusa gastar além do saldo, então negativo só entra por " +
+         "lançamento removido ou backup pela metade",
+         f25d.length && f25d[0].saldo < 0, f25d.length ? String(f25d[0].saldo) : "—");
+
+      /* -- o supervisor NÃO conserta o que não é cache -- */
+      var antesCaixa = CXs.saldo(w25);
+      var corr = SUP.corrigir();
+      eq("corrigir() não toca em nada que não seja cache", CXs.saldo(w25), antesCaixa);
+      ok("e diz isso por escrito", String(corr.naoTocado).indexOf("nunca ajustada") >= 0, corr.naoTocado);
+      nota("Ajustar um número para a conta fechar apagaria o sintoma e " +
+           "manteria a causa — o oposto da regra de ouro nº 1. Cache " +
+           "derivado ele reescreve a partir da fonte; extrato, jamais.");
+
+      /* -- a forma do achado é sempre a mesma -- */
+      var qualquer = V.carteiras()[0];
+      ok("todo achado tem nivel, area e o_que",
+         qualquer && qualquer.nivel && qualquer.area && qualquer.o_que,
+         qualquer ? [qualquer.nivel, qualquer.area].join("/") : "—");
+
+      try {
+        localStorage.removeItem("atlas.caixa.v1");
+        localStorage.removeItem("atlas.snapshots.v1");
+      } catch (e) {}
+      CXs._reload();
     }
   }
 

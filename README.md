@@ -178,6 +178,40 @@ qualquer tela futura — e o primeiro passo do sistema é sempre um **depósito*
 
 ---
 
+## O supervisor
+
+`core/atlas-supervisor.js` **não calcula nada**. Cada módulo faz a sua
+parte — o Hold sabe somar posições, o DeFi sabe o que é uma pool — e o
+supervisor pergunta a todos e confere se as respostas fecham entre si,
+com as carteiras e com o que a tela mostra. Recalcular aqui criaria uma
+segunda fonte da verdade, que é o defeito que a auditoria removeu.
+
+Ele existe porque **todo erro grave desta auditoria tinha a mesma
+assinatura**: cada pedaço estava certo isoladamente, e a incoerência só
+aparecia com dois pedaços lado a lado.
+
+O que ele confere:
+
+| Verificação | A pergunta |
+|---|---|
+| capital × caixa | o que saiu do caixa virou posição? |
+| patrimônio | caixa + investido = depositado − sacado + resultado |
+| cache da central | a cópia do saldo bate com o módulo? |
+| carteiras | dinheiro em carteira apagada, isolada no total, caixa negativo |
+| medições | a medição de hoje bate com o valor de agora? |
+| tela | o KPI exibido é o que os dados dizem? |
+
+**Sobre "consertar":** ele mexe em **uma coisa só** — cache derivado,
+reescrito a partir da fonte. Ajustar um número para a conta fechar
+apagaria o sintoma e manteria a causa, o oposto da regra de ouro nº 1.
+Divergência que não seja cópia velha ele relata e não toca.
+
+**E ele diz quando não pôde conferir.** Sem fonte para comparar,
+`ok` vem `null` e a tela escreve "não conferido" — nunca "tudo certo".
+Um verificador que tranquiliza sobre o vazio é pior que nenhum.
+
+Está em **Configurações → Supervisão das contas**.
+
 ## O núcleo das contas
 
 `core/atlas-contabilidade.js` define, uma vez, o que cada grandeza
