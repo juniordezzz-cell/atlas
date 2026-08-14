@@ -436,11 +436,41 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 
 /* progress meter (metrics) */
 .meter { display: grid; gap: 8px; }
-.meter .m-row { display: flex; align-items: center; gap: 12px; }
-.meter .m-label { width: 130px; font-size: 12.5px; color: var(--text-dim); flex-shrink: 0; }
+.meter .m-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; }
+.meter .m-label { width: 130px; font-size: 12.5px; color: var(--text-dim); flex-shrink: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meter .m-track { flex: 1; height: 8px; border-radius: 6px; background: var(--surface-alt); overflow: hidden; }
 .meter .m-track > i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
-.meter .m-val { width: 52px; text-align: right; font-family: var(--mono); font-size: 12.5px; }
+/* Trilho de uma posição SEM tese: tracejado, para a ausência ter
+   aparência de ausência em vez de barra zerada — que se confunde com
+   convicção baixa, que é outra coisa. */
+.meter .m-track.vazio { background: repeating-linear-gradient(90deg, var(--surface-alt) 0 6px, transparent 6px 10px); }
+.meter .m-val { width: 62px; text-align: right; font-family: var(--mono); font-size: 12.5px; }
+.meter .m-val.dim { color: var(--text-dim); font-family: var(--font); font-size: 11.5px; }
+.meter .m-row.clicavel {
+  cursor: pointer; padding: 5px 8px; margin: 0 -8px; border-radius: 8px;
+  transition: background 0.12s var(--ease);
+}
+.meter .m-row.clicavel:hover { background: var(--surface-alt); }
+.meter .m-row.clicavel:hover .m-label { color: var(--text); }
+
+/* ---- composição do universo ----
+   Toda barra é lida contra o UNIVERSO, nunca contra o maior valor da
+   lista: normalizar pelo maior fazia qualquer conjunto de números
+   virar um funil de aparência convincente. E não é funil — as linhas
+   não são subconjuntos encaixadas (ver o comentário em metricas.js). */
+.funil { display: grid; gap: 18px; }
+.funil .fn-linha.destaque { padding: 14px; margin: -2px -6px; border-radius: var(--radius);
+  background: var(--primary-08); border: 1px solid var(--primary-14); }
+.funil .fn-linha.destaque .fn-rot { color: var(--primary-text); }
+.funil .fn-topo { display: flex; align-items: baseline; gap: 10px; margin-bottom: 7px; }
+.funil .fn-rot { font-size: 13px; font-weight: 550; }
+.funil .fn-n { margin-left: auto; font-size: 16px; font-weight: 600; }
+.funil .fn-pct { width: 44px; text-align: right; font-size: 12px; color: var(--text-dim); }
+.funil .fn-barra { height: 10px; border-radius: 6px; background: var(--surface-alt); overflow: hidden; }
+.funil .fn-barra > i { display: block; height: 100%; border-radius: 6px;
+  background: linear-gradient(90deg, var(--primary), var(--accent)); }
+.funil .fn-dica { font-size: 11.5px; color: var(--text-dim); margin-top: 5px; }
 
 /* ============================================================
    Seletor de carteira — NÃO fica mais aqui.

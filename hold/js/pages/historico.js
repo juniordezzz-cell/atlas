@@ -72,7 +72,7 @@
 
       alvo.innerHTML = "";
       if (!lista.length) {
-        alvo.appendChild(U.card({ pad: true, body: [
+        alvo.appendChild(U.card({ body: [
           termo
             ? U.empty("search", "Nada encontrado para “" + termo + "”",
                 "Nenhum registro com esse ativo ou justificativa neste filtro.",
@@ -111,7 +111,7 @@
         ]);
         var tl = U.el("div", { class: "timeline" });
         g.itens.forEach(function (h) { tl.appendChild(fullItem(h)); });
-        alvo.appendChild(U.card({ pad: true, body: [cab, tl] }));
+        alvo.appendChild(U.card({ body: [cab, tl] }));
         alvo.lastChild.classList.add("mt-16");
       });
     }

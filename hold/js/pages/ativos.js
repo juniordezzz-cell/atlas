@@ -281,15 +281,19 @@
               U.el("span", { class: "small " + U.signClass(v), text: U.pct(S.get.positionPnLPct(p), 1) })
             ]);
           } },
-        { key: "Convicção", head: "Convicção", sort: function (a) { return +a.conviccao || 0; },
-          render: function (a) { return U.convictionMini(a.conviccao); } },
+        /* Coluna opcional: Configurações → Hold → "Mostrar convicção
+           nas listas". A preferência existia e nenhuma tela a lia. */
+        S.get.config("mostrar_conviccao")
+          ? { key: "Convicção", head: "Convicção", sort: function (a) { return +a.conviccao || 0; },
+              render: function (a) { return U.convictionMini(a.conviccao); } }
+          : null,
         { key: "Tese", head: "Tese", sort: function (a) { return S.get.thesisOfAsset(a.id) ? 1 : 0; },
           render: function (a) { return S.get.thesisOfAsset(a.id) ? U.badge("andamento", "Documentada") : U.el("span", { class: "badge plain", text: "Pendente" }); } },
         { key: "Status", head: "Status", sort: function (a) { return S.get.statusDe(a); },
           render: function (a) { return U.badge(S.get.statusDe(a)); } },
         { key: "acoes", head: "", actions: true,
           render: function (a) { return U.rowActions(acoesDoAtivo(a)); } }
-      ];
+      ].filter(Boolean);
 
       tableHolder.innerHTML = "";
       var body;
@@ -329,7 +333,10 @@
      diz se é muito. "US$ 4.000 · 62% da carteira" diz. */
   function pesoMini(pct) {
     var w = Math.max(0, Math.min(100, pct || 0));
-    var wrap = U.el("span", { class: "peso-mini" + (w > 40 ? " alto" : "") });
+    /* O "40" estava escrito à mão aqui, no selo da tela do ativo e no
+       alerta do store — três cópias da mesma regra. Agora um dono só,
+       e configurável. */
+    var wrap = U.el("span", { class: "peso-mini" + (S.get.concentrada(w) ? " alto" : "") });
     var bar = U.el("span", { class: "bar" });
     bar.appendChild(U.el("i", { style: "width:" + w.toFixed(0) + "%" }));
     wrap.appendChild(bar);
@@ -430,7 +437,7 @@
       ])));
       var posCard = U.card({ eyebrow: "Carteira · " + (carteira ? carteira.name : "—"),
         title: "Posição atual",
-        action: peso > 40 ? U.el("span", { class: "badge review" }, [
+        action: S.get.concentrada(peso) ? U.el("span", { class: "badge review" }, [
           U.el("span", { class: "dot" }), "Concentração de " + peso.toFixed(0) + "%"
         ]) : null,
         body: [posGrid] });

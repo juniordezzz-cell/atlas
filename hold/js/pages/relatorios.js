@@ -12,8 +12,27 @@
     view.appendChild(U.el("div", { class: "view-head" }, [
       U.el("div", { class: "row" }, [
         U.el("div", { class: "grow" }, [U.el("h1", { text: "Relatórios" }), U.el("p", { text: "Síntese consolidada do estado do portfólio para revisão periódica." })]),
+        /* ------------------------------------------------------------
+           "EXPORTAR JSON" SAIU DAQUI, E NÃO É PERDA DE FUNÇÃO
+
+           O botão gerava hold-export-AAAA-MM-DD.json e NADA no sistema
+           lia esse arquivo de volta: a função de importar existia no
+           store e não era chamada por tela nenhuma. Ao lado de "CSV" e
+           "Imprimir", ele parecia o botão de backup — e um backup que
+           não restaura é pior que nenhum, porque a pessoa confia nele.
+
+           E restaurá-lo seria pior ainda: o arquivo levava as POSIÇÕES
+           sem os eventos de caixa que as explicam. Recriaria exatamente
+           o estado que esta auditoria passou inteira removendo —
+           patrimônio existindo sem depósito que o justifique.
+
+           O backup de verdade é central, cobre as chaves do Hold e
+           restaura tudo junto, caixa incluído: Configurações → Dados e
+           Backup. O botão abaixo leva para lá em vez de fingir.
+           ------------------------------------------------------------ */
         U.button("Exportar CSV", { variant: "secondary", icon: "download", onClick: exportCSV }),
-        U.button("Exportar JSON", { variant: "secondary", icon: "download", onClick: exportJSON }),
+        U.button("Backup completo", { variant: "secondary", icon: "shield",
+          onClick: function () { location.href = "../configuracoes.html#dados"; } }),
         U.button("Imprimir / PDF", { variant: "primary", icon: "report", onClick: imprimir })
       ])
     ]));
@@ -71,11 +90,13 @@
     var posCols = [
       { head: "Ativo", render: function (p) { return U.assetCell(S.get.asset(p.ativo_id)); } },
       { head: "Tese", render: function (p) { var t = S.get.thesisOfAsset(p.ativo_id); return t ? U.badge(t.status) : U.el("span", { class: "badge plain", text: "—" }); } },
-      { head: "Convicção", render: function (p) { var a = S.get.asset(p.ativo_id); return U.convictionMini(a.conviccao); } },
+      S.get.config("mostrar_conviccao")
+        ? { head: "Convicção", render: function (p) { var a = S.get.asset(p.ativo_id); return U.convictionMini(a.conviccao); } }
+        : null,
       { head: "Valor", right: true, render: function (p) { return U.el("span", { class: "num", text: U.money(S.get.positionValue(p), 0) }); } },
       { head: "PnL", right: true, render: function (p) { var v = S.get.positionPnL(p); return U.el("span", { class: "num " + U.signClass(v), text: U.money(v, 0) }); } },
       { head: "Peso", right: true, render: function (p) { return U.el("span", { class: "num", text: S.get.positionWeight(p).toFixed(0) + "%" }); } }
-    ];
+    ].filter(Boolean);
     var posCard = U.card({ eyebrow: "Detalhamento", title: "Posições e fundamentos", tight: true,
       body: [S.get.walletPositions().length
         ? U.table(posCols, S.get.walletPositions().slice().sort(function (x, y) {
@@ -180,13 +201,5 @@
     } else { window.print(); }
   }
 
-  function exportJSON() {
-    var data = S.actions.exportJSON();
-    var blob = new Blob([data], { type: "application/json" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url; a.download = "hold-export-" + new Date().toISOString().slice(0, 10) + ".json";
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    U.toast("Exportado", "Arquivo JSON gerado.", "success");
-  }
+
 })();

@@ -404,6 +404,50 @@
     };
   }
 
+  /* ============================================================
+     PREFERÊNCIAS DO MÓDULO — que existiam e não valiam nada
+
+     Configurações → Hold oferecia três interruptores:
+     "Alertar teses invalidadas", "Alertar teses em revisão" e
+     "Mostrar convicção nas listas". NENHUM era lido por uma linha de
+     código do módulo. Ligar ou desligar não mudava nada na tela — e um
+     controle que não controla é pior que um ausente, porque a pessoa
+     desliga o alerta, continua vendo o alerta e conclui que o sistema
+     está quebrado.
+
+     Pior: os dois primeiros falavam de "invalidada" e "em revisão",
+     status que deixaram de existir quando as Teses viraram entidade
+     compartilhada. Eram interruptores para alertas que o módulo não
+     emite mais.
+
+     Agora as preferências correspondem aos alertas que EXISTEM, e são
+     lidas aqui. O limite de concentração também sai daqui: ele estava
+     escrito como "40" em três lugares (o alerta, a barra de peso da
+     lista e o selo da tela do ativo) — três cópias da mesma regra.
+     ============================================================ */
+  var PADRAO_CONFIG = {
+    alerta_sem_tese: true,
+    alerta_concentracao: true,
+    limite_concentracao: 40,
+    mostrar_conviccao: true
+  };
+
+  function config(chave) {
+    var c = HOLD_STATE.config || {};
+    var v = c[chave];
+    if (v === undefined || v === null || v === "") return PADRAO_CONFIG[chave];
+    if (typeof PADRAO_CONFIG[chave] === "number") {
+      var n = parseFloat(v);
+      return isFinite(n) ? n : PADRAO_CONFIG[chave];
+    }
+    if (typeof PADRAO_CONFIG[chave] === "boolean") return v !== false && v !== "false";
+    return v;
+  }
+
+  /* Um número, um dono: quem quiser saber se uma posição está
+     concentrada pergunta aqui. */
+  function concentrada(pct) { return pct > config("limite_concentracao"); }
+
   // Alertas derivados: teses em revisão / ativos investidos sem tese, etc.
   function alerts() {
     var out = [];
@@ -420,13 +464,15 @@
       }
     });
     HOLD_STATE.ativos.forEach(function (a) {
+      if (!config("alerta_sem_tese")) return;
       if (statusDe(a) === "invested" && !thesisOfAsset(a.id)) {
         out.push({ level: "crit", title: "Posição sem tese", sub: a.ticker + " está investido sem tese vinculada.", asset: a.id });
       }
     });
     walletPositions().forEach(function (p) {
+      if (!config("alerta_concentracao")) return;
       var pct = positionWeight(p);
-      if (pct > 40) {
+      if (concentrada(pct)) {
         var a3 = asset(p.ativo_id);
         out.push({ level: "info", title: "Concentração elevada", sub: (a3 ? a3.ticker : "—") + " representa " + pct.toFixed(0) + "% da carteira.", asset: p.ativo_id });
       }
@@ -544,14 +590,13 @@
       return { deleted: a, teseArquivada: !!(t && t.status !== "concluida" && t.status !== "arquivada") };
     },
 
-    updatePrice: function (id, price) {
-      var a = asset(id); if (!a) return;
-      a.preco_atual = num(price);
-      a.precoEm = new Date().toISOString();
-      logHistory(EVENTS.POSITION_UPDATED, "price", id, a.tese_id,
-        "Atualização de preço de mercado.", a.ticker + " marcado a " + price + ".");
-      emit(EVENTS.POSITION_UPDATED, a); persist();
-    },
+    /* updatePrice() vivia aqui e NUNCA foi chamada por tela nenhuma —
+       nem antes nem depois de o módulo ganhar remarcação de preço. Quem
+       faz o trabalho hoje são refreshPrices() (todas, pela cadeia) e
+       precoManual() (uma, informada por você). Uma terceira porta para
+       gravar preço, sem dono, é a próxima divergência esperando
+       acontecer. */
+
 
     /* ============================================================
        PREÇO NA MÃO — a regra do ATLAS, que faltava no Hold
@@ -684,6 +729,51 @@
       if (a && t2) a.conviccao = t2.conviccao;
       logHistory(EVENTS.THESIS_UPDATED, "thesis", t2 ? t2.ativo_id : null, id,
         data.motivo || "Tese revisada.", "Tese atualizada (convicção " + (t2 ? t2.conviccao : "—") + ", status " + (t2 ? t2.status : "—") + ").");
+      emit(EVENTS.THESIS_UPDATED, t2); persist();
+      return t2;
+    },
+
+    /* ============================================================
+       INICIAR E REATIVAR TESE — as duas ações que fugiam do store
+
+       A tela de Teses chamava `AtlasTheses.setStatus()` e
+       `AtlasTheses.reopen()` DIRETO, sem passar por aqui. O cabeçalho
+       deste arquivo diz que toda mutação passa por Store.actions
+       porque é aqui que o histórico é escrito — e essas duas não
+       escreviam. Consequência: "Iniciar" uma tese planejada e
+       "Reativar" uma arquivada não apareciam no Histórico, numa tela
+       que se apresenta como "registro imutável de decisões. Toda ação
+       do sistema deixa rastro aqui".
+
+       Começar a analisar um ativo e ressuscitar uma tese arquivada são
+       exatamente o tipo de decisão que se quer reler meses depois.
+       ============================================================ */
+    startThesis: function (id) {
+      if (!window.AtlasTheses) return null;
+      var t = thesis(id); if (!t) return null;
+      if (t.status !== "planejada") return t;
+      window.AtlasTheses.setStatus(id, "andamento");
+      syncTheses();
+      var a = asset(t.ativo_id);
+      logHistory(EVENTS.THESIS_UPDATED, "thesis", t.ativo_id, id,
+        "Análise iniciada.", "Tese de " + (a ? a.ticker : t.titulo || "ativo") +
+        " saiu da fila e entrou em andamento.");
+      emit(EVENTS.THESIS_UPDATED, thesis(id)); persist();
+      return thesis(id);
+    },
+
+    reopenThesis: function (id) {
+      if (!window.AtlasTheses) return null;
+      var t = thesis(id); if (!t) return null;
+      var antes = t.status;
+      window.AtlasTheses.reopen(id);
+      syncTheses();
+      var t2 = thesis(id); if (!t2) return null;
+      var a2 = asset(t2.ativo_id);
+      logHistory(EVENTS.THESIS_UPDATED, "thesis", t2.ativo_id, id,
+        antes === "arquivada" ? "Tese desarquivada." : "Tese reaberta.",
+        "Tese de " + (a2 ? a2.ticker : t2.titulo || "ativo") +
+        " voltou ao andamento (versão " + t2.version + ").");
       emit(EVENTS.THESIS_UPDATED, t2); persist();
       return t2;
     },
@@ -860,60 +950,29 @@
       return { position: pos };
     },
 
-    updateConfig: function (patch) {
-      Object.assign(HOLD_STATE.config, patch);
-      persist(); emit(EVENTS.STATE_CHANGED, { evt: "config", payload: HOLD_STATE.config });
-    },
+    /* updateConfig() saiu: nenhuma tela a chamava. As preferências do
+       módulo são editadas em Configurações → Hold, por
+       core/atlas-module-settings.js, que grava direto na chave. Manter
+       um segundo caminho de escrita para o mesmo objeto é como as duas
+       telas passam a discordar sobre o que está ligado. O Hold LÊ as
+       preferências em config() — ver o bloco lá em cima. */
+
 
     resetToSeed: function () {
       try { localStorage.removeItem(LS_KEY); } catch (e) {}
       load(); emit(EVENTS.STATE_CHANGED, { evt: "reset" });
     },
 
-    exportJSON: function () { return JSON.stringify(HOLD_STATE, null, 2); },
+    /* exportJSON()/importJSON() saíram. O botão que usava o primeiro
+       gerava um arquivo que o segundo nunca leu — importJSON não era
+       chamado por tela nenhuma. Pior, o arquivo levava POSIÇÕES sem os
+       eventos de caixa que as explicam: restaurá-lo recriaria
+       patrimônio sem depósito que o justifique.
 
-    importJSON: function (raw) {
-      try {
-        var parsed = JSON.parse(raw);
-        Object.keys(HOLD_STATE).forEach(function (k) {
-          if (k === "teses") return; // teses vivem na entidade compartilhada
-          if (parsed[k] != null) HOLD_STATE[k] = parsed[k];
-        });
-        // Backups antigos podem trazer teses/estudos: repassa à entidade sem duplicar.
-        if (window.AtlasTheses && (parsed.teses || parsed.estudos)) {
-          var tk = {};
-          (HOLD_STATE.ativos || []).forEach(function (a) { tk[a.id] = a.ticker; });
-          (parsed.teses || []).forEach(function (o) {
-            if (window.AtlasTheses.get(o.id)) return;
-            var map = { active: "andamento", review: "andamento", invalid: "arquivada" };
-            window.AtlasTheses.create({
-              id: o.id, module: "hold", asset: tk[o.ativo_id] || "—",
-              title: "Tese " + (tk[o.ativo_id] || ""), content: o.narrativa || "",
-              status: map[o.status] || o.status || "andamento",
-              data: {
-                ativo_id: o.ativo_id || null, cenarios: o.cenarios || {},
-                riscos: o.riscos || [], catalisadores: o.catalisadores || [],
-                criterios_invalidacao: o.criterios_invalidacao || "",
-                conviccao: o.conviccao != null ? o.conviccao : 5
-              }
-            });
-          });
-          (parsed.estudos || []).forEach(function (o) {
-            if (window.AtlasTheses.get(o.id)) return;
-            window.AtlasTheses.create({
-              id: o.id, module: "hold", asset: tk[o.ativo_id] || "Tema geral",
-              title: o.titulo || "Estudo sem título",
-              content: [o.conteudo, o.insights].filter(Boolean).join("\n\n"),
-              status: "planejada",
-              data: { ativo_id: o.ativo_id || null, tipo_estudo: o.tipo || null, origem: "estudo" }
-            });
-          });
-        }
-        syncTheses();
-        persist(); emit(EVENTS.STATE_CHANGED, { evt: "import" });
-        return { ok: true };
-      } catch (e) { return { error: "JSON inválido." }; }
-    }
+       O backup do ATLAS é central (core/atlas-backup.js), cobre
+       atlas.hold.state.v2 e atlas.hold.wallet.v1 e restaura tudo junto,
+       caixa incluído. Um formato de backup por sistema, não um por
+       módulo. */
   };
 
   /* ---- utils ---- */
@@ -948,7 +1007,8 @@
       portfolioPnL: portfolioPnL, portfolioPnLPct: portfolioPnLPct,
       globalTotal: globalTotal, statusDe: statusDe,
       portfolioHistory: portfolioHistory, recordSnapshot: recordSnapshot,
-      counts: counts, alerts: alerts
+      counts: counts, alerts: alerts,
+      config: config, concentrada: concentrada
     },
     /* ---- Carteiras (ponte com a central) ---- */
     wallets: {

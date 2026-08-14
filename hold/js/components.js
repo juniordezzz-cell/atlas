@@ -196,6 +196,14 @@
   }
 
   /* ---------- Card ---------- */
+  /* Não existe opção `pad` aqui, e é de propósito: o .card-body já
+     nasce com o espaçamento. Havia chamadas passando `pad: true`
+     acreditando que ligavam alguma coisa — ele era silenciosamente
+     ignorado e o resultado saía certo por acidente. Aplicar a classe
+     agora somaria os dois espaçamentos. As chamadas foram limpas.
+
+     A classe .card.pad continua no CSS para cartões montados à mão
+     (sem .card-body), como os da tela de Teses. */
   function card(opts) {
     opts = opts || {};
     var c = el("div", { class: "card" + (opts.hoverable ? " hoverable" : "") });

@@ -72,7 +72,10 @@
       var meta = U.el("div", { class: "between mt-16" });
       meta.appendChild(U.conviction(t.conviccao));
       var right = U.el("span", { class: "small dim" });
-      var pos = S.get.positionOf(t.ativo_id);
+      /* anyPositionOf, não positionOf: a tese é do MÓDULO inteiro, e
+         positionOf só enxerga a carteira ativa. Uma tese de um ativo
+         mantido em outra carteira aparecia como "Sem posição". */
+      var pos = S.get.anyPositionOf(t.ativo_id);
       right.textContent = "v" + (t.version || 1) + (t.revisoes ? " · " + t.revisoes + " revisão(ões)" : "") + " · " + (pos ? "Investido" : "Sem posição");
       meta.appendChild(right);
       card.appendChild(meta);
@@ -81,8 +84,10 @@
       if (a) actions.appendChild(U.button("Ver ativo", { variant: "secondary", size: "sm", onClick: function () { location.hash = "#/ativos?id=" + t.ativo_id; } }));
       actions.appendChild(U.button("Revisar", { variant: "ghost", size: "sm", icon: "edit", onClick: function () { F.editThesis(t.id); } }));
       if (t.status === "planejada") {
-        actions.appendChild(U.button("Iniciar", { variant: "ghost", size: "sm", onClick: function () {
-          window.AtlasTheses.setStatus(t.id, "andamento");
+        /* Passa por Store.actions, não por AtlasTheses direto: era daí
+           que vinha a ausência no Histórico. Ver startThesis(). */
+        actions.appendChild(U.button("Iniciar", { variant: "ghost", size: "sm", icon: "play", onClick: function () {
+          S.actions.startThesis(t.id);
           U.toast("Tese em andamento", (a ? a.ticker : t.titulo) + " iniciada.", "success");
           window.Router.rerender();
         }}));
@@ -93,9 +98,9 @@
       if (t.status !== "arquivada") {
         actions.appendChild(U.button("Arquivar", { variant: "ghost", size: "sm", onClick: function () { confirmArchive(t, a); } }));
       } else {
-        actions.appendChild(U.button("Reativar", { variant: "ghost", size: "sm", onClick: function () {
-          window.AtlasTheses.reopen(t.id);
-          U.toast("Tese reativada", "De volta ao andamento (versão " + ((t.version || 1) + 1) + ").", "success");
+        actions.appendChild(U.button("Reativar", { variant: "ghost", size: "sm", icon: "refresh", onClick: function () {
+          var r = S.actions.reopenThesis(t.id);
+          U.toast("Tese reativada", "De volta ao andamento (versão " + (r ? r.version : "?") + ").", "success");
           window.Router.rerender();
         }}));
       }

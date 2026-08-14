@@ -1057,6 +1057,82 @@
          H.state.historico.some(function (h) { return String(h.impacto).indexOf("SOOL removido") >= 0; }),
          "registrado");
 
+      /* ------------------------------------------------------------
+         PREFERÊNCIAS QUE NÃO PREFERIAM NADA
+
+         Configurações → Hold oferecia "Alertar teses invalidadas",
+         "Alertar teses em revisão" e "Mostrar convicção nas listas".
+         NENHUMA era lida por uma linha do módulo: ligar ou desligar não
+         mudava nada. E as duas primeiras nomeavam status que sumiram
+         quando as Teses viraram entidade compartilhada.
+
+         Um controle que não controla é pior que um ausente — a pessoa
+         desliga o alerta, continua vendo o alerta e conclui que o
+         sistema está quebrado. Os casos abaixo travam a ligação.
+         ------------------------------------------------------------ */
+      var solB = H.actions.createAsset({ nome: "Sol B", ticker: "SOLB", preco_atual: 100 });
+      CX3.registrar({ tipo: "deposito", valorUSD: 5000, walletId: wH });
+      H.actions.executeBuy({ ativo_id: solB.id, quantidade: 10, preco: 100 });
+
+      eq("por padrão o limite de concentração é 40%", H.get.config("limite_concentracao"), 40);
+      ok("e uma posição sozinha na carteira dispara o alerta",
+         H.get.alerts().some(function (a) { return a.title === "Concentração elevada"; }), "dispara");
+
+      H.state.config.alerta_concentracao = false;
+      ok("desligar a preferência silencia o alerta",
+         !H.get.alerts().some(function (a) { return a.title === "Concentração elevada"; }), "silenciou");
+      H.state.config.alerta_concentracao = true;
+
+      H.state.config.limite_concentracao = 99;
+      ok("subir o limite para 99% também silencia",
+         !H.get.alerts().some(function (a) { return a.title === "Concentração elevada"; }), "silenciou");
+      ok("e concentrada() segue o mesmo número", H.get.concentrada(98) === false, "98 < 99");
+      H.state.config.limite_concentracao = 40;
+      ok("voltando a 40, 98% é concentração", H.get.concentrada(98) === true, "sim");
+
+      ok("o alerta de posição sem tese existe",
+         H.get.alerts().some(function (a) { return a.title === "Posição sem tese"; }), "existe");
+      H.state.config.alerta_sem_tese = false;
+      ok("e obedece à preferência",
+         !H.get.alerts().some(function (a) { return a.title === "Posição sem tese"; }), "silenciou");
+      H.state.config.alerta_sem_tese = true;
+
+      /* ------------------------------------------------------------
+         AS DUAS AÇÕES DE TESE QUE FUGIAM DO STORE
+
+         A tela chamava AtlasTheses.setStatus/reopen direto, então
+         "Iniciar" e "Reativar" não escreviam no histórico do módulo —
+         numa tela que se apresenta como "registro imutável de decisões:
+         toda ação do sistema deixa rastro aqui".
+         ------------------------------------------------------------ */
+      var tB = H.actions.createThesis({ ativo_id: solB.id, narrativa: "fila", status: "planejada", conviccao: 4 });
+      var histAntes = H.state.historico.length;
+      H.actions.startThesis(tB.id);
+      is("iniciar leva a tese ao andamento", H.get.thesis(tB.id).status, "andamento");
+      ok("e deixa rastro no histórico", H.state.historico.length > histAntes,
+         H.state.historico.length - histAntes + " linha(s)");
+
+      H.actions.archiveThesis(tB.id, "teste");
+      var histAntes2 = H.state.historico.length;
+      var reab = H.actions.reopenThesis(tB.id);
+      is("reativar volta ao andamento", reab.status, "andamento");
+      eq("subindo a versão", reab.version, 2);
+      ok("e também deixa rastro", H.state.historico.length > histAntes2,
+         H.state.historico.length - histAntes2 + " linha(s)");
+
+      /* ------------------------------------------------------------
+         CÓDIGO MORTO QUE NÃO PODE VOLTAR
+
+         updatePrice, updateConfig, exportJSON e importJSON não eram
+         chamados por tela nenhuma. O par de JSON era o pior: gerava um
+         arquivo que o próprio sistema não lia de volta, e que levava
+         posições SEM os eventos de caixa que as explicam. Restaurá-lo
+         recriaria patrimônio sem depósito que o justifique.
+         ------------------------------------------------------------ */
+      ["updatePrice", "updateConfig", "exportJSON", "importJSON"].forEach(function (k) {
+        is("Store.actions." + k + " não existe mais", typeof H.actions[k], "undefined");
+      });
+
       /* -- "Começar do zero" não pode deixar a curva de pé -- */
       H.actions.resetToSeed();
       eq("resetar apaga a série junto com as posições", H.get.portfolioHistory(90).length, 0);

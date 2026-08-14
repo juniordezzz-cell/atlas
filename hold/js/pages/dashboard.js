@@ -279,7 +279,7 @@
           return U.el("span", { class: "num", text: U.money(S.get.positionValue(p), 0) }); } },
         { head: "Peso", right: true, render: function (p) {
           var w = S.get.positionWeight(p);
-          var wrap = U.el("span", { class: "peso-mini" + (w > 40 ? " alto" : "") });
+          var wrap = U.el("span", { class: "peso-mini" + (S.get.concentrada(w) ? " alto" : "") });
           var bar = U.el("span", { class: "bar" });
           bar.appendChild(U.el("i", { style: "width:" + w.toFixed(0) + "%" }));
           wrap.appendChild(bar);

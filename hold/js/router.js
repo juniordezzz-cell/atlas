@@ -118,11 +118,57 @@
     /* ---- Seletor de carteira (Global/Local) ---- */
     actions.appendChild(buildWalletSelector());
 
-    var pill = U.el("div", { class: "market-pill" });
+    /* ------------------------------------------------------------
+       A PASTILHA NÃO É UM SINAL DE MERCADO AO VIVO
+
+       Ela se chamava "market-pill" e trazia um ponto verde com brilho
+       — a convenção universal de "conectado, dados chegando agora".
+       Não há conexão nenhuma: o número é o valor da carteira calculado
+       com os preços gravados, que podem ser de semanas atrás. Um sinal
+       de "ao vivo" ao lado de um preço velho é o tipo de mentira
+       silenciosa que esta auditoria vem removendo.
+
+       O ponto agora reflete a idade do preço mais VELHO da carteira, e
+       a pastilha diz quando foi a última remarcação.
+       ------------------------------------------------------------ */
+    var idade = idadeDosPrecos();
+    var pill = U.el("div", { class: "market-pill " + idade.nivel, title: idade.dica });
     pill.appendChild(U.el("span", { class: "dot" }));
     pill.appendChild(document.createTextNode("Carteira " + U.compact(S.get.portfolioValue())));
+    pill.appendChild(U.el("span", { class: "mp-idade", text: idade.rotulo }));
     actions.appendChild(pill);
     tb.appendChild(actions);
+  }
+
+  /* Idade do preço mais velho ENTRE AS POSIÇÕES — não entre todos os
+     ativos: um ativo de watchlist com preço velho não afeta nenhum
+     número de dinheiro, e alarmar por ele treinaria a ignorar o aviso.
+     Sem posição, não há o que envelhecer. */
+  function idadeDosPrecos() {
+    var pos = S.get.walletPositions();
+    if (!pos.length) return { nivel: "neutro", rotulo: "", dica: "Sem posições nesta carteira." };
+
+    var maisVelho = null, semData = 0;
+    pos.forEach(function (p) {
+      var a = S.get.asset(p.ativo_id);
+      if (!a) return;
+      if (!a.precoEm) { semData++; return; }
+      var d = Math.floor((Date.now() - new Date(a.precoEm).getTime()) / 86400000);
+      if (maisVelho == null || d > maisVelho) maisVelho = d;
+    });
+
+    if (semData) {
+      return { nivel: "velho", rotulo: "· preço do cadastro",
+               dica: semData + " posição(ões) ainda com o preço digitado no cadastro. " +
+                     "Use \"Atualizar preços\" em Ativos." };
+    }
+    var r = maisVelho <= 0 ? "· hoje" : maisVelho === 1 ? "· ontem" : "· há " + maisVelho + "d";
+    return {
+      nivel: maisVelho <= 1 ? "fresco" : maisVelho <= 7 ? "morno" : "velho",
+      rotulo: r,
+      dica: "Remarcação mais antiga entre as posições: " +
+            (maisVelho <= 0 ? "hoje" : maisVelho + " dia(s) atrás") + "."
+    };
   }
 
   /* Totais do Hold numa carteira QUALQUER — não só a ativa.
@@ -178,12 +224,19 @@
     return wrap;
   }
 
-  function escapeHtml(s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
+  /* escapeHtml() morava aqui e não era chamada por uma linha sequer.
+     Função de escape sem uso é pior que ausente: quem lê o arquivo
+     conclui que a saída HTML daqui é escapada, e ela é montada com
+     textContent — que já escapa por natureza. */
 
   function render() {
     if (!mounted) buildShell();
+    /* O menu suspenso vive em document.body com position:fixed, então
+       ele NÃO é removido junto com a view. Sem esta linha, um menu
+       aberto quando o estado muda (troca de carteira, outra aba
+       gravando) sobrevivia ao render, flutuando sobre a tela nova e
+       apontando para uma linha que não existe mais. */
+    if (U.fecharMenu) U.fecharMenu();
     current = parseHash();
     var host = document.getElementById("app-view");
     var pageFn = window.Pages[current.route] || window.Pages.dashboard;

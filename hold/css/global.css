@@ -249,7 +249,15 @@ h3 { font-size: 16px; font-weight: 600; }
   padding: 6px 11px; border: 1px solid var(--border);
   border-radius: 20px; background: var(--surface);
 }
-.market-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); }
+/* O ponto informa a IDADE do preço, não uma conexão. Verde brilhante
+   fixo dizia "ao vivo" ao lado de números que podem ser de semanas
+   atrás. O brilho ficou só no estado realmente fresco. */
+.market-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); }
+.market-pill.fresco .dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
+.market-pill.morno  .dot { background: var(--warning); }
+.market-pill.velho  .dot { background: var(--danger); }
+.market-pill.velho  { border-color: rgba(239,68,68,0.28); }
+.market-pill .mp-idade { font-family: var(--mono); font-size: 11px; opacity: 0.8; }
 
 .view {
   flex: 1; padding: 26px 24px 60px;

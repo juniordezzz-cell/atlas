@@ -48,12 +48,29 @@
              daqui e alimenta a saudação e o avatar do shell inteiro */
           desc: "Aparece na saudação do painel, no avatar e nos relatórios",
           placeholder: "Seu nome" },
-        { k: "alerta_invalidacao", type: "bool", def: true,
-          label: "Alertar teses invalidadas",
-          desc: "Avisa quando uma tese perde a validade" },
-        { k: "alerta_revisao", type: "bool", def: true,
-          label: "Alertar teses em revisão",
-          desc: "Avisa quando chega a data de revisar" },
+        /* ------------------------------------------------------------
+           ESTES INTERRUPTORES NÃO CONTROLAVAM NADA
+
+           Havia aqui "Alertar teses invalidadas" e "Alertar teses em
+           revisão". Nenhuma linha do Hold os lia — desligar não mudava
+           nada na tela. E os dois falavam de "invalidada" e "em
+           revisão", status que sumiram quando as Teses viraram entidade
+           compartilhada (agora: planejada, andamento, concluida,
+           arquivada). Eram controles para alertas que o módulo não
+           emite mais.
+
+           Os de agora correspondem aos alertas que o Hold realmente
+           emite, e são lidos em hold/js/state.js → alerts().
+           ------------------------------------------------------------ */
+        { k: "alerta_sem_tese", type: "bool", def: true,
+          label: "Alertar posição sem tese",
+          desc: "Avisa enquanto houver dinheiro alocado sem fundamento escrito" },
+        { k: "alerta_concentracao", type: "bool", def: true,
+          label: "Alertar concentração elevada",
+          desc: "Avisa quando uma única posição passa do limite abaixo" },
+        { k: "limite_concentracao", type: "number", def: 40, min: 1, max: 100,
+          label: "Limite de concentração (%)",
+          desc: "Acima disso a posição é destacada na lista e no painel" },
         { k: "mostrar_conviccao", type: "bool", def: true,
           label: "Mostrar convicção nas listas",
           desc: "Exibe a nota de convicção junto de cada ativo" }
