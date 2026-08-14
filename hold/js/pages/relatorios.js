@@ -18,12 +18,42 @@
       ])
     ]));
 
+    /* ------------------------------------------------------------
+       O RESUMO PASSA A FECHAR A CONTA
+
+       Ele listava valor, custo e resultado — e parava aí. Faltava o
+       lado do dinheiro: quanto ainda há em caixa, e quanto entrou e
+       saiu no período. Sem isso, "quanto vale a carteira" e "quanto eu
+       tenho" eram perguntas diferentes que o relatório respondia pela
+       metade, num documento cujo propósito é a revisão periódica.
+
+       Aportes e retornos vêm do livro de caixa (wallets/walletCaixa),
+       que é a fonte da verdade do dinheiro — não de uma soma paralela
+       feita aqui.
+       ------------------------------------------------------------ */
+    var carteira = S.wallets.active();
+    var caixa = (window.AtlasCaixa && carteira) ? AtlasCaixa.saldo(carteira.id) : null;
+    var mov = { aporte: 0, retorno: 0 };
+    if (window.AtlasCaixa && carteira) {
+      AtlasCaixa.eventos(carteira.id).forEach(function (e) {
+        if (e.module !== "hold") return;
+        if (e.tipo === "aporte") mov.aporte += (+e.valorUSD || 0);
+        if (e.tipo === "retorno") mov.retorno += (+e.valorUSD || 0);
+      });
+    }
+
     // resumo executivo
     var dl = U.el("dl", { class: "def-list" });
     row(dl, "Data do relatório", U.dateShort(new Date().toISOString()));
+    row(dl, "Carteira", carteira ? carteira.name : "—");
     row(dl, "Valor de mercado", U.money(val, 0));
     row(dl, "Custo investido", U.money(cost, 0));
     row(dl, "Resultado", U.money(pnl, 0) + " (" + U.pct(pnlPct) + ")");
+    row(dl, "Caixa disponível", caixa == null ? "—" : U.money(caixa, 0));
+    row(dl, "Total sob gestão (carteira + caixa)",
+        caixa == null ? U.money(val, 0) : U.money(val + caixa, 0));
+    row(dl, "Comprado / apurado em vendas (Hold)",
+        U.money(mov.aporte, 0) + " / " + U.money(mov.retorno, 0));
     row(dl, "Posições ativas", String(c.posicoes));
     /* Antes: "ativas / revisão / total" com c.teses_revisao, que NUNCA
        existiu em Store.get.counts() — o relatório imprimia literalmente
@@ -47,7 +77,13 @@
       { head: "Peso", right: true, render: function (p) { return U.el("span", { class: "num", text: S.get.positionWeight(p).toFixed(0) + "%" }); } }
     ];
     var posCard = U.card({ eyebrow: "Detalhamento", title: "Posições e fundamentos", tight: true,
-      body: [S.get.walletPositions().length ? U.table(posCols, S.get.walletPositions(), {}) : U.empty("wallet", "Sem posições", "Nada a reportar na carteira.")] });
+      body: [S.get.walletPositions().length
+        ? U.table(posCols, S.get.walletPositions().slice().sort(function (x, y) {
+            return S.get.positionValue(y) - S.get.positionValue(x);
+          }), {})
+        : U.empty("wallet", "Sem posições", "Nada a reportar na carteira.",
+            U.button("Ver ativos", { variant: "secondary", icon: "layers",
+              onClick: function () { location.hash = "#/ativos"; } }))] });
     posCard.classList.add("mt-16");
     view.appendChild(posCard);
 

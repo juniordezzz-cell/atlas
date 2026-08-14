@@ -241,24 +241,79 @@
 
   /* ---------- Table ---------- */
   // columns: [{ head, right?, render(row)->node|string }]
+  /* ============================================================
+     TABELA COM ORDENAÇÃO E AÇÕES POR LINHA
+
+     A tabela do Hold só sabia listar. Duas consequências práticas:
+     não dava para perguntar "qual é a minha maior posição?" sem ler
+     linha a linha, e qualquer ação exigia abrir o ativo primeiro —
+     três cliques para uma compra que devia caber em um.
+
+     Ordenação: a coluna declara `sort` (função que extrai o valor de
+     comparação). Sem `sort`, o cabeçalho não vira botão — coluna que
+     não ordena não deve parecer que ordena. O estado vive fora do
+     render (`opts.sortKey`/`opts.onSort`) para sobreviver ao
+     re-render da página.
+
+     Ações: a coluna declara `actions: true`. O clique nela NÃO
+     dispara o onRow — abrir o ativo ao tentar excluí-lo seria o tipo
+     de acidente que a interface não pode oferecer.
+     ============================================================ */
   function table(columns, rows, opts) {
     opts = opts || {};
     var wrap = el("div", { class: "table-wrap" });
     var t = el("table", { class: "tbl" });
     var thead = el("thead"), htr = el("tr");
-    columns.forEach(function (col) { htr.appendChild(el("th", { class: col.right ? "right" : "", text: col.head })); });
+
+    var ordenadas = rows.slice();
+    var chave = opts.sortKey || null, desc = opts.sortDesc !== false;
+    if (chave) {
+      var alvo = columns.filter(function (c) { return (c.key || c.head) === chave && c.sort; })[0];
+      if (alvo) {
+        ordenadas.sort(function (a, b) {
+          var x = alvo.sort(a), y = alvo.sort(b);
+          if (typeof x === "string" || typeof y === "string") {
+            var r = String(x).localeCompare(String(y), "pt-BR");
+            return desc ? -r : r;
+          }
+          return desc ? (y - x) : (x - y);
+        });
+      }
+    }
+
+    columns.forEach(function (col) {
+      var id = col.key || col.head;
+      var th = el("th", { class: (col.right ? "right " : "") + (col.actions ? "acts " : "") + (col.sort ? "sortable" : "") });
+      if (!col.sort) { th.textContent = col.head; htr.appendChild(th); return; }
+      var ativo = chave === id;
+      var b = el("button", { class: "th-sort" + (ativo ? " on" : ""), type: "button",
+        "aria-label": "Ordenar por " + col.head });
+      b.appendChild(document.createTextNode(col.head));
+      b.appendChild(el("span", { class: "th-arrow", text: ativo ? (desc ? "↓" : "↑") : "↕" }));
+      b.addEventListener("click", function () {
+        if (!opts.onSort) return;
+        /* Clicar de novo na mesma coluna inverte; coluna nova começa
+           decrescente, que é o que se quer ver primeiro em dinheiro. */
+        opts.onSort(id, ativo ? !desc : true);
+      });
+      th.appendChild(b);
+      htr.appendChild(th);
+    });
     thead.appendChild(htr); t.appendChild(thead);
     var tb = el("tbody");
-    if (!rows.length) {
+    if (!ordenadas.length) {
       var tr = el("tr");
       tr.appendChild(el("td", { colspan: columns.length, class: "dim", style: "text-align:center;padding:28px", text: opts.empty || "Nenhum registro." }));
       tb.appendChild(tr);
     }
-    rows.forEach(function (row) {
+    ordenadas.forEach(function (row) {
       var tr = el("tr", { class: opts.onRow ? "clickable" : "" });
       if (opts.onRow) tr.addEventListener("click", function () { opts.onRow(row); });
       columns.forEach(function (col) {
-        var td = el("td", { class: col.right ? "right" : "" });
+        var td = el("td", { class: (col.right ? "right " : "") + (col.actions ? "acts" : "") });
+        /* A célula de ações engole o clique: quem aperta "excluir" não
+           quer, junto, abrir o ativo. */
+        if (col.actions) td.addEventListener("click", function (e) { e.stopPropagation(); });
         var val = col.render(row);
         if (val == null) val = "—";
         if (typeof val === "string" || typeof val === "number") td.textContent = String(val);
@@ -289,6 +344,124 @@
     b.appendChild(document.createTextNode(label));
     if (opts.onClick) b.addEventListener("click", opts.onClick);
     return b;
+  }
+
+  /* ============================================================
+     BOTÃO DE AÇÃO — o verbo ao alcance da linha
+
+     Botão só de ícone, com rótulo acessível obrigatório. Um ícone sem
+     nome é um enigma para quem usa leitor de tela e uma adivinhação
+     para todo mundo — o `title` também alimenta a dica ao passar o
+     mouse, então o mesmo texto serve aos dois.
+     ============================================================ */
+  function actionBtn(iconName, label, onClick, opts) {
+    opts = opts || {};
+    var b = el("button", {
+      class: "act-btn" + (opts.danger ? " danger" : "") + (opts.primary ? " primary" : ""),
+      type: "button", title: label, "aria-label": label
+    });
+    b.innerHTML = icon(iconName);
+    if (opts.disabled) { b.disabled = true; b.title = opts.disabledHint || label; }
+    else if (onClick) b.addEventListener("click", onClick);
+    return b;
+  }
+
+  /* Fileira de ações para uma linha de tabela. Aceita null no meio da
+     lista, para a página poder decidir "vender só aparece se houver
+     posição" sem montar arrays condicionais. */
+  function rowActions(botoes) {
+    var w = el("div", { class: "row-acts" });
+    [].concat(botoes || []).forEach(function (b) { if (b) w.appendChild(b); });
+    return w;
+  }
+
+  /* ============================================================
+     MENU SUSPENSO
+
+     Existe para tirar da linha as ações que não são do dia a dia sem
+     escondê-las num submenu de configurações. Fecha ao clicar fora, ao
+     apertar Esc e ao escolher — as três saídas que um menu precisa ter.
+     ============================================================ */
+  var menuAberto = null;
+  function fecharMenu() {
+    if (!menuAberto) return;
+    menuAberto.remove(); menuAberto = null;
+    document.removeEventListener("mousedown", foraDoMenu, true);
+    document.removeEventListener("keydown", escMenu, true);
+  }
+  function foraDoMenu(e) { if (menuAberto && !menuAberto.contains(e.target)) fecharMenu(); }
+  function escMenu(e) { if (e.key === "Escape") fecharMenu(); }
+
+  function menu(ancora, itens) {
+    fecharMenu();
+    var m = el("div", { class: "menu", role: "menu" });
+    itens.forEach(function (it) {
+      if (!it) return;
+      if (it.sep) { m.appendChild(el("div", { class: "menu-sep" })); return; }
+      var b = el("button", { class: "menu-item" + (it.danger ? " danger" : ""), type: "button", role: "menuitem" });
+      if (it.icon) b.innerHTML = icon(it.icon);
+      b.appendChild(el("span", { text: it.label }));
+      if (it.disabled) { b.disabled = true; if (it.hint) b.title = it.hint; }
+      else b.addEventListener("click", function () { fecharMenu(); it.onClick(); });
+      m.appendChild(b);
+    });
+
+    document.body.appendChild(m);
+    var r = ancora.getBoundingClientRect();
+    var alt = m.offsetHeight, larg = m.offsetWidth;
+    /* Perto do rodapé, abre para cima; perto da borda direita, alinha
+       pela direita. Menu que nasce fora da tela é menu que não existe. */
+    var top = (r.bottom + alt + 8 > window.innerHeight) ? (r.top - alt - 6) : (r.bottom + 6);
+    var left = Math.min(r.left, window.innerWidth - larg - 12);
+    m.style.top = Math.max(8, top) + "px";
+    m.style.left = Math.max(8, left) + "px";
+
+    menuAberto = m;
+    document.addEventListener("mousedown", foraDoMenu, true);
+    document.addEventListener("keydown", escMenu, true);
+    var primeiro = m.querySelector("button:not([disabled])");
+    if (primeiro) primeiro.focus();
+    return m;
+  }
+
+  /* Botão "⋯" que abre o menu acima. */
+  function menuBtn(itens, label) {
+    var b = actionBtn("more", label || "Mais ações", null);
+    b.addEventListener("click", function () { menu(b, typeof itens === "function" ? itens() : itens); });
+    return b;
+  }
+
+  /* ============================================================
+     CONFIRMAÇÃO DE AÇÃO IRREVERSÍVEL
+
+     O Hold não tinha nenhuma: não havia o que confirmar, porque não
+     havia como apagar nada. Agora que há, a regra do ATLAS vale — o
+     diálogo diz O QUE some, não pergunta "tem certeza?". "Tem certeza"
+     não informa; a lista do que será perdido informa.
+     ============================================================ */
+  function confirmar(opts) {
+    var corpo = el("div");
+    if (opts.mensagem) corpo.appendChild(el("p", { style: "line-height:1.6", text: opts.mensagem }));
+    if (opts.itens && opts.itens.length) {
+      var ul = el("div", { class: "confirm-list" });
+      opts.itens.forEach(function (i) {
+        ul.appendChild(el("div", { class: "ci" }, [iconEl(i.icon || "x"), el("span", { text: i.texto })]));
+      });
+      corpo.appendChild(ul);
+    }
+    if (opts.nota) corpo.appendChild(el("div", { class: "small dim", style: "margin-top:12px", text: opts.nota }));
+
+    var ok = button(opts.confirmar || "Confirmar", {
+      variant: opts.perigo === false ? "primary" : "danger",
+      icon: opts.perigo === false ? "check" : "trash",
+      onClick: function () { closeModal(); opts.onConfirm(); }
+    });
+    modal({
+      eyebrow: opts.eyebrow || "Confirmação",
+      title: opts.titulo,
+      body: [corpo],
+      footer: [button("Cancelar", { variant: "ghost", onClick: closeModal }), el("div", { class: "spacer" }), ok]
+    });
   }
 
   /* ---------- Modal ---------- */
@@ -389,6 +562,8 @@
     dateShort: dateShort, dateTime: dateTime,
     badge: badge, typeBadge: typeBadge, conviction: conviction, convictionMini: convictionMini,
     assetCell: assetCell, card: card, kpi: kpi, table: table, empty: empty, button: button,
+    actionBtn: actionBtn, rowActions: rowActions, menu: menu, menuBtn: menuBtn,
+    fecharMenu: fecharMenu, confirmar: confirmar,
     modal: modal, closeModal: closeModal, toast: toast,
     field: field, input: input, textarea: textarea, select: select
   };

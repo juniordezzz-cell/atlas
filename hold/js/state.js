@@ -502,6 +502,48 @@
       return a;
     },
 
+    /* ============================================================
+       EXCLUIR ATIVO — não existia, e a regra nova tornou isso caro
+
+       O Hold nunca teve como apagar um ativo. Conviver com lixo já era
+       ruim; depois de "um ticker, um ativo" virou um beco: um ticker
+       digitado errado passa a BLOQUEAR o certo para sempre, e a única
+       saída era apagar o módulo inteiro.
+
+       O que a exclusão NÃO pode fazer:
+         · sumir com posição aberta — o dinheiro está lá dentro. Quem
+           quer sair vende, e a venda devolve o apurado ao caixa. Por
+           isso a recusa quando há posição em qualquer carteira.
+         · apagar o histórico. As linhas viram registro de um ativo que
+           não existe mais, e as telas já sabem exibir isso ("—"). Um
+           livro de decisões que se reescreve não é livro de decisões.
+         · apagar a tese: ela vive na entidade compartilhada e pode ter
+           ido para o Academy. Fica arquivada, com o motivo.
+       ============================================================ */
+    deleteAsset: function (id) {
+      var a = asset(id); if (!a) return { error: "Ativo inexistente." };
+
+      var pos = anyPositionOf(id);
+      if (pos) {
+        return { error: a.ticker + " tem posição aberta (" + pos.quantidade + " unidades). " +
+                        "Venda antes de excluir — o apurado volta para o caixa da carteira. " +
+                        "Excluir aqui faria o dinheiro sumir sem venda e sem saque." };
+      }
+
+      var t = thesisOfAsset(id);
+      if (t && window.AtlasTheses && t.status !== "concluida" && t.status !== "arquivada") {
+        window.AtlasTheses.archive(t.id, "Ativo " + a.ticker + " excluído do Hold.");
+        syncTheses();
+      }
+      if (a.ticker && window.AtlasPrecos) window.AtlasPrecos.limparManual(a.ticker);
+
+      HOLD_STATE.ativos = HOLD_STATE.ativos.filter(function (x) { return x.id !== id; });
+      logHistory(EVENTS.ASSET_CREATED, "asset", id, t ? t.id : null,
+        "Ativo excluído do sistema.", a.ticker + " removido — não havia posição aberta.");
+      emit(EVENTS.STATE_CHANGED, { evt: "asset_deleted", payload: a }); persist();
+      return { deleted: a, teseArquivada: !!(t && t.status !== "concluida" && t.status !== "arquivada") };
+    },
+
     updatePrice: function (id, price) {
       var a = asset(id); if (!a) return;
       a.preco_atual = num(price);

@@ -1025,6 +1025,38 @@
       eq("o meio repete o último valor conhecido (degrau, não curva)", serie2[1].value, 200);
       eq("e o último ponto é o de hoje", serie2[3].value, H.get.portfolioValue());
 
+      /* ------------------------------------------------------------
+         EXCLUIR ATIVO — a ação nova mais perigosa do módulo
+
+         Ela não existia. Foi criada porque "um ticker, um ativo" fez um
+         ticker digitado errado bloquear o certo para sempre. Mas
+         apagar um ativo com posição aberta faria o dinheiro sumir sem
+         venda e sem saque — exatamente o que a regra de ouro nº 4
+         proíbe. Os casos abaixo travam as duas pontas.
+         ------------------------------------------------------------ */
+      var comPos = H.get.walletPositions()[0];
+      var idComPos = comPos ? comPos.ativo_id : null;
+      var antesCaixa = CX3.saldo(wH);
+      var recusa = H.actions.deleteAsset(idComPos);
+      ok("ativo com posição aberta NÃO é excluído", !!(recusa && recusa.error),
+         recusa && recusa.error ? "recusado" : "EXCLUÍDO");
+      eq("a posição continua lá", H.get.walletPositions().length, 1);
+      eq("e o caixa não se mexeu", CX3.saldo(wH), antesCaixa);
+
+      var lixo = H.actions.createAsset({ nome: "Ticker errado", ticker: "SOOL", preco_atual: 1 });
+      eq("cadastrado por engano", H.state.ativos.length, 3);
+      var apagou = H.actions.deleteAsset(lixo.id);
+      ok("sem posição, a exclusão passa", !!(apagou && apagou.deleted), apagou && apagou.error ? apagou.error : "excluído");
+      eq("some da lista", H.state.ativos.filter(function (x) { return x.ticker === "SOOL"; }).length, 0);
+      ok("e o ticker fica livre outra vez",
+         !!H.actions.createAsset({ nome: "Solana de novo", ticker: "SOOL", preco_atual: 1 }).id, "livre");
+
+      /* O histórico NÃO some junto: um livro de decisões que se
+         reescreve deixa de ser livro. */
+      ok("o histórico da exclusão fica registrado",
+         H.state.historico.some(function (h) { return String(h.impacto).indexOf("SOOL removido") >= 0; }),
+         "registrado");
+
       /* -- "Começar do zero" não pode deixar a curva de pé -- */
       H.actions.resetToSeed();
       eq("resetar apaga a série junto com as posições", H.get.portfolioHistory(90).length, 0);
