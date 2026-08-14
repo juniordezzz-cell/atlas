@@ -178,6 +178,38 @@ qualquer tela futura — e o primeiro passo do sistema é sempre um **depósito*
 
 ---
 
+## O núcleo das contas
+
+`core/atlas-contabilidade.js` define, uma vez, o que cada grandeza
+significa — e é por isso que ele existe. Os dois erros de matemática
+achados na terceira auditoria não eram de aritmética: as somas estavam
+certas, e o que estava errado era o significado dos números somados.
+
+```
+caixa               dinheiro parado numa carteira
+investido           valor de mercado das posições hoje
+custo               o que foi pago por elas
+patrimônio          caixa + investido
+resultado aberto    não realizado (informado quando difere de valor−custo)
+resultado realizado apurado em operações encerradas
+base realizada      o capital que produziu esse resultado
+rentabilidade       resultado total ÷ (custo + base realizada)
+```
+
+A última linha é a regra: **o denominador tem de conter a base de tudo
+que está no numerador**. Quem informa resultado realizado é obrigado a
+informar a base dele; sem ela a rentabilidade sai **nula** e a tela
+escreve "—". Base inválida nunca vira `0%`, porque zero é uma
+afirmação ("ficou de lado") e a ausência de base não é.
+
+E a regra de ouro nº 4 vira uma função:
+
+```js
+AtlasContabilidade.conferir.dinheiroFecha({ caixa, investido,
+                                            depositado, sacado, resultadoTotal })
+// caixa + investido = depositado − sacado + resultado total
+```
+
 ## Histórico de patrimônio
 
 `core/atlas-snapshots.js` guarda **uma medição por dia, por módulo, por

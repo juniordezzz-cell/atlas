@@ -177,6 +177,13 @@ Coisas que **não** são para "consertar" sem antes ler o porquê:
   dinheiro a compra não acontece — é aritmética). Bloquear pela tese
   fazia o ATLAS recusar o registro de uma compra que ocorreu no mundo
   real, e não registrar um fato é pior que registrá-lo incompleto.
+- **Toda conta passa pelo núcleo.** `core/atlas-contabilidade.js` é
+  onde "patrimônio", "custo", "resultado" e "rentabilidade" são
+  definidos. Ele não é calculadora — somar dois números não precisa de
+  ajuda. Ele existe porque os dois erros de matemática da auditoria
+  eram de DEFINIÇÃO: o patrimônio ignorava o caixa, e a rentabilidade
+  dividia o lucro realizado de um módulo pelo capital aberto de outro.
+  Base inválida devolve nulo, nunca zero.
 - **A curva do patrimônio é medida, não gerada.** `core/atlas-snapshots.js`
   é o livro de medições: uma leitura por dia, por módulo, por carteira.
   Antes cada módulo media dentro do próprio estado (três formatos), o

@@ -450,11 +450,75 @@
     });
     var cost = temCapital ? capital : (total - pnl);
 
+    /* ============================================================
+       AS CONTAS SAEM DO NÚCLEO (core/atlas-contabilidade.js)
+
+       Dois erros de matemática viviam exatamente aqui, e nenhum era de
+       aritmética:
+
+       1. O CAIXA NÃO ENTRAVA NO PATRIMÔNIO. `total` somava só o valor
+          das posições. Medido: depositar US$ 50.000 deixava o
+          "Patrimônio Total" em ZERO, e comprar US$ 30.000 o fazia
+          "subir" para 30.000 — como se o dinheiro nascesse na compra e
+          sumisse na venda. A regra de ouro nº 4 diz o contrário: o
+          patrimônio só muda com depósito ou saque. Ela já decidia esta
+          questão; a conta é que não obedecia.
+
+       2. A RENTABILIDADE MISTURAVA RÉGUAS. `pnl` inclui o resultado
+          REALIZADO do Trade (operações encerradas) e `cost` só tinha o
+          capital das ABERTAS. Medido: +5.000 do Trade sobre 30.000 de
+          custo do Hold = +16,67% exibidos. Agora quem informa
+          resultado realizado informa a base dele, e sem base a
+          rentabilidade sai NULA — a tela diz que não sabe, em vez de
+          dividir por um denominador alheio.
+       ============================================================ */
+    var C = global.AtlasContabilidade;
+
+    /* Caixa das carteiras globais. É dinheiro do usuário parado, e
+       patrimônio é o que se tem, não só o que está aplicado. */
+    var caixa = safe(function () {
+      if (!global.AtlasCaixa) return 0;
+      return globalIds().reduce(function (a, id) { return a + n(global.AtlasCaixa.saldo(id)); }, 0);
+    }, 0);
+
+    /* Base do resultado realizado — hoje só o Trade tem resultado
+       fechado dentro do consolidado. Módulo que passe a ter precisa
+       informar a sua base aqui, senão a rentabilidade fica nula de
+       propósito. */
+    var baseRealizada = safe(function () {
+      var A = trade(); if (!A || !A.app || !A.app.capitalRealizado) return 0;
+      return globalIds().reduce(function (a, id) { return a + n(A.app.capitalRealizado(id)); }, 0);
+    }, 0);
+    var realizado = tradePnl();
+
+    /* `pnl` é a SOMA DO QUE OS MÓDULOS RELATAM, e ela não é
+       `valor − custo`: o resultado do DeFi inclui taxa já coletada,
+       que saiu da posição e foi para o caixa. Por isso o resultado
+       aberto é informado, não derivado — ver o bloco em
+       core/atlas-contabilidade.js. O que o núcleo garante é que o
+       número exibido como resultado é o mesmo que entra na
+       rentabilidade. */
+    var contas = C ? C.patrimonio({
+      caixa: caixa,
+      posicoes: [{ valor: total, custo: cost }],
+      resultadoAberto: pnl - realizado,   /* Hold + DeFi + RWA */
+      realizado: realizado,
+      baseRealizada: baseRealizada
+    }) : null;
+
     return {
       capital: cost,
-      total: total,
+      /* `total` passa a ser o PATRIMÔNIO (caixa incluído). `investido`
+         continua disponível para quem quer só o aplicado — são dois
+         números legítimos, e o erro era ter um só com o nome do outro. */
+      total: contas ? contas.patrimonio : total,
+      investido: total,
+      caixa: caixa,
       pnl: pnl,
-      pnlPct: cost > 0 ? (pnl / cost) * 100 : 0,
+      /* null = não há base para afirmar rentabilidade. A tela escreve
+         "—". Antes isto era 0, que se lê como "ficou de lado". */
+      pnlPct: contas ? contas.rentabilidade : (cost > 0 ? (pnl / cost) * 100 : null),
+      pnlBaseIncompleta: contas ? contas.baseIncompleta : false,
       passiveIncome: passiveIncome(),
       protocols: protocolsCount(),
       byModule: byModule,

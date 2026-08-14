@@ -14,6 +14,8 @@
   <script src="../core/atlas-storage.js"></script>
 
   <script src="../core/atlas-snapshots.js"></script>
+
+  <script src="../core/atlas-contabilidade.js"></script>
   <script src="../core/settings.js"></script>
   <script src="../core/i18n.js"></script>
   <script src="../core/currency.js"></script>
@@ -76,6 +78,7 @@
 <script src="js/utils.js"></script>
 <!-- Hold: a entidade de Teses e o store do módulo. Sem colisão de nome —
      o DeFi publica DeFiStore, o Hold publica Store. Ver grupo 22. -->
+<script src="../core/atlas-contabilidade.js"></script>
 <script src="../core/entities/theses.js"></script>
 <script src="../hold/js/state.js"></script>
 <script>
@@ -1292,6 +1295,102 @@
 
       try { localStorage.removeItem("atlas.snapshots.v1"); } catch (e) {}
       SN._reload();
+    }
+    /* ============================================================
+       Os dois erros de matemática desta auditoria não eram de
+       aritmética — as somas estavam certas. Estava errado o
+       SIGNIFICADO dos números somados. Estes casos travam as
+       definições em core/atlas-contabilidade.js.
+       ============================================================ */
+    grupo("24 · Contabilidade: o que cada número quer dizer");
+    if (!window.AtlasContabilidade) {
+      nota("core/atlas-contabilidade.js não carregado — casos pulados.");
+    } else {
+      var K = window.AtlasContabilidade;
+
+      /* -- base inválida devolve NULO, não zero -- */
+      is("sem base, a razão é nula", K.pct(500, 0), null);
+      is("base negativa também", K.pct(500, -10), null);
+      eq("com base, calcula", K.pct(500, 2000), 25);
+      nota("Zero seria uma afirmação — \"ficou de lado\". A ausência de " +
+           "base não é isso, e a tela precisa poder escrever \"—\".");
+
+      /* -- dinheiro fecha na casa do centavo; quantidade não -- */
+      eq("0,1 + 0,2 vira 0,30 exato", K.dinheiro(0.1 + 0.2), 0.3, 0);
+      eq("e 1,005 arredonda para cima", K.dinheiro(1.005), 1.01, 0);
+
+      /* -- percentual de agregado sai do agregado, não da média -- */
+      var agg = K.somaPosicoes([{ valor: 200, custo: 100 }, { valor: 50, custo: 100 }]);
+      eq("valor somado", agg.valor, 250);
+      eq("custo somado", agg.custo, 200);
+      eq("resultado do conjunto", agg.resultado, 50);
+      eq("percentual sobre o custo AGREGADO (não a média de +100% e −50%)", agg.resultadoPct, 25);
+
+      /* -- média ponderada -- */
+      var mp = K.mediaPonderada([{ a: 300, v: 10 }, { a: 4, v: 100000 }],
+                                function (x) { return x.a; }, function (x) { return x.v; });
+      ok("APR médio pondera pelo valor", mp < 5, mp.toFixed(2) + "% (simples daria 152%)");
+      is("sem peso nenhum, é nulo", K.mediaPonderada([], function () { return 1; }, function () { return 0; }), null);
+
+      /* ------------------------------------------------------------
+         ERRO 1 — o caixa fazia parte do patrimônio e ninguém somava
+         ------------------------------------------------------------ */
+      var so_caixa = K.patrimonio({ caixa: 50000, posicoes: [] });
+      eq("depósito sem investir JÁ é patrimônio", so_caixa.patrimonio, 50000);
+      eq("e o investido é zero", so_caixa.investido, 0);
+
+      var comprou = K.patrimonio({ caixa: 20000, posicoes: [{ valor: 30000, custo: 30000 }] });
+      eq("comprar não muda o patrimônio", comprou.patrimonio, 50000);
+      eq("só move de caixa para investido", comprou.investido, 30000);
+      nota("Medido antes da correção: depositar US$ 50.000 deixava o " +
+           "\"Patrimônio Total\" em ZERO, e comprar US$ 30.000 o fazia subir " +
+           "para 30.000 — dinheiro nascendo na compra.");
+
+      /* ------------------------------------------------------------
+         ERRO 2 — resultado realizado exige a base que o produziu
+         ------------------------------------------------------------ */
+      var semBase = K.patrimonio({ caixa: 1000, posicoes: [{ valor: 5000, custo: 5000 }],
+                                   realizado: 800, baseRealizada: 0 });
+      is("resultado realizado sem base: recusa calcular", semBase.rentabilidade, null);
+      ok("e diz por quê", semBase.baseIncompleta === true, "baseIncompleta");
+
+      var comBase = K.patrimonio({ caixa: 1000, posicoes: [{ valor: 5000, custo: 5000 }],
+                                   realizado: 800, baseRealizada: 2000 });
+      eq("com a base, divide por custo + base realizada", comBase.rentabilidade, (800 / 7000) * 100);
+      eq("o numerador é o resultado total", comBase.resultadoTotal, 800);
+      nota("Medido antes: o lucro REALIZADO do Trade era dividido pelo " +
+           "capital das operações ABERTAS. Com tudo encerrado, +5.000 do " +
+           "Trade sobre 30.000 de custo do Hold viravam +16,67% na tela.");
+
+      /* -- resultado aberto informado pode divergir de valor − custo -- */
+      var comTaxa = K.patrimonio({ caixa: 0, posicoes: [{ valor: 1000, custo: 1000 }],
+                                   resultadoAberto: 120 });
+      eq("taxa já coletada conta como resultado", comTaxa.resultadoTotal, 120);
+      eq("e a divergência para valor−custo fica exposta", comTaxa.diferencaParaDerivado, 120);
+      nota("Não é erro: a taxa de uma pool já saiu da posição para o " +
+           "caixa. Derivar sempre por valor−custo a perderia.");
+
+      /* ------------------------------------------------------------
+         A REGRA DE OURO Nº 4, ESCRITA COMO CONTA
+         ------------------------------------------------------------ */
+      var fecha = K.conferir.dinheiroFecha({
+        caixa: 25000, investido: 30000, depositado: 50000, sacado: 0, resultadoTotal: 5000
+      });
+      ok("caixa + investido = depositado − sacado + resultado", fecha.ok,
+         fecha.esquerda + " vs " + fecha.direita);
+
+      var naoFecha = K.conferir.dinheiroFecha({
+        caixa: 20000, investido: 30000, depositado: 50000, sacado: 0, resultadoTotal: 5000
+      });
+      ok("e ACUSA quando não fecha", naoFecha.ok === false, "diferença " + naoFecha.diferenca);
+      nota("Este segundo caso é real: aconteceu na verificação, quando " +
+           "injetei um lucro no store sem o evento de caixa. A função " +
+           "pegou o dado inconsistente antes de eu concluir errado.");
+
+      ok("soma das partes bate com o todo",
+         K.conferir.somaBate([10.005, 20.005, 30], 60.01).ok, "dentro da tolerância");
+      ok("fatias de distribuição fecham em 100",
+         K.conferir.fatiasFecham([33.3, 33.3, 33.4]).ok, "100,0");
     }
   }
 

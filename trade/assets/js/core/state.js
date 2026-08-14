@@ -233,6 +233,29 @@
     },
 
     /* ------------------------------------------------------------
+       O CAPITAL QUE PRODUZIU O RESULTADO REALIZADO
+
+       `resultadoRealizado` existia sozinho, e quem quisesse a
+       rentabilidade tinha de arrumar um denominador em algum lugar. O
+       Dashboard arrumava o errado: usava `valorEmPosicoes`, que soma
+       operações ABERTAS. Com tudo encerrado, o lucro do Trade era
+       dividido pelo capital de outro módulo — medido na auditoria:
+       +5.000 do Trade sobre 30.000 de custo do Hold, exibido como
+       +16,67%.
+
+       Numerador e denominador têm de vir da mesma régua. Este é o
+       denominador do `resultadoRealizado`: o capital que estava dentro
+       das operações que já fecharam.
+       ------------------------------------------------------------ */
+    capitalRealizado: function (walletId) {
+      var d = (state.data || {})[walletId || state.currentWallet];
+      if (!d || !d.trades) return 0;
+      return d.trades.reduce(function (a, t) {
+        return a + (t.status === "encerrado" ? (Number(t.sizeUSD) || 0) : 0);
+      }, 0);
+    },
+
+    /* ------------------------------------------------------------
        KPIs CALCULADOS DAS OPERAÇÕES
 
        walletData().kpis era { winrate: 0, trades: 0, avgHold: "—",
