@@ -11,8 +11,14 @@
       U.el("div", { class: "grow" }, [U.el("h1", { text: "Histórico" }), U.el("p", { text: "Registro imutável de decisões. Toda ação do sistema deixa rastro aqui." })])
     ]));
 
+    /* "Conversões" (STUDY_CONVERTED) saiu: Estudos deixaram de existir
+       quando viraram Teses planejadas, e nada no sistema registra esse
+       evento desde então. Era um filtro que só sabia devolver "Sem
+       registros" — um botão que promete uma leitura que não existe.
+       No lugar entrou "Preços", que tem lastro: toda atualização de
+       preço, manual ou pela cadeia, já grava histórico. */
     var seg = U.el("div", { class: "segmented", style: "margin-bottom:18px" });
-    [["all", "Tudo"], ["TRADE_EXECUTED", "Operações"], ["THESIS_CREATED", "Teses"], ["THESIS_UPDATED", "Revisões"], ["STUDY_CONVERTED", "Conversões"]].forEach(function (o) {
+    [["all", "Tudo"], ["TRADE_EXECUTED", "Operações"], ["THESIS_CREATED", "Teses"], ["THESIS_UPDATED", "Revisões"], ["POSITION_UPDATED", "Preços"]].forEach(function (o) {
       var b = U.el("button", { class: filt === o[0] ? "on" : "", text: o[1] });
       b.addEventListener("click", function () { filt = o[0]; window.Router.rerender(); });
       seg.appendChild(b);

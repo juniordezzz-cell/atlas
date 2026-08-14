@@ -48,6 +48,26 @@
     return b;
   }
 
+  /* Preço + procedência. `origemPreco` responde a pergunta da auditoria
+     — qual a fonte deste número e de quando ele é. Sem preço nenhum,
+     diz isso em vez de imprimir US$ 0,00 com cara de cotação. */
+  function origemPreco(a) {
+    if (!(a.preco_atual > 0)) return "sem preço — informe em Editar";
+    var fonte = a.precoFonte === "manual" ? "informado por você"
+      : a.precoFonte ? "fonte: " + a.precoFonte
+      : "digitado no cadastro";
+    if (!a.precoEm) return fonte;
+    var dias = Math.floor((Date.now() - new Date(a.precoEm).getTime()) / 86400000);
+    var quando = dias <= 0 ? "hoje" : dias === 1 ? "ontem" : "há " + dias + " dias";
+    return fonte + " · " + quando;
+  }
+  function celulaPreco(a) {
+    var wrap = U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" });
+    wrap.appendChild(U.el("span", { class: "num", text: a.preco_atual > 0 ? U.money(a.preco_atual) : "—" }));
+    wrap.appendChild(U.el("span", { class: "small dim", text: origemPreco(a) }));
+    return wrap;
+  }
+
   function listView() {
     var view = U.el("div");
     view.appendChild(U.el("div", { class: "view-head" }, [
@@ -83,17 +103,21 @@
     function render(term) {
       term = (term || "").toLowerCase();
       var list = S.state.ativos.filter(function (a) {
-        return (filterState === "all" || a.status === filterState) &&
+        return (filterState === "all" || S.get.statusDe(a) === filterState) &&
           (!term || a.nome.toLowerCase().indexOf(term) >= 0 || a.ticker.toLowerCase().indexOf(term) >= 0);
       });
       var cols = [
         { head: "Ativo", render: function (a) { return U.assetCell(a); } },
         { head: "Setor", render: function (a) { return U.el("span", { class: "dim", text: a.setor || "—" }); } },
-        { head: "Preço", right: true, render: function (a) { return U.el("span", { class: "num", text: U.money(a.preco_atual) }); } },
+        /* O preço vinha sozinho na coluna, sem dizer de onde veio nem
+           de quando é. Um valor buscado há um minuto e um digitado há
+           seis meses tinham exatamente a mesma aparência — e é a
+           carteira inteira que se calcula em cima dele. */
+        { head: "Preço", right: true, render: function (a) { return celulaPreco(a); } },
         { head: "Market cap", right: true, render: function (a) { return U.el("span", { class: "num", text: U.compact(a.market_cap) }); } },
         { head: "Convicção", render: function (a) { return U.convictionMini(a.conviccao); } },
-        { head: "Tese", render: function (a) { return S.get.thesisOfAsset(a.id) ? U.badge("active", "Documentada") : U.el("span", { class: "badge plain", text: "Pendente" }); } },
-        { head: "Status", render: function (a) { return U.badge(a.status); } }
+        { head: "Tese", render: function (a) { return S.get.thesisOfAsset(a.id) ? U.badge("andamento", "Documentada") : U.el("span", { class: "badge plain", text: "Pendente" }); } },
+        { head: "Status", render: function (a) { return U.badge(S.get.statusDe(a)); } }
       ];
       tableHolder.innerHTML = "";
       var body = list.length
@@ -115,6 +139,10 @@
       U.el("div", { class: "row" }, [
         U.button("Voltar", { variant: "ghost", icon: "chevron", onClick: function () { location.hash = "#/ativos"; } }),
         U.el("div", { class: "grow" }),
+        /* "Editar" não existia em lugar nenhum do Hold — e o aviso do
+           botão "Atualizar preços" mandava a pessoa exatamente para
+           cá quando nenhuma fonte reconhecia o ticker. */
+        U.button("Editar", { variant: "ghost", icon: "edit", onClick: function () { F.editAsset(id); } }),
         t ? U.button("Revisar tese", { variant: "secondary", icon: "edit", onClick: function () { F.editThesis(t.id); } }) : U.button("Criar tese", { variant: "secondary", icon: "doc", onClick: function () { F.newThesis(id); } }),
         U.button("Comprar", { variant: "primary", icon: "arrowUp", onClick: function () { F.trade(id, "buy"); } }),
         pos ? U.button("Vender", { variant: "danger", icon: "arrowDown", onClick: function () { F.trade(id, "sell"); } }) : null
@@ -131,11 +159,15 @@
       U.el("div", { class: "dim small", text: a.ticker + " · " + a.tipo + " · " + (a.setor || "—") })
     ]));
     hrow.appendChild(left);
-    hrow.appendChild(U.badge(a.status));
+    hrow.appendChild(U.badge(S.get.statusDe(a)));
     header.appendChild(hrow);
 
     var stats = U.el("div", { class: "grid g-4 mt-16" });
-    stats.appendChild(miniStat("Preço atual", U.money(a.preco_atual)));
+    var precoNode = U.el("div", { class: "stack", style: "gap:2px" }, [
+      U.el("span", { class: "num", text: a.preco_atual > 0 ? U.money(a.preco_atual) : "—" }),
+      U.el("span", { class: "small dim", text: origemPreco(a) })
+    ]);
+    stats.appendChild(miniStatNode("Preço atual", precoNode));
     stats.appendChild(miniStat("Market cap", U.compact(a.market_cap)));
     stats.appendChild(miniStat("Categoria", a.categoria || "—"));
     var convWrap = U.el("div"); convWrap.appendChild(U.conviction(a.conviccao));
@@ -160,7 +192,10 @@
     // thesis card
     var thesisCard = U.card({ eyebrow: "Fundamento", title: "Tese de investimento",
       action: t ? U.badge(t.status) : null,
-      body: [t ? thesisContent(t) : U.empty("doc", "Sem tese", "Nenhum ativo é investido sem tese. Documente a tese para habilitar a operação.",
+      /* O texto dizia "Documente a tese para habilitar a operação" —
+         a compra deixou de depender dela (quem barra é o caixa). O
+         convite continua; a falsa condição sai. */
+      body: [t ? thesisContent(t) : U.empty("doc", "Sem tese", "Este ativo não tem tese documentada. A compra não fica travada por isso, mas o alerta vai cobrar até ela existir.",
         U.button("Criar tese", { variant: "primary", icon: "plus", onClick: function () { F.newThesis(id); } }))] });
     thesisCard.classList.add("mt-16");
     view.appendChild(thesisCard);

@@ -81,7 +81,11 @@
      AtlasTheses (module: "hold"). Estudos deixaram de existir —
      viraram Teses com status "planejada" (migração automática). */
   var HOLD_STATE = {
-    ativos: [], carteira: [], teses: [], historico: [], config: {}
+    ativos: [], carteira: [], teses: [], historico: [], config: {},
+    /* Medições diárias do valor da carteira, por carteira. Ver
+       recordSnapshot(). Existe para o painel poder desenhar uma curva
+       que ele MEDIU, em vez de uma que ele inventou. */
+    snapshots: {}
   };
 
   function uid(prefix) {
@@ -138,7 +142,12 @@
         var parsed = JSON.parse(raw);
         Object.keys(HOLD_STATE).forEach(function (k) {
           if (k === "teses") return;
-          HOLD_STATE[k] = parsed[k] != null ? parsed[k] : HOLD_STATE[k];
+          /* Chave ausente no arquivo NÃO herda o que estava em memória:
+             ela volta ao vazio. Sem isto, "Começar do zero" apagava as
+             posições e deixava os snapshots de pé — o painel desenhava
+             a curva de uma carteira que não existe mais. Vale para
+             qualquer chave nova que o formato ganhe depois. */
+          HOLD_STATE[k] = parsed[k] != null ? parsed[k] : (Array.isArray(HOLD_STATE[k]) ? [] : {});
         });
         if (ensureWalletStamp()) persist();
         syncTheses();
@@ -153,6 +162,9 @@
     HOLD_STATE.carteira  = clone(seed.carteira || []);
     HOLD_STATE.historico = clone(seed.historico || []);
     HOLD_STATE.config    = clone(seed.config || {});
+    /* Carteira zerada, série zerada. Medição é sobre as posições — sem
+       elas, não há o que a curva possa afirmar. */
+    HOLD_STATE.snapshots = {};
     ensureWalletStamp();
     persist();
     syncTheses();
@@ -212,6 +224,37 @@
     return HOLD_STATE.carteira.find(function (p) { return p.ativo_id === aid; });
   }
 
+  /* ============================================================
+     STATUS DO ATIVO É CONSEQUÊNCIA, NÃO DECLARAÇÃO
+
+     `status` era um campo GRAVADO, e o formulário de "Adicionar ativo"
+     oferecia "Investido" numa lista suspensa. Medido na auditoria: dá
+     para cadastrar um ativo marcado como investido sem comprar nada —
+     nenhuma posição, nenhum dólar saindo do caixa. A partir daí o
+     módulo mente em quatro lugares ao mesmo tempo:
+
+       · Ativos → filtro "Investidos" lista um ativo que não se possui;
+       · Métricas → o funil de decisão conta "1 investido" contra
+         0 posições, e a convicção média passa a incluí-lo;
+       · Alertas → dispara "Posição sem tese" para uma posição que não
+         existe, gastando a atenção de quem lê num fantasma;
+       · o inverso também acontecia — vender tudo numa carteira e
+         continuar com posição em OUTRA deixava o campo desencontrado.
+
+     Agora o status é derivado do único fato que o determina: existe
+     posição? Vendeu alguma vez? É a mesma decisão que a auditoria
+     tomou no status da faixa das pools (DeFiStore.statusDe) e pelo
+     mesmo motivo — dado que descreve outro dado não pode ser digitado.
+     ============================================================ */
+  function statusDe(a) {
+    if (!a) return "watchlist";
+    if (anyPositionOf(a.id)) return "invested";
+    var vendeu = HOLD_STATE.historico.some(function (h) {
+      return h.ativo_id === a.id && h.subtipo === "sell";
+    });
+    return vendeu ? "sold" : "watchlist";
+  }
+
   function positionValue(p) {
     var a = asset(p.ativo_id); if (!a) return 0;
     return p.quantidade * a.preco_atual;
@@ -248,12 +291,104 @@
     var tot = portfolioValue(); return tot === 0 ? 0 : (positionValue(p) / tot) * 100;
   }
 
+  /* ============================================================
+     A CURVA DA CARTEIRA PASSA A SER MEDIDA
+
+     O painel desenhava "Performance da carteira" a partir de uma
+     função chamada, no próprio comentário, de "série sintética
+     determinística": doze pontos rotulados Jan…Dez, interpolando do
+     custo até o valor atual com uma ondulação de Math.sin() por cima.
+     Nada ali aconteceu. Uma carteira aberta ontem exibia um ano de
+     história, com subidas e quedas que ninguém viveu — e o mesmo
+     desenho alimentava o sparkline do KPI "Valor da carteira",
+     colando aparência de trajetória num número que é de hoje.
+
+     É o mesmo defeito que esta auditoria já removeu do Trade
+     (Math.sin(i) * 50) e do painel macro do RWA. Preço histórico o
+     ATLAS não tem — e não dá para inventá-lo de trás para frente.
+     O que ele PODE afirmar é o que mediu: uma leitura por dia, por
+     carteira, igual ao snapshot do DeFi (Store._serie em
+     defi/js/data.js). Dia sem abrir o sistema não vira ponto: a série
+     repete o último valor conhecido, em degrau.
+
+     Antes da primeira medição a série vem vazia — e vazio é um estado
+     que a tela sabe desenhar. Melhor um espaço que diz "ainda não há
+     medição" do que uma curva que diz o que não houve.
+     ============================================================ */
+  var MAX_SNAPS = 400;
+
+  function snapsDaCarteira() {
+    var wid = activeWalletId();
+    if (!HOLD_STATE.snapshots || typeof HOLD_STATE.snapshots !== "object") HOLD_STATE.snapshots = {};
+    if (!Array.isArray(HOLD_STATE.snapshots[wid])) HOLD_STATE.snapshots[wid] = [];
+    return HOLD_STATE.snapshots[wid];
+  }
+
+  function diaIso(d) {
+    var x = d || new Date();
+    return x.getFullYear() + "-" +
+      String(x.getMonth() + 1).padStart(2, "0") + "-" +
+      String(x.getDate()).padStart(2, "0");
+  }
+
+  /* Idempotente: abrir o painel dez vezes no mesmo dia não cria dez
+     pontos — atualiza o ponto de hoje. */
+  function recordSnapshot() {
+    var snaps = snapsDaCarteira();
+    var hoje = diaIso();
+    var v = portfolioValue(), c = portfolioCost();
+
+    /* Carteira vazia e sem histórico nenhum: não registra o zero. Uma
+       fileira de zeros antes da primeira compra é um gráfico começando
+       no chão por convenção, não por medição. */
+    if (!snaps.length && v === 0 && c === 0) return snaps;
+
+    var ultimo = snaps[snaps.length - 1];
+    if (ultimo && ultimo.d === hoje) {
+      if (ultimo.v === v && ultimo.c === c) return snaps;
+      ultimo.v = v; ultimo.c = c;
+    } else {
+      snaps.push({ d: hoje, v: v, c: c });
+      if (snaps.length > MAX_SNAPS) snaps.splice(0, snaps.length - MAX_SNAPS);
+    }
+    persist();
+    return snaps;
+  }
+
+  /* Série diária dos últimos `dias`, em degrau. `medido: true` marca o
+     ponto que veio de uma leitura real daquele dia. */
+  function portfolioHistory(dias) {
+    var snaps = recordSnapshot();
+    if (!snaps.length) return [];
+    dias = dias || 90;
+
+    var porDia = {};
+    snaps.forEach(function (x) { porDia[x.d] = x; });
+
+    var hoje = new Date(), corrente = null;
+    var inicio = new Date(hoje); inicio.setDate(hoje.getDate() - (dias - 1));
+    var iniIso = diaIso(inicio);
+    for (var k = 0; k < snaps.length; k++) {
+      if (snaps[k].d <= iniIso) corrente = snaps[k];
+    }
+
+    var out = [];
+    for (var i = dias - 1; i >= 0; i--) {
+      var d = new Date(hoje); d.setDate(hoje.getDate() - i);
+      var iso = diaIso(d);
+      if (porDia[iso]) corrente = porDia[iso];
+      if (!corrente) continue;                 // antes da primeira medição: sem ponto
+      out.push({ date: iso, value: corrente.v, cost: corrente.c, medido: !!porDia[iso] });
+    }
+    return out;
+  }
+
   function counts() {
     return {
       ativos: HOLD_STATE.ativos.length,
-      investidos: HOLD_STATE.ativos.filter(function (a) { return a.status === "invested"; }).length,
-      watchlist: HOLD_STATE.ativos.filter(function (a) { return a.status === "watchlist"; }).length,
-      vendidos: HOLD_STATE.ativos.filter(function (a) { return a.status === "sold"; }).length,
+      investidos: HOLD_STATE.ativos.filter(function (a) { return statusDe(a) === "invested"; }).length,
+      watchlist: HOLD_STATE.ativos.filter(function (a) { return statusDe(a) === "watchlist"; }).length,
+      vendidos: HOLD_STATE.ativos.filter(function (a) { return statusDe(a) === "sold"; }).length,
       teses: HOLD_STATE.teses.filter(function (t) { return t.status !== "concluida"; }).length,
       teses_planejadas: HOLD_STATE.teses.filter(function (t) { return t.status === "planejada"; }).length,
       teses_andamento: HOLD_STATE.teses.filter(function (t) { return t.status === "andamento"; }).length,
@@ -279,13 +414,13 @@
       }
       if (t.status === "arquivada") {
         var a2 = asset(t.ativo_id);
-        if (a2 && a2.status === "invested") {
+        if (a2 && statusDe(a2) === "invested") {
           out.push({ level: "crit", title: "Tese arquivada", sub: a2.ticker + " está investido com tese arquivada. Reavalie a posição.", asset: t.ativo_id });
         }
       }
     });
     HOLD_STATE.ativos.forEach(function (a) {
-      if (a.status === "invested" && !thesisOfAsset(a.id)) {
+      if (statusDe(a) === "invested" && !thesisOfAsset(a.id)) {
         out.push({ level: "crit", title: "Posição sem tese", sub: a.ticker + " está investido sem tese vinculada.", asset: a.id });
       }
     });
@@ -341,19 +476,28 @@
         preco_atual: num(data.preco_atual), market_cap: num(data.market_cap),
         setor: data.setor || "", categoria: data.categoria || "",
         tese_id: null,
-        status: data.status || "watchlist",
         conviccao: clampInt(data.conviccao, 0, 10)
       };
+      /* `status` NÃO é gravado aqui — ver statusDe(). Todo ativo nasce
+         em watchlist porque é isso que ele é: cadastrado e não
+         comprado. Vira "investido" quando a compra acontece. */
       HOLD_STATE.ativos.push(a);
       logHistory(EVENTS.ASSET_CREATED, "asset", a.id, null,
-        "Ativo adicionado ao sistema.", a.ticker + " criado com status " + statusLabel(a.status) + ".");
+        "Ativo adicionado ao sistema.", a.ticker + " criado em " + statusLabel(statusDe(a)) + ".");
       emit(EVENTS.ASSET_CREATED, a); persist();
       return a;
     },
 
     updateAsset: function (id, patch) {
       var a = asset(id); if (!a) return;
-      Object.assign(a, patch);
+      /* `status` é derivado (statusDe). Aceitar um patch de status
+         aqui reabriria a porta que a auditoria fechou: um ativo
+         "investido" por declaração, sem posição nenhuma. */
+      var limpo = {};
+      Object.keys(patch || {}).forEach(function (k) {
+        if (k !== "status" && k !== "id") limpo[k] = patch[k];
+      });
+      Object.assign(a, limpo);
       persist(); emit(EVENTS.STATE_CHANGED, { evt: "asset_patched", payload: a });
       return a;
     },
@@ -365,6 +509,37 @@
       logHistory(EVENTS.POSITION_UPDATED, "price", id, a.tese_id,
         "Atualização de preço de mercado.", a.ticker + " marcado a " + price + ".");
       emit(EVENTS.POSITION_UPDATED, a); persist();
+    },
+
+    /* ============================================================
+       PREÇO NA MÃO — a regra do ATLAS, que faltava no Hold
+
+       O botão "Atualizar preços" já dizia, quando nenhuma fonte
+       reconhecia o ativo: "informe o preço na mão em Editar". Só que
+       o Hold NÃO TINHA Editar — nem formulário, nem botão, nem rota.
+       A instrução apontava para um lugar inexistente, e o preço de um
+       ativo que nenhuma API conhece ficava travado no que foi digitado
+       no cadastro, para sempre.
+
+       O preço informado aqui vai para o registro manual central
+       (core/atlas-precos.js), não para um campo solto: é ele que vence
+       a API na cadeia de resolução, envelhece depois de sete dias e
+       avisa quando está velho. Gravar só em `preco_atual` faria o
+       próximo "Atualizar preços" apagá-lo em silêncio.
+       ============================================================ */
+    precoManual: function (id, usd) {
+      var a = asset(id); if (!a) return { error: "Ativo inexistente." };
+      var v = num(usd);
+      if (!(v > 0)) return { error: "O preço precisa ser maior que zero." };
+      if (!a.ticker) return { error: "O ativo precisa de ticker para ter preço." };
+      if (window.AtlasPrecos) window.AtlasPrecos.definirManual(a.ticker, v);
+      a.preco_atual = v;
+      a.precoFonte = "manual";
+      a.precoEm = new Date().toISOString();
+      logHistory(EVENTS.POSITION_UPDATED, "price", id, a.tese_id,
+        "Preço informado manualmente.", a.ticker + " marcado a " + fmtMoney(v) + " por você.");
+      emit(EVENTS.POSITION_UPDATED, a); persist();
+      return { asset: a };
     },
 
     /* ============================================================
@@ -560,7 +735,8 @@
         else pos.walletId = "principal";
         HOLD_STATE.carteira.push(pos);
       }
-      a.status = "invested";
+      /* `a.status = "invested"` saiu: existir posição JÁ é ser
+         investido, e statusDe() lê isso direto. */
       /* A posição carrega a marca até a tese existir. É o que permite
          o alerta cobrar sem o sistema ter recusado o registro. */
       pos.semTese = semTese;
@@ -591,13 +767,29 @@
       var pos = positionOf(a.id); if (!pos) return { error: "Sem posição para vender." };
       var qty = num(data.quantidade), price = num(data.preco);
       if (qty <= 0 || qty > pos.quantidade) return { error: "Quantidade inválida." };
+      /* ------------------------------------------------------------
+         VENDA A PREÇO ZERO FAZIA O DINHEIRO SUMIR
+
+         A compra validava preço positivo; a venda não. O campo já vem
+         preenchido com `preco_atual`, que é ZERO em ativo cadastrado
+         sem preço — e nenhuma fonte reconhecendo o ticker, ele fica
+         zero. Confirmar assim apagava a posição e creditava $0 no
+         caixa: o capital investido evaporava do ATLAS sem depósito,
+         sem saque e sem prejuízo declarado.
+
+         É a regra de ouro nº 4 — nenhum dinheiro pode desaparecer.
+         ------------------------------------------------------------ */
+      if (price <= 0) {
+        return { error: "Informe o preço de venda. A " + fmtMoney(0) +
+                        " a posição sairia da carteira sem nada voltar ao caixa." };
+      }
       if (!data.motivo) return { error: "Toda venda depende de invalidação ou realização da tese." };
 
       pos.quantidade -= qty;
       if (pos.quantidade <= 0.00000001) {
         HOLD_STATE.carteira = HOLD_STATE.carteira.filter(function (p) { return p !== pos; });
-        // ativo só vira "vendido" se não sobrou posição em nenhuma carteira
-        if (!anyPositionOf(a.id)) a.status = "sold";
+        /* O ativo vira "vendido" sozinho: sem posição em carteira
+           nenhuma e com venda no histórico, statusDe() já responde. */
       }
       logHistory(EVENTS.TRADE_EXECUTED, "sell", a.id, a.tese_id,
         data.justificativa || (data.motivo === "invalidacao" ? "Tese invalidada." : "Realização de tese."),
@@ -712,7 +904,8 @@
       positionPnLPct: positionPnLPct, positionWeight: positionWeight,
       portfolioValue: portfolioValue, portfolioCost: portfolioCost,
       portfolioPnL: portfolioPnL, portfolioPnLPct: portfolioPnLPct,
-      globalTotal: globalTotal,
+      globalTotal: globalTotal, statusDe: statusDe,
+      portfolioHistory: portfolioHistory, recordSnapshot: recordSnapshot,
       counts: counts, alerts: alerts
     },
     /* ---- Carteiras (ponte com a central) ---- */

@@ -72,6 +72,10 @@
 <script src="js/performance.js"></script>
 <script src="js/data.js"></script>
 <script src="js/utils.js"></script>
+<!-- Hold: a entidade de Teses e o store do módulo. Sem colisão de nome —
+     o DeFi publica DeFiStore, o Hold publica Store. Ver grupo 22. -->
+<script src="../core/entities/theses.js"></script>
+<script src="../hold/js/state.js"></script>
 <script>
 /* ============================================================
    ATLAS · DeFi — bateria de testes
@@ -104,8 +108,12 @@
      agora registra aporte e retorno no livro de caixa, então rodar a
      bateria sem restaurar essa chave mexeria no dinheiro real do
      usuário. */
+  /* As três do Hold entram por causa do grupo 22, que cria ativos,
+     compra, vende e grava tese — tudo em cima das mesmas chaves reais
+     do usuário. */
   var CHAVES = ["atlas.defi.state.v3", "atlas.defi.wallet.v1", "atlas.defi.poolDraft.v1",
-                "atlas.precos.manual.v1", "atlas.caixa.v1"];
+                "atlas.precos.manual.v1", "atlas.caixa.v1",
+                "atlas.hold.state.v2", "atlas.hold.wallet.v1", "atlas.theses.v1"];
   var grupos = [], atual = null, passou = 0, falhou = 0;
 
   function grupo(nome) { atual = { nome: nome, casos: [] }; grupos.push(atual); }
@@ -926,6 +934,113 @@
       try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
       CX2._reload();
     }
+
+    /* ============================================================
+       A auditoria do Hold encontrou defeitos que a tela nunca
+       denunciaria: um ativo "investido" sem possuir nada, uma venda a
+       preço zero levando o capital embora, um relatório acusando
+       todas as teses de exigirem ação. Todos passam despercebidos
+       porque o resultado na tela continua plausível — é a mesma
+       assinatura que motivou esta bateria a existir.
+       ============================================================ */
+    grupo("22 · Hold: status é consequência, e nenhuma venda some com dinheiro");
+    if (!window.Store || !window.Store.actions || !window.AtlasCaixa) {
+      nota("store do Hold ou livro de caixa não carregado — casos pulados.");
+    } else {
+      var H = window.Store, CX3 = window.AtlasCaixa;
+      try {
+        localStorage.removeItem("atlas.hold.state.v2");
+        localStorage.removeItem("atlas.theses.v1");
+        localStorage.removeItem("atlas.caixa.v1");
+      } catch (e) {}
+      CX3._reload(); H.init();
+      var wH = H.wallets.activeId();
+
+      /* -- um ticker, um ativo -- */
+      var sol = H.actions.createAsset({ nome: "Solana", ticker: "SOL", preco_atual: 100 });
+      var dup = H.actions.createAsset({ nome: "Solana 2", ticker: "sol", preco_atual: 250 });
+      ok("ticker repetido é recusado (mesmo em minúsculo)", !!(dup && dup.error), dup && dup.error ? "recusado" : "aceito");
+      eq("e continua existindo um ativo só", H.state.ativos.length, 1);
+
+      /* -- status é derivado, não declarado -- */
+      is("ativo recém-criado nasce em watchlist", H.get.statusDe(sol), "watchlist");
+      H.actions.createAsset({ nome: "Bitcoin", ticker: "BTC", preco_atual: 60000, status: "invested" });
+      eq("declarar 'invested' no cadastro não investe nada", H.get.counts().investidos, 0);
+      H.actions.updateAsset(sol.id, { status: "invested" });
+      is("nem um patch direto no store consegue", H.get.statusDe(sol), "watchlist");
+
+      /* -- sem caixa não há compra -- */
+      var semGrana = H.actions.executeBuy({ ativo_id: sol.id, quantidade: 5, preco: 100 });
+      ok("carteira sem caixa não compra", !!(semGrana && semGrana.error), semGrana && semGrana.error ? "recusado" : "aceito");
+      eq("e nenhuma posição nasceu", H.get.walletPositions().length, 0);
+
+      /* -- com caixa, compra e o dinheiro sai -- */
+      CX3.registrar({ tipo: "deposito", valorUSD: 1000, walletId: wH });
+      var compra = H.actions.executeBuy({ ativo_id: sol.id, quantidade: 5, preco: 100 });
+      ok("com caixa, a compra passa", !!(compra && compra.position), compra && compra.position ? "sim" : "não");
+      eq("o custo saiu do caixa", CX3.saldo(wH), 500);
+      is("e o status virou investido sozinho", H.get.statusDe(sol), "invested");
+
+      /* -- a tese não bloqueia, mas é cobrada -- */
+      ok("comprar sem tese é permitido", !!compra.position, "permitido");
+      ok("e o alerta cobra a tese", H.get.alerts().some(function (a) { return a.title === "Posição sem tese"; }),
+         H.get.alerts().map(function (a) { return a.title; }).join(", "));
+
+      /* -- venda a preço zero: o defeito que fazia o capital evaporar -- */
+      var vZero = H.actions.executeSell({ ativo_id: sol.id, quantidade: 5, preco: 0, motivo: "realizacao" });
+      ok("venda a preço zero é recusada", !!(vZero && vZero.error), vZero && vZero.error ? "recusada" : "ACEITA");
+      eq("a posição continua de pé", H.get.walletPositions().length, 1);
+      eq("e o caixa não se moveu", CX3.saldo(wH), 500);
+
+      /* -- venda válida devolve tudo ao caixa -- */
+      H.actions.executeSell({ ativo_id: sol.id, quantidade: 5, preco: 120, motivo: "realizacao" });
+      eq("o apurado inteiro volta ao caixa", CX3.saldo(wH), 1100);
+      eq("500 investidos + 100 de lucro = 1100 (depósito 1000)", CX3.saldo(wH), 1100);
+      is("sem posição e com venda no histórico, o ativo é 'vendido'", H.get.statusDe(sol), "sold");
+
+      /* -- preço manual: a regra do ATLAS também no Hold -- */
+      var pm = H.actions.precoManual(sol.id, 250);
+      ok("o Hold sabe receber preço na mão", !!(pm && pm.asset), pm && pm.error ? pm.error : "ok");
+      if (window.AtlasPrecos) {
+        var reg = AtlasPrecos.manual("SOL");
+        eq("e ele vai para o registro central, não para um campo solto", reg ? reg.usd : null, 250);
+      }
+
+      /* -- a curva é medida, nunca gerada -- */
+      var serieVazia = H.get.portfolioHistory(90);
+      eq("carteira zerada não produz série", serieVazia.length, 0);
+      CX3.registrar({ tipo: "deposito", valorUSD: 1000, walletId: wH });
+      H.actions.executeBuy({ ativo_id: sol.id, quantidade: 4, preco: 100 });
+      var serie1 = H.get.portfolioHistory(90);
+      eq("com posição, existe UM ponto — o de hoje", serie1.length, 1);
+      eq("e ele vale o que a carteira vale", serie1[0].value, H.get.portfolioValue());
+      ok("marcado como medido", serie1[0].medido === true, String(serie1[0].medido));
+
+      var snaps = H.state.snapshots[wH];
+      var d3 = new Date(Date.now() - 3 * 86400000);
+      snaps.unshift({ d: localIso(d3), v: 200, c: 200 });
+      var serie2 = H.get.portfolioHistory(90);
+      eq("com duas medições, a série cobre os dias entre elas", serie2.length, 4);
+      eq("mas só duas são medições de verdade", serie2.filter(function (p) { return p.medido; }).length, 2);
+      eq("o meio repete o último valor conhecido (degrau, não curva)", serie2[1].value, 200);
+      eq("e o último ponto é o de hoje", serie2[3].value, H.get.portfolioValue());
+
+      /* -- "Começar do zero" não pode deixar a curva de pé -- */
+      H.actions.resetToSeed();
+      eq("resetar apaga a série junto com as posições", H.get.portfolioHistory(90).length, 0);
+
+      nota("O status do ativo era um campo GRAVADO e o formulário oferecia " +
+           "\"Investido\" numa lista suspensa: dava para possuir no papel sem " +
+           "comprar nada. A venda validava a quantidade e não o preço — e o " +
+           "campo já vinha preenchido com preco_atual, que é zero em ativo que " +
+           "nenhuma fonte reconhece.");
+
+      try {
+        localStorage.removeItem("atlas.hold.state.v2");
+        localStorage.removeItem("atlas.caixa.v1");
+      } catch (e) {}
+      CX3._reload();
+    }
   }
 
   /* ---------------- utilidades dos casos ---------------- */
@@ -975,6 +1090,10 @@
        relê o que acabou de ser devolvido. */
     try { if (window.DeFiStore && DeFiStore._reload) DeFiStore._reload(); } catch (e) {}
     try { if (window.AtlasCaixa && AtlasCaixa._reload) AtlasCaixa._reload(); } catch (e) {}
+    /* Mesmo motivo para o Hold: o store guarda HOLD_STATE em memória e
+       a próxima gravação o mandaria de volta ao disco por cima do que
+       acabou de ser restaurado. init() relê o que está lá. */
+    try { if (window.Store && window.Store.init && window.Store.actions) window.Store.init(); } catch (e) {}
   }
 
   /* ---------------- saída ---------------- */

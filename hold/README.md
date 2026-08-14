@@ -40,14 +40,37 @@ Painel · Carteira · Watchlist · Ativos · Teses · Estudos · Métricas · Hi
 - **Eventos:** `ASSET_CREATED`, `THESIS_CREATED`, `POSITION_UPDATED`,
   `STUDY_CONVERTED`, `THESIS_UPDATED`, `TRADE_EXECUTED`.
 - **Regras centrais aplicadas:**
-  - Nenhum ativo é *investido* sem tese (compra exige tese vinculada).
+  - **O que bloqueia a compra é o CAIXA, não a tese.** A regra anterior
+    recusava comprar sem tese vinculada. Tese é *disciplina* — a ausência
+    é problema de processo, e o alerta "Posição sem tese" já cobra.
+    Caixa é *possibilidade*: sem dinheiro a compra não acontece. Bloquear
+    pela tese fazia o ATLAS recusar o registro de uma compra que ocorreu
+    no mundo real. A posição nasce marcada com `semTese` até ela existir.
+  - **Um ticker, um ativo.** `createAsset` recusa ticker repetido, sem
+    diferenciar maiúsculas.
+  - **O status do ativo é derivado, nunca digitado** (`Store.get.statusDe`):
+    tem posição → investido; sem posição e com venda no histórico →
+    vendido; senão → watchlist. Era um campo gravado, e o formulário
+    oferecia "Investido" numa lista — dava para possuir no papel sem
+    comprar nada.
+  - **Nenhuma operação faz dinheiro sumir.** Compra debita o caixa da
+    carteira ativa; venda credita o apurado inteiro de volta. Venda exige
+    preço positivo — a zero, a posição sairia da carteira sem nada voltar.
+  - **A curva de evolução é medida, não gerada** (`portfolioHistory`):
+    uma leitura por dia, por carteira. Sem duas medições, a tela diz que
+    não há histórico em vez de desenhar.
+  - **Preço:** a cadeia única do ATLAS (`core/atlas-precos.js`) resolve
+    pelo ticker; o que nenhuma fonte reconhecer é informado à mão em
+    **Editar**, e o valor manual vence a API até ser limpo.
   - Toda decisão gera histórico.
   - Toda tese pode ser revisada.
   - Toda venda depende de invalidação ou realização da tese (motivo obrigatório).
 
 ## Persistência
-Estado salvo em `localStorage` (`HOLD_STATE_V1`). Em Configurações há exportar/importar
-JSON e restaurar dados de exemplo.
+Estado salvo em `localStorage` (`atlas.hold.state.v2`). As **teses** não moram
+aqui: a fonte da verdade é a entidade compartilhada `AtlasTheses`
+(`core/entities/theses.js`), com os status `planejada`, `andamento`,
+`concluida` e `arquivada`. Em Configurações há exportar/importar JSON.
 
 ## Integração com o ATLAS
 O sistema é auto-contido. Para lançar a partir do Atlas, o botão **HOLD** deve

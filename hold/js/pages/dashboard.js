@@ -3,25 +3,40 @@
   "use strict";
   var U = window.UI, S = window.Store, C = window.Charts, F = window.Forms;
 
-  function perfSeries() {
-    // série sintética determinística: custo -> valor atual em 12 pontos
-    var cost = S.get.portfolioCost() || 1, val = S.get.portfolioValue() || cost;
-    var pts = [], months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    for (var i = 0; i < 12; i++) {
-      var t = i / 11;
-      var wobble = Math.sin(i * 1.3) * 0.05 + Math.sin(i * 0.6) * 0.03;
-      var v = cost + (val - cost) * t + (val - cost) * wobble;
-      pts.push({ label: months[i], v: Math.max(0, v) });
-    }
-    pts[11].v = val;
-    return pts;
+  /* ============================================================
+     A CURVA QUE O SISTEMA MEDIU
+
+     Aqui morava perfSeries(): doze pontos rotulados Jan…Dez,
+     interpolando do custo até o valor atual com uma ondulação de
+     Math.sin() por cima — descrita no próprio comentário como "série
+     sintética determinística". Uma carteira aberta ontem exibia um ano
+     de história, com altos e baixos que nunca aconteceram, e o mesmo
+     desenho virava o sparkline do KPI "Valor da carteira".
+
+     Agora a série vem de Store.get.portfolioHistory(): uma medição por
+     dia, por carteira, gravada quando o painel abre. Ver o bloco em
+     hold/js/state.js. Enquanto não houver dois dias medidos ela vem
+     vazia, e a tela diz isso em vez de desenhar.
+     ============================================================ */
+  function serieMedida(dias) {
+    return S.get.portfolioHistory(dias || 90).map(function (p) {
+      var d = p.date.split("-");
+      return { label: d[2] + "/" + d[1], v: p.value, medido: p.medido };
+    });
+  }
+
+  /* Quantos dias de medição a série tem de fato — é o que a tela conta
+     para a pessoa saber a idade do gráfico que está olhando. */
+  function diasMedidos(serie) {
+    return serie.filter(function (p) { return p.medido; }).length;
   }
 
   window.Pages = window.Pages || {};
   window.Pages.dashboard = function () {
     var c = S.get.counts();
     var val = S.get.portfolioValue(), pnl = S.get.portfolioPnL(), pnlPct = S.get.portfolioPnLPct();
-    var invested = S.state.ativos.filter(function (a) { return a.status === "invested"; });
+    var serie = serieMedida(90), medidos = diasMedidos(serie);
+    var invested = S.state.ativos.filter(function (a) { return S.get.statusDe(a) === "invested"; });
     var avgConv = invested.length ? invested.reduce(function (s, a) { return s + a.conviccao; }, 0) / invested.length : 0;
 
     var view = U.el("div");
@@ -45,8 +60,11 @@
 
     /* KPIs */
     var kpis = U.el("div", { class: "grid g-3" });
+    /* O sparkline só aparece quando há duas medições. Com uma só, ele
+       desenharia uma linha reta com cara de estabilidade — e o que
+       existe é falta de histórico, não estabilidade. */
     kpis.appendChild(U.kpi({ icon: "wallet", label: "Valor da carteira", value: U.compact(val), sub: c.posicoes + " posições",
-      spark: C.sparkline(perfSeries().map(function (p) { return p.v; }), { w: 84, h: 26 }) }));
+      spark: serie.length >= 2 ? C.sparkline(serie.map(function (p) { return p.v; }), { w: 84, h: 26 }) : null }));
     kpis.appendChild(U.kpi({ icon: "trendUp", label: "Resultado (PnL)", value: U.money(pnl, 0),
       delta: pnl, deltaText: U.pct(pnlPct) }));
     kpis.appendChild(U.kpi({ icon: "target", label: "Convicção média", value: avgConv.toFixed(1) + " / 10", sub: c.teses_ativas + " teses ativas" }));
@@ -55,9 +73,22 @@
     /* performance + allocation */
     var mid = U.el("div", { class: "grid g-12 mt-16" });
 
+    var perfBody;
+    if (serie.length >= 2) {
+      perfBody = U.el("div", {}, [
+        C.lineChart(serie),
+        U.el("div", { class: "small dim", style: "margin-top:8px",
+          text: medidos + (medidos === 1 ? " dia medido" : " dias medidos") +
+                " · o traçado entre medições repete o último valor conhecido." })
+      ]);
+    } else {
+      perfBody = U.empty("chart", "Ainda sem histórico medido",
+        "O ATLAS registra o valor da carteira uma vez por dia, a partir de agora. " +
+        "A curva aparece quando houver duas medições — ele não desenha o passado que não mediu.");
+    }
     var perfCard = U.card({ eyebrow: "Evolução", title: "Performance da carteira",
       action: U.el("span", { class: "badge " + (pnl >= 0 ? "invested" : "invalid") }, [U.pct(pnlPct)]),
-      body: [C.lineChart(perfSeries())] });
+      body: [perfBody] });
     perfCard.classList.add("col-8");
     mid.appendChild(perfCard);
 

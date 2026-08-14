@@ -51,24 +51,50 @@
     posCard.classList.add("mt-16");
     view.appendChild(posCard);
 
-    // teses em atenção
-    var attention = S.state.teses.filter(function (t) { return t.status !== "active"; });
+    /* ------------------------------------------------------------
+       "TESES QUE EXIGEM AÇÃO" ACUSAVA TODAS ELAS
+
+       O filtro era `t.status !== "active"`, e "active" deixou de ser um
+       status quando as Teses viraram entidade compartilhada — os
+       status são planejada, andamento, concluida e arquivada. Como
+       nenhuma tese é "active", TODAS caíam na lista de pendências, cada
+       uma rotulada "Tese em revisão", inclusive as em andamento e as
+       concluídas. Um relatório para revisão periódica abrindo com
+       "estas exigem ação: todas" não é rigor, é ruído — e ruído nesse
+       lugar ensina a ignorar a seção inteira.
+
+       Exigir ação é o que os alertas do módulo já definem: tese
+       PLANEJADA (parada na fila) e tese ARQUIVADA com posição viva.
+       Em andamento é o estado saudável; concluída já foi para o
+       Academy.
+       ------------------------------------------------------------ */
+    var attention = S.state.teses.filter(function (t) {
+      if (t.status === "planejada") return true;
+      if (t.status === "arquivada") {
+        var a = S.get.asset(t.ativo_id);
+        return !!(a && S.get.statusDe(a) === "invested");
+      }
+      return false;
+    });
     var attBody;
     if (attention.length) {
       var tl = U.el("div", { class: "timeline" });
       attention.forEach(function (t) {
         var a = S.get.asset(t.ativo_id);
-        var item = U.el("div", { class: "tl-item " + (t.status === "invalid" ? "sell" : "thesis") });
-        item.innerHTML = '<div class="tl-dot">' + U.icon(t.status === "invalid" ? "alert" : "refresh") + '</div>';
+        var arq = t.status === "arquivada";
+        var item = U.el("div", { class: "tl-item " + (arq ? "sell" : "thesis") });
+        item.innerHTML = '<div class="tl-dot">' + U.icon(arq ? "alert" : "refresh") + '</div>';
         var head = U.el("div", { class: "tl-head" });
-        head.appendChild(U.el("span", { class: "tl-title", text: (a ? a.ticker : "—") + " · " + (t.status === "invalid" ? "Tese invalidada" : "Tese em revisão") }));
+        head.appendChild(U.el("span", { class: "tl-title",
+          text: (a ? a.ticker : t.titulo || "—") + " · " +
+                (arq ? "Tese arquivada com posição aberta" : "Tese planejada, análise não iniciada") }));
         head.appendChild(U.badge(t.status));
         item.appendChild(head);
-        item.appendChild(U.el("div", { class: "tl-body", text: t.criterios_invalidacao || t.narrativa }));
+        item.appendChild(U.el("div", { class: "tl-body", text: t.criterios_invalidacao || t.narrativa || "—" }));
         tl.appendChild(item);
       });
       attBody = tl;
-    } else attBody = U.empty("shield", "Sem pendências", "Todas as teses estão ativas e saudáveis.");
+    } else attBody = U.empty("shield", "Sem pendências", "Nenhuma tese parada na fila nem posição sustentada por tese arquivada.");
     var attCard = U.card({ eyebrow: "Pontos de atenção", title: "Teses que exigem ação", body: [attBody] });
     attCard.classList.add("mt-16");
     view.appendChild(attCard);

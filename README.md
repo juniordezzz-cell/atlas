@@ -180,12 +180,19 @@ qualquer tela futura — e o primeiro passo do sistema é sempre um **depósito*
 
 ## Teses
 
-Toda decisão nasce de uma **tese**, registrada dentro de um módulo. Ao concluir,
-ela vai automaticamente para o **Academy** e pode ser reaberta de lá, gerando
-uma nova versão sem perder o histórico. Hold, Trade e DeFi já consomem a
-entidade compartilhada; o RWA ainda não.
+Toda decisão **deveria** nascer de uma **tese**, registrada dentro de um módulo.
+Ao concluir, ela vai automaticamente para o **Academy** e pode ser reaberta de
+lá, gerando uma nova versão sem perder o histórico. Hold, Trade e DeFi já
+consomem a entidade compartilhada; o RWA ainda não.
 
 Status oficiais: `planejada` · `andamento` · `concluida` · `arquivada`.
+
+A tese **cobra, não tranca**. O Hold chegou a recusar compras sem tese
+vinculada, e a regra confundia duas naturezas: tese é disciplina, caixa é
+possibilidade. Recusar o registro de uma compra que aconteceu no mundo real
+deixa o sistema sem saber de um fato — pior que registrá-lo incompleto. O que
+bloqueia uma posição, em qualquer módulo, é não haver caixa na carteira. A
+ausência de tese vira alerta e fica visível até ser resolvida.
 
 ---
 

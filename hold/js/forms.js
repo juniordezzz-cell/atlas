@@ -27,17 +27,29 @@
     var mcap = U.input({ type: "number", step: "any", placeholder: "0" });
     var setor = U.input({ placeholder: "Ex.: Reserva de Valor" });
     var categoria = U.input({ placeholder: "Ex.: Layer 1" });
-    var status = U.select([
-      { value: "watchlist", label: "Watchlist (candidato)" },
-      { value: "invested", label: "Investido" }
-    ], "watchlist");
 
+    /* ------------------------------------------------------------
+       O "STATUS INICIAL" SAIU DO FORMULÁRIO
+
+       Havia aqui uma lista com "Watchlist (candidato)" e "Investido".
+       Escolher "Investido" cadastrava um ativo marcado como possuído
+       sem nenhuma compra: sem posição, sem um dólar saindo do caixa. A
+       partir daí o filtro "Investidos" listava o que não se tem, o
+       funil das Métricas contava investimento inexistente e o alerta
+       "Posição sem tese" cobrava uma posição fantasma.
+
+       Status virou consequência (Store.get.statusDe): tem posição, é
+       investido. Todo ativo nasce em watchlist, que é o que ele é —
+       cadastrado e não comprado. Para investir, use Comprar.
+       ------------------------------------------------------------ */
     var body = U.el("div", {}, [
       U.field("Nome", nome, { required: true }),
       U.el("div", { class: "form-row" }, [U.field("Ticker", ticker, { required: true }), U.field("Tipo", tipo)]),
-      U.el("div", { class: "form-row" }, [U.field("Preço atual (USD)", preco), U.field("Market cap (USD)", mcap)]),
-      U.el("div", { class: "form-row" }, [U.field("Setor", setor), U.field("Categoria", categoria)]),
-      U.field("Status inicial", status, { hint: "Nenhum ativo é investido sem tese — para investir, crie a tese em seguida." })
+      U.el("div", { class: "form-row" }, [
+        U.field("Preço atual (USD)", preco, { hint: "Opcional — \"Atualizar preços\" busca sozinho pelo ticker." }),
+        U.field("Market cap (USD)", mcap)
+      ]),
+      U.el("div", { class: "form-row" }, [U.field("Setor", setor), U.field("Categoria", categoria)])
     ]);
 
     var save = U.button("Adicionar ativo", { variant: "primary", icon: "plus", onClick: function () {
@@ -45,7 +57,7 @@
       var a = S.actions.createAsset({
         nome: nome.value.trim(), ticker: ticker.value.trim(), tipo: tipo.value,
         preco_atual: preco.value, market_cap: mcap.value, setor: setor.value.trim(),
-        categoria: categoria.value.trim(), status: status.value
+        categoria: categoria.value.trim()
       });
       /* createAsset passou a RECUSAR ticker repetido. Sem este ramo, o
          botão não faria nada e a pessoa não saberia por quê — e a linha
@@ -100,6 +112,85 @@
       AtlasAssets.attach(nome, { value: "name", onSelect: fillBoth });
       AtlasAssets.attach(ticker, { value: "symbol", onSelect: fillBoth });
     }
+  }
+
+  /* ============================================================
+     EDITAR ATIVO — a tela que o próprio sistema mandava abrir
+
+     O Hold não tinha edição. Depois de cadastrado, um ativo ficava
+     congelado: setor errado continuava errado, e — o que importa de
+     verdade — o preço de um ativo que nenhuma API reconhece ficava
+     preso ao que foi digitado no cadastro, para sempre. O aviso de
+     "Atualizar preços" dizia "informe o preço na mão em Editar",
+     apontando para um lugar que não existia.
+
+     A regra do ATLAS é a mesma nos quatro módulos: a API é o caminho
+     principal e, quando nenhuma fonte reconhece o ativo, quem informa
+     o preço é o dono do dado. O valor daqui vai para o registro manual
+     central (core/atlas-precos.js) — é ele que vence a API na cadeia,
+     envelhece em sete dias e avisa quando está velho. Gravar só no
+     ativo faria o próximo "Atualizar preços" apagá-lo em silêncio.
+
+     Ticker não se edita: ele é a identidade do ativo (um ticker, um
+     ativo) e o que amarra preço, posições e histórico.
+     ============================================================ */
+  function editAsset(assetId) {
+    var a = S.get.asset(assetId); if (!a) return;
+
+    var nome = U.input({ value: a.nome || "" });
+    var tipo = U.select([
+      { value: "Cripto", label: "Cripto" }, { value: "Ação", label: "Ação" },
+      { value: "ETF", label: "ETF" }, { value: "Commodity", label: "Commodity" }, { value: "Outro", label: "Outro" }
+    ], a.tipo || "Cripto");
+    var setor = U.input({ value: a.setor || "" });
+    var categoria = U.input({ value: a.categoria || "" });
+    var mcap = U.input({ type: "number", step: "any", value: a.market_cap || "" });
+    var preco = U.input({ type: "number", step: "any", value: a.preco_atual || "" });
+
+    var m = (window.AtlasPrecos && a.ticker) ? AtlasPrecos.manual(a.ticker) : null;
+    var dicaPreco = m
+      ? ("Preço informado por você" + (m.vencido ? " há " + m.dias + " dias — vale reconferir." : ".") +
+         " Ele vence a API até você limpar o campo.")
+      : "Informe só se nenhuma fonte reconhecer " + (a.ticker || "o ativo") +
+        ". O valor passa a valer sobre a API, e o campo vazio devolve a busca automática.";
+
+    var body = U.el("div", {}, [
+      U.el("div", { class: "small dim", style: "margin-bottom:12px",
+        text: "Ticker " + a.ticker + " — a identidade do ativo não muda. Para outro ativo, cadastre outro." }),
+      U.field("Nome", nome, { required: true }),
+      U.el("div", { class: "form-row" }, [U.field("Tipo", tipo), U.field("Market cap (USD)", mcap)]),
+      U.el("div", { class: "form-row" }, [U.field("Setor", setor), U.field("Categoria", categoria)]),
+      U.field("Preço (USD)", preco, { hint: dicaPreco })
+    ]);
+
+    var save = U.button("Salvar", { variant: "primary", icon: "check", onClick: function () {
+      if (!nome.value.trim()) return U.toast("Campo obrigatório", "O nome não pode ficar vazio.", "warning");
+
+      S.actions.updateAsset(assetId, {
+        nome: nome.value.trim(), tipo: tipo.value,
+        setor: setor.value.trim(), categoria: categoria.value.trim(),
+        market_cap: parseFloat(mcap.value) || 0
+      });
+
+      var txt = String(preco.value).trim();
+      if (txt === "") {
+        /* Campo esvaziado = devolver o ativo à busca automática. */
+        if (window.AtlasPrecos && a.ticker) AtlasPrecos.limparManual(a.ticker);
+      } else {
+        var v = parseFloat(txt);
+        if (!(v > 0)) return U.toast("Preço inválido", "O preço precisa ser maior que zero.", "warning");
+        if (v !== a.preco_atual || !m) {
+          var r = S.actions.precoManual(assetId, v);
+          if (r && r.error) return U.toast("Preço não salvo", r.error, "warning");
+        }
+      }
+      U.closeModal();
+      U.toast("Ativo atualizado", a.ticker + " salvo.", "success");
+      afterChange();
+    }});
+
+    U.modal({ eyebrow: "Editar · " + a.ticker, title: "Editar ativo", body: body,
+      footer: [U.button("Cancelar", { variant: "ghost", onClick: U.closeModal }), U.el("div", { class: "spacer" }), save] });
   }
 
   /* ---------- Nova tese ---------- */
@@ -296,7 +387,8 @@
   U.assetCellSafe = function (a) { return U.assetCell(a); };
 
   window.Forms = {
-    newAsset: newAsset, newThesis: newThesis, editThesis: editThesis,
+    newAsset: newAsset, editAsset: editAsset,
+    newThesis: newThesis, editThesis: editThesis,
     trade: trade
   };
 })();

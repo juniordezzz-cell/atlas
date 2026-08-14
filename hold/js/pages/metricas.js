@@ -26,8 +26,8 @@
     var top1 = weights[0] || 0;
     var hhi = weights.reduce(function (s, w) { return s + (w / 100) * (w / 100); }, 0);
 
-    // convicção
-    var invested = S.state.ativos.filter(function (a) { return a.status === "invested"; });
+    // convicção — investido é quem tem posição, não quem foi marcado
+    var invested = S.state.ativos.filter(function (a) { return S.get.statusDe(a) === "invested"; });
     var avgConv = invested.length ? invested.reduce(function (s, a) { return s + a.conviccao; }, 0) / invested.length : 0;
 
     var strip = U.el("div", { class: "grid g-4" });
@@ -73,13 +73,26 @@
     mid.appendChild(convCard);
     view.appendChild(mid);
 
-    // status das teses (donut)
-    var st = { active: 0, review: 0, invalid: 0 };
+    /* ------------------------------------------------------------
+       O DONUT CONTAVA STATUS QUE NÃO EXISTEM MAIS
+
+       Ele somava "active", "review" e "invalid" — o vocabulário
+       anterior. Desde que Teses viraram entidade compartilhada, os
+       status são planejada, andamento, concluida e arquivada. As três
+       contagens davam ZERO sempre, os segmentos eram filtrados por
+       value > 0, e a tela exibia "Sem teses · Documente teses para
+       acompanhar sua saúde" para quem tinha teses documentadas.
+
+       Mentira ao contrário da do relatório ao lado, mesma origem:
+       vocabulário velho lido contra dado novo.
+       ------------------------------------------------------------ */
+    var st = {};
     S.state.teses.forEach(function (t) { st[t.status] = (st[t.status] || 0) + 1; });
     var segs = [
-      { label: "Ativas", value: st.active, color: C.color(0) },
-      { label: "Em revisão", value: st.review, color: C.color(4) },
-      { label: "Invalidadas", value: st.invalid, color: C.color(5) }
+      { label: "Em andamento", value: st.andamento || 0, color: C.color(0) },
+      { label: "Planejadas", value: st.planejada || 0, color: C.color(4) },
+      { label: "Concluídas", value: st.concluida || 0, color: C.color(3) },
+      { label: "Arquivadas", value: st.arquivada || 0, color: C.color(5) }
     ].filter(function (s) { return s.value > 0; });
     var thBody = U.el("div");
     if (segs.length) {
