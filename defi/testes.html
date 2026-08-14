@@ -955,8 +955,18 @@
         localStorage.removeItem("atlas.hold.state.v2");
         localStorage.removeItem("atlas.theses.v1");
         localStorage.removeItem("atlas.caixa.v1");
+        /* O livro de medições também — e a falta dele aqui era um
+           defeito DESTE arquivo, não do produto. O caso "carteira
+           zerada não produz série" só passava enquanto o navegador
+           estivesse com o livro vazio: com uma medição do Hold
+           sobrando de qualquer uso anterior, `registrar` encontra
+           ponto prévio e grava o zero (que é o correto — zero depois
+           de ter valor é medição, zero antes de existir carteira não).
+           O teste passava por sorte ambiental. */
+        localStorage.removeItem("atlas.snapshots.v1");
       } catch (e) {}
       CX3._reload(); H.init();
+      if (window.AtlasSnapshots) AtlasSnapshots._reload();
       var wH = H.wallets.activeId();
 
       /* -- um ticker, um ativo -- */
@@ -1156,8 +1166,10 @@
       try {
         localStorage.removeItem("atlas.hold.state.v2");
         localStorage.removeItem("atlas.caixa.v1");
+        localStorage.removeItem("atlas.snapshots.v1");
       } catch (e) {}
       CX3._reload();
+      if (window.AtlasSnapshots) AtlasSnapshots._reload();
     }
     /* ============================================================
        O gráfico "Evolução do Patrimônio" do Dashboard afirmava 90 dias

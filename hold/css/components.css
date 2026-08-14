@@ -157,6 +157,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   .tbl tbody .row-acts .act-btn { opacity: 1; }
 }
 
+
 /* ---- menu suspenso ---- */
 .menu {
   position: fixed; z-index: 150; min-width: 190px;
@@ -480,3 +481,65 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
    arquivo: era exatamente assim que Hold, DeFi, Trade, RWA e
    Dashboard acabavam com cinco aparências diferentes.
    ============================================================ */
+
+/* ============================================================
+   NO TOQUE, O ALVO CRESCE
+
+   Fica no FIM do arquivo de propósito. Escrevi este bloco no meio dele
+   primeiro, logo abaixo de `.act-btn` — e só metade funcionou: os
+   botões cresceram (a regra base deles vem antes), mas o menu não,
+   porque `.menu-item` é definido DEPOIS e, com a mesma especificidade,
+   a última declaração vence. Medido: itens de 36px onde eu esperava
+   45px. Uma media query não aumenta especificidade; ela só restringe
+   quando a regra vale. Ajuste de tema entra por último.
+
+   30x30 passa no mínimo da WCAG 2.5.8 (24x24), então isto não é
+   correção de falha — é a diferença entre acertar e errar com o
+   polegar. E os três botões da linha são comprar, vender e o menu que
+   guarda o excluir: errar aqui não é errar um link.
+
+   Cresce o BOTÃO, não uma área invisível em volta dele. A técnica
+   comum (::after com inset negativo) faria os alvos de 44px se
+   sobreporem — eles ficam a 2px um do outro — e tocar em "vender"
+   poderia disparar "excluir". Alvo sobreposto é pior que alvo pequeno,
+   porque erra em silêncio.
+
+   `pointer: coarse` é a pergunta certa: descreve o dedo, não a
+   ausência de mouse. Um notebook com tela sensível tem hover E toque.
+   ============================================================ */
+@media (pointer: coarse) {
+  .act-btn { width: 44px; height: 44px; border-radius: 9px; }
+  .act-btn .ico { width: 18px; height: 18px; }
+  .row-acts { gap: 4px; }
+
+  /* O menu é onde mora a ação sem volta. */
+  .menu { min-width: 224px; }
+  .menu-item { padding: 12px 12px; font-size: 14px; }
+
+  /* Filtros e botões pequenos acompanham: um "sm" de 30px ao lado de
+     um alvo de 44px vira o ponto fraco da tela.
+
+     `min-height`, não `padding`: calculei o padding contra a altura de
+     linha e errei por 3px (11+11+19 = 41). A altura mínima diz o que
+     se quer — 44 — em vez de depender da fonte, do zoom e do idioma. */
+  .segmented button { min-height: 44px; padding: 0 14px; }
+  /* `.btn` base tem 36px e `.btn.sm` tem 30px. Os dois entram: medi só
+     o "sm" primeiro e deixei os botões de cabeçalho (Adicionar ativo,
+     Atualizar preços) em 36px — os mais usados da tela. */
+  .btn { min-height: 44px; height: auto; }
+  .btn.sm { min-height: 44px; height: auto; padding: 0 14px; font-size: 13px; }
+  .icon-btn { width: 44px; height: 44px; }
+
+  /* Linhas que são botão: ordenar coluna, abrir o ativo pela legenda do
+     donut, abrir o ativo pela barra de convicção. Todas passavam
+     raspando (29 a 39px) porque nasceram desenhadas para o ponteiro. */
+  .tbl th .th-sort { min-height: 44px; }
+  .ll-item { min-height: 44px; }
+  .meter .m-row.clicavel { min-height: 44px; }
+
+  /* O selo do ticker na linha do tempo (22px) fica como está de
+     propósito: ele é alvo EM LINHA, dentro de um texto, e o critério
+     2.5.8 abre exceção justamente para esse caso — o tamanho é imposto
+     pela altura da linha ao redor. Inchá-lo quebraria o parágrafo para
+     ganhar um alvo que ninguém erra, porque tem texto dos dois lados. */
+}

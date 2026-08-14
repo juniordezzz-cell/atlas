@@ -351,3 +351,19 @@ h3 { font-size: 16px; font-weight: 600; }
 body { animation: atlasPageFade .45s ease both; }
 #app-view > * { animation: atlasPageIn .5s ease both; }
 
+
+/* ============================================================
+   NAVEGAÇÃO NO TOQUE
+
+   Os itens da barra lateral ficam em 51x38 no trilho estreito — abaixo
+   dos 44 que um polegar pede, e são o caminho para todas as telas do
+   módulo. Fica no fim do arquivo porque `.nav-item` é definido acima:
+   media query não aumenta especificidade, só restringe quando a regra
+   vale, então um ajuste escrito antes da regra base perde para ela.
+   (Aprendido errando isto no components.css, três linhas atrás.)
+   ============================================================ */
+@media (pointer: coarse) {
+  .nav-item, .nav-back { min-height: 44px; }
+  .collapsed .nav-item, .collapsed .nav-back { padding: 10px 8px; }
+  .collapse-btn { min-height: 44px; }
+}
