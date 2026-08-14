@@ -157,10 +157,16 @@
     span.appendChild(document.createTextNode(textOverride || b.label));
     return span;
   }
-  function typeBadge(tipo) {
-    var span = el("span", { class: "badge " + tipo, text: tipo.charAt(0).toUpperCase() + tipo.slice(1) });
-    return span;
-  }
+  /* typeBadge() vivia aqui e não era chamada por NINGUÉM — nem pelas
+     páginas, nem internamente. Ela pintava um selo usando o próprio
+     texto do tipo como classe CSS (`badge Cripto`), classe que não
+     existe em folha nenhuma: se alguém a tivesse usado, o selo sairia
+     sem cor. Construtor de UI sem uso e sem estilo é uma armadilha
+     esperando o próximo a precisar de um selo de tipo.
+     (iconEl continua, apesar de não aparecer como U.iconEl: kpi() e
+     confirmar() a usam por dentro.) */
+
+
 
   /* ---------- Conviction meter ---------- */
   function conviction(value, showVal) {
@@ -568,7 +574,7 @@
     el: el, icon: icon, iconEl: iconEl,
     money: money, compact: compact, pct: pct, signClass: signClass, qty: qty,
     dateShort: dateShort, dateTime: dateTime,
-    badge: badge, typeBadge: typeBadge, conviction: conviction, convictionMini: convictionMini,
+    badge: badge, conviction: conviction, convictionMini: convictionMini,
     assetCell: assetCell, card: card, kpi: kpi, table: table, empty: empty, button: button,
     actionBtn: actionBtn, rowActions: rowActions, menu: menu, menuBtn: menuBtn,
     fecharMenu: fecharMenu, confirmar: confirmar,

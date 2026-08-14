@@ -60,6 +60,22 @@
     opts = opts || {};
     var w = 720, h = 240, padB = 26, padL = 4;
     var color = serie(opts.color || cssVar("--primary"));
+    /* Mesma armadilha que o sparkline acima já tinha corrigida e esta
+       função não: com UM ponto, `i / (data.length - 1)` é 0/0 = NaN, e
+       todo atributo do SVG sai como "NaN" — gráfico invisível, sem
+       erro no console para denunciar.
+
+       Hoje o painel não chega aqui (ele exige duas medições antes de
+       desenhar), então isto é rede de segurança, não conserto de
+       sintoma: a próxima tela a usar lineChart não deveria precisar
+       redescobrir a regra. Quadro vazio mantém o espaço no layout sem
+       afirmar nada. */
+    if (!data || data.length < 2) {
+      var vazio = document.createElement("div");
+      vazio.className = "chart-holder";
+      vazio.appendChild(svg(w, h));
+      return vazio;
+    }
     var min = Math.min.apply(null, data.map(function (d) { return d.v; }));
     var max = Math.max.apply(null, data.map(function (d) { return d.v; }));
     var range = (max - min) || 1;
