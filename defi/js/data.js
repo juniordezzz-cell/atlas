@@ -1535,6 +1535,20 @@
         var r = Store.poolSummary(p); return a + (r ? r.resultado : 0);
       }, 0);
 
+      /* ------------------------------------------------------------
+         A MEDIÇÃO TAMBÉM VAI PARA O LIVRO COMPARTILHADO
+
+         Guardada só aqui dentro, ela era invisível para a consolidação
+         da raiz — que por isso lia a série da carteira ATIVA e a
+         esticava até caber no total de TODAS as carteiras. Ver
+         core/atlas-snapshots.js. A cópia local continua por ora: as
+         telas do DeFi leem daqui, e trocar as duas coisas ao mesmo
+         tempo é como se perde medição no caminho.
+         ------------------------------------------------------------ */
+      if (window.AtlasSnapshots) {
+        window.AtlasSnapshots.registrar("defi", s.currentWalletId, { v: valor, p: lucro });
+      }
+
       var ultimo = snaps[snaps.length - 1];
       if (ultimo && ultimo.d === hoje) {
         if (ultimo.v === valor && ultimo.p === lucro) return snaps;

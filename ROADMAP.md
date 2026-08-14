@@ -177,6 +177,14 @@ Coisas que **não** são para "consertar" sem antes ler o porquê:
   dinheiro a compra não acontece — é aritmética). Bloquear pela tese
   fazia o ATLAS recusar o registro de uma compra que ocorreu no mundo
   real, e não registrar um fato é pior que registrá-lo incompleto.
+- **A curva do patrimônio é medida, não gerada.** `core/atlas-snapshots.js`
+  é o livro de medições: uma leitura por dia, por módulo, por carteira.
+  Antes cada módulo media dentro do próprio estado (três formatos), o
+  Trade não media, e a consolidação esticava a série de UMA carteira até
+  o fim bater com o total de TODAS — um passado inventado a partir de
+  dado real. Dia sem medição repete o último valor em degrau; dia
+  anterior à primeira medição não é desenhado. A tela diz quantos dias
+  mediu de fato.
 - **Preço manual vence a API.** Ele só existe quando nenhuma fonte
   reconheceu o ativo, e uma API que volta a responder com o ativo
   ERRADO (símbolo colidindo) é pior que não responder. Envelhece e

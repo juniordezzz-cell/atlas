@@ -629,3 +629,20 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
 /* Nível do alerta dentro do menu do sino (mesma semântica do card) */
 .tb-menu__note--crit { border-left-color: var(--vermelho); background: rgba(255,84,112,0.06); }
 .tb-menu__note--info { border-left-color: var(--azul-principal); background: rgba(0,191,255,0.05); }
+
+/* ------------------------------------------------------------
+   "N dias medidos" no cartao de evolucao
+
+   O grafico desenha a janela inteira (90 pontos), mas so uma parte
+   dela costuma ter medicao — o resto e o ultimo valor conhecido
+   repetido em degrau, e os dias anteriores a primeira medicao nem
+   sao desenhados. Sem esta linha, 90 pontos passavam por 90 dias de
+   historia. Ver evolutionMedidos em js/atlas-consolidation.js.
+   ------------------------------------------------------------ */
+.evo-medidos {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--atlas-text-mut, #8b97ad);
+}
+.evo-medidos:empty { display: none; }

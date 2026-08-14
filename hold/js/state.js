@@ -315,34 +315,45 @@
      que a tela sabe desenhar. Melhor um espaço que diz "ainda não há
      medição" do que uma curva que diz o que não houve.
      ============================================================ */
-  var MAX_SNAPS = 400;
+  var MAX_SNAPS = 400;   /* só p/ o caminho de reserva, abaixo */
 
-  function snapsDaCarteira() {
-    var wid = activeWalletId();
-    if (!HOLD_STATE.snapshots || typeof HOLD_STATE.snapshots !== "object") HOLD_STATE.snapshots = {};
-    if (!Array.isArray(HOLD_STATE.snapshots[wid])) HOLD_STATE.snapshots[wid] = [];
-    return HOLD_STATE.snapshots[wid];
+  function walletIdsGlobais() {
+    return (window.AtlasWallets && window.AtlasWallets.globals)
+      ? window.AtlasWallets.globals().map(function (w) { return w.id; })
+      : ["principal"];
   }
 
-  function diaIso(d) {
-    var x = d || new Date();
-    return x.getFullYear() + "-" +
-      String(x.getMonth() + 1).padStart(2, "0") + "-" +
-      String(x.getDate()).padStart(2, "0");
-  }
+  /* ------------------------------------------------------------
+     A MEDIÇÃO SAIU DAQUI
 
-  /* Idempotente: abrir o painel dez vezes no mesmo dia não cria dez
-     pontos — atualiza o ponto de hoje. */
+     Os snapshots do Hold moravam em HOLD_STATE.snapshots, dentro do
+     estado do módulo. Funcionava para o próprio painel do Hold e era
+     invisível para todo o resto: a consolidação da raiz não tinha como
+     ler uma medição guardada dentro de um store que ela não carrega —
+     e por isso desenhava o Hold como linha reta.
+
+     "Quanto isto valia naquele dia" é o mesmo conceito nos quatro
+     módulos, e estava escrito três vezes em três formatos. Agora é um
+     lugar só: core/atlas-snapshots.js. O Hold escreve lá e lê de lá.
+
+     O caminho de reserva abaixo existe para a página aberta em
+     file:// sem o arquivo compartilhado carregado — o módulo continua
+     desenhando a própria curva, só não alimenta a consolidação.
+     ------------------------------------------------------------ */
   function recordSnapshot() {
-    var snaps = snapsDaCarteira();
-    var hoje = diaIso();
+    var wid = activeWalletId();
     var v = portfolioValue(), c = portfolioCost();
 
-    /* Carteira vazia e sem histórico nenhum: não registra o zero. Uma
-       fileira de zeros antes da primeira compra é um gráfico começando
-       no chão por convenção, não por medição. */
-    if (!snaps.length && v === 0 && c === 0) return snaps;
+    if (window.AtlasSnapshots) {
+      return window.AtlasSnapshots.registrar("hold", wid, { v: v, c: c });
+    }
 
+    /* reserva local */
+    if (!HOLD_STATE.snapshots || typeof HOLD_STATE.snapshots !== "object") HOLD_STATE.snapshots = {};
+    if (!Array.isArray(HOLD_STATE.snapshots[wid])) HOLD_STATE.snapshots[wid] = [];
+    var snaps = HOLD_STATE.snapshots[wid];
+    var hoje = diaIso();
+    if (!snaps.length && v === 0 && c === 0) return snaps;
     var ultimo = snaps[snaps.length - 1];
     if (ultimo && ultimo.d === hoje) {
       if (ultimo.v === v && ultimo.c === c) return snaps;
@@ -355,29 +366,53 @@
     return snaps;
   }
 
-  /* Série diária dos últimos `dias`, em degrau. `medido: true` marca o
-     ponto que veio de uma leitura real daquele dia. */
-  function portfolioHistory(dias) {
-    var snaps = recordSnapshot();
-    if (!snaps.length) return [];
-    dias = dias || 90;
+  function diaIso(d) {
+    var x = d || new Date();
+    return x.getFullYear() + "-" +
+      String(x.getMonth() + 1).padStart(2, "0") + "-" +
+      String(x.getDate()).padStart(2, "0");
+  }
 
+  /* Série da carteira ATIVA — o que o painel do Hold desenha. */
+  function portfolioHistory(dias) {
+    recordSnapshot();
+    dias = dias || 90;
+    if (window.AtlasSnapshots) {
+      return window.AtlasSnapshots.serie(dias, {
+        modules: ["hold"], wallets: [activeWalletId()]
+      }).map(function (p) { return { date: p.date, value: p.value, medido: p.medido }; });
+    }
+    return reservaSerie(HOLD_STATE.snapshots[activeWalletId()] || [], dias);
+  }
+
+  /* Série somando TODAS as carteiras globais — o que a consolidação
+     precisa, e o que ela nunca teve como pedir. `globalTotal()` já
+     soma assim; esta é a mesma régua ao longo do tempo. */
+  function globalHistory(dias) {
+    recordSnapshot();
+    dias = dias || 90;
+    if (window.AtlasSnapshots) {
+      return window.AtlasSnapshots.serie(dias, {
+        modules: ["hold"], wallets: walletIdsGlobais()
+      });
+    }
+    return [];
+  }
+
+  function reservaSerie(snaps, dias) {
+    if (!snaps.length) return [];
     var porDia = {};
     snaps.forEach(function (x) { porDia[x.d] = x; });
-
     var hoje = new Date(), corrente = null;
     var inicio = new Date(hoje); inicio.setDate(hoje.getDate() - (dias - 1));
     var iniIso = diaIso(inicio);
-    for (var k = 0; k < snaps.length; k++) {
-      if (snaps[k].d <= iniIso) corrente = snaps[k];
-    }
-
+    for (var k = 0; k < snaps.length; k++) if (snaps[k].d <= iniIso) corrente = snaps[k];
     var out = [];
     for (var i = dias - 1; i >= 0; i--) {
       var d = new Date(hoje); d.setDate(hoje.getDate() - i);
       var iso = diaIso(d);
       if (porDia[iso]) corrente = porDia[iso];
-      if (!corrente) continue;                 // antes da primeira medição: sem ponto
+      if (!corrente) continue;
       out.push({ date: iso, value: corrente.v, cost: corrente.c, medido: !!porDia[iso] });
     }
     return out;
@@ -960,6 +995,10 @@
 
     resetToSeed: function () {
       try { localStorage.removeItem(LS_KEY); } catch (e) {}
+      /* A medição vive fora do estado do módulo agora — apagar só a
+         chave do Hold deixaria a curva de pé no livro compartilhado,
+         descrevendo uma carteira que não existe mais. */
+      if (window.AtlasSnapshots) window.AtlasSnapshots.limpar("hold");
       load(); emit(EVENTS.STATE_CHANGED, { evt: "reset" });
     },
 
@@ -1006,7 +1045,8 @@
       portfolioValue: portfolioValue, portfolioCost: portfolioCost,
       portfolioPnL: portfolioPnL, portfolioPnLPct: portfolioPnLPct,
       globalTotal: globalTotal, statusDe: statusDe,
-      portfolioHistory: portfolioHistory, recordSnapshot: recordSnapshot,
+      portfolioHistory: portfolioHistory, globalHistory: globalHistory,
+      recordSnapshot: recordSnapshot,
       counts: counts, alerts: alerts,
       config: config, concentrada: concentrada
     },

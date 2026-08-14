@@ -220,8 +220,42 @@ Chart.defaults.font.size = 11;
 /* A escala do eixo Y é recalculada a cada troca de período ou de
    dados: com janelas diferentes o mínimo e o máximo mudam, e uma
    escala fixa deixaria a linha achatada ou cortada. */
+/* ------------------------------------------------------------
+   QUANTOS DIAS ESTE GRÁFICO REALMENTE MEDIU
+
+   Ele desenhava 90 pontos e a legenda dizia "90 dias" — sem nada na
+   tela distinguindo 90 dias de história de 90 pontos dos quais 89 são
+   o último valor conhecido repetido. Num sistema aberto ontem, os
+   dois desenhos são idênticos.
+
+   Quando a medição cobre a janela inteira a linha some: repetir
+   "90 de 90" a cada render é ruído.
+   ------------------------------------------------------------ */
+function notaMedidos(medidos, dias) {
+  const varia = document.getElementById('evoVar');
+  let nota = document.getElementById('evoMedidos');
+  if (!nota) {
+    if (!varia || !varia.parentNode) return;
+    nota = document.createElement('span');
+    nota.id = 'evoMedidos';
+    nota.className = 'evo-medidos';
+    varia.parentNode.appendChild(nota);
+  }
+  const m = +medidos || 0, d = +dias || 0;
+  if (!d || m >= d) nota.textContent = '';
+  else if (!m) nota.textContent = 'sem medição no período';
+  else nota.textContent = m === 1
+    ? '1 dia medido — o restante repete o último valor conhecido'
+    : m + ' dias medidos de ' + d;
+}
+
 function escala(vals) {
-  const v = (vals && vals.length) ? vals : [0, 1];
+  /* A série passou a ter BURACOS (null) nos dias que ninguém mediu —
+     ver moduleHistory em js/atlas-consolidation.js. Math.min de um
+     array com null devolve 0, e o eixo Y era ancorado num zero que não
+     é um valor da série: a linha ficava esmagada no topo do gráfico. */
+  const v = (vals || []).filter(x => typeof x === "number" && isFinite(x));
+  if (!v.length) return { yMin: 0, yMax: 1000, yStep: 1000 };
   const lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
   const pad = Math.max((hi - lo) * 0.25, hi * 0.05, 1);
   const yMin = Math.max(0, Math.floor((lo - pad) / 1000) * 1000);
@@ -355,6 +389,10 @@ function pintarGraficos() {
     c.options.scales.y.max = esc.yMax;
     c.options.scales.y.ticks.stepSize = esc.yStep;
     c.update();
+    /* A nota só aparecia ao trocar o período — a primeira pintura vem
+       por aqui, não por aplicar(). Sem isto o gráfico abria com 90
+       pontos e nenhum aviso de quantos foram medidos. */
+    notaMedidos(D.evolucao.medidos, D.evolucao.dias);
   }
 
   donut('chartCategoria', 'legendCategoria', D.categoria);
@@ -483,6 +521,19 @@ pintarTudo();
       varia.textContent = pct(snap.pnlPct) + ' no período';
       varia.className = snap.pnl < 0 ? 'neg' : 'pos';
     }
+
+    /* ------------------------------------------------------------
+       QUANTOS DIAS ESTE GRÁFICO REALMENTE MEDIU
+
+       Ele desenhava 90 pontos e a legenda dizia "90 dias" — sem que
+       nada na tela distinguisse 90 dias de historia de 90 pontos dos
+       quais 89 sao o ultimo valor conhecido repetido. Num sistema
+       aberto ontem, os dois desenhos sao identicos.
+
+       O numero de medicoes de verdade vem da consolidacao
+       (evolutionMedidos). Quando ele cobre a janela inteira, a linha
+       some: dizer "90 de 90" a cada render é ruído. */
+    notaMedidos(snap.evolutionMedidos, snap.evolutionDias || dias);
     btn.firstChild.nodeValue = rotulo + ' ';
   }
 

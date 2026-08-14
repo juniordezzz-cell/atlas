@@ -178,6 +178,15 @@ qualquer tela futura — e o primeiro passo do sistema é sempre um **depósito*
 
 ---
 
+## Histórico de patrimônio
+
+`core/atlas-snapshots.js` guarda **uma medição por dia, por módulo, por
+carteira** — é a única coisa que o ATLAS não consegue refazer depois,
+porque o preço de ontem não volta. O Dashboard soma as carteiras globais
+e desenha só onde houve medição: dia sem leitura repete o último valor em
+degrau, e o período anterior à primeira medição fica em branco. A legenda
+informa quantos dias foram medidos de fato.
+
 ## Teses
 
 Toda decisão **deveria** nascer de uma **tese**, registrada dentro de um módulo.

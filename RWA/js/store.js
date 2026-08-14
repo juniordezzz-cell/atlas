@@ -385,6 +385,12 @@
                 "-" + (dd.length < 2 ? "0" + dd : dd);
 
       var k = Store.kpis();
+      /* Também para o livro compartilhado (core/atlas-snapshots.js):
+         guardada só aqui, esta medição era invisível para o Dashboard
+         da raiz. Ver o cabeçalho daquele arquivo. */
+      if (window.AtlasSnapshots) {
+        window.AtlasSnapshots.registrar("rwa", _currentId(), { v: k.total });
+      }
       var ultimo = snaps[snaps.length - 1];
       if (ultimo && ultimo.d === dia) {
         if (ultimo.v === k.total) return snaps;

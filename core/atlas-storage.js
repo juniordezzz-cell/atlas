@@ -119,6 +119,14 @@
     "atlas.defi.tokens.v1",
     "atlas.rwa.state.v3",
     /* ------------------------------------------------------------
+       MEDIÇÕES DIÁRIAS — dado do usuário, não cache
+
+       "Quanto isto valia naquele dia" é a única coisa que o ATLAS não
+       consegue refazer depois: o preço de ontem não volta. Perder esta
+       chave é perder o histórico inteiro do patrimônio, mesmo com
+       todas as posições intactas. Ver core/atlas-snapshots.js. */
+    "atlas.snapshots.v1",
+    /* ------------------------------------------------------------
        PREÇOS INFORMADOS À MÃO — isto é DADO DO USUÁRIO, não cache
 
        Quando nenhuma API reconhece um ativo, o preço passa a ser o que

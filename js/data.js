@@ -196,7 +196,11 @@ function buildAtlasData() {
   return {
     usuario: { nome: perfil.name, iniciais: perfil.initials, saudacao: saudacao() },
     kpis,
-    evolucao: { total: usd(snap.total), variacao: pct(snap.pnlPct) + " no período", labels, valores: snap.evolution, labelsCheios },
+    evolucao: { total: usd(snap.total), variacao: pct(snap.pnlPct) + " no período",
+                labels, valores: snap.evolution, labelsCheios,
+                /* quantos dias a serie tem de MEDICAO — ver
+                   evolutionMedidos em js/atlas-consolidation.js */
+                medidos: snap.evolutionMedidos, dias: snap.evolutionDias },
     categoria,
     blockchain: bcData,
     movimentacoes,

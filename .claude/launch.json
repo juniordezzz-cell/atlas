@@ -4,7 +4,12 @@
     {
       "name": "atlas",
       "runtimeExecutable": "py",
-      "runtimeArgs": ["-3", "-m", "http.server", "8777"],
+      "runtimeArgs": [
+        "-3",
+        "-m",
+        "http.server",
+        "8777"
+      ],
       "port": 8777
     }
   ]

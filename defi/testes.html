@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="../themes/atlas-theme.css">
 
   <script src="../core/atlas-storage.js"></script>
+
+  <script src="../core/atlas-snapshots.js"></script>
   <script src="../core/settings.js"></script>
   <script src="../core/i18n.js"></script>
   <script src="../core/currency.js"></script>
@@ -113,7 +115,8 @@
      do usuário. */
   var CHAVES = ["atlas.defi.state.v3", "atlas.defi.wallet.v1", "atlas.defi.poolDraft.v1",
                 "atlas.precos.manual.v1", "atlas.caixa.v1",
-                "atlas.hold.state.v2", "atlas.hold.wallet.v1", "atlas.theses.v1"];
+                "atlas.hold.state.v2", "atlas.hold.wallet.v1", "atlas.theses.v1",
+                "atlas.snapshots.v1"];
   var grupos = [], atual = null, passou = 0, falhou = 0;
 
   function grupo(nome) { atual = { nome: nome, casos: [] }; grupos.push(atual); }
@@ -1016,9 +1019,16 @@
       eq("e ele vale o que a carteira vale", serie1[0].value, H.get.portfolioValue());
       ok("marcado como medido", serie1[0].medido === true, String(serie1[0].medido));
 
-      var snaps = H.state.snapshots[wH];
-      var d3 = new Date(Date.now() - 3 * 86400000);
-      snaps.unshift({ d: localIso(d3), v: 200, c: 200 });
+      /* A medição saiu do estado do módulo e foi para o livro
+         compartilhado (core/atlas-snapshots.js) — forjar o passado
+         agora é lá. Foi exatamente isto que este caso pegou quando a
+         mudança aconteceu: `H.state.snapshots` deixou de existir. */
+      var livroH = JSON.parse(localStorage.getItem("atlas.snapshots.v1") || "{}");
+      var kH = "hold|" + wH;
+      if (!Array.isArray(livroH[kH])) livroH[kH] = [];
+      livroH[kH].unshift({ d: localIso(new Date(Date.now() - 3 * 86400000)), v: 200, c: 200 });
+      localStorage.setItem("atlas.snapshots.v1", JSON.stringify(livroH));
+      if (window.AtlasSnapshots) AtlasSnapshots._reload();
       var serie2 = H.get.portfolioHistory(90);
       eq("com duas medições, a série cobre os dias entre elas", serie2.length, 4);
       eq("mas só duas são medições de verdade", serie2.filter(function (p) { return p.medido; }).length, 2);
@@ -1149,6 +1159,83 @@
       } catch (e) {}
       CX3._reload();
     }
+    /* ============================================================
+       O gráfico "Evolução do Patrimônio" do Dashboard afirmava 90 dias
+       de história. Hold e Trade entravam como linha reta (nunca eram
+       perguntados), e DeFi e RWA entravam com a série da carteira
+       ATIVA multiplicada por uma constante até o fim bater com o total
+       de TODAS as carteiras. Os casos abaixo travam as três coisas que
+       impedem isso de voltar: uma medição por dia, soma por escopo, e
+       ausência que continua ausência.
+       ============================================================ */
+    grupo("23 · Medições: o gráfico só afirma o que alguém mediu");
+    if (!window.AtlasSnapshots) {
+      nota("core/atlas-snapshots.js não carregado nesta página — casos pulados.");
+    } else {
+      var SN = window.AtlasSnapshots;
+      try { localStorage.removeItem("atlas.snapshots.v1"); } catch (e) {}
+      SN._reload();
+
+      eq("livro vazio não produz série", SN.serie(30).length, 0);
+
+      SN.registrar("hold", "principal", { v: 1000, c: 900 });
+      SN.registrar("hold", "principal", { v: 1000, c: 900 });
+      SN.registrar("hold", "principal", { v: 1000, c: 900 });
+      eq("três chamadas no mesmo dia = UM ponto", SN.serie(30).length, 1);
+      eq("e ele vale o que foi medido", SN.serie(30)[0].value, 1000);
+
+      SN.registrar("hold", "principal", { v: 1200, c: 900 });
+      eq("medir de novo hoje ATUALIZA o ponto, não empilha", SN.serie(30).length, 1);
+      eq("com o valor novo", SN.serie(30)[0].value, 1200);
+
+      /* escopo: a soma tem de respeitar módulo e carteira */
+      SN.registrar("defi", "principal", { v: 300, p: 20 });
+      SN.registrar("hold", "isolada1", { v: 9999, c: 9999 });
+      eq("só o Hold da principal", SN.serie(30, { modules: ["hold"], wallets: ["principal"] })[0].value, 1200);
+      eq("Hold + DeFi da principal", SN.serie(30, { wallets: ["principal"] })[0].value, 1500);
+      eq("a carteira isolada não entra", SN.serie(30, { wallets: ["principal"] })[0].value, 1500);
+      eq("mas responde quando pedida", SN.serie(30, { wallets: ["isolada1"] })[0].value, 9999);
+      eq("campo alternativo (o resultado do DeFi)",
+         SN.serie(30, { modules: ["defi"], campo: "p" })[0].value, 20);
+
+      /* zero antes da primeira medição não é medição */
+      SN.registrar("rwa", "principal", { v: 0 });
+      eq("carteira zerada e nunca medida não vira ponto",
+         SN.serie(30, { modules: ["rwa"] }).length, 0);
+
+      /* degrau: dia sem medição repete, e se declara não medido */
+      var livro = JSON.parse(localStorage.getItem("atlas.snapshots.v1"));
+      livro["hold|principal"].unshift({ d: diasAtras(4), v: 500, c: 500 });
+      localStorage.setItem("atlas.snapshots.v1", JSON.stringify(livro));
+      SN._reload();
+
+      var serie23 = SN.serie(30, { modules: ["hold"], wallets: ["principal"] });
+      eq("a série cobre do primeiro dia medido até hoje", serie23.length, 5);
+      eq("mas só DOIS dias foram medidos de fato",
+         serie23.filter(function (p) { return p.medido; }).length, 2);
+      eq("o meio repete o último valor conhecido", serie23[1].value, 500);
+      ok("e se declara não medido", serie23[1].medido === false, String(serie23[1].medido));
+      eq("o último ponto é a medição de hoje", serie23[4].value, 1200);
+      eq("medidos() conta o mesmo",
+         SN.medidos(30, { modules: ["hold"], wallets: ["principal"] }), 2);
+
+      /* o marcador de migração não é um módulo */
+      var mods23 = Object.keys(SN.porModulo(30));
+      ok("__migrado não aparece como módulo", mods23.indexOf("__migrado") === -1, mods23.join(", "));
+
+      /* limpar um módulo não leva os outros junto */
+      SN.limpar("hold");
+      eq("limpar o Hold zera o Hold", SN.serie(30, { modules: ["hold"] }).length, 0);
+      eq("e deixa o DeFi de pé", SN.serie(30, { modules: ["defi"] }).length, 1);
+
+      nota("A normalização que existia na consolidação (k = totalAtual / " +
+           "últimoPonto) esticava uma série medida de UMA carteira até caber " +
+           "no total de TODAS. Com a soma por escopo acima, as duas pontas " +
+           "passam a ser a mesma régua e não há mais o que corrigir.");
+
+      try { localStorage.removeItem("atlas.snapshots.v1"); } catch (e) {}
+      SN._reload();
+    }
   }
 
   /* ---------------- utilidades dos casos ---------------- */
@@ -1198,6 +1285,7 @@
        relê o que acabou de ser devolvido. */
     try { if (window.DeFiStore && DeFiStore._reload) DeFiStore._reload(); } catch (e) {}
     try { if (window.AtlasCaixa && AtlasCaixa._reload) AtlasCaixa._reload(); } catch (e) {}
+    try { if (window.AtlasSnapshots && AtlasSnapshots._reload) AtlasSnapshots._reload(); } catch (e) {}
     /* Mesmo motivo para o Hold: o store guarda HOLD_STATE em memória e
        a próxima gravação o mandaria de volta ao disco por cima do que
        acabou de ser restaurado. init() relê o que está lá. */

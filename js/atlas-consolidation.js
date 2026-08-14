@@ -158,6 +158,44 @@
       });
       return true;
     }, null);
+
+    /* ------------------------------------------------------------
+       E CARIMBA A MEDIÇÃO DO DIA, MÓDULO POR MÓDULO E CARTEIRA POR
+       CARTEIRA
+
+       O gráfico "Evolução do Patrimônio" desta página afirmava 90 dias
+       de história. Auditado: Hold e Trade entravam como LINHA RETA
+       (nunca foram perguntados — o Trade nem tinha o que responder), e
+       DeFi e RWA entravam com a série da carteira ATIVA esticada por
+       uma constante até o fim bater com o total de TODAS as carteiras.
+       Uma medição real multiplicada até caber é pior que a linha reta:
+       linha reta se denuncia, curva esticada tem cara de história.
+
+       Esta página é a única que carrega os quatro stores ao mesmo
+       tempo — é o único lugar onde dá para medir tudo com o mesmo
+       relógio. O leitor por carteira que já existe acima responde
+       "quanto vale hoje"; aqui esse número ganha data e vai para o
+       livro compartilhado (core/atlas-snapshots.js).
+
+       É assim que o Trade passa a ter série sem precisar de um
+       mecanismo próprio: ele não guarda medição nenhuma, mas sabe
+       dizer quanto vale. Guardar é problema de outro arquivo.
+       ------------------------------------------------------------ */
+    safe(function () {
+      if (!global.AtlasSnapshots) return null;
+      var globais = globalIds();
+      globais.forEach(function (id) {
+        Object.keys(LEITORES).forEach(function (m) {
+          var r = LEITORES[m](id);
+          /* null = store ausente nesta página. Registrar zero aqui
+             seria afirmar que o módulo valia nada naquele dia, quando
+             o que houve foi ausência de leitura. */
+          if (!r) return;
+          global.AtlasSnapshots.registrar(m, id, { v: n(r.valorAtual), c: n(r.capital) });
+        });
+      });
+      return true;
+    }, null);
   })();
 
   /* ---------- TOTAIS (US$) — null = módulo ausente ----------
@@ -223,47 +261,76 @@
      Normaliza cada série do módulo para terminar no total ATUAL daquele
      módulo (reconcilia o endpoint com o KPI). Módulos sem série viram
      linha plana no total atual. Soma tudo elemento a elemento. */
-  function vals(arr) { return (arr || []).map(function (p) { return typeof p === "number" ? p : n(p.value); }); }
+  /* vals() saiu junto com a normalização: ela era a única a usar essa
+     conversão de formato, porque cada módulo devolvia a série num
+     formato diferente. Com o livro compartilhado há um formato só. */
 
-  /* ------------------------------------------------------------
-     SÉRIE DEGENERADA NÃO É SÉRIE
+  /* ============================================================
+     A SÉRIE DE UM MÓDULO — MEDIDA, NUNCA ESTICADA
 
-     A normalização (`k = totalAtual / último`) supõe que a série
-     termina num valor comparável ao total de hoje. O RWA guarda
-     equityCurves geradas com valor inicial ZERO — 90 zeros. Nesse
-     caso `último` virava 1 pelo `|| 1`, k virava o total, e o
-     resultado era 90 zeros vezes qualquer coisa: zero.
+     O que havia aqui:
 
-     Efeito na tela: o módulo entrava com o valor cheio no
-     "Patrimônio Total" e com ZERO na curva de evolução — inclusive
-     no ponto de HOJE. O gráfico terminava num número diferente do
-     KPI logo acima dele.
+       · o Hold e o Trade nem eram perguntados → linha reta;
+       · o DeFi e o RWA respondiam com a série da carteira ATIVA;
+       · e então `k = totalAtual / últimoPonto` multiplicava a série
+         inteira até o fim bater com o total de TODAS as carteiras.
 
-     Série ausente ou degenerada agora vira linha reta no total atual:
-     não é histórico (o módulo não mede), mas ao menos não contradiz
-     o número ao lado.
-     ------------------------------------------------------------ */
+     A normalização foi escrita para resolver um sintoma real (a curva
+     terminava num número diferente do KPI ao lado). Só que a causa era
+     de escopo: série de uma carteira contra total de várias. Esticar
+     uma medição real por uma constante produz um passado que não
+     aconteceu — e com aparência de dado, não de placeholder.
+
+     Agora todos os quatro leem do mesmo livro de medições, já somado
+     pelas carteiras GLOBAIS — o mesmo conjunto que produz o total. Sem
+     fator de correção, porque não há mais o que corrigir: as duas
+     pontas são a mesma régua.
+
+     Módulo sem medição nenhuma continua entrando como linha reta no
+     total atual, e isso agora é REPORTADO (ver `medidos` no snapshot):
+     a tela pode dizer quantos dias foram medidos de fato em vez de
+     deixar 90 pontos sugerirem 90 dias de história.
+     ============================================================ */
   function moduleHistory(key, currentTotal, days) {
-    var series = null;
-    if (key === "rwa")  series = safe(function () { return global.RWAStore ? vals(global.RWAStore.equityCurves().total) : null; }, null);
-    if (key === "defi") series = safe(function () { return global.DeFiStore ? vals(global.DeFiStore.portfolioHistory(days)) : null; }, null);
+    var serie = safe(function () {
+      if (!global.AtlasSnapshots) return null;
+      return global.AtlasSnapshots.serie(days, { modules: [key], wallets: globalIds() });
+    }, null);
 
     var out = [], j;
+    /* Sem livro de medições (página que não carrega o arquivo): linha
+       reta no total atual. Não é histórico — é a única coisa que não
+       contradiz o KPI ao lado. */
     function plana() {
       var f = []; for (j = 0; j < days; j++) f.push(currentTotal); return f;
     }
-    if (!series || !series.length) return plana();
+    if (!global.AtlasSnapshots) return plana();
+    if (!serie || !serie.length) { for (j = 0; j < days; j++) out.push(null); return out; }
 
-    var tail = series.slice(-days);
-    var last = tail[tail.length - 1];
-    /* último ponto zerado com total diferente de zero = série sem
-       relação com a realidade do módulo */
-    if (!isFinite(last) || (last === 0 && currentTotal !== 0)) return plana();
+    out = serie.map(function (p) { return n(p.value); });
+    /* ------------------------------------------------------------
+       ANTES DA PRIMEIRA MEDIÇÃO NÃO HÁ LINHA
 
-    var k = last ? (currentTotal / last) : 1;
-    out = tail.map(function (v) { return v * k; });
-    while (out.length < days) out.unshift(out[0]);
+       O impulso é repetir o primeiro valor conhecido para a esquerda,
+       preenchendo a janela. Mas isso AFIRMA que o patrimônio era
+       aquele valor num dia em que ninguém mediu nada — e num sistema
+       recém-aberto pinta 89 dias de estabilidade que não existiram.
+
+       `null` faz o gráfico simplesmente não desenhar ali. A linha
+       começa onde a medição começou, e o buraco à esquerda é a
+       resposta honesta: não sabemos.
+       ------------------------------------------------------------ */
+    while (out.length < days) out.unshift(null);
     return out.slice(-days);
+  }
+
+  /* Quantos dias da janela têm medição de verdade, somando os módulos.
+     É o número que separa "90 dias de história" de "90 pontos". */
+  function diasMedidos(days) {
+    return safe(function () {
+      if (!global.AtlasSnapshots) return 0;
+      return global.AtlasSnapshots.medidos(days, { wallets: globalIds() });
+    }, 0);
   }
 
   /* ---------- Exposição por blockchain (best-effort) ---------- */
@@ -316,11 +383,29 @@
     var total = present.reduce(function (a, m) { return a + n(m.total); }, 0);
     var pnl = tradePnl() + holdPnl() + defiPnl() + rwaPnl();
 
-    var evo = []; for (var i = 0; i < days; i++) evo.push(0);
-    present.forEach(function (m) {
-      var h = moduleHistory(m.key, n(m.total), days);
-      for (var j = 0; j < days; j++) evo[j] += n(h[j]);
-    });
+    /* ------------------------------------------------------------
+       SOMA QUE PRESERVA O "NÃO SABEMOS"
+
+       Antes: `evo` começava com 90 zeros e cada módulo somava por
+       cima — então um dia sem medição de NINGUÉM saía como zero, e o
+       gráfico desenhava o patrimônio despencando a zero no passado.
+
+       Agora um dia só existe se ALGUM módulo o mediu. Onde nenhum
+       mediu, o ponto é null e o gráfico não desenha. E um módulo sem
+       medição naquele dia não contribui zero: ele contribui nada, o
+       que é diferente — zero é uma afirmação sobre o valor.
+       ------------------------------------------------------------ */
+    var series = present.map(function (m) { return moduleHistory(m.key, n(m.total), days); });
+    var evo = [];
+    for (var i = 0; i < days; i++) {
+      var soma = 0, algum = false;
+      for (var s = 0; s < series.length; s++) {
+        var v = series[s][i];
+        if (v == null) continue;
+        soma += n(v); algum = true;
+      }
+      evo.push(algum ? soma : null);
+    }
 
     var byModule = present
       .map(function (m) { return { label: m.name, value: n(m.total), color: m.color }; })
@@ -374,6 +459,11 @@
       protocols: protocolsCount(),
       byModule: byModule,
       evolution: evo,
+      /* Quantos pontos da série vieram de MEDIÇÃO. Sem isto a tela não
+         tem como distinguir 90 dias de história de 90 pontos, dos
+         quais 88 são o último valor conhecido repetido. */
+      evolutionMedidos: diasMedidos(days),
+      evolutionDias: days,
       wallets: wallets,
       modules: mods
     };

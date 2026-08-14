@@ -70,7 +70,8 @@
         "atlas.hold.state.v2",
         "atlas.trade.state.v1",
         "atlas.defi.state.v3",
-        "atlas.rwa.state.v3"
+        "atlas.rwa.state.v3",
+        "atlas.snapshots.v1"
       ];
 
   /* Caches são descartáveis: o site refaz sozinho na primeira
@@ -137,6 +138,7 @@
     "atlas.defi.tokens.v1":    "DeFi · tokens",
     "atlas.defi.pools.v1":     "DeFi · catálogo de pools",
     "atlas.rwa.state.v3":      "RWA",
+    "atlas.snapshots.v1":      "Histórico de patrimônio (medições diárias)",
     "atlas.assets.cg_key.v1":  "Chave da API CoinGecko",
     /* nomes aposentados — só aparecem em arquivos antigos */
     "atlas.state.v1":          "Trade (nome antigo)",
