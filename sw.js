@@ -61,7 +61,7 @@
    debitar e creditar o caixa, e o Trade ganhou capital em dólar
    (sizeUSD/pnlUSD). Quem rodasse a versão anterior de um desses
    stores abriria posição sem tirar dinheiro do caixa. */
-var VERSAO = "atlas-v22";
+var VERSAO = "atlas-v23";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

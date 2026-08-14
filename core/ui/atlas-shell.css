@@ -1047,3 +1047,52 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   outline: 2px solid var(--atlas-accent);
   outline-offset: 2px;
 }
+
+/* ===================================================================
+   ALVOS DE TOQUE — 44px onde o dedo decide
+
+   Estes controles são da CASCA: aparecem em todas as páginas do ATLAS.
+   Mediram entre 27 e 37px, abaixo dos 44 que um polegar pede. Passam
+   no mínimo da WCAG 2.5.8 (24x24), então não era falha — é a diferença
+   entre acertar e errar, e o sino, o tema e o Oráculo são justamente
+   os controles que se usa de pé, com uma mão só.
+
+   `pointer: coarse` e não `hover: none`: a pergunta é sobre o dedo,
+   não sobre a ausência de mouse. Notebook com tela sensível tem os
+   dois, e ali as duas coisas devem valer.
+
+   Fica no FIM do arquivo de propósito. Media query não aumenta
+   especificidade — ela só restringe QUANDO a regra vale. Escrito antes
+   das regras base, este bloco perderia para elas por ordem de cascata.
+
+   Cresce o botão, não uma área invisível em volta: alvos ampliados por
+   ::after com inset negativo se sobrepõem quando ficam lado a lado, e
+   alvo sobreposto erra em silêncio.
+
+   O `.atlas-skip` (35px) fica de fora: ele só se torna visível no
+   :focus do teclado. Não é alvo de toque — ninguém o alcança com o
+   dedo, e inflá-lo não melhora nada para ninguém.
+   =================================================================== */
+@media (pointer: coarse) {
+  /* Oráculo */
+  .atlas-oraculo__close { width: 44px; height: 44px; }
+  .atlas-oraculo__send  { width: 44px; height: 44px; }
+  .atlas-oraculo__input { height: 44px; }
+  /* O chip é `block`; vira flex para o texto continuar centrado quando
+     a caixa cresce. `display:flex` mantém o comportamento de largura —
+     ele é item de um flex container e segue dimensionado pelo conteúdo. */
+  .atlas-oraculo__chip {
+    min-height: 44px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Central de alertas */
+  .atlas-bell__btn { width: 44px; height: 44px; }
+  .atlas-bell__all {
+    min-height: 44px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Alternador de tema */
+  .atlas-theme-toggle { width: 44px; height: 44px; }
+}

@@ -385,3 +385,16 @@
   .awsel__btn { padding: 6px; gap: 6px; }
   .awsel__menu { width: min(var(--aws-menu-w), calc(100vw - 24px)); }
 }
+
+/* Alvo de toque — ver core/ui/atlas-shell.css. O botão do seletor
+   mediu 74x42: dois pixels do mínimo, e é a porta de entrada para
+   trocar de carteira em seis telas. */
+@media (pointer: coarse) {
+  .awsel__btn { min-height: 44px; }
+  .awsel .awsel__add { min-height: 44px; }
+  /* Renomear e excluir carteira: 24x24 é o menor alvo do ATLAS inteiro,
+     e um deles apaga uma carteira. A especificidade acompanha a da
+     regra base (`.awsel .awsel__act`) — sem isso a largura não muda,
+     porque width perde para width mais específico. */
+  .awsel .awsel__act { width: 44px; height: 44px; }
+}

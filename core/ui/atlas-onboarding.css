@@ -170,3 +170,16 @@
 }
 
 @media print { .aonb { display: none; } }
+
+/* Alvos de toque — ver o bloco equivalente em core/ui/atlas-shell.css
+   para o porquê de `pointer: coarse` e de isto ficar no fim do arquivo.
+   Estes dois são os botões da PRIMEIRA sessão: se algum controle do
+   ATLAS não pode ser difícil de acertar num celular, é o que decide
+   entre continuar e pular a apresentação. */
+@media (pointer: coarse) {
+  .aonb__btn,
+  .aonb__pular {
+    min-height: 44px;
+    display: flex; align-items: center; justify-content: center;
+  }
+}

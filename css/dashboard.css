@@ -646,3 +646,66 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
   color: var(--atlas-text-mut, #8b97ad);
 }
 .evo-medidos:empty { display: none; }
+
+/* ===================================================================
+   ALVOS DE TOQUE — barra superior, navegação e cartões
+
+   Ver core/ui/atlas-shell.css para o raciocínio completo (por que
+   `pointer: coarse`, por que no fim do arquivo, e por que o botão
+   cresce em vez de ganhar área invisível).
+
+   Aqui ficam os controles do shell da raiz: menu de aplicativos,
+   avatar, abrir menu, itens de navegação, os botões dos cartões e os
+   campos de formulário.
+   =================================================================== */
+@media (pointer: coarse) {
+  .icon-btn,
+  .avatar,
+  .nav-toggle { width: 44px; height: 44px; }
+
+  .tb-menu__item { min-height: 44px; }
+  .nav-item      { min-height: 44px; }
+  .card-btn      { min-height: 44px; }
+
+  /* Campos: caixa de texto, seleção e afins. Caixa de marcação e botão
+     de rádio ficam de fora — esticá-los deforma o controle em vez de
+     ampliá-lo, e o alvo deles é o rótulo ao lado.
+
+     (Estas três valem também em carteiras.html e relatorios.html, que
+     são as páginas com <select> de verdade e carregam esta folha.) */
+  select,
+  textarea,
+  input:not([type="checkbox"]):not([type="radio"]) { min-height: 44px; }
+
+  /* `.select` é CLASSE DE BOTÃO, não o elemento — o seletor de período
+     do painel é `<button class="select">Últimos 30 dias</button>`. Li
+     "select" na varredura e escrevi a regra do elemento, que não o
+     alcançava: ele continuou em 29px enquanto eu achava tê-lo
+     corrigido. Nome de classe igual a nome de tag confunde a leitura
+     de quem mede tanto quanto a de quem escreve. */
+  .select { min-height: 44px; }
+}
+
+/* ===================================================================
+   A BARRA SUPERIOR QUEBRA LINHA EM TELA ESTREITA
+
+   Ela é `flex` com `space-between` e NENHUMA regra responsiva: a
+   saudação de um lado, cinco controles do outro, sem permissão para
+   quebrar. Num aparelho de 375px o conteúdo mede 452 — a barra
+   transbordava e levava a página inteira a rolar de lado.
+
+   Isto é anterior aos alvos de 44px (medido nos dois estados: 452 com
+   e sem), mas aumentá-los pioraria de vez, então o conserto vem junto.
+   Deixar quebrar resolve a causa; espremer os controles só adiaria.
+
+   `max-width` e não `pointer: coarse`: quem estreita a janela no
+   desktop tem o mesmo problema, e ali não há dedo nenhum.
+   =================================================================== */
+@media (max-width: 560px) {
+  .topbar { flex-wrap: wrap; }
+  .topbar-right {
+    width: 100%;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+}
