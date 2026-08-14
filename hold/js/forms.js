@@ -47,6 +47,10 @@
         preco_atual: preco.value, market_cap: mcap.value, setor: setor.value.trim(),
         categoria: categoria.value.trim(), status: status.value
       });
+      /* createAsset passou a RECUSAR ticker repetido. Sem este ramo, o
+         botão não faria nada e a pessoa não saberia por quê — e a linha
+         abaixo quebraria em a.ticker de um objeto de erro. */
+      if (a && a.error) return U.toast("Ticker já cadastrado", a.error, "warning");
       U.closeModal(); U.toast("Ativo adicionado", a.ticker + " entrou no sistema.", "success"); afterChange();
     }});
 
@@ -197,9 +201,10 @@
     var pos = S.get.positionOf(assetId);
     var isSell = side === "sell";
 
-    if (!isSell && !S.get.thesisOfAsset(assetId)) {
-      return U.toast("Tese obrigatória", "Crie a tese antes de investir em " + a.ticker + ".", "warning");
-    }
+    /* A falta de tese NÃO impede mais abrir a compra — ver executeBuy
+       em hold/js/state.js. Ela vira aviso dentro do formulário, junto
+       do caixa disponível, que é o que de fato decide. */
+    var semTese = !isSell && !S.get.thesisOfAsset(assetId);
     if (isSell && !pos) return U.toast("Sem posição", "Não há posição de " + a.ticker + " para vender.", "warning");
 
     var seg = U.el("div", { class: "segmented" });
@@ -220,8 +225,32 @@
 
     var posInfo = pos ? U.el("div", { class: "small dim", text: "Posição atual: " + U.qty(pos.quantidade) + " " + a.ticker + " · PM " + U.money(pos.preco_medio) }) : null;
 
+    /* ------------------------------------------------------------
+       O CAIXA DISPONÍVEL, NA TELA ONDE ELE É GASTO
+
+       O Hold passou a exigir caixa para comprar e não mostrava o saldo
+       em lugar nenhum: a pessoa preenchia quantidade e preço para só
+       então descobrir que não tinha dinheiro. O número que decide a
+       operação tem de estar visível antes dela.
+       ------------------------------------------------------------ */
+    var carteiraAtual = (S.wallets && S.wallets.active) ? S.wallets.active() : null;
+    var caixaAtual = (window.AtlasCaixa && carteiraAtual)
+      ? AtlasCaixa.saldo(carteiraAtual.id) : null;
+    var infoCaixa = (!isSell && caixaAtual != null)
+      ? U.el("div", { class: "small dim", style: "margin-bottom:10px",
+          text: "Caixa em " + carteiraAtual.name + ": " + U.money(caixaAtual) +
+                " — é daqui que sai o valor da compra." })
+      : null;
+    var avisoTese = semTese
+      ? U.el("div", { class: "small dim", style: "margin-bottom:10px",
+          text: "Sem tese registrada para " + a.ticker + ". A compra é registrada assim " +
+                "mesmo, e o alerta vai cobrar a tese até ela existir." })
+      : null;
+
     var body = U.el("div", {}, [
       U.el("div", { class: "between", style: "margin-bottom:16px" }, [U.assetCellSafe(a), seg]),
+      infoCaixa,
+      avisoTese,
       posInfo,
       U.el("div", { class: "form-row" }, [
         U.field("Quantidade", qtdI, { required: true }),

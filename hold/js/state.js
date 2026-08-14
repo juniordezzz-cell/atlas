@@ -306,9 +306,37 @@
 
     /* -- Ativo -- */
     createAsset: function (data) {
+      /* ------------------------------------------------------------
+         UM TICKER, UM ATIVO
+
+         Nada impedia cadastrar SOL duas vezes. Medido na auditoria do
+         Hold: três ativos com ticker SOL convivendo, com preços 100,
+         100 e 250 — o MESMO ativo valendo coisas diferentes na mesma
+         tela.
+
+         O estrago se espalha: a lista mostra o ativo três vezes, cada
+         cópia acumula a sua posição, "Atualizar preços" busca SOL três
+         vezes e grava em três lugares, e a alocação por ativo conta
+         como se fossem três ativos distintos — diluindo uma
+         concentração real em três fatias que parecem pequenas.
+
+         É a mesma classe de defeito que a terceira auditoria passou
+         inteira removendo: um conceito com mais de uma fonte.
+         ------------------------------------------------------------ */
+      var tk = String(data.ticker || "").trim().toUpperCase();
+      if (!tk) return { error: "Informe o ticker do ativo." };
+      var existente = HOLD_STATE.ativos.filter(function (x) {
+        return String(x.ticker || "").toUpperCase() === tk;
+      })[0];
+      if (existente) {
+        return { error: tk + " já está cadastrado como \"" + existente.nome + "\". " +
+                        "Um ticker, um ativo — abra o ativo existente para comprar mais.",
+                 asset: existente };
+      }
+
       var a = {
         id: uid("as"),
-        nome: data.nome, ticker: (data.ticker || "").toUpperCase(),
+        nome: data.nome, ticker: tk,
         tipo: data.tipo || "Cripto",
         preco_atual: num(data.preco_atual), market_cap: num(data.market_cap),
         setor: data.setor || "", categoria: data.categoria || "",
@@ -472,7 +500,32 @@
     // Executa compra. Regra: exige tese vinculada ao ativo.
     executeBuy: function (data) {
       var a = asset(data.ativo_id); if (!a) return { error: "Ativo inexistente." };
-      if (!thesisOfAsset(a.id)) return { error: "Nenhum ativo é investido sem tese. Crie a tese primeiro." };
+
+      /* ------------------------------------------------------------
+         O QUE BLOQUEIA A COMPRA É O CAIXA, NÃO A TESE
+
+         A regra anterior recusava a compra sem tese vinculada. Ela
+         nasceu de um princípio do módulo — "toda decisão nasce de uma
+         tese" — mas confundia duas coisas de naturezas diferentes:
+
+           tese  é DISCIPLINA. Ausência dela é um problema de processo,
+                 e o ATLAS já sabe cobrar processo: o alerta de "posição
+                 sem tese" existe, o Oráculo responde sobre teses em
+                 aberto, e o histórico registra tudo.
+           caixa é POSSIBILIDADE. Sem dinheiro a compra não pode
+                 acontecer — não é uma escolha de método, é aritmética.
+
+         Bloquear pela tese fazia o sistema recusar uma compra que
+         REALMENTE ocorreu no mundo, e recusar registrar um fato é pior
+         que registrá-lo imperfeito: o dinheiro sai da corretora de
+         qualquer jeito, e o ATLAS fica sem saber.
+
+         A tese continua sendo cobrada — a posição nasce marcada, e o
+         alerta aparece até ela existir. O que ela deixou de fazer é
+         impedir o registro. Decisão do dono do produto, tomada na
+         auditoria do Hold.
+         ------------------------------------------------------------ */
+      var semTese = !thesisOfAsset(a.id);
 
       var qty = num(data.quantidade), price = num(data.preco);
       if (qty <= 0 || price <= 0) return { error: "Quantidade e preço devem ser positivos." };
@@ -508,6 +561,9 @@
         HOLD_STATE.carteira.push(pos);
       }
       a.status = "invested";
+      /* A posição carrega a marca até a tese existir. É o que permite
+         o alerta cobrar sem o sistema ter recusado o registro. */
+      pos.semTese = semTese;
       logHistory(EVENTS.TRADE_EXECUTED, "buy", a.id, a.tese_id,
         data.justificativa || "Execução dentro da faixa de acúmulo da tese.",
         "Compra de " + qty + " " + a.ticker + " a " + fmtMoney(price) + ".");

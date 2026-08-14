@@ -170,6 +170,13 @@ Coisas que **não** são para "consertar" sem antes ler o porquê:
   posições — se voltar a ter armazenamento próprio, volta a divergir.
   A invariante que prova a unificação: o `net` do relatório de uma
   carteira é igual ao saldo de caixa dela.
+- **No Hold, o que bloqueia a compra é o CAIXA, não a tese.** A regra
+  anterior recusava comprar sem tese vinculada. Ela confundia duas
+  naturezas: tese é DISCIPLINA (ausência é problema de processo, e o
+  alerta "Posição sem tese" já cobra), caixa é POSSIBILIDADE (sem
+  dinheiro a compra não acontece — é aritmética). Bloquear pela tese
+  fazia o ATLAS recusar o registro de uma compra que ocorreu no mundo
+  real, e não registrar um fato é pior que registrá-lo incompleto.
 - **Preço manual vence a API.** Ele só existe quando nenhuma fonte
   reconheceu o ativo, e uma API que volta a responder com o ativo
   ERRADO (símbolo colidindo) é pior que não responder. Envelhece e
