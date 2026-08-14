@@ -210,7 +210,22 @@ Divergência que não seja cópia velha ele relata e não toca.
 `ok` vem `null` e a tela escreve "não conferido" — nunca "tudo certo".
 Um verificador que tranquiliza sobre o vazio é pior que nenhum.
 
-Está em **Configurações → Supervisão das contas**.
+**Ele roda sozinho.** O centro de alertas o chama, então o sino vigia em
+toda página, sem ninguém precisar lembrar de conferir. Um verificador que
+só roda quando é chamado vigia quando é lembrado.
+
+E ele fica **calado** no uso normal. Três áreas ficam fora do aviso
+automático porque são *defasagem de instante*, não incoerência de dado —
+cópia de saldo da central, tela ainda não repintada e medição do dia
+anterior ao preço novo. As três se resolvem sozinhas, e um alerta que
+pisca a cada compra legítima ensina a ignorar o sino. Elas continuam
+visíveis na auditoria completa.
+
+O que acende: capital que não bate com o caixa, patrimônio que não fecha
+com o extrato, carteira apagada com dinheiro dentro, caixa negativo.
+Nenhum desses se resolve esperando.
+
+O painel completo está em **Configurações → Supervisão das contas**.
 
 ## O núcleo das contas
 

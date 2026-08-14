@@ -649,6 +649,26 @@
       return true;
     }, null);
 
+    /* ---- Supervisão: incoerência entre fontes ----
+       Os alertas acima são do NEGÓCIO — uma tese parada, uma posição
+       concentrada. Estes são do SISTEMA: dois números que não podem
+       ser verdade ao mesmo tempo.
+
+       Entram aqui porque o centro de alertas já lê desta função, e é
+       assim que a supervisão passa a rodar sozinha em toda página, sem
+       ninguém precisar lembrar de abrir Configurações e clicar. Um
+       verificador que só roda quando é chamado vigia quando é lembrado.
+
+       Silêncio quando está tudo certo: o supervisor devolve lista
+       vazia, e nada aparece no sino. */
+    safe(function () {
+      if (!global.AtlasSupervisor || !global.AtlasSupervisor.alertas) return null;
+      global.AtlasSupervisor.alertas().forEach(function (a) {
+        add(a.level, a.module, a.texto, a.quando);
+      });
+      return true;
+    }, null);
+
     /* crítico primeiro; dentro do mesmo nível, preserva a ordem de
        chegada (que é a ordem dos módulos acima) */
     return out.sort(function (a, b) { return PESO[a.level] - PESO[b.level]; });

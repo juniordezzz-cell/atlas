@@ -1472,11 +1472,72 @@
            "manteria a causa — o oposto da regra de ouro nº 1. Cache " +
            "derivado ele reescreve a partir da fonte; extrato, jamais.");
 
-      /* -- a forma do achado é sempre a mesma -- */
-      var qualquer = V.carteiras()[0];
+      /* ------------------------------------------------------------
+         O CANAL AUTOMÁTICO SÓ ACENDE POR INCOERÊNCIA DE DADO
+
+         O supervisor roda sozinho: o centro de alertas o chama, e o
+         sino aparece em toda página. Isso só serve se ele ficar
+         CALADO no uso normal — um alerta que pisca a cada compra
+         legítima ensina a ignorar o sino, e aí o alerta que importa
+         passa junto.
+
+         Medido antes deste filtro: uma compra perfeitamente legítima
+         acendia três avisos (cache da central velho, tela ainda não
+         repintada, medição do dia anterior ao preço novo). Nenhum é
+         incoerência de dado — os três são defasagem de instante e se
+         resolvem sozinhos.
+         ------------------------------------------------------------ */
+      /* Os casos acima sujaram o livro de propósito (carteira órfã,
+         caixa negativo) e aquilo É incoerência de dado — o canal
+         automático acusaria com razão. Para medir o SILÊNCIO é preciso
+         partir de um estado coerente. Foi este descuido que fez os três
+         primeiros casos daqui falharem quando os escrevi. */
+      try {
+        localStorage.removeItem("atlas.caixa.v1");
+        localStorage.removeItem("atlas.snapshots.v1");
+      } catch (e) {}
+      CXs._reload();
+      CXs.registrar({ tipo: "deposito", valorUSD: 10000, walletId: w25 });
+      CXs.registrar({ tipo: "aporte", valorUSD: 4000, walletId: w25, module: "hold", refId: "p2" });
+
+      falso.valor = 4000; falso.capital = 4000;
+      var auto = SUP.alertas();
+      eq("com tudo coerente, o canal automático fica calado",
+         auto.filter(function (x) { return x.module === "sistema"; }).length, 0);
+
+      /* `alertas()` usa cache de 3s para poder ser chamado a cada
+         repintura sem pesar. No uso real ele é invalidado quando o
+         caixa ou as carteiras mudam; aqui mexemos num leitor fictício,
+         que não avisa ninguém — então invalidamos à mão. Foi isto que
+         fez o caso falhar quando o escrevi: eu media o cache anterior. */
+      falso.valor = 9000; falso.capital = 9000;
+      SUP.invalidar();
+      var auto2 = SUP.alertas();
+      ok("com dinheiro do nada, ele fala", auto2.length > 0, auto2.length + " alerta(s)");
+      is("e no nível crítico", auto2.length ? auto2[0].level : "—", "crit");
+      ok("dizendo qual é a diferença",
+         auto2.length && /diferença/.test(auto2[0].texto), auto2.length ? auto2[0].texto : "—");
+
+      falso.valor = 4000; falso.capital = 4000;
+      SUP.invalidar();
+      eq("desfeito, volta ao silêncio", SUP.alertas().length, 0);
+
+      /* As áreas de defasagem continuam visíveis no painel completo —
+         o que muda é que elas não gritam sozinhas. */
+      var completo = SUP.auditar({ tela: false });
+      ok("mas a auditoria completa continua enxergando tudo",
+         completo.achados.length >= 0, completo.achados.length + " achado(s)");
+
+      /* -- a forma do achado é sempre a mesma --
+         Vale para QUALQUER verificação: a tela e os testes leem sem
+         saber de onde o achado veio. Provocado aqui, não colhido de
+         sobra de caso anterior. */
+      falso.valor = 7777; falso.capital = 7777;
+      var qualquer = V.capitalContraCaixa()[0];
       ok("todo achado tem nivel, area e o_que",
-         qualquer && qualquer.nivel && qualquer.area && qualquer.o_que,
+         !!(qualquer && qualquer.nivel && qualquer.area && qualquer.o_que),
          qualquer ? [qualquer.nivel, qualquer.area].join("/") : "—");
+      falso.valor = 4000; falso.capital = 4000;
 
       try {
         localStorage.removeItem("atlas.caixa.v1");

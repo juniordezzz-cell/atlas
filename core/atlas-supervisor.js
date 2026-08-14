@@ -455,6 +455,29 @@
     };
   }
 
+  /* ------------------------------------------------------------
+     CACHE CURTO — para poder rodar sozinho sem pesar
+
+     A auditoria é chamada pelo centro de alertas, que por sua vez é
+     lido a cada repintura da barra superior. Sem isto, uma tela que
+     redesenha cinco vezes rodaria a varredura cinco vezes.
+
+     Três segundos: curto o bastante para que uma compra apareça no
+     sino quase na hora, longo o bastante para absorver a rajada de
+     renders de um mesmo instante.
+     ------------------------------------------------------------ */
+  var _cache = null, _cacheEm = 0, CACHE_MS = 3000;
+
+  function auditarCacheado(opts) {
+    var agora = Date.now();
+    if (_cache && (agora - _cacheEm) < CACHE_MS) return _cache;
+    _cache = auditar(opts);
+    _cacheEm = agora;
+    return _cache;
+  }
+
+  function invalidar() { _cache = null; _cacheEm = 0; }
+
   function auditar(opts) {
     opts = opts || {};
     var snap = opts.snapshot || safe(function () {
@@ -520,8 +543,85 @@
     return L.join("\n");
   }
 
+  /* ------------------------------------------------------------
+     OS ACHADOS COMO ALERTAS
+
+     Ele roda SOZINHO — o centro de alertas o chama, e o sino aparece
+     em toda página. Era o que faltava para ele servir ao propósito: um
+     verificador que só roda quando alguém lembra de clicar não vigia
+     nada, vigia quando é lembrado.
+
+     Silêncio total quando está tudo certo. Um supervisor que fala toda
+     hora vira barulho, e barulho ensina a ignorar — que é como o alerta
+     importante passa despercebido.
+     ------------------------------------------------------------ */
+  /* Áreas que NÃO entram no aviso automático. Não é que sejam
+     inofensivas — é que são DEFASAGEM DE INSTANTE, não incoerência de
+     dado, e o sino é um canal de coisas duráveis.
+
+       cache  a central guarda uma cópia do saldo de cada módulo. Toda
+              compra a deixa velha por alguns instantes, até a próxima
+              varredura. Medido: uma compra perfeitamente legítima
+              acendia o alerta. É corrigível com um clique e aparece no
+              painel de Configurações, onde há contexto para agir.
+
+       tela   compara o DOM com os dados AGORA. Entre uma operação e a
+              repintura os dois divergem por milissegundos — e em outra
+              aba, por mais tempo. Um alerta que pisca a cada ação
+              ensina a ignorar o sino, e aí o alerta que importa passa
+              junto.
+
+       medição a medição do dia é de um instante; o preço muda depois
+              dela. A própria verificação já dizia isso no texto
+              ("normal se o preço mudou depois da medição") e mesmo
+              assim eu a deixei acender o sino — ela apitava a cada
+              compra legítima. Ela se resolve sozinha na próxima
+              abertura do módulo, que remede.
+
+     As duas continuam na auditoria completa e no painel. O que muda é
+     que elas não gritam sozinhas.
+
+     O que grita: capital que não bate com o caixa, patrimônio que não
+     fecha com o extrato, carteira apagada com dinheiro dentro, caixa
+     negativo. Nenhum desses se resolve esperando. */
+  var AREAS_SILENCIOSAS = { cache: true, tela: true, "medição": true };
+
+  function alertas() {
+    var res = auditarCacheado({});
+    if (!res.cobertura || !res.cobertura.podeAfirmar) return [];   /* nada a afirmar */
+    return res.achados.filter(function (a) {
+      return !AREAS_SILENCIOSAS[a.area];
+    }).map(function (a) {
+      var partes = [a.o_que];
+      if (a.modulo) partes.push("(" + a.modulo + (a.carteira ? " · " + a.carteira : "") + ")");
+      else if (a.carteira) partes.push("(" + a.carteira + ")");
+      if (a.diferenca != null && isFinite(a.diferenca)) {
+        partes.push("— diferença de " + Math.abs(Math.round(a.diferenca * 100) / 100));
+      }
+      return {
+        level: a.nivel === "erro" ? "crit" : "warn",
+        module: "sistema",
+        texto: partes.join(" "),
+        quando: "agora"
+      };
+    });
+  }
+
+  /* Refaz a conta quando o dinheiro muda. Sem isto o sino levaria até
+     três segundos para notar — o que é aceitável — mas também ficaria
+     com o resultado velho enquanto ninguém pedisse nada. */
+  if (global.AtlasCaixa && global.AtlasCaixa.subscribe) {
+    safe(function () { global.AtlasCaixa.subscribe(invalidar); return true; }, null);
+  }
+  if (global.AtlasWallets && global.AtlasWallets.subscribe) {
+    safe(function () { global.AtlasWallets.subscribe(invalidar); return true; }, null);
+  }
+
   global.AtlasSupervisor = {
     auditar: auditar,
+    auditarCacheado: auditarCacheado,
+    invalidar: invalidar,
+    alertas: alertas,
     cobertura: cobertura,
     corrigir: corrigir,
     relatorio: relatorio,
