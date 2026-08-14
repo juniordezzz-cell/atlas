@@ -1514,81 +1514,57 @@
        a única que ele mediu. Dia sem abrir o sistema não vira ponto
        inventado: a série interpola com o último valor conhecido só na
        leitura, e o gráfico diz quantos dias foram medidos.
-       ============================================================ */
-    MAX_SNAPS: 400,
 
-    _snaps: function (s) {
-      var wd = _wallet(s || _read());
-      if (!Array.isArray(wd.snapshots)) wd.snapshots = [];
-      return wd.snapshots;
+       E A MEDIÇÃO NÃO MORA MAIS AQUI
+       ------------------------------
+       Ela ficava em `wallets[id].snapshots`, dentro do estado do DeFi.
+       Funcionava para as telas deste módulo e era invisível para o
+       Dashboard da raiz — que por isso desenhava a série de UMA
+       carteira esticada até caber no total de TODAS.
+
+       Por um passo intermediário este arquivo gravou nos DOIS lugares.
+       Isso resolvia a consolidação e criava um problema pior: duas
+       cópias da mesma medição, que só precisam de uma gravação
+       perdida para começarem a discordar — e as telas leem lugares
+       diferentes, então ninguém notaria.
+
+       Agora há um dono só: core/atlas-snapshots.js. Este store
+       pergunta e responde por lá. O `wallets[id].snapshots` antigo
+       continua no disco (a migração já o copiou) e não é mais escrito
+       nem lido — apagar dado medido do usuário para limpar formato é
+       troca ruim, porque o preço de ontem não volta.
+       ============================================================ */
+
+    /* Chave do módulo no livro compartilhado. Uma função para não
+       repetir a string "defi" em quatro lugares. */
+    _serieOpts: function (campo) {
+      return { modules: ["defi"], wallets: [_read().currentWalletId], campo: campo || "v" };
     },
 
     /* Registra (ou atualiza) a medição de hoje. Idempotente: abrir a
        tela dez vezes no mesmo dia não cria dez pontos. */
     recordSnapshot: function () {
+      if (!window.AtlasSnapshots) return [];
       var s = _read(), wd = _wallet(s);
-      var snaps = Store._snaps(s);
-      var hoje = _hoje();
-
       var valor = Store.walletValue(wd);
       var lucro = (wd.pools || []).reduce(function (a, p) {
         var r = Store.poolSummary(p); return a + (r ? r.resultado : 0);
       }, 0);
-
-      /* ------------------------------------------------------------
-         A MEDIÇÃO TAMBÉM VAI PARA O LIVRO COMPARTILHADO
-
-         Guardada só aqui dentro, ela era invisível para a consolidação
-         da raiz — que por isso lia a série da carteira ATIVA e a
-         esticava até caber no total de TODAS as carteiras. Ver
-         core/atlas-snapshots.js. A cópia local continua por ora: as
-         telas do DeFi leem daqui, e trocar as duas coisas ao mesmo
-         tempo é como se perde medição no caminho.
-         ------------------------------------------------------------ */
-      if (window.AtlasSnapshots) {
-        window.AtlasSnapshots.registrar("defi", s.currentWalletId, { v: valor, p: lucro });
-      }
-
-      var ultimo = snaps[snaps.length - 1];
-      if (ultimo && ultimo.d === hoje) {
-        if (ultimo.v === valor && ultimo.p === lucro) return snaps;
-        ultimo.v = valor; ultimo.p = lucro;
-      } else {
-        snaps.push({ d: hoje, v: valor, p: lucro });
-        if (snaps.length > Store.MAX_SNAPS) snaps.splice(0, snaps.length - Store.MAX_SNAPS);
-      }
-      _persist();
-      return snaps;
+      return window.AtlasSnapshots.registrar("defi", s.currentWalletId, { v: valor, p: lucro });
     },
 
     /* Série diária contínua nos últimos `dias`, preenchendo os dias
        sem medição com o último valor conhecido (degrau, não curva
        inventada). Devolve [] quando nunca houve medição — e uma lista
-       vazia é um estado que a tela sabe desenhar. */
+       vazia é um estado que a tela sabe desenhar.
+
+       O degrau e o recorte de janela são os mesmos de antes; o que
+       mudou é de onde vêm os pontos. O formato devolvido é idêntico
+       ({ date, value, medido }), então as telas não mudaram. */
     _serie: function (dias, campo) {
-      var snaps = Store.recordSnapshot();
-      if (!snaps.length) return [];
-      dias = dias || 45;
-
-      var porDia = {};
-      snaps.forEach(function (x) { porDia[x.d] = x; });
-
-      var out = [], hoje = new Date(), corrente = null;
-      /* valor de partida: a última medição ANTES da janela */
-      var inicio = new Date(hoje); inicio.setDate(hoje.getDate() - (dias - 1));
-      var iniIso = _hoje(inicio);
-      for (var k = 0; k < snaps.length; k++) {
-        if (snaps[k].d <= iniIso) corrente = snaps[k];
-      }
-
-      for (var i = dias - 1; i >= 0; i--) {
-        var d = new Date(hoje); d.setDate(hoje.getDate() - i);
-        var iso = _hoje(d);
-        if (porDia[iso]) corrente = porDia[iso];
-        if (!corrente) continue;                 // antes da primeira medição: sem ponto
-        out.push({ date: iso, value: corrente[campo], medido: !!porDia[iso] });
-      }
-      return out;
+      if (!window.AtlasSnapshots) return [];
+      Store.recordSnapshot();
+      return window.AtlasSnapshots.serie(dias || 45, Store._serieOpts(campo));
     },
 
     portfolioHistory: function (dias) { return Store._serie(dias || 45, "v"); },
@@ -1606,7 +1582,15 @@
     },
     /* Quantos dias a série realmente MEDIU (para a tela poder dizer
        "3 dias de histórico" em vez de fingir 45). */
-    snapshotCount: function () { return Store._snaps().length; },
+    /* Quantas medições existem de fato — o Dashboard usa `> 1` para
+       decidir entre mostrar "vs. 7 dias" e "primeira medição". Conta
+       dias MEDIDOS, não pontos da série: a série interpola, e contar
+       pontos interpolados diria "30 medições" no segundo dia de uso.
+       A janela de 400 dias é o limite que o livro guarda. */
+    snapshotCount: function () {
+      if (!window.AtlasSnapshots) return 0;
+      return window.AtlasSnapshots.medidos(400, Store._serieOpts("v"));
+    },
 
     /* Quando a cotação de mercado foi gravada pela última vez, olhando
        TODAS as pools da carteira. É o que permite a tela dizer "estes

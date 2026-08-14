@@ -49,17 +49,33 @@
       aviso.className = "hint";
       box.parentNode.insertBefore(aviso, box.nextSibling);
     }
-    /* Menos de dois pontos não é gráfico — é uma promessa vazia. Dizer
-       quantos dias existem é mais útil que desenhar uma linha reta. */
-    if (pts.length < 2) {
-      aviso.textContent = pts.length
+    /* ------------------------------------------------------------
+       "dias medidos" TEM DE CONTAR MEDIÇÃO, NÃO PONTO
+
+       Isto contava `pts.length`, que é o tamanho da série JÁ
+       INTERPOLADA: entre duas medições a série preenche os dias
+       vazios com o último valor conhecido (degrau). Com uma medição
+       há três dias e outra hoje, `pts.length` é 4 — e a tela anunciava
+       "4 dia(s) medidos" para 2 medições. Medido nesta verificação.
+
+       O ponto interpolado é honesto no desenho (é o que se sabe do
+       dia), mas contá-lo como medição transforma degrau em histórico.
+       Cada ponto já diz se foi medido; basta perguntar.
+       ------------------------------------------------------------ */
+    var medidos = pts.filter(function (p) { return p.medido; }).length;
+
+    /* Menos de duas MEDIÇÕES não é gráfico — é uma promessa vazia.
+       Dizer quantos dias existem é mais útil que desenhar uma linha
+       reta ligando um ponto a cópias dele mesmo. */
+    if (medidos < 2) {
+      aviso.textContent = medidos
         ? "Primeira medição registrada hoje. A curva aparece a partir do segundo dia de uso."
         : "Sem histórico ainda. O ATLAS mede o patrimônio uma vez por dia, a cada vez que você abre o módulo.";
       box.style.display = "none";
       return;
     }
     box.style.display = "";
-    aviso.textContent = pts.length + " dia(s) medidos de " + days + " pedidos.";
+    aviso.textContent = medidos + " dia(s) medidos de " + days + " pedidos.";
     evoChart = Charts.line(box, pts, { color: "#5B9BFF", fill: "rgba(59,130,246,0.18)" });
   }
   drawEvo(30);

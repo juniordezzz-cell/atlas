@@ -369,52 +369,52 @@
        curva com menos de dois pontos não é curva: a tela diz quantos
        dias foram medidos em vez de desenhar uma linha reta.
        ============================================================ */
-    MAX_SNAPS: 400,
+    /* ============================================================
+       A MEDIÇÃO NÃO MORA MAIS AQUI
 
-    _snaps: function () {
-      var wd = _ensureWallet(_currentId());
-      if (!Array.isArray(wd.snapshots)) wd.snapshots = [];
-      return wd.snapshots;
-    },
+       Ela ficava em `wallets[id].snapshots`, dentro do estado do RWA —
+       invisível para o Dashboard da raiz, que por isso desenhava a
+       série de UMA carteira esticada até caber no total de TODAS.
 
+       Por um passo intermediário este arquivo gravou nos DOIS lugares.
+       Isso resolvia a consolidação e criava um problema pior: duas
+       cópias da mesma medição, que só precisam de uma gravação perdida
+       para discordarem — e cada tela lê um lado, então ninguém
+       notaria.
+
+       Agora o dono é core/atlas-snapshots.js. O `wallets[id].snapshots`
+       antigo continua no disco (a migração já o copiou) e não é mais
+       escrito nem lido: apagar medição do usuário para arrumar formato
+       é troca ruim, porque o preço de ontem não volta.
+       ============================================================ */
     recordSnapshot: function () {
-      var snaps = Store._snaps();
-      var hoje = new Date();
-      var mm = String(hoje.getMonth() + 1), dd = String(hoje.getDate());
-      var dia = hoje.getFullYear() + "-" + (mm.length < 2 ? "0" + mm : mm) +
-                "-" + (dd.length < 2 ? "0" + dd : dd);
-
-      var k = Store.kpis();
-      /* Também para o livro compartilhado (core/atlas-snapshots.js):
-         guardada só aqui, esta medição era invisível para o Dashboard
-         da raiz. Ver o cabeçalho daquele arquivo. */
-      if (window.AtlasSnapshots) {
-        window.AtlasSnapshots.registrar("rwa", _currentId(), { v: k.total });
-      }
-      var ultimo = snaps[snaps.length - 1];
-      if (ultimo && ultimo.d === dia) {
-        if (ultimo.v === k.total) return snaps;
-        ultimo.v = k.total;
-      } else {
-        snaps.push({ d: dia, v: k.total });
-        if (snaps.length > Store.MAX_SNAPS) snaps.splice(0, snaps.length - Store.MAX_SNAPS);
-      }
-      _persist();
-      return snaps;
+      if (!window.AtlasSnapshots) return [];
+      return window.AtlasSnapshots.registrar("rwa", _currentId(), { v: Store.kpis().total });
     },
 
     /* Formato { rwa, hold, total } mantido para não quebrar quem já
        lê daqui. `hold` sai vazio: o RWA nunca mediu o Hold, e a série
-       que ele devolvia era ficção com nome de outro módulo. */
+       que ele devolvia era ficção com nome de outro módulo.
+
+       Devolve só os dias MEDIDOS, sem preencher os vazios — é o que a
+       tela de Performance sempre desenhou, e ela conta o tamanho desta
+       lista para dizer "N dia(s) medidos". Interpolar aqui faria o
+       segundo dia de uso anunciar 400 medições. */
     equityCurves: function () {
-      var snaps = Store.recordSnapshot();
-      var serie = snaps.map(function (p) { return { date: p.d, value: p.v }; });
+      if (!window.AtlasSnapshots) return { rwa: [], hold: [], total: [] };
+      Store.recordSnapshot();
+      var serie = window.AtlasSnapshots
+        .serie(400, { modules: ["rwa"], wallets: [_currentId()] })
+        .filter(function (p) { return p.medido; });
       return { rwa: serie, hold: [], total: serie };
     },
 
     /* quantos dias foram REALMENTE medidos — a tela usa para decidir
        entre desenhar a curva e explicar que ainda não há curva */
-    snapshotCount: function () { return Store._snaps().length; },
+    snapshotCount: function () {
+      if (!window.AtlasSnapshots) return 0;
+      return window.AtlasSnapshots.medidos(400, { modules: ["rwa"], wallets: [_currentId()] });
+    },
     macro: function () { return _read().macro; },
     narrative: function () { return _read().narrative; },
     journal: function () { return _read().journal.slice(); },

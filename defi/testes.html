@@ -1228,6 +1228,51 @@
       eq("limpar o Hold zera o Hold", SN.serie(30, { modules: ["hold"] }).length, 0);
       eq("e deixa o DeFi de pé", SN.serie(30, { modules: ["defi"] }).length, 1);
 
+      /* ------------------------------------------------------------
+         UM DONO SÓ — DeFi e RWA deixaram de guardar cópia própria
+
+         Por um passo intermediário os dois gravavam a medição no
+         próprio estado E no livro. Duas cópias da mesma coisa só
+         precisam de uma gravação perdida para discordarem, e cada tela
+         lê um lado — ninguém notaria. Estes casos travam a fonte
+         única, sem depender de haver pool ou ativo cadastrado.
+         ------------------------------------------------------------ */
+      is("o DeFi não tem mais _snaps", typeof S._snaps, "undefined");
+      is("nem MAX_SNAPS", typeof S.MAX_SNAPS, "undefined");
+      ok("e recordSnapshot não persiste no estado do módulo",
+         S.recordSnapshot.toString().indexOf("_persist") === -1, "não persiste");
+      if (window.RWAStore) {
+        is("o RWA também não tem _snaps", typeof RWAStore._snaps, "undefined");
+        ok("e o equityCurves devolve só dias medidos",
+           RWAStore.equityCurves().rwa.every(function (p) { return p.medido; }), "só medidos");
+      } else {
+        nota("RWAStore não carregado nesta página — os dois casos do RWA ficam para a tela dele.");
+      }
+
+      /* ------------------------------------------------------------
+         "DIAS MEDIDOS" NÃO É "PONTOS DA SÉRIE"
+
+         Achado durante esta unificação, e ele já existia antes dela: o
+         painel do DeFi contava `pts.length`, o tamanho da série JÁ
+         INTERPOLADA. Com uma medição há três dias e outra hoje, isso é
+         4 — e a tela anunciava "4 dia(s) medidos" para 2 medições.
+         O ponto interpolado é honesto no desenho; contá-lo como
+         medição transforma degrau em histórico.
+         ------------------------------------------------------------ */
+      SN.limpar("defi");
+      SN.registrar("defi", "principal", { v: 100, p: 0 });
+      var livro23 = JSON.parse(localStorage.getItem("atlas.snapshots.v1"));
+      livro23["defi|principal"].unshift({ d: diasAtras(3), v: 80, p: 0 });
+      localStorage.setItem("atlas.snapshots.v1", JSON.stringify(livro23));
+      SN._reload();
+
+      var s23 = SN.serie(30, { modules: ["defi"], wallets: ["principal"] });
+      eq("a série interpolada tem 4 pontos", s23.length, 4);
+      eq("mas só 2 são medição", s23.filter(function (p) { return p.medido; }).length, 2);
+      ok("contar length diria 4 — é o número que a tela mostrava",
+         s23.length !== s23.filter(function (p) { return p.medido; }).length,
+         s23.length + " vs " + s23.filter(function (p) { return p.medido; }).length);
+
       nota("A normalização que existia na consolidação (k = totalAtual / " +
            "últimoPonto) esticava uma série medida de UMA carteira até caber " +
            "no total de TODAS. Com a soma por escopo acima, as duas pontas " +

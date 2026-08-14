@@ -19,10 +19,16 @@
   function serieOuAviso(canvasId, serie, opts) {
     var cv = U.qs(canvasId);
     if (!cv) return;
-    if (serie.length < 2) {
+    /* Conta MEDIÇÃO, não ponto. A série vem interpolada — os dias sem
+       leitura repetem o último valor conhecido —, então `serie.length`
+       de uma única medição feita há uma semana é 8, e o gráfico
+       desenharia uma linha reta perfeita chamando isso de histórico.
+       Cada ponto declara se foi medido. */
+    var medidos = serie.filter(function (p) { return p.medido; }).length;
+    if (medidos < 2) {
       var aviso = document.createElement("div");
       aviso.className = "hint";
-      aviso.textContent = serie.length
+      aviso.textContent = medidos
         ? "Só há uma medição até agora. A curva aparece a partir do segundo dia de uso."
         : "Sem histórico ainda — o ATLAS mede o patrimônio uma vez por dia, quando você abre o módulo.";
       cv.parentNode.replaceChild(aviso, cv);
