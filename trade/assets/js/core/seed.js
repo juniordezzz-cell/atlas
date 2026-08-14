@@ -10,7 +10,8 @@
 
   function emptyWallet() {
     return {
-      equity: [0, 0],
+      /* `equity: [0, 0]` saiu: array escrito na criação e lido por
+         ninguém. Ver o comentário em core/state.js → emptyWalletData. */
       kpis: { winrate: 0, trades: 0, avgHold: "—", profitFactor: 0 },
       studies: [], rds: [], trades: [], alerts: [],
       archive: { studies: [], trades: [] }

@@ -117,8 +117,20 @@
     Object.keys(DEFAULT_PREFS).forEach(function (k) { if (state.prefs[k] == null) state.prefs[k] = DEFAULT_PREFS[k]; });
   }
 
+  /* `equity: [0, 0]` saiu daqui.
+
+     Três comentários neste arquivo (e um no walletSelector) já
+     documentavam que ele era um array decorativo: escrito uma vez na
+     criação da carteira e lido por ninguém depois que a banca, o
+     patrimônio e o saldo do seletor passaram a sair do capital em
+     posições e do livro de caixa. Continuava sendo GRAVADO em três
+     lugares — semente, este construtor e addWallet.
+
+     Campo que só se escreve é pior que campo ausente: o próximo a ler
+     o arquivo conclui que existe uma curva de capital guardada, e não
+     existe. A série do Trade é medida em core/atlas-snapshots.js. */
   function emptyWalletData() {
-    return { equity: [0, 0], kpis: { winrate: 0, trades: 0, avgHold: "—", profitFactor: 0 }, studies: [], rds: [], trades: [], alerts: [], archive: { studies: [], trades: [] } };
+    return { kpis: { winrate: 0, trades: 0, avgHold: "—", profitFactor: 0 }, studies: [], rds: [], trades: [], alerts: [], archive: { studies: [], trades: [] } };
   }
 
   var app = {
@@ -653,10 +665,13 @@
         id = genId("w");
         state.wallets.push({ id: id, name: data.name || "Nova carteira", tag: data.tag || "Carteira", color: data.color || "#4C9AFF" });
       }
-      var wd = emptyWalletData();
-      var bal = parseFloat(data.balance);
-      if (!isNaN(bal)) wd.equity = [bal, bal];
-      state.data[id] = wd;
+      /* `data.balance` deixou de ser aceito. Ele virava `wd.equity`,
+         que ninguém lê — ou seja, um "saldo inicial" informado aqui
+         desaparecia em silêncio. Saldo de carteira é evento de caixa:
+         quem quer começar com dinheiro registra um DEPÓSITO em
+         Carteiras & Movimentações, e aí ele existe para o sistema
+         inteiro. Ver wallets/walletCaixa.js. */
+      state.data[id] = emptyWalletData();
       persist(); emit();
       return id;
     },

@@ -392,21 +392,33 @@
       return window.AtlasSnapshots.registrar("rwa", _currentId(), { v: Store.kpis().total });
     },
 
-    /* Formato { rwa, hold, total } mantido para não quebrar quem já
-       lê daqui. `hold` sai vazio: o RWA nunca mediu o Hold, e a série
-       que ele devolvia era ficção com nome de outro módulo.
+    /* ------------------------------------------------------------
+       UMA CURVA, NÃO TRÊS
 
-       Devolve só os dias MEDIDOS, sem preencher os vazios — é o que a
-       tela de Performance sempre desenhou, e ela conta o tamanho desta
-       lista para dizer "N dia(s) medidos". Interpolar aqui faria o
-       segundo dia de uso anunciar 400 medições. */
+       Devolvia { rwa, hold, total }. O `hold` era ficção com nome de
+       outro módulo — o RWA nunca mediu o Hold — e saiu esvaziado numa
+       correção anterior; o `total` era cópia do `rwa` e existia para o
+       Dashboard da raiz, que hoje lê o livro compartilhado direto.
+       Restaram duas chaves que ninguém abre: a única leitora é a tela
+       de Performance deste módulo, e ela usa `curves.rwa`.
+
+       Devolver um `total` que é sempre igual ao `rwa` convida a somar
+       os dois. E um `hold` vazio devolvido pelo RWA convida a acreditar
+       que o número do Hold poderia vir daqui.
+
+       Devolve só os dias MEDIDOS, sem preencher vazios — é o que a
+       tela sempre desenhou, e ela conta o tamanho desta lista para
+       dizer "N dia(s) medidos". Interpolar aqui faria o segundo dia
+       de uso anunciar 400 medições.
+       ------------------------------------------------------------ */
     equityCurves: function () {
-      if (!window.AtlasSnapshots) return { rwa: [], hold: [], total: [] };
+      if (!window.AtlasSnapshots) return { rwa: [] };
       Store.recordSnapshot();
-      var serie = window.AtlasSnapshots
-        .serie(400, { modules: ["rwa"], wallets: [_currentId()] })
-        .filter(function (p) { return p.medido; });
-      return { rwa: serie, hold: [], total: serie };
+      return {
+        rwa: window.AtlasSnapshots
+          .serie(400, { modules: ["rwa"], wallets: [_currentId()] })
+          .filter(function (p) { return p.medido; })
+      };
     },
 
     /* quantos dias foram REALMENTE medidos — a tela usa para decidir
