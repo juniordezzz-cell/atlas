@@ -178,6 +178,21 @@ qualquer tela futura — e o primeiro passo do sistema é sempre um **depósito*
 
 ---
 
+## Preço de uma data
+
+A cadeia de preço responde "quanto vale agora". Para registrar uma posição
+aberta no passado existe `AtlasPrecos.emData(simbolo, "AAAA-MM-DD")`:
+stablecoin → 1 dólar em qualquer data; senão, o histórico do provedor.
+
+**O preço manual não entra nessa cadeia** — ele é "o preço de hoje,
+informado por você", sem data associada, e carimbar uma data passada nele
+seria inventar procedência. Sem histórico, devolve nulo e a tela pede o
+valor à mão, como no resto do sistema.
+
+A resposta traz `aproximado: true`: o histórico é o **fechamento de 00:00
+UTC** daquele dia, não o instante da operação — que ninguém recupera. Quem
+exibe é obrigado a dizer isso.
+
 ## O supervisor
 
 `core/atlas-supervisor.js` **não calcula nada**. Cada módulo faz a sua

@@ -151,6 +151,24 @@
                O par agora é 100% manual e sai exatamente na ordem
                digitada: o 1º token é o primeiro do par. -->
 
+          <!-- ============================================================
+               A DATA VEM ANTES DAS QUANTIDADES, E É DE PROPÓSITO
+
+               Ela vivia no passo 5, depois de os preços já terem sido
+               buscados — então servia só para carimbar a posição, e o
+               capital era calculado com o preço de HOJE. O rodapé do
+               passo 4 admitia: "preço de mercado agora — corrija se a
+               posição é de outra data". O sistema sabia que o número
+               estava errado e passava a conta ao usuário.
+
+               Aqui em cima ela decide a busca: informe o dia, e o passo
+               seguinte procura quanto o token valia NAQUELE dia.
+               ============================================================ -->
+          <div class="field"><label>Quando esta posição foi aberta</label>
+            <input class="input" id="openedAt" type="date" />
+            <div class="hint" id="dataHint">Já vem com hoje. Escolha uma data passada e o próximo passo busca quanto o token valia naquele dia.</div>
+          </div>
+
           <div class="field"><label>1º token do par</label>
             <div class="tk-row">
               <input class="input" id="tkBase" placeholder="ex.: ORCA" data-atlas-asset="symbol" list="dlTokens" autocomplete="off" />
@@ -213,10 +231,9 @@
             <div class="input-money" style="position:relative"><input class="input" id="apr" type="number" min="0" placeholder="0" style="padding-left:13px" /></div>
             <div class="hint">Opcional — deixe em branco se ainda estiver em análise.</div>
           </div>
-          <div class="field"><label>Data de criação da pool</label>
-            <input class="input" id="openedAt" type="date" />
-            <div class="hint">Se você abriu a posição antes de hoje, coloque a data real — é dela que sai o APR realizado.</div>
-          </div>
+          <!-- A data saiu daqui e foi para o passo 3 (Tokens): lá ela
+               decide o preço que o passo 4 vai buscar. Aqui embaixo ela
+               chegava tarde demais para isso. -->
           <!-- "Situação do range" (Dentro / Fora / Em análise) foi
                REMOVIDO aqui. Era um veredito digitado: virava p.status,
                p.status virava o selo do card, e o selo sobrevivia meses

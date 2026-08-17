@@ -292,14 +292,47 @@
     }
     if (status) status.textContent = "Buscando preços…";
 
-    Promise.all([
-      simB ? AtlasPrice.bySymbol(simB) : Promise.resolve(null),
-      simQ ? AtlasPrice.bySymbol(simQ) : Promise.resolve(null)
-    ]).then(function (r) {
+    /* ------------------------------------------------------------
+       O PREÇO SEGUE A DATA INFORMADA
+
+       Antes, sempre o preço de agora — e o rodapé pedia ao usuário que
+       corrigisse se a posição fosse de outra data. Registrar uma pool
+       aberta há duas semanas com a cotação de hoje falseia o capital, e
+       com ele o resultado e a rentabilidade da posição inteira.
+
+       Com uma data passada no passo 3, a busca pergunta quanto o token
+       valia NAQUELE dia (AtlasPrecos.emData). Sem data, é hoje, como
+       sempre foi.
+       ------------------------------------------------------------ */
+    var dia = (U.qs("#openedAt") && U.qs("#openedAt").value) || "";
+    var hojeIso = (function () {
+      var d = new Date();
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") +
+             "-" + String(d.getDate()).padStart(2, "0");
+    })();
+    var passado = !!dia && dia < hojeIso;
+
+    if (status) {
+      status.textContent = passado
+        ? "Buscando o preço de " + dia.split("-").reverse().join("/") + "…"
+        : "Buscando preços…";
+    }
+
+    /* Com data no passado usa a cadeia histórica; sem ela, a de sempre.
+       As duas devolvem { usd }, então o resto do código não muda. */
+    function cotarUm(sim) {
+      if (!sim) return Promise.resolve(null);
+      if (passado && window.AtlasPrecos && AtlasPrecos.emData) {
+        return AtlasPrecos.emData(sim, dia);
+      }
+      return AtlasPrice.bySymbol(sim);
+    }
+
+    Promise.all([cotarUm(simB), cotarUm(simQ)]).then(function (r) {
       var achou = 0, faltou = [];
       if (r[0] && r[0].usd) {
         precoBuscado.base = r[0].usd;
-        if (!num(U.qs("#prBase"))) U.qs("#prBase").value = r[0].usd; 
+        if (!num(U.qs("#prBase"))) U.qs("#prBase").value = r[0].usd;
         achou++;
       } else if (simB) faltou.push(simB);
 
@@ -310,11 +343,25 @@
       } else if (simQ) faltou.push(simQ);
 
       recalcularCapital();
-      if (status) {
-        status.textContent = faltou.length
-          ? "Não achei preço de " + faltou.join(" e ") + " — preencha na mão."
-          : (achou ? "Preço de mercado agora. Corrija se a posição é de outra data." : "");
+      if (!status) return;
+
+      if (faltou.length) {
+        status.textContent = passado
+          ? "Não achei o preço de " + faltou.join(" e ") + " em " +
+            dia.split("-").reverse().join("/") + " — preencha na mão."
+          : "Não achei preço de " + faltou.join(" e ") + " — preencha na mão.";
+        return;
       }
+      if (!achou) { status.textContent = ""; return; }
+
+      /* O histórico é o fechamento de 00:00 UTC daquele dia, não o
+         instante da sua operação. Dizer isso é obrigação de quem
+         exibe — o número é bom, mas não é exato, e quem lê decide se
+         ajusta. */
+      status.textContent = passado
+        ? "Preço de " + dia.split("-").reverse().join("/") +
+          " (fechamento de 00:00 UTC). Ajuste se a sua entrada foi em outro momento do dia."
+        : "Preço de mercado agora.";
     }).catch(function () {
       if (status) status.textContent = "Sem conexão — preencha os preços na mão.";
     });
@@ -529,7 +576,11 @@
     precoBuscado = { base: null, quote: null };
     wz = { step: 0, chain: "", proto: "" };
     var dt = U.qs("#openedAt");
-    if (dt) dt.value = U.hoje();
+    /* `max` no próprio seletor: barrar a data futura ANTES da escolha é
+       melhor que aceitá-la e corrigir em silêncio no salvamento, que é
+       o que acontecia — a pessoa escolhia amanhã e a pool nascia hoje
+       sem nenhum aviso. */
+    if (dt) { dt.value = U.hoje(); dt.setAttribute("max", U.hoje()); }
     U.qsa("#objList .obj-item.on").forEach(function (n) { n.classList.remove("on"); });
     var st = U.qs("#capStatus"); if (st) st.textContent = "";
     U.qs("#tkCat").value = "Liquidez";

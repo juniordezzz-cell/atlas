@@ -212,6 +212,69 @@
     /* Um símbolo. Devolve
          { usd, fonte, em, vencido, id } | null
        fonte: "manual" | "stable" | "registro" | "busca" */
+    /* ============================================================
+       PREÇO DE UMA DATA — a pergunta que faltava
+
+       Toda esta cadeia responde "quanto vale AGORA". Quem registra uma
+       posição aberta semana passada recebia o preço de hoje, e o
+       formulário pedia ao usuário para corrigir na mão — ou seja, o
+       sistema sabia que o número estava errado e passava a conta
+       adiante.
+
+       Aqui a ordem é outra e mais curta que a cadeia do preço atual:
+
+         1. stablecoin  → 1 dólar, em qualquer data;
+         2. id curado   → histórico do provedor.
+
+       O preço MANUAL não entra: ele é "o preço de hoje, informado por
+       você", sem data associada. Usá-lo como preço de uma data
+       passada seria carimbar uma data num número que não a tem.
+
+       E não há fonte secundária: a DEX responde o par de agora, não o
+       de um dia específico. Sem histórico, devolve null — e a tela
+       pede o valor na mão, que é a mesma regra do resto do sistema.
+
+       O que volta é `{ usd, em, aproximado, nota }`. `aproximado` é
+       verdadeiro de propósito: o histórico é o fechamento de 00:00 UTC
+       daquele dia, não o instante da sua operação. Quem exibe tem de
+       dizer isso.
+       ============================================================ */
+    emData: function (sim, iso) {
+      var s = norm(sim);
+      var dia = String(iso || "").slice(0, 10);
+      if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(dia)) return Promise.resolve(null);
+
+      /* Data no futuro não tem preço, e hoje é "agora" — para hoje a
+         cadeia normal responde melhor (inclui manual e DEX). */
+      var hoje = new Date();
+      var hojeIso = hoje.getFullYear() + "-" +
+        String(hoje.getMonth() + 1).padStart(2, "0") + "-" +
+        String(hoje.getDate()).padStart(2, "0");
+      if (dia >= hojeIso) {
+        return API.de(s).then(function (r) {
+          return r ? { usd: r.usd, em: hojeIso, aproximado: false,
+                       fonte: r.fonte, nota: "preço de agora" } : null;
+        });
+      }
+
+      if (isStable(s)) {
+        return Promise.resolve({ usd: 1, em: dia, aproximado: false,
+                                 fonte: "stable", nota: "stablecoin" });
+      }
+
+      var id = idDe(s);
+      if (!id) return Promise.resolve(null);
+
+      var prov = global.AtlasProviders && global.AtlasProviders.get("coingecko");
+      if (!prov || !prov.priceOn) return Promise.resolve(null);
+
+      return prov.priceOn(id, dia).then(function (r) {
+        if (!r) return null;
+        r.fonte = "histórico";
+        return r;
+      });
+    },
+
     de: function (sim) {
       return API.deVarios([sim]).then(function (d) {
         var s = norm(sim);

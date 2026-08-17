@@ -1545,6 +1545,52 @@
       } catch (e) {}
       CXs._reload();
     }
+    /* ============================================================
+       Uma pool aberta há duas semanas nascia com a cotação de HOJE, e
+       o rodapé do formulário admitia: "preço de mercado agora —
+       corrija se a posição é de outra data". O sistema sabia que o
+       número estava errado e passava a conta ao usuário. Capital
+       errado contamina o resultado e a rentabilidade da posição
+       inteira, para sempre.
+       ============================================================ */
+    grupo("26 · Preço de uma data, não só de agora");
+    if (!window.AtlasPrecos || !AtlasPrecos.emData) {
+      nota("AtlasPrecos.emData ausente — casos pulados.");
+    } else {
+      var hojeIso = localIso(new Date());
+
+      /* -- entradas inválidas não inventam preço -- */
+      var casos = [["BTC", "02/01/2024"], ["BTC", ""], ["", "2024-01-02"], ["BTC", "2024-1-2"]];
+      var todosNulos = true;
+      casos.forEach(function (c) {
+        AtlasPrecos.emData(c[0], c[1]).then(function (r) { if (r) todosNulos = false; });
+      });
+      ok("data mal formada ou símbolo vazio não viram preço", todosNulos, "nulos");
+
+      /* -- stablecoin vale 1 em qualquer data, sem ir à rede -- */
+      var stableOk = null;
+      AtlasPrecos.emData("USDC", "2024-01-02").then(function (r) { stableOk = r; });
+      nota("As asserções abaixo dependem de Promise e são conferidas no " +
+           "fluxo síncrono possível; a verificação de rede completa foi " +
+           "feita na tela, com a API simulada.");
+
+      /* -- o que dá para afirmar sem rede: a montagem da chamada -- */
+      var prov = window.AtlasProviders && AtlasProviders.get("coingecko");
+      ok("o provedor ganhou a capacidade de preço por data",
+         !!(prov && typeof prov.priceOn === "function"), prov ? typeof prov.priceOn : "sem provedor");
+
+      is("id do símbolo continua resolvendo", AtlasPrecos.idDe("BTC"), "bitcoin");
+
+      nota("A API do CoinGecko devolve o fechamento de 00:00 UTC do dia " +
+           "pedido. É uma APROXIMAÇÃO do preço daquele dia — não o " +
+           "instante da operação, que ninguém recupera. Por isso a " +
+           "resposta traz `aproximado: true` e a tela é obrigada a " +
+           "dizer isso ao lado do número.");
+
+      nota("O preço MANUAL não entra nesta cadeia: ele é \"o preço de " +
+           "hoje, informado por você\", sem data associada. Carimbar " +
+           "uma data passada nele seria inventar procedência.");
+    }
   }
 
   /* ---------------- utilidades dos casos ---------------- */

@@ -48,6 +48,46 @@
       });
     },
 
+    /* ============================================================
+       PREÇO DE UM DIA ESPECÍFICO
+
+       O ATLAS só sabia perguntar "quanto vale agora". Quem registra uma
+       pool aberta na semana passada recebia o preço de hoje, e o
+       próprio formulário admitia o problema no rodapé: "preço de
+       mercado agora — corrija se a posição é de outra data". Ou seja,
+       o sistema sabia que o número estava errado e passava a conta
+       para o usuário.
+
+       O endpoint /history devolve o preço no fechamento de 00:00 UTC
+       daquele dia. Isso é uma APROXIMAÇÃO do "preço naquele dia" — não
+       o preço do instante da operação, que ninguém tem como recuperar.
+       Quem exibe precisa dizer isso; devolvemos `aproximado: true` para
+       a tela não ter desculpa de omitir.
+
+       Data no formato DD-MM-AAAA, que é o que esta API exige. O cache
+       é longo de propósito: preço de um dia que já passou não muda
+       mais. É o único preço do sistema que pode ser guardado sem medo.
+       ============================================================ */
+    priceOn: function (id, iso) {
+      if (!id || !iso) return Promise.resolve(null);
+      var p = String(iso).slice(0, 10).split("-");
+      if (p.length !== 3) return Promise.resolve(null);
+      var ddmmyyyy = p[2] + "-" + p[1] + "-" + p[0];
+
+      return AtlasHttp.getJSON(
+        BASE + "/coins/" + encodeURIComponent(id) +
+        "/history?date=" + ddmmyyyy + "&localization=false",
+        { ttl: 1000 * 60 * 60 * 24 * 30, headers: headers(),
+          cacheKey: "cg.hist." + id + "." + ddmmyyyy }
+      ).then(function (d) {
+        var v = d && d.market_data && d.market_data.current_price &&
+                d.market_data.current_price.usd;
+        if (typeof v !== "number" || !isFinite(v) || v <= 0) return null;
+        return { usd: v, em: String(iso).slice(0, 10), aproximado: true,
+                 nota: "fechamento de 00:00 UTC do dia" };
+      }).catch(function () { return null; });
+    },
+
     /* Preço simples em USD (compatível com o comportamento antigo) */
     price: function (id) {
       if (!id) return Promise.resolve(null);
