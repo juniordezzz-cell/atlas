@@ -69,6 +69,24 @@
     return m[name] || "#5B9BFF";
   }
 
+  /* ---------- Logotipos oficiais (rede/protocolo) ----------
+     Ícones servidos pelo CDN da DeFiLlama, indexados pelo slug (o
+     nome em minúsculas resolve todos os casos atuais). São só o
+     logo: a cor de marca de colorOf() continua sendo o fundo do
+     selo, que aparece enquanto a imagem chega e permanece como
+     retrato se a rede cair (file://, offline) — nesse caso o selo
+     volta às iniciais, sem quebrar. */
+  var LOGO_BASE = {
+    chain: "https://icons.llamao.fi/icons/chains/rsz_",
+    proto: "https://icons.llamao.fi/icons/protocols/"
+  };
+  function logoOf(kind, name) {
+    var base = LOGO_BASE[kind];
+    if (!base || !name) return "";
+    var slug = String(name).trim().toLowerCase();
+    return kind === "chain" ? base + slug + ".jpg" : base + slug;
+  }
+
   /* "YYYY-MM-DD" lido como MEIA-NOITE LOCAL. Sem o T00:00:00 o
      navegador interpreta como UTC e, no Brasil, a data volta um dia —
      o que jogava a posição criada hoje para "ontem" e fazia o APR
@@ -138,6 +156,13 @@
     return s.byWallet[id];
   }
 
+  function _walletById(s, id) {
+    s = s || _mem;
+    var wid = id || "principal";
+    if (!s.byWallet[wid]) s.byWallet[wid] = emptyWallet();
+    return s.byWallet[wid];
+  }
+
   /* migra o formato antigo (v2: pools/closed/staking/lending na raiz)
      para a carteira principal do novo formato (v3: byWallet) */
   function _migrateOld() {
@@ -202,6 +227,7 @@
   var Store = {
     palette: PALETTE,
     colorOf: colorOf,
+    logoOf: logoOf,
 
     all: function () { return _read(); },
     meta: function () { return _read().meta; },
@@ -453,7 +479,7 @@
       return _wallet(_read()).pools.filter(function (p) { return p.id === id; })[0] || null;
     },
     addPool: function (p) {
-      var s = _read(), wd = _wallet(s);
+      var s = _read();
       /* ------------------------------------------------------------
          Date.now() SOZINHO COLIDE
 
@@ -468,10 +494,14 @@
          restauração de backup ou importação em laço, é o caso comum.
          ------------------------------------------------------------ */
       p.id = Store._uid("p");
+      var widPool = String((p && p.walletId) || s.currentWalletId || "").trim();
+      if (!widPool) return null;
+      if (W && W.get && !W.get(widPool)) return null;
+      var wd = _walletById(s, widPool);
       /* recusa antes de criar: ver _temCaixa */
-      if (!Store._temCaixa(s.currentWalletId, Number(p.capital) || 0)) return null;
-      if (W && W.stamp) Object.assign(p, W.stamp("defi", p.origem || "manual", s.currentWalletId));
-      else { p.walletId = s.currentWalletId; p.module = "defi"; p.data = new Date().toISOString(); }
+      if (!Store._temCaixa(widPool, Number(p.capital) || 0)) return null;
+      if (W && W.stamp) Object.assign(p, W.stamp("defi", p.origem || "manual", widPool));
+      else { p.walletId = widPool; p.module = "defi"; p.data = new Date().toISOString(); }
       var abertura = p.openedAt || p.createdAt || _hoje();
       p.history = p.history || [{ date: abertura, value: p.capital }];
       p.notes = p.notes || [];

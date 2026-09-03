@@ -34,10 +34,13 @@
   display: flex; align-items: center; gap: 9px; padding: 12px 13px; border-radius: var(--r-md);
   border: 1px solid var(--glass-border); background: rgba(120,150,220,0.04); cursor: pointer;
   transition: all var(--fast) var(--ease); font-size: 13.5px; color: var(--text); font-weight: 500;
+  white-space: nowrap; min-width: 0;
 }
 .opt:hover { border-color: var(--glass-border-hi); background: rgba(120,150,220,0.08); }
 .opt.selected { border-color: var(--blue-500); background: rgba(59,130,246,0.10); color: var(--text-hi); box-shadow: 0 0 0 1px var(--blue-500) inset; }
-.opt .swatch { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-size: 9px; font-weight: 700; color: #fff; flex: none; }
+.opt .swatch { position: relative; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-size: 9px; font-weight: 700; color: #fff; flex: none; overflow: hidden; }
+.opt .swatch-ini { line-height: 1; }
+.opt .swatch-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* Segmented control (toggle horizontal) */
 .segmented { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface); border: 1px solid var(--glass-border); border-radius: var(--r-md); }

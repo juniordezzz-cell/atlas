@@ -193,6 +193,23 @@
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
+  function carteirasDeFi() {
+    if (window.AtlasWallets && AtlasWallets.forModule) return AtlasWallets.forModule("defi");
+    return [{ id: "principal", name: "Principal" }];
+  }
+
+  function preencherCarteirasPool() {
+    var sel = U.qs("#poolWallet");
+    if (!sel) return;
+    var atual = sel.value;
+    var ativa = S.activeWallet && S.activeWallet();
+    var base = atual || (ativa && ativa.id) || "";
+    sel.innerHTML = carteirasDeFi().map(function (w) {
+      return '<option value="' + esc(w.id) + '"' + (w.id === base ? " selected" : "") + '>' +
+        esc(w.name) + '</option>';
+    }).join("");
+  }
+
   /* ------------------------------------------------------------
      Capital calculado a partir das quantidades
 
@@ -439,9 +456,21 @@
     pintarEspelhoPar();
   }
 
+  /* Selo da opção: logotipo oficial da rede/protocolo sobre a cor de
+     marca. A imagem cobre as iniciais; se ela não carregar (offline,
+     file://, CDN fora), o onerror a remove e o selo volta a ser as
+     duas letras — nunca fica um quadrado vazio. */
   function swatch(kind, name) {
     var c = S.colorOf(kind, name);
-    return '<span class="swatch" style="background:' + c + '">' + name.slice(0, 2).toUpperCase() + '</span>';
+    var ini = String(name).slice(0, 2).toUpperCase();
+    var logo = S.logoOf ? S.logoOf(kind, name) : "";
+    var img = logo
+      ? '<img class="swatch-logo" src="' + logo + '" alt="" loading="lazy" ' +
+        'referrerpolicy="no-referrer" onerror="this.remove();">'
+      : "";
+    return '<span class="swatch" style="background:' + c + '">' +
+             '<span class="swatch-ini">' + ini + '</span>' + img +
+           '</span>';
   }
 
   U.qs("#optChain").innerHTML = CHAINS.map(function (c) {
@@ -497,6 +526,9 @@
     if (n === 3 && !(parseFloat(U.qs("#capital").value) > 0)) {
       U.toast("O capital ficou zerado — confira quantidade e preço.", "warn"); return false;
     }
+    if (n === 3 && !U.qs("#poolWallet").value) {
+      U.toast("Escolha a carteira da posição.", "warn"); return false;
+    }
     return true;
   }
 
@@ -519,7 +551,7 @@
      campos que existem no DOM. */
   var CAMPOS = ["tkBase", "tkQuote", "qtyBase", "qtyQuote", "prBase", "prQuote",
                 "capital", "apr", "goal", "rngLow", "rngHigh",
-                "rngDenom", "openedAt", "tkCat"];
+                "rngDenom", "openedAt", "tkCat", "poolWallet"];
 
   function lerRascunho() {
     try { return JSON.parse(localStorage.getItem(KEY_DRAFT) || "null"); }
@@ -581,6 +613,7 @@
        o que acontecia — a pessoa escolhia amanhã e a pool nascia hoje
        sem nenhum aviso. */
     if (dt) { dt.value = U.hoje(); dt.setAttribute("max", U.hoje()); }
+    preencherCarteirasPool();
     U.qsa("#objList .obj-item.on").forEach(function (n) { n.classList.remove("on"); });
     var st = U.qs("#capStatus"); if (st) st.textContent = "";
     U.qs("#tkCat").value = "Liquidez";
@@ -591,6 +624,7 @@
     limparFormulario();
     var d = temRascunho() ? lerRascunho() : null;
     if (d) aplicarRascunho(d); else showStep(0);
+    preencherCarteirasPool();
     pintarAvisoRascunho(!!d, d);
     U.openModal("#modalNew");
   }
@@ -656,8 +690,13 @@
        insuficiente" sem número obriga a pessoa a sair da tela para
        descobrir o que fazer.
        ------------------------------------------------------------ */
+    var walletId = U.qs("#poolWallet").value;
+    var carteira = (window.AtlasWallets && AtlasWallets.get) ? AtlasWallets.get(walletId) : null;
+    if (!walletId || !carteira) {
+      U.toast("Escolha uma carteira válida para abrir a pool.", "warn");
+      return;
+    }
     if (window.AtlasCaixa) {
-      var carteira = S.activeWallet();
       var conf = AtlasCaixa.podeGastar(carteira.id, cap);
       if (!conf.ok) {
         U.toast("Caixa insuficiente em " + carteira.name + ": há " +
@@ -678,6 +717,7 @@
       qtyQuote:  num(U.qs("#qtyQuote")),
       priceBase: num(U.qs("#prBase")),
       priceQuote:num(U.qs("#prQuote")),
+      walletId: walletId,
 
       capital: cap, currentValue: cap, profit: 0, profitPct: 0, apr: apr,
       /* status guarda só o CICLO DE VIDA da posição. O selo
