@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="ATLAS — sistema operacional financeiro para gestao de patrimonio em cripto: Hold, Trade, DeFi e RWA em um so lugar.">
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="icon" type="image/png" href="assets/iconeatlas.png">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -38,27 +38,16 @@
   <script src="core/atlas-auth.js"></script>
   <script src="core/atlas-pwa.js"></script>
 
-  <!-- ===== Entrada rápida para quem já conhece o sistema ==============
-       O boot leva ~7s e as boas-vindas mais alguns — apresentação, não
-       carregamento real. Vale muito na primeira visita e vira pedágio
-       em todas as outras.
+  <!-- ===== A tela de Boot/Intro SEMPRE roda na rota principal =========
+       Havia aqui um desvio que, nas visitas seguintes, pulava a
+       apresentação e ia direto para pages/login.html quando
+       shouldPlayIntro() era falso. Ele foi REMOVIDO a pedido: a raiz
+       deve exibir o boot com todas as animações, toda vez.
 
-       Este desvio precisa estar AQUI, no <head> e antes do <body>: em
-       js/init.js (fim do body) o céu, a esfera e o HUD já teriam
-       pintado, e o usuário veria um flash da tela que ele acabou de
-       pular. location.replace, e não href, para o botão "voltar" não
-       cair de novo no boot.
-
-       Quem quiser rever: Configurações → "Rever apresentação", ou
-       abrir index.html?intro=1 direto.
+       Quem tiver pressa usa o botão "pular boot ›" na própria tela
+       (js/init.js) — o caminho rápido continua existindo, agora por
+       escolha explícita, não automático.
        ============================================================ -->
-  <script>
-    (function () {
-      "use strict";
-      var S = window.AtlasSettings;
-      if (S && !S.shouldPlayIntro()) location.replace("login.html");
-    })();
-  </script>
 </head>
 <body class="init-body">
 
