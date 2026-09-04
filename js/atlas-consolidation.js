@@ -41,6 +41,88 @@
   }
 
   /* ============================================================
+     CAIXA A PREÇO DE MERCADO — a fonte central única
+     ------------------------------------------------------------
+     O livro de caixa (AtlasCaixa) guarda quanto foi DEPOSITADO em cada
+     ativo (custo) e a QUANTIDADE. `saldo()` devolve o custo. Enquanto o
+     header e o Dashboard liam `saldo()`, o caixa aparecia a preço de
+     compra — e quando os tokens valorizavam, batia diferente da tela
+     de Carteiras, que reavalia a mercado.
+
+     Aqui fica UMA reavaliação a mercado, síncrona (para o render) sobre
+     um cache que `atualizarCaixa()` preenche via AtlasPrecos. Sem preço
+     para um ativo, cai no custo — nunca some. O header, o Dashboard e a
+     tela de Carteiras passam a contar a mesma história. */
+  var _precoCaixa = {};
+
+  function simbolosCaixa() {
+    var W = global.AtlasWallets, CX = global.AtlasCaixa;
+    if (!W || !W.all || !CX || !CX.caixaPorAtivo) return [];
+    var set = {};
+    W.all().forEach(function (w) {
+      (CX.caixaPorAtivo(w.id) || []).forEach(function (a) {
+        if (a && a.ativo) set[String(a.ativo).toUpperCase()] = 1;
+      });
+    });
+    return Object.keys(set);
+  }
+
+  /* Valor de mercado do caixa de UMA carteira: Σ quantidade × preço em
+     cache; sem preço, o custo registrado. */
+  function caixaMercadoDe(walletId) {
+    var CX = global.AtlasCaixa;
+    if (!CX) return 0;
+    if (!CX.caixaPorAtivo) return n(CX.saldo ? CX.saldo(walletId) : 0);
+    var soma = 0;
+    (CX.caixaPorAtivo(walletId) || []).forEach(function (a) {
+      var sym = String(a.ativo || "").toUpperCase();
+      var preco = _precoCaixa[sym];
+      var qtd = Number(a.qtd) || 0;
+      if (typeof preco === "number" && isFinite(preco) && preco > 0 && qtd) soma += qtd * preco;
+      else soma += Number(a.usd) || 0;   /* fallback: custo */
+    });
+    return soma;
+  }
+
+  /* Caixa quebrado por ATIVO, a mercado, somando as carteiras globais.
+     Alimenta o nível 2 da distribuição no Dashboard (dentro do Caixa,
+     por token). Mesma reavaliação de caixaMercadoDe. */
+  function caixaPorAtivo() {
+    var CX = global.AtlasCaixa;
+    if (!CX || !CX.caixaPorAtivo) return [];
+    var mapa = {};
+    globalIds().forEach(function (id) {
+      (CX.caixaPorAtivo(id) || []).forEach(function (a) {
+        var k = String(a.ativo || "").toUpperCase();
+        if (!mapa[k]) mapa[k] = { ativo: k, qtd: 0, usd: 0 };
+        mapa[k].qtd += Number(a.qtd) || 0;
+        mapa[k].usd += Number(a.usd) || 0;
+      });
+    });
+    return Object.keys(mapa).map(function (k) {
+      var m = mapa[k], preco = _precoCaixa[k];
+      var val = (typeof preco === "number" && isFinite(preco) && preco > 0 && m.qtd) ? m.qtd * preco : m.usd;
+      return { ativo: k, valor: Math.round(val * 1e6) / 1e6 };
+    }).filter(function (a) { return Math.abs(a.valor) > 1e-6; })
+      .sort(function (a, b) { return b.valor - a.valor; });
+  }
+
+  /* Busca os preços dos ativos em caixa e, ao terminar, avisa quem
+     desenha (o seletor do header) para repintar com o valor a mercado. */
+  function atualizarCaixa() {
+    var simbolos = simbolosCaixa();
+    if (!simbolos.length || !global.AtlasPrecos || !global.AtlasPrecos.deVarios) {
+      return Promise.resolve();
+    }
+    return global.AtlasPrecos.deVarios(simbolos).then(function (r) {
+      _precoCaixa = (r && r.valores) ? r.valores : {};
+      if (global.document && global.document.dispatchEvent) {
+        try { global.document.dispatchEvent(new Event("atlas:caixa-precos")); } catch (e) {}
+      }
+    }).catch(function () {});
+  }
+
+  /* ============================================================
      LEITORES POR CARTEIRA — a fonte única de "quanto vale"
      ------------------------------------------------------------
      Havia DOIS caminhos para responder a mesma pergunta:
@@ -324,13 +406,78 @@
     return out.slice(-days);
   }
 
-  /* Quantos dias da janela têm medição de verdade, somando os módulos.
-     É o número que separa "90 dias de história" de "90 pontos". */
+  /* ------------------------------------------------------------
+     SÉRIE DO CAIXA — reconstruída do livro de eventos
+
+     Os módulos entram na evolução por MEDIÇÃO (snapshots). O caixa não
+     é medido: ele é DERIVADO do extrato — a cada dia, a soma dos
+     depósitos/saques/transferências até ali. Isso é exato, não
+     estimado, e já dá história imediata (o dia do depósito → hoje) sem
+     esperar dias de medição.
+
+     A série corre a preço de CUSTO (o valor de cada evento) e o ÚLTIMO
+     ponto vira o valor a MERCADO de hoje — o único dia para o qual há
+     cotação. Antes do primeiro evento o ponto é null: não havia caixa,
+     e o gráfico não deve afirmar que havia. */
+  function diasISOConsol(days) {
+    var out = [], hoje = new Date();
+    for (var i = days - 1; i >= 0; i--) {
+      var d = new Date(hoje); d.setDate(hoje.getDate() - i);
+      out.push(d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0"));
+    }
+    return out;
+  }
+
+  function caixaHistory(days) {
+    var CX = global.AtlasCaixa;
+    if (!CX || !CX.eventos || !CX.TIPOS) return null;
+    var datas = diasISOConsol(days);
+    var de = datas[0], ix = {};
+    datas.forEach(function (d, i) { ix[d] = i; });
+
+    var base = 0, delta = datas.map(function () { return 0; });
+    var temEvento = false, primeira = null;
+    globalIds().forEach(function (walletId) {
+      (CX.eventos({ walletId: walletId }) || []).forEach(function (ev) {
+        var t = CX.TIPOS[ev.tipo]; if (!t) return;
+        var v = Number(ev.valorUSD) || 0, s = 0;
+        if (ev.walletId === walletId) s += t.sinal * v;
+        if (t.contra && ev.contraWalletId === walletId) s += -t.sinal * v;
+        if (!s) return;
+        temEvento = true;
+        if (!primeira || ev.data < primeira) primeira = ev.data;
+        if (ev.data < de) { base += s; return; }
+        if (ix[ev.data] != null) delta[ix[ev.data]] += s;
+      });
+    });
+    if (!temEvento) return null;
+
+    var running = base, out = [];
+    for (var i = 0; i < datas.length; i++) {
+      running += delta[i];
+      out.push(datas[i] < primeira ? null : Math.round(running * 1e6) / 1e6);
+    }
+    /* último ponto a mercado (o único dia com cotação) */
+    var mercado = globalIds().reduce(function (a, id) { return a + caixaMercadoDe(id); }, 0);
+    if (out.length) out[out.length - 1] = Math.round(mercado * 1e6) / 1e6;
+    return out;
+  }
+
+  /* Quantos dias da janela são CONHECIDOS: medição dos módulos ou a
+     série derivada do caixa (que é exata). É o número que separa
+     "90 dias de história" de "90 pontos". */
   function diasMedidos(days) {
-    return safe(function () {
+    var mod = safe(function () {
       if (!global.AtlasSnapshots) return 0;
       return global.AtlasSnapshots.medidos(days, { wallets: globalIds() });
     }, 0);
+    var cx = safe(function () {
+      var s = caixaHistory(days);
+      return s ? s.filter(function (x) { return x != null; }).length : 0;
+    }, 0);
+    return Math.max(mod, cx);
   }
 
   /* ---------- Exposição por blockchain (best-effort) ---------- */
@@ -396,6 +543,11 @@
        que é diferente — zero é uma afirmação sobre o valor.
        ------------------------------------------------------------ */
     var series = present.map(function (m) { return moduleHistory(m.key, n(m.total), days); });
+    /* O caixa entra na curva pela série derivada do extrato — senão a
+       evolução ignora justamente o dinheiro parado, que num portfólio
+       só-caixa é o patrimônio inteiro. */
+    var caixaSerie = caixaHistory(days);
+    if (caixaSerie) series.push(caixaSerie);
     var evo = [];
     for (var i = 0; i < days; i++) {
       var soma = 0, algum = false;
@@ -478,7 +630,7 @@
        patrimônio é o que se tem, não só o que está aplicado. */
     var caixa = safe(function () {
       if (!global.AtlasCaixa) return 0;
-      return globalIds().reduce(function (a, id) { return a + n(global.AtlasCaixa.saldo(id)); }, 0);
+      return globalIds().reduce(function (a, id) { return a + caixaMercadoDe(id); }, 0);
     }, 0);
 
     /* Base do resultado realizado — hoje só o Trade tem resultado
@@ -715,6 +867,10 @@
     moduleList: moduleList,
     blockchain: blockchain,
     alerts: alerts,
-    cotarDeFi: cotarDeFi
+    cotarDeFi: cotarDeFi,
+    /* caixa a mercado — a fonte única que header, Dashboard e Carteiras leem */
+    caixaMercadoDe: caixaMercadoDe,
+    caixaPorAtivo: caixaPorAtivo,
+    atualizarCaixa: atualizarCaixa
   };
 })(window);

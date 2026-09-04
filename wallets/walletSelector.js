@@ -110,7 +110,30 @@
       { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
   function saldo(opts, id) {
-    return money(opts, W.balanceOf(id, opts.balanceModule || null));
+    var base = W.balanceOf(id, opts.balanceModule || null);
+    /* PATRIMÔNIO da carteira inteira = caixa + posições.
+
+       O seletor mostrava só `balanceOf` (valor das POSIÇÕES) e ignorava
+       o caixa. Uma carteira com US$ 97,28 depositados e nenhuma posição
+       aberta aparecia como "US$ 0,00" no seletor — ao lado da tela de
+       Carteiras e do "Patrimônio Total" do Dashboard, que já somam o
+       caixa (ver AtlasContabilidade.patrimonio e o snapshot da
+       consolidação). É a mesma definição de patrimônio; faltava aqui.
+
+       A FATIA DE UM MÓDULO (balanceModule) não soma caixa: dinheiro
+       parado não é de nenhum módulo, e somá-lo em cada um o contaria
+       várias vezes. Por isso o caixa entra só na visão da carteira
+       inteira (sem balanceModule). */
+    if (!opts.balanceModule) {
+      /* Caixa a PREÇO DE MERCADO pela fonte central (AtlasConsolidation),
+         para bater com o Dashboard e a tela de Carteiras. Onde a
+         consolidação não está carregada (páginas de módulo), cai no
+         custo do próprio livro — melhor o custo que zero. */
+      var C = global.AtlasConsolidation;
+      if (C && C.caixaMercadoDe) base += Number(C.caixaMercadoDe(id)) || 0;
+      else if (global.AtlasCaixa && global.AtlasCaixa.saldo) base += Number(global.AtlasCaixa.saldo(id)) || 0;
+    }
+    return money(opts, base);
   }
 
   /* ---------------- escopo e carteira ativa ---------------- */
@@ -260,6 +283,21 @@
           repintarTudo();
         }
       });
+    }
+
+    /* O saldo do seletor agora inclui o CAIXA (ver saldo()). O caixa
+       vive noutro livro (AtlasCaixa), que o store de carteiras não
+       conhece — sem esta assinatura, depositar na tela de Carteiras
+       atualizava o valor lá e deixava o chip do header parado no antigo.
+       Assinando o caixa, um depósito/saque repinta o seletor na hora. */
+    if (global.AtlasCaixa && global.AtlasCaixa.subscribe) {
+      global.AtlasCaixa.subscribe(repintarTudo);
+    }
+
+    /* Quando a consolidação termina de cotar o caixa a mercado, o valor
+       do chip muda de custo para mercado — repinta para acompanhar. */
+    if (global.document && global.document.addEventListener) {
+      global.document.addEventListener("atlas:caixa-precos", repintarTudo);
     }
   }
 
