@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Carteiras e movimentacoes do ATLAS: caixa disponivel por carteira, deposito, saque, transferencia, swap e o extrato de onde esta cada dolar.">
+  <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ATLAS">
+  <title>ATLAS — Carteiras &amp; Movimentações</title>
+  <!-- Inter e JetBrains Mono servidas pelo proprio ATLAS.
+       Vinham do fonts.googleapis.com em vinte paginas, num sistema que
+       se declara sem dependencias e promete abrir sem internet.
+       Ver themes/atlas-fonts.css. -->
+  <link rel="stylesheet" href="../themes/atlas-fonts.css">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/relatorios.css">
+  <link rel="stylesheet" href="../css/carteiras.css">
+
+  <!-- ===== ATLAS · camada global ===== -->
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <link rel="stylesheet" href="../themes/atlas-print.css" media="print">
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <link rel="stylesheet" href="../core/ui/atlas-palette.css">
+  <link rel="stylesheet" href="../wallets/walletSelector.css">
+
+  <script src="../core/atlas-storage.js"></script>
+
+  <script src="../core/atlas-snapshots.js"></script>
+
+  <script src="../core/atlas-contabilidade.js"></script>
+
+  <script src="../core/atlas-supervisor.js"></script>
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <script src="../core/atlas-auth.js"></script>
+  <script src="../core/atlas-pwa.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-mark">
+        <img src="../assets/iconeatlas.png" alt="ATLAS">
+      </span>
+      <span class="logo-text">ATLAS <span class="logo-section">CARTEIRAS</span></span>
+    </div>
+    <nav class="nav" data-atlas-nav="carteiras"></nav>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="greet">
+        <h1>Carteiras &amp; Movimentações</h1>
+        <p>De onde vem, para onde vai, e onde está cada dólar</p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" aria-hidden="true"></div>
+      </div>
+    </header>
+
+    <!-- ============ GUIAS ============
+         Duas leituras do mesmo dinheiro. "Movimentações" é o fluxo de
+         caixa; "Taxas de pool" é a receita das posições de liquidez,
+         que tem ciclo próprio (gerada → disponível → destinada) e por
+         isso não cabe numa linha de extrato. -->
+    <!-- Faixa da abertura de saldo. Aparece só quando há posição
+         anterior ao livro de caixa e ele ainda está vazio. Uma
+         migração que mexe em dinheiro não pode ser silenciosa: ela
+         diz o que vai fazer antes, e o usuário decide. -->
+    <div id="cxMigracao"></div>
+
+    <div class="cx-guias" role="tablist">
+      <button type="button" class="cx-guia is-on" role="tab" data-guia="movimentacoes" aria-selected="true">Movimentações</button>
+      <button type="button" class="cx-guia" role="tab" data-guia="taxas" aria-selected="false">Taxas de pool</button>
+    </div>
+
+    <!-- ============ AÇÕES ============
+         Os quatro movimentos que o usuário registra à mão. Aporte e
+         retorno de posição NÃO estão aqui de propósito: eles nascem
+         de abrir e fechar posição nos módulos, e um botão para
+         registrá-los na mão criaria uma segunda porta de entrada para
+         o mesmo evento — pronta para divergir do que o módulo gravou. -->
+    <section class="cx-acoes" data-painel="movimentacoes">
+      <button type="button" class="cx-btn cx-btn--in"  data-acao="deposito">Depósito</button>
+      <button type="button" class="cx-btn cx-btn--out" data-acao="saque">Saque</button>
+      <button type="button" class="cx-btn"             data-acao="transferencia">Transferência</button>
+      <button type="button" class="cx-btn"             data-acao="swap">Swap</button>
+      <!-- Seletor de carteira ativa, ao lado das ações. É o MESMO
+           componente central de /wallets (nada de segunda implementação):
+           trocar aqui muda a carteira ativa do ATLAS e esta tela toda
+           repinta pela assinatura de W.subscribe já existente. O botão
+           "Nova carteira global" vem embutido no componente. -->
+      <div id="cxWalletSel" class="cx-wallet-sel"></div>
+    </section>
+
+    <section class="section" data-painel="movimentacoes">
+      <div class="cx-hero">
+        <article class="cx-hero-card cx-hero-card--net">
+          <div class="cx-hero__head">
+            <div class="cx-hero__pill">Net worth</div>
+            <div class="cx-hero__actions">
+              <button type="button" class="cx-pill-btn cx-pill-btn--ghost" data-acao="transferencia">Send</button>
+              <button type="button" class="cx-pill-btn" data-acao="deposito">Deposit</button>
+            </div>
+          </div>
+          <div class="cx-hero__main">
+            <div class="cx-hero__value" id="cxHeroTotal">US$ 0,00</div>
+            <div class="cx-hero__delta" id="cxHeroDelta">—</div>
+            <!-- A história do dinheiro: quanto entrou vs quanto valorizou -->
+            <div class="cx-hero__story" id="cxHeroStory" hidden></div>
+          </div>
+          <div class="cx-hero__chart">
+            <canvas id="cxHeroChart" aria-label="Evolução do patrimônio da carteira ativa" role="img"></canvas>
+            <!-- Aparece quando ainda não há dias medidos suficientes para uma curva -->
+            <div class="cx-hero__chart-msg" id="cxHeroChartMsg" hidden></div>
+          </div>
+        </article>
+
+        <article class="cx-hero-card">
+          <div class="cx-hero__head">
+            <div>
+              <div class="eyebrow">Carteira ativa</div>
+              <h2 id="cxHeroWalletNome">—</h2>
+            </div>
+            <div class="cx-hero__small" id="cxHeroWalletTotal">US$ 0,00</div>
+          </div>
+          <div id="cxHeroWalletSplit"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ ONDE ESTÁ CADA DÓLAR ============ -->
+    <section class="section" data-painel="movimentacoes">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Patrimônio</div>
+            <h2>Onde está cada dólar</h2>
+          </div>
+          <div class="cx-total" id="cxTotal"></div>
+        </div>
+        <div class="cx-donut-wrap">
+          <div class="cx-donut">
+            <canvas id="cxDonut" aria-label="Distribuição do patrimônio por destino" role="img"></canvas>
+          </div>
+          <ul class="cx-donut-legend" id="cxDonutLegend"></ul>
+        </div>
+        <div id="cxDistribuicao"></div>
+      </div>
+    </section>
+
+    <!-- ============ CAIXA POR CARTEIRA ============ -->
+    <section class="section" data-painel="movimentacoes">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Disponível</div>
+            <h2>Caixa por carteira</h2>
+          </div>
+        </div>
+        <div id="cxCarteiras"></div>
+      </div>
+    </section>
+
+    <section class="section" data-painel="movimentacoes">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Dinheiro parado</div>
+            <h2>Caixa por ativo</h2>
+          </div>
+        </div>
+        <div id="cxAtivosParados"></div>
+      </div>
+    </section>
+
+    <!-- ============ EXTRATO ============ -->
+    <section class="section" data-painel="movimentacoes">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Histórico</div>
+            <h2>Movimentações</h2>
+          </div>
+          <select id="cxFiltro" class="rep-select" aria-label="Filtrar por carteira"></select>
+        </div>
+        <div id="cxExtrato"></div>
+      </div>
+    </section>
+
+
+    <!-- ============ TAXAS DE POOL ============
+         A taxa tem ciclo próprio e não cabe numa linha de extrato:
+         ela nasce dentro da pool (pendente), sai para a carteira
+         quando coletada, e só então tem destino. Esta guia mostra os
+         três estados e permite agir sobre eles sem sair daqui. -->
+    <section class="section" data-painel="taxas" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Receita das pools</div>
+            <h2>Taxas geradas</h2>
+          </div>
+          <div class="cx-total" id="txTotal"></div>
+        </div>
+        <div id="txResumo"></div>
+      </div>
+    </section>
+
+    <section class="section" data-painel="taxas" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="eyebrow">Por posição</div>
+            <h2>Onde a taxa está</h2>
+          </div>
+        </div>
+        <div id="txPools"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toasts"></div>
+
+<!-- diálogo das ações, montado por js/carteiras.js -->
+<div class="cx-modal" id="cxModal" hidden>
+  <div class="cx-modal__box" role="dialog" aria-modal="true" aria-labelledby="cxModalTitulo">
+    <div class="cx-modal__head">
+      <h3 id="cxModalTitulo"></h3>
+      <button type="button" class="cx-modal__x" data-cx-close aria-label="Fechar">&times;</button>
+    </div>
+    <div class="cx-modal__body" id="cxModalBody"></div>
+    <div class="cx-modal__foot">
+      <button type="button" class="cx-btn" data-cx-close>Cancelar</button>
+      <button type="button" class="cx-btn cx-btn--in" id="cxConfirmar">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<script src="../wallets/walletStore.js"></script>
+<script src="../wallets/walletTypes.js"></script>
+<script src="../wallets/walletLedger.js"></script>
+<script src="../wallets/walletManager.js"></script>
+<script src="../wallets/walletCaixa.js"></script>
+<script src="../wallets/walletMenus.js"></script>
+<script src="../wallets/walletDialog.js"></script>
+<script src="../wallets/walletSelector.js"></script>
+<script src="../assets/vendor/chart-4.4.1.min.js"></script>
+<script src="../core/ui/atlas-chart-theme.js"></script>
+
+<!-- Os stores dos quatro módulos: esta tela responde "onde está cada
+     dólar", e para isso precisa saber quanto cada módulo tem alocado.
+     Sem eles, a distribuição mostraria só o caixa. -->
+<script src="../core/http.js"></script>
+<script src="../core/providers/registry.js"></script>
+<script src="../core/providers/coingecko.js"></script>
+<script src="../core/atlas-price.js"></script>
+<script src="../core/providers/geckoterminal.js"></script>
+<script src="../core/atlas-precos.js"></script>
+<script src="../core/atlas-tokens.js"></script>
+<script src="../js/atlas-assets.js"></script>
+<!-- Teses: o Hold recusa compra sem tese vinculada, e a regra vive na
+     entidade compartilhada. Sem este arquivo o store do Hold carrega,
+     mas nenhuma tese existe — e toda compra seria recusada. -->
+<script src="../core/entities/theses.js"></script>
+<script src="../RWA/js/store.js"></script>
+<script src="../defi/js/performance.js"></script>
+<script src="../defi/js/data.js"></script>
+<script src="../hold/data/seed.js"></script>
+<script src="../hold/js/state.js"></script>
+<script src="../trade/assets/js/core/util.js"></script>
+<script src="../trade/assets/js/core/store.js"></script>
+<script src="../trade/assets/js/core/seed.js"></script>
+<script src="../trade/assets/js/core/state.js"></script>
+
+<script src="../js/atlas-movements.js"></script>
+<script src="../js/atlas-consolidation.js"></script>
+<script src="../js/atlas-nav.js"></script>
+<script src="../js/atlas-topbar.js"></script>
+<script src="../core/ui/atlas-flash.js"></script>
+<script src="../core/ui/atlas-icons.js"></script>
+<script src="../core/ui/atlas-ui.js"></script>
+<script src="../core/atlas-notifications.js"></script>
+<script src="../core/ui/atlas-palette.js"></script>
+<script src="../core/atlas-vocabulario.js"></script>
+<script src="../core/ui/atlas-shell.js"></script>
+<script src="../core/atlas-backup.js"></script>
+<!-- Abertura de saldo: só faz sentido onde os QUATRO stores estão
+     carregados, que é aqui e no Dashboard. Ver o arquivo. -->
+<script src="../wallets/walletCaixaMigracao.js"></script>
+<script src="../js/carteiras.js"></script>
+</body>
+</html>
