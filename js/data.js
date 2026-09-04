@@ -90,12 +90,32 @@ function buildAtlasData() {
     { rotulo: "Protocolos",       valor: String(snap.protocols || 0), variacao: "Conectados", periodo: "", tipo: "neutro" }
   ];
 
-  /* Distribuição por Categoria = por MÓDULO */
-  const catTotal = snap.byModule.reduce((a, m) => a + m.value, 0) || 1;
+  /* Distribuição por Categoria = CAIXA + MÓDULOS. Sem o caixa, um
+     portfólio só de dinheiro parado aparecia vazio aqui — que é
+     justamente o caso de quem só depositou e ainda não alocou nada. */
+  const CAIXA_COR = "#5eead4";
+  const cats = [];
+  if (snap.caixa > 0.005) cats.push({ label: "Caixa disponível", value: snap.caixa, color: CAIXA_COR });
+  snap.byModule.forEach(m => cats.push(m));
+  const catTotal = cats.reduce((a, m) => a + m.value, 0) || 1;
+
+  /* Nível 2: dentro do Caixa, a quebra por ativo (USDC/JUP/SOL/RAY). */
+  let caixaSub = null;
+  const ativosCaixa = (C.caixaPorAtivo ? C.caixaPorAtivo() : []) || [];
+  if (ativosCaixa.length > 1 && snap.caixa > 0.005) {
+    caixaSub = {
+      "Caixa disponível": ativosCaixa.map(a => ({
+        nome: a.ativo,
+        pct: +((a.valor / snap.caixa) * 100).toFixed(1)
+      }))
+    };
+  }
+
   const categoria = {
-    labels: snap.byModule.map(m => m.label),
-    valores: snap.byModule.map(m => +((m.value / catTotal) * 100).toFixed(1)),
-    cores: snap.byModule.map(m => m.color)
+    labels: cats.map(m => m.label),
+    valores: cats.map(m => +((m.value / catTotal) * 100).toFixed(1)),
+    cores: cats.map(m => m.color),
+    sub: caixaSub
   };
 
   /* Distribuição por Blockchain (best-effort) */

@@ -243,9 +243,9 @@ function notaMedidos(medidos, dias) {
   }
   const m = +medidos || 0, d = +dias || 0;
   if (!d || m >= d) nota.textContent = '';
-  else if (!m) nota.textContent = 'sem medição no período';
+  else if (!m) nota.textContent = 'Ainda coletando o histórico — a curva aparece conforme os dias passam';
   else nota.textContent = m === 1
-    ? '1 dia medido — o restante repete o último valor conhecido'
+    ? '1 dia medido — a curva completa se forma conforme os dias passam'
     : m + ' dias medidos de ' + d;
 }
 
@@ -373,6 +373,27 @@ function donut(canvasId, legendId, cfg) {
       <span class="nome">${l}</span>
       <span class="val">${cfg.valores[i].toString().replace('.', ',')}%</span>
     </li>`).join('');
+
+  /* Nível 2: dentro de uma categoria (hoje o Caixa), a quebra por
+     ativo. Vem em cfg.sub[label] e é inserido via DOM (textContent,
+     sem innerHTML) logo abaixo da linha da categoria. */
+  if (cfg.sub) {
+    const ul = document.getElementById(legendId);
+    const lis = ul ? ul.querySelectorAll(':scope > li') : [];
+    cfg.labels.forEach((l, i) => {
+      const itens = cfg.sub[l];
+      if (!itens || !itens.length || !lis[i]) return;
+      const sub = document.createElement('li');
+      sub.className = 'legend-sub';
+      itens.forEach((s) => {
+        const k = document.createElement('span'); k.className = 'k'; k.textContent = s.nome;
+        const p = document.createElement('span'); p.className = 'p';
+        p.textContent = s.pct.toString().replace('.', ',') + '%';
+        sub.appendChild(k); sub.appendChild(p);
+      });
+      lis[i].insertAdjacentElement('afterend', sub);
+    });
+  }
 }
 
 function pintarGraficos() {
@@ -450,6 +471,21 @@ window.AtlasDashboard = { repintar: repintar };
       pintarAlertas();
     } catch (e) { /* a tela anterior continua coerente */ }
   });
+})();
+
+/* ------------------------------------------------------------
+   CAIXA A PREÇO DE MERCADO
+
+   O snapshot da consolidação lê o caixa pela reavaliação a mercado
+   (AtlasConsolidation.caixaMercadoDe), que depende de um cache de
+   preços. Sem esta chamada, a primeira pintura mostra o caixa a CUSTO
+   (o valor do depósito); com ela, quando as cotações chegam, o
+   Patrimônio Total e a Evolução repintam a mercado — e o chip do
+   header acompanha pelo evento "atlas:caixa-precos".
+   ------------------------------------------------------------ */
+(function revalorizarCaixa() {
+  if (!window.AtlasConsolidation || !AtlasConsolidation.atualizarCaixa) return;
+  AtlasConsolidation.atualizarCaixa().then(function () { repintar(); });
 })();
 
 /* Trocar a moeda (ou o formato de data/número) nas Configurações exige

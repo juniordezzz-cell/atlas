@@ -36,16 +36,23 @@ body {
   width: 34px; height: 34px;
   display: grid; place-items: center;
   color: var(--atlas-accent-text);
-  border-radius: 9px;
-  background: rgba(0,191,255,0.10);
-  box-shadow: inset 0 0 12px rgba(0,191,255,0.25);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .logo-mark svg { width: 21px; height: 21px; }
+.logo-mark img { width: 100%; height: 100%; object-fit: contain; border-radius: 0; display: block; }
 .logo-text {
   font-family: var(--fonte-titulo);
   font-weight: 600;
-  font-size: 19px;
-  letter-spacing: 0.14em;
+  font-size: 14px;
+  letter-spacing: 0.09em;
+  white-space: nowrap;
+}
+.logo-section {
+  font-size: 0.72em;
+  letter-spacing: 0.06em;
+  color: var(--texto-suave);
 }
 
 .nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
@@ -196,6 +203,15 @@ body {
 .legend .swatch { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .legend .nome { color: var(--texto-suave); }
 .legend .val { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Nível 2: quebra por ativo dentro de uma categoria (o Caixa) */
+.legend .legend-sub {
+  margin-left: 18px; padding-left: 10px; gap: 8px; flex-wrap: wrap;
+  border-left: 1px solid var(--borda, rgba(140,170,225,.14));
+  font-size: 11.5px; color: var(--texto-suave);
+}
+.legend .legend-sub .k { font-weight: 600; }
+.legend .legend-sub .p { font-variant-numeric: tabular-nums; opacity: .8; }
+.legend .legend-sub .k:not(:first-child) { margin-left: 6px; }
 
 /* ---- Bottom row ---- */
 .bottom {
