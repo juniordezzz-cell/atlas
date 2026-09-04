@@ -60,8 +60,26 @@
    v7 = fechamento das fases 4 e 5. Trade, Hold e RWA passaram a
    debitar e creditar o caixa, e o Trade ganhou capital em dólar
    (sizeUSD/pnlUSD). Quem rodasse a versão anterior de um desses
-   stores abriria posição sem tirar dinheiro do caixa. */
-var VERSAO = "atlas-v27";
+   stores abriria posição sem tirar dinheiro do caixa.
+
+   v29 = a rota principal (index.html) deixou de pular a apresentação
+   nas visitas seguintes — o desvio para pages/login.html saiu, e o
+   boot volta a rodar sempre. O index.html vive na CASCA ("./"): sem o
+   bump, quem já abriu o ATLAS continuaria recebendo do cache o HTML
+   antigo, com o redirect, e "a correção não pegaria".
+
+   v30 = o caixa passou a valer a PREÇO DE MERCADO no centro
+   (AtlasConsolidation.caixaMercadoDe), então o chip do header, o
+   Patrimônio Total do Dashboard e a tela de Carteiras mostram o mesmo
+   número. Mexeu em atlas-consolidation.js, walletSelector.js,
+   dashboard.js e carteiras.js — o bump garante que a versão nova
+   chegue a quem já tinha o ATLAS aberto.
+
+   v31 = o Dashboard ganhou o caixa na curva de Evolução (série
+   derivada do extrato) e a Distribuição por Categoria passou a incluir
+   o Caixa disponível com a quebra por ativo (nível 2). Mexeu em
+   atlas-consolidation.js, data.js, dashboard.js. */
+var VERSAO = "atlas-v31";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
@@ -70,10 +88,10 @@ var CACHE = VERSAO;
    DeFi e não deveria pagar o download dele. */
 var CASCA = [
   "./",
-  "dashboard.html",
-  "offline.html",
+  "pages/dashboard.html",
+  "pages/offline.html",
   "manifest.webmanifest",
-  "assets/favicon.svg",
+  "assets/iconeatlas.png",
   /* As fontes entram na casca agora que são NOSSAS. Enquanto vinham do
      Google, o fetch abaixo as deixava passar por serem de outra origem
      — e a promessa de "abre sem internet" valia para o layout mas não
@@ -181,7 +199,7 @@ self.addEventListener("fetch", function (e) {
            offline.html não tem dependência nenhuma: CSS inline e um
            único link absoluto. Não há como quebrar. */
         if (req.mode === "navigate") {
-          return caches.match("offline.html").then(function (o) {
+          return caches.match("pages/offline.html").then(function (o) {
             return o || Response.error();
           });
         }
