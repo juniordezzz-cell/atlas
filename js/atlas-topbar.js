@@ -233,7 +233,11 @@
         if (!window.AtlasAuth) return;              // sem a camada, o href faz o trabalho
         e.preventDefault();
         AtlasAuth.signOut().then(function () {
-          window.location.href = "login.html";
+          /* login.html vive em pages/. Este topbar roda tanto no index
+             (raiz) quanto nas telas atlas (pages/); AtlasShell.raiz() dá
+             o caminho certo até a raiz do projeto em cada caso. */
+          var RAIZ = (window.AtlasShell && AtlasShell.raiz) ? AtlasShell.raiz() : "";
+          window.location.href = RAIZ + "pages/login.html";
         });
       });
     }

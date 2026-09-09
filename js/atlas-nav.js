@@ -101,8 +101,13 @@
 
     nav.innerHTML = MENU.map(function (m) {
       var ativo = m.id === atual;
+      /* Os destinos moram na raiz do projeto (pages/…, hold/…, etc.);
+         daqui até a raiz é AtlasShell.raiz(). Antes as telas atlas eram a
+         própria raiz e o href cru bastava — agora que vivem em pages/,
+         o mesmo prefixo do shell e da paleta vale aqui. */
+      var RAIZ = (window.AtlasShell && AtlasShell.raiz) ? AtlasShell.raiz() : "";
       return '<a class="nav-item' + (ativo ? " active" : "") + '"' +
-             ' href="' + m.href + '"' +
+             ' href="' + RAIZ + m.href + '"' +
              /* a página atual não é um destino: vira marco, não link */
              (ativo ? ' aria-current="page"' : "") + ">" +
              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +

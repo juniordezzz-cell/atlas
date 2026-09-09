@@ -200,7 +200,7 @@
     var rdl = mount.querySelector("[data-rd]");
     if (rdl) rdl.addEventListener("click", function () { if (ATLAS.rd) { ATLAS.rd.openDetail(rdl.dataset.rd); } ATLAS.router.go("rd"); });
     var sl = mount.querySelector("[data-study]");
-    if (sl) sl.addEventListener("click", function () { if (ATLAS.estudos) ATLAS.estudos.request(sl.dataset.study); ATLAS.router.go("teses"); });
+    if (sl) sl.addEventListener("click", function () { location.href = "../academy/index.html#/detail/" + sl.dataset.study; });
 
     if (t.status === "aberto") {
       var noteI = mount.querySelector("[data-note]");
@@ -283,6 +283,9 @@
     var rd = rdId ? app.getRd(rdId) : null;
     var studies = app.studies();
     var pend = pendingRds();
+    var wallets = app.wallets ? app.wallets() : [];
+    if (!wallets.length) wallets = [{ id: "principal", name: "Principal" }];
+    var current = app.currentWallet ? app.currentWallet() : null;
 
     var pre = {
       asset: rd ? rd.asset : "",
@@ -300,6 +303,10 @@
     var studyOpts = '<option value="">Sem tese</option>' + studies.map(function (s) {
       return '<option value="' + s.id + '"' + (s.id === pre.studyId ? " selected" : "") + '>' + u.escape(s.asset + " · " + s.title) + '</option>';
     }).join("");
+    var walletOpts = wallets.map(function (w) {
+      var sel = current && current.id === w.id ? " selected" : "";
+      return '<option value="' + u.escape(w.id) + '"' + sel + '>' + u.escape(w.name) + '</option>';
+    }).join("");
 
     mount.innerHTML =
       '<div class="estudos est__form reveal">' +
@@ -310,6 +317,7 @@
             '<label class="field"><span>RD de origem</span><select class="input" data-f="rdId">' + rdOpts + '</select></label>' +
             '<label class="field field--sm"><span>Ativo</span><input class="input" data-f="asset" value="' + u.escape(pre.asset) + '" placeholder="BTC" maxlength="12"></label>' +
           '</div>' +
+          '<label class="field"><span>Carteira da posição</span><select class="input" data-f="walletId">' + walletOpts + '</select></label>' +
           '<label class="field"><span>Tese de origem</span><select class="input" data-f="studyId">' + studyOpts + '</select></label>' +
           '<label class="field"><span>Direção</span><div class="seg" data-f="side">' +
             '<button type="button" class="seg__opt" data-v="long" aria-current="true">Long</button>' +
@@ -398,6 +406,8 @@
     mount.querySelector("[data-save]").addEventListener("click", function () {
       var asset = val("asset");
       if (!asset) return ATLAS.util.invalido(mount.querySelector('[data-f="asset"]'), "Informe o ativo.");
+      var wid = val("walletId");
+      if (!wid) return ATLAS.util.invalido(mount.querySelector('[data-f="walletId"]'), "Escolha a carteira da posição.");
 
       var capital = parseFloat(String(val("sizeUSD")).replace(",", "."));
       if (!(capital > 0)) {
@@ -409,7 +419,8 @@
          pessoa procurar o saldo noutra tela é o que fazia o número
          parecer arbitrário. */
       if (window.AtlasCaixa && window.AtlasWallets) {
-        var w = app.currentWallet();
+        var w = window.AtlasWallets.get(wid);
+        if (!w) return ATLAS.util.invalido(mount.querySelector('[data-f="walletId"]'), "Carteira inválida.");
         var conf = AtlasCaixa.podeGastar(w.id, capital);
         if (!conf.ok) {
           return ATLAS.util.invalido(mount.querySelector('[data-f="sizeUSD"]'),
@@ -421,7 +432,7 @@
       var tr = app.openTrade({
         asset: asset, side: sideState.side, rdId: val("rdId") || null, studyId: val("studyId") || null,
         entry: numOr("entry"), stop: numOr("stop"), target: numOr("target"),
-        sizeUSD: capital,
+        sizeUSD: capital, walletId: wid,
         size: val("size"), leverage: val("leverage"), note: val("note")
       });
       /* openTrade devolve null quando o caixa não cobre. A tela já
@@ -432,6 +443,7 @@
         return ATLAS.util.invalido(mount.querySelector('[data-f="sizeUSD"]'),
           "Caixa insuficiente para abrir esta operação.");
       }
+      if (app.currentWallet && app.currentWallet().id !== wid && app.setWallet) app.setWallet(wid);
       selectedId = tr.id; show("detail");
     });
   }

@@ -50,11 +50,23 @@
     rwa: "RWA", academy: "ACADEMY"
   }[MODULE] || MODULE.toUpperCase();
 
-  // Profundidade da página → caminho correto para o dashboard e para os assets.
-  // Módulos vivem um nível abaixo da raiz (hold/, trade/, defi/, RWA/, academy/);
-  // o Dashboard raiz está na própria raiz.
-  var RAIZ       = (MODULE === "atlas") ? "" : "../";
-  var BACK_HREF  = RAIZ + "dashboard.html";
+  // Profundidade da página → caminho correto para a raiz do projeto.
+  // Agora TODAS as telas com shell vivem um nível abaixo da raiz: os
+  // módulos em hold/ trade/ defi/ RWA/ academy/, e as telas atlas em
+  // pages/. Só index.html está na própria raiz. Em vez de adivinhar pelo
+  // módulo, o shell se autolocaliza pelo caminho do PRÓPRIO <script>:
+  // o que vier antes de "core/ui/atlas-shell.js" é o caminho até a raiz
+  // ("" na raiz, "../" um nível abaixo). À prova de onde a página mora.
+  var RAIZ = (function () {
+    var el = document.currentScript ||
+             document.querySelector('script[src*="core/ui/atlas-shell.js"]');
+    var src = (el && el.getAttribute) ? (el.getAttribute("src") || "") : "";
+    var i = src.indexOf("core/ui/atlas-shell.js");
+    if (i >= 0) return src.slice(0, i);
+    return (MODULE === "atlas") ? "" : "../";   // rede de segurança
+  })();
+  // O Dashboard mora em pages/ agora; daqui até ele é RAIZ + "pages/…".
+  var BACK_HREF  = RAIZ + "pages/dashboard.html";
   var ORACULO_AVATAR = RAIZ + "assets/atena.webp";
 
   function t(s) { return (window.AtlasI18n ? AtlasI18n.t(s) : s); }
@@ -113,7 +125,7 @@
      ============================================================ */
 
   var DESTINOS = [
-    { id: "dashboard", label: "Dashboard", href: "dashboard.html",
+    { id: "dashboard", label: "Dashboard", href: "pages/dashboard.html",
       icon: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/>' },
     { id: "hold", label: "Hold", href: "hold/index.html",
       icon: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="3.5"/>' },
@@ -127,13 +139,13 @@
        Academy: os cinco primeiros itens são onde o dinheiro está, e
        esta tela é a que responde onde ele está no total. Academy e
        Relatórios são leitura, não operação. */
-    { id: "carteiras", label: "Carteiras", href: "carteiras.html",
+    { id: "carteiras", label: "Carteiras", href: "pages/carteiras.html",
       icon: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><path d="M3 8.5h15"/><circle cx="17" cy="13.5" r="1.4"/>' },
     { id: "academy", label: "Academy", href: "academy/index.html",
       icon: '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"/>' },
-    { id: "relatorios", label: "Relatórios", href: "relatorios.html",
+    { id: "relatorios", label: "Relatórios", href: "pages/relatorios.html",
       icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>' },
-    { id: "configuracoes", label: "Configurações", href: "configuracoes.html",
+    { id: "configuracoes", label: "Configurações", href: "pages/configuracoes.html",
       icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 12.6a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.4 6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8"/>' }
   ];
 

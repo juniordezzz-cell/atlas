@@ -32,7 +32,7 @@
            ------------------------------------------------------------ */
         U.button("Exportar CSV", { variant: "secondary", icon: "download", onClick: exportCSV }),
         U.button("Backup completo", { variant: "secondary", icon: "shield",
-          onClick: function () { location.href = "../configuracoes.html#dados"; } }),
+          onClick: function () { location.href = "../pages/configuracoes.html#dados"; } }),
         U.button("Imprimir / PDF", { variant: "primary", icon: "report", onClick: imprimir })
       ])
     ]));

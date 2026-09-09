@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Configuracoes do ATLAS: tema, idioma, formato de data, preferencias por modulo, backup e restauracao de dados.">
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
+  <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ATLAS">
@@ -17,33 +17,33 @@
        Vinham do fonts.googleapis.com em vinte paginas, num sistema que
        se declara sem dependencias e promete abrir sem internet.
        Ver themes/atlas-fonts.css. -->
-  <link rel="stylesheet" href="themes/atlas-fonts.css">
-  <link rel="stylesheet" href="css/variables.css">
-  <link rel="stylesheet" href="css/global.css">
-  <link rel="stylesheet" href="css/dashboard.css">
-  <link rel="stylesheet" href="css/configuracoes.css">
+  <link rel="stylesheet" href="../themes/atlas-fonts.css">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/configuracoes.css">
 
   <!-- ===== ATLAS · camada global ===== -->
-  <link rel="stylesheet" href="themes/atlas-theme.css">
-  <link rel="stylesheet" href="themes/atlas-effects.css">
-  <link rel="stylesheet" href="themes/atlas-print.css" media="print">
-  <link rel="stylesheet" href="core/ui/atlas-shell.css">
-  <link rel="stylesheet" href="core/ui/atlas-palette.css">
-  <link rel="stylesheet" href="core/ui/atlas-onboarding.css">
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <link rel="stylesheet" href="../themes/atlas-print.css" media="print">
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <link rel="stylesheet" href="../core/ui/atlas-palette.css">
+  <link rel="stylesheet" href="../core/ui/atlas-onboarding.css">
 
   <!-- PRIMEIRO de todos: migra as chaves antigas do localStorage
        para a convencao unica, antes de qualquer store abrir. -->
-  <script src="core/atlas-storage.js"></script>
-  <script src="core/atlas-contabilidade.js"></script>
-  <script src="core/atlas-supervisor.js"></script>
-  <script src="core/settings.js"></script>
-  <script src="core/i18n.js"></script>
-  <script src="core/currency.js"></script>
-  <script src="core/atlas-boot.js"></script>
-  <script src="core/atlas-auth.js"></script>
-  <script src="core/atlas-pwa.js"></script>
-  <script src="core/atlas-backup.js"></script>
-  <script src="core/atlas-module-settings.js"></script>
+  <script src="../core/atlas-storage.js"></script>
+  <script src="../core/atlas-contabilidade.js"></script>
+  <script src="../core/atlas-supervisor.js"></script>
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <script src="../core/atlas-auth.js"></script>
+  <script src="../core/atlas-pwa.js"></script>
+  <script src="../core/atlas-backup.js"></script>
+  <script src="../core/atlas-module-settings.js"></script>
 </head>
 <body>
 <div class="app">
@@ -52,11 +52,9 @@
   <aside class="sidebar">
     <div class="logo">
       <span class="logo-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
-          <circle cx="12" cy="12" r="9"/><path d="M12 3a13 13 0 0 0 0 18M12 3a13 13 0 0 1 0 18M3 12h18"/>
-        </svg>
+        <img src="../assets/iconeatlas.png" alt="ATLAS">
       </span>
-      <span class="logo-text">ATLAS</span>
+      <span class="logo-text">ATLAS <span class="logo-section">CONFIGURAÇÕES</span></span>
     </div>
 
     <!-- Os itens do menu sao gerados por js/atlas-nav.js a partir de
@@ -130,7 +128,7 @@
               <button type="button" data-val="primeira" aria-pressed="true"><span data-i18n="Só na primeira vez">Só na primeira vez</span></button>
               <button type="button" data-val="sempre" aria-pressed="false"><span data-i18n="Sempre">Sempre</span></button>
             </div>
-            <a class="hint hint-link" href="index.html?intro=1" data-i18n="Rever agora">Rever agora</a>
+            <a class="hint hint-link" href="../index.html?intro=1" data-i18n="Rever agora">Rever agora</a>
           </div>
         </div>
 
@@ -324,7 +322,7 @@
         <div class="set-row set-row--perigo">
           <div class="set-row-txt">
             <div class="set-label" data-i18n="Começar do zero">Começar do zero</div>
-            <div class="set-desc" id="zeroDesc">Apaga <b>todos</b> os seus dados deste navegador: carteiras, caixa, posições, teses, histórico e preços informados à mão. Não há como desfazer — exporte um backup antes.</div>
+            <div class="set-desc" id="zeroDesc">Apaga <b>todos</b> os seus dados deste navegador: carteiras, caixa, posições, estudos da Academy, histórico e preços informados à mão. Não há como desfazer — exporte um backup antes.</div>
           </div>
           <div class="set-row-ctrl set-foot">
             <button type="button" id="btnZerar" class="btn-ghost danger">
@@ -366,38 +364,38 @@
      restante do pacote /wallets. -->
 <!-- Fontes que a supervisão precisa comparar. Sem elas o painel
      não tinha o que conferir e anunciava "tudo fecha" sobre o vazio. -->
-<script src="wallets/walletStore.js"></script>
-<script src="wallets/walletTypes.js"></script>
-<script src="wallets/walletLedger.js"></script>
-<script src="wallets/walletCaixa.js"></script>
-<script src="wallets/walletManager.js"></script>
-<script src="wallets/walletMenus.js"></script>
-<script src="js/atlas-nav.js"></script>
-<script src="js/atlas-topbar.js"></script>
-<script src="core/ui/atlas-flash.js"></script>
-<script src="core/ui/atlas-icons.js"></script>
-<script src="core/ui/atlas-ui.js"></script>
+<script src="../wallets/walletStore.js"></script>
+<script src="../wallets/walletTypes.js"></script>
+<script src="../wallets/walletLedger.js"></script>
+<script src="../wallets/walletCaixa.js"></script>
+<script src="../wallets/walletManager.js"></script>
+<script src="../wallets/walletMenus.js"></script>
+<script src="../js/atlas-nav.js"></script>
+<script src="../js/atlas-topbar.js"></script>
+<script src="../core/ui/atlas-flash.js"></script>
+<script src="../core/ui/atlas-icons.js"></script>
+<script src="../core/ui/atlas-ui.js"></script>
 <!-- Os quatro stores. A supervisão compara o que cada módulo diz com
      o livro de caixa e as carteiras — sem eles carregados a página não
      tem o que conferir, e um verificador sem fonte é pior que nenhum:
      ele anuncia "tudo certo" sobre o vazio. -->
-<script src="RWA/js/store.js"></script>
-<script src="defi/js/tokens.js"></script>
-<script src="defi/js/performance.js"></script>
-<script src="defi/js/data.js"></script>
-<script src="hold/data/seed.js"></script>
-<script src="hold/js/state.js"></script>
-<script src="trade/assets/js/core/util.js"></script>
-<script src="trade/assets/js/core/store.js"></script>
-<script src="trade/assets/js/core/seed.js"></script>
-<script src="trade/assets/js/core/state.js"></script>
-<script src="js/atlas-consolidation.js"></script>
-<script src="core/atlas-notifications.js"></script>
-<script src="core/atlas-export.js"></script>
-<script src="core/ui/atlas-palette.js"></script>
-<script src="core/atlas-vocabulario.js"></script>
-<script src="core/ui/atlas-shell.js"></script>
-<script src="core/ui/atlas-onboarding.js"></script>
-<script src="js/configuracoes.js"></script>
+<script src="../RWA/js/store.js"></script>
+<script src="../defi/js/tokens.js"></script>
+<script src="../defi/js/performance.js"></script>
+<script src="../defi/js/data.js"></script>
+<script src="../hold/data/seed.js"></script>
+<script src="../hold/js/state.js"></script>
+<script src="../trade/assets/js/core/util.js"></script>
+<script src="../trade/assets/js/core/store.js"></script>
+<script src="../trade/assets/js/core/seed.js"></script>
+<script src="../trade/assets/js/core/state.js"></script>
+<script src="../js/atlas-consolidation.js"></script>
+<script src="../core/atlas-notifications.js"></script>
+<script src="../core/atlas-export.js"></script>
+<script src="../core/ui/atlas-palette.js"></script>
+<script src="../core/atlas-vocabulario.js"></script>
+<script src="../core/ui/atlas-shell.js"></script>
+<script src="../core/ui/atlas-onboarding.js"></script>
+<script src="../js/configuracoes.js"></script>
 </body>
 </html>

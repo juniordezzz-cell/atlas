@@ -16,7 +16,7 @@
       }).join("");
 
       el.innerHTML =
-        '<a class="nav__item nav__back" href="../dashboard.html">' +
+        '<a class="nav__item nav__back" href="../pages/dashboard.html">' +
           '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 18l-6-6 6-6"/></svg>' +
           '<span class="label">Voltar ao Atlas</span>' +
         '</a>' +

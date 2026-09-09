@@ -37,9 +37,16 @@
   var CACHE_KEY = "atlas.assets.cache.v1";
   var APIKEY_KEY = "atlas.assets.cg_key.v1";
   var CACHE_TTL = 1000 * 60 * 60 * 24;
+  var FALLBACK_BADGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='12' fill='%2322D3EE'/%3E%3Cpath d='M6 12h12M12 6v12' stroke='%230B0F14' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E";
 
   function provider() {
     return (window.AtlasProviders && AtlasProviders.forCapability("prices")) || null;
+  }
+
+  function thumbFromSymbol(sym) {
+    var s = String(sym || "").trim().toLowerCase();
+    if (!s) return FALLBACK_BADGE;
+    return "https://cryptoicons.org/api/icon/" + encodeURIComponent(s) + "/64";
   }
 
   /* ---------- Lista curada (top ativos por relevância) ---------- */
@@ -99,7 +106,9 @@
     ["aerodrome-finance","AERO","Aerodrome Finance"],["eigenlayer","EIGEN","EigenLayer"],
     ["raydium","RAY","Raydium"],["jito-governance-token","JTO","Jito"],["drift-protocol","DRIFT","Drift"],
     ["kamino","KMNO","Kamino"],["marinade","MNDE","Marinade"],["tensor","TNSR","Tensor"]
-  ].map(function (r) { return { id: r[0], symbol: r[1], name: r[2], rank: 0, thumb: "" }; });
+  ].map(function (r) {
+    return { id: r[0], symbol: r[1], name: r[2], rank: 0, thumb: thumbFromSymbol(r[1]) };
+  });
 
   /* ---------- Cache localStorage (fallback interno, sem core) ---------- */
   var mem = {};
@@ -155,8 +164,9 @@
       .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(function (data) {
         var items = (data && data.coins ? data.coins : []).map(function (c) {
-          return { id: c.id, symbol: (c.symbol || "").toUpperCase(), name: c.name,
-                   rank: c.market_cap_rank || 9999, thumb: c.thumb || c.large || "" };
+          var symbol = (c.symbol || "").toUpperCase();
+          return { id: c.id, symbol: symbol, name: c.name,
+                   rank: c.market_cap_rank || 9999, thumb: c.thumb || c.large || thumbFromSymbol(symbol) };
         });
         items.sort(function (a, b) { return a.rank - b.rank; });
         cache[q] = { t: Date.now(), items: items };
@@ -172,7 +182,7 @@
     var local = localSearch(q, max);
     return liveSearch(q).then(function (live) {
       var seen = {}, out = [];
-      local.concat(live).forEach(function (c) {
+      live.concat(local).forEach(function (c) {
         var k = c.id || c.symbol;
         if (seen[k]) return; seen[k] = 1; out.push(c);
       });
@@ -324,8 +334,8 @@
              !/nome|name|bitcoin|ethereum/.test(hint);
     }
     function badge(coin) {
-      if (coin.thumb) return '<span class="aa-badge"><img src="' + coin.thumb + '" alt=""></span>';
-      return '<span class="aa-badge">' + (coin.symbol || "?").slice(0, 2) + "</span>";
+      var src = coin.thumb || thumbFromSymbol(coin.symbol);
+      return '<span class="aa-badge"><img src="' + src + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src=\'' + FALLBACK_BADGE + '\';"></span>';
     }
     /* `buscando` acrescenta a linha de progresso da consulta online. A
        lista local já está na tela nesse meio-tempo: o usuário lê e

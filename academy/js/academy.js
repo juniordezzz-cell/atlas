@@ -50,12 +50,10 @@
   function modChip(m) { return '<span class="chip mod">' + (T.moduleLabel(m) || m) + '</span>'; }
 
   var MODULE_HREF = {
-    hold: "../hold/index.html#/teses",
-    trade: "../trade/index.html#/teses",
-    defi: "../defi/teses.html",
-    /* apontava para a home do RWA porque rota de teses não existia lá.
-       Agora existe, e o Academy leva à tese como leva nos outros três. */
-    rwa: "../RWA/index.html#/teses"
+    hold: "../hold/index.html#/dashboard",
+    trade: "../trade/index.html#/dashboard",
+    defi: "../defi/index.html",
+    rwa: "../RWA/index.html#/dashboard"
   };
 
   /* ---------- menu ---------- */

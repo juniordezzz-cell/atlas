@@ -41,10 +41,6 @@
     { id: "macro",     label: "Macro",       icon: "macro",     route: "#/macro" },
     { id: "risk",      label: "Risk Engine", icon: "risk",      route: "#/risk" },
     { id: "narrative", label: "Narrative",   icon: "narrative", route: "#/narrative" },
-    /* Teses vem ANTES do Journal de propósito: tese é o fundamento da
-       decisão, o Journal é o registro dela. A ordem do menu conta a
-       ordem do processo. */
-    { id: "teses",     label: "Teses",       icon: "doc",       route: "#/teses" },
     { id: "journal",   label: "Journal",     icon: "journal",   route: "#/journal" }
   ];
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
@@ -67,15 +63,15 @@
       root.innerHTML =
         '<aside class="sidebar" id="sidebar">' +
           '<div class="side-brand">' +
-            '<span class="mark">' + U.icon("layers") + '</span>' +
-            '<span class="txt"><span class="n">ATLAS<b> RWA</b></span><span class="s">Macro Intelligence</span></span>' +
+            '<span class="mark"><img src="../assets/iconeatlas.png" alt="ATLAS"></span>' +
+            '<span class="txt"><span class="n">ATLAS RWA</span></span>' +
           '</div>' +
           '<div class="side-label">Terminal</div>' +
           '<nav class="nav" id="nav">' +
             NAV.map(function (n) { return '<a class="nav-item" href="' + n.route + '" data-id="' + n.id + '">' + U.icon(n.icon) + '<span>' + n.label + '</span></a>'; }).join("") +
           '</nav>' +
           '<div class="side-foot">' +
-            '<a class="side-back" href="../dashboard.html">' + U.icon("back") + '<span>Voltar ao Atlas</span></a>' +
+            '<a class="side-back" href="../pages/dashboard.html">' + U.icon("back") + '<span>Voltar ao Atlas</span></a>' +
           '</div>' +
         '</aside>' +
         '<div class="scrim" id="scrim"></div>' +
@@ -278,12 +274,29 @@
   var CLASSES = ["Treasury", "Bond", "Equity", "Commodity", "Credit", "Real Estate", "Crypto"];
   var SECTORS = ["Government", "Broad Equity", "Technology", "Commodities", "Private Credit", "Real Estate", "Energy", "Financials", "Infra"];
   var SENS = ["Risk-On", "Risk-Off", "Liquidity", "Neutral"];
+  function carteirasRWA() {
+    if (window.AtlasWallets && AtlasWallets.forModule) return AtlasWallets.forModule("rwa");
+    return [{ id: "principal", name: "Principal" }];
+  }
+  function opcoesCarteiraRWA(cur) {
+    return carteirasRWA().map(function (w) {
+      return '<option value="' + esc(w.id) + '"' + (w.id === cur ? " selected" : "") + '>' + esc(w.name) + '</option>';
+    }).join("");
+  }
 
   function assetForm(a) {
     a = a || {};
+    var isEdit = !!a.id;
+    var walletAtual = (a.walletId || (S.currentWalletId ? S.currentWalletId() : null) || "principal");
     function opt(list, cur) { return list.map(function (x) { return '<option value="' + x + '"' + (x === cur ? " selected" : "") + '>' + x + '</option>'; }).join(""); }
     return '' +
       '<div class="rform">' +
+        '<div class="rrow">' +
+          '<label class="rfield"><span>Carteira da posição</span>' +
+            '<select class="rinput" data-rf="walletId"' + (isEdit ? " disabled" : "") + '>' +
+              opcoesCarteiraRWA(walletAtual) +
+            '</select></label>' +
+        '</div>' +
         '<div class="rrow">' +
           '<label class="rfield"><span>Nome do ativo</span><input class="rinput" data-rf="name" value="' + esc(a.name || "") + '" placeholder="Ex.: US Treasury 10Y / Bitcoin" /></label>' +
           '<label class="rfield rfield-sm"><span>Ticker</span><input class="rinput" data-rf="ticker" value="' + esc(a.ticker || "") + '" placeholder="Ex.: UST10 / BTC" /></label>' +
@@ -444,6 +457,13 @@
     m.querySelector("[data-save]").addEventListener("click", function () {
       var name = fv("name"), ticker = fv("ticker").toUpperCase();
       if (!name || !ticker) { U.toast("Preencha nome e ticker.", "warn"); return; }
+      var wid = isEdit ? (existing.walletId || (S.currentWalletId ? S.currentWalletId() : "principal")) : fv("walletId");
+      if (!wid) { U.toast("Escolha a carteira da posição.", "warn"); return; }
+      if (window.AtlasWallets && AtlasWallets.get && !AtlasWallets.get(wid)) {
+        U.toast("Carteira inválida.", "warn");
+        return;
+      }
+      if (!isEdit && S.setWallet && S.currentWalletId && S.currentWalletId() !== wid) S.setWallet(wid);
       var q = parseFloat(String(fv("quantidade")).replace(",", "."));
       var data = {
         name: name, ticker: ticker, type: fv("type") || "Treasury", sector: fv("sector") || "Outros",
@@ -453,7 +473,7 @@
         quantidade: isFinite(q) && q > 0 ? q : null,
         precoMedio: parseFloat(String(fv("precoMedio")).replace(",", ".")) || null,
         precoAtual: parseFloat(String(fv("precoAtual")).replace(",", ".")) || null,
-        entry: parseFloat(fv("entry")) || 0, current: parseFloat(fv("current")) || 0,
+        entry: parseFloat(fv("entry")) || 0, current: parseFloat(fv("current")) || 0, walletId: wid,
         score: parseInt(fv("score"), 10) || 0, regimeSens: fv("regimeSens") || "Neutral", status: fv("status") || "core"
       };
       if (isEdit) { S.updateAsset(existing.id, data); U.toast("Ativo atualizado."); }
@@ -1224,7 +1244,6 @@
       .register("macro", V.macro, "macro")
       .register("risk", V.risk, "risk")
       .register("narrative", V.narrative, "narrative")
-      .register("teses", V.teses, "teses")
       .register("journal", V.journal, "journal")
       .start();
 

@@ -119,7 +119,7 @@
       c.ativos + (c.ativos === 1 ? " ativo" : " ativos") + " para remarcar",
       atualizarPrecos));
     acoes.appendChild(rapida("wallet", "Carteiras e caixa", "depositar, sacar, transferir",
-      function () { location.href = "../carteiras.html"; }));
+      function () { location.href = "../pages/carteiras.html"; }));
     view.appendChild(acoes);
 
     /* KPIs — quatro, não três. O caixa entrou porque é ele que decide

@@ -210,13 +210,13 @@
   function asset(id) { return HOLD_STATE.ativos.find(function (a) { return a.id === id; }); }
   function thesis(id) { return HOLD_STATE.teses.find(function (t) { return t.id === id; }); }
   function thesisOfAsset(aid) { return HOLD_STATE.teses.find(function (t) { return t.ativo_id === aid; }); }
-  function positionOf(aid) {
-    var wid = activeWalletId();
+  function positionOf(aid, walletId) {
+    var wid = walletId || activeWalletId();
     return HOLD_STATE.carteira.find(function (p) { return p.ativo_id === aid && (p.walletId || "principal") === wid; });
   }
   /* posições da carteira ativa (o que as páginas veem) */
-  function walletPositions() {
-    var wid = activeWalletId();
+  function walletPositions(walletId) {
+    var wid = walletId || activeWalletId();
     return HOLD_STATE.carteira.filter(function (p) { return (p.walletId || "principal") === wid; });
   }
   /* posição de um ativo em QUALQUER carteira (p/ regra "investido sem tese") */
@@ -880,7 +880,10 @@
          caixa da carteira ativa, e carteira sem caixa não compra.
          ------------------------------------------------------------ */
       var custo = qty * price;
-      var widC = activeWalletId();
+      var widC = data.walletId || activeWalletId();
+      if (window.AtlasWallets && (!window.AtlasWallets.get || !window.AtlasWallets.get(widC))) {
+        return { error: "Carteira inválida para registrar a compra." };
+      }
       if (window.AtlasCaixa) {
         var conf = window.AtlasCaixa.podeGastar(widC, custo);
         if (!conf.ok) {
@@ -890,7 +893,7 @@
         }
       }
 
-      var pos = positionOf(a.id);
+      var pos = positionOf(a.id, widC);
       if (pos) {
         var newQty = pos.quantidade + qty;
         pos.preco_medio = ((pos.quantidade * pos.preco_medio) + (qty * price)) / newQty;
@@ -898,7 +901,7 @@
       } else {
         pos = { ativo_id: a.id, quantidade: qty, preco_medio: price, status: "invested" };
         // estampa de carteira/proveniência (o dinheiro é por carteira)
-        if (window.AtlasWallets) Object.assign(pos, window.AtlasWallets.stamp("hold", data.origem || "compra", activeWalletId()));
+        if (window.AtlasWallets) Object.assign(pos, window.AtlasWallets.stamp("hold", data.origem || "compra", widC));
         else pos.walletId = "principal";
         HOLD_STATE.carteira.push(pos);
       }
@@ -931,7 +934,8 @@
     // Venda. Regra: exige invalidação OU realização declarada.
     executeSell: function (data) {
       var a = asset(data.ativo_id); if (!a) return { error: "Ativo inexistente." };
-      var pos = positionOf(a.id); if (!pos) return { error: "Sem posição para vender." };
+      var widS = data.walletId || activeWalletId();
+      var pos = positionOf(a.id, widS); if (!pos) return { error: "Sem posição para vender nesta carteira." };
       var qty = num(data.quantidade), price = num(data.preco);
       if (qty <= 0 || qty > pos.quantidade) return { error: "Quantidade inválida." };
       /* ------------------------------------------------------------
@@ -963,7 +967,7 @@
         "Venda de " + qty + " " + a.ticker + " a " + fmtMoney(price) + ".");
       emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "sell" });
       emit(EVENTS.POSITION_UPDATED, pos); persist();
-      var widS = activeWalletId();
+      var widRet = pos.walletId || widS;
       var apurado = qty * price;
       /* ------------------------------------------------------------
          VENDER NÃO É TIRAR DINHEIRO DO ATLAS
@@ -976,7 +980,7 @@
          ------------------------------------------------------------ */
       if (window.AtlasCaixa) {
         window.AtlasCaixa.registrar({
-          tipo: "retorno", valorUSD: apurado, walletId: widS,
+          tipo: "retorno", valorUSD: apurado, walletId: widRet,
           module: "hold", refId: "hold:" + a.id,
           data: data.data,
           obs: "Venda de " + qty + " " + (a.ticker || "")

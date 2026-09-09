@@ -12,7 +12,7 @@
   /* Fallback de segurança: se o motor visual não carregar,
      o boot nunca prende o usuário — segue em 2s. */
   if (!FX) {
-    setTimeout(function () { window.location.href = "boas-vindas.html"; }, 2000);
+    setTimeout(function () { window.location.href = "pages/boas-vindas.html"; }, 2000);
     return;
   }
 
@@ -48,7 +48,7 @@
   function goNext() {
     if (done) return; done = true;
     document.getElementById("stage").classList.add("leaving");
-    setTimeout(function () { window.location.href = "boas-vindas.html"; }, 560);
+    setTimeout(function () { window.location.href = "pages/boas-vindas.html"; }, 560);
   }
 
   var boot = FX.makeBoot(STEPS, {

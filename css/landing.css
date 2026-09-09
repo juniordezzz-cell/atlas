@@ -39,6 +39,7 @@
   color: var(--atlas-text-hi); text-decoration: none;
 }
 .lp-brand svg { width: 28px; height: 28px; flex: none; }
+.lp-brand img { width: 28px; height: 28px; flex: none; object-fit: contain; display: block; }
 .lp-nav__links { display: flex; gap: var(--atlas-sp-5); margin-left: auto; }
 .lp-nav__links a {
   color: var(--atlas-text-mut); text-decoration: none;

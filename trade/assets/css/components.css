@@ -41,10 +41,12 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
-.brand__mark { width: 30px; height: 30px; flex: none; filter: drop-shadow(0 0 10px rgba(76,154,255,0.55)); }
+.brand__mark { width: 30px; height: 30px; flex: none; filter: none; }
+img.brand__mark { object-fit: contain; border-radius: 0; display: block; }
 .brand__word {
   font-family: var(--font-display); font-weight: 700;
   font-size: 1.16rem; letter-spacing: 0.16em; color: var(--text-hi);
+  white-space: nowrap;
 }
 
 /* ---- Topbar -------------------------------------------- */

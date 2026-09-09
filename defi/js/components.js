@@ -13,8 +13,7 @@
     { id: "staking", label: "Staking", href: "staking.html" },
     { id: "lending", label: "Lending", href: "lending.html" },
     { id: "analytics", label: "Analytics", href: "analytics.html" },
-    { id: "historico", label: "Histórico", href: "historico.html" },
-    { id: "teses", label: "Teses", href: "teses.html" }
+    { id: "historico", label: "Histórico", href: "historico.html" }
   ];
 
   var C = {
@@ -28,13 +27,13 @@
         '<header class="topnav">' +
           '<div class="topnav-inner">' +
             '<a class="brand" href="index.html">' +
-              '<span class="brand-mark">' + U.icon("layers") + '</span>' +
-              '<span class="brand-name">ATLAS<b> DeFi</b></span>' +
+              '<span class="brand-mark"><img src="../assets/iconeatlas.png" alt="ATLAS"></span>' +
+              '<span class="brand-name">ATLAS DEFI</span>' +
             '</a>' +
             '<nav class="nav-links">' + links + '</nav>' +
             '<div class="nav-spacer"></div>' +
             '<div id="wsel"></div>' +
-            '<a class="nav-back" href="../dashboard.html" title="Voltar ao Atlas">' +
+            '<a class="nav-back" href="../pages/dashboard.html" title="Voltar ao Atlas">' +
               U.icon("back") + '<span>Voltar ao Atlas</span>' +
             '</a>' +
           '</div>' +

@@ -3,7 +3,7 @@
   "short_name": "ATLAS",
   "description": "Gestão de patrimônio em cripto e ativos reais: Hold, Trade, DeFi e RWA sob um mesmo painel.",
   "id": "/",
-  "start_url": "dashboard.html",
+  "start_url": "pages/dashboard.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
@@ -14,15 +14,15 @@
   "categories": ["finance", "productivity"],
   "icons": [
     {
-      "src": "assets/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "assets/iconeatlas.png",
+      "sizes": "1280x1229",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/icon-maskable.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "assets/iconeatlas.png",
+      "sizes": "1280x1229",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
@@ -31,7 +31,7 @@
       "name": "Relatórios",
       "short_name": "Relatórios",
       "description": "Relatórios por carteira, com exportação em CSV e PDF",
-      "url": "relatorios.html"
+      "url": "pages/relatorios.html"
     },
     {
       "name": "Hold",

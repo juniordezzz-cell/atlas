@@ -63,8 +63,8 @@
            emite, e são lidos em hold/js/state.js → alerts().
            ------------------------------------------------------------ */
         { k: "alerta_sem_tese", type: "bool", def: true,
-          label: "Alertar posição sem tese",
-          desc: "Avisa enquanto houver dinheiro alocado sem fundamento escrito" },
+          label: "Alertar posição sem estudo na Academy",
+          desc: "Avisa enquanto houver dinheiro alocado sem estudo registrado na Academy" },
         { k: "alerta_concentracao", type: "bool", def: true,
           label: "Alertar concentração elevada",
           desc: "Avisa quando uma única posição passa do limite abaixo" },
@@ -88,8 +88,8 @@
           desc: "Como o sistema se dirige a você",
           placeholder: "operador" },
         { k: "studyLimitH", type: "number", def: 72, min: 1,
-          label: "Limite da tese (horas)",
-          desc: "Prazo para transformar um estudo em decisão" },
+          label: "Limite do estudo na Academy (horas)",
+          desc: "Prazo para transformar um estudo da Academy em decisão" },
         { k: "tradeReviewH", type: "number", def: 24, min: 1,
           label: "Revisar trade após (horas)",
           desc: "Quando o sistema cobra a análise pós-trade" }

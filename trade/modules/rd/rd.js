@@ -169,8 +169,7 @@
     });
     var sl = mount.querySelector("[data-study]");
     if (sl) sl.addEventListener("click", function () {
-      if (ATLAS.estudos) ATLAS.estudos.request(sl.dataset.study);
-      ATLAS.router.go("teses");
+      location.href = "../academy/index.html#/detail/" + sl.dataset.study;
     });
     var tb = mount.querySelector("[data-trade]");
     if (tb) tb.addEventListener("click", function () {

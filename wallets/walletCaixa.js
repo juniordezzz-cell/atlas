@@ -63,6 +63,12 @@
   };
 
   function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+  function pos(v) { var n = Number(v); return (isFinite(n) && n > 0) ? n : null; }
+  function txt(v) { return String(v == null ? "" : v).trim(); }
+  function ativo(v) {
+    var s = txt(v).toUpperCase();
+    return s || "USDT";
+  }
 
   function hoje() {
     var d = new Date();
@@ -127,16 +133,21 @@
       data: dia(ev.data),
       tipo: tipo,
       valorUSD: valor,
-      ativo: String(ev.ativo || "USDT").toUpperCase(),
+      ativo: ativo(ev.ativo),
+      ativoNome: txt(ev.ativoNome) || null,
+      ativoThumb: txt(ev.ativoThumb) || null,
       walletId: ev.walletId,
       contraWalletId: ev.contraWalletId || null,
       module: ev.module || null,
       refId: ev.refId || null,
       /* swap guarda os dois lados: sem isso ele seria um evento sem
          conteúdo, já que não mexe no caixa em dólar */
-      ativoDestino: ev.ativoDestino ? String(ev.ativoDestino).toUpperCase() : null,
-      qtdOrigem: ev.qtdOrigem != null ? num(ev.qtdOrigem) : null,
-      qtdDestino: ev.qtdDestino != null ? num(ev.qtdDestino) : null,
+      ativoDestino: ev.ativoDestino ? ativo(ev.ativoDestino) : null,
+      ativoDestinoNome: txt(ev.ativoDestinoNome) || null,
+      ativoDestinoThumb: txt(ev.ativoDestinoThumb) || null,
+      qtd: ev.qtd != null ? pos(ev.qtd) : null,
+      qtdOrigem: ev.qtdOrigem != null ? pos(ev.qtdOrigem) : null,
+      qtdDestino: ev.qtdDestino != null ? pos(ev.qtdDestino) : null,
       obs: ev.obs || "",
       criadoEm: ev.criadoEm || new Date().toISOString()
     };
@@ -280,6 +291,60 @@
       });
       Object.keys(out).forEach(function (k) { out[k] = Math.round(out[k] * 1e6) / 1e6; });
       return out;
+    },
+
+    caixaPorAtivo: function (walletId) {
+      if (!walletId) return [];
+
+      function add(mapa, symbol, usdDelta, qtdDelta, nome, thumb) {
+        var key = ativo(symbol);
+        if (!mapa[key]) mapa[key] = { ativo: key, nome: nome || key, thumb: thumb || "", usd: 0, qtd: 0 };
+        if (!mapa[key].nome && nome) mapa[key].nome = nome;
+        if (!mapa[key].thumb && thumb) mapa[key].thumb = thumb;
+        if (isFinite(usdDelta)) mapa[key].usd += Number(usdDelta) || 0;
+        if (qtdDelta != null && isFinite(qtdDelta)) mapa[key].qtd += Number(qtdDelta) || 0;
+      }
+
+      var mapa = {};
+      ler().forEach(function (e) {
+        var t = TIPOS[e.tipo];
+        if (!t) return;
+
+        if (e.walletId === walletId) {
+          if (e.tipo === "swap") {
+            add(mapa, e.ativo, -e.valorUSD, e.qtdOrigem != null ? -e.qtdOrigem : null, e.ativoNome, e.ativoThumb);
+            add(mapa, e.ativoDestino || "USDT", +e.valorUSD, e.qtdDestino, e.ativoDestinoNome, e.ativoDestinoThumb);
+            return;
+          }
+          add(
+            mapa,
+            e.ativo,
+            t.sinal * e.valorUSD,
+            e.qtd != null ? t.sinal * e.qtd : null,
+            e.ativoNome,
+            e.ativoThumb
+          );
+          return;
+        }
+
+        if (t.contra && e.contraWalletId === walletId) {
+          add(mapa, e.ativo, +e.valorUSD, e.qtd, e.ativoNome, e.ativoThumb);
+        }
+      });
+
+      return Object.keys(mapa).map(function (k) {
+        return {
+          ativo: mapa[k].ativo,
+          nome: mapa[k].nome || mapa[k].ativo,
+          thumb: mapa[k].thumb || "",
+          usd: Math.round(mapa[k].usd * 1e6) / 1e6,
+          qtd: Math.round(mapa[k].qtd * 1e8) / 1e8
+        };
+      }).filter(function (r) {
+        return Math.abs(r.usd) > 1e-6 || Math.abs(r.qtd) > 1e-8;
+      }).sort(function (a, b) {
+        return Math.abs(b.usd) - Math.abs(a.usd);
+      });
     },
 
     /* Caixa somado de todas as carteiras GLOBAIS — é o que sobe para o

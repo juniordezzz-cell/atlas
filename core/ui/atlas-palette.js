@@ -221,8 +221,7 @@
     if (!window.AtlasTheses || !AtlasTheses.all) return [];
     var b = base();
     return (AtlasTheses.all() || []).slice(0, 20).map(function (x) {
-      var destino = { hold: "hold/index.html", trade: "trade/index.html",
-                      defi: "defi/teses.html", rwa: "RWA/index.html" }[x.module] || "academy/index.html";
+      var destino = "academy/index.html#/detail/" + encodeURIComponent(x.id || "");
       return {
         grupo: "Tese",
         titulo: x.title || t("Sem título"),

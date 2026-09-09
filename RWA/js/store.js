@@ -337,6 +337,56 @@
       }
       return null;
     },
+    /* ------------------------------------------------------------
+       Atualiza preço de mercado dos ativos com quantidade.
+
+       Usa a cadeia central (AtlasPrecos) e atualiza TODAS as
+       carteiras pedidas sem trocar a carteira ativa na UI.
+       ------------------------------------------------------------ */
+    refreshPrices: function (opts) {
+      opts = opts || {};
+      if (!window.AtlasPrecos || !window.AtlasPrecos.deVarios) {
+        return Promise.reject(new Error("Camada de preços não carregada nesta página."));
+      }
+      var s = _load();
+      var ids = Array.isArray(opts.walletIds) && opts.walletIds.length
+        ? opts.walletIds.slice()
+        : Object.keys(s.byWallet || {});
+
+      var refs = [];
+      ids.forEach(function (wid) {
+        var wd = s.byWallet && s.byWallet[wid];
+        if (!wd || !Array.isArray(wd.assets)) return;
+        wd.assets.forEach(function (a) {
+          Store.normalizar(a);
+          if (!(a && a.id && a.quantidade > 0 && a.ticker)) return;
+          refs.push({ wid: wid, asset: a, sym: String(a.ticker).toUpperCase() });
+        });
+      });
+      if (!refs.length) return Promise.resolve({ atualizados: 0, faltando: [], divergentes: [] });
+
+      var unicos = [];
+      var seen = {};
+      refs.forEach(function (r) {
+        if (!seen[r.sym]) { seen[r.sym] = 1; unicos.push(r.sym); }
+      });
+
+      return window.AtlasPrecos.deVarios(unicos).then(function (d) {
+        var n = 0;
+        refs.forEach(function (r) {
+          var p = d.valores && d.valores[r.sym];
+          if (!(p > 0)) return;
+          if (r.asset.precoAtual === p) return;
+          r.asset.precoAtual = p;
+          r.asset.precoFonte = (d.fonte && d.fonte[r.sym]) || null;
+          r.asset.precoEm = new Date().toISOString();
+          Store.normalizar(r.asset);
+          n++;
+        });
+        if (n) _persist();
+        return { atualizados: n, faltando: d.faltando || [], divergentes: d.divergentes || [] };
+      });
+    },
     asset: function (id) { return this.assets().filter(function (a) { return a.id === id; })[0] || null; },
 
     kpis: function () {
@@ -470,6 +520,7 @@
       /* quantidade × preço manda; sem quantidade, valem os totais */
       Store.normalizar(a);
       var widA = _currentId();
+      a.walletId = widA;
 
       /* ------------------------------------------------------------
          SEM CAIXA NÃO COMPRA — o RWA era o único que não conferia
@@ -522,7 +573,7 @@
       for (var i = 0; i < s.assets.length; i++) {
         if (s.assets[i].id === id) {
           var sold = s.assets[i];
-          var widR = _currentId();
+          var widR = sold.walletId || _currentId();
           /* Vender devolve o valor ao CAIXA da carteira — não retira
              do ATLAS. Sair do sistema é um saque, que é outro evento. */
           if (window.AtlasCaixa && sold.current > 0) {

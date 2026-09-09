@@ -482,7 +482,7 @@
       if (!global.AtlasCaixa || !(valor > 0)) return null;
       return global.AtlasCaixa.registrar({
         tipo: tipo, valorUSD: valor,
-        walletId: state.currentWallet,
+        walletId: (tr && tr.walletId) || state.currentWallet,
         module: "trade", refId: tr.id, obs: obs || ""
       });
     },
@@ -491,13 +491,16 @@
     openTrade: function (data) {
       var t = now();
       var capital = Number(data.sizeUSD);
+      var wid = String(data.walletId || state.currentWallet || "").trim();
+      if (!wid) return null;
+      if (global.AtlasWallets && global.AtlasWallets.get && !global.AtlasWallets.get(wid)) return null;
       if (!isFinite(capital) || capital < 0) capital = 0;
       /* Sem caixa a operação nem nasce. O livro recusaria o débito de
          qualquer forma, mas aí sobraria um trade aberto sem dinheiro
          por trás — patrimônio do nada. A tela checa antes para poder
          dizer quanto falta; esta é a trava de qualquer caminho. */
       if (capital > 0 && global.AtlasCaixa &&
-          !global.AtlasCaixa.podeGastar(state.currentWallet, capital).ok) return null;
+          !global.AtlasCaixa.podeGastar(wid, capital).ok) return null;
       var tr = {
         id: genId("t"),
         asset: (data.asset || "").toUpperCase(),
@@ -517,12 +520,14 @@
         leverage: data.leverage || "",
         pnl: 0,
         pnlUSD: 0,
+        walletId: wid,
         openedAt: t,
         updatedAt: t,
         events: [{ ts: t, type: "abertura", text: data.note || "Trade aberto." }],
         partials: []
       };
-      app.walletData().trades.unshift(tr);
+      if (!state.data[wid]) state.data[wid] = emptyWalletData();
+      state.data[wid].trades.unshift(tr);
       if (tr.rdId) { var rd = app.getRd(tr.rdId); if (rd) { rd.status = "convertido"; } }
       persist();
       app._caixa("aporte", tr, capital, "Abertura de trade " + tr.asset);

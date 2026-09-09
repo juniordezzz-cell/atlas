@@ -458,7 +458,7 @@
         { variant: "primary", icon: caixa > 0 ? "arrowUp" : "wallet",
           onClick: caixa > 0
             ? function () { F.trade(id, "buy"); }
-            : function () { location.href = "../carteiras.html"; } }));
+            : function () { location.href = "../pages/carteiras.html"; } }));
       var spCard = U.card({ eyebrow: "Carteira", title: "Ainda não investido", body: [semPos] });
       spCard.classList.add("mt-16");
       view.appendChild(spCard);

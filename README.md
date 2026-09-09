@@ -43,7 +43,7 @@ quem ainda não entrou; o login aponta para ela.
 > O login é **simulado**: qualquer submit entra. Ele abre uma sessão em
 > `AtlasAuth` (é o que faz o "Sair" ter o que encerrar), mas no modo local
 > **não barra ninguém**. Autenticação real é uma fase futura — a costura
-> já está pronta, ver [`ROADMAP.md`](ROADMAP.md#a--autenticação-real).
+> já está pronta, ver [`ROADMAP.md`](docs/ROADMAP.md#a--autenticação-real).
 
 ---
 
@@ -389,7 +389,7 @@ uma variável no tema → o sistema inteiro muda junto.
 Autenticação real, página de valores e evolução do Oráculo são **fases
 planejadas**, não pendências — e a estrutura para receber cada uma já
 está no código. O mapa completo, com o que fazer quando a hora chegar,
-está em [`ROADMAP.md`](ROADMAP.md).
+está em [`ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 

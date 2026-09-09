@@ -289,14 +289,20 @@
   /* ---------- Trade (compra/venda) ---------- */
   function trade(assetId, side) {
     var a = S.get.asset(assetId); if (!a) return;
-    var pos = S.get.positionOf(assetId);
     var isSell = side === "sell";
+    var carteiras = (S.wallets && S.wallets.list) ? S.wallets.list() : [{ id: "principal", name: "Principal" }];
+    var carteiraAtiva = (S.wallets && S.wallets.active) ? S.wallets.active() : null;
+    var walletSel = U.select(carteiras.map(function (w) {
+      return { value: w.id, label: w.name };
+    }), (carteiraAtiva && carteiraAtiva.id) || (carteiras[0] && carteiras[0].id));
 
     /* A falta de tese NÃO impede mais abrir a compra — ver executeBuy
        em hold/js/state.js. Ela vira aviso dentro do formulário, junto
        do caixa disponível, que é o que de fato decide. */
     var semTese = !isSell && !S.get.thesisOfAsset(assetId);
-    if (isSell && !pos) return U.toast("Sem posição", "Não há posição de " + a.ticker + " para vender.", "warning");
+    if (isSell && !S.get.positionOf(assetId, walletSel.value)) {
+      return U.toast("Sem posição", "Não há posição de " + a.ticker + " para vender nesta carteira.", "warning");
+    }
 
     var seg = U.el("div", { class: "segmented" });
     var buyBtn = U.el("button", { class: side === "buy" ? "on" : "", text: "Comprar" });
@@ -314,7 +320,7 @@
     var motivoField = U.field("Motivo da venda", motivo, { hint: "Toda venda depende de invalidação ou realização da tese." });
     motivoField.classList.toggle("hidden", !isSell);
 
-    var posInfo = pos ? U.el("div", { class: "small dim", text: "Posição atual: " + U.qty(pos.quantidade) + " " + a.ticker + " · PM " + U.money(pos.preco_medio) }) : null;
+    var posInfo = U.el("div", { class: "small dim" });
 
     /* ------------------------------------------------------------
        O CAIXA DISPONÍVEL, NA TELA ONDE ELE É GASTO
@@ -324,14 +330,7 @@
        então descobrir que não tinha dinheiro. O número que decide a
        operação tem de estar visível antes dela.
        ------------------------------------------------------------ */
-    var carteiraAtual = (S.wallets && S.wallets.active) ? S.wallets.active() : null;
-    var caixaAtual = (window.AtlasCaixa && carteiraAtual)
-      ? AtlasCaixa.saldo(carteiraAtual.id) : null;
-    var infoCaixa = (!isSell && caixaAtual != null)
-      ? U.el("div", { class: "small dim", style: "margin-bottom:10px",
-          text: "Caixa em " + carteiraAtual.name + ": " + U.money(caixaAtual) +
-                " — é daqui que sai o valor da compra." })
-      : null;
+    var infoCaixa = U.el("div", { class: "small dim", style: "margin-bottom:10px" });
     var avisoTese = semTese
       ? U.el("div", { class: "small dim", style: "margin-bottom:10px",
           text: "Sem tese registrada para " + a.ticker + ". A compra é registrada assim " +
@@ -340,6 +339,7 @@
 
     var body = U.el("div", {}, [
       U.el("div", { class: "between", style: "margin-bottom:16px" }, [U.assetCellSafe(a), seg]),
+      U.field("Carteira da posição", walletSel, { required: true, hint: "Compra e venda desta posição caem nesta carteira." }),
       infoCaixa,
       avisoTese,
       posInfo,
@@ -352,6 +352,32 @@
     ]);
 
     var currentSide = side;
+    function carteiraSelecionada() {
+      var wid = walletSel.value;
+      var lista = (S.wallets && S.wallets.list) ? S.wallets.list() : [];
+      for (var i = 0; i < lista.length; i++) if (lista[i].id === wid) return lista[i];
+      return null;
+    }
+    function atualizarResumoCarteira() {
+      var w = carteiraSelecionada();
+      var caixa = (window.AtlasCaixa && w) ? AtlasCaixa.saldo(w.id) : null;
+      var p = S.get.positionOf(assetId, w ? w.id : null);
+      if (!isSell && caixa != null && w) {
+        infoCaixa.textContent = "Caixa em " + w.name + ": " + U.money(caixa) +
+          " — é daqui que sai o valor da compra.";
+        infoCaixa.style.display = "";
+      } else {
+        infoCaixa.textContent = "";
+        infoCaixa.style.display = "none";
+      }
+      if (p) {
+        posInfo.textContent = "Posição atual: " + U.qty(p.quantidade) + " " + a.ticker + " · PM " + U.money(p.preco_medio);
+        posInfo.style.display = "";
+      } else {
+        posInfo.textContent = "Sem posição de " + a.ticker + " nesta carteira.";
+        posInfo.style.display = currentSide === "sell" ? "" : "none";
+      }
+    }
     function setSide(sd) {
       currentSide = sd;
       buyBtn.classList.toggle("on", sd === "buy");
@@ -359,16 +385,23 @@
       motivoField.classList.toggle("hidden", sd !== "sell");
       confirmBtn.className = "btn " + (sd === "sell" ? "danger" : "primary");
       confirmBtn.lastChild.textContent = sd === "sell" ? "Registrar venda" : "Registrar compra";
+      atualizarResumoCarteira();
     }
     buyBtn.addEventListener("click", function () { setSide("buy"); });
     sellBtn.addEventListener("click", function () {
-      if (!S.get.positionOf(assetId)) return U.toast("Sem posição", "Não há o que vender.", "warning");
+      if (!S.get.positionOf(assetId, walletSel.value)) {
+        return U.toast("Sem posição", "Não há o que vender nesta carteira.", "warning");
+      }
       setSide("sell");
     });
+    walletSel.addEventListener("change", atualizarResumoCarteira);
 
     var confirmBtn = U.button(isSell ? "Registrar venda" : "Registrar compra", {
       variant: isSell ? "danger" : "primary", icon: "check", onClick: function () {
-        var payload = { ativo_id: assetId, quantidade: qtdI.value, preco: precoI.value, justificativa: just.value.trim() };
+        var payload = {
+          ativo_id: assetId, quantidade: qtdI.value, preco: precoI.value,
+          justificativa: just.value.trim(), walletId: walletSel.value
+        };
         var res;
         if (currentSide === "sell") { payload.motivo = motivo.value; res = S.actions.executeSell(payload); }
         else res = S.actions.executeBuy(payload);
@@ -381,6 +414,7 @@
 
     U.modal({ eyebrow: "Executar decisão", title: "Operar " + a.ticker, body: body,
       footer: [U.button("Cancelar", { variant: "ghost", onClick: U.closeModal }), U.el("div", { class: "spacer" }), confirmBtn] });
+    atualizarResumoCarteira();
   }
 
   // helper pra assetCell dentro de modal sem quebrar se UI ainda não tiver

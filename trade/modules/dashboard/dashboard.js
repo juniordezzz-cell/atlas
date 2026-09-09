@@ -118,7 +118,7 @@
 
     return '<div class="card reveal" style="animation-delay:.26s"><div class="card__head">' +
       '<span class="card__title">Teses pendentes</span>' +
-      '<button class="btn btn--ghost" data-go="teses">Ver todos</button></div>' +
+      '<button class="btn btn--ghost" data-go="academy">Ver no Academy</button></div>' +
       '<div class="list">' + body + '</div></div>';
   }
 
@@ -145,7 +145,7 @@
     var app = ATLAS.app, u = ATLAS.util, out = [];
     app.studies().forEach(function (s) {
       if (s.state === "andamento" && app.studyOpenHours(s) > (app.pref("studyLimitH") || 72))
-        out.push({ level: "warn", text: "Tese de " + s.asset + " aberta há " + u.dur(app.studyOpenHours(s)) + " (limite 72h).", ref: "Teses", go: "teses" });
+        out.push({ level: "warn", text: "Tese de " + s.asset + " aberta há " + u.dur(app.studyOpenHours(s)) + " (limite 72h).", ref: "Academy", go: "academy" });
     });
     app.tradesToReview(app.pref("tradeReviewH") || 24).forEach(function (t) {
       out.push({ level: "warn", text: "Trade de " + t.asset + " aberto há " + u.dur(app.tradeAgeHours(t)) + " sem revisão.", ref: "Trades", go: "trades" });
@@ -190,15 +190,20 @@
 
     // Ações
     mount.querySelectorAll("[data-go]").forEach(function (b) {
-      b.addEventListener("click", function () { ATLAS.router.go(b.dataset.go); });
+      b.addEventListener("click", function () {
+        if (b.dataset.go === "academy") {
+          location.href = "../academy/index.html#/andamento";
+          return;
+        }
+        ATLAS.router.go(b.dataset.go);
+      });
     });
     mount.querySelectorAll("[data-oraculo]").forEach(function (b) {
       b.addEventListener("click", function () { ATLAS.oraculo.setOpen(true); });
     });
     mount.querySelectorAll("[data-study]").forEach(function (row) {
       row.addEventListener("click", function () {
-        if (ATLAS.estudos) ATLAS.estudos.request(row.dataset.study);
-        ATLAS.router.go("teses");
+        location.href = "../academy/index.html#/detail/" + row.dataset.study;
       });
     });
     mount.querySelectorAll("[data-trade]").forEach(function (row) {

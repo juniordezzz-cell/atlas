@@ -148,7 +148,7 @@
       if (!provedor) return true;
       if (API.autenticado()) return true;
       var destino = paraOnde ||
-        ((global.AtlasShell && AtlasShell.raiz) ? AtlasShell.raiz() + "login.html" : "login.html");
+        ((global.AtlasShell && AtlasShell.raiz) ? AtlasShell.raiz() + "pages/login.html" : "login.html");
       safe(function () { global.location.replace(destino); });
       return false;
     },

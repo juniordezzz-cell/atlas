@@ -186,14 +186,14 @@
         li.appendChild(U.el("span", { class: "sw", style: "background:" + s.color }));
         li.appendChild(U.el("span", { class: "ll-tick", style: "font-family:var(--font)", text: s.label }));
         li.appendChild(U.el("span", { class: "ll-pct num", text: String(s.value) }));
-        li.addEventListener("click", function () { location.hash = "#/teses"; });
+        li.addEventListener("click", function () { location.href = "../academy/index.html#/andamento"; });
         leg.appendChild(li);
       });
       corpoTeses.appendChild(leg);
     } else {
-      corpoTeses = U.empty("doc", "Sem teses", "Documente teses para acompanhar sua saúde.",
-        U.button("Nova tese", { variant: "primary", icon: "plus",
-          onClick: function () { window.Forms.newThesis(); } }));
+      corpoTeses = U.empty("doc", "Sem teses", "Acompanhe os estudos diretamente no Academy.",
+        U.button("Abrir Academy", { variant: "primary", icon: "plus",
+          onClick: function () { location.href = "../academy/index.html#/andamento"; } }));
     }
     var cardTeses = U.card({ eyebrow: "Saúde", title: "Status das teses", body: [corpoTeses] });
     cardTeses.classList.add("col-4", "mt-16");

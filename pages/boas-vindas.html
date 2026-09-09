@@ -4,39 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Bem-vindo ao ATLAS — processo, dados e decisao para a sua gestao patrimonial.">
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
+  <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ATLAS">
   <title>ATLAS — Bem-vindo</title>
-  <link rel="preload" as="image" href="assets/atena.webp">
+  <link rel="preload" as="image" href="../assets/atena.webp">
   <!-- Inter e JetBrains Mono servidas pelo proprio ATLAS.
        Vinham do fonts.googleapis.com em vinte paginas, num sistema que
        se declara sem dependencias e promete abrir sem internet.
        Ver themes/atlas-fonts.css. -->
-  <link rel="stylesheet" href="themes/atlas-fonts.css">
-  <link rel="stylesheet" href="css/variables.css">
-  <link rel="stylesheet" href="css/global.css">
-  <link rel="stylesheet" href="css/atlas-celestial.css">
-  <link rel="stylesheet" href="css/boas-vindas.css">
+  <link rel="stylesheet" href="../themes/atlas-fonts.css">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/atlas-celestial.css">
+  <link rel="stylesheet" href="../css/boas-vindas.css">
 
   <!-- ===== ATLAS · camada global (Fase 0) ===================================
        Identidade visual, tema, idioma e moeda centralizados.
        O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
        ============================================================ -->
-  <link rel="stylesheet" href="themes/atlas-theme.css">
-  <link rel="stylesheet" href="themes/atlas-effects.css">
-  <link rel="stylesheet" href="themes/atlas-print.css" media="print">
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <link rel="stylesheet" href="../themes/atlas-print.css" media="print">
   <!-- PRIMEIRO de todos: migra as chaves antigas do localStorage
        para a convencao unica, antes de qualquer store abrir. -->
-  <script src="core/atlas-storage.js"></script>
-  <script src="core/settings.js"></script>
-  <script src="core/i18n.js"></script>
-  <script src="core/currency.js"></script>
-  <script src="core/atlas-boot.js"></script>
-  <script src="core/atlas-auth.js"></script>
-  <script src="core/atlas-pwa.js"></script>
+  <script src="../core/atlas-storage.js"></script>
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <script src="../core/atlas-auth.js"></script>
+  <script src="../core/atlas-pwa.js"></script>
 </head>
 <body class="welcome-body">
 
@@ -64,7 +64,7 @@
         <span class="core-ring core-ring--c"></span>
         <span class="core-ring core-ring--a"></span>
         <div class="core">
-          <img class="core__img" src="assets/atena.webp" alt="Oráculo">
+          <img class="core__img" src="../assets/atena.webp" alt="Oráculo">
           <span class="core__light"></span>
           <span class="core__spec"></span>
           <span class="core__rim"></span>
@@ -87,7 +87,7 @@
     </div>
   </main>
 
-  <script src="js/atlas-fx.js"></script>
+  <script src="../js/atlas-fx.js"></script>
   <script>
     (function () {
       "use strict";

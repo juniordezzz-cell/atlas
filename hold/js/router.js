@@ -11,8 +11,6 @@
     { section: "Operação" },
     { route: "dashboard",     label: "Painel",       icon: "dashboard" },
     { route: "ativos",        label: "Ativos",       icon: "layers", count: function (c) { return c.ativos; } },
-    { section: "Fundamento" },
-    { route: "teses",         label: "Teses",        icon: "doc", count: function (c) { return c.teses; } },
     { section: "Análise" },
     { route: "metricas",      label: "Métricas",     icon: "chart" },
     { route: "historico",     label: "Histórico",    icon: "history", count: function (c) { return c.historico; } },
@@ -40,15 +38,14 @@
     /* sidebar */
     var sidebar = U.el("aside", { class: "sidebar" });
     var brand = U.el("div", { class: "brand" });
-    brand.appendChild(U.el("div", { class: "brand-mark", text: "H" }));
+    brand.appendChild(U.el("img", { class: "brand-mark", src: "../assets/iconeatlas.png", alt: "ATLAS" }));
     brand.appendChild(U.el("div", { class: "brand-text" }, [
-      U.el("div", { class: "brand-name", text: "ATLAS HOLD" }),
-      U.el("div", { class: "brand-sub", text: "Long-Term System" })
+      U.el("div", { class: "brand-name", text: "ATLAS HOLD" })
     ]));
     sidebar.appendChild(brand);
 
     /* voltar ao Atlas */
-    var back = U.el("a", { class: "nav-back", href: "../dashboard.html", title: "Voltar ao Atlas" });
+    var back = U.el("a", { class: "nav-back", href: "../pages/dashboard.html", title: "Voltar ao Atlas" });
     back.innerHTML = U.icon("chevron");
     back.appendChild(U.el("span", { class: "label", text: "Voltar ao Atlas" }));
     sidebar.appendChild(back);
