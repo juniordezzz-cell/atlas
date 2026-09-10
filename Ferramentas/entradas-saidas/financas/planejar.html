@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Planejar — Finanças ATLAS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/financas.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+</head>
+<body data-page="comparativo">
+  <div class="fx-app" data-fx-app>
+    <main class="fx-main" data-fx-main>
+      <section class="fx-content">
+        <div class="fx-planner">
+
+          <div class="fx-planner-toolbar">
+            <select id="plannerMonth" class="fx-select" aria-label="Mês do planejamento"></select>
+            <input class="fx-input fx-planner-owner" type="text" id="plannerOwner" placeholder="Seu nome" aria-label="Seu nome">
+            <button class="fx-btn fx-btn--danger" type="button" id="plannerReset">Limpar tudo</button>
+          </div>
+
+          <section class="fx-metric-grid" aria-label="Resumo do orçamento">
+            <article class="card fx-metric-card fx-metric-card--pos">
+              <p class="fx-metric-label">Total de entradas</p>
+              <p class="fx-metric-value fx-text-pos" data-planner-entradas>R$ 0,00</p>
+              <p class="fx-metric-note">Tudo que entra no mês</p>
+            </article>
+            <article class="card fx-metric-card fx-metric-card--neg">
+              <p class="fx-metric-label">Gastos fixos</p>
+              <p class="fx-metric-value fx-text-neg" data-planner-essenciais>R$ 0,00</p>
+              <p class="fx-metric-note">Repetem todo mês</p>
+            </article>
+            <article class="card fx-metric-card fx-metric-card--neg">
+              <p class="fx-metric-label">Gastos não fixos</p>
+              <p class="fx-metric-value fx-text-neg" data-planner-nao-essenciais>R$ 0,00</p>
+              <p class="fx-metric-note">Variam a cada mês</p>
+            </article>
+            <article class="card fx-metric-card">
+              <p class="fx-metric-label">Sobra do mês</p>
+              <p class="fx-metric-value" data-planner-sobra>R$ 0,00</p>
+              <p class="fx-metric-note">Entradas menos saídas</p>
+            </article>
+          </section>
+
+          <section class="fx-planner-grid">
+            <!-- COLUNA ESQUERDA: ENTRADAS (preencha primeiro) + RESULTADO -->
+            <div class="fx-planner-side">
+              <article class="card fx-planner-card fx-planner-card--incomes">
+                <div class="fx-planner-head">
+                  <h2>Entradas<small>Salário e rendas — cada fonte com sua frequência</small></h2>
+                  <span class="fx-planner-badge fx-planner-badge--green" data-planner-total-entradas>R$ 0,00</span>
+                </div>
+                <div class="fx-planner-rows" data-planner-list="incomes"></div>
+                <div class="fx-planner-add">
+                  <button class="fx-btn" type="button" data-planner-add="incomes">+ Adicionar entrada</button>
+                </div>
+              </article>
+
+              <article class="card fx-planner-result">
+                <div class="fx-result-line fx-result-line--highlight" data-planner-sobra-box>
+                  <p>Se o orçamento estiver certo, todo mês vai sobrar:</p>
+                  <strong data-planner-sobra>R$ 0,00</strong>
+                </div>
+                <div class="fx-result-line">
+                  <p>Reserva de emergência ideal para o seu padrão de vida:</p>
+                  <strong class="fx-text-pos" data-planner-reserva>R$ 0,00</strong>
+                </div>
+                <p class="fx-result-note">A reserva ideal cobre 6 meses dos seus gastos fixos. Com a sobra atual, você levaria <strong data-planner-meses>—</strong> para montar a sua.</p>
+                <div class="fx-commit-track"><span class="fx-commit-fill" data-planner-commit></span></div>
+                <div class="fx-commit-caption">
+                  <span>Renda comprometida</span>
+                  <span data-planner-commit-pct>0%</span>
+                </div>
+              </article>
+            </div>
+
+            <!-- COLUNA DIREITA: SAÍDAS (lista maior) -->
+            <article class="card fx-planner-card fx-planner-card--expenses">
+              <div class="fx-planner-head">
+                <h2>Saídas<small>Fixos repetem todo mês; não fixos são do mês escolhido</small></h2>
+                <span class="fx-planner-badge fx-planner-badge--red" data-planner-total-saidas>R$ 0,00</span>
+              </div>
+
+              <div class="fx-planner-subhead">
+                <span>Gastos fixos — repetem todo mês (defina o dia)</span>
+                <strong data-planner-sub-essenciais>R$ 0,00</strong>
+              </div>
+              <div class="fx-planner-rows" data-planner-list="essentials"></div>
+              <div class="fx-planner-add">
+                <button class="fx-btn" type="button" data-planner-add="essentials">+ Adicionar gasto fixo</button>
+              </div>
+
+              <div class="fx-planner-subhead">
+                <span>Gastos não fixos — do mês selecionado</span>
+                <strong data-planner-sub-nao-essenciais>R$ 0,00</strong>
+              </div>
+              <div class="fx-planner-rows" data-planner-list="nonEssentials"></div>
+              <div class="fx-planner-add">
+                <button class="fx-btn" type="button" data-planner-add="nonEssentials">+ Adicionar gasto não fixo</button>
+              </div>
+            </article>
+          </section>
+
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/ui/shell.js"></script>
+  <script type="module" src="js/app-bridge.js"></script>
+  <script src="js/pages/planejar.js"></script>
+  <script>window.Shell.mount({ page: "comparativo", title: "Planejar", subtitle: "Entradas × Saídas do mês" });</script>
+  <script src="js/pwa.js" defer></script>
+</body>
+</html>

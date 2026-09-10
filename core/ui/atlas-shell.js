@@ -143,6 +143,13 @@
       icon: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><path d="M3 8.5h15"/><circle cx="17" cy="13.5" r="1.4"/>' },
     { id: "academy", label: "Academy", href: "academy/index.html",
       icon: '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"/>' },
+    /* Ferramentas: a bancada do ATLAS. Não é módulo de patrimônio nem
+       leitura como Academy/Relatórios — é onde vivem utilidades que
+       rodam ao lado do sistema (cada uma na sua pasta em Ferramentas/).
+       Entra depois do Academy e antes de Relatórios: fecha o bloco de
+       "operar + aprender" e abre o de "usar o que está pronto". */
+    { id: "ferramentas", label: "Ferramentas", href: "pages/ferramentas.html",
+      icon: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>' },
     { id: "relatorios", label: "Relatórios", href: "pages/relatorios.html",
       icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>' },
     { id: "configuracoes", label: "Configurações", href: "pages/configuracoes.html",

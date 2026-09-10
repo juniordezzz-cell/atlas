@@ -1,0 +1,33 @@
+/* ==========================================================================
+   ATLAS design tokens — recriados (NÃO baixados do site ATLAS).
+   Fonte: brief da Task 1 (fundacao-atlas-financas). Valores verbatim.
+   Tema escuro é o padrão (:root); tema claro sob :root[data-theme="light"].
+   ========================================================================== */
+
+:root, :root[data-theme="dark"] {
+  --fundo:#05080F; --card:#0D1422; --azul-escuro:#0A1A2F; --azul-profundo:#07121F;
+  --texto:#E6F1FF; --texto-suave:rgba(230,241,255,.62); --texto-fraco:rgba(230,241,255,.38);
+  --atlas-accent:#00BFFF; --atlas-accent-2:#00F0FF; --ciano:#00F0FF; --azul-principal:#00BFFF;
+  --atlas-grad:linear-gradient(135deg,#00BFFF 0%,#00F0FF 100%); --atlas-on-accent:#04121e;
+  --verde:#00E28A; --vermelho:#FF5470; --dourado:#FFD700; --cinza:#A0AEC0;
+  --card-borda:rgba(0,191,255,.10); --card-borda-forte:rgba(0,191,255,.22); --linha:rgba(160,174,192,.10);
+  --glow-azul:0 0 40px rgba(0,191,255,.45); --glow-ciano:0 0 60px rgba(0,240,255,.35);
+  --raio:14px; --raio-sm:10px; --gap:20px; --sidebar-w:240px; --topbar-h:64px; --content-max:1400px;
+  --atlas-sp-1:4px; --atlas-sp-2:8px; --atlas-sp-3:12px; --atlas-sp-4:16px; --atlas-sp-5:20px;
+  --atlas-sp-6:24px; --atlas-sp-7:32px; --atlas-sp-8:40px;
+  --atlas-r-sm:10px; --atlas-r-md:14px; --atlas-r-lg:20px; --atlas-r-pill:999px;
+  --atlas-ease:cubic-bezier(.22,1,.36,1); --atlas-dur:260ms;
+  --font-ui:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-mono:"JetBrains Mono","SF Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+:root[data-theme="light"] {
+  --fundo:#F6F8FC; --card:#FFFFFF; --texto:#0B1220; --texto-suave:#4A5568; --texto-fraco:#646E7D;
+  --card-borda:rgba(15,30,60,.12); --card-borda-forte:rgba(15,30,60,.26); --linha:rgba(15,30,60,.08);
+  --verde:#0A6B61; --vermelho:#B91C1C; --atlas-on-accent:#04121e;
+}
+
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: var(--font-ui);
+}

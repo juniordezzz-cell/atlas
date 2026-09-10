@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Entradas — Finanças ATLAS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/financas.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+</head>
+<body data-page="entradas">
+  <div class="fx-app" data-fx-app>
+    <main class="fx-main" data-fx-main>
+      <section class="fx-content">
+        <div class="fx-page">
+
+          <section class="fx-metric-grid" aria-label="Resumo das entradas">
+            <article class="card fx-metric-card fx-metric-card--pos">
+              <p class="fx-metric-label">Total recebido</p>
+              <p class="fx-metric-value fx-text-pos" data-entradas-total>R$ 0,00</p>
+              <p class="fx-metric-note">Receitas do período</p>
+            </article>
+            <article class="card fx-metric-card fx-metric-card--pos">
+              <p class="fx-metric-label">Maior entrada</p>
+              <p class="fx-metric-value fx-text-pos" data-entradas-maior>R$ 0,00</p>
+              <p class="fx-metric-note" data-entradas-maior-nome>—</p>
+            </article>
+            <article class="card fx-metric-card fx-metric-card--pos">
+              <p class="fx-metric-label">Fontes de renda</p>
+              <p class="fx-metric-value" data-entradas-fontes>0</p>
+              <p class="fx-metric-note">Entradas diferentes no mês</p>
+            </article>
+            <article class="card fx-metric-card fx-metric-card--pos">
+              <p class="fx-metric-label">Média por fonte</p>
+              <p class="fx-metric-value fx-text-pos" data-entradas-media>R$ 0,00</p>
+              <p class="fx-metric-note">Total ÷ fontes</p>
+            </article>
+          </section>
+
+          <section class="fx-cols-2">
+            <article class="card">
+              <h2 class="fx-section-title">Receitas por origem</h2>
+              <div class="fx-canvas-wrap">
+                <canvas id="entradasFonteChart" aria-label="Gráfico de barras das entradas por origem"></canvas>
+              </div>
+            </article>
+
+            <article class="card fx-hint">
+              <h2 class="fx-section-title">De onde vêm estes números?</h2>
+              <p>Esta página mostra apenas as <strong>entradas</strong> lançadas no seu orçamento. Para adicionar, editar ou remover valores, use a página <strong>Planejar</strong> — ela é o único lugar de lançamento, e tudo aqui atualiza sozinho.</p>
+              <a class="fx-btn fx-btn--primary" href="planejar.html">Ir para Planejar →</a>
+            </article>
+          </section>
+
+          <section class="card fx-table-card">
+            <div class="fx-table-toolbar">
+              <h2 class="fx-section-title">Histórico</h2>
+              <div class="fx-table-filters">
+                <input id="entradaSearch" class="fx-input" type="search" placeholder="Pesquisar entrada" aria-label="Pesquisar entrada">
+                <select id="entradaMonth" class="fx-select" aria-label="Filtro por mês">
+                  <option value="all">Todos os meses</option>
+                </select>
+              </div>
+            </div>
+            <div class="fx-table-scroll">
+              <table class="fx-table">
+                <thead><tr><th>Data</th><th>Origem</th><th>Descrição</th><th>Status</th><th>Valor</th></tr></thead>
+                <tbody id="entradasTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/ui/shell.js"></script>
+  <script type="module" src="js/app-bridge.js"></script>
+  <script src="js/pages/entradas.js"></script>
+  <script>window.Shell.mount({ page: "entradas", title: "Entradas", subtitle: "Recebimentos do mês" });</script>
+  <script src="js/pwa.js" defer></script>
+</body>
+</html>

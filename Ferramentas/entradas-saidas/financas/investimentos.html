@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Investimentos — Finanças ATLAS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/financas.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+</head>
+<body data-page="investimentos">
+  <div class="fx-app" data-fx-app>
+    <main class="fx-main" data-fx-main>
+      <section class="fx-content">
+        <div class="fx-page">
+
+          <section class="fx-minicards" aria-label="Resumo dos aportes">
+            <article class="card fx-minicard">
+              <p class="fx-minicard-label">Investido no total</p>
+              <p class="fx-minicard-value" data-inv-total>R$ 0,00</p>
+              <p class="fx-minicard-note">Soma de todos os aportes registrados</p>
+            </article>
+            <article class="card fx-minicard fx-minicard--green">
+              <p class="fx-minicard-label">Aporte deste mês</p>
+              <p class="fx-minicard-value" data-inv-mes>R$ 0,00</p>
+              <p class="fx-minicard-note" data-inv-mes-label>—</p>
+            </article>
+          </section>
+
+          <article class="card fx-hint">
+            <h2 class="fx-section-title">O que é esta página</h2>
+            <p>Aqui você só registra <strong>quanto guardou/investiu por mês</strong> — um acompanhamento pessoal do seu hábito de poupar. Não há preços de ativos, carteira, alocação ou rentabilidade: isso já vive nos módulos de cripto do ATLAS (Hold, Trade, DeFi, RWA).</p>
+          </article>
+
+          <article class="card">
+            <h2 class="fx-section-title">Aporte por mês</h2>
+            <div class="fx-canvas-wrap">
+              <canvas id="aporteMesChart" aria-label="Gráfico de barras do aporte por mês"></canvas>
+            </div>
+          </article>
+
+          <article class="card fx-planner-card fx-planner-card--incomes">
+            <div class="fx-planner-head">
+              <h2>Seus aportes<small>Um valor por mês — o quanto você separou/investiu naquele período.</small></h2>
+            </div>
+            <div class="fx-planner-rows" data-aporte-list></div>
+            <div class="fx-planner-add">
+              <button class="fx-btn fx-btn--primary" type="button" id="aporteAdd">+ Adicionar aporte</button>
+            </div>
+          </article>
+
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/ui/shell.js"></script>
+  <script type="module" src="js/app-bridge.js"></script>
+  <script src="js/pages/investimentos.js"></script>
+  <script>window.Shell.mount({ page: "investimentos", title: "Investimentos", subtitle: "Quanto você guardou por mês" });</script>
+  <script src="js/pwa.js" defer></script>
+</body>
+</html>

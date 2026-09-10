@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Configurações — Finanças ATLAS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/financas.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+</head>
+<body data-page="configuracoes">
+  <div class="fx-app" data-fx-app>
+    <main class="fx-main" data-fx-main>
+      <section class="fx-content">
+        <div class="fx-page">
+
+          <section class="fx-cols-2">
+            <article class="card">
+              <h2 class="fx-section-title">Tema</h2>
+              <div class="fx-segmented" aria-label="Escolha de tema" data-theme-group>
+                <button type="button" data-theme-choice="dark">Escuro</button>
+                <button type="button" data-theme-choice="light">Claro</button>
+              </div>
+              <div class="fx-divider"></div>
+              <div class="fx-switch-row">
+                <div><strong>Animação dos números</strong><p>Efeito de contagem nos valores em R$</p></div>
+                <label class="fx-switch"><input id="animationsToggle" type="checkbox"><span></span></label>
+              </div>
+              <div class="fx-switch-row">
+                <div><strong>Tabelas compactas</strong><p>Reduz o espaçamento das listas e tabelas</p></div>
+                <label class="fx-switch"><input id="compactTablesToggle" type="checkbox"><span></span></label>
+              </div>
+            </article>
+
+            <article class="card">
+              <h2 class="fx-section-title">Backup</h2>
+              <p class="fx-note">Seus dados ficam só neste navegador. Exporte um backup para guardar em outro lugar, ou restaure a partir de um arquivo salvo antes.</p>
+              <div class="fx-config-actions">
+                <button id="exportBackup" class="fx-btn fx-btn--primary" type="button"><span aria-hidden="true">↓</span> Exportar dados</button>
+                <label class="fx-btn" for="importBackup"><span aria-hidden="true">↑</span> Importar backup</label>
+                <input id="importBackup" type="file" accept="application/json" hidden>
+                <button id="resetData" class="fx-btn fx-btn--danger" type="button"><span aria-hidden="true">×</span> Restaurar dados</button>
+              </div>
+            </article>
+          </section>
+
+          <!-- ============ APLICATIVO (APK) ============
+               O download do app fica SÓ aqui, dentro do módulo Finanças
+               (não no hub de Ferramentas do ATLAS). O arquivo é gerado
+               pelo PWABuilder depois de publicar o site e entra em
+               downloads/atlas-financas.apk. Enquanto não existir, o
+               botão aparece desabilitado, para não prometer um download
+               que ainda não está lá. -->
+          <section class="card">
+            <h2 class="fx-section-title">Aplicativo <span class="fx-badge">Teste</span></h2>
+            <p class="fx-note">Versão Android do Finanças para instalar e testar no celular. É um build de teste — no Android, toque no arquivo baixado e permita a instalação de "fontes desconhecidas".</p>
+            <div class="fx-config-actions">
+              <a id="downloadApk" class="fx-btn fx-btn--primary" href="downloads/atlas-financas.apk" download>
+                <span aria-hidden="true">↓</span> Baixar APK
+              </a>
+            </div>
+            <p class="fx-note fx-note--muted" id="apkStatus" hidden>O APK ainda não foi gerado. Assim que o arquivo estiver em <code>downloads/atlas-financas.apk</code>, este botão passa a baixá-lo.</p>
+          </section>
+
+          <section class="card">
+            <h2 class="fx-section-title">Perfil</h2>
+            <form id="profileForm" class="fx-form-grid">
+              <div class="fx-field">
+                <label for="profileName">Nome</label>
+                <input id="profileName" name="name" type="text" class="fx-input">
+              </div>
+              <div class="fx-field">
+                <label for="profileEmail">E-mail</label>
+                <input id="profileEmail" name="email" type="email" class="fx-input">
+              </div>
+              <div class="fx-field">
+                <label for="profileCurrency">Moeda</label>
+                <select id="profileCurrency" name="currency" class="fx-select">
+                  <option value="BRL">Real brasileiro</option>
+                  <option value="USD">Dólar</option>
+                  <option value="EUR">Euro</option>
+                </select>
+              </div>
+              <div class="fx-form-actions">
+                <button class="fx-btn fx-btn--primary" type="submit"><span aria-hidden="true">✓</span> Salvar perfil</button>
+              </div>
+            </form>
+          </section>
+
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/ui/shell.js"></script>
+  <script type="module" src="js/app-bridge.js"></script>
+  <script src="js/pages/configuracoes.js"></script>
+  <script>window.Shell.mount({ page: "configuracoes", title: "Configurações", subtitle: "Preferências e backup" });</script>
+  <script src="js/pwa.js" defer></script>
+  <!-- Mantém o botão do APK honesto: se o arquivo ainda não foi
+       gerado (HEAD dá 404), desativa o botão e mostra o aviso, em vez
+       de oferecer um download que resultaria em página de erro. -->
+  <script>
+    (function () {
+      var btn = document.getElementById("downloadApk");
+      var aviso = document.getElementById("apkStatus");
+      if (!btn) return;
+      fetch(btn.getAttribute("href"), { method: "HEAD" })
+        .then(function (r) {
+          if (r && r.ok) return;                 // APK presente: nada a fazer
+          throw new Error("apk ausente");
+        })
+        .catch(function () {
+          btn.classList.add("fx-btn--disabled");
+          btn.setAttribute("aria-disabled", "true");
+          btn.removeAttribute("download");
+          if (aviso) aviso.hidden = false;
+        });
+    })();
+  </script>
+</body>
+</html>

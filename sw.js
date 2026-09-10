@@ -78,8 +78,14 @@
    v31 = o Dashboard ganhou o caixa na curva de Evolução (série
    derivada do extrato) e a Distribuição por Categoria passou a incluir
    o Caixa disponível com a quebra por ativo (nível 2). Mexeu em
-   atlas-consolidation.js, data.js, dashboard.js. */
-var VERSAO = "atlas-v31";
+   atlas-consolidation.js, data.js, dashboard.js.
+
+   v32 = a bancada de Ferramentas. O menu central (core/ui/atlas-shell.js)
+   ganhou o item "Ferramentas", e nasceu a página pages/ferramentas.html
+   que lista as tools (a primeira é o Finanças). atlas-shell.js roda em
+   TODA página — sem o bump, quem já abriu o ATLAS continuaria recebendo
+   do cache a versão sem o novo item de menu, e o botão não apareceria. */
+var VERSAO = "atlas-v32";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

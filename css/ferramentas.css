@@ -1,0 +1,207 @@
+/* ============================================================
+   ATLAS · css/ferramentas.css
+   A bancada de Ferramentas — cards grandes agrupados por seção.
+
+   Reaproveita a casca (.app/.sidebar/.main/.topbar) de
+   css/dashboard.css; o card daqui é próprio (.tool-card) porque é
+   maior e mais estruturado que o .card padrão. Feito para crescer:
+   basta duplicar um bloco <section class="tools-sec"> e um <a/div
+   class="tool-card">.
+   ============================================================ */
+
+/* ---------- Introdução da tela ---------- */
+.tools-intro {
+  margin: 0 0 26px;
+  max-width: 760px;
+}
+.tools-intro p {
+  margin: 0;
+  color: var(--texto-suave, rgba(230, 241, 255, 0.62));
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* ---------- Seção (grupo de ferramentas) ---------- */
+.tools-sec { margin: 0 0 34px; }
+
+.tools-sec__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+.tools-sec__icon {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--raio-sm, 10px);
+  background: var(--atlas-accent-soft, rgba(0, 191, 255, 0.14));
+  color: var(--atlas-accent-text, #00BFFF);
+}
+.tools-sec__icon svg { width: 17px; height: 17px; }
+.tools-sec__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--texto, #E6F1FF);
+  letter-spacing: 0;
+}
+.tools-sec__sub {
+  font-size: 13px;
+  color: var(--atlas-text-faint, #7A86A6);
+}
+/* Contador de ferramentas da seção, empurrado para a direita */
+.tools-sec__count {
+  margin-left: auto;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--atlas-text-faint, #7A86A6);
+}
+
+/* ---------- A grade de cards grandes ---------- */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+/* ---------- Card grande de ferramenta ----------
+   É um <a class="tool-card">: a coisa inteira é clicável. */
+.tool-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 250px;
+  padding: 22px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--atlas-surface-solid, #121B31);
+  border: 1px solid var(--card-borda, rgba(0, 191, 255, 0.10));
+  border-radius: var(--raio, 14px);
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.tool-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--atlas-border-hi, rgba(150, 185, 255, 0.28));
+  box-shadow: var(--atlas-sh-3, 0 18px 40px rgba(0, 0, 0, 0.35));
+}
+
+/* Selo do ícone — sotaque de marca do módulo */
+.tool-card__icon {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--raio-sm, 10px);
+  background: var(--atlas-accent-soft, rgba(0, 191, 255, 0.14));
+  border: 1px solid var(--atlas-accent-line, rgba(0, 191, 255, 0.28));
+  color: var(--atlas-accent-text, #00BFFF);
+}
+.tool-card__icon svg { width: 24px; height: 24px; }
+
+/* Selo de preço/estado, canto superior direito */
+.tool-card__badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.tool-card__badge--free {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.10);
+  border-color: rgba(74, 222, 128, 0.34);
+}
+.tool-card__badge--pro {
+  color: #c084fc;
+  background: rgba(192, 132, 252, 0.10);
+  border-color: rgba(192, 132, 252, 0.34);
+}
+
+.tool-card__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--texto, #E6F1FF);
+  letter-spacing: 0;
+}
+.tool-card__desc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--texto-suave, rgba(230, 241, 255, 0.62));
+}
+
+/* Chips descritivos */
+.tool-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.tool-card__chip {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--texto-suave, rgba(230, 241, 255, 0.62));
+  background: rgba(140, 170, 225, 0.06);
+  border: 1px solid var(--atlas-border, rgba(140, 170, 225, 0.13));
+}
+
+/* Rodapé "Abrir ferramenta →": colado na base, a seta anda no hover */
+.tool-card__cta {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--atlas-accent-text, #00BFFF);
+}
+.tool-card__cta svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.16s ease;
+}
+.tool-card:hover .tool-card__cta svg { transform: translateX(4px); }
+
+/* ---------- Card "Em breve" ----------
+   Anuncia que a bancada vai crescer, sem fingir ser clicável. */
+.tool-card--soon {
+  border-style: dashed;
+  cursor: default;
+}
+.tool-card--soon:hover {
+  transform: none;
+  border-color: var(--card-borda, rgba(0, 191, 255, 0.10));
+  box-shadow: none;
+}
+.tool-card--soon .tool-card__icon {
+  background: transparent;
+  border-color: var(--atlas-border, rgba(140, 170, 225, 0.13));
+  color: var(--atlas-text-faint, #7A86A6);
+}
+.tool-card--soon .tool-card__title,
+.tool-card--soon .tool-card__cta {
+  color: var(--atlas-text-faint, #7A86A6);
+}
+.tool-card__badge--soon {
+  color: var(--atlas-text-faint, #7A86A6);
+  background: rgba(140, 170, 225, 0.06);
+  border-color: var(--atlas-border, rgba(140, 170, 225, 0.13));
+}
+
+@media (max-width: 560px) {
+  .tools-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Análises — Finanças ATLAS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/financas.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+</head>
+<body data-page="analises">
+  <div class="fx-app" data-fx-app>
+    <main class="fx-main" data-fx-main>
+      <section class="fx-content">
+        <div class="fx-page">
+
+          <!-- Gráfico fixo: renda mês a mês + média mensal do ano -->
+          <article class="card">
+            <div class="fx-chart-head">
+              <h2 class="fx-section-title">Renda mês a mês em <span data-analise-ano>—</span></h2>
+              <span class="fx-planner-badge fx-planner-badge--green">Média mensal: <strong data-renda-media style="margin-left:6px;">R$ 0,00</strong></span>
+            </div>
+            <div class="fx-canvas-wrap">
+              <canvas id="rendaAnualChart" aria-label="Gráfico da renda por mês no ano"></canvas>
+            </div>
+          </article>
+
+          <!-- Gráfico dinâmico: escolha uma categoria e veja mês a mês -->
+          <article class="card">
+            <div class="fx-chart-head">
+              <h2 class="fx-section-title">Gasto por categoria, mês a mês</h2>
+              <div class="fx-analise-controls">
+                <input id="analiseBusca" class="fx-input" type="search" list="analiseCats" placeholder="Digite um gasto: iFood, Luz, Aluguel..." aria-label="Buscar gasto" autocomplete="off">
+                <datalist id="analiseCats"></datalist>
+                <div class="fx-chip-group">
+                  <button type="button" class="fx-chip is-active" data-filtro="fixed">Fixos</button>
+                  <button type="button" class="fx-chip" data-filtro="variable">Não fixos</button>
+                </div>
+                <span class="fx-planner-badge fx-planner-badge--red">Média: <strong data-cat-media style="margin-left:6px;">R$ 0,00</strong></span>
+              </div>
+            </div>
+            <div class="fx-canvas-wrap">
+              <canvas id="categoriaChart" aria-label="Gráfico do gasto da categoria por mês"></canvas>
+            </div>
+          </article>
+
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/ui/shell.js"></script>
+  <script type="module" src="js/app-bridge.js"></script>
+  <script src="js/pages/analises.js"></script>
+  <script>window.Shell.mount({ page: "analises", title: "Análises", subtitle: "Padrões e insights" });</script>
+  <script src="js/pwa.js" defer></script>
+</body>
+</html>

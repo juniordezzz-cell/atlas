@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Despesas — Finanças ATLAS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/financas.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+</head>
+<body data-page="despesas">
+  <div class="fx-app" data-fx-app>
+    <main class="fx-main" data-fx-main>
+      <section class="fx-content">
+        <div class="fx-page">
+
+          <div class="fx-page-toolbar">
+            <select id="despesaMonth" class="fx-select" aria-label="Filtro por mês">
+              <option value="all">Todos os meses</option>
+            </select>
+            <select id="despesaCategory" class="fx-select" aria-label="Filtro por categoria">
+              <option value="all">Todas as categorias</option>
+              <option>Casa</option>
+              <option>Transporte</option>
+              <option>Alimentação</option>
+              <option>Saúde</option>
+              <option>Lazer</option>
+              <option>Outros</option>
+            </select>
+          </div>
+
+          <section class="fx-metric-grid" aria-label="Resumo das despesas">
+            <article class="card fx-metric-card fx-metric-card--neg">
+              <p class="fx-metric-label">Total de despesas</p>
+              <p class="fx-metric-value fx-text-neg" data-despesas-total>R$ 0,00</p>
+              <p class="fx-metric-note">Saídas do período</p>
+            </article>
+            <article class="card fx-metric-card fx-metric-card--neg">
+              <p class="fx-metric-label">Gastos fixos</p>
+              <p class="fx-metric-value fx-text-neg" data-despesas-essenciais>R$ 0,00</p>
+              <p class="fx-metric-note">Repetem todo mês</p>
+            </article>
+            <article class="card fx-metric-card fx-metric-card--neg">
+              <p class="fx-metric-label">Gastos não fixos</p>
+              <p class="fx-metric-value fx-text-neg" data-despesas-nao-essenciais>R$ 0,00</p>
+              <p class="fx-metric-note">Variam a cada mês</p>
+            </article>
+            <article class="card fx-metric-card">
+              <p class="fx-metric-label">Maior categoria</p>
+              <p class="fx-metric-value" data-despesas-maior>R$ 0,00</p>
+              <p class="fx-metric-note">Categoria que mais consome</p>
+            </article>
+          </section>
+
+          <section class="fx-cols-2">
+            <article class="card">
+              <h2 class="fx-section-title">Gastos fixos</h2>
+              <div class="fx-canvas-wrap">
+                <canvas id="essenciaisChart" aria-label="Gráfico de despesas essenciais"></canvas>
+              </div>
+            </article>
+            <article class="card">
+              <h2 class="fx-section-title">Gastos não fixos</h2>
+              <div class="fx-canvas-wrap">
+                <canvas id="naoEssenciaisChart" aria-label="Gráfico de despesas não essenciais"></canvas>
+              </div>
+            </article>
+          </section>
+
+          <section class="fx-cols-2">
+            <article class="card fx-planner-card fx-planner-card--expenses">
+              <div class="fx-planner-head">
+                <h2>Lista de compras do mês<small>Gás, luz, mercado... marque conforme for pagando</small></h2>
+                <span class="fx-planner-badge fx-planner-badge--red" data-shopping-total>R$ 0,00</span>
+              </div>
+              <form class="fx-shopping-form" id="shoppingForm">
+                <input type="text" class="fx-input" id="shoppingName" placeholder="Item (ex: Gás, Luz, Mercado...)" required aria-label="Nome do item">
+                <input type="number" class="fx-input" id="shoppingValue" placeholder="Valor (R$)" min="0" step="0.01" inputmode="decimal" aria-label="Valor do item">
+                <button class="fx-btn fx-btn--primary" type="submit">+ Adicionar</button>
+              </form>
+              <div class="fx-shopping-list" data-shopping-list></div>
+              <div class="fx-shopping-footer">
+                <div class="fx-shopping-totals">
+                  <span>Pagos: <strong class="fx-text-neg" data-shopping-pago>R$ 0,00</strong></span>
+                  <span>Faltam: <strong data-shopping-pendente>R$ 0,00</strong></span>
+                </div>
+                <div class="fx-shopping-launch">
+                  <select class="fx-select" id="shoppingCategory" aria-label="Categoria para lançar">
+                    <option>Casa</option>
+                    <option>Alimentação</option>
+                    <option>Transporte</option>
+                    <option>Saúde</option>
+                    <option>Lazer</option>
+                    <option>Outros</option>
+                  </select>
+                  <button class="fx-btn" type="button" id="shoppingLaunch">Lançar pagos como despesa</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="card">
+              <h2 class="fx-section-title">Categorias que mais consomem dinheiro</h2>
+              <div class="fx-canvas-wrap">
+                <canvas id="topCategoriasChart" aria-label="Gráfico de barras horizontais por categoria"></canvas>
+              </div>
+            </article>
+          </section>
+
+          <section class="card fx-table-card">
+            <div class="fx-table-toolbar">
+              <h2 class="fx-section-title">Tabela de despesas</h2>
+            </div>
+            <div class="fx-table-scroll">
+              <table class="fx-table">
+                <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Tipo</th><th>Valor</th></tr></thead>
+                <tbody id="despesasTableBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/ui/shell.js"></script>
+  <script type="module" src="js/app-bridge.js"></script>
+  <script src="js/pages/despesas.js"></script>
+  <script>window.Shell.mount({ page: "despesas", title: "Despesas", subtitle: "Saídas do mês" });</script>
+  <script src="js/pwa.js" defer></script>
+</body>
+</html>

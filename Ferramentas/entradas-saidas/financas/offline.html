@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Você está offline — Finanças ATLAS</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/financas.css">
+  <style>
+    .fx-offline-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--atlas-sp-6);
+    }
+    .fx-offline-card {
+      max-width: 420px;
+      text-align: center;
+      padding: var(--atlas-sp-8) var(--atlas-sp-6);
+    }
+    .fx-offline-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto var(--atlas-sp-5);
+      border-radius: var(--atlas-r-pill);
+      background: var(--atlas-grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      color: var(--atlas-on-accent);
+    }
+    .fx-offline-card h1 {
+      font-size: 1.25rem;
+      margin: 0 0 var(--atlas-sp-3);
+      color: var(--texto);
+    }
+    .fx-offline-card p {
+      color: var(--texto-suave);
+      line-height: 1.5;
+      margin: 0 0 var(--atlas-sp-6);
+    }
+  </style>
+</head>
+<body data-page="offline">
+  <div class="fx-offline-wrap">
+    <article class="card fx-offline-card">
+      <div class="fx-offline-icon" aria-hidden="true">⚡</div>
+      <h1>Você está offline</h1>
+      <p>Sem conexão no momento. Seus dados ficam salvos localmente neste dispositivo — assim que a conexão voltar, é só continuar de onde parou.</p>
+      <a class="fx-btn fx-btn--primary" href="index.html">Tentar novamente</a>
+    </article>
+  </div>
+</body>
+</html>

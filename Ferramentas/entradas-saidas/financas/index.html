@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Finanças — ATLAS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/financas.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+</head>
+<body data-page="dashboard">
+  <div class="fx-app" data-fx-app>
+    <main class="fx-main" data-fx-main>
+      <section class="fx-content">
+        <div class="fx-dashboard">
+
+          <!-- Boas-vindas — mostrada só quando não há entries/expenses/planner
+               ainda (financas/js/pages/visao-geral.js decide e alterna [hidden]) -->
+          <article class="card fx-welcome" data-fx-welcome hidden>
+            <h2>Seu Finanças está pronto — e vazio</h2>
+            <p>Comece planejando o mês ou carregue dados de exemplo para ver o painel funcionando antes de lançar as suas próprias entradas e despesas.</p>
+            <div class="fx-welcome-actions">
+              <a class="fx-btn fx-btn--primary" href="planejar.html">Começar a planejar</a>
+              <button class="fx-btn" type="button" data-fx-load-example>Carregar dados de exemplo</button>
+            </div>
+          </article>
+
+          <div data-fx-dashboard-content>
+
+          <!-- Card herói: Saldo do mês -->
+          <article class="card fx-hero">
+            <div class="fx-hero-head">
+              <p class="fx-hero-label">Saldo do mês</p>
+              <p class="fx-hero-value" data-saldo-mes>R$ 0,00</p>
+              <p class="fx-hero-note" data-note-saldo>—</p>
+            </div>
+            <div class="fx-hero-chart">
+              <canvas id="cashFlowHero" aria-label="Tendência do saldo nos últimos meses"></canvas>
+            </div>
+          </article>
+
+          <!-- Mini-cards: Entradas / Saídas / Investido -->
+          <section class="fx-minicards" aria-label="Resumo do mês">
+            <article class="card fx-minicard fx-minicard--green">
+              <p class="fx-minicard-label">Entradas</p>
+              <p class="fx-minicard-value" data-total-entradas>R$ 0,00</p>
+              <p class="fx-minicard-note" data-note-entradas>—</p>
+            </article>
+            <article class="card fx-minicard fx-minicard--red">
+              <p class="fx-minicard-label">Saídas</p>
+              <p class="fx-minicard-value" data-total-despesas>R$ 0,00</p>
+              <p class="fx-minicard-note" data-note-despesas>—</p>
+            </article>
+            <article class="card fx-minicard">
+              <p class="fx-minicard-label">Investido</p>
+              <p class="fx-minicard-value" data-total-investimentos>R$ 0,00</p>
+              <p class="fx-minicard-note">Total investido</p>
+            </article>
+          </section>
+
+          <!-- Fluxo financeiro do mês -->
+          <article class="card fx-chart-card">
+            <div class="fx-chart-head">
+              <h2 class="fx-section-title">Fluxo financeiro do mês</h2>
+              <div class="fx-legend">
+                <span class="fx-legend-item"><span class="fx-dot fx-dot--cyan"></span>Entradas</span>
+                <span class="fx-legend-item"><span class="fx-dot fx-dot--red"></span>Saídas</span>
+              </div>
+            </div>
+            <div class="fx-canvas-wrap">
+              <canvas id="cashFlowChart" aria-label="Gráfico de linha do fluxo financeiro do mês"></canvas>
+            </div>
+          </article>
+
+          <!-- Seções reveladas ao rolar -->
+          <article class="card fx-section fx-reveal">
+            <h2 class="fx-section-title">Distribuição das despesas</h2>
+            <div class="fx-progress-list" data-expense-detail></div>
+          </article>
+
+          <article class="card fx-section fx-reveal">
+            <h2 class="fx-section-title">Últimas movimentações</h2>
+            <div class="fx-transactions" data-last-transactions></div>
+          </article>
+
+          <article class="card fx-section fx-reveal">
+            <h2 class="fx-section-title">Desempenho mês a mês</h2>
+            <div class="fx-monthly-performance" data-monthly-performance></div>
+          </article>
+
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="js/ui/shell.js"></script>
+  <script type="module" src="js/app-bridge.js"></script>
+  <script src="js/pages/visao-geral.js"></script>
+  <script>window.Shell.mount({ page: "dashboard", title: "Finanças", subtitle: "Fluxo de caixa pessoal" });</script>
+  <script src="js/pwa.js" defer></script>
+</body>
+</html>

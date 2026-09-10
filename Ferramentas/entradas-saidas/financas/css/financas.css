@@ -1,0 +1,2037 @@
+/* ==========================================================================
+   Finanças (ATLAS) — financas.css
+   Layout do shell: sidebar global ATLAS + topbar + sub-nav (pílulas) +
+   barra inferior mobile com FAB central. Usa somente tokens de
+   css/atlas-tokens.css — nenhuma cor hardcoded.
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+a { color: inherit; }
+
+/* -------------------------------------------------------------------- */
+/* App shell: sidebar ATLAS (global) + main do módulo Finanças           */
+/* -------------------------------------------------------------------- */
+
+.fx-app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+  background: var(--fundo);
+}
+
+/* Sidebar global ATLAS — stand-in visual (Task 1). Links não navegam. */
+.fx-sidebar {
+  background: var(--card);
+  border-right: 1px solid var(--linha);
+  padding: var(--atlas-sp-5) var(--atlas-sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--atlas-sp-6);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.fx-side-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--atlas-sp-2);
+  padding: 0 var(--atlas-sp-2);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: var(--texto);
+  font-size: .85rem;
+}
+
+.fx-side-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--atlas-r-sm);
+  background: var(--atlas-grad);
+  box-shadow: var(--glow-azul);
+  flex-shrink: 0;
+}
+
+.fx-side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--atlas-sp-1);
+}
+
+.fx-side-item {
+  display: flex;
+  align-items: center;
+  gap: var(--atlas-sp-3);
+  padding: var(--atlas-sp-3) var(--atlas-sp-3);
+  border-radius: var(--atlas-r-sm);
+  color: var(--texto-suave);
+  text-decoration: none;
+  font-size: .875rem;
+  transition: background var(--atlas-dur) var(--atlas-ease), color var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-side-item:hover {
+  background: var(--card-borda);
+  color: var(--texto);
+}
+
+.fx-side-item.is-active {
+  background: var(--card-borda);
+  color: var(--texto);
+  box-shadow: inset 3px 0 0 var(--atlas-accent);
+  font-weight: 600;
+}
+
+.fx-side-ic {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--texto-fraco);
+  flex-shrink: 0;
+}
+
+.fx-side-item.is-active .fx-side-ic {
+  background: var(--atlas-grad);
+}
+
+/* -------------------------------------------------------------------- */
+/* Main do módulo Finanças                                               */
+/* -------------------------------------------------------------------- */
+
+.fx-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+.fx-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atlas-sp-4);
+  height: var(--topbar-h);
+  padding: 0 var(--atlas-sp-6);
+  border-bottom: 1px solid var(--linha);
+  position: sticky;
+  top: 0;
+  background: var(--fundo);
+  z-index: 20;
+}
+
+.fx-menu {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--atlas-r-sm);
+  background: var(--card);
+  border: 1px solid var(--card-borda);
+  color: var(--texto);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.fx-title { min-width: 0; }
+
+.fx-title h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--texto);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fx-title p {
+  margin: 2px 0 0;
+  font-size: .8rem;
+  color: var(--texto-suave);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fx-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--atlas-sp-2);
+  flex-shrink: 0;
+}
+
+.fx-theme,
+.fx-settings {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--card);
+  border: 1px solid var(--card-borda);
+  color: var(--texto);
+  font-size: 1rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color var(--atlas-dur) var(--atlas-ease), box-shadow var(--atlas-dur) var(--atlas-ease), color var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-theme:hover,
+.fx-settings:hover {
+  border-color: var(--card-borda-forte);
+  box-shadow: var(--glow-azul);
+}
+
+.fx-settings.is-active {
+  color: var(--atlas-on-accent);
+  background: var(--atlas-grad);
+  border-color: transparent;
+  box-shadow: var(--glow-azul);
+}
+
+/* Sub-nav (pílulas) — navegação real das seções do módulo */
+.fx-subnav {
+  display: flex;
+  gap: var(--atlas-sp-2);
+  padding: var(--atlas-sp-4) var(--atlas-sp-6);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--linha);
+  scrollbar-width: none;
+}
+
+.fx-subnav::-webkit-scrollbar { display: none; }
+
+.fx-pill {
+  flex-shrink: 0;
+  padding: var(--atlas-sp-2) var(--atlas-sp-4);
+  border-radius: var(--atlas-r-pill);
+  color: var(--texto-suave);
+  background: transparent;
+  border: 1px solid var(--card-borda);
+  white-space: nowrap;
+  font-size: .85rem;
+  text-decoration: none;
+  transition: background var(--atlas-dur) var(--atlas-ease), color var(--atlas-dur) var(--atlas-ease), border-color var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-pill:hover {
+  color: var(--texto);
+  border-color: var(--card-borda-forte);
+}
+
+.fx-pill.is-active {
+  background: var(--atlas-grad);
+  color: var(--atlas-on-accent);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.fx-content {
+  flex: 1;
+  padding: var(--atlas-sp-6);
+}
+
+.fx-empty {
+  color: var(--texto-fraco);
+  text-align: center;
+  padding: var(--atlas-sp-8) 0;
+  font-size: .95rem;
+}
+
+/* -------------------------------------------------------------------- */
+/* Barra inferior mobile + FAB central                                   */
+/* -------------------------------------------------------------------- */
+
+.fx-bottombar {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  align-items: center;
+  justify-content: space-around;
+  height: 64px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  background: var(--card);
+  border-top: 1px solid var(--linha);
+  z-index: 50;
+}
+
+.fx-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  color: var(--texto-suave);
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: .65rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.fx-tab.is-active { color: var(--atlas-accent); }
+
+.fx-tab-ic {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--texto-fraco);
+}
+
+.fx-tab.is-active .fx-tab-ic { background: var(--atlas-grad); }
+
+.fx-fab {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  margin-top: -30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--atlas-grad);
+  color: var(--atlas-on-accent);
+  font-size: 1.4rem;
+  text-decoration: none;
+  box-shadow: var(--glow-azul);
+}
+
+/* Scrim + menu do botão "Mais" (mobile): seções fora da barra inferior */
+.fx-more-scrim {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--atlas-on-accent) 65%, transparent);
+  z-index: 60;
+}
+
+.fx-more-scrim[hidden] { display: none; }
+
+.fx-more-menu {
+  position: fixed;
+  left: var(--atlas-sp-4);
+  right: var(--atlas-sp-4);
+  bottom: calc(64px + env(safe-area-inset-bottom, 0) + var(--atlas-sp-3));
+  display: flex;
+  flex-direction: column;
+  gap: var(--atlas-sp-1);
+  padding: var(--atlas-sp-3);
+  background: var(--card);
+  border: 1px solid var(--card-borda);
+  border-radius: var(--atlas-r-lg);
+  box-shadow: 0 -4px 24px color-mix(in srgb, var(--atlas-on-accent) 30%, transparent);
+  z-index: 61;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.fx-more-menu[hidden] { display: none; }
+
+.fx-more-item {
+  padding: var(--atlas-sp-3) var(--atlas-sp-4);
+  border-radius: var(--atlas-r-sm);
+  color: var(--texto-suave);
+  text-decoration: none;
+  font-size: .9rem;
+  transition: background var(--atlas-dur) var(--atlas-ease), color var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-more-item:hover {
+  background: var(--card-borda);
+  color: var(--texto);
+}
+
+.fx-more-item.is-active {
+  background: var(--atlas-grad);
+  color: var(--atlas-on-accent);
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------------- */
+/* Responsivo: ≤768px vira app mobile (bottom bar + menu), > 768px       */
+/* mostra sidebar + pílulas fixas.                                       */
+/* -------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------- */
+/* Componente base: card ATLAS (fundo/borda/raio a partir dos tokens)    */
+/* -------------------------------------------------------------------- */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-borda);
+  border-radius: var(--atlas-r-lg);
+  padding: var(--atlas-sp-5);
+}
+
+.fx-text-pos { color: var(--verde); }
+.fx-text-neg { color: var(--vermelho); }
+
+/* -------------------------------------------------------------------- */
+/* Visão geral (dashboard) — layout "foco no essencial" (Task 7)         */
+/* -------------------------------------------------------------------- */
+
+.fx-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--atlas-sp-6);
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.fx-section-title {
+  margin: 0 0 var(--atlas-sp-4);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.fx-canvas-wrap {
+  position: relative;
+  height: 260px;
+}
+
+.fx-canvas-wrap canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Herói: Saldo do mês */
+.fx-hero {
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--atlas-accent) 10%, transparent), color-mix(in srgb, var(--atlas-accent-2) 2%, transparent) 60%),
+    var(--card);
+  border-color: var(--card-borda-forte);
+}
+
+.fx-hero-head {
+  margin-bottom: var(--atlas-sp-4);
+}
+
+.fx-hero-label {
+  margin: 0 0 var(--atlas-sp-2);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.fx-hero-value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(2.1rem, 6vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--atlas-accent-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-hero-note {
+  margin: var(--atlas-sp-2) 0 0;
+  font-size: .82rem;
+  color: var(--texto-suave);
+}
+
+.fx-hero-chart {
+  position: relative;
+  height: 120px;
+}
+
+.fx-hero-chart canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Mini-cards: Entradas / Saídas / Investido */
+.fx-minicards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--atlas-sp-4);
+}
+
+.fx-minicard {
+  padding: var(--atlas-sp-4) var(--atlas-sp-5);
+}
+
+.fx-minicard-label {
+  margin: 0 0 var(--atlas-sp-1);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.fx-minicard-value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto);
+}
+
+.fx-minicard--green .fx-minicard-value { color: var(--verde); }
+.fx-minicard--red .fx-minicard-value { color: var(--vermelho); }
+
+.fx-minicard-note {
+  margin: var(--atlas-sp-1) 0 0;
+  font-size: .76rem;
+  color: var(--texto-suave);
+}
+
+/* Card grande: Fluxo financeiro do mês */
+.fx-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atlas-sp-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--atlas-sp-4);
+}
+
+.fx-chart-head .fx-section-title { margin: 0; }
+
+.fx-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--atlas-sp-4);
+  color: var(--texto-suave);
+  font-size: .8rem;
+}
+
+.fx-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.fx-dot {
+  width: 9px;
+  height: 9px;
+  display: inline-block;
+  border-radius: 50%;
+}
+
+.fx-dot--cyan { background: var(--atlas-accent-2); box-shadow: 0 0 8px color-mix(in srgb, var(--atlas-accent-2) 50%, transparent); }
+.fx-dot--green { background: var(--verde); box-shadow: 0 0 8px color-mix(in srgb, var(--verde) 50%, transparent); }
+.fx-dot--red { background: var(--vermelho); box-shadow: 0 0 8px color-mix(in srgb, var(--vermelho) 50%, transparent); }
+
+/* Seções reveladas ao rolar */
+.fx-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 520ms var(--atlas-ease), transform 520ms var(--atlas-ease);
+}
+
+.fx-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Distribuição das despesas */
+.fx-progress-list {
+  display: grid;
+  gap: var(--atlas-sp-4);
+}
+
+.fx-progress-item {
+  display: grid;
+  grid-template-columns: minmax(80px, 110px) minmax(0, 1fr) auto;
+  gap: var(--atlas-sp-3);
+  align-items: center;
+  font-size: .85rem;
+  color: var(--texto-suave);
+}
+
+.fx-progress-item strong {
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fx-progress-track {
+  height: 8px;
+  border-radius: var(--atlas-r-pill);
+  background: var(--linha);
+  overflow: hidden;
+}
+
+.fx-progress-fill {
+  display: block;
+  height: 100%;
+  width: var(--value, 0%);
+  border-radius: inherit;
+  background: var(--atlas-grad);
+}
+
+/* Últimas movimentações */
+.fx-transactions {
+  display: grid;
+  gap: var(--atlas-sp-3);
+}
+
+.fx-transaction-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--atlas-sp-3);
+  padding-bottom: var(--atlas-sp-3);
+  border-bottom: 1px solid var(--linha);
+}
+
+.fx-transaction-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.fx-transaction-item p {
+  margin: 0;
+  font-size: .9rem;
+  color: var(--texto);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fx-transaction-item small {
+  color: var(--texto-suave);
+  font-size: .76rem;
+}
+
+.fx-transaction-item strong {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Desempenho mês a mês */
+.fx-monthly-performance {
+  display: grid;
+  gap: var(--atlas-sp-4);
+}
+
+.fx-month-row {
+  display: grid;
+  gap: var(--atlas-sp-2);
+  padding: var(--atlas-sp-4);
+  border: 1px solid var(--linha);
+  border-radius: var(--atlas-r-md);
+}
+
+.fx-month-row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--atlas-sp-3);
+  flex-wrap: wrap;
+}
+
+.fx-month-row-head h3 {
+  margin: 0;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--texto);
+  text-transform: capitalize;
+}
+
+.fx-month-saldo {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: .85rem;
+}
+
+.fx-month-bars {
+  display: grid;
+  gap: var(--atlas-sp-2);
+}
+
+.fx-month-bar {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr) auto;
+  gap: var(--atlas-sp-3);
+  align-items: center;
+  font-size: .8rem;
+  color: var(--texto-suave);
+}
+
+.fx-month-bar strong {
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fx-month-bar-track {
+  height: 7px;
+  border-radius: var(--atlas-r-pill);
+  background: var(--linha);
+  overflow: hidden;
+}
+
+.fx-month-bar-fill {
+  display: block;
+  height: 100%;
+  width: var(--value, 0%);
+  border-radius: inherit;
+}
+
+.fx-month-bar-fill--green { background: linear-gradient(90deg, color-mix(in srgb, var(--verde) 55%, transparent), var(--verde)); }
+.fx-month-bar-fill--red { background: linear-gradient(90deg, color-mix(in srgb, var(--vermelho) 55%, transparent), var(--vermelho)); }
+
+@media (max-width: 768px) {
+  .fx-app {
+    grid-template-columns: 1fr;
+  }
+
+  .fx-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(var(--sidebar-w), 80vw);
+    transform: translateX(-100%);
+    transition: transform var(--atlas-dur) var(--atlas-ease);
+    z-index: 100;
+    box-shadow: var(--glow-azul);
+  }
+
+  .fx-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .fx-menu {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fx-subnav {
+    display: none;
+  }
+
+  .fx-bottombar {
+    display: flex;
+  }
+
+  .fx-content {
+    padding-bottom: calc(var(--atlas-sp-8) + 64px);
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/* Planejar (Entradas x Saídas) — motor de recorrência (Task 8)          */
+/* -------------------------------------------------------------------- */
+
+.fx-planner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--atlas-sp-6);
+  max-width: var(--content-max);
+  width: 100%;
+}
+
+/* ---------- Controles gerais (form base reutilizada nesta página) ---------- */
+.fx-select,
+.fx-input {
+  min-height: 40px;
+  font: inherit;
+  font-size: .85rem;
+  border: 1px solid var(--card-borda);
+  border-radius: var(--atlas-r-sm);
+  background: var(--card);
+  color: var(--texto);
+  padding: 0 var(--atlas-sp-3);
+  outline: none;
+  transition: border-color var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-select:hover,
+.fx-input:hover {
+  border-color: var(--card-borda-forte);
+}
+
+.fx-select:focus,
+.fx-input:focus {
+  border-color: var(--atlas-accent);
+}
+
+.fx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 var(--atlas-sp-4);
+  border: 1px solid var(--card-borda);
+  border-radius: var(--atlas-r-sm);
+  background: var(--card);
+  color: var(--texto-suave);
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--atlas-dur) var(--atlas-ease), border-color var(--atlas-dur) var(--atlas-ease), background var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-btn:hover {
+  color: var(--texto);
+  border-color: var(--card-borda-forte);
+}
+
+.fx-btn--danger {
+  color: var(--vermelho);
+  border-color: color-mix(in srgb, var(--vermelho) 35%, transparent);
+  background: color-mix(in srgb, var(--vermelho) 10%, var(--card));
+}
+
+.fx-btn--danger:hover {
+  background: color-mix(in srgb, var(--vermelho) 18%, var(--card));
+  border-color: color-mix(in srgb, var(--vermelho) 55%, transparent);
+}
+
+.fx-btn--primary {
+  align-self: flex-start;
+  border-color: transparent;
+  color: var(--atlas-on-accent);
+  background: var(--atlas-grad);
+  box-shadow: var(--glow-azul);
+}
+
+.fx-btn--primary:hover {
+  color: var(--atlas-on-accent);
+  border-color: transparent;
+  filter: brightness(1.06);
+}
+
+/* ---------- Barra de topo: mês + nome + reiniciar ---------- */
+.fx-planner-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--atlas-sp-3);
+  flex-wrap: wrap;
+}
+
+.fx-planner-owner {
+  max-width: 220px;
+  flex: 1 1 160px;
+}
+
+.fx-planner-toolbar .fx-select {
+  flex: 0 0 auto;
+}
+
+.fx-planner-toolbar .fx-btn--danger {
+  margin-left: auto;
+}
+
+/* ---------- Cartões de resumo (entradas / fixos / não fixos / sobra) ---------- */
+.fx-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--atlas-sp-4);
+}
+
+.fx-metric-card {
+  padding: var(--atlas-sp-4) var(--atlas-sp-5);
+}
+
+.fx-metric-label {
+  margin: 0 0 var(--atlas-sp-1);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.fx-metric-value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto);
+}
+
+.fx-metric-note {
+  margin: var(--atlas-sp-1) 0 0;
+  font-size: .76rem;
+  color: var(--texto-suave);
+}
+
+.fx-metric-card--pos { border-color: color-mix(in srgb, var(--verde) 25%, var(--card-borda)); }
+.fx-metric-card--neg { border-color: color-mix(in srgb, var(--vermelho) 25%, var(--card-borda)); }
+
+/* ---------- Grid principal: entradas+resultado à esquerda, saídas à direita ---------- */
+.fx-planner-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.25fr);
+  gap: var(--atlas-sp-5);
+  align-items: start;
+}
+
+.fx-planner-side {
+  display: grid;
+  gap: var(--atlas-sp-5);
+}
+
+.fx-planner-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.fx-planner-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atlas-sp-3);
+  padding: var(--atlas-sp-4) var(--atlas-sp-5);
+  border-bottom: 1px solid var(--linha);
+}
+
+.fx-planner-head h2 {
+  margin: 0;
+  font-size: .86rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--texto);
+}
+
+.fx-planner-head small {
+  display: block;
+  margin-top: 4px;
+  color: var(--texto-suave);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: .78rem;
+}
+
+.fx-planner-card--expenses .fx-planner-head {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--vermelho) 14%, transparent), transparent 70%);
+  border-left: 3px solid var(--vermelho);
+}
+
+.fx-planner-card--incomes .fx-planner-head {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--verde) 12%, transparent), transparent 70%);
+  border-left: 3px solid var(--verde);
+}
+
+.fx-planner-badge {
+  min-height: 26px;
+  font-size: .82rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--atlas-sp-3);
+  border-radius: var(--atlas-r-pill);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fx-planner-badge--green {
+  color: var(--verde);
+  background: color-mix(in srgb, var(--verde) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--verde) 30%, transparent);
+}
+
+.fx-planner-badge--red {
+  color: var(--vermelho);
+  background: color-mix(in srgb, var(--vermelho) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vermelho) 30%, transparent);
+}
+
+/* ---------- Subgrupos (fixos / não fixos) ---------- */
+.fx-planner-subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atlas-sp-3);
+  padding: var(--atlas-sp-3) var(--atlas-sp-5);
+  background: color-mix(in srgb, var(--texto) 3%, transparent);
+  border-bottom: 1px solid var(--linha);
+  color: var(--texto-suave);
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.fx-planner-subhead strong {
+  color: var(--texto);
+  font-size: .9rem;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Linhas editáveis (rolam na horizontal só se necessário,   ---------- */
+/* nunca a página inteira)                                               */
+.fx-planner-rows {
+  display: grid;
+  overflow-x: auto;
+}
+
+.fx-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 128px 36px;
+  gap: var(--atlas-sp-2);
+  align-items: center;
+  padding: 6px var(--atlas-sp-3) 6px var(--atlas-sp-5);
+  border-bottom: 1px solid var(--linha);
+  min-width: 360px;
+}
+
+.fx-row:last-child {
+  border-bottom: 0;
+}
+
+.fx-row input,
+.fx-row select {
+  min-height: 38px;
+  font: inherit;
+  font-size: .88rem;
+  border: 1px solid transparent;
+  border-radius: var(--atlas-r-sm);
+  background: transparent;
+  color: var(--texto);
+  padding: 0 var(--atlas-sp-2);
+  outline: none;
+  transition: border-color var(--atlas-dur) var(--atlas-ease), background var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-row input::placeholder {
+  color: var(--texto-fraco);
+}
+
+.fx-row input:hover,
+.fx-row select:hover {
+  background: color-mix(in srgb, var(--texto) 4%, transparent);
+}
+
+.fx-row input:focus,
+.fx-row select:focus {
+  border-color: var(--atlas-accent);
+  background: var(--fundo);
+}
+
+.fx-row-value {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-planner-card--expenses .fx-row-value:focus {
+  border-color: var(--vermelho);
+}
+
+.fx-row-remove {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--atlas-r-sm);
+  background: transparent;
+  color: var(--texto-fraco);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color var(--atlas-dur) var(--atlas-ease), background var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-row-remove:hover {
+  color: var(--vermelho);
+  background: color-mix(in srgb, var(--vermelho) 10%, transparent);
+}
+
+.fx-planner-add {
+  display: flex;
+  padding: var(--atlas-sp-3) var(--atlas-sp-5) var(--atlas-sp-4);
+}
+
+.fx-planner-add .fx-btn {
+  min-height: 40px;
+  font-size: .85rem;
+}
+
+/* ---------- Cartão de resultado (sobra + reserva) ---------- */
+.fx-planner-result {
+  display: grid;
+  gap: var(--atlas-sp-4);
+}
+
+.fx-result-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--atlas-sp-3);
+  align-items: center;
+  padding: var(--atlas-sp-4);
+  border: 1px solid var(--linha);
+  border-radius: var(--atlas-r-md);
+  background: color-mix(in srgb, var(--texto) 2%, transparent);
+  transition: border-color var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-result-line p {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: .86rem;
+}
+
+.fx-result-line strong {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fx-result-line--highlight {
+  border-color: color-mix(in srgb, var(--verde) 35%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--verde) 8%, transparent), transparent 60%);
+}
+
+.fx-result-line--highlight.is-negative {
+  border-color: color-mix(in srgb, var(--vermelho) 40%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--vermelho) 9%, transparent), transparent 60%);
+}
+
+.fx-result-note {
+  margin: 0;
+  color: var(--texto-fraco);
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+/* Barra de renda comprometida */
+.fx-commit-track {
+  position: relative;
+  height: 10px;
+  border-radius: var(--atlas-r-pill);
+  background: var(--linha);
+  overflow: hidden;
+}
+
+.fx-commit-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--value, 0%);
+  border-radius: var(--atlas-r-pill);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--verde) 60%, transparent), var(--verde));
+  transition: width 220ms ease;
+}
+
+.fx-commit-fill.is-warn {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--dourado) 55%, transparent), var(--dourado));
+}
+
+.fx-commit-fill.is-danger {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--vermelho) 60%, transparent), var(--vermelho));
+}
+
+.fx-commit-caption {
+  display: flex;
+  justify-content: space-between;
+  color: var(--texto-suave);
+  font-size: .8rem;
+}
+
+/* ============================================================
+   Motor de recorrência — linha de RENDA (com frequência) e
+   linha de GASTO FIXO (com dia do mês).
+   ============================================================ */
+
+.fx-row--income {
+  grid-template-columns: minmax(160px, 1fr) 120px 34px;
+  grid-template-areas:
+    "label value remove"
+    "freq  freq  remove"
+    "inst  inst  inst";
+  row-gap: var(--atlas-sp-2);
+  padding-top: var(--atlas-sp-2);
+  padding-bottom: var(--atlas-sp-2);
+}
+
+.fx-row--income .fx-row-label { grid-area: label; }
+.fx-row--income .fx-row-value { grid-area: value; }
+.fx-row--income .fx-row-remove { grid-area: remove; align-self: center; }
+.fx-row--income .fx-installments { grid-area: inst; }
+
+/* Campo de total (só leitura) da renda personalizada */
+.fx-row-total {
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--verde);
+  cursor: default;
+}
+
+/* Editor de parcelas (renda personalizada) */
+.fx-installments {
+  margin-top: 4px;
+  padding: var(--atlas-sp-3);
+  border: 1px dashed var(--card-borda-forte);
+  border-radius: var(--atlas-r-sm);
+  background: color-mix(in srgb, var(--verde) 4%, transparent);
+  display: grid;
+  gap: var(--atlas-sp-2);
+}
+
+.fx-inst-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atlas-sp-3);
+  font-size: .76rem;
+  color: var(--texto-suave);
+}
+
+.fx-inst-add {
+  min-height: 30px;
+  padding: 0 var(--atlas-sp-3);
+  font-size: .8rem;
+  border: 1px solid color-mix(in srgb, var(--verde) 30%, transparent);
+  border-radius: var(--atlas-r-sm);
+  background: color-mix(in srgb, var(--verde) 10%, transparent);
+  color: var(--verde);
+  cursor: pointer;
+}
+
+.fx-inst-add:hover {
+  background: color-mix(in srgb, var(--verde) 18%, transparent);
+}
+
+.fx-inst-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 30px;
+  gap: var(--atlas-sp-2);
+  align-items: center;
+}
+
+.fx-inst-date,
+.fx-inst-value {
+  min-height: 34px;
+  font: inherit;
+  font-size: .84rem;
+  border: 1px solid var(--card-borda);
+  border-radius: var(--atlas-r-sm);
+  background: var(--fundo);
+  color: var(--texto);
+  padding: 0 var(--atlas-sp-2);
+  outline: none;
+}
+
+.fx-inst-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-inst-date:focus,
+.fx-inst-value:focus {
+  border-color: var(--atlas-accent);
+}
+
+.fx-inst-remove {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--atlas-r-sm);
+  background: transparent;
+  color: var(--texto-fraco);
+  font-size: .95rem;
+  cursor: pointer;
+}
+
+.fx-inst-remove:hover {
+  color: var(--vermelho);
+  background: color-mix(in srgb, var(--vermelho) 10%, transparent);
+}
+
+.fx-inst-empty {
+  margin: 0;
+  font-size: .78rem;
+  color: var(--texto-fraco);
+  line-height: 1.4;
+}
+
+.fx-row--income .fx-row-freq {
+  grid-area: freq;
+  display: flex;
+  gap: var(--atlas-sp-2);
+  align-items: center;
+}
+
+.fx-freq-type,
+.fx-freq-input {
+  min-height: 34px;
+  font: inherit;
+  font-size: .82rem;
+  border: 1px solid var(--card-borda);
+  border-radius: var(--atlas-r-sm);
+  background: var(--fundo);
+  color: var(--texto);
+  padding: 0 var(--atlas-sp-2);
+  outline: none;
+}
+
+.fx-freq-type { flex: 0 0 auto; }
+
+.fx-freq-type:focus,
+.fx-freq-input:focus {
+  border-color: var(--atlas-accent);
+}
+
+.fx-row--income .fx-freq-param {
+  flex: 1 1 auto;
+  display: flex;
+  min-width: 0;
+}
+
+.fx-row--income .fx-freq-input { width: 100%; }
+
+.fx-freq-note {
+  align-self: center;
+  padding-left: 4px;
+  font-size: .78rem;
+  color: var(--texto-suave);
+}
+
+/* Linha de GASTO FIXO: descrição + dia do mês + valor + remover */
+.fx-row--fixed {
+  grid-template-columns: minmax(120px, 1fr) 58px 108px 34px;
+}
+
+.fx-row-day {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1180px) {
+  .fx-planner-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .fx-planner-toolbar .fx-btn--danger {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .fx-row {
+    grid-template-columns: minmax(140px, 1fr) 104px 32px;
+    padding-left: var(--atlas-sp-3);
+  }
+
+  .fx-row--income {
+    grid-template-columns: minmax(140px, 1fr) 96px 30px;
+  }
+
+  .fx-row--income .fx-row-freq { flex-wrap: wrap; }
+
+  .fx-row--fixed {
+    grid-template-columns: minmax(100px, 1fr) 48px 84px 30px;
+  }
+}
+
+/* ============================================================
+   Entradas & Despesas — páginas de visualização (Task 9)
+   ============================================================ */
+
+.fx-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--atlas-sp-6);
+  max-width: var(--content-max);
+  width: 100%;
+}
+
+/* ---------- Barra de filtros no topo da página (Despesas) ---------- */
+.fx-page-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--atlas-sp-3);
+  flex-wrap: wrap;
+}
+
+/* ---------- Grid de duas colunas (gráfico + card auxiliar) ---------- */
+.fx-cols-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--atlas-sp-5);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .fx-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Card de dica (link para a página de lançamento) ---------- */
+.fx-hint {
+  display: flex;
+  flex-direction: column;
+  gap: var(--atlas-sp-3);
+}
+
+.fx-hint p {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: .88rem;
+  line-height: 1.55;
+}
+
+.fx-hint strong {
+  color: var(--texto);
+}
+
+/* ---------- Tabelas (Histórico de entradas / Tabela de despesas) ---------- */
+.fx-table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.fx-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atlas-sp-3);
+  padding: var(--atlas-sp-4) var(--atlas-sp-5);
+  border-bottom: 1px solid var(--linha);
+  flex-wrap: wrap;
+}
+
+.fx-table-toolbar .fx-section-title {
+  margin: 0;
+}
+
+.fx-table-filters {
+  display: flex;
+  gap: var(--atlas-sp-2);
+  flex-wrap: wrap;
+}
+
+.fx-table-filters .fx-input {
+  min-width: 180px;
+}
+
+/* Rola só a tabela na horizontal quando necessário — nunca a página inteira */
+.fx-table-scroll {
+  overflow-x: auto;
+}
+
+.fx-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+}
+
+.fx-table th,
+.fx-table td {
+  padding: var(--atlas-sp-3) var(--atlas-sp-5);
+  text-align: left;
+  font-size: .85rem;
+  white-space: nowrap;
+}
+
+.fx-table thead th {
+  color: var(--texto-suave);
+  font-weight: 600;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 1px solid var(--linha);
+}
+
+.fx-table tbody tr {
+  border-bottom: 1px solid var(--linha);
+  transition: background var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-table tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.fx-table tbody tr:hover {
+  background: color-mix(in srgb, var(--texto) 3%, transparent);
+}
+
+.fx-empty-cell {
+  white-space: normal;
+  text-align: center;
+  color: var(--texto-fraco);
+  padding: var(--atlas-sp-7) var(--atlas-sp-5) !important;
+}
+
+.fx-empty-cell a {
+  color: var(--atlas-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.fx-empty-cell a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Tags de status (Receita / tipo de despesa) ---------- */
+.fx-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--atlas-sp-3);
+  border-radius: var(--atlas-r-pill);
+  font-size: .74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fx-tag--green {
+  color: var(--verde);
+  background: color-mix(in srgb, var(--verde) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--verde) 30%, transparent);
+}
+
+.fx-tag--red {
+  color: var(--vermelho);
+  background: color-mix(in srgb, var(--vermelho) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--vermelho) 30%, transparent);
+}
+
+/* ---------- Lista de compras do mês (dentro de Despesas) ---------- */
+.fx-shopping-form {
+  display: flex;
+  gap: var(--atlas-sp-3);
+  padding: var(--atlas-sp-4) var(--atlas-sp-5);
+  flex-wrap: wrap;
+}
+
+.fx-shopping-form .fx-input {
+  flex: 1 1 160px;
+}
+
+.fx-shopping-form .fx-btn {
+  flex: 0 0 auto;
+}
+
+.fx-shopping-list {
+  display: grid;
+}
+
+.fx-shopping-item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto 30px;
+  gap: var(--atlas-sp-3);
+  align-items: center;
+  padding: var(--atlas-sp-3) var(--atlas-sp-5);
+  border-bottom: 1px solid var(--linha);
+}
+
+.fx-shopping-item:last-child {
+  border-bottom: 0;
+}
+
+.fx-shopping-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--verde);
+  cursor: pointer;
+}
+
+.fx-shopping-name {
+  color: var(--texto);
+  font-size: .9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fx-shopping-value {
+  color: var(--texto);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fx-shopping-item.is-done .fx-shopping-name,
+.fx-shopping-item.is-done .fx-shopping-value {
+  color: var(--texto-fraco);
+  text-decoration: line-through;
+}
+
+.fx-shopping-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atlas-sp-3);
+  padding: var(--atlas-sp-4) var(--atlas-sp-5);
+  border-top: 1px solid var(--linha);
+  flex-wrap: wrap;
+}
+
+.fx-shopping-totals {
+  display: flex;
+  gap: var(--atlas-sp-4);
+  flex-wrap: wrap;
+  font-size: .84rem;
+  color: var(--texto-suave);
+}
+
+.fx-shopping-totals strong {
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-shopping-launch {
+  display: flex;
+  gap: var(--atlas-sp-2);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .fx-table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fx-table-filters {
+    flex-direction: column;
+  }
+
+  .fx-table-filters .fx-input,
+  .fx-table-filters .fx-select {
+    width: 100%;
+  }
+
+  .fx-shopping-launch {
+    width: 100%;
+  }
+
+  .fx-shopping-launch .fx-select,
+  .fx-shopping-launch .fx-btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* ============================================================
+   Investimentos — aporte mensal (Task 10)
+   ------------------------------------------------------------
+   Reaproveita .fx-row / .fx-planner-* (Planejar, Task 8) e
+   .fx-minicard / .fx-canvas-wrap / .fx-hint (Visão geral e
+   Entradas). Só o grid de colunas da linha muda: mês (fixo) +
+   valor (flexível) + remover, em vez de label + valor + remover.
+   ============================================================ */
+.fx-row--aporte {
+  grid-template-columns: 148px minmax(120px, 1fr) 36px;
+}
+
+@media (max-width: 640px) {
+  .fx-row--aporte {
+    grid-template-columns: minmax(120px, 1fr) 96px 32px;
+  }
+}
+
+/* ============================================================
+   Relatórios & Análises — páginas de visualização (Task 11)
+   ------------------------------------------------------------
+   Reaproveita .fx-page / .fx-chart-head / .fx-canvas-wrap /
+   .fx-table-card / .fx-table-toolbar / .fx-tag (Task 9) e
+   .fx-btn / .fx-input / .fx-planner-badge (Task 8). Só os
+   componentes novos desta dupla de páginas entram aqui: a barra
+   de topo com o seletor de período, o controle segmentado
+   (Mensal/Trimestral/Anual) e os chips de filtro (Fixos/Não
+   fixos) da página Análises.
+   ============================================================ */
+
+.fx-page-toolbar-actions {
+  display: flex;
+  gap: var(--atlas-sp-2);
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+/* ---------- Controle segmentado (Relatórios: Mensal/Trimestral/Anual) ---------- */
+.fx-segmented {
+  display: inline-flex;
+  border: 1px solid var(--card-borda);
+  border-radius: var(--atlas-r-sm);
+  overflow: hidden;
+}
+
+.fx-segmented button {
+  min-height: 38px;
+  padding: 0 var(--atlas-sp-4);
+  border: 0;
+  border-right: 1px solid var(--card-borda);
+  background: var(--card);
+  color: var(--texto-suave);
+  font: inherit;
+  font-size: .85rem;
+  cursor: pointer;
+  transition: color var(--atlas-dur) var(--atlas-ease), background var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-segmented button:last-child {
+  border-right: 0;
+}
+
+.fx-segmented button:hover {
+  color: var(--texto);
+}
+
+.fx-segmented button.is-active {
+  background: var(--atlas-grad);
+  color: var(--atlas-on-accent);
+  font-weight: 600;
+}
+
+/* ---------- Tag neutra (ex.: "Receitas x despesas" na tabela de Relatórios) ---------- */
+.fx-tag--neutral {
+  color: var(--texto-suave);
+  background: color-mix(in srgb, var(--texto) 6%, transparent);
+  border: 1px solid var(--card-borda);
+}
+
+/* ---------- Controles do card "Gasto por categoria" (Análises) ---------- */
+.fx-analise-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--atlas-sp-3);
+  flex-wrap: wrap;
+}
+
+.fx-analise-controls .fx-input {
+  min-width: 210px;
+  flex: 1 1 210px;
+}
+
+/* ---------- Chips de filtro (Análises: Fixos / Não fixos) ---------- */
+.fx-chip-group {
+  display: flex;
+  gap: var(--atlas-sp-2);
+  flex-wrap: wrap;
+}
+
+.fx-chip {
+  min-height: 38px;
+  padding: 0 var(--atlas-sp-4);
+  border: 1px solid var(--card-borda);
+  border-radius: var(--atlas-r-pill);
+  background: var(--card);
+  color: var(--texto-suave);
+  font: inherit;
+  font-size: .84rem;
+  cursor: pointer;
+  transition: color var(--atlas-dur) var(--atlas-ease), background var(--atlas-dur) var(--atlas-ease), border-color var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-chip:hover {
+  color: var(--texto);
+  border-color: var(--card-borda-forte);
+}
+
+.fx-chip.is-active {
+  background: color-mix(in srgb, var(--vermelho) 14%, transparent);
+  color: var(--vermelho);
+  border-color: color-mix(in srgb, var(--vermelho) 35%, transparent);
+}
+
+@media (max-width: 640px) {
+  .fx-page-toolbar-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .fx-page-toolbar-actions .fx-btn {
+    flex: 1 1 auto;
+  }
+
+  .fx-segmented {
+    width: 100%;
+  }
+
+  .fx-segmented button {
+    flex: 1 1 auto;
+  }
+
+  .fx-analise-controls {
+    width: 100%;
+  }
+
+  .fx-analise-controls .fx-input {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+}
+
+/* ============================================================
+   Configurações + boas-vindas / dados de exemplo (Task 12)
+   ------------------------------------------------------------
+   Reaproveita .fx-cols-2 / .fx-segmented / .fx-btn / .fx-input /
+   .fx-select / .card / .fx-section-title dos módulos anteriores.
+   Só os componentes novos desta página entram aqui: o divisor,
+   a chave (switch) de preferências, o form de perfil e o cartão
+   de boas-vindas da Visão geral quando o estado está vazio.
+   ============================================================ */
+
+.fx-divider {
+  height: 1px;
+  margin: var(--atlas-sp-4) 0;
+  background: var(--linha);
+}
+
+.fx-note {
+  margin: 0 0 var(--atlas-sp-4);
+  color: var(--texto-suave);
+  font-size: .86rem;
+  line-height: 1.55;
+}
+
+/* Nota mais apagada — usada no aviso "APK ainda não gerado" */
+.fx-note--muted {
+  margin-top: var(--atlas-sp-3);
+  margin-bottom: 0;
+  color: var(--texto-fraco);
+  font-size: .8rem;
+}
+.fx-note--muted code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .95em;
+  color: var(--texto-suave);
+}
+
+/* Selo ao lado de um título de seção (ex.: "Aplicativo · Teste") */
+.fx-badge {
+  display: inline-block;
+  margin-left: var(--atlas-sp-2);
+  padding: 2px 8px;
+  border-radius: var(--atlas-r-pill);
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: var(--verde);
+  background: color-mix(in srgb, var(--verde) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--verde) 34%, transparent);
+}
+
+/* Botão-âncora desativado enquanto o APK não existe: não navega,
+   não engana o clique, e conta o porquê no aviso ao lado. */
+.fx-btn--disabled {
+  opacity: .5;
+  pointer-events: none;
+  filter: grayscale(.4);
+}
+
+/* ---------- Chave (switch) de preferências ---------- */
+.fx-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atlas-sp-4);
+  padding: var(--atlas-sp-3) 0;
+}
+
+.fx-switch-row + .fx-switch-row {
+  border-top: 1px solid var(--linha);
+}
+
+.fx-switch-row strong {
+  display: block;
+  color: var(--texto);
+  font-size: .88rem;
+}
+
+.fx-switch-row p {
+  margin: 2px 0 0;
+  color: var(--texto-suave);
+  font-size: .78rem;
+}
+
+.fx-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 26px;
+}
+
+.fx-switch input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.fx-switch span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--card-borda);
+  border-radius: var(--atlas-r-pill);
+  background: var(--linha);
+  transition: background var(--atlas-dur) var(--atlas-ease), border-color var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-switch span::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--texto-fraco);
+  transition: transform var(--atlas-dur) var(--atlas-ease), background var(--atlas-dur) var(--atlas-ease);
+}
+
+.fx-switch input:checked + span {
+  background: color-mix(in srgb, var(--verde) 30%, transparent);
+  border-color: color-mix(in srgb, var(--verde) 45%, transparent);
+}
+
+.fx-switch input:checked + span::after {
+  transform: translateX(20px);
+  background: var(--verde);
+}
+
+.fx-switch input:focus-visible + span {
+  border-color: var(--atlas-accent);
+  box-shadow: var(--glow-azul);
+}
+
+/* ---------- Backup: botões de exportar/importar/restaurar ---------- */
+.fx-config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--atlas-sp-3);
+}
+
+/* ---------- Form de perfil ---------- */
+.fx-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--atlas-sp-4);
+}
+
+.fx-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fx-field label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.fx-field .fx-input,
+.fx-field .fx-select {
+  width: 100%;
+}
+
+.fx-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  margin-top: var(--atlas-sp-2);
+}
+
+/* ---------- Boas-vindas (Visão geral, estado vazio) ---------- */
+[data-fx-dashboard-content] {
+  display: contents;
+}
+
+[data-fx-dashboard-content][hidden] {
+  display: none;
+}
+
+.fx-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--atlas-sp-4);
+  padding: var(--atlas-sp-8) var(--atlas-sp-5);
+  text-align: center;
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--atlas-accent) 10%, transparent), color-mix(in srgb, var(--atlas-accent-2) 2%, transparent) 60%),
+    var(--card);
+  border-color: var(--card-borda-forte);
+}
+
+.fx-welcome[hidden] {
+  display: none;
+}
+
+.fx-welcome h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.fx-welcome p {
+  margin: 0;
+  max-width: 440px;
+  color: var(--texto-suave);
+  font-size: .92rem;
+  line-height: 1.6;
+}
+
+.fx-welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--atlas-sp-3);
+  margin-top: var(--atlas-sp-2);
+}
+
+@media (max-width: 640px) {
+  .fx-welcome-actions {
+    flex-direction: column;
+    align-self: stretch;
+    width: 100%;
+  }
+
+  .fx-welcome-actions .fx-btn {
+    width: 100%;
+  }
+
+  .fx-config-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fx-config-actions .fx-btn {
+    width: 100%;
+  }
+}

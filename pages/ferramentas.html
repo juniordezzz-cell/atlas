@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ferramentas do ATLAS: a bancada de utilidades que rodam ao lado do sistema. A primeira e o Financas — controle de entradas e saidas.">
+  <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ATLAS">
+  <title>ATLAS — Ferramentas</title>
+  <!-- Inter e JetBrains Mono servidas pelo proprio ATLAS (ver themes/atlas-fonts.css). -->
+  <link rel="stylesheet" href="../themes/atlas-fonts.css">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/ferramentas.css">
+
+  <!-- ===== ATLAS · camada global ===== -->
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../themes/atlas-effects.css">
+  <link rel="stylesheet" href="../themes/atlas-print.css" media="print">
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <link rel="stylesheet" href="../core/ui/atlas-palette.css">
+
+  <script src="../core/atlas-storage.js"></script>
+  <script src="../core/atlas-contabilidade.js"></script>
+  <script src="../core/atlas-supervisor.js"></script>
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <script src="../core/atlas-auth.js"></script>
+  <script src="../core/atlas-pwa.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-mark">
+        <img src="../assets/iconeatlas.png" alt="ATLAS">
+      </span>
+      <span class="logo-text">ATLAS <span class="logo-section">FERRAMENTAS</span></span>
+    </div>
+    <!-- O menu é injetado por js/atlas-nav.js a partir de AtlasShell.destinos().
+         data-atlas-nav="ferramentas" marca este item como o atual. -->
+    <nav class="nav" data-atlas-nav="ferramentas"></nav>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="greet">
+        <h1>Ferramentas</h1>
+        <p>A bancada do ATLAS — utilidades que rodam ao lado do sistema</p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" aria-hidden="true"></div>
+      </div>
+    </header>
+
+    <div class="tools-intro">
+      <p>Cada ferramenta vive na sua própria pasta e abre em tela cheia. Escolha uma para começar — a bancada cresce conforme novas forem entrando.</p>
+    </div>
+
+    <!-- ============================================================
+         COMO CRESCER ESTA TELA
+         Para adicionar uma ferramenta: duplique um <a class="tool-card">
+         dentro da .tools-grid da seção certa, aponte o href para o
+         index.html dela em ../Ferramentas/<pasta>/… e atualize o
+         contador (.tools-sec__count) da seção. Para um grupo novo,
+         duplique a <section class="tools-sec"> inteira.
+         O "F" maiúsculo de Ferramentas/ importa: o site publicado no
+         GitHub Pages roda em Linux, que diferencia maiúsculas.
+         ============================================================ -->
+
+    <!-- ============ SEÇÃO · Gerir o dinheiro ============ -->
+    <section class="tools-sec">
+      <div class="tools-sec__head">
+        <span class="tools-sec__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <path d="M2 10h20"/>
+          </svg>
+        </span>
+        <h2 class="tools-sec__title">Gerir o dinheiro</h2>
+        <span class="tools-sec__sub">Para onde vai o seu caixa?</span>
+        <span class="tools-sec__count">1</span>
+      </div>
+
+      <div class="tools-grid">
+
+        <!-- FERRAMENTA · Finanças (entradas e saídas)
+             Mora em Ferramentas/entradas-saidas/financas/ e é um app
+             próprio, com manifest e service worker dele — por isso o
+             link sai da casca do ATLAS e entra no index.html da tool. -->
+        <a class="tool-card" href="../Ferramentas/entradas-saidas/financas/index.html">
+          <span class="tool-card__badge tool-card__badge--free">Grátis</span>
+          <span class="tool-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </span>
+          <h3 class="tool-card__title">Finanças</h3>
+          <p class="tool-card__desc">Controle de fluxo de caixa pessoal: registre entradas e despesas, planeje o mês e acompanhe investimentos, com relatórios e análises.</p>
+          <div class="tool-card__chips">
+            <span class="tool-card__chip">Entradas e saídas</span>
+            <span class="tool-card__chip">Planejamento</span>
+            <span class="tool-card__chip">Relatórios</span>
+          </div>
+          <span class="tool-card__cta">
+            Abrir ferramenta
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </span>
+        </a>
+
+        <!-- Marcador honesto: a bancada vai crescer. Não finge ser
+             clicável (ver .tool-card--soon). Troque por uma ferramenta
+             real quando existir. -->
+        <div class="tool-card tool-card--soon" aria-hidden="true">
+          <span class="tool-card__badge tool-card__badge--soon">Em breve</span>
+          <span class="tool-card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </span>
+          <h3 class="tool-card__title">Próxima ferramenta</h3>
+          <p class="tool-card__desc">Novas utilidades entram aqui conforme ficarem prontas — cada uma na sua pasta, sem mexer no resto do ATLAS.</p>
+          <span class="tool-card__cta">Em construção</span>
+        </div>
+
+        <div class="tool-card tool-card--soon" aria-hidden="true">
+          <span class="tool-card__badge tool-card__badge--soon">Em breve</span>
+          <span class="tool-card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </span>
+          <h3 class="tool-card__title">Próxima ferramenta</h3>
+          <p class="tool-card__desc">Espaço reservado para a próxima ideia da bancada. Quando você definir, viramos este card num link de verdade.</p>
+          <span class="tool-card__cta">Em construção</span>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toasts"></div>
+
+<!-- Stores dos módulos: o Oráculo e a paleta (Ctrl+K) do shell somam os
+     quatro módulos e o caixa. Sem eles, o Oráculo abriria "sem saber"
+     responder patrimônio nesta tela — o mesmo conjunto que as outras
+     páginas de pages/ já carregam. -->
+<script src="../wallets/walletStore.js"></script>
+<script src="../wallets/walletTypes.js"></script>
+<script src="../wallets/walletLedger.js"></script>
+<script src="../wallets/walletCaixa.js"></script>
+<script src="../wallets/walletManager.js"></script>
+<script src="../wallets/walletMenus.js"></script>
+<script src="../js/atlas-nav.js"></script>
+<script src="../js/atlas-topbar.js"></script>
+<script src="../core/ui/atlas-flash.js"></script>
+<script src="../core/ui/atlas-icons.js"></script>
+<script src="../core/ui/atlas-ui.js"></script>
+
+<script src="../RWA/js/store.js"></script>
+<script src="../defi/js/tokens.js"></script>
+<script src="../defi/js/performance.js"></script>
+<script src="../defi/js/data.js"></script>
+<script src="../hold/data/seed.js"></script>
+<script src="../hold/js/state.js"></script>
+<script src="../trade/assets/js/core/util.js"></script>
+<script src="../trade/assets/js/core/store.js"></script>
+<script src="../trade/assets/js/core/seed.js"></script>
+<script src="../trade/assets/js/core/state.js"></script>
+<script src="../js/atlas-consolidation.js"></script>
+<script src="../core/atlas-notifications.js"></script>
+<script src="../core/ui/atlas-palette.js"></script>
+<script src="../core/atlas-vocabulario.js"></script>
+<script src="../core/ui/atlas-shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+APK do Finanças — onde o arquivo entra
+=======================================
+
+O botão "Baixar APK" da tela de Configurações do Finanças aponta para:
+
+    downloads/atlas-financas.apk
+
+Coloque o arquivo gerado aqui, com EXATAMENTE esse nome. Assim que ele
+existir, o botão deixa de aparecer desativado e passa a baixá-lo.
+
+Como gerar o APK (rota PWABuilder)
+----------------------------------
+1. Publique o site (GitHub Pages) — o PWABuilder precisa de uma URL
+   pública em HTTPS.
+2. Abra https://www.pwabuilder.com e informe a URL do Finanças, algo como:
+   https://<seu-usuario>.github.io/atlas/Ferramentas/entradas-saidas/financas/
+3. Em "Package for stores" -> Android, gere o pacote. Baixe o .apk de
+   TESTE (assinado com a chave de teste do próprio PWABuilder).
+4. Renomeie para atlas-financas.apk e salve nesta pasta.
+5. Faça commit e publique de novo — o botão passa a servir o download.
+
+No Android: ao abrir o .apk, permita "instalar de fontes desconhecidas"
+para o navegador/arquivos. É um build de teste, não a versão de loja.
