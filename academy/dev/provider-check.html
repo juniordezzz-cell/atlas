@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>Provider check</title>
+<script src="../../core/http.js"></script>
+<script src="../../core/providers/registry.js"></script>
+<script src="../../core/providers/feargreed.js"></script>
+<script src="../../core/providers/coingecko.js"></script>
+<script src="../../core/providers/coinpaprika.js"></script>
+<script src="../../core/providers/binance.js"></script>
+<script src="../../core/providers/coinlore.js"></script>
+<script src="../../core/providers/defillama.js"></script>
+<script src="../../core/providers/id-map.js"></script>
+<script src="../js/market-data.js"></script>
+</head><body>
+<pre id="out">Abra o console. Helpers: assert(cond,msg), P (AtlasProviders), H (AtlasHttp).</pre>
+<script>
+  window.P = window.AtlasProviders; window.H = window.AtlasHttp;
+  window.assert = function (c, m) {
+    console.log((c ? "OK: " : "FALHOU: ") + m); return !!c;
+  };
+</script>
+</body></html>
