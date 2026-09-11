@@ -262,7 +262,7 @@ a { color: inherit; text-decoration: none; }
 .cc-globe-label { position: absolute; top: 11px; left: 15px; z-index: 2; display: flex; flex-direction: column; pointer-events: none; }
 .cc-globe-title { font-family: var(--fonte-titulo); font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--texto); }
 .cc-globe-sub { font-size: 10px; color: var(--texto-fraco); letter-spacing: 0.03em; }
-.cc-globe { height: 218px; }
+.cc-globe { height: 236px; }
 
 /* leitura interativa da rede selecionada */
 .cc-globe-readout {

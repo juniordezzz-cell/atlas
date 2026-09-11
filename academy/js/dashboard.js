@@ -108,8 +108,8 @@
   function globeStage() {
     var stage = h("div","cc-globe-stage");
     var label = h("div","cc-globe-label");
-    label.appendChild(h("span","cc-globe-title","MAPA DE REDES DeFi"));
-    label.appendChild(h("span","cc-globe-sub","nós = redes reais · tamanho = TVL · cor = 24h · clique p/ filtrar"));
+    label.appendChild(h("span","cc-globe-title","RADAR DE LIQUIDEZ DeFi"));
+    label.appendChild(h("span","cc-globe-sub","raio = TVL · cor = 24h · clique num blip p/ filtrar"));
     var globeBox = h("div","cc-globe");
     var readout = h("div","cc-globe-readout");
     stage.appendChild(label); stage.appendChild(globeBox); stage.appendChild(readout);
