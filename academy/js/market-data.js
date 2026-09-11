@@ -73,6 +73,10 @@
       });
     },
 
+    /* Lista ampla do mercado (top ~250 por market cap). Alimenta o
+       heatmap, o ranking, a dominância e os movers numa fonte só. */
+    markets: function () { return market(250); },
+
     global: function () {
       return P.tryChain("global", "global", []);
     },
@@ -118,11 +122,11 @@
         }).catch(function () { return []; });
     },
 
+    /* Categorias/setores na ordem natural do CoinGecko (por market cap).
+       Quem exibe decide como ordenar/cortar. */
     categories: function () {
       return P.tryChain("categories", "categories", []).then(function (cats) {
-        return (cats || []).filter(function (c) { return c.change24h != null; })
-                           .sort(function (a, b) { return b.change24h - a.change24h; })
-                           .slice(0, 12);
+        return (cats || []).filter(function (c) { return c.marketCap; }).slice(0, 24);
       }).catch(function () { return []; });
     },
 

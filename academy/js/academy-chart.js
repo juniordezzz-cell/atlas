@@ -76,7 +76,48 @@
     container.appendChild(svg);
   }
 
+  /* Donut — segments: [{value, color, label}]. Desenha um anel com um
+     furo central; usado no painel de setores/dominância. */
+  function donut(container, segments, opts) {
+    opts = opts || {};
+    while (container.firstChild) container.removeChild(container.firstChild);
+    var total = 0;
+    (segments || []).forEach(function (s) { total += Math.max(0, s.value || 0); });
+    if (!total) { var e = document.createElement("div"); e.className = "chart-empty"; e.textContent = "indisponível"; container.appendChild(e); return; }
+
+    var size = 180, cx = size / 2, cy = size / 2, r = 68, rin = 44;
+    var svg = el("svg", { viewBox: "0 0 " + size + " " + size, width: "100%", height: "100%" });
+    svg.style.display = "block";
+    var ang = -Math.PI / 2; // começa no topo
+    var gap = 0.035; // radianos de respiro entre fatias
+
+    segments.forEach(function (s) {
+      var frac = Math.max(0, s.value || 0) / total;
+      var a0 = ang + gap / 2, a1 = ang + frac * Math.PI * 2 - gap / 2;
+      if (a1 <= a0) { ang += frac * Math.PI * 2; return; }
+      var large = (a1 - a0) > Math.PI ? 1 : 0;
+      var x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+      var x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+      var xi0 = cx + rin * Math.cos(a1), yi0 = cy + rin * Math.sin(a1);
+      var xi1 = cx + rin * Math.cos(a0), yi1 = cy + rin * Math.sin(a0);
+      var d = "M" + x0.toFixed(2) + " " + y0.toFixed(2) +
+              " A" + r + " " + r + " 0 " + large + " 1 " + x1.toFixed(2) + " " + y1.toFixed(2) +
+              " L" + xi0.toFixed(2) + " " + yi0.toFixed(2) +
+              " A" + rin + " " + rin + " 0 " + large + " 0 " + xi1.toFixed(2) + " " + yi1.toFixed(2) + " Z";
+      svg.appendChild(el("path", { d: d, fill: s.color || "#00BFFF" }));
+      ang += frac * Math.PI * 2;
+    });
+    if (opts.center != null) {
+      var t = el("text", { x: cx, y: cy, "text-anchor": "middle", "dominant-baseline": "central",
+        fill: "var(--texto)", "font-size": "20", "font-family": "var(--mono, monospace)", "font-weight": "600" });
+      t.textContent = opts.center;
+      svg.appendChild(t);
+    }
+    container.appendChild(svg);
+  }
+
   var AcademyChart = {
+    donut: donut,
     line: function (container, points, opts) {
       if (!container) return;
       draw(container, points, opts);
