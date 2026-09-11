@@ -37,7 +37,7 @@
   }
 
   var DefiLlama = {
-    capabilities: ["onchainPrice", "defiTvl", "defiChains", "defiYields", "rwaTvl", "protocolFlows"],
+    capabilities: ["onchainPrice", "defiTvl", "defiChains", "defiYields", "rwaTvl", "protocolFlows", "stablecoins", "defiCategories"],
 
     onchainPrice: function (refs) {
       refs = (refs || []).filter(Boolean);
@@ -123,6 +123,42 @@
             })
             .map(function (p) { return { name: p.name, tvl: p.tvl, change24h: p.change_1d, flowUsd: p.tvl * p.change_1d / 100, category: p.category || null, chains: p.chains || [] }; })
             .sort(function (a, b) { return Math.abs(b.flowUsd) - Math.abs(a.flowUsd); }).slice(0, n);
+        });
+    },
+
+    /* Dominância de stablecoins por market cap (USDT domina ~59%, não 90%).
+       Fonte: stablecoins.llama.fi. Devolve total + ranking com share %. */
+    stablecoins: function (n) {
+      return AtlasHttp.getJSON("https://stablecoins.llama.fi/stablecoins?includePrices=false",
+        { ttl: 300000, cacheKey: "llama.stables" }
+      ).then(function (d) {
+        var arr = (d && d.peggedAssets ? d.peggedAssets : []).map(function (s) {
+          return { symbol: (s.symbol || "").toUpperCase(), name: s.name,
+                   mcap: (s.circulating && s.circulating.peggedUSD) || 0 };
+        }).filter(function (x) { return x.mcap > 0; }).sort(function (a, b) { return b.mcap - a.mcap; });
+        var tot = arr.reduce(function (s, x) { return s + x.mcap; }, 0) || 1;
+        arr.forEach(function (x) { x.share = x.mcap / tot * 100; });
+        return { total: tot, list: arr.slice(0, n || 6) };
+      });
+    },
+
+    /* Dominância no DeFi por categoria de protocolo (Lending, Liquid
+       Staking, Dexs…). Exclui CEX e Chain, que não são DeFi — igual à
+       própria DefiLlama. Devolve total + lista com share %. */
+    defiCategories: function (n) {
+      return AtlasHttp.getJSON(API + "/protocols", { ttl: 300000, cacheKey: "llama.protocols" })
+        .then(function (arr) {
+          var byCat = {};
+          (arr || []).forEach(function (p) {
+            if (p.tvl > 0 && !/^(cex|chain)$/i.test(p.category || "")) {
+              byCat[p.category] = (byCat[p.category] || 0) + p.tvl;
+            }
+          });
+          var list = Object.keys(byCat).map(function (k) { return { cat: k, tvl: byCat[k] }; })
+                           .sort(function (a, b) { return b.tvl - a.tvl; });
+          var tot = list.reduce(function (s, x) { return s + x.tvl; }, 0) || 1;
+          list.forEach(function (x) { x.share = x.tvl / tot * 100; });
+          return { total: tot, list: list.slice(0, n || 7) };
         });
     }
   };

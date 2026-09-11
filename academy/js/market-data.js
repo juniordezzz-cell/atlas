@@ -79,6 +79,32 @@
 
     /* ---- DeFi / RWA / yields (DefiLlama, fonte única keyless) ---- */
     defiTvl: function () { var d = P.get("defillama"); return d ? d.defiTvl().catch(function(){return null;}) : Promise.resolve(null); },
+    defiCategories: function (n) { var d = P.get("defillama"); return d ? d.defiCategories(n).catch(function(){return null;}) : Promise.resolve(null); },
+    stablecoins: function (n) { var d = P.get("defillama"); return d ? d.stablecoins(n).catch(function(){return null;}) : Promise.resolve(null); },
+
+    /* RWAs em alta = estritamente AÇÕES TOKENIZADAS (categoria do CoinGecko
+       tokenized-stock): TSLAX, MSTRX, CRCLX… ordenadas por variação 24h. */
+    tokenizedStocks: function () {
+      var cg = P.get("coingecko");
+      if (!cg) return Promise.resolve([]);
+      return cg.topMovers({ category: "tokenized-stock", order: "market_cap_desc", perPage: 60 })
+        .then(function (rows) {
+          return (rows || []).filter(function (r) { return r.change24h != null && r.usd; })
+                             .sort(sortByChangeDesc).slice(0, 7);
+        }).catch(function () { return []; });
+    },
+
+    /* Dominância de RWA por protocolo/empresa (Ondo, BUIDL, Paxos Gold…),
+       em % do TVL de RWA. Mostra onde está o dinheiro dos ativos do mundo real. */
+    rwaDominance: function (n) {
+      var d = P.get("defillama");
+      if (!d) return Promise.resolve(null);
+      return d.rwaTvl(n || 8).then(function (rows) {
+        var tot = rows.reduce(function (s, x) { return s + (x.tvl || 0); }, 0) || 1;
+        rows.forEach(function (x) { x.share = x.tvl / tot * 100; });
+        return { total: tot, list: rows };
+      }).catch(function () { return null; });
+    },
     defiChains: function (n) { var d = P.get("defillama"); return d ? d.defiChains(n).catch(function(){return [];}) : Promise.resolve([]); },
     defiYields: function () { var d = P.get("defillama"); return d ? d.defiYields().catch(function(){return null;}) : Promise.resolve(null); },
     rwaTvl: function (n) { var d = P.get("defillama"); return d ? d.rwaTvl(n).catch(function(){return [];}) : Promise.resolve([]); },
