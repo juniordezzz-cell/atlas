@@ -22,6 +22,12 @@
   opacity: 0;
   pointer-events: none;
 }
+/* IMPORTANTE: sem esta regra, o atributo hidden NÃO esconde o overlay —
+   o seletor de classe `.boot { display: grid }` vence o `[hidden]` do
+   navegador, e a splash fica opaca cobrindo a tela. Era o que travava
+   ao voltar para "Início" na mesma sessão (o caminho que só faz
+   boot.hidden = true, sem o fade do is-done). */
+.boot[hidden] { display: none !important; }
 
 /* Enquanto o boot está na tela, trava a rolagem do fundo. */
 html.boot-lock, html.boot-lock body { overflow: hidden; }
@@ -65,29 +71,20 @@ html.boot-lock, html.boot-lock body { overflow: hidden; }
 }
 @keyframes bootIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-.boot__logo-wrap {
-  position: relative;
-  width: 116px; height: 116px;
-  display: grid; place-items: center;
-}
-.boot__logo {
-  width: 96px; height: 96px;
-  border-radius: 22px;
+/* Imagem-herói do boot (a arte de mercado/IA). Já tem brilho e anéis
+   próprios, então não recebe halo/borda — só um leve respiro e uma
+   sombra difusa para assentar no fundo escuro. */
+.boot__hero {
+  width: min(340px, 68vmin);
+  height: auto;
   display: block;
-  box-shadow: 0 10px 40px rgba(0, 160, 255, .35);
-  animation: bootPulse 2.4s ease-in-out infinite;
+  filter: drop-shadow(0 12px 48px rgba(0, 120, 220, .35));
+  animation: bootFloat 3.6s ease-in-out infinite;
 }
-/* Halo que respira em torno da logo (o "núcleo" do site, simplificado). */
-.boot__halo {
-  position: absolute;
-  inset: -14px;
-  border-radius: 30px;
-  border: 1px solid rgba(0, 200, 255, .35);
-  box-shadow: 0 0 40px rgba(0, 180, 255, .25);
-  animation: bootHalo 2.4s ease-in-out infinite;
+@keyframes bootFloat {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%     { transform: translateY(-6px) scale(1.012); }
 }
-@keyframes bootPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
-@keyframes bootHalo { 0%,100% { opacity: .4; transform: scale(1); } 50% { opacity: .85; transform: scale(1.05); } }
 
 .boot__brand {
   margin: 4px 0 0;
@@ -138,6 +135,6 @@ html.boot-lock, html.boot-lock body { overflow: hidden; }
 
 /* Acessibilidade: sem movimento, nada pulsa nem pisca. */
 @media (prefers-reduced-motion: reduce) {
-  .boot__stars, .boot__logo, .boot__halo, .boot__stage { animation: none; }
+  .boot__stars, .boot__hero, .boot__stage { animation: none; }
   .boot__bar { transition: none; }
 }

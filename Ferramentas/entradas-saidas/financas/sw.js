@@ -18,7 +18,11 @@
 // v4 = o app ganhou nome ("ATLASfinances") e uma tela de boot/boas-vindas
 // na abertura (css/boot.css + js/boot.js, injetados no index.html). Entram
 // no precache; sem o bump o index antigo (sem a splash) seguiria em cache.
-const CACHE = "financas-v4";
+//
+// v5 = o boot passou a exibir a arte de abertura (assets/boot-hero.png)
+// no lugar do ícone "A". A imagem entra no precache para a splash abrir
+// offline; sem o bump o index/boot antigos seguiriam em cache.
+const CACHE = "financas-v5";
 
 const ASSETS = [
   "index.html",
@@ -51,6 +55,7 @@ const ASSETS = [
   "js/pages/analises.js",
   "js/pages/configuracoes.js",
   "js/pwa.js",
+  "assets/boot-hero.png",
   "assets/icons/icon-192.png",
   "assets/icons/icon-512.png",
   "assets/icons/icon-maskable-512.png",
