@@ -122,7 +122,10 @@
     r.appendChild(h("span", "asset-price", fmtMoney(row.usd)));
     r.appendChild(h("span", "asset-chg " + pctClass(row.change24h), fmtPct(row.change24h)));
     r.appendChild(h("span", "asset-vol", fmtBig(row.volume24h)));
-    r.addEventListener("click", function () { AcademyRouter.go("/ativo/" + row.id); });
+    r.addEventListener("click", function () {
+      window.__academyAssetHint = { id: row.id, symbol: row.symbol };
+      AcademyRouter.go("/ativo/" + row.id);
+    });
     return r;
   }
 

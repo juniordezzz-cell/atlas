@@ -90,6 +90,7 @@
       row.addEventListener("click", function () {
         box.value = "";
         hideResults();
+        window.__academyAssetHint = { id: it.id, symbol: it.symbol };
         AcademyRouter.go("/ativo/" + it.id);
       });
       resultsBox.appendChild(row);
@@ -101,6 +102,7 @@
     if (lastResults && lastResults[0]) {
       box.value = "";
       hideResults();
+      window.__academyAssetHint = { id: lastResults[0].id, symbol: lastResults[0].symbol };
       AcademyRouter.go("/ativo/" + lastResults[0].id);
     }
   };
