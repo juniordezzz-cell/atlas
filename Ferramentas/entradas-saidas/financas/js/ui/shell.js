@@ -5,21 +5,12 @@
    Sem dependências externas, sem rede, sem conta.
    ========================================================================== */
 (function () {
-  // Itens globais da sidebar ATLAS (produto real). Aqui são apenas um
-  // stand-in visual — os links não navegam (href="#") exceto onde indicado.
-  // "Ferramentas" é o item que leva a este módulo, por isso fica ativo.
-  const ATLAS_NAV = [
-    { label: "Dashboard" },
-    { label: "Hold" },
-    { label: "Trade" },
-    { label: "DeFi" },
-    { label: "RWA" },
-    { label: "Carteiras" },
-    { label: "Academy" },
-    { label: "Ferramentas", active: true },
-    { label: "Relatórios" },
-    { label: "Configurações" },
-  ];
+  // Este app roda INDEPENDENTE do ATLAS por enquanto — a ligação vem
+  // depois, via Firebase. Por isso ele NÃO injeta mais a sidebar nem o
+  // botão de menu do ATLAS (eram só um stand-in visual, e no celular a
+  // sidebar abria por cima do próprio botão ☰ e não fechava mais).
+  // A navegação agora é 100% própria: pílulas no desktop, barra inferior
+  // + "Mais" no celular.
 
   const SECTIONS = [
     { slug: "dashboard",     label: "Visão geral",      href: "index.html" },
@@ -36,16 +27,6 @@
     let t = "dark";
     try { t = localStorage.getItem("atlas-financas-theme") || "dark"; } catch (e) {}
     document.documentElement.setAttribute("data-theme", t);
-  }
-
-  function sidebar() {
-    const items = ATLAS_NAV.map(item =>
-      `<a class="fx-side-item${item.active ? " is-active" : ""}" href="#"><span class="fx-side-ic" aria-hidden="true"></span><span>${item.label}</span></a>`
-    ).join("");
-    return `<aside class="fx-sidebar" data-fx-sidebar>
-        <div class="fx-side-brand"><span class="fx-side-logo" aria-hidden="true"></span><span>ATLAS</span></div>
-        <nav class="fx-side-nav" aria-label="Navegação ATLAS">${items}</nav>
-      </aside>`;
   }
 
   function pills(active) {
@@ -90,16 +71,9 @@
     const app = document.querySelector("[data-fx-app]") || document.body;
     const main = document.querySelector("[data-fx-main]");
 
-    // sidebar global ATLAS (stand-in visual), inserida antes do main
-    if (main) {
-      main.insertAdjacentHTML("beforebegin", sidebar());
-    } else {
-      app.insertAdjacentHTML("afterbegin", sidebar());
-    }
-
-    // topbar
+    // topbar — sem o botão de menu do ATLAS: o app é autônomo e o título
+    // faz o papel de marca ("Finanças").
     const topbar = `<header class="fx-topbar">
-        <button class="fx-menu" type="button" data-fx-menu aria-label="Abrir menu ATLAS">☰</button>
         <div class="fx-title"><h1>${opts.title || "Finanças"}</h1><p>${opts.subtitle || ""}</p></div>
         <div class="fx-topbar-actions">
           <a class="fx-settings${active === "configuracoes" ? " is-active" : ""}" href="configuracoes.html" aria-label="Configurações">⚙</a>
@@ -113,10 +87,6 @@
       const cur = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", cur);
       try { localStorage.setItem("atlas-financas-theme", cur); } catch (e) {}
-    });
-
-    document.querySelector("[data-fx-menu]")?.addEventListener("click", () => {
-      document.querySelector("[data-fx-sidebar]")?.classList.toggle("is-open");
     });
 
     // menu "Mais" (mobile): abre um sheet com as seções fora da barra

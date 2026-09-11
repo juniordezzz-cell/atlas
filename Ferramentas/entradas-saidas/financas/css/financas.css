@@ -21,7 +21,9 @@ a { color: inherit; }
 
 .fx-app {
   display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;
+  /* Coluna única: o app é autônomo e não tem mais a sidebar do ATLAS.
+     O .fx-main já se centraliza com max-width + margin auto. */
+  grid-template-columns: 1fr;
   min-height: 100vh;
   background: var(--fundo);
 }

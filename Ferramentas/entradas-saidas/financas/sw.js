@@ -9,7 +9,12 @@
 // botão de baixar, e o css/financas.css ganhou .fx-badge / .fx-note--muted
 // / .fx-btn--disabled. Sem o bump, o cache-first continuaria servindo o
 // CSS e o HTML antigos, e a seção/estilos novos não apareceriam.
-const CACHE = "financas-v2";
+//
+// v3 = o app virou AUTÔNOMO: saiu a sidebar/menu stand-in do ATLAS do
+// shell.js (era o que travava aberto no celular) e o .fx-app deixou de
+// reservar a coluna dela. Sem o bump, o cache-first continuaria servindo
+// o shell.js e o CSS antigos, e o menu quebrado voltaria.
+const CACHE = "financas-v3";
 
 const ASSETS = [
   "index.html",
