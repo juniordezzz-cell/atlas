@@ -40,6 +40,7 @@
     mount: function (container, opts) {
       opts = opts || {};
       var onHover = opts.onHover || function () {};
+      var onSelect = opts.onSelect || function () {};
       var reduce = false;
       try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
 
@@ -94,7 +95,7 @@
         if (id!==hoverId){ hoverId=id; canvas.style.cursor=n?"pointer":"grab"; if(n) onHover(n); else if(!pinnedId) onHover(null); }
       });
       canvas.addEventListener("mouseleave", function(){ mouse=null; hoverId=null; if(!pinnedId) onHover(null); });
-      canvas.addEventListener("click", function(){ var n=pickNode(); if(n){ pinnedId=(pinnedId===n.id?null:n.id); onHover(n); } });
+      canvas.addEventListener("click", function(){ var n=pickNode(); if(n){ pinnedId=(pinnedId===n.id?null:n.id); onHover(pinnedId?n:null); onSelect(pinnedId?n:null); } });
 
       function draw() {
         if (!running) return;

@@ -27,8 +27,10 @@
 
   function h(tag,c,t){ var e=document.createElement(tag); if(c)e.className=c; if(t!=null)e.textContent=t; return e; }
 
-  var refreshers = [];   // loaders re-chamados no auto-refresh
-  var globeCtl = null;   // controlador do globo (para parar)
+  var refreshers = [];      // loaders re-chamados no auto-refresh
+  var globeCtl = null;      // controlador do globo (para parar)
+  var chainFocusSubs = [];  // reagem ao clique numa rede do globo
+  function emitChainFocus(chain) { chainFocusSubs.forEach(function (f) { try { f(chain); } catch (e) {} }); }
 
   /* moldura de painel HUD */
   function panelFrame(title, hint) {
@@ -107,7 +109,7 @@
     var stage = h("div","cc-globe-stage");
     var label = h("div","cc-globe-label");
     label.appendChild(h("span","cc-globe-title","MAPA DE REDES DeFi"));
-    label.appendChild(h("span","cc-globe-sub","nós = redes reais · tamanho = TVL · cor = 24h"));
+    label.appendChild(h("span","cc-globe-sub","nós = redes reais · tamanho = TVL · cor = 24h · clique p/ filtrar"));
     var globeBox = h("div","cc-globe");
     var readout = h("div","cc-globe-readout");
     stage.appendChild(label); stage.appendChild(globeBox); stage.appendChild(readout);
@@ -133,7 +135,11 @@
       setTimeout(function(){
         if (window.AcademyGlobe && document.body.contains(globeBox)) {
           if (globeCtl) { try{globeCtl.stop();}catch(e){} }
-          globeCtl = AcademyGlobe.mount(globeBox, { nodes: nodes, onHover: function(n){ paintReadout(n || nodes[0], total); } });
+          globeCtl = AcademyGlobe.mount(globeBox, {
+            nodes: nodes,
+            onHover: function(n){ paintReadout(n || nodes[0], total); },
+            onSelect: function(n){ emitChainFocus(n ? n.id : null); }
+          });
           paintReadout(nodes[0], total);
         }
       }, 40);
@@ -195,7 +201,8 @@
   var CHAIN_ABBR={"Ethereum":"ETH","Solana":"SOL","BSC":"BNB","Base":"BASE","Arbitrum":"ARB","Tron":"TRX","Bitcoin":"BTC","Polygon":"POL","Avalanche":"AVAX","Optimism":"OP"};
   function chainsPanel() {
     var p=panelFrame("TVL por rede","DeFi · pontes");
-    function load(){ p.loading(); AcademyData.defiChains(6).then(function(rows){
+    var rowsByChain = {};
+    function load(){ p.loading(); rowsByChain={}; AcademyData.defiChains(6).then(function(rows){
       if(!rows||!rows.length)return p.unavailable(load);
       var list=h("div","chain-list");
       rows.forEach(function(c){ var row=h("div","chainrow");
@@ -203,9 +210,18 @@
         row.appendChild(h("span","chainrow-name",c.name));
         row.appendChild(h("span","chainrow-tvl",big(c.tvl)));
         row.appendChild(h("span","chainrow-chg "+cls(c.change24h),pctS(c.change24h)));
-        list.appendChild(row); });
+        rowsByChain[c.name]=row; list.appendChild(row); });
       p.setState(list); }).catch(function(){p.unavailable(load);}); }
-    load(); refreshers.push(load); return p;
+    load(); refreshers.push(load);
+    // reage ao clique numa rede do globo: destaca a linha (dim nas outras)
+    chainFocusSubs.push(function(chain){
+      Object.keys(rowsByChain).forEach(function(name){
+        var row=rowsByChain[name];
+        row.classList.toggle("chainrow-focus", !!chain && name===chain);
+        row.classList.toggle("chainrow-dim", !!chain && name!==chain);
+      });
+    });
+    return p;
   }
 
   // TVL DeFi — tendência (linha com glow)
@@ -252,18 +268,22 @@
   // fluxo de protocolos (entradas/saídas) — barras divergentes
   function flowsPanel() {
     var p=panelFrame("Fluxo de protocolos","TVL 24h");
-    function load(){ p.loading(); AcademyData.protocolFlows(8).then(function(rows){
-      if(!rows||!rows.length)return p.unavailable(load);
+    var curChain=null;
+    function setHint(chain){ var hEl=p.querySelector(".hpanel-hint"); if(hEl) hEl.textContent=chain?("● "+chain):"TVL 24h"; }
+    function load(){ p.loading(); AcademyData.protocolFlows(8,curChain).then(function(rows){
+      if(!rows||!rows.length){ if(curChain){ p.setState(h("div","hempty",curChain+": sem protocolos relevantes")); return; } return p.unavailable(load); }
       var max=Math.max.apply(null,rows.map(function(r){return Math.abs(r.flowUsd)||1;}));
       var list=h("div","flow-list");
       rows.forEach(function(r){ var row=h("div","flow-row");
         row.appendChild(h("span","flow-name",r.name));
         var barwrap=h("span","flow-barwrap"); var bar=h("span","flow-bar "+(r.flowUsd>=0?"pos":"neg"));
         bar.style.width=Math.max(4,(Math.abs(r.flowUsd)/max)*100)+"%"; barwrap.appendChild(bar); row.appendChild(barwrap);
-        row.appendChild(h("span","flow-val "+(r.flowUsd>=0?"up":"down"),(r.flowUsd>=0?"+":"−")+big(Math.abs(r.flowUsd)).replace("$","$")));
+        row.appendChild(h("span","flow-val "+(r.flowUsd>=0?"up":"down"),(r.flowUsd>=0?"+":"−")+big(Math.abs(r.flowUsd))));
         list.appendChild(row); });
       p.setState(list); }).catch(function(){p.unavailable(load);}); }
-    load(); refreshers.push(load); return p;
+    load(); refreshers.push(load);
+    chainFocusSubs.push(function(chain){ curChain=chain||null; setHint(curChain); load(); });
+    return p;
   }
 
   // heatmap (analytics)
@@ -341,6 +361,7 @@
   /* ---------- montagem por aba ---------- */
   function buildTab(tab, mount) {
     refreshers = [];
+    chainFocusSubs = [];
     if (globeCtl) { try{globeCtl.stop();}catch(e){} globeCtl=null; }
 
     if (tab === "Mercado Geral") {

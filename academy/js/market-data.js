@@ -82,7 +82,7 @@
     defiChains: function (n) { var d = P.get("defillama"); return d ? d.defiChains(n).catch(function(){return [];}) : Promise.resolve([]); },
     defiYields: function () { var d = P.get("defillama"); return d ? d.defiYields().catch(function(){return null;}) : Promise.resolve(null); },
     rwaTvl: function (n) { var d = P.get("defillama"); return d ? d.rwaTvl(n).catch(function(){return [];}) : Promise.resolve([]); },
-    protocolFlows: function (n) { var d = P.get("defillama"); return d ? d.protocolFlows(n).catch(function(){return [];}) : Promise.resolve([]); },
+    protocolFlows: function (n, chainFilter) { var d = P.get("defillama"); return d ? d.protocolFlows(n, chainFilter).catch(function(){return [];}) : Promise.resolve([]); },
 
     global: function () {
       return P.tryChain("global", "global", []);

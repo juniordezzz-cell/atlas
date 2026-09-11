@@ -110,15 +110,18 @@
         });
     },
 
-    /* Fluxo de protocolos: maiores entradas/saídas de TVL em 24h (em $). */
-    protocolFlows: function (n) {
+    /* Fluxo de protocolos: maiores entradas/saídas de TVL em 24h (em $).
+       chainFilter opcional: só protocolos presentes naquela rede. */
+    protocolFlows: function (n, chainFilter) {
       n = n || 8;
       return AtlasHttp.getJSON(API + "/protocols", { ttl: 300000, cacheKey: "llama.protocols" })
         .then(function (arr) {
           return (arr || []).filter(function (p) {
-              return p.tvl > 5e7 && p.change_1d != null && !/cex|chain/i.test(p.category || "");
+              if (!(p.tvl > 5e7 && p.change_1d != null) || /cex|chain/i.test(p.category || "")) return false;
+              if (chainFilter) { var chains = p.chains || []; if (chains.indexOf(chainFilter) === -1) return false; }
+              return true;
             })
-            .map(function (p) { return { name: p.name, tvl: p.tvl, change24h: p.change_1d, flowUsd: p.tvl * p.change_1d / 100, category: p.category || null }; })
+            .map(function (p) { return { name: p.name, tvl: p.tvl, change24h: p.change_1d, flowUsd: p.tvl * p.change_1d / 100, category: p.category || null, chains: p.chains || [] }; })
             .sort(function (a, b) { return Math.abs(b.flowUsd) - Math.abs(a.flowUsd); }).slice(0, n);
         });
     }
