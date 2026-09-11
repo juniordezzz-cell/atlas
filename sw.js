@@ -97,7 +97,7 @@
    com globo central em Canvas, abas Mercado/DeFi/RWA/Analytics/Yields e
    metricas de TVL/RWA/yields via DefiLlama). Entrou academy/js/academy-globe.js
    e o DefiLlama ganhou dados de DeFi/RWA. Bump para a versao nova chegar. */
-var VERSAO = "atlas-v35";
+var VERSAO = "atlas-v36";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
