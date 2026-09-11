@@ -85,7 +85,15 @@
    que lista as tools (a primeira é o Finanças). atlas-shell.js roda em
    TODA página — sem o bump, quem já abriu o ATLAS continuaria recebendo
    do cache a versão sem o novo item de menu, e o botão não apareceria. */
-var VERSAO = "atlas-v32";
+/* v33 = o Academy deixou de ser a biblioteca de teses e virou a central
+   de mercado (command center + página dedicada por ativo). O módulo foi
+   reescrito (academy/index.html, academy/js/*, academy/css/academy.css) e
+   ganhou uma camada de provedores nova (core/providers/*: coinpaprika,
+   binance, coinlore, defillama, feargreed, id-map, e a cadeia de fallback
+   no registry). Sem o bump, quem já abriu o ATLAS continuaria recebendo do
+   cache o Academy antigo. A entidade compartilhada AtlasTheses
+   (core/entities/theses.js) foi MANTIDA — Hold/Trade/RWA/DeFi gravam nela. */
+var VERSAO = "atlas-v33";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
