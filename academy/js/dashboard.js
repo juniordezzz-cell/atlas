@@ -1,406 +1,394 @@
 /* ============================================================
    ATLAS · academy/js/dashboard.js
-   Tela inicial — Market Command Center (HUD denso).
+   GLOBAL CRYPTO & RWA COMMAND CENTER
    window.renderDashboard(el)
 
-   Barra HUD (LIVE + relógio) · faixa de KPIs · grid de 3 colunas:
-   ranking com barras, dominância, mapa de calor do mercado (a
-   assinatura), tendência do BTC, feed de alertas ao vivo, setores
-   (donut) · e as tabelas de movers.
-
-   Todo dado é real (AcademyData). Campo ausente = "indisponível";
-   painel sem dado mostra "indisponível" + tentar de novo. Auto-refresh
-   a cada 60s enquanto a home estiver aberta.
+   Layout de 3 colunas com hero central (globo ambiente) no estilo
+   "Sci-Fi Operations Command Center". Abas no topo (Mercado Geral,
+   DeFi, RWA, Analytics, Yields). Todo número é real (CoinGecko +
+   DefiLlama, via AcademyData); o tráfego do globo é ambiente. Campo
+   ausente = "indisponível"; painel sem dado = "indisponível".
    ============================================================ */
 (function () {
   "use strict";
 
   /* ---------- formatação ---------- */
-  function money(v) {
-    if (v == null || !isFinite(v)) return "—";
-    var a = Math.abs(v);
-    if (a >= 1e12) return "$" + (v / 1e12).toFixed(2) + "T";
-    if (a >= 1e9)  return "$" + (v / 1e9).toFixed(2) + "B";
-    if (a >= 1e6)  return "$" + (v / 1e6).toFixed(2) + "M";
-    if (a >= 1)    return "$" + v.toLocaleString("en-US", { maximumFractionDigits: 2 });
-    return "$" + v.toLocaleString("en-US", { maximumFractionDigits: 6 });
-  }
-  function big(v) {
-    if (v == null || !isFinite(v)) return "—";
-    var a = Math.abs(v);
-    if (a >= 1e12) return "$" + (v / 1e12).toFixed(2) + "T";
-    if (a >= 1e9)  return "$" + (v / 1e9).toFixed(1) + "B";
-    if (a >= 1e6)  return "$" + (v / 1e6).toFixed(1) + "M";
-    return "$" + Math.round(v).toLocaleString("en-US");
-  }
-  function pct(v) { if (v == null || !isFinite(v)) return "—"; return (v >= 0 ? "+" : "") + v.toFixed(2) + "%"; }
-  function pctShort(v) { if (v == null || !isFinite(v)) return "—"; return (v >= 0 ? "+" : "") + v.toFixed(1) + "%"; }
-  function cls(v) { return v == null ? "" : (v >= 0 ? "up" : "down"); }
-  function hhmm(d) { d = d || new Date(); return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
+  function money(v){ if(v==null||!isFinite(v))return"—"; var a=Math.abs(v);
+    if(a>=1e12)return"$"+(v/1e12).toFixed(2)+"T"; if(a>=1e9)return"$"+(v/1e9).toFixed(2)+"B";
+    if(a>=1e6)return"$"+(v/1e6).toFixed(2)+"M"; if(a>=1)return"$"+v.toLocaleString("en-US",{maximumFractionDigits:2});
+    return"$"+v.toLocaleString("en-US",{maximumFractionDigits:6}); }
+  function big(v){ if(v==null||!isFinite(v))return"—"; var a=Math.abs(v);
+    if(a>=1e12)return"$"+(v/1e12).toFixed(2)+"T"; if(a>=1e9)return"$"+(v/1e9).toFixed(1)+"B";
+    if(a>=1e6)return"$"+(v/1e6).toFixed(1)+"M"; return"$"+Math.round(v).toLocaleString("en-US"); }
+  function pct(v){ if(v==null||!isFinite(v))return"—"; return(v>=0?"+":"")+v.toFixed(2)+"%"; }
+  function pctS(v){ if(v==null||!isFinite(v))return"—"; return(v>=0?"+":"")+v.toFixed(1)+"%"; }
+  function cls(v){ return v==null?"":(v>=0?"up":"down"); }
+  function hhmm(d){ d=d||new Date(); return("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
 
-  /* ---------- DOM ---------- */
-  function h(tag, c, t) { var e = document.createElement(tag); if (c) e.className = c; if (t != null) e.textContent = t; return e; }
-  function frag() { return document.createDocumentFragment(); }
+  function h(tag,c,t){ var e=document.createElement(tag); if(c)e.className=c; if(t!=null)e.textContent=t; return e; }
 
-  /* moldura de painel com cabeçalho HUD (título + dica à direita) */
+  var refreshers = [];   // loaders re-chamados no auto-refresh
+  var globeCtl = null;   // controlador do globo (para parar)
+
+  /* moldura de painel HUD */
   function panelFrame(title, hint) {
-    var p = h("section", "hpanel");
-    var head = h("div", "hpanel-head");
-    head.appendChild(h("span", "hpanel-title", title));
-    if (hint) head.appendChild(h("span", "hpanel-hint", hint));
-    var body = h("div", "hpanel-body");
+    var p = h("section","hpanel");
+    var head = h("div","hpanel-head");
+    head.appendChild(h("span","hpanel-title",title));
+    if (hint) head.appendChild(h("span","hpanel-hint",hint));
+    var body = h("div","hpanel-body");
     p.appendChild(head); p.appendChild(body);
-    p._body = body;
-    p.setState = function (node) { while (body.firstChild) body.removeChild(body.firstChild); body.appendChild(node); };
-    p.loading = function () { p.setState(h("div", "hloading", "carregando…")); };
-    p.unavailable = function (retry) {
-      var box = h("div", "hempty");
-      box.appendChild(h("span", null, "indisponível"));
-      var b = h("button", "hretry", "tentar de novo"); b.type = "button"; b.addEventListener("click", retry);
-      box.appendChild(b); p.setState(box);
-    };
+    p.setState=function(n){ while(body.firstChild)body.removeChild(body.firstChild); body.appendChild(n); };
+    p.loading=function(){ p.setState(h("div","hloading","carregando…")); };
+    p.unavailable=function(retry){ var b=h("div","hempty"); b.appendChild(h("span",null,"indisponível"));
+      var r=h("button","hretry","tentar de novo"); r.type="button"; r.addEventListener("click",retry); b.appendChild(r); p.setState(b); };
     p.loading();
     return p;
   }
+  function assetLink(id,symbol){ return function(){ window.__academyAssetHint={id:id,symbol:symbol}; AcademyRouter.go("/ativo/"+id); }; }
 
-  function assetLink(id, symbol) {
-    return function () { window.__academyAssetHint = { id: id, symbol: symbol }; AcademyRouter.go("/ativo/" + id); };
-  }
-
-  /* ---------- barra HUD superior ---------- */
-  function hudBar() {
-    var bar = h("div", "hud-bar");
-    var left = h("div", "hud-left");
-    left.appendChild(h("span", "hud-brand", "ATLAS ACADEMY"));
-    left.appendChild(h("span", "hud-sub", "MARKET COMMAND CENTER"));
-    var right = h("div", "hud-right");
-    var live = h("span", "hud-live"); live.appendChild(h("span", "hud-dot")); live.appendChild(h("span", null, "LIVE"));
-    var clock = h("span", "hud-clock");
-    var date = h("span", "hud-date");
-    function tick() {
-      var d = new Date();
-      clock.textContent = ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)+":"+("0"+d.getSeconds()).slice(-2);
-      date.textContent = d.toLocaleDateString("pt-BR", { day:"2-digit", month:"short", year:"numeric" });
-    }
-    tick();
-    bar._clockTimer = setInterval(tick, 1000);
-    right.appendChild(live); right.appendChild(clock); right.appendChild(date);
+  /* ---------- barra de abas + status ---------- */
+  var TABS = ["Mercado Geral","DeFi","RWA","Analytics","Yields"];
+  function topBar(active, onTab) {
+    var bar = h("div","cc-topbar");
+    var left = h("div","cc-brand");
+    left.appendChild(h("span","cc-title","GLOBAL CRYPTO & RWA COMMAND CENTER"));
+    var nav = h("nav","cc-tabs");
+    TABS.forEach(function(t){
+      var b=h("button","cc-tab"+(t===active?" active":""),t); b.type="button";
+      b.addEventListener("click",function(){ onTab(t); });
+      nav.appendChild(b);
+    });
+    left.appendChild(nav);
+    var right = h("div","cc-status");
+    var live=h("span","cc-live"); live.appendChild(h("span","cc-dot")); live.appendChild(h("span",null,"LIVE"));
+    var clock=h("span","cc-clock"); var utc=h("span","cc-utc");
+    function tick(){ var d=new Date();
+      clock.textContent=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)+":"+("0"+d.getSeconds()).slice(-2);
+      utc.textContent="UTC "+d.toISOString().slice(11,16); }
+    tick(); bar._clock=setInterval(tick,1000);
+    right.appendChild(live); right.appendChild(clock); right.appendChild(utc);
     bar.appendChild(left); bar.appendChild(right);
     return bar;
   }
 
-  /* ---------- faixa de KPIs ---------- */
-  function kpiStrip() {
-    var strip = h("div", "kpi-strip");
-    var defs = [
-      ["Market Cap", "mktcap"], ["Volume 24h", "vol"], ["Dominância BTC", "dom"],
-      ["Fear & Greed", "fng"], ["Ouro (PAXG)", "gold"], ["Bitcoin", "btc"]
-    ];
-    var cells = {};
-    defs.forEach(function (d) {
-      var c = h("div", "kpi-cell");
-      c.appendChild(h("span", "kpi-label", d[0]));
-      var v = h("span", "kpi-value", "…"); c.appendChild(v);
-      var s = h("span", "kpi-delta", ""); c.appendChild(s);
-      cells[d[1]] = { value: v, delta: s };
-      strip.appendChild(c);
-    });
-
-    Promise.all([
-      AcademyData.global().catch(function(){ return null; }),
-      AcademyData.feargreed().catch(function(){ return null; }),
-      AcademyData.ticker().catch(function(){ return []; })
-    ]).then(function (r) {
-      var g = r[0], fg = r[1], tk = r[2] || [];
-      var byS = {}; tk.forEach(function (a) { byS[a.symbol] = a; });
-      cells.mktcap.value.textContent = g ? big(g.marketCap) : "indisponível";
-      cells.vol.value.textContent = g ? big(g.volume24h) : "indisponível";
-      cells.dom.value.textContent = g && g.btcDominance != null ? g.btcDominance.toFixed(1) + "%" : "indisponível";
-      if (fg) { cells.fng.value.textContent = String(fg.value);
-        cells.fng.delta.textContent = fg.label; cells.fng.delta.className = "kpi-delta " + (fg.value >= 50 ? "up" : "down"); }
-      else cells.fng.value.textContent = "indisponível";
-      function fill(key, sym) {
-        var a = byS[sym];
-        cells[key].value.textContent = a ? money(a.usd) : "indisponível";
-        if (a && a.change24h != null) { cells[key].delta.textContent = pctShort(a.change24h); cells[key].delta.className = "kpi-delta " + cls(a.change24h); }
-      }
-      fill("gold", "PAXG"); fill("btc", "BTC");
-    });
+  /* ---------- barra de métricas centrais ---------- */
+  function metricsBar() {
+    var strip = h("div","cc-metrics");
+    var defs=[["TVL DeFi","tvl"],["RWA · TVL","rwa"],["Volume 24h","vol"],["Yield médio","apy"],["Domin. BTC","dbtc"],["Domin. ETH","deth"]];
+    var cells={};
+    defs.forEach(function(d){ var c=h("div","cc-metric"); c.appendChild(h("span","cc-mlabel",d[0]));
+      var v=h("span","cc-mvalue","…"); c.appendChild(v); var s=h("span","cc-mdelta",""); c.appendChild(s);
+      cells[d[1]]={v:v,s:s}; strip.appendChild(c); });
+    function load(){
+      Promise.all([
+        AcademyData.defiTvl(), AcademyData.rwaTvl(40), AcademyData.global().catch(function(){return null;}),
+        AcademyData.defiYields(), AcademyData.markets().catch(function(){return[];})
+      ]).then(function(r){
+        var tvl=r[0], rwa=r[1]||[], g=r[2], y=r[3], mk=r[4]||[];
+        if(tvl){ cells.tvl.v.textContent=big(tvl.current); if(tvl.change24h!=null){ cells.tvl.s.textContent=pctS(tvl.change24h); cells.tvl.s.className="cc-mdelta "+cls(tvl.change24h);} }
+        else cells.tvl.v.textContent="indisponível";
+        var rwaSum=rwa.reduce(function(s,p){return s+(p.tvl||0);},0);
+        cells.rwa.v.textContent=rwaSum? big(rwaSum):"indisponível";
+        cells.vol.v.textContent=g? big(g.volume24h):"indisponível";
+        cells.apy.v.textContent=y&&y.avgApy!=null? y.avgApy.toFixed(2)+"%":"indisponível";
+        cells.dbtc.v.textContent=g&&g.btcDominance!=null? g.btcDominance.toFixed(1)+"%":"indisponível";
+        var eth=mk.filter(function(x){return x.symbol==="ETH";})[0];
+        cells.deth.v.textContent=(eth&&g&&g.marketCap)? (eth.marketCap/g.marketCap*100).toFixed(1)+"%":"indisponível";
+      }).catch(function(){});
+    }
+    load(); refreshers.push(load);
     return strip;
   }
 
-  /* ---------- ranking de capitalização (barras) ---------- */
-  function rankingPanel() {
-    var p = panelFrame("Capitalização", "top 8");
-    function load() {
-      p.loading();
-      AcademyData.markets().then(function (rows) {
-        if (!rows || !rows.length) return p.unavailable(load);
-        var top = rows.filter(function (r) { return r.marketCap; }).slice(0, 8);
-        var max = top.length ? top[0].marketCap : 1;
-        var list = h("div", "bar-list");
-        top.forEach(function (r, i) {
-          var row = h("button", "bar-row"); row.type = "button";
-          row.addEventListener("click", assetLink(r.id, r.symbol));
-          row.appendChild(h("span", "bar-rank", String(i + 1)));
-          row.appendChild(h("span", "bar-sym", r.symbol));
-          var track = h("span", "bar-track");
-          var fill = h("span", "bar-fill"); fill.style.width = Math.max(4, (r.marketCap / max) * 100) + "%";
-          track.appendChild(fill); row.appendChild(track);
-          row.appendChild(h("span", "bar-val", big(r.marketCap)));
-          row.appendChild(h("span", "bar-chg " + cls(r.change24h), pctShort(r.change24h)));
-          list.appendChild(row);
-        });
-        p.setState(list);
-      }).catch(function () { p.unavailable(load); });
-    }
-    load();
-    return p;
+  /* ---------- globo central ---------- */
+  function globeStage() {
+    var stage = h("div","cc-globe-stage");
+    var label = h("div","cc-globe-label");
+    label.appendChild(h("span","cc-globe-title","REDE DE LIQUIDEZ GLOBAL"));
+    label.appendChild(h("span","cc-globe-sub","cripto · pontes · RWA — fluxo ambiente"));
+    var globeBox = h("div","cc-globe");
+    stage.appendChild(label); stage.appendChild(globeBox);
+    // monta o globo depois de estar no DOM (precisa de dimensões)
+    setTimeout(function(){
+      if (window.AcademyGlobe && document.body.contains(globeBox)) {
+        if (globeCtl) { try{globeCtl.stop();}catch(e){} }
+        globeCtl = AcademyGlobe.mount(globeBox, {});
+      }
+    }, 40);
+    return stage;
   }
 
-  /* ---------- dominância (barras horizontais) ---------- */
-  var STABLES = { USDT:1, USDC:1, DAI:1, FDUSD:1, TUSD:1, USDE:1, PYUSD:1, USDS:1 };
-  function dominancePanel() {
-    var p = panelFrame("Dominância", "por capital");
-    function load() {
-      p.loading();
-      Promise.all([AcademyData.markets(), AcademyData.global().catch(function(){return null;})]).then(function (r) {
-        var rows = r[0], g = r[1];
-        if (!rows || !rows.length) return p.unavailable(load);
-        var total = 0, btc = 0, eth = 0, stab = 0;
-        rows.forEach(function (a) {
-          var mc = a.marketCap || 0; total += mc;
-          if (a.symbol === "BTC") btc += mc;
-          else if (a.symbol === "ETH") eth += mc;
-          else if (STABLES[a.symbol]) stab += mc;
-        });
-        if (!total) return p.unavailable(load);
-        var segs = [
-          ["Bitcoin", btc / total * 100, "var(--dourado)"],
-          ["Ethereum", eth / total * 100, "var(--azul-principal)"],
-          ["Stablecoins", stab / total * 100, "var(--verde)"],
-          ["Outros", Math.max(0, (total - btc - eth - stab)) / total * 100, "rgba(160,174,192,0.5)"]
-        ];
-        var wrap = h("div", "domin-list");
-        segs.forEach(function (s) {
-          var row = h("div", "domin-row");
-          var top = h("div", "domin-top");
-          top.appendChild(h("span", "domin-name", s[0]));
-          top.appendChild(h("span", "domin-pct", s[1].toFixed(1) + "%"));
-          row.appendChild(top);
-          var track = h("span", "domin-track");
-          var fill = h("span", "domin-fill"); fill.style.width = s[1] + "%"; fill.style.background = s[2];
-          track.appendChild(fill); row.appendChild(track);
-          wrap.appendChild(row);
-        });
-        p.setState(wrap);
-      }).catch(function () { p.unavailable(load); });
-    }
-    load();
-    return p;
+  /* ---------- painéis de dados ---------- */
+  // ranking de cryptos (barras) — gainers
+  function cryptosPanel() {
+    var p=panelFrame("Cryptos em alta","24h · top 7");
+    function load(){ p.loading(); AcademyData.gainers().then(function(rows){
+      if(!rows||!rows.length)return p.unavailable(load);
+      var top=rows.slice(0,7); var max=Math.max.apply(null,top.map(function(r){return Math.abs(r.change24h)||1;}));
+      var list=h("div","bar-list");
+      top.forEach(function(r,i){ var row=h("button","bar-row"); row.type="button"; row.addEventListener("click",assetLink(r.id,r.symbol));
+        row.appendChild(h("span","bar-rank",String(i+1))); row.appendChild(h("span","bar-sym",r.symbol));
+        var tr=h("span","bar-track"); var fl=h("span","bar-fill"); fl.style.width=Math.max(6,(Math.abs(r.change24h)/max)*100)+"%"; tr.appendChild(fl); row.appendChild(tr);
+        row.appendChild(h("span","bar-val",money(r.usd))); row.appendChild(h("span","bar-chg "+cls(r.change24h),pctS(r.change24h)));
+        list.appendChild(row); });
+      p.setState(list); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
   }
 
-  /* ---------- mapa de calor (assinatura) ---------- */
-  function heatmapPanel() {
-    var p = panelFrame("Mapa do mercado", "24h · top 40");
-    function load() {
-      p.loading();
-      AcademyData.markets().then(function (rows) {
-        if (!rows || !rows.length) return p.unavailable(load);
-        var top = rows.filter(function (r) { return r.marketCap && r.change24h != null; }).slice(0, 40);
-        var grid = h("div", "heat-grid");
-        top.forEach(function (r, i) {
-          var tile = h("button", "heat-tile"); tile.type = "button";
-          if (i < 2) tile.classList.add("heat-xl");
-          else if (i < 8) tile.classList.add("heat-lg");
-          var v = r.change24h;
-          var mag = Math.min(1, Math.abs(v) / 12); // satura em ±12%
-          var color = v >= 0 ? "0,226,138" : "255,84,112";
-          tile.style.background = "rgba(" + color + "," + (0.10 + mag * 0.5).toFixed(2) + ")";
-          tile.style.borderColor = "rgba(" + color + "," + (0.25 + mag * 0.4).toFixed(2) + ")";
-          tile.appendChild(h("span", "heat-sym", r.symbol));
-          tile.appendChild(h("span", "heat-chg", pctShort(v)));
-          tile.addEventListener("click", assetLink(r.id, r.symbol));
-          grid.appendChild(tile);
-        });
-        p.setState(grid);
-      }).catch(function () { p.unavailable(load); });
-    }
-    load();
-    return p;
+  // RWAs em alta por TVL (DefiLlama) — barras de volume/TVL
+  function rwaTvlPanel() {
+    var p=panelFrame("RWAs em alta","por TVL");
+    function load(){ p.loading(); AcademyData.rwaTvl(7).then(function(rows){
+      if(!rows||!rows.length)return p.unavailable(load);
+      var max=rows[0].tvl||1; var list=h("div","bar-list");
+      rows.forEach(function(r){ var row=h("div","bar-row bar-row-static");
+        row.appendChild(h("span","bar-rank","◆")); row.appendChild(h("span","bar-sym2",r.name));
+        var tr=h("span","bar-track"); var fl=h("span","bar-fill bar-fill-gold"); fl.style.width=Math.max(6,(r.tvl/max)*100)+"%"; tr.appendChild(fl); row.appendChild(tr);
+        row.appendChild(h("span","bar-val",big(r.tvl))); row.appendChild(h("span","bar-chg "+cls(r.change24h),pctS(r.change24h)));
+        list.appendChild(row); });
+      p.setState(list); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
   }
 
-  /* ---------- tendência do Bitcoin ---------- */
-  function btcTrendPanel() {
-    var p = panelFrame("Bitcoin", "7 dias");
-    function load() {
-      p.loading();
-      AcademyData.chart("bitcoin", "BTC", 7).then(function (c) {
-        if (!c || !c.points || !c.points.length) return p.unavailable(load);
-        var box = h("div", "trend-box");
-        p.setState(box);
-        var up = c.points[c.points.length - 1][1] >= c.points[0][1];
-        AcademyChart.line(box, c.points, { up: up });
-      }).catch(function () { p.unavailable(load); });
-    }
-    load();
-    return p;
-  }
-
-  /* ---------- alertas ao vivo (derivados do dado) ---------- */
-  function alertsPanel() {
-    var p = panelFrame("Alertas ao vivo", "sinais");
-    function load() {
-      p.loading();
-      Promise.all([
-        AcademyData.markets(),
-        AcademyData.feargreed().catch(function(){return null;}),
-        AcademyData.rwa().catch(function(){return [];})
-      ]).then(function (r) {
-        var rows = r[0], fg = r[1], rwa = r[2] || [];
-        if (!rows || !rows.length) return p.unavailable(load);
-        var withMc = rows.filter(function (x) { return x.marketCap > 5e7 && x.change24h != null; });
-        var byGain = withMc.slice().sort(function (a,b){ return b.change24h - a.change24h; });
-        var byVol = rows.filter(function (x){ return x.marketCap>0 && x.volume24h>0; })
-                        .map(function (x){ x._r = x.volume24h/x.marketCap; return x; })
-                        .sort(function (a,b){ return b._r - a._r; });
-        var alerts = [];
-        if (byGain[0]) alerts.push({ sev: byGain[0].change24h >= 15 ? "HIGH" : "MED", txt: byGain[0].symbol + " dispara " + pctShort(byGain[0].change24h) + " em 24h", id: byGain[0].id, sym: byGain[0].symbol });
-        var last = byGain[byGain.length-1];
-        if (last && last.change24h < 0) alerts.push({ sev: last.change24h <= -15 ? "HIGH" : "MED", txt: last.symbol + " cai " + pctShort(last.change24h) + " em 24h", id: last.id, sym: last.symbol });
-        if (byVol[0]) alerts.push({ sev: "MED", txt: "Volume anormal em " + byVol[0].symbol + " (" + byVol[0]._r.toFixed(1) + "x cap)", id: byVol[0].id, sym: byVol[0].symbol });
-        if (rwa[0]) alerts.push({ sev: "MED", txt: "RWA " + rwa[0].symbol + " sobe " + pctShort(rwa[0].change24h), id: rwa[0].id, sym: rwa[0].symbol });
-        if (fg) {
-          if (fg.value <= 25) alerts.push({ sev: "HIGH", txt: "Medo extremo no mercado (F&G " + fg.value + ")" });
-          else if (fg.value >= 75) alerts.push({ sev: "HIGH", txt: "Ganância extrema no mercado (F&G " + fg.value + ")" });
-        }
-        if (byGain[1]) alerts.push({ sev: "LOW", txt: byGain[1].symbol + " avança " + pctShort(byGain[1].change24h) + " em 24h", id: byGain[1].id, sym: byGain[1].symbol });
-
-        var now = new Date();
-        var list = h("div", "alert-list");
-        alerts.slice(0, 6).forEach(function (a, i) {
-          var t = new Date(now.getTime() - i * 137000); // instantes recentes escalonados
-          var row = a.id ? h("button", "alert-row") : h("div", "alert-row");
-          if (a.id) { row.type = "button"; row.addEventListener("click", assetLink(a.id, a.sym)); }
-          row.appendChild(h("span", "alert-time", hhmm(t)));
-          row.appendChild(h("span", "alert-txt", a.txt));
-          row.appendChild(h("span", "alert-sev sev-" + a.sev, a.sev));
-          list.appendChild(row);
-        });
-        p.setState(list);
-      }).catch(function () { p.unavailable(load); });
-    }
-    load();
-    return p;
-  }
-
-  /* ---------- setores (donut) ---------- */
-  var SECTOR_COLORS = ["#00BFFF","#00F0FF","#00E28A","#FFD700","#9B8CFF","#FF8FA3","#5B9BFF","#6C7A99"];
+  // setores (donut)
+  var SECTOR_COLORS=["#00BFFF","#00F0FF","#00E28A","#FFD700","#9B8CFF","#FF8FA3","#5B9BFF","#6C7A99"];
   function sectorsPanel() {
-    var p = panelFrame("Setores", "por capital");
-    function load() {
-      p.loading();
-      // pequeno respiro: setores só têm o CoinGecko; deixa o burst inicial
-      // (markets/global/chart) passar antes, evitando 429 nesta chamada.
-      setTimeout(fetchCats, 900);
-    }
-    function fetchCats() {
-      AcademyData.categories().then(function (cats) {
-        if (!cats || !cats.length) return p.unavailable(load);
-        var top = cats.filter(function (c){ return c.marketCap; })
-                      .sort(function (a,b){ return b.marketCap - a.marketCap; }).slice(0, 6);
-        if (!top.length) return p.unavailable(load);
-        var segs = top.map(function (c, i) { return { value: c.marketCap, color: SECTOR_COLORS[i % SECTOR_COLORS.length], label: c.name }; });
-        var wrap = h("div", "sector-wrap");
-        var donutBox = h("div", "donut-box"); wrap.appendChild(donutBox);
-        var legend = h("div", "sector-legend");
-        top.forEach(function (c, i) {
-          var it = h("div", "legend-item");
-          var dot = h("span", "legend-dot"); dot.style.background = SECTOR_COLORS[i % SECTOR_COLORS.length];
-          it.appendChild(dot);
-          it.appendChild(h("span", "legend-name", c.name));
-          it.appendChild(h("span", "legend-val " + cls(c.change24h), pctShort(c.change24h)));
-          legend.appendChild(it);
-        });
-        wrap.appendChild(legend);
-        p.setState(wrap);
-        AcademyChart.donut(donutBox, segs, {});
-      }).catch(function () { p.unavailable(load); });
-    }
-    load();
-    return p;
+    var p=panelFrame("Setores","por capital");
+    function load(){ p.loading(); setTimeout(fetchCats,700); }
+    function fetchCats(){ AcademyData.categories().then(function(cats){
+      var top=(cats||[]).filter(function(c){return c.marketCap;}).sort(function(a,b){return b.marketCap-a.marketCap;}).slice(0,6);
+      if(!top.length)return p.unavailable(load);
+      var segs=top.map(function(c,i){return{value:c.marketCap,color:SECTOR_COLORS[i%SECTOR_COLORS.length]};});
+      var wrap=h("div","sector-wrap"); var dbox=h("div","donut-box"); wrap.appendChild(dbox);
+      var legend=h("div","sector-legend");
+      top.forEach(function(c,i){ var it=h("div","legend-item"); var dot=h("span","legend-dot"); dot.style.background=SECTOR_COLORS[i%SECTOR_COLORS.length];
+        it.appendChild(dot); it.appendChild(h("span","legend-name",c.name)); it.appendChild(h("span","legend-val "+cls(c.change24h),pctS(c.change24h))); legend.appendChild(it); });
+      wrap.appendChild(legend); p.setState(wrap); AcademyChart.donut(dbox,segs,{});
+    }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
   }
 
-  /* ---------- tabela de movers ---------- */
-  function moversPanel(title, hint, loader) {
-    var p = panelFrame(title, hint);
-    function load() {
-      p.loading();
-      loader().then(function (rows) {
-        if (!rows || !rows.length) return p.unavailable(load);
-        var list = h("div", "mv-list");
-        rows.slice(0, 6).forEach(function (r) {
-          var row = h("button", "mv-row"); row.type = "button";
-          row.addEventListener("click", assetLink(r.id, r.symbol));
-          var badge = h("span", "mv-badge");
-          if (r.image) { var img = document.createElement("img"); img.src = r.image; img.alt = r.symbol; img.loading = "lazy"; badge.appendChild(img); }
-          else badge.textContent = (r.symbol||"?").slice(0,3);
-          row.appendChild(badge);
-          row.appendChild(h("span", "mv-sym", r.symbol));
-          row.appendChild(h("span", "mv-price", money(r.usd)));
-          row.appendChild(h("span", "mv-chg " + cls(r.change24h), pctShort(r.change24h)));
-          list.appendChild(row);
-        });
+  // TVL por rede (DefiLlama)
+  var CHAIN_ABBR={"Ethereum":"ETH","Solana":"SOL","BSC":"BNB","Base":"BASE","Arbitrum":"ARB","Tron":"TRX","Bitcoin":"BTC","Polygon":"POL","Avalanche":"AVAX","Optimism":"OP"};
+  function chainsPanel() {
+    var p=panelFrame("TVL por rede","DeFi · pontes");
+    function load(){ p.loading(); AcademyData.defiChains(6).then(function(rows){
+      if(!rows||!rows.length)return p.unavailable(load);
+      var list=h("div","chain-list");
+      rows.forEach(function(c){ var row=h("div","chainrow");
+        row.appendChild(h("span","chainrow-badge",CHAIN_ABBR[c.name]||c.name.slice(0,3).toUpperCase()));
+        row.appendChild(h("span","chainrow-name",c.name));
+        row.appendChild(h("span","chainrow-tvl",big(c.tvl)));
+        row.appendChild(h("span","chainrow-chg "+cls(c.change24h),pctS(c.change24h)));
+        list.appendChild(row); });
+      p.setState(list); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // TVL DeFi — tendência (linha com glow)
+  function tvlTrendPanel() {
+    var p=panelFrame("TVL DeFi","90 dias");
+    function load(){ p.loading(); AcademyData.defiTvl().then(function(t){
+      if(!t||!t.series||!t.series.length)return p.unavailable(load);
+      var box=h("div","trend-box"); p.setState(box);
+      var up=t.series[t.series.length-1][1]>=t.series[0][1];
+      AcademyChart.line(box,t.series,{up:up});
+    }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // alertas ao vivo (cripto + DeFi/RWA)
+  function alertsPanel() {
+    var p=panelFrame("Alertas ao vivo","sinais");
+    function load(){ p.loading();
+      Promise.all([AcademyData.markets(),AcademyData.feargreed().catch(function(){return null;}),
+        AcademyData.rwaTvl(8),AcademyData.protocolFlows(6)]).then(function(r){
+        var mk=r[0],fg=r[1],rwa=r[2]||[],flows=r[3]||[];
+        if(!mk||!mk.length)return p.unavailable(load);
+        var withMc=mk.filter(function(x){return x.marketCap>5e7&&x.change24h!=null;});
+        var byGain=withMc.slice().sort(function(a,b){return b.change24h-a.change24h;});
+        var byVol=mk.filter(function(x){return x.marketCap>0&&x.volume24h>0;}).map(function(x){x._r=x.volume24h/x.marketCap;return x;}).sort(function(a,b){return b._r-a._r;});
+        var A=[];
+        var bigFlow=flows.slice().sort(function(a,b){return Math.abs(b.flowUsd)-Math.abs(a.flowUsd);})[0];
+        if(bigFlow) A.push({sev:Math.abs(bigFlow.flowUsd)>3e8?"HIGH":"MED",txt:(bigFlow.flowUsd>=0?"Entrada de ":"Saída de ")+big(Math.abs(bigFlow.flowUsd))+" em "+bigFlow.name});
+        if(byGain[0]) A.push({sev:byGain[0].change24h>=15?"HIGH":"MED",txt:byGain[0].symbol+" dispara "+pctS(byGain[0].change24h)+" em 24h",id:byGain[0].id,sym:byGain[0].symbol});
+        if(rwa[0]&&rwa[0].change24h!=null) A.push({sev:"MED",txt:"RWA "+rwa[0].name+" "+(rwa[0].change24h>=0?"cresce ":"recua ")+pctS(rwa[0].change24h)+" em TVL"});
+        var last=byGain[byGain.length-1];
+        if(last&&last.change24h<0) A.push({sev:last.change24h<=-15?"HIGH":"MED",txt:last.symbol+" cai "+pctS(last.change24h)+" em 24h",id:last.id,sym:last.symbol});
+        if(byVol[0]) A.push({sev:"MED",txt:"Volume anormal em "+byVol[0].symbol+" ("+byVol[0]._r.toFixed(1)+"x cap)",id:byVol[0].id,sym:byVol[0].symbol});
+        if(fg){ if(fg.value<=25)A.push({sev:"HIGH",txt:"Medo extremo (F&G "+fg.value+")"}); else if(fg.value>=75)A.push({sev:"HIGH",txt:"Ganância extrema (F&G "+fg.value+")"}); }
+        var now=new Date(); var list=h("div","alert-list");
+        A.slice(0,7).forEach(function(a,i){ var t=new Date(now.getTime()-i*137000);
+          var row=a.id?h("button","alert-row"):h("div","alert-row"); if(a.id){row.type="button"; row.addEventListener("click",assetLink(a.id,a.sym));}
+          row.appendChild(h("span","alert-time",hhmm(t))); row.appendChild(h("span","alert-txt",a.txt)); row.appendChild(h("span","alert-sev sev-"+a.sev,a.sev)); list.appendChild(row); });
         p.setState(list);
-      }).catch(function () { p.unavailable(load); });
+      }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // fluxo de protocolos (entradas/saídas) — barras divergentes
+  function flowsPanel() {
+    var p=panelFrame("Fluxo de protocolos","TVL 24h");
+    function load(){ p.loading(); AcademyData.protocolFlows(8).then(function(rows){
+      if(!rows||!rows.length)return p.unavailable(load);
+      var max=Math.max.apply(null,rows.map(function(r){return Math.abs(r.flowUsd)||1;}));
+      var list=h("div","flow-list");
+      rows.forEach(function(r){ var row=h("div","flow-row");
+        row.appendChild(h("span","flow-name",r.name));
+        var barwrap=h("span","flow-barwrap"); var bar=h("span","flow-bar "+(r.flowUsd>=0?"pos":"neg"));
+        bar.style.width=Math.max(4,(Math.abs(r.flowUsd)/max)*100)+"%"; barwrap.appendChild(bar); row.appendChild(barwrap);
+        row.appendChild(h("span","flow-val "+(r.flowUsd>=0?"up":"down"),(r.flowUsd>=0?"+":"−")+big(Math.abs(r.flowUsd)).replace("$","$")));
+        list.appendChild(row); });
+      p.setState(list); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // heatmap (analytics)
+  function heatmapPanel() {
+    var p=panelFrame("Mapa do mercado","24h · top 40");
+    function load(){ p.loading(); AcademyData.markets().then(function(rows){
+      if(!rows||!rows.length)return p.unavailable(load);
+      var top=rows.filter(function(r){return r.marketCap&&r.change24h!=null;}).slice(0,40);
+      var grid=h("div","heat-grid");
+      top.forEach(function(r,i){ var tile=h("button","heat-tile"); tile.type="button";
+        if(i<2)tile.classList.add("heat-xl"); else if(i<8)tile.classList.add("heat-lg");
+        var v=r.change24h, mag=Math.min(1,Math.abs(v)/12), color=v>=0?"0,226,138":"255,84,112";
+        tile.style.background="rgba("+color+","+(0.10+mag*0.5).toFixed(2)+")"; tile.style.borderColor="rgba("+color+","+(0.25+mag*0.4).toFixed(2)+")";
+        tile.appendChild(h("span","heat-sym",r.symbol)); tile.appendChild(h("span","heat-chg",pctS(v)));
+        tile.addEventListener("click",assetLink(r.id,r.symbol)); grid.appendChild(tile); });
+      p.setState(grid); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // dominância
+  var STABLES={USDT:1,USDC:1,DAI:1,FDUSD:1,TUSD:1,USDE:1,PYUSD:1,USDS:1};
+  function dominancePanel() {
+    var p=panelFrame("Dominância","por capital");
+    function load(){ p.loading(); Promise.all([AcademyData.markets(),AcademyData.global().catch(function(){return null;})]).then(function(r){
+      var rows=r[0]; if(!rows||!rows.length)return p.unavailable(load);
+      var total=0,btc=0,eth=0,stab=0; rows.forEach(function(a){var mc=a.marketCap||0;total+=mc;if(a.symbol==="BTC")btc+=mc;else if(a.symbol==="ETH")eth+=mc;else if(STABLES[a.symbol])stab+=mc;});
+      if(!total)return p.unavailable(load);
+      var segs=[["Bitcoin",btc/total*100,"var(--dourado)"],["Ethereum",eth/total*100,"var(--azul-principal)"],["Stablecoins",stab/total*100,"var(--verde)"],["Outros",Math.max(0,(total-btc-eth-stab))/total*100,"rgba(160,174,192,0.5)"]];
+      var wrap=h("div","domin-list");
+      segs.forEach(function(s){ var row=h("div","domin-row"); var top=h("div","domin-top"); top.appendChild(h("span","domin-name",s[0])); top.appendChild(h("span","domin-pct",s[1].toFixed(1)+"%")); row.appendChild(top);
+        var tr=h("span","domin-track"); var fl=h("span","domin-fill"); fl.style.width=s[1]+"%"; fl.style.background=s[2]; tr.appendChild(fl); row.appendChild(tr); wrap.appendChild(row); });
+      p.setState(wrap); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // BTC trend
+  function btcTrendPanel() {
+    var p=panelFrame("Bitcoin","7 dias");
+    function load(){ p.loading(); AcademyData.chart("bitcoin","BTC",7).then(function(c){
+      if(!c||!c.points||!c.points.length)return p.unavailable(load);
+      var box=h("div","trend-box"); p.setState(box); var up=c.points[c.points.length-1][1]>=c.points[0][1]; AcademyChart.line(box,c.points,{up:up});
+    }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // tabela de yields (top pools por APY)
+  function yieldsPanel(wide) {
+    var p=panelFrame("Melhores yields","APY · pools grandes");
+    function load(){ p.loading(); AcademyData.defiYields().then(function(y){
+      if(!y||!y.pools||!y.pools.length)return p.unavailable(load);
+      var list=h("div","yield-list"+(wide?" yield-wide":""));
+      y.pools.forEach(function(pl){ var row=h("div","yield-row");
+        row.appendChild(h("span","yield-proj",pl.project)); row.appendChild(h("span","yield-sym",pl.symbol));
+        row.appendChild(h("span","yield-chain",pl.chain)); row.appendChild(h("span","yield-tvl",big(pl.tvlUsd)));
+        row.appendChild(h("span","yield-apy",pl.apy.toFixed(1)+"%")); list.appendChild(row); });
+      p.setState(list); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // movers table
+  function moversPanel(title,hint,loader) {
+    var p=panelFrame(title,hint);
+    function load(){ p.loading(); loader().then(function(rows){
+      if(!rows||!rows.length)return p.unavailable(load);
+      var list=h("div","mv-list");
+      rows.slice(0,6).forEach(function(r){ var row=h("button","mv-row"); row.type="button"; row.addEventListener("click",assetLink(r.id,r.symbol));
+        var badge=h("span","mv-badge"); if(r.image){var img=document.createElement("img");img.src=r.image;img.alt=r.symbol;img.loading="lazy";badge.appendChild(img);} else badge.textContent=(r.symbol||"?").slice(0,3);
+        row.appendChild(badge); row.appendChild(h("span","mv-sym",r.symbol)); row.appendChild(h("span","mv-price",money(r.usd))); row.appendChild(h("span","mv-chg "+cls(r.change24h),pctS(r.change24h))); list.appendChild(row); });
+      p.setState(list); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  function col(cls_){ return h("div","cc-col "+cls_); }
+
+  /* ---------- montagem por aba ---------- */
+  function buildTab(tab, mount) {
+    refreshers = [];
+    if (globeCtl) { try{globeCtl.stop();}catch(e){} globeCtl=null; }
+
+    if (tab === "Mercado Geral") {
+      mount.appendChild(metricsBar());
+      var grid=h("div","cc-grid");
+      var L=col("cc-l"); L.appendChild(cryptosPanel()); L.appendChild(sectorsPanel()); L.appendChild(rwaTvlPanel());
+      var C=col("cc-c"); C.appendChild(globeStage()); C.appendChild(tvlTrendPanel());
+      var R=col("cc-r"); R.appendChild(chainsPanel()); R.appendChild(alertsPanel()); R.appendChild(flowsPanel());
+      grid.appendChild(L); grid.appendChild(C); grid.appendChild(R); mount.appendChild(grid);
+      var mv=h("div","movers-grid");
+      mv.appendChild(moversPanel("Tokens em alta","24h",function(){return AcademyData.gainers();}));
+      mv.appendChild(moversPanel("Maiores quedas","24h",function(){return AcademyData.losers();}));
+      mv.appendChild(moversPanel("RWAs (mercado)","tokenizados",function(){return AcademyData.rwa();}));
+      mv.appendChild(moversPanel("Volume anormal","vol/cap",function(){return AcademyData.abnormalVolume();}));
+      mount.appendChild(mv);
+
+    } else if (tab === "DeFi") {
+      mount.appendChild(metricsBar());
+      var g2=h("div","cc-grid");
+      var L2=col("cc-l"); L2.appendChild(chainsPanel()); L2.appendChild(flowsPanel());
+      var C2=col("cc-c"); C2.appendChild(globeStage()); C2.appendChild(tvlTrendPanel());
+      var R2=col("cc-r"); R2.appendChild(yieldsPanel()); R2.appendChild(alertsPanel());
+      g2.appendChild(L2); g2.appendChild(C2); g2.appendChild(R2); mount.appendChild(g2);
+
+    } else if (tab === "RWA") {
+      mount.appendChild(metricsBar());
+      var g3=h("div","cc-grid cc-grid-2");
+      var L3=col("cc-l"); L3.appendChild(rwaTvlPanel());
+      var C3=col("cc-c"); C3.appendChild(moversPanel("RWAs em alta (mercado)","24h",function(){return AcademyData.rwa();}));
+      var R3=col("cc-r"); R3.appendChild(alertsPanel());
+      g3.appendChild(L3); g3.appendChild(C3); g3.appendChild(R3); mount.appendChild(g3);
+
+    } else if (tab === "Analytics") {
+      var g4=h("div","cc-grid");
+      var L4=col("cc-l"); L4.appendChild(dominancePanel()); L4.appendChild(sectorsPanel());
+      var C4=col("cc-c"); C4.appendChild(heatmapPanel());
+      var R4=col("cc-r"); R4.appendChild(btcTrendPanel()); R4.appendChild(tvlTrendPanel());
+      g4.appendChild(L4); g4.appendChild(C4); g4.appendChild(R4); mount.appendChild(g4);
+
+    } else if (tab === "Yields") {
+      mount.appendChild(metricsBar());
+      var yw=h("div","cc-single"); yw.appendChild(yieldsPanel(true)); mount.appendChild(yw);
     }
-    load();
-    return p;
   }
 
   /* ---------- render principal ---------- */
   window.renderDashboard = function (el) {
-    var console_ = h("div", "console");
+    var current = (window.__academyTab && TABS.indexOf(window.__academyTab)>-1) ? window.__academyTab : "Mercado Geral";
+    var root = h("div","cc-console");
+    var content = h("div","cc-content");
 
-    var hud = hudBar();
-    console_.appendChild(hud);
-    console_.appendChild(kpiStrip());
+    function draw(tab) {
+      window.__academyTab = tab;
+      if (bar && bar._clock) clearInterval(bar._clock);
+      while (root.firstChild) root.removeChild(root.firstChild);
+      bar = topBar(tab, function(t){ if(t!==window.__academyTab) draw(t); });
+      root.appendChild(bar);
+      while (content.firstChild) content.removeChild(content.firstChild);
+      root.appendChild(content);
+      buildTab(tab, content);
+    }
+    var bar = null;
+    draw(current);
+    el.appendChild(root);
 
-    var grid = h("div", "console-grid");
-    // coluna esquerda
-    var colL = h("div", "col col-l");
-    colL.appendChild(rankingPanel());
-    colL.appendChild(dominancePanel());
-    // coluna central
-    var colC = h("div", "col col-c");
-    colC.appendChild(heatmapPanel());
-    colC.appendChild(btcTrendPanel());
-    // coluna direita
-    var colR = h("div", "col col-r");
-    colR.appendChild(alertsPanel());
-    colR.appendChild(sectorsPanel());
-    grid.appendChild(colL); grid.appendChild(colC); grid.appendChild(colR);
-    console_.appendChild(grid);
-
-    // faixa de movers
-    var movers = h("div", "movers-grid");
-    movers.appendChild(moversPanel("Tokens em alta", "24h", function () { return AcademyData.gainers(); }));
-    movers.appendChild(moversPanel("Maiores quedas", "24h", function () { return AcademyData.losers(); }));
-    movers.appendChild(moversPanel("RWAs em alta", "tokenizados", function () { return AcademyData.rwa(); }));
-    movers.appendChild(moversPanel("Volume anormal", "vol/cap", function () { return AcademyData.abnormalVolume(); }));
-    console_.appendChild(movers);
-
-    el.appendChild(console_);
-
-    // auto-refresh 60s: re-render enquanto a home estiver na tela
-    var timer = setInterval(function () {
-      if (!document.body.contains(console_)) { clearInterval(timer); return; }
-      var parent = console_.parentNode;
-      if (!parent) { clearInterval(timer); return; }
-      clearInterval(hud._clockTimer);
-      while (parent.firstChild) parent.removeChild(parent.firstChild);
-      window.renderDashboard(parent);
-    }, 60000);
-    window.__academyOnLeave = function () { clearInterval(timer); clearInterval(hud._clockTimer); };
+    // auto-refresh 60s: re-chama os loaders sem tocar no globo nem no DOM
+    var timer=setInterval(function(){
+      if(!document.body.contains(root)){ clearInterval(timer); return; }
+      refreshers.forEach(function(f){ try{f();}catch(e){} });
+    },60000);
+    window.__academyOnLeave=function(){ clearInterval(timer); if(bar&&bar._clock)clearInterval(bar._clock); if(globeCtl){try{globeCtl.stop();}catch(e){} globeCtl=null;} };
   };
 })();
