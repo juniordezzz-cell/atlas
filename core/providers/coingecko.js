@@ -31,7 +31,7 @@
   }
 
   var CoinGecko = {
-    capabilities: ["prices", "search"],
+    capabilities: ["prices", "search", "rankings", "global", "assetDetail", "chart", "categories"],
 
     search: function (q) {
       q = String(q || "").trim().toLowerCase();
@@ -160,7 +160,148 @@
       return CoinGecko.pricesRaw(ids).catch(function () { return {}; });
     },
 
-    setApiKey: function (k) { try { localStorage.setItem(KEY_LS, k || ""); } catch (e) {} }
+    setApiKey: function (k) { try { localStorage.setItem(KEY_LS, k || ""); } catch (e) {} },
+
+    /* ============================================================
+       ACADEMY — dados de mercado (central de pesquisa)
+
+       Métodos abaixo alimentam o command center. Formas canônicas
+       combinadas com os provedores de fallback (Binance, CoinPaprika,
+       CoinLore): o mesmo shape sai de todos, então a tela não sabe
+       qual fonte respondeu. Ver docs/superpowers/specs.
+       ============================================================ */
+
+    /* Panorama do mercado: market cap, volume e dominância do BTC. */
+    global: function () {
+      return AtlasHttp.getJSON(BASE + "/global",
+        { ttl: 120000, headers: headers(), cacheKey: "cg.global" }
+      ).then(function (d) {
+        var g = d && d.data; if (!g) return null;
+        return {
+          marketCap: g.total_market_cap && g.total_market_cap.usd || null,
+          volume24h: g.total_volume && g.total_volume.usd || null,
+          btcDominance: g.market_cap_percentage && g.market_cap_percentage.btc || null
+        };
+      });
+    },
+
+    /* Rankings: altas, quedas, volume, e categorias (ex.: RWA).
+       order ex.: "price_change_percentage_24h_desc" | "volume_desc"
+       category ex.: "real-world-assets-rwa" (opcional). */
+    topMovers: function (o) {
+      o = o || {};
+      var order = o.order || "market_cap_desc";
+      var url = BASE + "/coins/markets?vs_currency=usd&order=" + order +
+        "&per_page=" + (o.perPage || 20) + "&page=1&price_change_percentage=24h&sparkline=false" +
+        (o.category ? "&category=" + encodeURIComponent(o.category) : "");
+      return AtlasHttp.getJSON(url, {
+        ttl: 90000, headers: headers(),
+        cacheKey: "cg.mkts." + order + "." + (o.category || "") + "." + (o.perPage || 20)
+      }).then(function (arr) {
+        return (arr || []).map(function (c) {
+          return {
+            id: c.id, symbol: (c.symbol || "").toUpperCase(), name: c.name,
+            usd: c.current_price, change24h: c.price_change_percentage_24h,
+            volume24h: c.total_volume, marketCap: c.market_cap,
+            rank: c.market_cap_rank, image: c.image, category: o.category || null
+          };
+        });
+      });
+    },
+
+    /* Setores/categorias do mercado, para o painel "categorias". */
+    categories: function () {
+      return AtlasHttp.getJSON(BASE + "/coins/categories",
+        { ttl: 300000, headers: headers(), cacheKey: "cg.cats" }
+      ).then(function (arr) {
+        return (arr || []).map(function (c) {
+          return { id: c.id, name: c.name, change24h: c.market_cap_change_24h,
+                   marketCap: c.market_cap, volume24h: c.volume_24h };
+        });
+      });
+    },
+
+    /* Detalhe profundo do ativo — quase tudo da página do ativo numa
+       chamada só: preço, variações por janela, ATH/ATL, supply,
+       contratos por rede, categorias, descrição, links e exchanges.
+       Campo ausente = null (a tela mostra "indisponível"). */
+    assetFull: function (id) {
+      if (!id) return Promise.resolve(null);
+      return AtlasHttp.getJSON(BASE + "/coins/" + encodeURIComponent(id) +
+        "?localization=false&tickers=true&market_data=true&community_data=false&developer_data=false",
+        { ttl: 180000, headers: headers(), cacheKey: "cg.coin." + id }
+      ).then(function (c) {
+        if (!c) return null;
+        var m = c.market_data || {};
+        var plats = [];
+        var det = c.detail_platforms || {};
+        Object.keys(det).forEach(function (chain) {
+          var p = det[chain];
+          if (p && p.contract_address) {
+            plats.push({ chain: chain || "", contract: p.contract_address, explorerUrl: null });
+          }
+        });
+        var isRwa = (c.categories || []).some(function (x) {
+          return /real.?world|rwa|tokenized/i.test(x || "");
+        });
+        var l = c.links || {};
+        return {
+          id: c.id, symbol: (c.symbol || "").toUpperCase(), name: c.name,
+          image: c.image && c.image.large || null,
+          classification: isRwa ? "rwa" : "crypto",
+          usd: m.current_price && m.current_price.usd || null,
+          change: {
+            h24: m.price_change_percentage_24h != null ? m.price_change_percentage_24h : null,
+            d7:  m.price_change_percentage_7d  != null ? m.price_change_percentage_7d  : null,
+            d30: m.price_change_percentage_30d != null ? m.price_change_percentage_30d : null,
+            m3:  m.price_change_percentage_60d != null ? m.price_change_percentage_60d : null,
+            m6:  m.price_change_percentage_200d != null ? m.price_change_percentage_200d : null,
+            y1:  m.price_change_percentage_1y  != null ? m.price_change_percentage_1y  : null
+          },
+          ath: m.ath && m.ath.usd || null, athDate: m.ath_date && m.ath_date.usd || null,
+          atl: m.atl && m.atl.usd || null, atlDate: m.atl_date && m.atl_date.usd || null,
+          marketCap: m.market_cap && m.market_cap.usd || null,
+          fdv: m.fully_diluted_valuation && m.fully_diluted_valuation.usd || null,
+          volume24h: m.total_volume && m.total_volume.usd || null,
+          rank: c.market_cap_rank || null,
+          supply: {
+            circulating: m.circulating_supply != null ? m.circulating_supply : null,
+            total: m.total_supply != null ? m.total_supply : null,
+            max: m.max_supply != null ? m.max_supply : null
+          },
+          platforms: plats,
+          categories: (c.categories || []).filter(Boolean),
+          description: (c.description && c.description.en) || null,
+          links: {
+            homepage: (l.homepage || [])[0] || null,
+            whitepaper: l.whitepaper || null,
+            twitter: l.twitter_screen_name ? "https://twitter.com/" + l.twitter_screen_name : null,
+            telegram: l.telegram_channel_identifier ? "https://t.me/" + l.telegram_channel_identifier : null,
+            github: (l.repos_url && l.repos_url.github || [])[0] || null,
+            reddit: l.subreddit_url || null
+          },
+          exchanges: (c.tickers || []).slice(0, 15).map(function (t) {
+            return { name: t.market && t.market.name || "", pair: (t.base || "") + "/" + (t.target || ""),
+                     url: t.trade_url || null };
+          })
+        };
+      });
+    },
+
+    /* Série de preço para o gráfico. days: 1|7|30|90|180|365. */
+    chart: function (id, days) {
+      if (!id) return Promise.resolve(null);
+      days = days || 7;
+      return AtlasHttp.getJSON(BASE + "/coins/" + encodeURIComponent(id) +
+        "/market_chart?vs_currency=usd&days=" + days,
+        { ttl: days <= 1 ? 60000 : 300000, headers: headers(),
+          cacheKey: "cg.chart." + id + "." + days }
+      ).then(function (d) {
+        var pts = d && d.prices;
+        if (!pts || !pts.length) return null;
+        return { days: days, points: pts };
+      });
+    }
   };
 
   window.AtlasProviders.register("coingecko", CoinGecko);
