@@ -93,7 +93,11 @@
    no registry). Sem o bump, quem já abriu o ATLAS continuaria recebendo do
    cache o Academy antigo. A entidade compartilhada AtlasTheses
    (core/entities/theses.js) foi MANTIDA — Hold/Trade/RWA/DeFi gravam nela. */
-var VERSAO = "atlas-v33";
+/* v34 = o dashboard do Academy virou o Global Command Center (3 colunas
+   com globo central em Canvas, abas Mercado/DeFi/RWA/Analytics/Yields e
+   metricas de TVL/RWA/yields via DefiLlama). Entrou academy/js/academy-globe.js
+   e o DefiLlama ganhou dados de DeFi/RWA. Bump para a versao nova chegar. */
+var VERSAO = "atlas-v34";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
