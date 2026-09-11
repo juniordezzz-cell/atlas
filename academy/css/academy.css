@@ -11,6 +11,16 @@ a { color: inherit; text-decoration: none; }
 }
 
 .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+.app--full { display: block; min-height: 100vh; }
+
+/* ---------- Voltar ao ATLAS (barra de topo, sem sidebar) ---------- */
+.ac-back { display: inline-flex; align-items: center; gap: 10px; color: var(--texto-suave); padding: 6px 10px; border-radius: 9px; border: 1px solid var(--linha); transition: color .15s, border-color .15s, background .15s; }
+.ac-back:hover { color: var(--texto); border-color: var(--card-borda-forte); background: rgba(0,191,255,0.05); }
+.ac-back svg { width: 16px; height: 16px; flex-shrink: 0; }
+.ac-back-logo { width: 22px; height: 22px; display: grid; place-items: center; }
+.ac-back-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ac-back-text { font-family: var(--fonte-titulo); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; white-space: nowrap; }
+.ac-back-text b { color: var(--azul-principal); font-weight: 700; }
 
 /* ---------- Sidebar ---------- */
 .sidebar {
