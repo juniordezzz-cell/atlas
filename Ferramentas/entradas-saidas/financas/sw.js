@@ -14,7 +14,11 @@
 // shell.js (era o que travava aberto no celular) e o .fx-app deixou de
 // reservar a coluna dela. Sem o bump, o cache-first continuaria servindo
 // o shell.js e o CSS antigos, e o menu quebrado voltaria.
-const CACHE = "financas-v3";
+//
+// v4 = o app ganhou nome ("ATLASfinances") e uma tela de boot/boas-vindas
+// na abertura (css/boot.css + js/boot.js, injetados no index.html). Entram
+// no precache; sem o bump o index antigo (sem a splash) seguiria em cache.
+const CACHE = "financas-v4";
 
 const ASSETS = [
   "index.html",
@@ -28,7 +32,9 @@ const ASSETS = [
   "offline.html",
   "manifest.webmanifest",
   "css/atlas-tokens.css",
+  "css/boot.css",
   "css/financas.css",
+  "js/boot.js",
   "js/ui/shell.js",
   "js/ui/charts.js",
   "js/app-bridge.js",

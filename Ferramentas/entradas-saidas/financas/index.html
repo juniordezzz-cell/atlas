@@ -3,17 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Finanças — ATLAS</title>
+  <title>ATLASfinances</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
   <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/boot.css">
   <link rel="stylesheet" href="css/financas.css">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ATLASfinances">
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 </head>
 <body data-page="dashboard">
+
+  <!-- ============ BOOT / BOAS-VINDAS ============
+       Splash de abertura do app (eco do boot do site). Só aqui, na tela
+       de abertura; js/boot.js roda a barra e revela o app, uma vez por
+       sessão. Fica no topo do body para cobrir tudo desde o primeiro
+       frame; o app é montado normalmente por trás. -->
+  <div class="boot" id="fxBoot" role="status" aria-label="Carregando ATLASfinances">
+    <div class="boot__sky" aria-hidden="true">
+      <span class="boot__glow"></span>
+      <span class="boot__stars"></span>
+    </div>
+    <div class="boot__stage">
+      <div class="boot__logo-wrap">
+        <span class="boot__halo" aria-hidden="true"></span>
+        <img class="boot__logo" src="assets/icons/icon-512.png" alt="ATLASfinances" width="96" height="96">
+      </div>
+      <h1 class="boot__brand">ATLAS<span>finances</span></h1>
+      <p class="boot__status" id="fxBootStatus">Ligando sistema…</p>
+      <div class="boot__progress">
+        <div class="boot__track"><div class="boot__bar" id="fxBootBar"></div></div>
+        <span class="boot__pct" id="fxBootPct">0%</span>
+      </div>
+    </div>
+  </div>
+  <script src="js/boot.js"></script>
+
   <div class="fx-app" data-fx-app>
     <main class="fx-main" data-fx-main>
       <section class="fx-content">

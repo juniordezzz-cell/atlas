@@ -1,0 +1,143 @@
+/* ==========================================================================
+   ATLASfinances — css/boot.css
+   Tela de boot/boas-vindas ao ABRIR o app. Eco visual do boot do site
+   (fundo espacial, logo com halo, wordmark em degradê, barra de progresso),
+   mas self-contained: sem depender de arquivos do ATLAS, funciona offline.
+   Só entra em index.html (tela de abertura) e some ao terminar.
+   ========================================================================== */
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: #02040A;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity .5s ease;
+}
+/* Fim do boot: some suave e para de capturar toque/clique. */
+.boot.is-done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Enquanto o boot está na tela, trava a rolagem do fundo. */
+html.boot-lock, html.boot-lock body { overflow: hidden; }
+
+/* ----- Céu: brilho central + estrelas (puro CSS, sem canvas) ----- */
+.boot__sky { position: absolute; inset: 0; }
+.boot__glow {
+  position: absolute;
+  left: 50%; top: 42%;
+  width: 120vmin; height: 120vmin;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at center,
+    rgba(0, 160, 255, .22) 0%,
+    rgba(0, 120, 220, .10) 32%,
+    transparent 62%);
+  filter: blur(6px);
+}
+.boot__stars {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(200,230,255,.9), transparent),
+    radial-gradient(1px 1px at 75% 22%, rgba(200,230,255,.7), transparent),
+    radial-gradient(1.5px 1.5px at 40% 70%, rgba(200,230,255,.8), transparent),
+    radial-gradient(1px 1px at 88% 66%, rgba(200,230,255,.6), transparent),
+    radial-gradient(1px 1px at 12% 80%, rgba(200,230,255,.7), transparent),
+    radial-gradient(1.5px 1.5px at 60% 44%, rgba(200,230,255,.6), transparent);
+  opacity: .55;
+  animation: bootTwinkle 3.6s ease-in-out infinite;
+}
+@keyframes bootTwinkle { 0%,100% { opacity: .35; } 50% { opacity: .7; } }
+
+/* ----- Palco central ----- */
+.boot__stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  animation: bootIn .6s ease both;
+}
+@keyframes bootIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.boot__logo-wrap {
+  position: relative;
+  width: 116px; height: 116px;
+  display: grid; place-items: center;
+}
+.boot__logo {
+  width: 96px; height: 96px;
+  border-radius: 22px;
+  display: block;
+  box-shadow: 0 10px 40px rgba(0, 160, 255, .35);
+  animation: bootPulse 2.4s ease-in-out infinite;
+}
+/* Halo que respira em torno da logo (o "núcleo" do site, simplificado). */
+.boot__halo {
+  position: absolute;
+  inset: -14px;
+  border-radius: 30px;
+  border: 1px solid rgba(0, 200, 255, .35);
+  box-shadow: 0 0 40px rgba(0, 180, 255, .25);
+  animation: bootHalo 2.4s ease-in-out infinite;
+}
+@keyframes bootPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+@keyframes bootHalo { 0%,100% { opacity: .4; transform: scale(1); } 50% { opacity: .85; transform: scale(1.05); } }
+
+.boot__brand {
+  margin: 4px 0 0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  background: linear-gradient(92deg, #9FD9FF 0%, #E6F6FF 45%, #6FB9FF 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.boot__brand span { font-weight: 500; opacity: .92; }
+
+.boot__status {
+  margin: 0;
+  min-height: 1.2em;
+  font-size: .85rem;
+  color: rgba(200, 222, 250, .7);
+  letter-spacing: .02em;
+}
+
+/* ----- Progresso ----- */
+.boot__progress {
+  display: flex; align-items: center; gap: 14px;
+  width: min(320px, 76vw);
+}
+.boot__track {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(120, 170, 220, .14);
+  overflow: hidden;
+}
+.boot__bar {
+  width: 0%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0090E8, #00E5FF);
+  box-shadow: 0 0 12px rgba(0, 200, 255, .5);
+  transition: width .3s ease;
+}
+.boot__pct {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: .78rem;
+  color: rgba(200, 222, 250, .8);
+  min-width: 3ch; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Acessibilidade: sem movimento, nada pulsa nem pisca. */
+@media (prefers-reduced-motion: reduce) {
+  .boot__stars, .boot__logo, .boot__halo, .boot__stage { animation: none; }
+  .boot__bar { transition: none; }
+}

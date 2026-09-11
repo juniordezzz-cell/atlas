@@ -1,6 +1,6 @@
 {
-  "name": "Finanças — ATLAS",
-  "short_name": "Finanças",
+  "name": "ATLASfinances",
+  "short_name": "ATLASfinances",
   "description": "Fluxo de caixa pessoal do ATLAS",
   "start_url": "index.html",
   "scope": "./",
