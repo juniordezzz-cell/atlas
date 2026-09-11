@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../themes/atlas-fonts.css">
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/global.css">
-  <link rel="stylesheet" href="css/academy.css">
+  <link rel="stylesheet" href="css/academy.css?v=academy-1">
 
   <!-- ===== ATLAS · camada global (Fase 0) ===================================
        Identidade visual, tema, idioma e moeda centralizados.
@@ -76,22 +76,27 @@
   </main>
 </div>
 
-<!-- ===== Camada de dados do Academy ===== -->
-<script src="../core/http.js"></script>
-<script src="../core/providers/registry.js"></script>
-<script src="../core/providers/feargreed.js"></script>
-<script src="../core/providers/coingecko.js"></script>
-<script src="../core/providers/coinpaprika.js"></script>
-<script src="../core/providers/binance.js"></script>
-<script src="../core/providers/coinlore.js"></script>
-<script src="../core/providers/defillama.js"></script>
-<script src="../core/providers/id-map.js"></script>
-<script src="js/market-data.js"></script>
+<!-- ===== Camada de dados do Academy =====
+     Os includes abaixo levam ?v= (versão do Academy). Motivo: o dev
+     server (python http.server) responde 304 por falso-positivo de
+     timestamp e o navegador serve JS velho — o clássico "a correção
+     não pega". URL versionada é a única forma à prova de 304. Suba o
+     número ao mudar estes arquivos. -->
+<script src="../core/http.js?v=academy-1"></script>
+<script src="../core/providers/registry.js?v=academy-1"></script>
+<script src="../core/providers/feargreed.js?v=academy-1"></script>
+<script src="../core/providers/coingecko.js?v=academy-1"></script>
+<script src="../core/providers/coinpaprika.js?v=academy-1"></script>
+<script src="../core/providers/binance.js?v=academy-1"></script>
+<script src="../core/providers/coinlore.js?v=academy-1"></script>
+<script src="../core/providers/defillama.js?v=academy-1"></script>
+<script src="../core/providers/id-map.js?v=academy-1"></script>
+<script src="js/market-data.js?v=academy-1"></script>
 
 <!-- ===== UI ===== -->
-<script src="js/academy-chart.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/asset-page.js"></script>
-<script src="js/academy.js"></script>
+<script src="js/academy-chart.js?v=academy-1"></script>
+<script src="js/dashboard.js?v=academy-1"></script>
+<script src="js/asset-page.js?v=academy-1"></script>
+<script src="js/academy.js?v=academy-1"></script>
 </body>
 </html>
