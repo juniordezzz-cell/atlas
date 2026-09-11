@@ -108,8 +108,8 @@
   function globeStage() {
     var stage = h("div","cc-globe-stage");
     var label = h("div","cc-globe-label");
-    label.appendChild(h("span","cc-globe-title","RADAR DE LIQUIDEZ DeFi"));
-    label.appendChild(h("span","cc-globe-sub","raio = TVL · cor = 24h · clique num blip p/ filtrar"));
+    label.appendChild(h("span","cc-globe-title","MAPA GLOBAL DE LIQUIDEZ"));
+    label.appendChild(h("span","cc-globe-sub","hubs = redes reais · tamanho = TVL · cor = 24h · clique p/ filtrar"));
     var globeBox = h("div","cc-globe");
     var readout = h("div","cc-globe-readout");
     stage.appendChild(label); stage.appendChild(globeBox); stage.appendChild(readout);
@@ -237,8 +237,9 @@
   }
 
   // alertas ao vivo (cripto + DeFi/RWA)
-  function alertsPanel() {
+  function alertsPanel(big_) {
     var p=panelFrame("Alertas ao vivo","sinais");
+    if (big_) p.classList.add("hpanel-tall");
     function load(){ p.loading();
       Promise.all([AcademyData.markets(),AcademyData.feargreed().catch(function(){return null;}),
         AcademyData.rwaTvl(8),AcademyData.protocolFlows(6)]).then(function(r){
@@ -256,8 +257,12 @@
         if(last&&last.change24h<0) A.push({sev:last.change24h<=-15?"HIGH":"MED",txt:last.symbol+" cai "+pctS(last.change24h)+" em 24h",id:last.id,sym:last.symbol});
         if(byVol[0]) A.push({sev:"MED",txt:"Volume anormal em "+byVol[0].symbol+" ("+byVol[0]._r.toFixed(1)+"x cap)",id:byVol[0].id,sym:byVol[0].symbol});
         if(fg){ if(fg.value<=25)A.push({sev:"HIGH",txt:"Medo extremo (F&G "+fg.value+")"}); else if(fg.value>=75)A.push({sev:"HIGH",txt:"Ganância extrema (F&G "+fg.value+")"}); }
+        if(byGain[1]) A.push({sev:"LOW",txt:byGain[1].symbol+" avança "+pctS(byGain[1].change24h)+" em 24h",id:byGain[1].id,sym:byGain[1].symbol});
+        var last2=byGain[byGain.length-2]; if(last2&&last2.change24h<0) A.push({sev:"MED",txt:last2.symbol+" recua "+pctS(last2.change24h)+" em 24h",id:last2.id,sym:last2.symbol});
+        if(byVol[1]) A.push({sev:"LOW",txt:"Volume elevado em "+byVol[1].symbol+" ("+byVol[1]._r.toFixed(1)+"x cap)",id:byVol[1].id,sym:byVol[1].symbol});
+        if(byGain[2]) A.push({sev:"LOW",txt:byGain[2].symbol+" sobe "+pctS(byGain[2].change24h)+" em 24h",id:byGain[2].id,sym:byGain[2].symbol});
         var now=new Date(); var list=h("div","alert-list");
-        A.slice(0,7).forEach(function(a,i){ var t=new Date(now.getTime()-i*137000);
+        A.slice(0, big_?10:7).forEach(function(a,i){ var t=new Date(now.getTime()-i*137000);
           var row=a.id?h("button","alert-row"):h("div","alert-row"); if(a.id){row.type="button"; row.addEventListener("click",assetLink(a.id,a.sym));}
           row.appendChild(h("span","alert-time",hhmm(t))); row.appendChild(h("span","alert-txt",a.txt)); row.appendChild(h("span","alert-sev sev-"+a.sev,a.sev)); list.appendChild(row); });
         p.setState(list);
@@ -343,6 +348,86 @@
     load(); refreshers.push(load); return p;
   }
 
+  // RWAs em alta = AÇÕES TOKENIZADAS (TSLAX, GOOGLX, MSTRX…)
+  function tokenizedStocksPanel() {
+    var p=panelFrame("RWAs em alta","ações tokenizadas");
+    function load(){ p.loading(); AcademyData.tokenizedStocks().then(function(rows){
+      if(!rows||!rows.length)return p.unavailable(load);
+      var max=Math.max.apply(null,rows.map(function(r){return Math.abs(r.change24h)||1;}));
+      var list=h("div","bar-list");
+      rows.forEach(function(r,i){ var row=h("button","bar-row"); row.type="button"; row.addEventListener("click",assetLink(r.id,r.symbol));
+        row.appendChild(h("span","bar-rank",String(i+1))); row.appendChild(h("span","bar-sym",r.symbol));
+        var tr=h("span","bar-track"); var fl=h("span","bar-fill bar-fill-gold"); fl.style.width=Math.max(6,(Math.abs(r.change24h)/max)*100)+"%"; tr.appendChild(fl); row.appendChild(tr);
+        row.appendChild(h("span","bar-val",money(r.usd))); row.appendChild(h("span","bar-chg "+cls(r.change24h),pctS(r.change24h)));
+        list.appendChild(row); });
+      p.setState(list); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // Dominância das stablecoins (USDT domina ~59%, dado real)
+  function stablecoinsPanel() {
+    var p=panelFrame("Dominância das Stablecoins","market cap");
+    function load(){ p.loading(); AcademyData.stablecoins(6).then(function(d){
+      if(!d||!d.list||!d.list.length)return p.unavailable(load);
+      var segs=d.list.map(function(s,i){return {value:s.mcap,color:SECTOR_COLORS[i%SECTOR_COLORS.length]};});
+      var wrap=h("div","sector-wrap"); var dbox=h("div","donut-box"); wrap.appendChild(dbox);
+      var legend=h("div","sector-legend");
+      d.list.forEach(function(s,i){ var it=h("div","legend-item"); var dot=h("span","legend-dot"); dot.style.background=SECTOR_COLORS[i%SECTOR_COLORS.length];
+        it.appendChild(dot); it.appendChild(h("span","legend-name",s.symbol)); it.appendChild(h("span","legend-val",s.share.toFixed(1)+"%")); legend.appendChild(it); });
+      wrap.appendChild(legend); p.setState(wrap);
+      AcademyChart.donut(dbox,segs,{ center: d.list[0] ? d.list[0].share.toFixed(0)+"%" : null });
+    }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // Dominância de RWAs por protocolo/empresa (onde está o dinheiro RWA)
+  function rwaDominancePanel() {
+    var p=panelFrame("Dominância de RWAs","por protocolo");
+    function load(){ p.loading(); AcademyData.rwaDominance(8).then(function(d){
+      if(!d||!d.list||!d.list.length)return p.unavailable(load);
+      var max=d.list[0].share||1; var list=h("div","domdist-list");
+      d.list.forEach(function(r,i){ var row=h("div","domdist-row");
+        var top=h("div","domdist-top"); top.appendChild(h("span","domdist-name",r.name)); top.appendChild(h("span","domdist-pct",r.share.toFixed(1)+"%")); row.appendChild(top);
+        var tr=h("span","domin-track"); var fl=h("span","domin-fill"); fl.style.width=Math.max(3,(r.share/max)*100)+"%"; fl.style.background=SECTOR_COLORS[i%SECTOR_COLORS.length]; tr.appendChild(fl); row.appendChild(tr);
+        var sub=h("span","domdist-sub",big(r.tvl)+" TVL · "+pctS(r.change24h)); row.appendChild(sub);
+        list.appendChild(row); });
+      p.setState(list); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  // TVL DeFi: gráfico com área colorida + dominância por categoria (DefiLlama-style)
+  function tvlDefiPanel() {
+    var p=panelFrame("TVL DeFi","total + dominância");
+    function load(){ p.loading();
+      Promise.all([AcademyData.defiTvl(), AcademyData.defiCategories(7)]).then(function(r){
+        var tvl=r[0], cats=r[1];
+        if(!tvl||!tvl.series||!tvl.series.length)return p.unavailable(load);
+        var wrap=h("div","tvldefi");
+        // topo: valor grande + variação + gráfico
+        var head=h("div","tvldefi-head");
+        var big1=h("span","tvldefi-value",big(tvl.current)); head.appendChild(big1);
+        head.appendChild(h("span","tvldefi-delta "+cls(tvl.change24h),pctS(tvl.change24h)+" 24h"));
+        wrap.appendChild(head);
+        var box=h("div","tvldefi-chart"); wrap.appendChild(box);
+        var up=tvl.series[tvl.series.length-1][1]>=tvl.series[0][1];
+        // dominância por categoria
+        if(cats&&cats.list&&cats.list.length){
+          var dom=h("div","defidom");
+          dom.appendChild(h("div","defidom-title","Dominância no DeFi · por categoria"));
+          var bar=h("div","defidom-bar");
+          cats.list.forEach(function(c,i){ var seg=h("span","defidom-seg"); seg.style.width=c.share+"%"; seg.style.background=SECTOR_COLORS[i%SECTOR_COLORS.length]; seg.title=c.cat+" "+c.share.toFixed(1)+"%"; bar.appendChild(seg); });
+          dom.appendChild(bar);
+          var leg=h("div","defidom-legend");
+          cats.list.slice(0,6).forEach(function(c,i){ var it=h("span","defidom-item"); var dot=h("span","legend-dot"); dot.style.background=SECTOR_COLORS[i%SECTOR_COLORS.length]; it.appendChild(dot); it.appendChild(h("span","defidom-cat",c.cat)); it.appendChild(h("span","defidom-pct",c.share.toFixed(1)+"%")); leg.appendChild(it); });
+          dom.appendChild(leg);
+          wrap.appendChild(dom);
+        }
+        p.setState(wrap);
+        AcademyChart.line(box, tvl.series, { up: up });
+      }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
   // movers table
   function moversPanel(title,hint,loader) {
     var p=panelFrame(title,hint);
@@ -367,14 +452,16 @@
     if (tab === "Mercado Geral") {
       mount.appendChild(metricsBar());
       var grid=h("div","cc-grid");
-      var L=col("cc-l"); L.appendChild(cryptosPanel()); L.appendChild(sectorsPanel()); L.appendChild(rwaTvlPanel());
-      var C=col("cc-c"); C.appendChild(globeStage()); C.appendChild(tvlTrendPanel());
-      var R=col("cc-r"); R.appendChild(chainsPanel()); R.appendChild(alertsPanel()); R.appendChild(flowsPanel());
+      // esquerda: Criptos -> RWAs (ações tokenizadas) -> Stablecoins
+      var L=col("cc-l"); L.appendChild(cryptosPanel()); L.appendChild(tokenizedStocksPanel()); L.appendChild(stablecoinsPanel());
+      // centro: globo grande + TVL DeFi (com dominância)
+      var C=col("cc-c"); C.appendChild(globeStage()); C.appendChild(tvlDefiPanel());
+      // direita: TVL por rede -> Alertas (destaque) -> Dominância de RWAs
+      var R=col("cc-r"); R.appendChild(chainsPanel()); R.appendChild(alertsPanel(true)); R.appendChild(rwaDominancePanel());
       grid.appendChild(L); grid.appendChild(C); grid.appendChild(R); mount.appendChild(grid);
-      var mv=h("div","movers-grid");
+      var mv=h("div","movers-grid movers-grid-3");
       mv.appendChild(moversPanel("Tokens em alta","24h",function(){return AcademyData.gainers();}));
       mv.appendChild(moversPanel("Maiores quedas","24h",function(){return AcademyData.losers();}));
-      mv.appendChild(moversPanel("RWAs (mercado)","tokenizados",function(){return AcademyData.rwa();}));
       mv.appendChild(moversPanel("Volume anormal","vol/cap",function(){return AcademyData.abnormalVolume();}));
       mount.appendChild(mv);
 

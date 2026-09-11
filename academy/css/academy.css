@@ -197,6 +197,7 @@ a { color: inherit; text-decoration: none; }
 
 /* --- faixa de movers --- */
 .movers-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.movers-grid-3 { grid-template-columns: repeat(3, 1fr); }
 .mv-list { display: flex; flex-direction: column; }
 .mv-row { display: grid; grid-template-columns: 26px 1fr auto auto; align-items: center; gap: 9px; width: 100%; padding: 5px 14px; background: none; border: none; cursor: pointer; text-align: left; color: var(--texto); }
 .mv-row:hover { background: rgba(0,191,255,0.05); }
@@ -205,6 +206,29 @@ a { color: inherit; text-decoration: none; }
 .mv-sym { font-weight: 700; font-size: 12px; }
 .mv-price { font-family: var(--mono, monospace); font-size: 11px; color: var(--texto-suave); text-align: right; }
 .mv-chg { font-family: var(--mono, monospace); font-size: 11px; font-weight: 600; text-align: right; }
+
+/* --- TVL DeFi (gráfico colorido + dominância por categoria) --- */
+.tvldefi { display: flex; flex-direction: column; }
+.tvldefi-head { display: flex; align-items: baseline; gap: 10px; padding: 8px 16px 2px; }
+.tvldefi-value { font-family: var(--mono, monospace); font-size: 22px; font-weight: 600; }
+.tvldefi-delta { font-family: var(--mono, monospace); font-size: 12px; font-weight: 700; }
+.tvldefi-delta.up { color: var(--verde); } .tvldefi-delta.down { color: var(--vermelho); }
+.tvldefi-chart { height: 118px; padding: 4px 12px 8px; }
+.defidom { padding: 6px 16px 14px; border-top: 1px solid var(--linha); margin-top: 4px; }
+.defidom-title { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-fraco); font-weight: 600; margin: 8px 0 8px; }
+.defidom-bar { display: flex; height: 12px; border-radius: 5px; overflow: hidden; background: rgba(255,255,255,0.04); }
+.defidom-seg { height: 100%; }
+.defidom-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 14px; margin-top: 10px; }
+.defidom-item { display: flex; align-items: center; gap: 7px; }
+.defidom-cat { font-size: 11.5px; color: var(--texto-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.defidom-pct { font-family: var(--mono, monospace); font-size: 11px; font-weight: 600; color: var(--texto); }
+
+/* --- Dominância de RWAs por protocolo --- */
+.domdist-list { display: flex; flex-direction: column; gap: 10px; padding: 8px 16px 12px; }
+.domdist-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.domdist-name { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.domdist-pct { font-family: var(--mono, monospace); font-size: 12.5px; font-weight: 700; }
+.domdist-sub { display: block; font-family: var(--mono, monospace); font-size: 10px; color: var(--texto-fraco); margin-top: 3px; }
 
 /* retry legado (usado pela página do ativo) */
 .panel-retry { font-size: 12px; font-weight: 600; color: var(--azul-principal); cursor: pointer; background: rgba(0,191,255,0.08); border: 1px solid var(--card-borda); border-radius: 8px; padding: 6px 12px; }
@@ -245,8 +269,8 @@ a { color: inherit; text-decoration: none; }
 .cc-mdelta.up { color: var(--verde); } .cc-mdelta.down { color: var(--vermelho); }
 
 /* --- grid principal --- */
-.cc-grid { display: grid; grid-template-columns: 288px minmax(0,1fr) 308px; gap: 10px; align-items: start; }
-.cc-grid-2 { grid-template-columns: 308px minmax(0,1fr) 308px; }
+.cc-grid { display: grid; grid-template-columns: 248px minmax(0,1fr) 268px; gap: 8px; align-items: start; }
+.cc-grid-2 { grid-template-columns: 268px minmax(0,1fr) 268px; }
 .cc-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .cc-single { display: block; }
 
@@ -262,7 +286,8 @@ a { color: inherit; text-decoration: none; }
 .cc-globe-label { position: absolute; top: 11px; left: 15px; z-index: 2; display: flex; flex-direction: column; pointer-events: none; }
 .cc-globe-title { font-family: var(--fonte-titulo); font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--texto); }
 .cc-globe-sub { font-size: 10px; color: var(--texto-fraco); letter-spacing: 0.03em; }
-.cc-globe { height: 236px; }
+.cc-globe { height: 400px; }
+.hpanel-tall .hpanel-body { min-height: 340px; }
 
 /* leitura interativa da rede selecionada */
 .cc-globe-readout {
