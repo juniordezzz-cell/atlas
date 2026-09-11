@@ -101,21 +101,43 @@
     return strip;
   }
 
-  /* ---------- globo central ---------- */
+  /* ---------- globo central = mapa de redes DeFi (interativo) ---------- */
+  var GLOBE_COORDS = [[18,10],[-8,72],[42,-78],[-28,150],[12,-140],[52,34],[-20,-46],[34,110]];
   function globeStage() {
     var stage = h("div","cc-globe-stage");
     var label = h("div","cc-globe-label");
-    label.appendChild(h("span","cc-globe-title","REDE DE LIQUIDEZ GLOBAL"));
-    label.appendChild(h("span","cc-globe-sub","cripto · pontes · RWA — fluxo ambiente"));
+    label.appendChild(h("span","cc-globe-title","MAPA DE REDES DeFi"));
+    label.appendChild(h("span","cc-globe-sub","nós = redes reais · tamanho = TVL · cor = 24h"));
     var globeBox = h("div","cc-globe");
-    stage.appendChild(label); stage.appendChild(globeBox);
-    // monta o globo depois de estar no DOM (precisa de dimensões)
-    setTimeout(function(){
-      if (window.AcademyGlobe && document.body.contains(globeBox)) {
-        if (globeCtl) { try{globeCtl.stop();}catch(e){} }
-        globeCtl = AcademyGlobe.mount(globeBox, {});
-      }
-    }, 40);
+    var readout = h("div","cc-globe-readout");
+    stage.appendChild(label); stage.appendChild(globeBox); stage.appendChild(readout);
+
+    function paintReadout(node, totalTvl) {
+      while (readout.firstChild) readout.removeChild(readout.firstChild);
+      if (!node) { readout.appendChild(h("span","cc-ro-hint","passe o mouse num nó")); return; }
+      readout.appendChild(h("span","cc-ro-badge",CHAIN_ABBR[node.id]||node.label));
+      readout.appendChild(h("span","cc-ro-name",node.id));
+      var m=h("span","cc-ro-metric"); m.appendChild(h("b",null,big(node.tvl))); m.appendChild(h("span",null," TVL")); readout.appendChild(m);
+      var c=h("span","cc-ro-chg "+cls(node.change24h),pctS(node.change24h)); readout.appendChild(c);
+      if (totalTvl) { var sh=h("span","cc-ro-share"); sh.textContent=(node.tvl/totalTvl*100).toFixed(1)+"% do DeFi"; readout.appendChild(sh); }
+    }
+
+    Promise.all([AcademyData.defiChains(7), AcademyData.defiTvl()]).then(function (r) {
+      var chains = r[0]||[], tvlInfo = r[1];
+      var total = tvlInfo ? tvlInfo.current : chains.reduce(function(s,c){return s+(c.tvl||0);},0);
+      if (!chains.length) { paintReadout(null); return; }
+      var nodes = chains.map(function (c, i) {
+        return { id:c.name, label:CHAIN_ABBR[c.name]||c.name.slice(0,4).toUpperCase(),
+                 tvl:c.tvl, change24h:c.change24h, lat:GLOBE_COORDS[i%GLOBE_COORDS.length][0], lon:GLOBE_COORDS[i%GLOBE_COORDS.length][1] };
+      });
+      setTimeout(function(){
+        if (window.AcademyGlobe && document.body.contains(globeBox)) {
+          if (globeCtl) { try{globeCtl.stop();}catch(e){} }
+          globeCtl = AcademyGlobe.mount(globeBox, { nodes: nodes, onHover: function(n){ paintReadout(n || nodes[0], total); } });
+          paintReadout(nodes[0], total);
+        }
+      }, 40);
+    }).catch(function(){ paintReadout(null); });
     return stage;
   }
 

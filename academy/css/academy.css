@@ -242,17 +242,30 @@ a { color: inherit; text-decoration: none; }
 
 /* --- hero: globo --- */
 .cc-globe-stage {
-  position: relative; background: radial-gradient(120% 90% at 50% 40%, rgba(0,191,255,0.06), rgba(6,10,18,0) 70%), var(--card);
-  border: 1px solid var(--card-borda); border-radius: 12px; overflow: hidden; min-height: 360px;
+  position: relative; background: radial-gradient(120% 90% at 50% 42%, rgba(0,191,255,0.06), rgba(6,10,18,0) 70%), var(--card);
+  border: 1px solid var(--card-borda); border-radius: 12px; overflow: hidden;
   display: flex; flex-direction: column;
 }
-.cc-globe-stage::before, .cc-globe-stage::after { content: ""; position: absolute; width: 12px; height: 12px; border: 1px solid var(--ciano); opacity: 0.5; pointer-events: none; z-index: 3; }
+.cc-globe-stage::before, .cc-globe-stage::after { content: ""; position: absolute; width: 11px; height: 11px; border: 1px solid var(--ciano); opacity: 0.5; pointer-events: none; z-index: 3; }
 .cc-globe-stage::before { top: 8px; left: 8px; border-right: none; border-bottom: none; }
 .cc-globe-stage::after { bottom: 8px; right: 8px; border-left: none; border-top: none; }
-.cc-globe-label { position: absolute; top: 12px; left: 16px; z-index: 2; display: flex; flex-direction: column; }
-.cc-globe-title { font-family: var(--fonte-titulo); font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--texto); }
-.cc-globe-sub { font-size: 10.5px; color: var(--texto-fraco); letter-spacing: 0.04em; }
-.cc-globe { flex: 1; min-height: 340px; }
+.cc-globe-label { position: absolute; top: 11px; left: 15px; z-index: 2; display: flex; flex-direction: column; pointer-events: none; }
+.cc-globe-title { font-family: var(--fonte-titulo); font-size: 11.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--texto); }
+.cc-globe-sub { font-size: 10px; color: var(--texto-fraco); letter-spacing: 0.03em; }
+.cc-globe { height: 250px; }
+
+/* leitura interativa da rede selecionada */
+.cc-globe-readout {
+  display: flex; align-items: center; gap: 11px; padding: 10px 15px;
+  border-top: 1px solid var(--linha); background: rgba(10,18,30,0.55); min-height: 42px;
+}
+.cc-ro-hint { font-size: 11.5px; color: var(--texto-fraco); }
+.cc-ro-badge { font-family: var(--mono, monospace); font-size: 10px; font-weight: 700; color: var(--ciano); background: rgba(0,240,255,0.1); border: 1px solid rgba(0,240,255,0.25); border-radius: 5px; padding: 3px 6px; }
+.cc-ro-name { font-size: 13px; font-weight: 700; }
+.cc-ro-metric { font-size: 11.5px; color: var(--texto-fraco); }
+.cc-ro-metric b { font-family: var(--mono, monospace); font-size: 13px; font-weight: 600; color: var(--texto); }
+.cc-ro-chg { font-family: var(--mono, monospace); font-size: 12px; font-weight: 700; }
+.cc-ro-share { font-size: 11px; color: var(--texto-fraco); margin-left: auto; font-family: var(--mono, monospace); }
 
 /* --- TVL por rede --- */
 .chain-list { display: flex; flex-direction: column; }
