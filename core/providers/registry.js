@@ -50,6 +50,51 @@
       }
       return null;
     },
-    list: function () { return order.slice(); }
+    list: function () { return order.slice(); },
+
+    /* ------------------------------------------------------------
+       CADEIA DE FALLBACK
+
+       forCapability devolve UM provedor. Isso basta quando a fonte
+       nunca falha — mas o CoinGecko keyless falha com facilidade
+       (429). chainFor devolve TODOS os provedores da capacidade, na
+       ordem de registro (= ordem de preferência), e tryChain tenta um
+       por um: pula quem rejeita OU quem devolve vazio, e só desiste
+       quando ninguém respondeu. A tela nunca sabe qual fonte atendeu.
+       ------------------------------------------------------------ */
+    chainFor: function (cap) {
+      var out = [];
+      for (var i = 0; i < order.length; i++) {
+        var p = registry[order[i]];
+        if (p && p.capabilities && p.capabilities.indexOf(cap) !== -1) out.push(p);
+      }
+      return out;
+    },
+
+    tryChain: function (cap, method, args) {
+      var chain = this.chainFor(cap);
+      function empty(v) {
+        return v == null ||
+          (Array.isArray(v) && v.length === 0) ||
+          (typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 0);
+      }
+      var i = 0, lastErr = null;
+      function next() {
+        if (i >= chain.length) {
+          return Promise.reject(lastErr || new Error("Sem fonte de dados disponível."));
+        }
+        var impl = chain[i++];
+        var fn = impl && impl[method];
+        if (typeof fn !== "function") return next();
+        return Promise.resolve().then(function () { return fn.apply(impl, args || []); })
+          .then(function (res) {
+            if (empty(res)) return next();
+            try { console.log("[academy] " + cap + " respondido por provedor #" + i); } catch (e) {}
+            return res;
+          })
+          .catch(function (err) { lastErr = err; return next(); });
+      }
+      return next();
+    }
   };
 })();
