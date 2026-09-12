@@ -41,12 +41,17 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
-.brand__mark { width: 30px; height: 30px; flex: none; filter: none; }
+.brand__mark { width: 44px; height: 44px; flex: none; filter: none; }
 img.brand__mark { object-fit: contain; border-radius: 0; display: block; }
+.brand__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .brand__word {
   font-family: var(--font-display); font-weight: 700;
-  font-size: 1.16rem; letter-spacing: 0.16em; color: var(--text-hi);
-  white-space: nowrap;
+  font-size: 1.32rem; letter-spacing: 0.16em; color: var(--text-hi);
+  white-space: nowrap; line-height: 1.05;
+}
+.brand__tag {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.02em;
+  color: var(--text-faint); white-space: nowrap;
 }
 
 /* ---- Topbar -------------------------------------------- */
@@ -138,11 +143,28 @@ img.brand__mark { object-fit: contain; border-radius: 0; display: block; }
 }
 .nav__group-label { padding: var(--sp-4) var(--sp-3) var(--sp-2); }
 
+/* Busca compartilhada no topo da navegação, com a paleta do Trade. */
+.nav .atlas-side-search {
+  margin: 0 0 var(--sp-3);
+  background: color-mix(in srgb, var(--atlas-bg-raise) 40%, transparent);
+  border-color: var(--glass-border);
+  color: var(--text-mut);
+}
+.nav .atlas-side-search:hover {
+  border-color: var(--cyan-text); color: var(--text-hi);
+  background: rgba(34,211,238,0.08);
+}
+.nav .atlas-side-search kbd {
+  border-color: var(--glass-border); color: var(--text-faint);
+  background: rgba(255,255,255,0.05);
+}
+
 @media (max-width: 900px) {
   .nav { flex-direction: row; overflow-x: auto; padding: var(--sp-3); border-right: none; border-bottom: 1px solid var(--glass-border); }
   .nav__item { flex: none; }
   .nav__group-label, .nav__soon { display: none; }
   .nav__item span.label { display: none; }
+  .nav .atlas-side-search { display: none; }
 }
 
 /* ---- Badges / chips ------------------------------------ */

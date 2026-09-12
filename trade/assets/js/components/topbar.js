@@ -11,12 +11,27 @@
     return "Boa noite";
   }
 
-  var MARK =
-    '<img class="brand__mark" src="../assets/iconeatlas.png" alt="ATLAS">';
+  /* Marca construída via DOM (sem innerHTML): ícone maior + "ATLAS" e a
+     tagline "o seu mapa de investimentos" empilhados, como no shell da
+     raiz. A célula .brand-cell tem altura --topbar-h; o texto cabe. */
+  function el(tag, cls, txt) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt != null) n.textContent = txt;
+    return n;
+  }
 
   ATLAS.topbar = {
-    mountBrand: function (el) {
-      el.innerHTML = MARK + '<span class="brand__word">ATLAS TRADE</span>';
+    mountBrand: function (host) {
+      host.textContent = "";
+      var img = el("img", "brand__mark");
+      img.src = "../assets/iconeatlas.png";
+      img.alt = "ATLAS";
+      var text = el("span", "brand__text");
+      text.appendChild(el("span", "brand__word", "ATLAS"));
+      text.appendChild(el("span", "brand__tag", "o seu mapa de investimentos"));
+      host.appendChild(img);
+      host.appendChild(text);
     },
     mount: function (el) {
       var wallet = ATLAS.app.currentWallet();
