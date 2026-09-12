@@ -64,8 +64,11 @@
         '<aside class="sidebar" id="sidebar">' +
           '<div class="side-brand">' +
             '<span class="mark"><img src="../assets/iconeatlas.png" alt="ATLAS"></span>' +
-            '<span class="txt"><span class="n">ATLAS RWA</span></span>' +
+            '<span class="txt"><span class="n">ATLAS</span><span class="tag">o seu mapa de investimentos</span></span>' +
           '</div>' +
+          '<button type="button" class="atlas-side-search" id="rwaPalette" aria-label="Buscar (Ctrl+K)">' +
+            U.icon("search") + '<span class="lbl">Buscar…</span><kbd>Ctrl</kbd><kbd>K</kbd>' +
+          '</button>' +
           '<div class="side-label">Terminal</div>' +
           '<nav class="nav" id="nav">' +
             NAV.map(function (n) { return '<a class="nav-item" href="' + n.route + '" data-id="' + n.id + '">' + U.icon(n.icon) + '<span>' + n.label + '</span></a>'; }).join("") +
@@ -97,6 +100,11 @@
       var si = U.qs("#globalSearch");
       si.addEventListener("keydown", function (e) {
         if (e.key === "Enter" && si.value.trim()) location.hash = "#/portfolio?q=" + encodeURIComponent(si.value.trim());
+      });
+
+      var pal = U.qs("#rwaPalette");
+      if (pal) pal.addEventListener("click", function () {
+        if (window.AtlasPalette && AtlasPalette.open) AtlasPalette.open();
       });
 
       try { if (S.onWalletChange) S.onWalletChange(function () { Shell.renderWallet(); Shell.refreshTopbar(); Router.resolve(); }); } catch (e) {}
