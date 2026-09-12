@@ -1096,3 +1096,21 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   /* Alternador de tema */
   .atlas-theme-toggle { width: 44px; height: 44px; }
 }
+
+/* ============================================================
+   ORDEM DO CABEÇALHO (.topbar-right)
+   Os controles chegam de fontes diferentes (markup da página +
+   injeções do shell), então a ordem visual é fixada aqui por
+   `order` — independe de quem entrou primeiro no DOM. O avatar
+   (conta) fica SEMPRE por último. Idempotente e sem tocar no JS.
+   ============================================================ */
+.topbar-right { flex-wrap: wrap; row-gap: 8px; }
+.topbar-right > * { order: 5; }                                   /* padrão */
+.topbar-right #walletSel { order: 1; }                            /* carteira */
+.topbar-right .atlas-cmdk { order: 2; }                           /* busca Ctrl+K */
+.topbar-right .tb-menu[data-atlas-menu="apps"] { order: 3; }      /* aplicativos */
+.topbar-right [data-atlas-ui="bell"],
+.topbar-right .atlas-bell { order: 4; }                           /* notificações */
+.topbar-right [data-atlas-ui="theme"],
+.topbar-right .atlas-theme-toggle { order: 5; }                   /* tema */
+.topbar-right .tb-menu[data-atlas-menu="perfil"] { order: 6; }    /* conta (por último) */

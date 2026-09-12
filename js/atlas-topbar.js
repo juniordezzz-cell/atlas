@@ -190,6 +190,9 @@
     return "Conta local · dados neste navegador";
   }
 
+  var subEl = null; // o <span> do subtítulo da conta, atualizado quando o auth resolve
+  function atualizarConta() { try { if (subEl) subEl.textContent = contaSub(); } catch (e) {} }
+
   function perfil() {
     if (window.AtlasSettings && AtlasSettings.profile) return AtlasSettings.profile();
     return { name: "Gestor ATLAS", initials: "GA" };
@@ -224,7 +227,7 @@
         '<span class="tb-menu__user-av">' + esc(p.initials) + "</span>" +
         '<span class="tb-menu__user-txt">' +
           "<strong>" + esc(p.name) + "</strong>" +
-          "<span>" + esc(contaSub()) + "</span>" +
+          '<span class="tb-sub">' + esc(contaSub()) + "</span>" +
         "</span>" +
       "</div>" +
       '<div class="tb-menu__list">' +
@@ -237,6 +240,17 @@
            continua ali para quem abrir em nova aba ou estiver sem JS. */
         '<a class="tb-menu__item tb-menu__item--exit" role="menuitem" href="login.html" data-sair>' + IC_EXIT + "<span>Sair</span></a>" +
       "</div>";
+
+    /* O menu é montado no load, ANTES do Firebase resolver a sessão
+       (assíncrono). Então o subtítulo nasce como "Conta local" e precisa
+       ser atualizado quando o login resolve. Guardamos o span atual e
+       ligamos UM ouvinte de auth que o repinta com contaSub(). */
+    subEl = raiz._pop.querySelector(".tb-sub");
+    atualizarConta();
+    if (!montarPerfil._authHooked && window.AtlasAuth && AtlasAuth.onChange) {
+      AtlasAuth.onChange(atualizarConta);
+      montarPerfil._authHooked = true;
+    }
 
     var sair = raiz._pop.querySelector("[data-sair]");
     if (sair) {
