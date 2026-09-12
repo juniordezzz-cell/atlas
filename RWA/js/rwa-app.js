@@ -64,7 +64,7 @@
         '<aside class="sidebar" id="sidebar">' +
           '<div class="side-brand">' +
             '<span class="mark"><img src="../assets/iconeatlas.png" alt="ATLAS"></span>' +
-            '<span class="txt"><span class="n">ATLAS</span><span class="tag">o seu mapa de investimentos</span></span>' +
+            '<span class="txt"><span class="n">ATLAS</span><span class="tag">seu mapa de investimentos</span></span>' +
           '</div>' +
           '<button type="button" class="atlas-side-search" id="rwaPalette" aria-label="Buscar (Ctrl+K)">' +
             U.icon("search") + '<span class="lbl">Buscar…</span><kbd>Ctrl</kbd><kbd>K</kbd>' +

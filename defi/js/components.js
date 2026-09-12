@@ -30,7 +30,7 @@
               '<span class="brand-mark"><img src="../assets/iconeatlas.png" alt="ATLAS"></span>' +
               '<span class="brand-text">' +
                 '<span class="brand-name">ATLAS</span>' +
-                '<span class="brand-tag">o seu mapa de investimentos</span>' +
+                '<span class="brand-tag">seu mapa de investimentos</span>' +
               '</span>' +
             '</a>' +
             '<nav class="nav-links">' + links + '</nav>' +

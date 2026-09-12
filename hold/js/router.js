@@ -41,7 +41,7 @@
     brand.appendChild(U.el("img", { class: "brand-mark", src: "../assets/iconeatlas.png", alt: "ATLAS" }));
     brand.appendChild(U.el("div", { class: "brand-text" }, [
       U.el("div", { class: "brand-name", text: "ATLAS" }),
-      U.el("div", { class: "brand-tag", text: "o seu mapa de investimentos" })
+      U.el("div", { class: "brand-tag", text: "seu mapa de investimentos" })
     ]));
     sidebar.appendChild(brand);
 

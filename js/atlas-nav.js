@@ -234,7 +234,7 @@
     if (!logo.querySelector(".logo-tag")) {
       var tag = document.createElement("span");
       tag.className = "logo-tag";
-      tag.textContent = "o seu mapa de investimentos";
+      tag.textContent = "seu mapa de investimentos";
       logo.appendChild(tag);
     }
     // busca na sidebar → abre a paleta Ctrl+K (uma busca só no ATLAS)

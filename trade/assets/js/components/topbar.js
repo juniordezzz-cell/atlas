@@ -12,7 +12,7 @@
   }
 
   /* Marca construída via DOM (sem innerHTML): ícone maior + "ATLAS" e a
-     tagline "o seu mapa de investimentos" empilhados, como no shell da
+     tagline "seu mapa de investimentos" empilhados, como no shell da
      raiz. A célula .brand-cell tem altura --topbar-h; o texto cabe. */
   function el(tag, cls, txt) {
     var n = document.createElement(tag);
@@ -29,7 +29,7 @@
       img.alt = "ATLAS";
       var text = el("span", "brand__text");
       text.appendChild(el("span", "brand__word", "ATLAS"));
-      text.appendChild(el("span", "brand__tag", "o seu mapa de investimentos"));
+      text.appendChild(el("span", "brand__tag", "seu mapa de investimentos"));
       host.appendChild(img);
       host.appendChild(text);
     },
