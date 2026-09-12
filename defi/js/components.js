@@ -28,10 +28,16 @@
           '<div class="topnav-inner">' +
             '<a class="brand" href="index.html">' +
               '<span class="brand-mark"><img src="../assets/iconeatlas.png" alt="ATLAS"></span>' +
-              '<span class="brand-name">ATLAS DEFI</span>' +
+              '<span class="brand-text">' +
+                '<span class="brand-name">ATLAS</span>' +
+                '<span class="brand-tag">o seu mapa de investimentos</span>' +
+              '</span>' +
             '</a>' +
             '<nav class="nav-links">' + links + '</nav>' +
             '<div class="nav-spacer"></div>' +
+            '<button type="button" class="atlas-side-search topnav-search" aria-label="Buscar (Ctrl+K)">' +
+              U.icon("search") + '<span class="lbl">Buscar</span><kbd>Ctrl</kbd><kbd>K</kbd>' +
+            '</button>' +
             '<div id="wsel"></div>' +
             '<a class="nav-back" href="../pages/dashboard.html" title="Voltar ao Atlas">' +
               U.icon("back") + '<span>Voltar ao Atlas</span>' +
@@ -44,6 +50,10 @@
       var host = U.qs("#nav");
       if (host) host.innerHTML = C.nav(active);
       C.mountWalletSelector();
+      var busca = U.qs(".topnav-search");
+      if (busca) busca.addEventListener("click", function () {
+        if (window.AtlasPalette && AtlasPalette.open) AtlasPalette.open();
+      });
     },
 
     /* ---------- Seletor de carteira (Global/Local) ---------- */
