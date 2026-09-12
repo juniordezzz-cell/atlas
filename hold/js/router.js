@@ -40,9 +40,29 @@
     var brand = U.el("div", { class: "brand" });
     brand.appendChild(U.el("img", { class: "brand-mark", src: "../assets/iconeatlas.png", alt: "ATLAS" }));
     brand.appendChild(U.el("div", { class: "brand-text" }, [
-      U.el("div", { class: "brand-name", text: "ATLAS HOLD" })
+      U.el("div", { class: "brand-name", text: "ATLAS" }),
+      U.el("div", { class: "brand-tag", text: "o seu mapa de investimentos" })
     ]));
     sidebar.appendChild(brand);
+
+    /* busca na sidebar (abre a paleta Ctrl+K) — mesmo padrão do shell */
+    (function () {
+      var NS = "http://www.w3.org/2000/svg";
+      var svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("fill", "none");
+      svg.setAttribute("stroke", "currentColor"); svg.setAttribute("stroke-width", "1.8"); svg.setAttribute("stroke-linecap", "round");
+      var c = document.createElementNS(NS, "circle"); c.setAttribute("cx", "11"); c.setAttribute("cy", "11"); c.setAttribute("r", "7");
+      var pth = document.createElementNS(NS, "path"); pth.setAttribute("d", "m20 20-3.5-3.5");
+      svg.appendChild(c); svg.appendChild(pth);
+      var busca = U.el("button", { class: "atlas-side-search", type: "button", "aria-label": "Buscar (Ctrl+K)" }, [
+        svg,
+        U.el("span", { class: "lbl", text: "Buscar…" }),
+        U.el("kbd", { text: "Ctrl" }),
+        U.el("kbd", { text: "K" })
+      ]);
+      busca.addEventListener("click", function () { if (window.AtlasPalette && AtlasPalette.open) AtlasPalette.open(); });
+      sidebar.appendChild(busca);
+    })();
 
     /* voltar ao Atlas */
     var back = U.el("a", { class: "nav-back", href: "../pages/dashboard.html", title: "Voltar ao Atlas" });
