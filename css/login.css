@@ -91,3 +91,24 @@
 .signup a:hover { text-decoration: underline; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(16px);} to { opacity:1; transform:none; } }
+
+/* ---------- Login com Google (Fase 1: auth real) ---------- */
+.login-logo {
+  display: block; width: 52px; height: 52px; margin: 0 auto 16px; object-fit: contain;
+}
+.login-sub {
+  text-align: center; font-size: 13.5px; color: var(--texto-suave); margin: -20px 0 26px;
+}
+.btn-google {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 11px;
+  padding: 13px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer;
+  color: #04121e; background: #fff; border: 1px solid transparent;
+  box-shadow: 0 8px 26px rgba(0,0,0,0.35); transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease;
+}
+.btn-google:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(0,0,0,0.42); }
+.btn-google:disabled { opacity: .7; cursor: default; transform: none; }
+.btn-google svg { flex-shrink: 0; }
+.login-erro {
+  margin: 16px 0 0; padding: 11px 14px; border-radius: 10px; font-size: 13px;
+  color: var(--vermelho); background: rgba(255,84,112,0.08); border: 1px solid rgba(255,84,112,0.25);
+}

@@ -10,24 +10,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ATLAS">
   <title>ATLAS — Login</title>
-  <!-- Inter e JetBrains Mono servidas pelo proprio ATLAS.
-       Vinham do fonts.googleapis.com em vinte paginas, num sistema que
-       se declara sem dependencias e promete abrir sem internet.
-       Ver themes/atlas-fonts.css. -->
   <link rel="stylesheet" href="../themes/atlas-fonts.css">
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/login.css">
 
-  <!-- ===== ATLAS · camada global (Fase 0) ===================================
-       Identidade visual, tema, idioma e moeda centralizados.
-       O CSS entra por ÚLTIMO de propósito: ele governa os tokens.
-       ============================================================ -->
   <link rel="stylesheet" href="../themes/atlas-theme.css">
   <link rel="stylesheet" href="../themes/atlas-effects.css">
   <link rel="stylesheet" href="../themes/atlas-print.css" media="print">
-  <!-- PRIMEIRO de todos: migra as chaves antigas do localStorage
-       para a convencao unica, antes de qualquer store abrir. -->
   <script src="../core/atlas-storage.js"></script>
   <script src="../core/settings.js"></script>
   <script src="../core/i18n.js"></script>
@@ -35,35 +25,27 @@
   <script src="../core/atlas-boot.js"></script>
   <script src="../core/atlas-auth.js"></script>
   <script src="../core/atlas-pwa.js"></script>
+
+  <!-- Autenticação real (Firebase). SDK servido pelo próprio ATLAS. -->
+  <script src="../core/atlas-firebase-config.js"></script>
+  <script src="../assets/vendor/firebase-app-compat-10.14.1.js"></script>
+  <script src="../assets/vendor/firebase-auth-compat-10.14.1.js"></script>
+  <script src="../core/atlas-firebase.js"></script>
 </head>
 <body class="login-body">
   <div class="login-card">
-    <h2 class="login-title">Entrar na sua conta</h2>
+    <img class="login-logo" src="../assets/iconeatlas.png" alt="ATLAS">
+    <h2 class="login-title">Entrar no ATLAS</h2>
+    <p class="login-sub">Acesse com sua conta Google autorizada.</p>
 
-    <form id="loginForm" novalidate>
-      <label class="field">
-        <span>Email</span>
-        <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
-      </label>
+    <button type="button" id="btnGoogle" class="btn-google">
+      <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.3 6.1 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.3 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.1-2 13.7-5.3l-6.3-5.2C29.3 35 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.6 5.1C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6.3 5.2C41.8 35.6 44 30.3 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>
+      <span>Entrar com Google</span>
+    </button>
 
-      <label class="field">
-        <span>Senha</span>
-        <input type="password" id="senha" placeholder="••••••••••" autocomplete="current-password">
-      </label>
+    <p class="login-erro" id="loginErro" hidden></p>
 
-      <!-- "Esqueceu sua senha?" apontava para href="#". Enquanto o
-           login é simulado (qualquer submit entra) e não há
-           autenticação real, não existe senha a recuperar: o link
-           prometia um fluxo inexistente. Volta junto com o item 4.1. -->
-
-      <button type="submit" class="btn-entrar">Entrar</button>
-
-      <!-- O "Cadastre-se" apontava para href="#": um link que promete
-           uma tela e não leva a lugar nenhum. Enquanto não há
-           autenticação real (item 4.1), ele aponta para a página que
-           explica o produto — que é o que alguém sem conta procura. -->
-      <p class="signup">Primeira vez por aqui? <a href="landing.html">Conheça o ATLAS</a></p>
-    </form>
+    <p class="signup">Sem acesso? <a href="landing.html">Conheça o ATLAS</a></p>
   </div>
 
   <script src="../js/login.js"></script>

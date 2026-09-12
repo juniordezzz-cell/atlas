@@ -1,34 +1,57 @@
 /* ===================================================================
-   ATLAS — Login (SIMULADO)
+   ATLAS — Login (Google, via Firebase)
 
-   Não valida credenciais: qualquer submit entra. Autenticação real é
-   uma FASE FUTURA do projeto.
+   O botão delega para AtlasAuth.signIn(), que chama o provedor Firebase
+   (login Google + checagem da allowlist). Em sucesso, vai para o
+   dashboard. Fora da allowlist, mostra o motivo e não entra.
 
-   O que este arquivo faz de verdade é ABRIR SESSÃO em AtlasAuth. No
-   modo local isso não protege nada — e não pretende proteger. Serve
-   para o sistema saber que alguém entrou, e para o "Sair" do menu de
-   perfil ter o que encerrar. Quando um provedor real for registrado,
-   este mesmo código passa a autenticar de verdade sem mudar uma linha:
-   AtlasAuth.signIn delega para o provedor.
+   Se o Firebase não estiver configurado (modo local), AtlasAuth.signIn
+   ainda funciona como antes — abre uma sessão local sem barrar nada.
    =================================================================== */
+(function () {
+  "use strict";
 
-const form = document.getElementById('loginForm');
+  var btn = document.getElementById("btnGoogle");
+  var erroEl = document.getElementById("loginErro");
 
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const btn = form.querySelector('.btn-entrar');
-  const email = (form.querySelector('input[type=email]') || {}).value || '';
+  function erro(msg) {
+    if (!erroEl) return;
+    erroEl.textContent = msg || "Não foi possível entrar. Tente novamente.";
+    erroEl.hidden = false;
+  }
+  function limpaErro() { if (erroEl) { erroEl.hidden = true; erroEl.textContent = ""; } }
 
-  btn.textContent = 'Entrando...';
-  btn.style.opacity = '0.8';
+  function irParaApp() { window.location.href = "dashboard.html"; }
 
-  const entrar = window.AtlasAuth
-    ? AtlasAuth.signIn({ email })
-    : Promise.resolve();
+  // Já autenticado? (sessão persistida) → entra direto.
+  function checaSessao() {
+    if (window.AtlasFirebase && AtlasFirebase.whenReady) {
+      AtlasFirebase.whenReady(function () { if (AtlasAuth && AtlasAuth.autenticado()) irParaApp(); });
+    } else if (window.AtlasAuth && AtlasAuth.autenticado()) {
+      irParaApp();
+    }
+  }
+  checaSessao();
 
-  /* O atraso não é enfeite: sem ele o clique parece não ter efeito em
-     máquina rápida. Meio segundo é o mínimo que se lê como resposta. */
-  entrar
-    .catch(() => null)
-    .then(() => setTimeout(() => { window.location.href = 'dashboard.html'; }, 550));
-});
+  btn.addEventListener("click", function () {
+    limpaErro();
+    btn.disabled = true;
+    var txt = btn.querySelector("span");
+    var original = txt ? txt.textContent : "";
+    if (txt) txt.textContent = "Entrando…";
+
+    var p = window.AtlasAuth ? AtlasAuth.signIn({ metodo: "google" }) : Promise.reject(new Error("Auth indisponível."));
+
+    p.then(function () { irParaApp(); })
+     .catch(function (e) {
+       btn.disabled = false;
+       if (txt) txt.textContent = original;
+       var code = e && e.code;
+       if (code === "atlas/nao-autorizado") erro(e.message);
+       else if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") limpaErro();
+       else if (code === "auth/popup-blocked") erro("O navegador bloqueou a janela de login. Libere pop-ups e tente de novo.");
+       else if (code === "auth/unauthorized-domain") erro("Este domínio não está autorizado no Firebase. Adicione-o em Authentication → Authorized domains.");
+       else erro((e && e.message) || "Não foi possível entrar.");
+     });
+  });
+})();
