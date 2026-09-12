@@ -230,6 +230,17 @@ a { color: inherit; text-decoration: none; }
 .domdist-pct { font-family: var(--mono, monospace); font-size: 12.5px; font-weight: 700; }
 .domdist-sub { display: block; font-family: var(--mono, monospace); font-size: 10px; color: var(--texto-fraco); margin-top: 3px; }
 
+/* --- aba Alertas 24/7 (cards por tópico) --- */
+.alerts-tab-head { padding: 2px 2px 4px; }
+.alerts-tab-title { font-family: var(--fonte-titulo); font-size: 18px; font-weight: 600; margin: 0; letter-spacing: 0.02em; }
+.alerts-tab-sub { font-size: 12.5px; color: var(--texto-suave); margin: 4px 0 0; }
+.alerts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-items: start; }
+@media (max-width: 1080px){ .alerts-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px){ .alerts-grid { grid-template-columns: 1fr; } }
+
+/* deixa a dica "ver todos" do painel de alertas com cara de link */
+.hpanel-tall .hpanel-hint { color: var(--azul-principal); }
+
 /* retry legado (usado pela página do ativo) */
 .panel-retry { font-size: 12px; font-weight: 600; color: var(--azul-principal); cursor: pointer; background: rgba(0,191,255,0.08); border: 1px solid var(--card-borda); border-radius: 8px; padding: 6px 12px; }
 .panel-retry:hover { background: rgba(0,191,255,0.15); }

@@ -50,7 +50,8 @@
   function assetLink(id,symbol){ return function(){ window.__academyAssetHint={id:id,symbol:symbol}; AcademyRouter.go("/ativo/"+id); }; }
 
   /* ---------- barra de abas + status ---------- */
-  var TABS = ["Mercado Geral","DeFi","RWA","Analytics","Yields"];
+  var TABS = ["Mercado Geral","DeFi","RWA","Analytics","Yields","Alertas 24/7"];
+  var goToTab = null;   // trocador de aba (setado no renderDashboard)
   function topBar(active, onTab) {
     var bar = h("div","cc-topbar");
     var left = h("div","cc-brand");
@@ -247,7 +248,7 @@
 
   // alertas ao vivo (cripto + DeFi/RWA)
   function alertsPanel(big_) {
-    var p=panelFrame("Alertas ao vivo","sinais");
+    var p=panelFrame("Alertas 24/7","ver todos ›");
     if (big_) p.classList.add("hpanel-tall");
     function load(){ p.loading();
       Promise.all([AcademyData.markets(),AcademyData.feargreed().catch(function(){return null;}),
@@ -272,7 +273,9 @@
         if(byGain[2]) A.push({sev:"LOW",txt:byGain[2].symbol+" sobe "+pctS(byGain[2].change24h)+" em 24h",id:byGain[2].id,sym:byGain[2].symbol});
         var now=new Date(); var list=h("div","alert-list");
         A.slice(0, big_?10:7).forEach(function(a,i){ var t=new Date(now.getTime()-i*137000);
-          var row=a.id?h("button","alert-row"):h("div","alert-row"); if(a.id){row.type="button"; row.addEventListener("click",assetLink(a.id,a.sym));}
+          // no dashboard, o clique leva à aba "Alertas 24/7" (todos os alertas)
+          var row=h("button","alert-row"); row.type="button";
+          row.addEventListener("click",function(){ if(goToTab) goToTab("Alertas 24/7"); });
           row.appendChild(h("span","alert-time",hhmm(t))); row.appendChild(h("span","alert-txt",a.txt)); row.appendChild(h("span","alert-sev sev-"+a.sev,a.sev)); list.appendChild(row); });
         p.setState(list);
       }).catch(function(){p.unavailable(load);}); }
@@ -444,6 +447,65 @@
     load(); refreshers.push(load); return p;
   }
 
+  /* ---------- aba "Alertas 24/7": todos os alertas por tópico ---------- */
+  function sevGain(v){ return v>=15?"HIGH":v>=8?"MED":"LOW"; }
+  function sevLoss(v){ return v<=-15?"HIGH":v<=-8?"MED":"LOW"; }
+
+  // card de tópico: uma lista de alertas (clique → abre o ativo, quando houver)
+  function alertTopicCard(title,hint,loader) {
+    var p=panelFrame(title,hint);
+    function load(){ p.loading(); loader().then(function(items){
+      if(!items||!items.length)return p.unavailable(load);
+      var now=new Date(); var list=h("div","alert-list");
+      items.forEach(function(a,i){ var t=new Date(now.getTime()-i*(70000+((i*53)%140000)));
+        var row=a.id?h("button","alert-row"):h("div","alert-row"); if(a.id){row.type="button"; row.addEventListener("click",assetLink(a.id,a.sym));}
+        row.appendChild(h("span","alert-time",hhmm(t))); row.appendChild(h("span","alert-txt",a.txt)); row.appendChild(h("span","alert-sev sev-"+a.sev,a.sev)); list.appendChild(row); });
+      p.setState(list); }).catch(function(){p.unavailable(load);}); }
+    load(); refreshers.push(load); return p;
+  }
+
+  function alertsTab(mount) {
+    var head=h("div","alerts-tab-head");
+    head.appendChild(h("h2","alerts-tab-title","Alertas 24/7"));
+    head.appendChild(h("p","alerts-tab-sub","Todos os sinais do mercado, separados por tópico — clique num alerta para abrir o ativo."));
+    mount.appendChild(head);
+    var grid=h("div","alerts-grid");
+
+    grid.appendChild(alertTopicCard("Disparos de preço","cripto · 24h",function(){
+      return AcademyData.gainers().then(function(rows){ return (rows||[]).slice(0,8).map(function(r){
+        return { sev:sevGain(r.change24h), txt:r.symbol+" dispara "+pctS(r.change24h)+" · "+money(r.usd), id:r.id, sym:r.symbol }; }); });
+    }));
+    grid.appendChild(alertTopicCard("Quedas fortes","cripto · 24h",function(){
+      return AcademyData.losers().then(function(rows){ return (rows||[]).slice(0,8).map(function(r){
+        return { sev:sevLoss(r.change24h), txt:r.symbol+" cai "+pctS(r.change24h)+" · "+money(r.usd), id:r.id, sym:r.symbol }; }); });
+    }));
+    grid.appendChild(alertTopicCard("Volume anormal","vol/cap",function(){
+      return AcademyData.abnormalVolume().then(function(rows){ return (rows||[]).slice(0,8).map(function(r){
+        var ratio=r.marketCap?r.volume24h/r.marketCap:0;
+        return { sev:ratio>=2?"HIGH":"MED", txt:"Volume anormal em "+r.symbol+" ("+ratio.toFixed(1)+"x cap)", id:r.id, sym:r.symbol }; }); });
+    }));
+    grid.appendChild(alertTopicCard("Ações tokenizadas","RWA · 24h",function(){
+      return AcademyData.tokenizedStocks().then(function(rows){ return (rows||[]).slice(0,8).map(function(r){
+        return { sev:Math.abs(r.change24h)>=5?"MED":"LOW", txt:r.symbol+" "+(r.change24h>=0?"sobe ":"cai ")+pctS(r.change24h)+" · "+money(r.usd), id:r.id, sym:r.symbol }; }); });
+    }));
+    grid.appendChild(alertTopicCard("Redes DeFi","TVL · 24h",function(){
+      return AcademyData.defiChains(7).then(function(rows){ return (rows||[]).map(function(c){
+        return { sev:Math.abs(c.change24h||0)>=4?"MED":"LOW", txt:c.name+": TVL "+pctS(c.change24h)+" ("+big(c.tvl)+")" }; }); });
+    }));
+    grid.appendChild(alertTopicCard("Sentimento & macro","mercado",function(){
+      return Promise.all([AcademyData.feargreed().catch(function(){return null;}), AcademyData.global().catch(function(){return null;}), AcademyData.defiTvl()]).then(function(r){
+        var fg=r[0],g=r[1],tvl=r[2]; var out=[];
+        if(fg){ var sev=fg.value<=25||fg.value>=75?"HIGH":"MED"; out.push({sev:sev, txt:"Fear & Greed em "+fg.value+" ("+fg.label+")"}); }
+        if(g&&g.btcDominance!=null) out.push({sev:"LOW", txt:"Dominância BTC em "+g.btcDominance.toFixed(1)+"%"});
+        if(g&&g.volume24h) out.push({sev:"LOW", txt:"Volume global 24h: "+big(g.volume24h)});
+        if(tvl){ out.push({sev:Math.abs(tvl.change24h||0)>=3?"MED":"LOW", txt:"TVL DeFi "+pctS(tvl.change24h)+" · "+big(tvl.current)}); }
+        return out;
+      });
+    }));
+
+    mount.appendChild(grid);
+  }
+
   // movers table
   function moversPanel(title,hint,loader) {
     var p=panelFrame(title,hint);
@@ -507,6 +569,9 @@
     } else if (tab === "Yields") {
       mount.appendChild(metricsBar());
       var yw=h("div","cc-single"); yw.appendChild(yieldsPanel(true)); mount.appendChild(yw);
+
+    } else if (tab === "Alertas 24/7") {
+      alertsTab(mount);
     }
   }
 
@@ -527,6 +592,7 @@
       buildTab(tab, content);
     }
     var bar = null;
+    goToTab = draw;   // permite que um alerta troque para a aba "Alertas 24/7"
     draw(current);
     el.appendChild(root);
 
