@@ -50,8 +50,8 @@ img.brand__mark { object-fit: contain; border-radius: 0; display: block; }
   white-space: nowrap; line-height: 1.05;
 }
 .brand__tag {
-  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.02em;
-  color: var(--text-faint); white-space: nowrap;
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em;
+  color: var(--text-faint); white-space: nowrap; text-transform: uppercase;
 }
 
 /* ---- Topbar -------------------------------------------- */

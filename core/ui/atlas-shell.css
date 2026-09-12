@@ -1137,7 +1137,8 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 .sidebar .logo-tag {
   grid-area: tag; align-self: start;
   font-family: var(--mono, 'JetBrains Mono', monospace);
-  font-size: 10px; letter-spacing: 0.02em; color: var(--texto-fraco); white-space: nowrap;
+  font-size: 10px; letter-spacing: 0.08em; color: var(--texto-fraco); white-space: nowrap;
+  text-transform: uppercase;
 }
 
 /* busca na sidebar (abre a paleta Ctrl+K) */

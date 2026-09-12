@@ -248,7 +248,7 @@
 .side-brand .txt { display: flex; flex-direction: column; min-width: 0; }
 .side-brand .txt .n { font-size: 20px; font-weight: 700; line-height: 1.05; letter-spacing: 0.11em; white-space: nowrap; }
 .side-brand .txt .s { font-size: 10.5px; margin-top: 2px; }
-.side-brand .txt .tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.02em; color: var(--text-3); margin-top: 2px; line-height: 1.25; }
+.side-brand .txt .tag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--text-3); margin-top: 2px; line-height: 1.25; text-transform: uppercase; }
 
 /* Busca compartilhada (abre a paleta Ctrl+K) na sidebar, com os tokens
    do RWA. A busca de ativos do topbar (#globalSearch) é outra função. */
