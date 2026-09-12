@@ -179,6 +179,17 @@
      segunda cópia da leitura de atlas.hold.state.v2 → config.nome_gestor — o
      tipo de duplicata que faz um lugar mostrar o nome novo e o outro o
      antigo. Agora só delega. */
+  /* Subtítulo da conta no menu de perfil. Com login real (Firebase),
+     mostra o email da sessão — a verdade sobre quem está conectado.
+     Sem provedor real (modo local), mantém o aviso honesto de sempre. */
+  function contaSub() {
+    if (window.AtlasAuth && AtlasAuth.real && AtlasAuth.real()) {
+      var u = AtlasAuth.current && AtlasAuth.current();
+      if (u && u.email) return "Conectado como " + u.email;
+    }
+    return "Conta local · dados neste navegador";
+  }
+
   function perfil() {
     if (window.AtlasSettings && AtlasSettings.profile) return AtlasSettings.profile();
     return { name: "Gestor ATLAS", initials: "GA" };
@@ -213,7 +224,7 @@
         '<span class="tb-menu__user-av">' + esc(p.initials) + "</span>" +
         '<span class="tb-menu__user-txt">' +
           "<strong>" + esc(p.name) + "</strong>" +
-          "<span>Conta local · dados neste navegador</span>" +
+          "<span>" + esc(contaSub()) + "</span>" +
         "</span>" +
       "</div>" +
       '<div class="tb-menu__list">' +
