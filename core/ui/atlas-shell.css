@@ -1127,7 +1127,9 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   grid-template-columns: auto 1fr;
   grid-template-areas: "mark text" "mark tag";
   align-items: center; column-gap: 13px; row-gap: 1px;
-  padding: 6px 6px 22px;
+  /* left 0: o ícone alinha com a borda da busca e dos itens do menu
+     (a sidebar já dá a margem esquerda). Antes ficava 6px pra dentro. */
+  padding: 6px 6px 22px 0;
 }
 .sidebar .logo-mark { grid-area: mark; width: 46px; height: 46px; }
 .sidebar .logo-mark img { width: 100%; height: 100%; }
