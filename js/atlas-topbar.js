@@ -124,33 +124,83 @@
 
   var MODULOS = /^(hold|trade|defi|rwa|academy)\//i;
 
+  /* As 9 bolinhas abrem um LAUNCHER em modal (card por módulo), no lugar
+     do dropdown antigo. A lista vem de AtlasShell.destinos() — uma
+     definição só — com descrições e grupos aqui. */
+  var APP_DESC = {
+    dashboard: "Visão geral do patrimônio", hold: "Carteira de longo prazo",
+    trade: "Operações e processo", defi: "Pools, staking e lending",
+    rwa: "Ativos do mundo real", carteiras: "Carteiras e movimentações",
+    academy: "Pesquisa de mercado (cripto + RWA)", ferramentas: "A bancada de utilidades",
+    relatorios: "Relatórios do patrimônio", configuracoes: "Preferências e dados"
+  };
+  var APP_GRUPOS = [
+    { nome: "Módulos", ids: ["hold", "trade", "defi", "rwa"] },
+    { nome: "Painéis", ids: ["dashboard", "carteiras", "academy"] },
+    { nome: "Sistema", ids: ["ferramentas", "relatorios", "configuracoes"] }
+  ];
+
+  function svgDeInner(inner) {
+    try {
+      var d = new DOMParser().parseFromString(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">' + inner + "</svg>",
+        "image/svg+xml");
+      var el = d.documentElement;
+      return (el && el.nodeName.toLowerCase() === "svg" && !el.querySelector("parsererror")) ? el : null;
+    } catch (e) { return null; }
+  }
+
+  var launcherEl = null;
+  function fecharLauncher() {
+    if (launcherEl && launcherEl.parentNode) launcherEl.parentNode.removeChild(launcherEl);
+    launcherEl = null; document.removeEventListener("keydown", launcherKey);
+  }
+  function launcherKey(e) { if (e.key === "Escape") fecharLauncher(); }
+
+  function abrirLauncher() {
+    if (launcherEl) { fecharLauncher(); return; }
+    var destinos = (window.AtlasShell && AtlasShell.destinos) ? AtlasShell.destinos() : [];
+    if (!destinos.length) return;
+    var raizPath = (window.AtlasShell && AtlasShell.raiz) ? AtlasShell.raiz() : "";
+    var byId = {}; destinos.forEach(function (d) { byId[d.id] = d; });
+
+    var scrim = document.createElement("div"); scrim.className = "atlas-applauncher";
+    var panel = document.createElement("div"); panel.className = "atlas-applauncher__panel";
+    panel.setAttribute("role", "dialog"); panel.setAttribute("aria-label", "Ir para");
+    var head = document.createElement("div"); head.className = "atlas-applauncher__head";
+    var title = document.createElement("div"); title.className = "atlas-applauncher__title"; title.textContent = "Ir para";
+    var x = document.createElement("button"); x.type = "button"; x.className = "atlas-applauncher__x"; x.setAttribute("aria-label", "Fechar"); x.textContent = "×";
+    head.appendChild(title); head.appendChild(x); panel.appendChild(head);
+
+    APP_GRUPOS.forEach(function (g) {
+      var ids = g.ids.filter(function (id) { return byId[id]; });
+      if (!ids.length) return;
+      var grp = document.createElement("div"); grp.className = "atlas-applauncher__group";
+      var gl = document.createElement("div"); gl.className = "atlas-applauncher__glabel"; gl.textContent = g.nome; grp.appendChild(gl);
+      var grid = document.createElement("div"); grid.className = "atlas-applauncher__grid";
+      ids.forEach(function (id) {
+        var d = byId[id];
+        var card = document.createElement("a"); card.className = "atlas-appcard"; card.href = raizPath + d.href;
+        var ic = document.createElement("span"); ic.className = "atlas-appcard__icon";
+        var svg = svgDeInner(d.icon); if (svg) ic.appendChild(svg); card.appendChild(ic);
+        var nm = document.createElement("span"); nm.className = "atlas-appcard__name"; nm.textContent = d.label; card.appendChild(nm);
+        var ds = document.createElement("span"); ds.className = "atlas-appcard__desc"; ds.textContent = APP_DESC[id] || ""; card.appendChild(ds);
+        grid.appendChild(card);
+      });
+      grp.appendChild(grid); panel.appendChild(grp);
+    });
+
+    scrim.appendChild(panel);
+    scrim.addEventListener("click", function (e) { if (e.target === scrim) fecharLauncher(); });
+    x.addEventListener("click", fecharLauncher);
+    document.addEventListener("keydown", launcherKey);
+    document.body.appendChild(scrim); launcherEl = scrim;
+  }
+
   function montarAplicativos() {
     var btn = document.querySelector('.topbar-right .icon-btn[title="Aplicativos"]');
     if (!btn) return;
-
-    /* Os itens saem da própria sidebar: mesmo rótulo, mesmo ícone,
-       mesmo destino. Zero SVG novo e zero risco de divergir. */
-    var itens = [];
-    document.querySelectorAll(".sidebar .nav-item").forEach(function (a) {
-      var href = a.getAttribute("href") || "";
-      if (!MODULOS.test(href)) return;
-      var svg = a.querySelector("svg");
-      var rotulo = a.querySelector("span");
-      itens.push(
-        '<a class="tb-menu__item" role="menuitem" href="' + esc(href) + '">' +
-          (svg ? svg.outerHTML : "") +
-          "<span>" + esc(rotulo ? rotulo.textContent : href) + "</span>" +
-        "</a>"
-      );
-    });
-
-    if (!itens.length) return;   // página sem sidebar: não monta
-
-    var raiz = envolver(btn, { id: "apps" });
-    if (!raiz) return;
-    raiz._pop.innerHTML =
-      '<div class="tb-menu__head">Módulos</div>' +
-      '<div class="tb-menu__grid">' + itens.join("") + "</div>";
+    btn.addEventListener("click", function (e) { e.preventDefault(); abrirLauncher(); });
   }
 
   /* ============================================================

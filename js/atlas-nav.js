@@ -216,10 +216,48 @@
     isOpen: function () { return aberto; }
   };
 
+  /* ---------- marca maior + tagline + busca na sidebar ---------- */
+  function mkSearchIcon() {
+    var NS = "http://www.w3.org/2000/svg";
+    var s = document.createElementNS(NS, "svg");
+    s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("fill", "none");
+    s.setAttribute("stroke", "currentColor"); s.setAttribute("stroke-width", "1.8"); s.setAttribute("stroke-linecap", "round");
+    var c = document.createElementNS(NS, "circle"); c.setAttribute("cx", "11"); c.setAttribute("cy", "11"); c.setAttribute("r", "7");
+    var p = document.createElementNS(NS, "path"); p.setAttribute("d", "m20 20-3.5-3.5");
+    s.appendChild(c); s.appendChild(p); return s;
+  }
+
+  function mountBrand() {
+    var logo = document.querySelector(".sidebar .logo");
+    if (!logo) return;
+    // tagline (fonte mono, menor) sob o "ATLAS"
+    if (!logo.querySelector(".logo-tag")) {
+      var tag = document.createElement("span");
+      tag.className = "logo-tag";
+      tag.textContent = "o seu mapa de investimentos";
+      logo.appendChild(tag);
+    }
+    // busca na sidebar → abre a paleta Ctrl+K (uma busca só no ATLAS)
+    var sb = logo.closest(".sidebar");
+    if (sb && !sb.querySelector(".atlas-side-search")) {
+      var nav = sb.querySelector("nav.nav[data-atlas-nav]");
+      var btn = document.createElement("button");
+      btn.type = "button"; btn.className = "atlas-side-search";
+      btn.setAttribute("aria-label", "Buscar (Ctrl+K)");
+      btn.appendChild(mkSearchIcon());
+      var lbl = document.createElement("span"); lbl.className = "lbl"; lbl.textContent = "Buscar…"; btn.appendChild(lbl);
+      var k1 = document.createElement("kbd"); k1.textContent = "Ctrl"; var k2 = document.createElement("kbd"); k2.textContent = "K";
+      btn.appendChild(k1); btn.appendChild(k2);
+      btn.addEventListener("click", function () { if (window.AtlasPalette && AtlasPalette.open) AtlasPalette.open(); });
+      if (nav && nav.parentNode) nav.parentNode.insertBefore(btn, nav); else sb.appendChild(btn);
+    }
+  }
+
   function init() {
     /* o menu primeiro: js/atlas-topbar.js clona estes itens para montar
        o atalho "Aplicativos", e roda logo depois deste script */
     renderMenu();
+    mountBrand();
     if (!build()) return;
     wire();
   }
