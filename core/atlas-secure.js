@@ -57,11 +57,17 @@
     if (global.AtlasFirebase && AtlasFirebase.whenReady) AtlasFirebase.whenReady(go); else go();
   }
 
-  // cadeia: config → firebase-app → firebase-auth → provedor → decide
+  // cadeia: config → app → auth → firestore → provedor → nuvem → decide
   load(root + "core/atlas-firebase-config.js", function () {
     load(root + "assets/vendor/firebase-app-compat-10.14.1.js", function () {
       load(root + "assets/vendor/firebase-auth-compat-10.14.1.js", function () {
-        load(root + "core/atlas-firebase.js", function () { decide(); });
+        load(root + "assets/vendor/firebase-firestore-compat-10.14.1.js", function () {
+          load(root + "core/atlas-firebase.js", function () {
+            // a nuvem (Fase 2) sobe depois do provedor; ela mesma espera o login
+            load(root + "core/atlas-cloud.js", function () {});
+            decide();
+          });
+        });
       });
     });
   });

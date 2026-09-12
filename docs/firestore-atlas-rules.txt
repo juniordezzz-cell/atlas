@@ -1,0 +1,48 @@
+============================================================
+ATLAS · Regras de segurança do Firestore (Fase 2)
+============================================================
+
+ATENÇÃO: o Firestore é COMPARTILHADO com o MundoDeFi (projeto
+cryptotrack-br). As regras são UM arquivo único para o projeto inteiro.
+
+  → NÃO apague as regras que já existem (se o MundoDeFi usa Firestore).
+  → ACRESCENTE o bloco "atlas_users" ao que já está lá.
+
+Se o Firestore acabou de ser criado e está VAZIO (só ATLAS vai usar),
+pode colar o arquivo inteiro abaixo.
+
+------------------------------------------------------------
+1) O BLOCO A ACRESCENTAR (dentro de match /databases/{database}/documents)
+------------------------------------------------------------
+
+    // ATLAS — cada usuário só acessa a própria subárvore.
+    match /atlas_users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+------------------------------------------------------------
+2) EXEMPLO COMPLETO (para um Firestore novo/vazio)
+------------------------------------------------------------
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ATLAS — dados do portfólio, isolados por usuário.
+    match /atlas_users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // (Se o MundoDeFi usa Firestore, as regras dele entram aqui também,
+    //  em outros match/... — não misturam com o atlas_users acima.)
+  }
+}
+
+------------------------------------------------------------
+Onde colar: Firebase Console → Firestore Database → aba "Regras" (Rules)
+→ editar → Publicar.
+------------------------------------------------------------
+
+Por que isto protege de verdade: as regras rodam no SERVIDOR do Google.
+Mesmo que alguém edite o JS do ATLAS no navegador, não consegue ler nem
+escrever os dados de outro usuário — só os do próprio uid autenticado.

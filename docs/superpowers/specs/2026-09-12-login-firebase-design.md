@@ -73,20 +73,65 @@ aparece. O login Google real é teste do usuário (não se loga a conta dele aqu
 
 ---
 
-## Fase 2 — Nuvem (Firestore) — ESBOÇO (spec própria depois)
+## Fase 2 — Nuvem (Firestore) — DESIGN FINAL (aprovado)
 
 **Objetivo:** cada conta tem seus dados no Firestore; o app abre com os **mesmos**
-dados em qualquer aparelho.
+dados em qualquer aparelho. Sincroniza o **portfólio inteiro**.
 
-**Arquitetura recomendada (não reescrever o ATLAS):**
-- **localStorage continua a cópia de trabalho local** (offline, rápido).
-- **Firestore é o espelho na nuvem**, sob `users/<uid>/...`.
-- Ao logar: puxa a nuvem → localStorage. A cada mudança: empurra localStorage →
-  nuvem. **Conflito** (edição em dois aparelhos): definir política (last-write-wins
-  por chave, ou merge) na spec da Fase 2.
-- **Regras de segurança** do Firestore: cada usuário só lê/escreve `users/<uid>`.
-  Isso torna a allowlist e a posse dos dados **server-side** — proteção real.
+**Projeto:** compartilhado `cryptotrack-br` (Opção A) — dados do ATLAS isolados
+sob `atlas/...`, longe das coleções do MundoDeFi.
 
-**Escopo:** portfólio inteiro (carteiras, posições, movimentações, configurações).
+### O que sincroniza
+As chaves de **dados** do registro canônico (`AtlasStorage.KEYS`, grupo "dados"
+do `AtlasBackup` — carteiras, caixa, snapshots, preços manuais, teses, estudos,
+notificações, e os estados de hold/trade/defi/rwa). **NÃO** sincroniza: caches
+(`atlas.http.cache`, `atlas.assets.cache`, `atlas.fx`) nem `atlas.session.v1`
+(sessão é do aparelho).
 
-**Fora de escopo agora:** a Fase 2 ganha spec e plano próprios.
+### Modelo no Firestore
+`atlas/users/{uid}/store/{chaveId}` — **um documento por chave**. Cada doc:
+`{ value: <string do localStorage>, updatedAt: <serverTimestamp>, device: <id> }`.
+Um-doc-por-chave evita o limite de 1 MiB e permite empurrar só o que mudou.
+(`chaveId` = a chave com `.` trocado por `__` para caber no nome do doc.)
+
+### Regras de segurança (server-side)
+Só o dono acessa a própria subárvore:
+```
+match /atlas/users/{uid}/{document=**} {
+  allow read, write: if request.auth != null && request.auth.uid == uid;
+}
+```
+Isso torna a posse dos dados **real** (não mais client-side). Complemento
+opcional: exigir que o email esteja verificado.
+
+### Fluxo
+1. **Ao logar / abrir:** puxa todos os docs de `store` → escreve nas chaves locais
+   → dispara um refresh dos stores/telas. A nuvem manda ao abrir.
+2. **A cada mudança** numa chave de dado (via um observador sobre o `localStorage.setItem`
+   das chaves de dados): empurra o doc daquela chave (debounce ~1,5 s), com
+   `updatedAt` e `device`.
+3. **Primeira sincronização num aparelho:**
+   - nuvem vazia + local com dados → **sobe** o local (semeia a nuvem);
+   - nuvem com dados + local vazio → **baixa**;
+   - ambos com dados → nuvem vence, mas **antes** grava um backup local do que
+     havia (via AtlasBackup) — nada some em silêncio.
+4. **Conflito:** last-write-wins **por chave** (`updatedAt`).
+5. **Entre aparelhos (sem tempo real):** um listener leve avisa quando OUTRO
+   aparelho gravou algo mais novo enquanto este está aberto → mostra um aviso
+   discreto "dados atualizados em outro aparelho — recarregar?". Não sobrescreve
+   edição em andamento.
+
+### Arquivos previstos
+- `assets/vendor/firebase-firestore-compat-10.14.1.js` — SDK local.
+- `core/atlas-cloud.js` — o motor de sincronização (pull/push/first-sync/notice),
+  apoiado em `AtlasStorage.KEYS` e `AtlasBackup`.
+- Wiring: incluir o firestore + `atlas-cloud.js` nas páginas (junto do que o
+  `atlas-secure.js`/provider já carrega); regras coladas no console pelo usuário.
+
+### Pré-requisitos do usuário (console)
+1. Firestore → **Criar banco** (modo produção; região sul-americana ou us-central).
+2. Colar as **regras** acima em Firestore → Rules.
+
+### Fora de escopo (v1)
+- Sincronização em tempo real (só aviso + recarregar).
+- Merge fino dentro de uma chave (é last-write-wins por chave inteira).
