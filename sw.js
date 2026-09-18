@@ -109,7 +109,9 @@
    atlas-flash.js ignora o número enquanto ele conta. */
 /* v58 = blur-fade nas entradas (atlas-effects.css) e fita de cotações
    (.atlas-marquee em atlas-magic.css) no Command Center do Academy. */
-var VERSAO = "atlas-v58";
+/* v59 = correções de segurança SEC-001/002/012 (escape de HTML no
+   Dashboard, DeFi, RWA, Finanças e Scanner Pools). */
+var VERSAO = "atlas-v59";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

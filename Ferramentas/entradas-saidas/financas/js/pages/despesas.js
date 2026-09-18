@@ -19,10 +19,10 @@
    Local-first: sem backend na nuvem, sem rede. pt-BR.
 
    Nota de segurança: as funções abaixo montam HTML (innerHTML) a
-   partir de `state` (lido do localStorage pelo próprio app, via
-   FinanceUtils.getState -- mesma origem, sem rede ou terceiros) e
-   de textos fixos deste arquivo. Não há entrada de rede sendo
-   injetada; mesmo padrão ja usado em financas/js/app-bridge.js.
+   partir de `state`. Esse estado NÃO é confiável só por ser local:
+   ele também chega por importação de backup (Configurações). Todo
+   texto livre passa por FinanceUtils.escapeHtml e a data por
+   FinanceUtils.formatDate, que só devolve DD/MM/AAAA ou "—" (SEC-001).
    ============================================================ */
 (function () {
   /* Deriva um tom mais escuro do token --vermelho (tema atual) sem
@@ -90,9 +90,9 @@
     FinanceUtils.renderRows(tbody, rows, (item) => `
       <tr>
         <td>${FinanceUtils.formatDate(item.date)}</td>
-        <td>${item.category}</td>
-        <td>${item.description}</td>
-        <td><span class="fx-tag fx-tag--red">${item.type}</span></td>
+        <td>${FinanceUtils.escapeHtml(item.category)}</td>
+        <td>${FinanceUtils.escapeHtml(item.description)}</td>
+        <td><span class="fx-tag fx-tag--red">${FinanceUtils.escapeHtml(item.type)}</span></td>
         <td class="fx-text-neg">${FinanceUtils.formatCurrency(item.value)}</td>
       </tr>
     `);
@@ -148,9 +148,9 @@
       container.innerHTML = items
         .map(
           (item) => `
-            <div class="fx-shopping-item ${item.done ? "is-done" : ""}" data-shopping-id="${item.id}">
+            <div class="fx-shopping-item ${item.done ? "is-done" : ""}" data-shopping-id="${FinanceUtils.escapeHtml(item.id)}">
               <input type="checkbox" ${item.done ? "checked" : ""} aria-label="Marcar como pago">
-              <span class="fx-shopping-name">${item.name}</span>
+              <span class="fx-shopping-name">${FinanceUtils.escapeHtml(item.name)}</span>
               <span class="fx-shopping-value">${FinanceUtils.formatCurrency(item.value)}</span>
               <button class="fx-row-remove" type="button" title="Remover item" aria-label="Remover item">✕</button>
             </div>

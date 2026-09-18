@@ -492,9 +492,16 @@
         .sort(function (a, b) { return b.pct - a.pct; });
       var topSector = bySector[0] || { label: "—", pct: 0 };
       var alerts = [];
-      bySector.forEach(function (s) { if (s.pct > 40) alerts.push({ level: "warn", text: "Concentração elevada em <b>" + s.label + "</b>: " + s.pct.toFixed(1) + "% do portfólio." }); });
-      byAsset.forEach(function (a) { if (a.pct > 22) alerts.push({ level: "warn", text: "Posição <b>" + a.label + "</b> acima de 22% (" + a.pct.toFixed(1) + "%)." }); });
-      assets.forEach(function (a) { if (a.status === "reduce") alerts.push({ level: "neg", text: "<b>" + a.ticker + "</b> marcado para redução — revisar exposição." }); });
+      /* O texto do alerta é HTML (o <b> é de propósito) e vai para
+         innerHTML no RWA; setor e ticker são digitados pelo usuário —
+         escapados aqui, na origem (SEC-012). */
+      var escA = function (v) {
+        return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      };
+      bySector.forEach(function (s) { if (s.pct > 40) alerts.push({ level: "warn", text: "Concentração elevada em <b>" + escA(s.label) + "</b>: " + s.pct.toFixed(1) + "% do portfólio." }); });
+      byAsset.forEach(function (a) { if (a.pct > 22) alerts.push({ level: "warn", text: "Posição <b>" + escA(a.label) + "</b> acima de 22% (" + a.pct.toFixed(1) + "%)." }); });
+      assets.forEach(function (a) { if (a.status === "reduce") alerts.push({ level: "neg", text: "<b>" + escA(a.ticker) + "</b> marcado para redução — revisar exposição." }); });
       if (!alerts.length) alerts.push({ level: "ok", text: "Nenhuma sobre-exposição relevante. Portfólio dentro dos limites." });
       // risco total 0-100
       var concRisk = Math.max(0, topSector.pct - 30) * 1.4;

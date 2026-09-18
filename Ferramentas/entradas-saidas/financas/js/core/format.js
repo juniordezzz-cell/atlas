@@ -13,8 +13,11 @@ export function formatPercent(value) {
 }
 
 export function formatDate(value) {
-  const [year, month, day] = value.split("-");
-  return `${day}/${month}/${year}`;
+  /* Só aceita AAAA-MM-DD (com ou sem hora depois). O resultado vai
+     direto para innerHTML nas tabelas, e a data pode vir de um backup
+     importado — texto que não é data vira "—", nunca marcação (SEC-001). */
+  const m = String(value == null ? "" : value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : "—";
 }
 
 export function parseMoney(value) {

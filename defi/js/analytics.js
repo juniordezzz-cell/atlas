@@ -76,7 +76,7 @@
     legenda.style.marginTop = "8px";
     legenda.innerHTML = "Barras = APR <b>realizado</b> (taxa gerada sobre o capital médio, anualizada). " +
       "Declarado na criação: " + all.map(function (x) {
-        return x.p.base + "/" + x.p.quote + " " + U.pct(x.declarado);
+        return U.esc(x.p.base) + "/" + U.esc(x.p.quote) + " " + U.pct(x.declarado);
       }).join(" · ") + ".";
     elApr.parentNode.appendChild(legenda);
   }
@@ -94,12 +94,12 @@
        dizia "US$ 27" ao lado da barra que dizia "US$ 27,21". */
     U.qs("#dcVal").textContent = U.money(total);
     U.qs("#aLegend").innerHTML = items.map(function (i) {
-      return '<div class="legend-item"><span class="lg-l"><span class="sw" style="background:' + i.color + '"></span>' + i.label + '</span><span class="lg-v">' + U.pct(i.pct) + '</span></div>';
+      return '<div class="legend-item"><span class="lg-l"><span class="sw" style="background:' + U.esc(i.color) + '"></span>' + U.esc(i.label) + '</span><span class="lg-v">' + U.pct(i.pct) + '</span></div>';
     }).join("");
     U.qs("#aBarTitle").textContent = titleMap[by];
     U.qs("#aBars").innerHTML = items.map(function (i) {
       return '<div class="dist-item"><div class="dist-top">' +
-        '<span class="dist-label"><span class="sw" style="background:' + i.color + '"></span>' + i.label + '</span>' +
+        '<span class="dist-label"><span class="sw" style="background:' + U.esc(i.color) + '"></span>' + U.esc(i.label) + '</span>' +
         '<span class="dist-val">' + U.money(i.value) + '</span></div>' +
         '<div class="dist-bar"><i style="width:' + i.pct + '%;background:' + i.color + '"></i></div></div>';
     }).join("");

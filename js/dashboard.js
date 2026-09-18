@@ -139,6 +139,16 @@ function pintarKpis() {
   }).join('');
 }
 
+/* Escape de HTML para tudo que vem de dado (rótulo de movimento, par,
+   protocolo, texto de alerta, nome de categoria). Esses valores são
+   digitados pelo usuário, restaurados de backup ou sincronizados pela
+   nuvem — nunca podem virar marcação dentro de innerHTML (SEC-001). */
+function escHTML(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 /* ---- Movimentações ---- */
 const iconEntrada = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12l7 7 7-7"/></svg>`;
 const iconSaida   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`;
@@ -148,12 +158,12 @@ function pintarMovimentacoes() {
     <li class="mov-item">
       <span class="mov-icon ${m.tipo === 'neg' ? 'neg' : ''}">${m.tipo === 'neg' ? iconSaida : iconEntrada}</span>
       <div class="mov-info">
-        <div class="t">${m.titulo}</div>
-        <div class="o">${m.origem}</div>
+        <div class="t">${escHTML(m.titulo)}</div>
+        <div class="o">${escHTML(m.origem)}</div>
       </div>
       <div class="mov-right">
-        <div class="v ${m.tipo}">${m.valor}</div>
-        <div class="q">${m.quando}</div>
+        <div class="v ${m.tipo}">${escHTML(m.valor)}</div>
+        <div class="q">${escHTML(m.quando)}</div>
       </div>
     </li>`).join('');
 }
@@ -162,18 +172,18 @@ function pintarMovimentacoes() {
 function pintarPools() {
   document.getElementById('poolList').innerHTML = D.pools.map(p => `
     <li class="pool-item">
-      <span class="pool-icon">${p.par.split('/')[0].slice(0,3)}</span>
+      <span class="pool-icon">${escHTML(String(p.par).split('/')[0].slice(0,3))}</span>
       <div class="pool-info">
-        <div class="par">${p.par}</div>
-        <div class="dex">${p.dex}</div>
+        <div class="par">${escHTML(p.par)}</div>
+        <div class="dex">${escHTML(p.dex)}</div>
       </div>
       <div class="pool-metric">
         <div class="lbl">APR</div>
-        <div class="apr">${p.apr}</div>
+        <div class="apr">${escHTML(p.apr)}</div>
       </div>
       <div class="pool-lucro">
         <div class="lbl">Lucro</div>
-        <div class="val">${p.lucro}</div>
+        <div class="val">${escHTML(p.lucro)}</div>
       </div>
     </li>`).join('');
 }
@@ -196,8 +206,8 @@ function pintarAlertas() {
       <li class="alert-item nivel-${a.level || 'warn'}">
         <span class="alert-ic">${ICON_NIVEL[a.level] || ICON_NIVEL.warn}</span>
         <div>
-          <div class="alert-txt">${a.texto}</div>
-          <div class="alert-when">${a.module ? `<span class="alert-mod">${a.module}</span>` : ''}${a.quando}</div>
+          <div class="alert-txt">${escHTML(a.texto)}</div>
+          <div class="alert-when">${a.module ? `<span class="alert-mod">${escHTML(a.module)}</span>` : ''}${escHTML(a.quando)}</div>
         </div>
       </li>`).join('');
   } else {
@@ -370,7 +380,7 @@ function donut(canvasId, legendId, cfg) {
   document.getElementById(legendId).innerHTML = cfg.labels.map((l, i) => `
     <li>
       <span class="swatch" style="background:${cores[i]}"></span>
-      <span class="nome">${l}</span>
+      <span class="nome">${escHTML(l)}</span>
       <span class="val">${cfg.valores[i].toString().replace('.', ',')}%</span>
     </li>`).join('');
 

@@ -130,10 +130,18 @@
     },
 
     /* ---------- Iniciais / cores de token ---------- */
+    /* Escape de HTML para dado do usuário (par, protocolo, rede,
+       categoria) que entra em string de innerHTML — SEC-001. */
+    esc: function (s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    },
+
     coin: function (sym) {
       var c = (window.DeFiStore && DeFiStore.colorOf("token", sym)) || "#5B9BFF";
-      var initials = sym.slice(0, 3).toUpperCase();
-      return '<span class="coin" style="background:' + c + '">' + initials + '</span>';
+      var initials = String(sym == null ? "" : sym).slice(0, 3).toUpperCase();
+      return '<span class="coin" style="background:' + U.esc(c) + '">' + U.esc(initials) + '</span>';
     },
 
     /* ---------- Status ---------- */
@@ -198,7 +206,9 @@
       var ic = kind === "ok" ? U.icon("check") : kind === "warn" ? U.icon("alert") : U.icon("info");
       var t = document.createElement("div");
       t.className = "toast " + kind;
-      t.innerHTML = '<span class="ic">' + ic + '</span><span>' + msg + '</span>';
+      /* a mensagem é texto (pode trazer nome de pool digitado) — SEC-001 */
+      t.innerHTML = '<span class="ic">' + ic + '</span><span></span>';
+      t.lastChild.textContent = msg;
       wrap.appendChild(t);
       setTimeout(function () { t.style.opacity = "0"; t.style.transform = "translateX(24px)"; setTimeout(function () { t.remove(); }, 260); }, 2800);
     },

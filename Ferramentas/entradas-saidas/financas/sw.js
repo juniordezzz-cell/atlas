@@ -27,7 +27,11 @@
 // (../../../core/atlas-auth.js + atlas-secure.js + SDK do Firebase). Esses
 // arquivos moram FORA desta pasta e são do ATLAS: o fetch abaixo não os
 // guarda em cache (senão um ajuste no login nunca chegaria aqui).
-const CACHE = "financas-v6";
+//
+// v7 = correção de segurança SEC-001: texto livre e datas escapados antes
+// do innerHTML (app-bridge.js, core/format.js, pages/*). Este SW serve do
+// cache primeiro — sem o bump, quem já instalou seguiria com o código antigo.
+const CACHE = "financas-v7";
 
 const ASSETS = [
   "index.html",

@@ -174,7 +174,17 @@ function applyTheme(theme) {
 /* ============================================================
    Publicação dos globais clássicos
    ============================================================ */
+/* Escape de HTML para texto livre (descrição, categoria, origem, nome
+   de item) antes de entrar em innerHTML. O "dado local" não é confiável:
+   chega também por importação de backup (Configurações) — SEC-001. */
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 window.FinanceUtils = {
+  escapeHtml,
   STORAGE_KEY,
   EXPENSE_TYPES,
   defaultState,

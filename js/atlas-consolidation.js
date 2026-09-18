@@ -738,9 +738,14 @@
       (global.RWAStore.riskEngine().alerts || []).forEach(function (a) {
         var nivel = (a && a.level) || "warn";
         if (nivel === "ok") return;
-        add(NIVEL_RWA[nivel] || "warn", "rwa",
-            typeof a === "string" ? a : (a.text || a.msg || ""),
-            (a && a.when) || "agora");
+        /* O RWA escreve o alerta em HTML (<b>…</b>, dado já escapado).
+           O Dashboard escapa tudo que recebe, então convertemos para
+           texto aqui: DOMParser não executa script nem carrega imagem. */
+        var html = typeof a === "string" ? a : (a.text || a.msg || "");
+        var texto = safe(function () {
+          return new DOMParser().parseFromString(String(html), "text/html").body.textContent;
+        }, String(html).replace(/<[^>]*>/g, ""));
+        add(NIVEL_RWA[nivel] || "warn", "rwa", texto || "", (a && a.when) || "agora");
       });
       return true;
     }, null);

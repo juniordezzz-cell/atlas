@@ -123,7 +123,7 @@
         const width = Math.round((item.value / total) * 100);
         return `
           <div class="fx-progress-item">
-            <span>${item.name}</span>
+            <span>${FinanceUtils.escapeHtml(item.name)}</span>
             <span class="fx-progress-track"><span class="fx-progress-fill" style="--value: ${width}%"></span></span>
             <strong>${FinanceUtils.formatCurrency(item.value)}</strong>
           </div>
@@ -157,8 +157,8 @@
         return `
           <div class="fx-transaction-item">
             <div>
-              <p>${item.description}</p>
-              <small>${item.kind} · ${FinanceUtils.formatDate(item.date)}</small>
+              <p>${FinanceUtils.escapeHtml(item.description)}</p>
+              <small>${FinanceUtils.escapeHtml(item.kind)} · ${FinanceUtils.formatDate(item.date)}</small>
             </div>
             <strong class="${valueClass}">${sign} ${FinanceUtils.formatCurrency(item.value)}</strong>
           </div>

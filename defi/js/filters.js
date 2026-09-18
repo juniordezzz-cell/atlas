@@ -15,7 +15,7 @@
         if (!v || seen[v]) return false; seen[v] = 1; return true;
       }).sort();
       selectEl.innerHTML = '<option value="">' + placeholder + '</option>' +
-        vals.map(function (v) { return '<option value="' + v + '">' + v + '</option>'; }).join("");
+        vals.map(function (v) { return '<option value="' + U.esc(v) + '">' + U.esc(v) + '</option>'; }).join("");
     },
 
     /* Aplica um objeto de filtros { field: value } a um array */

@@ -95,7 +95,7 @@
     distChart = Charts.donut(U.qs("#chartDist"), items);
     U.qs("#distLegend").innerHTML = items.map(function (i) {
       return '<div class="legend-item">' +
-        '<span class="lg-l"><span class="sw" style="background:' + i.color + '"></span>' + i.label + '</span>' +
+        '<span class="lg-l"><span class="sw" style="background:' + U.esc(i.color) + '"></span>' + U.esc(i.label) + '</span>' +
         '<span class="lg-v">' + U.pct(i.pct) + '</span>' +
       '</div>';
     }).join("");
@@ -247,7 +247,7 @@
     if (!el) return;
     var msg = (err && err.message) ? err.message : "Não consegui atualizar os preços agora.";
     var quando = S.ultimaCotacao();
-    el.innerHTML = "⚠ " + msg + " Os valores abaixo são os da última atualização" +
+    el.innerHTML = "⚠ " + U.esc(msg) + " Os valores abaixo são os da última atualização" +
       (quando ? " (" + U.date(quando.slice(0, 10)) + ")" : "") + ", não os de agora.";
   }
 
@@ -266,7 +266,7 @@
   function avisarSemPreco(faltando) {
     var el = faixaAviso();
     if (!el) return;
-    el.innerHTML = "⚠ Nenhuma fonte reconheceu <b>" + faltando.join("</b>, <b>") +
+    el.innerHTML = "⚠ Nenhuma fonte reconheceu <b>" + faltando.map(U.esc).join("</b>, <b>") +
       "</b>. Abra a posição e informe o preço na mão em <b>Atualizar pool</b> — " +
       "enquanto isso, a faixa dessas posições fica sem veredito.";
   }
@@ -274,7 +274,7 @@
   function avisarVencidos(vencidos) {
     var el = faixaAviso();
     if (!el) return;
-    el.innerHTML = "⚠ O preço de <b>" + vencidos.join("</b>, <b>") +
+    el.innerHTML = "⚠ O preço de <b>" + vencidos.map(U.esc).join("</b>, <b>") +
       "</b> foi informado por você há mais de " +
       (window.AtlasPrecos ? AtlasPrecos.VALIDADE_DIAS : 7) +
       " dias. Os números abaixo usam esse preço — vale conferir.";

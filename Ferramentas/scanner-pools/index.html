@@ -1325,14 +1325,48 @@ function load(){
     console.error("load falhou:", e);
     state.pools = clone(SEED);
   }
+  // SEC-002: o id vai para dentro de onclick="…(${p.id})" e os números
+  // passam por fFee/fUSD, que devolvem string crua quando recebem string.
+  // Dado salvo (ou importado antes desta correção) é normalizado aqui.
+  state.pools = assignPoolIds(state.pools.map(normalizePool));
   state.pools.forEach((p,i)=>{
-    if(p.id==null) p.id = i+1;
     if(p.updatedAt==null) p.updatedAt = Date.parse(DATA_VERSION+"T00:00:00");
     if(!Array.isArray(p.history) || p.history.length===0){
       p.history = [{ts:p.updatedAt, tvl:p.tvl, vol24h:p.vol24h, vol30d:p.vol30d, fee:p.fee, apr:p.apr}];
     }
     if(p.notes==null) p.notes = "";
   });
+}
+/* SEC-002: pool vinda de fora (localStorage antigo, JSON importado) vira
+   um objeto com tipos garantidos. id: número finito e positivo (vai para onclick);
+   números: Number ou null; textos: String (escapados na renderização). */
+function normalizePool(p){
+  const o = (p && typeof p==="object") ? {...p} : {};
+  // id finito e positivo é mantido como está — inclusive o fracionário que
+  // o próprio app cria (Date.now()+Math.random()) e que os alertas "vistos"
+  // usam como chave. Só id ausente/inválido fica null e é renumerado depois.
+  const id = Number(o.id);
+  o.id = (Number.isFinite(id) && id>0) ? id : null;
+  ["fee","tvl","vol24h"].forEach(k=>{ const v=Number(o[k]); o[k] = Number.isFinite(v) ? v : 0; });
+  ["vol30d","apr"].forEach(k=>{ if(o[k]==null || o[k]===""){ o[k]=null; return; } const v=Number(o[k]); o[k] = Number.isFinite(v) ? v : null; });
+  if(o.updatedAt!=null){ const t=Number(o.updatedAt); o.updatedAt = Number.isFinite(t) ? t : null; }
+  ["pool","platform","network","notes","level","cat","srcId"].forEach(k=>{ if(o[k]!=null) o[k]=String(o[k]); });
+  o.fav = !!o.fav;
+  if(Array.isArray(o.history)){
+    o.history = o.history.filter(h=>h && typeof h==="object").map(h=>({
+      ts:Number(h.ts)||0, tvl:Number(h.tvl)||0, vol24h:Number(h.vol24h)||0,
+      vol30d: h.vol30d==null ? null : (Number(h.vol30d)||0),
+      fee:Number(h.fee)||0, apr: h.apr==null ? null : (Number(h.apr)||0)
+    }));
+  }
+  return o;
+}
+/* Dá id a quem veio sem (ou com id repetido), a partir do maior existente. */
+function assignPoolIds(pools){
+  const seen = new Set();
+  let next = Math.floor(pools.reduce((m,p)=>Math.max(m, p.id||0), 0)) + 1;
+  pools.forEach(p=>{ if(p.id==null || seen.has(p.id)) p.id = next++; seen.add(p.id); });
+  return pools;
 }
 /* Acrescenta as pools do seed que ainda não existem. Pool já existente fica como está. */
 function mergeSeedIntoPools(){
@@ -1581,7 +1615,7 @@ function buildNetworkFilter(){
   const pool = state.platform==="Todas" ? state.pools : state.pools.filter(p=>p.platform===state.platform);
   const nets = ["Todas", ...Array.from(new Set(pool.map(p=>p.network))).sort()];
   const valid = nets.includes(cur) ? cur : "Todas";
-  sel.innerHTML = nets.map(n=>`<option value="${n}"${n===valid?' selected':''}>${n==="Todas"?"Todas as redes":n}</option>`).join("");
+  sel.innerHTML = nets.map(n=>`<option value="${esc(n)}"${n===valid?' selected':''}>${n==="Todas"?"Todas as redes":esc(n)}</option>`).join("");
 }
 
 function buildPlatStats(){
@@ -1590,8 +1624,8 @@ function buildPlatStats(){
   el.innerHTML = plats.map(pl=>{
     const n = pl==="Todas" ? state.pools.length : state.pools.filter(p=>p.platform===pl).length;
     const color = pl==="Todas" ? "var(--accent)" : (PLAT_COLORS[pl]||"#8a94a8");
-    return `<div class="pchip ${state.platform===pl?'on':''}" onclick="setPlatform('${pl}')">
-      <span class="pdot" style="background:${color}"></span>${pl==="Todas"?"Todas":pl}<span class="cnt">${n}</span>
+    return `<div class="pchip ${state.platform===pl?'on':''}" data-pl="${esc(pl)}" onclick="setPlatform(this.dataset.pl)">
+      <span class="pdot" style="background:${esc(color)}"></span>${pl==="Todas"?"Todas":esc(pl)}<span class="cnt">${n}</span>
     </div>`;
   }).join("");
 }
@@ -2427,7 +2461,8 @@ function importJSON(ev){
       const data=JSON.parse(rd.result);
       if(!Array.isArray(data)) throw 0;
       if(confirm(`Importar ${data.length} pool(s)? Isso SUBSTITUI os dados atuais.`)){
-        state.pools=data.map((p,i)=>({id:p.id??(Date.now()+i),...p}));
+        // SEC-002: nada do arquivo entra sem normalizar (ids repetidos renumerados)
+        state.pools=assignPoolIds(data.map(normalizePool));
         state.page=1; save(); render();
       }
     }catch(e){ alert("Arquivo JSON inválido."); }
@@ -2442,7 +2477,7 @@ function restoreSeed(){
   }
 }
 
-function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ================================================================
    SCANNER IA — lê print de pool e monta uma prévia editável.

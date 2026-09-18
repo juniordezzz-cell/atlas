@@ -205,21 +205,21 @@
       var profitCls = lucro > 0 ? "up" : (lucro < 0 ? "down" : "flat");
 
       return '' +
-        '<a class="pos-card" href="pool.html?id=' + p.id + '">' +
+        '<a class="pos-card" href="pool.html?id=' + encodeURIComponent(p.id) + '">' +
           '<div class="pos-head">' +
             '<div class="pos-pair">' +
               '<div class="pair-icons">' + U.coin(p.base) + U.coin(p.quote) + '</div>' +
               '<div>' +
-                '<div class="pair-name">' + p.base + ' / ' + p.quote + '</div>' +
-                '<div class="pair-proto">' + p.protocol + '</div>' +
+                '<div class="pair-name">' + U.esc(p.base) + ' / ' + U.esc(p.quote) + '</div>' +
+                '<div class="pair-proto">' + U.esc(p.protocol) + '</div>' +
               '</div>' +
             '</div>' +
             U.statusDot(status, "pool") +
           '</div>' +
           '<div class="pos-tags">' +
-            '<span class="tag tag-chain"><span class="dot" style="background:' + DeFiStore.colorOf("chain", p.chain) + '"></span>' + p.chain + '</span>' +
-            '<span class="tag tag-proto">' + p.protocol + '</span>' +
-            '<span class="tag tag-cat">' + p.category + '</span>' +
+            '<span class="tag tag-chain"><span class="dot" style="background:' + U.esc(DeFiStore.colorOf("chain", p.chain)) + '"></span>' + U.esc(p.chain) + '</span>' +
+            '<span class="tag tag-proto">' + U.esc(p.protocol) + '</span>' +
+            '<span class="tag tag-cat">' + U.esc(p.category) + '</span>' +
           '</div>' +
           '<div class="pos-metrics">' +
             '<div class="pos-metric"><div class="k">Capital</div><div class="v">' + U.money(capital) + '</div></div>' +

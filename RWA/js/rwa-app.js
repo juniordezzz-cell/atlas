@@ -43,7 +43,7 @@
     { id: "narrative", label: "Narrative",   icon: "narrative", route: "#/narrative" },
     { id: "journal",   label: "Journal",     icon: "journal",   route: "#/journal" }
   ];
-  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
 
   /* Confirmação de ação destrutiva pelo kit compartilhado
      (core/ui/atlas-ui.js), com window.confirm como rede de segurança —
@@ -877,9 +877,9 @@
       '</div>' +
       '<div class="grid g-2 section">' +
         UI.panel("Concentração por setor",
-          r.bySector.length ? r.bySector.map(function (s2) { return UI.meter({ k: s2.label, v: U.pct(s2.pct), pct: s2.pct, color: s2.color }); }).join("") : UI.empty({ icon: "info", title: "Sem dados", text: "Adicione ativos para ver a concentração." }), '', "Setores") +
+          r.bySector.length ? r.bySector.map(function (s2) { return UI.meter({ k: esc(s2.label), v: U.pct(s2.pct), pct: s2.pct, color: s2.color }); }).join("") : UI.empty({ icon: "info", title: "Sem dados", text: "Adicione ativos para ver a concentração." }), '', "Setores") +
         UI.panel("Concentração por ativo",
-          r.byAsset.length ? r.byAsset.map(function (s2) { return UI.meter({ k: s2.label, v: U.pct(s2.pct), pct: s2.pct, color: s2.color }); }).join("") : UI.empty({ icon: "info", title: "Sem dados", text: "Adicione ativos para ver a concentração." }), '', "Ativos") +
+          r.byAsset.length ? r.byAsset.map(function (s2) { return UI.meter({ k: esc(s2.label), v: U.pct(s2.pct), pct: s2.pct, color: s2.color }); }).join("") : UI.empty({ icon: "info", title: "Sem dados", text: "Adicione ativos para ver a concentração." }), '', "Ativos") +
       '</div>' +
       '<div class="section">' + UI.panel("Alertas",
         '<div class="alerts">' + r.alerts.map(function (al) {

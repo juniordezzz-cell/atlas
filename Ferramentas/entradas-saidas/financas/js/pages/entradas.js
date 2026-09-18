@@ -16,10 +16,10 @@
    Local-first: sem backend na nuvem, sem rede. pt-BR.
 
    Nota de segurança: as funções abaixo montam HTML (innerHTML) a
-   partir de `state` (lido do localStorage pelo próprio app, via
-   FinanceUtils.getState -- mesma origem, sem rede ou terceiros) e
-   de textos fixos deste arquivo. Não há entrada de rede sendo
-   injetada; mesmo padrão ja usado em financas/js/app-bridge.js.
+   partir de `state`. Esse estado NÃO é confiável só por ser local:
+   ele também chega por importação de backup (Configurações). Todo
+   texto livre passa por FinanceUtils.escapeHtml e a data por
+   FinanceUtils.formatDate, que só devolve DD/MM/AAAA ou "—" (SEC-001).
    ============================================================ */
 (function () {
   function filteredEntries(state) {
@@ -57,8 +57,8 @@
     FinanceUtils.renderRows(tbody, rows, (item) => `
       <tr>
         <td>${FinanceUtils.formatDate(item.date)}</td>
-        <td>${item.source}</td>
-        <td>${item.description}</td>
+        <td>${FinanceUtils.escapeHtml(item.source)}</td>
+        <td>${FinanceUtils.escapeHtml(item.description)}</td>
         <td><span class="fx-tag fx-tag--green">Receita</span></td>
         <td class="fx-text-pos">${FinanceUtils.formatCurrency(item.value)}</td>
       </tr>
