@@ -1,0 +1,6 @@
+# Chaves de API reais — NUNCA versionar nem subir para o site (viraria uma URL pública).
+# No site, use o botão "Importar keys.json" da aba Scanner: as chaves ficam só no navegador.
+keys/keys.json
+
+# Backups locais do HTML
+*.backup.html

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Ferramentas do ATLAS: a bancada de utilidades que rodam ao lado do sistema. A primeira e o Financas — controle de entradas e saidas.">
+  <meta name="description" content="Ferramentas do ATLAS: a bancada de utilidades que rodam ao lado do sistema. Financas (entradas e saidas) e Pulse (pools de liquidez).">
   <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
@@ -88,7 +88,7 @@
         </span>
         <h2 class="tools-sec__title">Gerir o dinheiro</h2>
         <span class="tools-sec__sub">Para onde vai o seu caixa?</span>
-        <span class="tools-sec__count">1</span>
+        <span class="tools-sec__count">2</span>
       </div>
 
       <div class="tools-grid">
@@ -122,22 +122,37 @@
           </span>
         </a>
 
+        <!-- FERRAMENTA · Pulse (pools de liquidez)
+             Mora em Ferramentas/pulse/ e é um HTML único, autônomo.
+             As chaves de IA do Scanner ficam só no navegador (keys.json
+             é ignorado pelo git — ver Ferramentas/pulse/.gitignore). -->
+        <a class="tool-card" href="../Ferramentas/pulse/index.html">
+          <span class="tool-card__badge tool-card__badge--free">Grátis</span>
+          <span class="tool-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </span>
+          <h3 class="tool-card__title">Pulse</h3>
+          <p class="tool-card__desc">Análise de pools de liquidez: compare TVL, volume, taxa e eficiência, leia prints com o scanner e acompanhe as pools no radar.</p>
+          <div class="tool-card__chips">
+            <span class="tool-card__chip">Pools de liquidez</span>
+            <span class="tool-card__chip">Scanner</span>
+            <span class="tool-card__chip">Radar</span>
+          </div>
+          <span class="tool-card__cta">
+            Abrir ferramenta
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </span>
+        </a>
+
         <!-- Marcador honesto: a bancada vai crescer. Não finge ser
              clicável (ver .tool-card--soon). Troque por uma ferramenta
              real quando existir. -->
-        <div class="tool-card tool-card--soon" aria-hidden="true">
-          <span class="tool-card__badge tool-card__badge--soon">Em breve</span>
-          <span class="tool-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-          </span>
-          <h3 class="tool-card__title">Próxima ferramenta</h3>
-          <p class="tool-card__desc">Novas utilidades entram aqui conforme ficarem prontas — cada uma na sua pasta, sem mexer no resto do ATLAS.</p>
-          <span class="tool-card__cta">Em construção</span>
-        </div>
-
         <div class="tool-card tool-card--soon" aria-hidden="true">
           <span class="tool-card__badge tool-card__badge--soon">Em breve</span>
           <span class="tool-card__icon">
