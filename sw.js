@@ -107,7 +107,9 @@
 /* v57 = efeitos do Magic UI em core/ui/atlas-magic.{css,js} (spotlight nos
    cards, feixe na borda, contagem dos totais), carregados pelo atlas-shell.js;
    atlas-flash.js ignora o número enquanto ele conta. */
-var VERSAO = "atlas-v57";
+/* v58 = blur-fade nas entradas (atlas-effects.css) e fita de cotações
+   (.atlas-marquee em atlas-magic.css) no Command Center do Academy. */
+var VERSAO = "atlas-v58";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

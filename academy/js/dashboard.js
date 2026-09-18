@@ -75,6 +75,46 @@
     return bar;
   }
 
+  /* ---------- fita de cotações (marquee do Magic UI) ----------
+     As 20 maiores por capitalização, sem stablecoins (preço parado em
+     $1 não diz nada numa fita). Mesma lista/cache de AcademyData.markets()
+     que os painéis já usam — nenhuma chamada a mais às APIs. A animação
+     é .atlas-marquee (core/ui/atlas-magic.css): duas cópias do trilho
+     deslizando em loop, pausa no hover. Clique abre a página do ativo. */
+  var STABLE_SYM = { USDT:1, USDC:1, DAI:1, USDE:1, FDUSD:1, PYUSD:1, TUSD:1, USDD:1, BUSD:1, USDS:1, USD1:1, BUIDL:1 };
+  function tickerTape() {
+    var tape = h("div","cc-tape atlas-marquee");
+    tape.setAttribute("aria-label","Cotações das maiores criptomoedas");
+    tape.style.display = "none";            // só aparece quando houver dado
+    function trilho(rows, copia) {
+      var tr = h("div","atlas-marquee__track");
+      if (copia) tr.setAttribute("aria-hidden","true");
+      rows.forEach(function (r) {
+        var it = h("button","cc-tape-item"); it.type = "button";
+        if (copia) it.tabIndex = -1;
+        it.appendChild(h("span","cc-tape-sym", r.symbol));
+        it.appendChild(h("span","cc-tape-px", money(r.usd)));
+        it.appendChild(h("span","cc-tape-chg "+cls(r.change24h), pct(r.change24h)));
+        it.addEventListener("click", assetLink(r.id, r.symbol));
+        tr.appendChild(it);
+      });
+      return tr;
+    }
+    function load() {
+      AcademyData.markets().then(function (rows) {
+        rows = (rows || []).filter(function (r) { return r.usd && !STABLE_SYM[r.symbol]; }).slice(0, 20);
+        if (!rows.length) return;          // falhou: fica escondida, sem "indisponível" piscando
+        while (tape.firstChild) tape.removeChild(tape.firstChild);
+        tape.style.setProperty("--atlas-marquee-dur", (rows.length * 3.2) + "s");
+        tape.appendChild(trilho(rows, false));
+        tape.appendChild(trilho(rows, true));
+        tape.style.display = "";
+      }).catch(function () {});
+    }
+    load(); refreshers.push(load);
+    return tape;
+  }
+
   /* ---------- barra de métricas centrais ---------- */
   function metricsBar() {
     var strip = h("div","cc-metrics");
@@ -526,6 +566,8 @@
     refreshers = [];
     chainFocusSubs = [];
     if (globeCtl) { try{globeCtl.stop();}catch(e){} globeCtl=null; }
+
+    mount.appendChild(tickerTape());   // fita de cotações em todas as abas
 
     if (tab === "Mercado Geral") {
       mount.appendChild(metricsBar());

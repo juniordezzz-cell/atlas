@@ -80,10 +80,47 @@
 .tool-card:hover > .atlas-beam,
 [data-atlas-beam] > .atlas-beam { opacity: 1; }
 
+/* ---------- 4. FITA (marquee) ----------
+   Uso:  <div class="atlas-marquee">
+           <div class="atlas-marquee__track">…itens…</div>
+           <div class="atlas-marquee__track" aria-hidden="true">…mesmos itens…</div>
+         </div>
+   Como no original: o trilho vem repetido e cada cópia anda o próprio
+   comprimento + o vão, então o laço não tem emenda. Pausa no hover.
+   Velocidade: --atlas-marquee-dur (quem monta ajusta ao nº de itens). */
+.atlas-marquee {
+  --atlas-marquee-gap: 28px;
+  display: flex;
+  gap: var(--atlas-marquee-gap);
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+          mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+}
+.atlas-marquee__track {
+  display: flex; flex-shrink: 0; align-items: center;
+  gap: var(--atlas-marquee-gap);
+  min-width: 100%;
+  justify-content: space-around;
+  animation: atlas-marquee var(--atlas-marquee-dur, 40s) linear infinite;
+}
+.atlas-marquee:hover .atlas-marquee__track,
+.atlas-marquee:focus-within .atlas-marquee__track { animation-play-state: paused; }
+@keyframes atlas-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-100% - var(--atlas-marquee-gap))); }
+}
+
 /* ---------- interruptores (mesmos de atlas-effects.css §0) ---------- */
+/* Sem movimento, a fita vira uma faixa rolável à mão e a cópia some. */
 html[data-anim="off"] .atlas-beam { display: none; }
+html[data-anim="off"] .atlas-marquee { overflow-x: auto; }
+html[data-anim="off"] .atlas-marquee__track { animation: none; }
+html[data-anim="off"] .atlas-marquee__track[aria-hidden="true"] { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .atlas-beam { display: none; }
+  .atlas-marquee { overflow-x: auto; }
+  .atlas-marquee__track { animation: none; }
+  .atlas-marquee__track[aria-hidden="true"] { display: none; }
 }
 @media print {
   .atlas-spot, .atlas-beam { display: none; }

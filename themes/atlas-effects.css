@@ -465,10 +465,19 @@ svg .atlas-dot:hover {
 .page-enter {
   animation: atlas-view-in var(--atlas-dur) var(--atlas-ease-out);
 }
+/* blur-fade (Magic UI): entra desfocado e foca.
+   CUIDADO: um filter que sobra depois da animação (mesmo blur(0px))
+   vira bloco de contenção e desloca menus/modais fixos dentro do card.
+   E "none" no último quadro NÃO basta: o navegador interpola none como
+   blur(0px), e com fill-mode both/forwards esse valor fica para sempre.
+   Por isso o desfoque é uma animação À PARTE, atlas-blur-in, sempre com
+   fill-mode backwards — age na entrada e some ao terminar. atlas-view-in
+   não tem fill, então pode levar o filtro direto. */
 @keyframes atlas-view-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(8px); filter: blur(6px); }
+  to   { opacity: 1; transform: translateY(0); filter: none; }
 }
+@keyframes atlas-blur-in { from { filter: blur(6px); } }
 
 /* ===================================================================
    8. UTILITÁRIOS DE MOVIMENTO
@@ -694,7 +703,8 @@ table td, table th { font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: no-preference) {
   html[data-anim="on"] .kpi {
-    animation: atlas-kpi-in var(--atlas-dur-slow) var(--atlas-ease-out) both;
+    animation: atlas-kpi-in var(--atlas-dur-slow) var(--atlas-ease-out) both,
+               atlas-blur-in var(--atlas-dur-slow) var(--atlas-ease-out) backwards;
   }
 }
 @keyframes atlas-kpi-in {
@@ -718,9 +728,9 @@ table td, table th { font-variant-numeric: tabular-nums; }
     html[data-anim="on"] .panel,
     html[data-anim="on"] .set-card,
     html[data-anim="on"] .est__card {
-      animation: atlas-reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 42%;
+      animation: atlas-reveal linear both, atlas-blur-in linear backwards;
+      animation-timeline: view(), view();
+      animation-range: entry 0% entry 42%, entry 0% entry 42%;
     }
   }
 }
