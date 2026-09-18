@@ -36,6 +36,36 @@
   var path = String(location.pathname || "").toLowerCase();
   if (/(login|offline|landing|boas-vindas)\.html$/.test(path)) return; // públicas
 
+  /* MODO DEV — ver as telas sem login, SÓ no servidor local.
+     Liga com ?atlas-dev=1 no endereço e fica lembrado neste navegador;
+     desliga com ?atlas-dev=0. Existe para o Claude conseguir abrir e
+     conferir as páginas que está editando (ele não pode fazer login).
+     Fora de localhost/127.0.0.1 o bloco inteiro é ignorado: no site
+     publicado a trava continua valendo sempre. Sem sessão, a nuvem
+     (atlas-cloud.js) não sobe — os dados são só os locais deste navegador. */
+  var DEV_KEY = "atlas.dev.semlogin";
+  if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) {
+    try {
+      var pedido = new URLSearchParams(location.search).get("atlas-dev");
+      if (pedido === "1") localStorage.setItem(DEV_KEY, "1");
+      else if (pedido === "0") localStorage.removeItem(DEV_KEY);
+      if (localStorage.getItem(DEV_KEY) === "1") {
+        global.ATLAS_DEV_SEM_LOGIN = true;
+        var selo = function () {
+          var b = document.createElement("div");
+          b.textContent = "MODO DEV · sem login";
+          b.title = "Só no servidor local. Desligue com ?atlas-dev=0 no endereço.";
+          b.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:2147483647;padding:4px 8px;" +
+            "border-radius:6px;background:#f5b942;color:#1a1200;font:600 11px/1.2 system-ui,sans-serif;" +
+            "pointer-events:none;opacity:.9";
+          document.body.appendChild(b);
+        };
+        if (document.body) selo(); else document.addEventListener("DOMContentLoaded", selo);
+        return;
+      }
+    } catch (e) {}
+  }
+
   // esconde o conteúdo até resolver (evita flash de tela protegida)
   var style = document.createElement("style");
   style.id = "atlas-gate-style";

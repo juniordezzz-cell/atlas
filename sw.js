@@ -101,7 +101,8 @@
    pages/ferramentas.html, ao lado do Finanças. */
 /* v54 = Pulse virou Scanner Pools (Ferramentas/scanner-pools/) e toda
    ferramenta passou a exigir login (core/atlas-secure.js). */
-var VERSAO = "atlas-v54";
+/* v55 = modo dev sem login em core/atlas-secure.js (só localhost, ?atlas-dev=1). */
+var VERSAO = "atlas-v55";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
