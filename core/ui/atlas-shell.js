@@ -69,6 +69,20 @@
   var BACK_HREF  = RAIZ + "pages/dashboard.html";
   var ORACULO_AVATAR = RAIZ + "assets/atena.webp";
 
+  // Efeitos do Magic UI (spotlight nos cards, feixe na borda, contagem dos
+  // totais) — core/ui/atlas-magic.*. O shell roda em toda tela, então
+  // carregar daqui liga os efeitos no sistema inteiro sem tocar em cada HTML.
+  (function carregarMagic() {
+    if (document.querySelector('script[src*="core/ui/atlas-magic.js"]')) return;
+    var css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = RAIZ + "core/ui/atlas-magic.css";
+    document.head.appendChild(css);
+    var js = document.createElement("script");
+    js.src = RAIZ + "core/ui/atlas-magic.js";
+    document.head.appendChild(js);
+  })();
+
   function t(s) { return (window.AtlasI18n ? AtlasI18n.t(s) : s); }
   // Escolhe a frase pronta conforme o idioma ativo (respostas dinâmicas do Oráculo)
   function L(pt, en) { return (window.AtlasI18n && AtlasI18n.lang() === "en") ? en : pt; }

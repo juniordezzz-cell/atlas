@@ -121,6 +121,10 @@
   }
 
   function conferir(el) {
+    /* Contagem de entrada (core/ui/atlas-magic.js) em andamento: os
+       quadros intermediários não são mudança de valor. Ao terminar, o
+       texto final é o mesmo que já está na memória — nada pisca. */
+    if (el.hasAttribute("data-atlas-ticking")) return;
     var atual = valorDe(el.textContent);
     var antes = anteriorDe(el);
     guardar(el, atual);

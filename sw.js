@@ -104,7 +104,10 @@
 /* v55 = modo dev sem login em core/atlas-secure.js (só localhost, ?atlas-dev=1). */
 /* v56 = a sidebar das telas de pages/ deixa de mostrar o nome da seção ao
    lado de "ATLAS" (invadia o título) — regra em core/ui/atlas-shell.css. */
-var VERSAO = "atlas-v56";
+/* v57 = efeitos do Magic UI em core/ui/atlas-magic.{css,js} (spotlight nos
+   cards, feixe na borda, contagem dos totais), carregados pelo atlas-shell.js;
+   atlas-flash.js ignora o número enquanto ele conta. */
+var VERSAO = "atlas-v57";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
