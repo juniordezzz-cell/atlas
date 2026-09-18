@@ -99,7 +99,9 @@
    e o DefiLlama ganhou dados de DeFi/RWA. Bump para a versao nova chegar. */
 /* v53 = entrou a ferramenta Pulse (Ferramentas/pulse/) com card em
    pages/ferramentas.html, ao lado do Finanças. */
-var VERSAO = "atlas-v53";
+/* v54 = Pulse virou Scanner Pools (Ferramentas/scanner-pools/) e toda
+   ferramenta passou a exigir login (core/atlas-secure.js). */
+var VERSAO = "atlas-v54";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pulse — Pools de Liquidez</title>
+<title>Scanner Pools — Pools de Liquidez</title>
 <style>
   :root{
     --bg:#0a0e17; --panel:#111723; --panel2:#0d1320; --line:#1e2735;
@@ -563,12 +563,15 @@
     .cathead{flex-direction:column; align-items:flex-start; gap:4px}
   }
 </style>
+  <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+  <script src="../../core/atlas-auth.js"></script>
+  <script src="../../core/atlas-secure.js"></script>
 </head>
 <body>
 <div class="wrap">
 
   <header class="topbar">
-    <div class="brand"><span class="brand-dot"></span>Pulse</div>
+    <div class="brand"><span class="brand-dot"></span>Scanner Pools</div>
     <nav class="tabs">
       <button class="tab on" data-tab="dash" onclick="switchTab('dash')">📊 Dashboard</button>
       <button class="tab" data-tab="scan" onclick="switchTab('scan')">🔎 Scanner</button>
@@ -1111,7 +1114,7 @@
       <button class="linkbtn" onclick="mergeDuplicates()" title="Junta pools duplicadas (mesmo ativo + rede + taxa) num único registro, com o histórico de todas mesclado">Mesclar duplicatas</button>
       <button class="linkbtn risky" onclick="restoreSeed()" title="Apaga seus dados e volta pro conjunto original">Restaurar seed</button>
     </div>
-    <div class="foot-note">Pulse · dados em USD · roda offline (file://) · salvo no navegador (localStorage). Faça <b>Exportar</b> pra ter backup dos seus dados.</div>
+    <div class="foot-note">Scanner Pools · dados em USD · roda offline (file://) · salvo no navegador (localStorage). Faça <b>Exportar</b> pra ter backup dos seus dados.</div>
   </footer>
 </div>
 

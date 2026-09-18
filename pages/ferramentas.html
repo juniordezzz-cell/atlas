@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Ferramentas do ATLAS: a bancada de utilidades que rodam ao lado do sistema. Financas (entradas e saidas) e Pulse (pools de liquidez).">
+  <meta name="description" content="Ferramentas do ATLAS: a bancada de utilidades que rodam ao lado do sistema. Financas (entradas e saidas) e Scanner Pools (pools de liquidez).">
   <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
@@ -122,11 +122,12 @@
           </span>
         </a>
 
-        <!-- FERRAMENTA · Pulse (pools de liquidez)
-             Mora em Ferramentas/pulse/ e é um HTML único, autônomo.
+        <!-- FERRAMENTA · Scanner Pools (pools de liquidez)
+             Mora em Ferramentas/scanner-pools/ e é um HTML único, com a trava
+             de login do ATLAS (core/atlas-secure.js) como todo o resto.
              As chaves de IA do Scanner ficam só no navegador (keys.json
-             é ignorado pelo git — ver Ferramentas/pulse/.gitignore). -->
-        <a class="tool-card" href="../Ferramentas/pulse/index.html">
+             é ignorado pelo git — ver Ferramentas/scanner-pools/.gitignore). -->
+        <a class="tool-card" href="../Ferramentas/scanner-pools/index.html">
           <span class="tool-card__badge tool-card__badge--free">Grátis</span>
           <span class="tool-card__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
@@ -134,7 +135,7 @@
               <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
             </svg>
           </span>
-          <h3 class="tool-card__title">Pulse</h3>
+          <h3 class="tool-card__title">Scanner Pools</h3>
           <p class="tool-card__desc">Análise de pools de liquidez: compare TVL, volume, taxa e eficiência, leia prints com o scanner e acompanhe as pools no radar.</p>
           <div class="tool-card__chips">
             <span class="tool-card__chip">Pools de liquidez</span>

@@ -22,7 +22,12 @@
 // v5 = o boot passou a exibir a arte de abertura (assets/boot-hero.png)
 // no lugar do ícone "A". A imagem entra no precache para a splash abrir
 // offline; sem o bump o index/boot antigos seguiriam em cache.
-const CACHE = "financas-v5";
+//
+// v6 = as páginas passaram a carregar a trava de login do ATLAS
+// (../../../core/atlas-auth.js + atlas-secure.js + SDK do Firebase). Esses
+// arquivos moram FORA desta pasta e são do ATLAS: o fetch abaixo não os
+// guarda em cache (senão um ajuste no login nunca chegaria aqui).
+const CACHE = "financas-v6";
 
 const ASSETS = [
   "index.html",
@@ -84,6 +89,12 @@ self.addEventListener("fetch", (event) => {
 
   // Ignora requisições não-GET e cross-origin (ex.: Google Fonts) — deixa ir direto pra rede.
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) {
+    return;
+  }
+
+  // Fora do escopo do app (ex.: /core/ e /assets/vendor/ do ATLAS, usados
+  // pela trava de login) — vai direto pra rede, sem cache deste SW.
+  if (!req.url.startsWith(self.registration.scope)) {
     return;
   }
 
