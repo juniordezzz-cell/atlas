@@ -1134,6 +1134,11 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 .sidebar .logo-mark { grid-area: mark; width: 46px; height: 46px; }
 .sidebar .logo-mark img { width: 100%; height: 100%; }
 .sidebar .logo-text { grid-area: text; align-self: end; font-size: 23px; letter-spacing: 0.13em; line-height: 1.05; }
+/* Na marca nova a sidebar diz só "ATLAS" (como Hold/Trade/RWA/DeFi). O
+   nome da seção ("ATLAS FERRAMENTAS", "ATLAS CONFIGURAÇÕES"…) não cabe
+   nos 240px com a palavra a 23px e invadia o título da página. Quem diz
+   onde você está é o h1 da topbar e o item ativo do menu. */
+.sidebar .logo-section { display: none; }
 .sidebar .logo-tag {
   grid-area: tag; align-self: start;
   font-family: var(--mono, 'JetBrains Mono', monospace);
