@@ -1,0 +1,4 @@
+[submodule "referencias/magicui"]
+	path = referencias/magicui
+	url = https://github.com/magicuidesign/magicui.git
+	shallow = true
