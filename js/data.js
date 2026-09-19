@@ -12,7 +12,7 @@
    criar ou excluir uma carteira muda o KPI "Carteiras" e pode mudar os
    totais. Nada dentro mudou: o corpo é o mesmo, e ATLAS_DATA continua
    sendo o resultado da primeira chamada. */
-function buildAtlasData() {
+function buildAtlasDataReal() {
   function n(v) { return (typeof v === "number" && isFinite(v)) ? v : 0; }
   /* Dinheiro — delegado ao AtlasCurrency. Os totais consolidados estão
      em USD (regra de armazenamento); a conversão é camada de exibição. */
@@ -228,6 +228,31 @@ function buildAtlasData() {
     alertas,
     oraculo: { mensagem: "Consolidando " + snap.byModule.length + " módulos · patrimônio " + usd(snap.total) + "." }
   };
+}
+
+/* ------------------------------------------------------------
+   MODO DEMONSTRAÇÃO (core/atlas-demo.js)
+
+   Num ATLAS sem nenhum dado real, o Dashboard mostra números de exemplo
+   em vez do roteiro de primeiro acesso — até a pessoa clicar em "Limpar
+   demonstração". Este é o ÚNICO lugar que decide, porque é o único que
+   enxerga os quatro módulos juntos:
+     - há dado real      → estado "limpo" (quem tem dado nunca vê exemplo
+                           e nunca é barrado nos módulos) e o real;
+     - vazio, não limpo  → estado "ativo" e os exemplos;
+     - vazio, já limpo   → o real (zerado).
+   "Vazio" é o mesmo critério do roteiro de primeiro acesso (dashboard.js,
+   calcularSemDados). Nada fictício é gravado — só a exibição muda.
+   ------------------------------------------------------------ */
+function buildAtlasData() {
+  const real = buildAtlasDataReal();
+  const D = window.AtlasDemo;
+  if (!D) return real;
+  const vazio = !real.categoria.labels.length && !real.movimentacoes.length && !real.pools.length;
+  if (!vazio) { D.encerrar(); return real; }
+  if (D.estado() === "limpo") return real;
+  D.ativar();
+  return D.dados(real.usuario);
 }
 
 window.buildAtlasData = buildAtlasData;

@@ -46,6 +46,12 @@ let D = ATLAS_DATA;
    =================================================================== */
 let SEM_DADOS = calcularSemDados();
 
+/* Quem limpou a demonstração pediu para começar do zero: o painel fica
+   visível e zerado, sem o roteiro de instruções (decisão de 2026-09-19). */
+function limpouDemo() {
+  return !!(window.AtlasDemo && AtlasDemo.estado() === 'limpo');
+}
+
 function calcularSemDados() {
   return !D.categoria.labels.length &&
          !D.movimentacoes.length &&
@@ -75,7 +81,7 @@ const PASSOS = [
 function pintarRoteiro() {
   const existente = document.querySelector('.onboard');
 
-  if (!SEM_DADOS) {
+  if (!SEM_DADOS || limpouDemo()) {
     /* saiu do primeiro acesso: tira o roteiro e devolve o painel */
     if (existente) existente.remove();
     ['.charts', '.bottom'].forEach(sel => {
@@ -408,8 +414,10 @@ function donut(canvasId, legendId, cfg) {
 
 function pintarGraficos() {
   /* Sem dados a seção inteira está oculta: desenhar num canvas de
-     tamanho zero só gasta trabalho e polui o console. */
-  if (SEM_DADOS) return;
+     tamanho zero só gasta trabalho e polui o console. Depois de limpar a
+     demonstração ela fica VISÍVEL e zerada — aí desenha, senão sobrava
+     a imagem dos gráficos de exemplo. */
+  if (SEM_DADOS && !limpouDemo()) return;
 
   const c = criarGraficoEvolucao();
   if (c) {
@@ -433,7 +441,26 @@ function pintarGraficos() {
 /* ===================================================================
    PINTURA COMPLETA
    =================================================================== */
+/* ---- Faixa do modo demonstração (core/atlas-demo.js) ---- */
+function pintarFaixaDemo() {
+  let faixa = document.querySelector('.demo-faixa');
+  const exibindo = !!(window.AtlasDemo && AtlasDemo.exibindo());
+  if (!exibindo) { if (faixa) faixa.remove(); return; }
+  if (faixa) return;
+  faixa = document.createElement('div');
+  faixa.className = 'demo-faixa';
+  faixa.setAttribute('role', 'status');
+  faixa.innerHTML =
+    '<p><strong>Modo demonstração</strong> — estes números são ilustrativos. ' +
+    'Para usar o ATLAS com os seus dados, limpe a demonstração.</p>' +
+    '<button type="button" class="demo-faixa__btn">Limpar demonstração</button>';
+  faixa.querySelector('button').addEventListener('click', () => AtlasDemo.limpar());
+  const main = document.querySelector('.main');
+  main.insertBefore(faixa, main.firstElementChild ? main.firstElementChild.nextSibling : null);
+}
+
 function pintarTudo() {
+  pintarFaixaDemo();
   pintarCabecalho();
   pintarRoteiro();
   pintarKpis();
@@ -458,6 +485,12 @@ function repintar() {
 }
 
 window.AtlasDashboard = { repintar: repintar };
+
+/* Limpou a demonstração: recarrega. É um evento de uma vez só, e a tela
+   inteira (gráficos, seletor de período, faixa) precisa sair do estado
+   de exemplo — repintar peça por peça deixava o seletor em "90 dias"
+   com a curva real de 30. */
+document.addEventListener('atlas:demo', () => location.reload());
 
 /* ------------------------------------------------------------
    O ALERTA DE FAIXA PRECISA DE PREÇO PARA EXISTIR
@@ -545,7 +578,11 @@ pintarTudo();
 
   function aplicar(dias, rotulo) {
     let snap;
-    try { snap = window.AtlasConsolidation.snapshot(dias); }
+    try {
+      snap = (window.AtlasDemo && AtlasDemo.exibindo())
+        ? AtlasDemo.snapshot(dias)
+        : window.AtlasConsolidation.snapshot(dias);
+    }
     catch (e) { return; }                       // consolidação indisponível: mantém o que está na tela
     if (!snap) return;
 

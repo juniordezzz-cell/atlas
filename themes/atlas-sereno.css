@@ -702,3 +702,35 @@ html .lp-brand { letter-spacing: 0.12em; }
 html[data-theme="light"] svg text[fill="#EAF0FB" i] { fill: var(--atlas-text-hi); }
 /* e o inverso: desenhado no claro, trocado para o escuro */
 html:not([data-theme="light"]) svg text[fill="#0B1220" i] { fill: var(--atlas-text-hi); }
+
+/* ===================================================================
+   MODO DEMONSTRAÇÃO — faixa do Dashboard (core/atlas-demo.js)
+   Discreta: uma linha preenchida, sem borda, com o botão de limpar.
+   =================================================================== */
+html .demo-faixa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atlas-sp-3) var(--atlas-sp-5);
+  flex-wrap: wrap;
+  margin: 0 0 var(--atlas-sp-6);
+  padding: 10px 12px 10px 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--atlas-accent) 9%, transparent);
+  color: var(--atlas-text);
+  font-size: var(--atlas-fs-sm);
+}
+html .demo-faixa p { margin: 0; flex: 1 1 260px; line-height: 1.45; }
+html .demo-faixa strong { color: var(--atlas-text-hi); font-weight: 600; }
+html .demo-faixa__btn {
+  flex: none;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--atlas-accent) 18%, transparent);
+  color: var(--atlas-text-hi);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+html .demo-faixa__btn:hover { background: color-mix(in srgb, var(--atlas-accent) 26%, transparent); }
