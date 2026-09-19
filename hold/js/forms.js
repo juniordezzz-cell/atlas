@@ -17,6 +17,8 @@
 
   /* ---------- Novo ativo ---------- */
   function newAsset() {
+    /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
+    if (window.AtlasDemo && AtlasDemo.bloquear(function () { newAsset(); })) return;
     var nome = U.input({ placeholder: "Ex.: Bitcoin" });
     var ticker = U.input({ placeholder: "BTC", style: "text-transform:uppercase" });
     var tipo = U.select([
@@ -195,6 +197,8 @@
 
   /* ---------- Nova tese ---------- */
   function newThesis(presetAssetId) {
+    /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
+    if (window.AtlasDemo && AtlasDemo.bloquear(function () { newThesis(presetAssetId); })) return;
     var candidates = assetOptions(function (a) { return !S.get.thesisOfAsset(a.id); });
     if (!candidates.length) return U.toast("Sem ativos disponíveis", "Todos os ativos já possuem tese. Adicione um ativo primeiro.", "warning");
 
@@ -288,6 +292,8 @@
 
   /* ---------- Trade (compra/venda) ---------- */
   function trade(assetId, side) {
+    /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
+    if (side !== "sell" && window.AtlasDemo && AtlasDemo.bloquear(function () { trade(assetId, side); })) return;
     var a = S.get.asset(assetId); if (!a) return;
     var isSell = side === "sell";
     var carteiras = (S.wallets && S.wallets.list) ? S.wallets.list() : [{ id: "principal", name: "Principal" }];

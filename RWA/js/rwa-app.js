@@ -360,6 +360,8 @@
   }
 
   function openAssetModal(existing) {
+    /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
+    if (!existing && window.AtlasDemo && AtlasDemo.bloquear(function () { openAssetModal(); })) return;
     var isEdit = !!existing;
     var m = openModal(isEdit ? "Editar ativo" : "Adicionar ativo", assetForm(existing),
       (isEdit ? '<button class="rbtn rbtn-danger" data-del>Excluir</button>' : '') +
@@ -995,6 +997,8 @@
   }
 
   function abrirFormTese(id) {
+    /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
+    if (!id && window.AtlasDemo && AtlasDemo.bloquear(function () { abrirFormTese(null); })) return;
     var api = T(); if (!api) return;
     var t = id ? api.get(id) : null;
     var m = openModal(t ? "Editar tese" : "Nova tese", formTese(t),

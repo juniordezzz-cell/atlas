@@ -208,6 +208,8 @@
     }
 
     function abrirNovo() {
+      /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
+      if (window.AtlasDemo && AtlasDemo.bloquear(function () { abrirNovo(); })) return;
       modal(V.novo,
         '<div class="field"><label>Token</label>' +
           '<input class="input" id="rToken" placeholder="ex.: SOL" data-atlas-asset="symbol" autocomplete="off" /></div>' +

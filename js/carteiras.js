@@ -996,6 +996,8 @@
 
   function abrir(acao) {
     if (!FORMS[acao]) return;
+    /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
+    if (window.AtlasDemo && AtlasDemo.bloquear(function () { abrir(acao); })) return;
     acaoAtual = acao;
     qs("#cxModalTitulo").textContent = TITULOS[acao];
     qs("#cxModalBody").innerHTML = FORMS[acao]();

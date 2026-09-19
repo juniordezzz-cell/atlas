@@ -110,6 +110,8 @@
 
   function open(opts) {
     opts = opts || {};
+    /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
+    if (opts.mode !== "rename" && window.AtlasDemo && AtlasDemo.bloquear(function () { open(opts); })) return null;
     W = window.AtlasWallets;
     if (aberto) fechar();
     injectSegCSS();

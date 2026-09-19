@@ -89,7 +89,11 @@
         '<div class="est__list reveal">' + cards + '</div>' +
       '</div>';
 
-    mount.querySelector("[data-new]").addEventListener("click", function () { pending = null; show("openForm"); });
+    mount.querySelector("[data-new]").addEventListener("click", function () {
+      /* modo demonstração: limpar antes de cadastrar dado real */
+      if (window.AtlasDemo && AtlasDemo.bloquear(function () { pending = null; show("openForm"); })) return;
+      pending = null; show("openForm");
+    });
     mount.querySelectorAll("[data-filter]").forEach(function (b) { b.addEventListener("click", function () { filter = b.dataset.filter; render(mount); }); });
     mount.querySelectorAll("[data-open]").forEach(function (c) { c.addEventListener("click", function () { selectedId = c.dataset.open; show("detail"); }); });
     var ex = mount.querySelector("[data-exec]");

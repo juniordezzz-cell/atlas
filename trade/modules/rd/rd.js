@@ -87,7 +87,11 @@
       '</div>';
 
     mount.querySelectorAll("[data-new]").forEach(function (b) {
-      b.addEventListener("click", function () { editId = null; pending = null; show("form"); });
+      b.addEventListener("click", function () {
+        /* modo demonstração: limpar antes de cadastrar dado real */
+        if (window.AtlasDemo && AtlasDemo.bloquear(function () { b.click(); })) return;
+        editId = null; pending = null; show("form");
+      });
     });
     mount.querySelectorAll("[data-filter]").forEach(function (b) {
       b.addEventListener("click", function () { filter = b.dataset.filter; render(mount); });
