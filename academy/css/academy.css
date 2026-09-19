@@ -495,4 +495,9 @@ a.chain-addr:hover { color: var(--azul-principal); }
   .cc-title { font-size: 12px; }
   .yield-row { grid-template-columns: 1fr auto 56px; }
   .yield-sym, .yield-chain { display: none; }
+  /* a busca tinha min-width:300px ao lado do título: a página ia a 545px
+     num celular de 375. Desce para uma linha própria e ocupa a largura. */
+  .topbar { flex-wrap: wrap; }
+  .topbar-right { width: 100%; }
+  .searchbox { min-width: 0; flex: 1; }
 }
