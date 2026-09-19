@@ -27,35 +27,42 @@ passo a passo de uso será explicado em vídeo no YouTube.
 4. **Faixa no topo do Dashboard:** "Modo demonstração — estes números são
    ilustrativos. Para usar o ATLAS com os seus dados, limpe a
    demonstração." + botão **Limpar demonstração**.
-5. **Aviso ao adicionar:** enquanto a demonstração estiver ativa, todo botão
-   de criar dado (marcado `data-atlas-cria`) abre o aviso "Primeiro limpe os
+5. **Aviso ao adicionar:** enquanto a demonstração estiver ativa, toda função
+   que abre um formulário de CRIAR dado (não editar) abre antes o aviso "Primeiro limpe os
    dados de demonstração para cadastrar os seus" com **Limpar e continuar** /
-   **Cancelar**. Ao limpar, a ação original segue (o clique é refeito).
+   **Cancelar**. Ao limpar, a ação original segue.
 6. **Depois de limpar:** Dashboard zerado, **sem** o cartão de instruções. A
-   escolha fica em `AtlasSettings` (preferência), então "Apagar todos os
-   dados" em Configurações não traz a demonstração de volta.
+   escolha fica em `atlas.demo.v1`; "Apagar todos os dados" em
+   Configurações a regrava como "limpo", então a demonstração não volta.
 
 ## Componentes
 
 - **`core/atlas-demo.js`** (novo, carregado em toda página que tem o shell):
-  - `AtlasDemo.ativo()` — true se não limpo e sem dado real. "Sem dado
-    real" é calculado da consolidação real (`AtlasConsolidation.snapshot`,
-    `AtlasMovements.list`, `DeFiStore` pools/staking/lending), sem depender
-    do Dashboard.
-  - `AtlasDemo.limpar()` — grava a preferência.
+  - `AtlasDemo.estado()` / `exibindo()` / `ativar()` / `encerrar()` /
+    `limpar()` — leem e gravam `atlas.demo.v1`. Quem decide é o Dashboard
+    (`buildAtlasData`), o único lugar que enxerga os quatro módulos juntos.
   - `AtlasDemo.dados()` — o objeto no formato de `buildAtlasData()`.
   - `AtlasDemo.snapshot(dias)` — série de evolução para 7/30/90 dias, no
     formato que o seletor de período do Dashboard consome.
-  - Vigia de cliques em fase de captura: em `[data-atlas-cria]` com a
-    demonstração ativa, cancela o clique, abre o aviso e, ao confirmar,
-    limpa e refaz `el.click()`.
-- **js/data.js:** no início de `buildAtlasData()`, se `AtlasDemo.ativo()`,
+  - `AtlasDemo.bloquear(continuar)`: chamado no início de cada função que
+    abre formulário de criação; com a demonstração ativa abre o aviso e,
+    ao confirmar, limpa e chama `continuar()`. Proteger a FUNÇÃO (e não o
+    botão) cobre todos os botões e estados vazios que abrem o mesmo
+    formulário.
+  - Estado em `atlas.demo.v1` (ausente | "ativo" | "limpo"), fora do
+    AtlasSettings para "Restaurar padrões" não trazer a demonstração de
+    volta. Módulos só bloqueiam com "ativo" (gravado pelo Dashboard ao
+    exibir); Dashboard com dado real grava "limpo".
+- **js/data.js:** `buildAtlasData()` monta o real; com dado real grava
+  "limpo" e devolve o real; vazio e estado ≠ "limpo" grava "ativo" e
   devolve `AtlasDemo.dados()` (com saudação/perfil reais).
 - **js/dashboard.js:** faixa de demonstração; seletor de período usa
   `AtlasDemo.snapshot` quando ativo; após limpar, remonta com dados reais e
   não mostra o roteiro de primeiro acesso (flag "limpo").
-- **Marcação `data-atlas-cria`:** botões de criar em Hold, Trade, DeFi, RWA,
-  Carteiras e no seletor de carteira ("Nova carteira").
+- **Entradas protegidas:** Hold (Forms.newAsset/newThesis/trade compra),
+  Trade (Novo RD, Novo trade), DeFi (openWizard, abrirNovo de staking/
+  lending), RWA (openAssetModal/abrirFormTese sem edição), Carteiras
+  (abrir ação), criação de carteira (AtlasWalletDialog.open, não rename).
 
 ## Dados de exemplo
 
