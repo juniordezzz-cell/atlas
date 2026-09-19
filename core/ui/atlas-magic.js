@@ -4,13 +4,11 @@
    mora em core/ui/atlas-magic.css; aqui fica o que precisa de JS.
    Carregado por core/ui/atlas-shell.js em toda tela do sistema.
 
-   1. SPOTLIGHT (magic-card) — a luz segue o mouse nos cards.
-      Um único ouvinte no documento; cada card ganha, no primeiro
-      hover, uma camada .atlas-spot (e .atlas-beam nos que têm feixe).
-      Card regerado por innerHTML perde a camada e ganha outra no
-      próximo movimento. Só em aparelho com mouse.
+   O spotlight que seguia o mouse e o feixe na borda saíram no visual
+   sereno (docs/superpowers/specs/2026-09-18-visual-sereno-design.md):
+   foram pedidos fora, não reintroduzir.
 
-   2. CONTAGEM (number-ticker) — o número sobe de 0 até o valor na
+   CONTAGEM (number-ticker) — o número sobe de 0 até o valor na
       PRIMEIRA vez que aparece na tela. Alvos: [data-atlas-flash] (os
       totais que já piscam quando mudam) e [data-atlas-count].
 
@@ -30,59 +28,7 @@
   "use strict";
   if (window.AtlasMagic) return;
 
-  /* ---------------- 1. SPOTLIGHT ---------------- */
-
-  var SPOT_SEL = ".card, .panel, .set-card, .est__card, .kpi, .wcard, .tool-card, .onboard-card";
-  var BEAM_SEL = ".tool-card, [data-atlas-beam]";
-
-  function camada(host, classe, classeFilho) {
-    for (var i = 0; i < host.children.length; i++) {
-      if (host.children[i].classList.contains(classe)) return host.children[i];
-    }
-    var el = document.createElement("span");
-    el.className = classe;
-    el.setAttribute("aria-hidden", "true");
-    if (classeFilho) {
-      var filho = document.createElement("span");
-      filho.className = classeFilho;
-      el.appendChild(filho);
-    }
-    host.appendChild(el);
-    return el;
-  }
-
-  function prepararHost(host) {
-    if (!host.classList.contains("atlas-spot-host")) {
-      host.classList.add("atlas-spot-host");
-      if (getComputedStyle(host).position === "static") host.style.position = "relative";
-    }
-    camada(host, "atlas-spot");
-    if (host.matches(BEAM_SEL)) camada(host, "atlas-beam", "atlas-beam__dot");
-  }
-
-  function iniciarSpot() {
-    /* feixe sempre ligado: quem tem data-atlas-beam já nasce com ele */
-    document.querySelectorAll("[data-atlas-beam]").forEach(prepararHost);
-
-    if (!window.matchMedia || !matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    var alvo = null, x = 0, y = 0, quadro = 0;
-    function pintar() {
-      quadro = 0;
-      if (!alvo || !alvo.isConnected) return;
-      var r = alvo.getBoundingClientRect();
-      alvo.style.setProperty("--atlas-spot-x", (x - r.left) + "px");
-      alvo.style.setProperty("--atlas-spot-y", (y - r.top) + "px");
-    }
-    document.addEventListener("pointermove", function (e) {
-      var host = e.target && e.target.closest ? e.target.closest(SPOT_SEL) : null;
-      if (!host) { alvo = null; return; }
-      if (host !== alvo || !host.querySelector(":scope > .atlas-spot")) { prepararHost(host); alvo = host; }
-      x = e.clientX; y = e.clientY;
-      if (!quadro) quadro = requestAnimationFrame(pintar);
-    }, { passive: true });
-  }
-
-  /* ---------------- 2. CONTAGEM ---------------- */
+  /* ---------------- CONTAGEM ---------------- */
 
   var COUNT_SEL = "[data-atlas-flash], [data-atlas-count]";
   var DUR = 1100;
@@ -203,7 +149,7 @@
     }).observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
-  function iniciar() { iniciarSpot(); iniciarContagem(); }
+  function iniciar() { iniciarContagem(); }
 
   window.AtlasMagic = { count: contar, _molde: molde, _formatar: formatar };
 

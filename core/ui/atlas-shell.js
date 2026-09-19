@@ -69,8 +69,8 @@
   var BACK_HREF  = RAIZ + "pages/dashboard.html";
   var ORACULO_AVATAR = RAIZ + "assets/atena.webp";
 
-  // Efeitos do Magic UI (spotlight nos cards, feixe na borda, contagem dos
-  // totais) — core/ui/atlas-magic.*. O shell roda em toda tela, então
+  // Efeitos do Magic UI (contagem dos totais, fita de cotações) —
+  // core/ui/atlas-magic.*. Spotlight e feixe saíram no visual sereno. O shell roda em toda tela, então
   // carregar daqui liga os efeitos no sistema inteiro sem tocar em cada HTML.
   (function carregarMagic() {
     if (document.querySelector('script[src*="core/ui/atlas-magic.js"]')) return;

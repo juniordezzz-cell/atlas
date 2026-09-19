@@ -5,80 +5,11 @@
    desenho sem nenhuma dependência. Carregado por atlas-shell.js,
    então vale em todas as telas do sistema de uma vez.
 
-     1. SPOTLIGHT  (magic-card)  luz que segue o mouse no card
-     2. FEIXE      (border-beam) ponto de luz correndo pela borda
      3. CONTAGEM   (number-ticker) — só JS; aqui não há regra
 
-   As camadas são FILHOS injetados (.atlas-spot, .atlas-beam), não
-   ::before/::after — esses já são do fio de luz e das cantoneiras de
-   HUD (themes/atlas-effects.css §10 e §11) e não podem ser tomados.
+   O spotlight (1) e o feixe na borda (2) saíram no visual sereno —
+   pedidos fora, não reintroduzir.
    ============================================================ */
-
-/* ---------- 1. SPOTLIGHT (magic-card) ---------- */
-
-/* O card precisa ser o contexto da camada. .card/.kpi/.panel já têm
-   isolation em atlas-effects.css §10; os demais ganham aqui. */
-.atlas-spot-host { isolation: isolate; }
-
-.atlas-spot {
-  position: absolute; inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: -1;                /* acima do fundo do card, abaixo do conteúdo */
-  opacity: 0;
-  transition: opacity .35s ease;
-  background: radial-gradient(
-    var(--atlas-spot-size, 280px) circle at var(--atlas-spot-x, -999px) var(--atlas-spot-y, -999px),
-    color-mix(in srgb, var(--atlas-accent, #00BFFF) 12%, transparent),
-    transparent 70%);
-}
-/* o anel: a mesma luz, mas só onde a borda está (máscara em anel) */
-.atlas-spot::after {
-  content: "";
-  position: absolute; inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: radial-gradient(
-    calc(var(--atlas-spot-size, 280px) * .8) circle at var(--atlas-spot-x, -999px) var(--atlas-spot-y, -999px),
-    color-mix(in srgb, var(--atlas-accent, #00BFFF) 70%, transparent),
-    transparent 70%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-}
-.atlas-spot-host:hover > .atlas-spot { opacity: 1; }
-
-/* ---------- 2. FEIXE NA BORDA (border-beam) ---------- */
-
-.atlas-beam {
-  position: absolute; inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 3;
-  border: 1px solid transparent;
-  /* só a faixa da borda aparece: border-box menos padding-box */
-  -webkit-mask: linear-gradient(transparent, transparent) padding-box, linear-gradient(#000, #000) border-box;
-  -webkit-mask-composite: source-in;
-          mask: linear-gradient(transparent, transparent) padding-box intersect, linear-gradient(#000, #000) border-box;
-  opacity: 0;
-  transition: opacity .4s ease;
-}
-.atlas-beam__dot {
-  position: absolute;
-  width: 70px; aspect-ratio: 1;
-  background: linear-gradient(to left,
-    var(--atlas-accent, #00BFFF),
-    color-mix(in srgb, var(--atlas-accent, #00BFFF) 45%, #B06CFF),
-    transparent);
-  offset-path: rect(0 auto auto 0 round 70px);
-  animation: atlas-beam-run 5s linear infinite;
-}
-@keyframes atlas-beam-run { from { offset-distance: 0%; } to { offset-distance: 100%; } }
-
-/* quem mostra o feixe: cards de ferramenta no hover, ou quem pedir
-   com data-atlas-beam (sempre ligado — use com parcimônia) */
-.tool-card:hover > .atlas-beam,
-[data-atlas-beam] > .atlas-beam { opacity: 1; }
 
 /* ---------- 4. FITA (marquee) ----------
    Uso:  <div class="atlas-marquee">
@@ -112,16 +43,11 @@
 
 /* ---------- interruptores (mesmos de atlas-effects.css §0) ---------- */
 /* Sem movimento, a fita vira uma faixa rolável à mão e a cópia some. */
-html[data-anim="off"] .atlas-beam { display: none; }
 html[data-anim="off"] .atlas-marquee { overflow-x: auto; }
 html[data-anim="off"] .atlas-marquee__track { animation: none; }
 html[data-anim="off"] .atlas-marquee__track[aria-hidden="true"] { display: none; }
 @media (prefers-reduced-motion: reduce) {
-  .atlas-beam { display: none; }
   .atlas-marquee { overflow-x: auto; }
   .atlas-marquee__track { animation: none; }
   .atlas-marquee__track[aria-hidden="true"] { display: none; }
-}
-@media print {
-  .atlas-spot, .atlas-beam { display: none; }
 }
