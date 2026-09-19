@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scanner Pools — Pools de Liquidez</title>
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
 <style>
   :root{
     --bg:#0a0e17; --panel:#111723; --panel2:#0d1320; --line:#1e2735;
@@ -562,6 +563,50 @@
     .ltable td,.ltable thead th{padding:7px 8px}
     .cathead{flex-direction:column; align-items:flex-start; gap:4px}
   }
+
+  /* ===================================================================
+     VISUAL SERENO (docs/superpowers/specs/2026-09-18-visual-sereno-design.md)
+     Esta página não carrega o tema do ATLAS; as mesmas regras vêm aqui:
+     Inter nos números, seções sem moldura cinza, rótulos em caixa normal,
+     sem brilho. Bordas COLORIDAS (nível do radar, cor da categoria)
+     carregam informação e ficam.
+     =================================================================== */
+  body{font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; font-variant-numeric:tabular-nums;
+       background:linear-gradient(180deg,#0b1120 0,#070b15 100vh) no-repeat, #070b15}
+  :root{--bg:#070b15; --panel:rgba(148,170,215,.045); --panel2:rgba(148,170,215,.06); --line:rgba(160,185,230,.09)}
+  /* o modal fica sobre o conteúdo: fundo sólido, não o --panel translúcido */
+  .modal .card{background:#111827}
+  /* campos mantêm contorno legível (a --line nova é só para divisórias) */
+  select,input[type=text],input[type=number],textarea,.scantable input,.scantable select{border-color:rgba(160,185,230,.2)}
+
+  /* contêineres: preenchidos, sem contorno, cantos mais redondos */
+  .thesis,.learn-hero,.scan-hero,.toc,.keybox,.scanitem,.histcard,.vscard,.fstep,.formula,
+  .hero-kpis div,.scan-step,.liveprev,.card,.alertbox,.radar-empty{
+    border-color:transparent; border-radius:18px; box-shadow:none}
+  .thesis{border-left:0; background:var(--panel)}
+  .learn-hero,.scan-hero{background:var(--panel)}
+  .radar-empty{border-style:solid}
+
+  /* tabela principal: sem caixa em volta; linhas finas separam */
+  .tablewrap{border:0; border-radius:0; background:transparent}
+  thead th{background:transparent}
+  tbody tr:hover{background:rgba(148,170,215,.04)}
+
+  /* chips e botões pequenos sem contorno */
+  .pchip,.feepill,.iconbtn,.cmpbtn,.radar-sechead span{border-color:transparent}
+  .pchip{background:var(--panel)}
+  .pchip.on{box-shadow:none; background:rgba(91,140,255,.16)}
+
+  /* linhas com barra de nível/categoria: some só o contorno cinza */
+  .vline,.catrow,.radar-row{border-top-color:transparent; border-right-color:transparent; border-bottom-color:transparent}
+
+  /* rótulos em caixa alta viram caixa normal */
+  thead th,.field label,.learn-hero .eyebrow,.vstag,.toc-title,.ltable thead th,.scantable th,
+  .histtable th,.radar-sechead,.radar-metrics .rm span,.alerthead,.cmp-charttitle,
+  .tablewrap tbody td[data-label]::before{text-transform:none; letter-spacing:0}
+
+  /* sem halo */
+  .brand-dot{box-shadow:none}
 </style>
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
