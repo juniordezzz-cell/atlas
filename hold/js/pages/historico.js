@@ -98,7 +98,7 @@
          ------------------------------------------------------------ */
       var porDia = [], indice = {};
       lista.forEach(function (h) {
-        var d = String(h.data || "").slice(0, 10);
+        var d = diaLocal(h.data);
         if (!indice[d]) { indice[d] = { dia: d, itens: [] }; porDia.push(indice[d]); }
         indice[d].itens.push(h);
       });
@@ -121,6 +121,19 @@
 
     return { title: "Histórico", crumb: "Registro de decisões", node: view };
   };
+
+  /* O registro guarda o instante em UTC (toISOString), e está certo
+     guardar assim. O dia de agrupar é o de QUEM LÊ: cortar os 10
+     primeiros caracteres dava o dia UTC, e no Brasil (UTC−3) tudo o que
+     acontecia depois das 21h caía no dia seguinte. */
+  function diaLocal(v) {
+    var s = String(v || "");
+    if (!s || /^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return s.slice(0, 10);
+    var mm = String(d.getMonth() + 1), dd = String(d.getDate());
+    return d.getFullYear() + "-" + (mm.length < 2 ? "0" + mm : mm) + "-" + (dd.length < 2 ? "0" + dd : dd);
+  }
 
   /* "Hoje" e "Ontem" por extenso: numa lista de dias, a data absoluta
      obriga a fazer a conta de cabeça para saber se foi agora. */

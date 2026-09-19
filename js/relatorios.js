@@ -269,7 +269,9 @@
     var host = el("repCal");
     if (!host || !window.AtlasCalendar) return;
     if (calInst) { calInst.destroy(); calInst = null; }
-    calInst = AtlasCalendar.month({ walletId: state.walletId, value: new Date().toISOString().slice(0, 10) });
+    /* hoje LOCAL: toISOString dava o dia UTC, e depois das 21h no Brasil
+       o calendário abria selecionando amanhã */
+    calInst = AtlasCalendar.month({ walletId: state.walletId, value: AtlasCalendar._toKey(new Date()) });
     host.innerHTML = "";
     host.appendChild(calInst.el);
   }

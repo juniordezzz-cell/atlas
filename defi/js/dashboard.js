@@ -248,7 +248,9 @@
     var msg = (err && err.message) ? err.message : "Não consegui atualizar os preços agora.";
     var quando = S.ultimaCotacao();
     el.innerHTML = "⚠ " + U.esc(msg) + " Os valores abaixo são os da última atualização" +
-      (quando ? " (" + U.date(quando.slice(0, 10)) + ")" : "") + ", não os de agora.";
+      /* U.date recebe o instante inteiro e mostra o dia LOCAL; cortar em
+         10 caracteres antes dava o dia UTC (amanhã, depois das 21h). */
+      (quando ? " (" + U.date(quando) + ")" : "") + ", não os de agora.";
   }
 
   /* ------------------------------------------------------------

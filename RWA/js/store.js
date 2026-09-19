@@ -93,6 +93,12 @@
      - só carteiras GLOBAIS somam no dashboard principal (globalTotal)
   */
   var W = (typeof window !== "undefined") ? window.AtlasWallets : null;
+  /* Dia LOCAL (AAAA-MM-DD). toISOString().slice(0,10) dá o dia UTC: no
+     Brasil, o que fosse registrado depois das 21h ganhava a data de amanhã. */
+  function hojeLocal() {
+    var d = new Date(), mm = String(d.getMonth() + 1), dd = String(d.getDate());
+    return d.getFullYear() + "-" + (mm.length < 2 ? "0" + mm : mm) + "-" + (dd.length < 2 ? "0" + dd : dd);
+  }
   function principalId() { return (W && W.activeGlobal) ? W.activeGlobal().id : "principal"; }
   function moduleWallets() {
     if (W && W.forModule) return W.forModule("rwa");
@@ -481,7 +487,7 @@
     narrative: function () { return _read().narrative; },
     journal: function () { return _read().journal.slice(); },
     addJournal: function (entry) {
-      entry.date = entry.date || new Date().toISOString().slice(0, 10);
+      entry.date = entry.date || hojeLocal();
       _read().journal.unshift(entry); _persist(); return entry;
     },
 
@@ -523,7 +529,7 @@
       a.id = a.id || (String(a.ticker || "ast").toLowerCase().replace(/[^a-z0-9]/g, "") + "_" + Date.now().toString(36));
       a.color = a.color || PALETTE[s.assets.length % PALETTE.length];
       a.score = Math.max(0, Math.min(100, +a.score || 0));
-      a.date = a.date || new Date().toISOString().slice(0, 10);
+      a.date = a.date || hojeLocal();
       /* quantidade × preço manda; sem quantidade, valem os totais */
       Store.normalizar(a);
       var widA = _currentId();
