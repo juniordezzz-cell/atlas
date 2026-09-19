@@ -2,7 +2,7 @@ name: Central RWA · diário (camada B + histórico + T-bills)
 
 on:
   schedule:
-    - cron: "30 0 * * *"    # 00h30 UTC, depois da camada A das 00h
+    - cron: "30 3 * * *"    # 00h30 de Brasília (03h30 UTC), depois da camada A da meia-noite
   workflow_dispatch:
 
 concurrency:

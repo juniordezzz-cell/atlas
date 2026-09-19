@@ -23,8 +23,8 @@ Para gravar no banco, copie `.env.example` para `.env` e preencha `SUPABASE_DB_U
 | Comando | O que faz | Onde roda |
 |---|---|---|
 | `migrate` | Aplica `central-rwa/supabase/migrations/*.sql` | manual / backfill |
-| `tier_a` | Snapshots dos tokens da camada A + cotação dos ativos de referência | Actions, a cada 6h |
-| `daily` | Catálogo, snapshots da camada B, recálculo das camadas, 1 dia de histórico, T-bills | Actions, 00h30 UTC |
+| `tier_a` | Snapshots dos tokens da camada A + cotação dos ativos de referência | Actions, 00h/06h/12h/18h de Brasília |
+| `daily` | Catálogo, snapshots da camada B, recálculo das camadas, 1 dia de histórico, T-bills | Actions, 00h30 de Brasília |
 | `backfill` | 10 anos de histórico da camada A (+ B conhecida). **Retomável** | Actions, manual |
 | `catalog` | Só o catálogo | manual |
 | `report` | Tamanho do banco por tabela | depois do daily/backfill |

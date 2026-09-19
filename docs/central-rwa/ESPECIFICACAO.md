@@ -232,8 +232,8 @@ Atualizar todos os ativos o tempo todo estouraria os limites gratuitos. Por isso
 
 | Camada | Ativos | Frequência | Horários (UTC, sugestão) |
 |---|---|---|---|
-| **A — Observação** | Lista da seção 3.4 + os que o usuário estiver pesquisando | **A cada 6h** | 00h, 06h, 12h, 18h |
-| **B — Geral** | Todos os outros que passam no piso | **A cada 24h** | 00h |
+| **A — Observação** | Lista da seção 3.4 + os que o usuário estiver pesquisando | **A cada 6h** | 00h, 06h, 12h, 18h (Brasília) |
+| **B — Geral** | Todos os outros que passam no piso | **A cada 24h** | 00h30 (Brasília) |
 | **C — Histórico** | Série diária de 10+ anos | **Uma vez** + 1 dia novo por dia | 00h |
 
 Regras:
