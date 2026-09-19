@@ -210,8 +210,9 @@
   }
 
   function ultimaColeta(execs) {
+    /* Só camada A e diário coletam preço; backfill/relatório não contam. */
     for (var i = 0; i < execs.length; i++) if (execs[i].job === "tier_a" || execs[i].job === "daily") return execs[i];
-    return execs[0] || null;
+    return null;
   }
 
   function visaoGeral(app, d) {
@@ -225,7 +226,7 @@
 
     mount(app,
       head(SUB + " Atualiza a cada 6h (lista de observação) e 1× por dia (demais).",
-        [t3("Última coleta " + quando(ult && (ult.fim || ult.inicio)), "font-size:12px"), " ", botaoRecarregar()]),
+        [t3(ult ? "Última coleta " + quando(ult.fim || ult.inicio) : "Nenhuma coleta de preços ainda", "font-size:12px"), " ", botaoRecarregar()]),
 
       h("div", { class: "grid g-4" },
         kpi({ k: "Ativos monitorados", v: String(linhas.length), icon: "layers", foot: A.length + " na observação · " + B.length + " acima de US$ 100 mil" }),
