@@ -482,7 +482,9 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   background: var(--atlas-inner);
   border: 1px solid var(--atlas-border);
 }
-.awd__scope svg { flex: none; }
+/* sem tamanho, o ícone do selo virava um círculo de 100px (tamanho
+   padrão de SVG) em todo diálogo de confirmação do sistema */
+.awd__scope svg { flex: none; width: 14px; height: 14px; }
 
 .awd__x {
   display: grid;

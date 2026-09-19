@@ -734,3 +734,15 @@ html .demo-faixa__btn {
   cursor: pointer;
 }
 html .demo-faixa__btn:hover { background: color-mix(in srgb, var(--atlas-accent) 26%, transparent); }
+
+/* Diálogo de confirmação e de carteira (.awd): sem o fio de luz no topo,
+   selo sem contorno e sem caixa alta */
+html .awd__box::before { content: none; }
+html .awd__box { border-color: transparent; }
+html .awd__scope[class] {
+  border-color: transparent;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--atlas-fs-sm);
+  font-weight: 600;
+}
