@@ -113,7 +113,9 @@
    Dashboard, DeFi, RWA, Finanças e Scanner Pools). */
 /* v60 = visual sereno (themes/atlas-sereno.css): fundo liso, seções
    abertas, faixa de números; sai spotlight/feixe do Magic UI. */
-var VERSAO = "atlas-v60";
+/* v61 = modo demonstração (core/atlas-demo.js), correções de celular e
+   datas locais. */
+var VERSAO = "atlas-v61";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

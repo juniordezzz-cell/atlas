@@ -225,6 +225,10 @@
              sistema zerado ofereceria "registrar abertura" para
              posições que não existem mais. */
           try { localStorage.removeItem("atlas.caixa.migrado.v1"); } catch (e) {}
+          /* Quem apaga os próprios dados quer começar do zero, não rever
+             os números de exemplo: a demonstração fica encerrada
+             (core/atlas-demo.js). */
+          try { localStorage.setItem("atlas.demo.v1", "limpo"); } catch (e) {}
 
           toast(t("Dados apagados"));
           /* Recarrega em vez de repintar: os stores dos módulos guardam
