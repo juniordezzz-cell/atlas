@@ -530,3 +530,91 @@ html .narrative-hero {
 }
 html .tb-metric { border-color: transparent; }
 html .roo-track i { box-shadow: none; }
+
+/* ===================================================================
+   ACADEMY (Command Center e página de ativo)
+   -------------------------------------------------------------------
+   Era o módulo mais "HUD": cantoneiras em todo painel, barra lateral
+   luminosa nos cabeçalhos, faixas de métrica desenhadas como tabela de
+   células com fundo. Tudo vira seção aberta e faixa de números.
+   =================================================================== */
+/* cabeçalhos com barra luminosa: faixa preenchida, sem borda nem barra */
+html :is(.hud-bar, .cc-topbar, .asset-head) {
+  background: var(--sereno-fill);
+  border-color: transparent;
+  border-radius: var(--sereno-r);
+}
+html :is(.hud-bar, .cc-topbar, .asset-head)::before,
+html .asset-head::after { content: none; }
+
+/* cantoneiras de HUD dos painéis, gráficos, abas e globo */
+html :is(.hpanel, .chart-card, .tabs, .cc-globe-stage)::before,
+html :is(.hpanel, .chart-card, .tabs, .cc-globe-stage)::after { content: none; }
+html :is(.tabs, .athatl-box) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+html .hpanel-head { border-bottom: 0; padding-left: 0; padding-right: 0; }
+html .hpanel-title[class] {
+  text-transform: none;
+  letter-spacing: var(--atlas-track-display);
+  font-size: var(--atlas-fs-h3);
+}
+html .cc-globe-title[class] { text-transform: none; letter-spacing: 0; }
+
+/* faixas de métrica: sem grade de células, traço fino entre números */
+html :is(.kpi-strip, .cc-metrics, .metric-grid) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  gap: var(--atlas-sp-4) 0;
+}
+html :is(.kpi-cell, .cc-metric, .metric) {
+  background: transparent;
+  padding: var(--atlas-sp-1) var(--atlas-sp-5);
+}
+html :is(.kpi-cell, .cc-metric, .metric):first-child { padding-left: 0; }
+html :is(.kpi-cell, .cc-metric, .metric) + :is(.kpi-cell, .cc-metric, .metric) {
+  border-left: 1px solid var(--sereno-rule);
+}
+html .kpi-cell::after { content: none; }
+html :is(.kpi-label, .cc-mlabel, .metric-label)[class] {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--atlas-fs-sm);
+  font-weight: 500;
+}
+html :is(.kpi-value, .metric-value, .cc-mvalue) { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+@media (max-width: 1280px) {
+  html :is(.kpi-cell, .cc-metric, .metric),
+  html :is(.kpi-cell, .cc-metric, .metric):first-child { padding-left: 0; padding-right: var(--atlas-sp-4); }
+  html :is(.kpi-cell, .cc-metric, .metric) + :is(.kpi-cell, .cc-metric, .metric) { border-left: 0; }
+}
+
+/* fita de cotações: sem caixa em volta */
+html .cc-tape {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--sereno-rule);
+  border-bottom: 1px solid var(--sereno-rule);
+  border-radius: 0;
+}
+/* título do Command Center vem em maiúsculas do próprio JS: só sai a
+   entressilha larga */
+html .cc-title { letter-spacing: 0.03em; }
+html .cc-live { letter-spacing: 0.02em; }
+html .defidom-title[class] { text-transform: none; letter-spacing: 0; }
+/* abas: pílula preenchida; a ativa em tom do acento, sem degradê neon */
+html .cc-tab { border-color: transparent; background: var(--sereno-fill); }
+html .cc-tab:hover { border-color: transparent; background: var(--sereno-fill-hi); }
+html .cc-tab.active {
+  background: color-mix(in srgb, var(--atlas-accent) 22%, transparent);
+  color: var(--atlas-text-hi);
+}
+/* palco do globo: superfície preenchida, sem contorno */
+html .cc-globe-stage { border-color: transparent; border-radius: var(--sereno-r); }
+html .cc-dot { box-shadow: none; }
+html :is(.ac-back, .cc-chip, .searchbox) { border-color: transparent; background: var(--sereno-fill); box-shadow: none; }
+html :is(.ac-back, .cc-chip):hover { border-color: transparent; background: var(--sereno-fill-hi); }
+html :is(.chainrow-badge, .cc-ro-badge) { border-color: transparent; }
