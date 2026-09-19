@@ -685,3 +685,15 @@ html .login-card {
 }
 html .lp-card { box-shadow: none; }
 html .lp-brand { letter-spacing: 0.12em; }
+
+/* ===================================================================
+   CORREÇÃO — texto de gráfico SVG ao trocar para o tema claro
+   Os gráficos SVG do Hold (hold/js/charts.js) gravam a cor do texto no
+   atributo fill lendo a variável na hora de desenhar. Trocando o tema
+   pelo botão, o gráfico não é redesenhado e o número do centro do donut
+   fica #EAF0FB (quase branco) sobre fundo claro: invisível até recarregar.
+   A propriedade CSS fill vence o atributo, então basta mapear aqui.
+   =================================================================== */
+html[data-theme="light"] svg text[fill="#EAF0FB" i] { fill: var(--atlas-text-hi); }
+/* e o inverso: desenhado no claro, trocado para o escuro */
+html:not([data-theme="light"]) svg text[fill="#0B1220" i] { fill: var(--atlas-text-hi); }
