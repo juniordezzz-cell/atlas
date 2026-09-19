@@ -373,3 +373,34 @@ body { animation: atlasPageFade .45s ease both; }
   .collapsed .nav-item, .collapsed .nav-back { padding: 10px 8px; }
   .collapse-btn { min-height: 44px; }
 }
+
+/* ============================================================
+   TOPBAR NO CELULAR
+   A 375px sobram ~300px ao lado da barra lateral recolhida, e a topbar
+   pedia ~385: migalha + seletor de carteira + pílula da carteira + sino
+   + tema, com 24px de margem e 16px entre cada. A migalha (min-width:0)
+   encolhia a zero e o texto vazava por baixo do seletor; o botão de
+   tema passava da borda e a página ganhava rolagem lateral.
+   Aqui a migalha fica só com a tela atual, a barra aperta o espaço e a
+   pílula sai — o valor dela é o primeiro KPI logo abaixo, e a idade dos
+   preços continua na tela de Ativos.
+   ============================================================ */
+@media (max-width: 560px) {
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-actions { gap: 6px; }
+  .topbar .crumb .sep, .topbar .crumb .ctx { display: none; }
+  .topbar .crumb { flex: 1 1 auto; overflow: hidden; }
+  .topbar .crumb__atual { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .market-pill { display: none; }
+}
+
+/* Barra lateral recolhida (≤860px): o @media acima esconde os rótulos do
+   menu, mas a busca e o "Voltar ao Atlas" são injetados pelo shell e
+   ficavam com texto — vazavam da coluna de 72px por cima do conteúdo. */
+@media (max-width: 860px) {
+  .sidebar .atlas-side-search .lbl,
+  .sidebar .atlas-side-search kbd,
+  .sidebar .atlas-backfoot span { display: none; }
+  .sidebar .atlas-side-search,
+  .sidebar .atlas-backfoot { justify-content: center; padding-left: 0; padding-right: 0; }
+}
