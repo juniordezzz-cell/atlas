@@ -10,6 +10,7 @@ from ..router import NoProviderAvailable
 from .runner import Context
 
 MIN_CONFIDENCE_TIER_B = 0.5
+MAX_FULL_PER_DAILY = 40  # downloads de 10 anos por job diário (~2 s cada no Yahoo)
 
 
 def _ts() -> datetime:
@@ -96,7 +97,13 @@ def daily(ctx: Context) -> None:
 
     years = int(ctx.watchlist.get("history_years", 10))
     tickers = sorted(ctx.tier_a | tier_b)
-    ctx.section("historico", update_history(ctx.router, ctx.repo, ctx.registry, tickers, today, years, allow_full=ctx.tier_a))
+    # Ativos que acabaram de entrar na camada B ganham os 10 anos aqui mesmo
+    # (camada A primeiro), limitado por execução para não pesar o job diário.
+    ordered = sorted(ctx.tier_a) + sorted(set(tickers) - ctx.tier_a)
+    ctx.section(
+        "historico",
+        update_history(ctx.router, ctx.repo, ctx.registry, ordered, today, years, allow_full=set(tickers), max_full=MAX_FULL_PER_DAILY),
+    )
     ctx.section("tbills", update_tbills(ctx.router, ctx.repo, today, years))
 
 

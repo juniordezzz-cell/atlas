@@ -35,8 +35,12 @@ def update_history(
     today: date,
     years: int,
     allow_full: set[str],
+    max_full: int | None = None,
 ) -> HistoryResult:
+    """allow_full: tickers que podem receber os 10 anos inteiros nesta execução.
+    max_full: teto de downloads completos por execução (o resto fica para a próxima)."""
     res = HistoryResult()
+    full_done = 0
     target_start = date(today.year - years, today.month, min(today.day, 28))
     # Um ativo da lista (ex.: WTI) pode não ter nenhum token no catálogo ainda:
     # registra antes de gravar, senão a chave estrangeira recusa o histórico.
@@ -48,9 +52,10 @@ def update_history(
         first, last, count = repo.history_range(ticker)
         complete_start = first is not None and first <= target_start + timedelta(days=SLACK_DAYS)
         if first is None or not complete_start:
-            if ticker not in allow_full:
+            if ticker not in allow_full or (max_full is not None and full_done >= max_full):
                 res.skipped_no_history.append(ticker)
                 continue
+            full_done += 1
             start = target_start
         else:
             if last and last >= today - timedelta(days=1):

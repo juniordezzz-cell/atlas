@@ -192,6 +192,16 @@ def test_atualizacao_diaria_busca_so_o_fim_e_nao_faz_backfill_da_camada_b(clock)
     assert prov.requests == [("NVDA", date(2026, 9, 5))]  # último dia - 5 de sobreposição
 
 
+def test_teto_de_downloads_completos_por_execucao(clock):
+    repo, prov = MemoryRepository(), HistProv()
+    reg = ReferenceRegistry({})
+    today = date(2026, 9, 19)
+    res = update_history(hist_router(clock, prov), repo, reg, ["A", "B", "C"], today, 10, allow_full={"A", "B", "C"}, max_full=2)
+    assert set(res.updated) == {"A", "B"} and res.skipped_no_history == ["C"]
+    res2 = update_history(hist_router(clock, prov), repo, reg, ["A", "B", "C"], today, 10, allow_full={"A", "B", "C"}, max_full=2)
+    assert set(res2.updated) == {"C"}
+
+
 def test_tbills_incremental_e_retomavel(clock):
     repo, prov = MemoryRepository(), HistProv()
     res = update_tbills(hist_router(clock, prov), repo, date(2026, 9, 19), years=10)
