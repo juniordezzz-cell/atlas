@@ -5,8 +5,11 @@
    ============================================================ */
 
 /* Notebook / telas menores */
+/* html[data-module="defi"]:root, não :root: a ponte do tema
+   (themes/atlas-theme.css) redefine --gutter com especificidade maior, e
+   as margens menores de notebook/celular nunca valiam (ficava 24px). */
 @media (max-width: 1200px) {
-  :root { --gutter: 20px; }
+  html[data-module="defi"]:root { --gutter: 20px; }
   .fin-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -14,7 +17,9 @@
 @media (max-width: 1024px) {
   .col-2 { grid-template-columns: 1fr !important; }
   .col-3 { grid-template-columns: 1fr 1fr !important; }
-  .chart-split { grid-template-columns: 1fr !important; }
+  /* minmax(0,1fr): 1fr não encolhe abaixo do conteúdo dos painéis e a
+     coluna passava da tela no celular */
+  .chart-split { grid-template-columns: minmax(0, 1fr) !important; }
 }
 
 /* Tablet */
@@ -30,7 +35,7 @@
 
 /* Celular — tudo em coluna única */
 @media (max-width: 620px) {
-  :root { --gutter: 15px; --nav-h: 60px; }
+  html[data-module="defi"]:root { --gutter: 15px; --nav-h: 104px; }
   .fin-grid { grid-template-columns: 1fr; }
   .pos-grid { grid-template-columns: 1fr; }
   .mini-stats { grid-template-columns: 1fr; }
@@ -39,7 +44,24 @@
   .page-head .head-actions .btn { flex: 1; }
   .fin-card .fin-value { font-size: 24px; }
 
-  .brand-name { display: none; }
+  /* Menu superior em duas linhas: marca + busca + carteira + sino + tema
+     em cima, links embaixo com rolagem própria. Numa linha só, o que não
+     cabia era cortado — carteira, sino e tema ficavam fora da tela, sem
+     como clicar. --nav-h (acima) sobe para caber as duas linhas. */
+  .topnav-inner { flex-wrap: wrap; align-content: center; gap: 6px 8px; }
+  .brand { padding-right: 0; }
+  /* o espaçador invisível contava como mais um intervalo e, a 320px,
+     derrubava o botão de tema para uma terceira linha */
+  .nav-spacer { display: none; }
+  .topnav-search { margin-left: auto; }
+  /* cabeçalho de painel com seletor (15D/30D/Máx, Chain/Protocolo…):
+     o seletor não quebrava e passava da tela; desce para baixo do
+     título e, se ainda assim não couber, rola dentro de si */
+  .panel-head, .section-head { flex-wrap: wrap; }
+  .segmented { max-width: 100%; overflow-x: auto; }
+  .brand-text { display: none; }
+  .nav-links { order: 10; flex: 1 0 100%; margin-left: 0; }
+  .topnav-search .lbl, .topnav-search kbd { display: none; }
   .nav-back span { display: none; }
 
   .hist-row { grid-template-columns: 1fr auto; gap: 10px; }
