@@ -423,3 +423,70 @@ html .est__tab[aria-current="true"] {
   border-color: transparent;
   box-shadow: none;
 }
+
+/* ===================================================================
+   DEFI
+   =================================================================== */
+/* ".page { padding: 34px 0 90px }" vem depois de ".wrap" e zerava o
+   recuo lateral do conteúdo; os cards com fundo escondiam isso, as
+   seções abertas não. */
+html .wrap.page {
+  padding-left: var(--gutter, 24px);
+  padding-right: var(--gutter, 24px);
+}
+
+/* KPIs do DeFi (fin-card) viram a mesma faixa de números */
+html .fin-grid { column-gap: 0; row-gap: var(--atlas-sp-5); }
+html .fin-card { padding: var(--atlas-sp-2) var(--atlas-sp-6); }
+html .fin-card:first-child { padding-left: 0; }
+html .fin-card + .fin-card { border-left: 1px solid var(--sereno-rule); }
+html .fin-card::before { content: none; }
+html .fin-card:hover { transform: none; }
+html .fin-card .fin-ic { display: none; }
+html .fin-card .fin-value {
+  font-family: var(--atlas-font-ui);
+  font-size: clamp(1.5rem, 1.1rem + 0.9vw, 2rem);
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+html .fin-card:first-child .fin-value { font-size: clamp(1.8rem, 1.2rem + 1.4vw, 2.5rem); }
+@media (max-width: 1280px) {
+  html .fin-card, html .fin-card:first-child { padding-left: 0; padding-right: var(--atlas-sp-4); }
+  html .fin-card + .fin-card { border-left: 0; }
+}
+
+/* card de posição é clicável: preenchido, sem brilho interno */
+html .pos-card {
+  background: var(--sereno-fill);
+  border-color: transparent;
+  border-radius: var(--sereno-r);
+  padding: var(--atlas-sp-5);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+}
+html .pos-card::after { content: none; }
+html .pos-card:hover { background: var(--sereno-fill-hi); transform: none; box-shadow: none; border-color: transparent; }
+
+/* ilustração do estado vazio e timeline sem halo */
+html .empty-art { border-color: transparent; background: var(--sereno-fill); box-shadow: none; }
+html .tl-item::before { box-shadow: none; }
+/* linhas do histórico: linha de tabela, não cartão */
+html .hist-row {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--sereno-rule);
+  border-radius: 0;
+}
+html .mini-stat .v { font-family: var(--atlas-font-ui); font-variant-numeric: tabular-nums; }
+
+/* "Voltar ao Atlas" (Hold, RWA, DeFi, shell): sem contorno */
+html :is(.nav-back, .side-back, .atlas-backfoot) {
+  border-color: transparent;
+  background: var(--sereno-fill);
+  box-shadow: none;
+}
+html :is(.nav-back, .side-back, .atlas-backfoot):hover {
+  border-color: transparent;
+  background: var(--sereno-fill-hi);
+}
