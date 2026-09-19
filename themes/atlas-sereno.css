@@ -328,3 +328,27 @@ html :is(.sidebar .nav-item, .nav__item) {
   padding-top: 5px;
   padding-bottom: 5px;
 }
+
+/* ===================================================================
+   RÓTULOS — fim da caixa alta espaçada
+   -------------------------------------------------------------------
+   "PRIMEIROS PASSOS", "OPERAÇÃO", "HOLD": o rótulo em caixa alta com
+   entressilha larga é a assinatura do painel de terminal. Vira texto
+   discreto em caixa normal. Selos pequenos (GRÁTIS, GLOBAL, EM BREVE)
+   ficam como estão: são etiqueta, não título.
+   [class][class]: especificidade para vencer ".card-head .eyebrow".
+   =================================================================== */
+html :is([class*="eyebrow"], .onboard-mod, .nav-section, .nav__group-label, .side-label,
+         .tb-menu__head, .atlas-applauncher__glabel, .awsel__head, .atlas-bell__head,
+         .set-label, .welcome-eyebrow, .lp-eyebrow)[class][class] {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: var(--atlas-fs-sm);
+}
+/* os que eram só enfeite em cor de acento voltam à tinta discreta; o
+   nome do módulo nos passos do onboarding mantém a cor (identifica) */
+html :is([class*="eyebrow"], .nav-section, .nav__group-label, .side-label, .tb-menu__head,
+         .atlas-applauncher__glabel, .awsel__head, .atlas-bell__head)[class][class] {
+  color: var(--atlas-text-mut, var(--atlas-text));
+}
