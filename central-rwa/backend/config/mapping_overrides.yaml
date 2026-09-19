@@ -1,0 +1,23 @@
+# Mapeamentos manuais. SEMPRE vencem a heurística (confiança 1.0).
+# Chave: "rede:endereço" (EVM em minúsculas; Solana como está).
+#
+# Exemplo:
+# overrides:
+#   "ethereum:0x68749665ff8d2d112fa859aa293f07a622782f38":
+#     reference_ticker: GOLD
+#     asset_class: commodity
+#     issuer: tether
+#   "solana:Endereço...":
+#     ignore: true        # tira o token do catálogo
+
+overrides:
+  "ethereum:0x68749665ff8d2d112fa859aa293f07a622782f38":
+    reference_ticker: GOLD
+    asset_class: commodity
+    issuer: tether
+    symbol: XAUT
+  "ethereum:0x45804880de22913dafe09f4980848ece6ecbaf78":
+    reference_ticker: GOLD
+    asset_class: commodity
+    issuer: paxos
+    symbol: PAXG

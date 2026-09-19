@@ -1,0 +1,60 @@
+# Provedores e capacidades do roteador (seção 18 da especificação).
+#
+# limits: chamadas por janela (second | minute | day | month). O roteador para
+#   ANTES de estourar. Nas janelas day/month aplica a margem quota_safety.
+# key_env: variável de ambiente com a chave. key_required: false = funciona sem.
+# Um provedor que mudou de plano é ajustado AQUI, sem mexer no código.
+# Limites conferidos em 2026-09-19 — ver docs/central-rwa/FONTES_VERIFICADAS.md.
+
+router:
+  quota_safety: 0.9
+  cooldown_base_seconds: 60
+  cooldown_max_seconds: 3600
+  circuit_threshold: 5
+  circuit_seconds: 1800
+  cache_ttl_seconds: 300
+  price_tolerance_pct: 1.0
+
+providers:
+  xstocks:
+    limits: { minute: 60 }          # cabeçalho x-ratelimit-limit: 1000 (janela não documentada); usamos bem menos
+    notes: API pública do emissor, sem chave
+  coingecko:
+    key_env: COINGECKO_DEMO_KEY
+    key_required: false
+    limits: { minute: 3 }                          # sem chave deu 429 após ~6 chamadas seguidas
+    limits_with_key: { minute: 25, month: 9000 }   # Demo: ~30/min e ~10k/mês
+    max_wait_seconds: 65
+  dexscreener:
+    limits: { minute: 250 }         # documentado: 300/min nos endpoints de pares/tokens
+  geckoterminal:
+    limits: { minute: 25 }          # documentado: 30/min
+    max_wait_seconds: 30
+  defillama:
+    limits: { minute: 120 }         # sem limite publicado para uso normal; auto-limitado
+  yahoo:
+    limits: { minute: 30, day: 2000 }    # não oficial; bloqueia IP por excesso
+    max_wait_seconds: 60
+  treasury:
+    limits: { minute: 20 }
+  tiingo:
+    key_env: TIINGO_KEY
+    limits: { day: 1000 }
+  twelvedata:
+    key_env: TWELVEDATA_KEY
+    limits: { minute: 8, day: 800 }
+    max_wait_seconds: 60
+  finnhub:
+    key_env: FINNHUB_KEY
+    limits: { minute: 55 }
+  fred:
+    key_env: FRED_KEY
+    limits: { minute: 100 }
+
+capabilities:
+  catalog_issuer:            [xstocks]
+  catalog_category:          [coingecko]
+  token_price:               [dexscreener, defillama, geckoterminal, coingecko]
+  reference_history_daily:   [yahoo, tiingo, twelvedata, fred]
+  reference_quote:           [finnhub, twelvedata, yahoo]
+  tbill_yield:               [treasury, fred]

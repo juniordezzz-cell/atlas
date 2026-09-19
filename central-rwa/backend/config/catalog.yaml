@@ -1,0 +1,22 @@
+# Categorias da CoinGecko usadas para descobrir tokens de outros emissores.
+# (A xStocks vem da API do próprio emissor, com confiança máxima.)
+#
+# rule:
+#   suffix  — ticker = símbolo sem o sufixo do emissor (NVDAON → NVDA)
+#   fixed   — todo token da categoria aponta para o mesmo ativo (ouro → GOLD)
+#   keyword — procura gold/silver/oil no nome
+#   manual  — não mapeia; precisa de mapping_overrides.yaml
+# Categorias conferidas em /coins/categories/list em 2026-09-19.
+
+categories:
+  - { id: ondo-tokenized-assets,            issuer: ondo,      rule: suffix, suffix: "on" }
+  - { id: robinhood-chain-stocks-ecosystem, issuer: robinhood, rule: suffix, suffix: "" }
+  - { id: bstocks-ecosystem,                issuer: bstocks,   rule: suffix, suffix: "b" }
+  - { id: dinari-ecosystem,                 issuer: dinari,    rule: manual }
+  - { id: xstocks-ecosystem,                issuer: xstocks,   rule: suffix, suffix: "x" }
+  - { id: tokenized-gold,                   issuer: varios,    rule: fixed, ticker: GOLD,   asset_class: commodity }
+  - { id: tokenized-silver,                 issuer: varios,    rule: fixed, ticker: SILVER, asset_class: commodity }
+  - { id: tokenized-commodities,            issuer: varios,    rule: keyword, asset_class: commodity }
+  - { id: tokenized-treasuries,             issuer: varios,    rule: fixed, ticker: TBILL,  asset_class: tbill }
+  - { id: tokenized-t-bills,                issuer: varios,    rule: fixed, ticker: TBILL,  asset_class: tbill }
+  - { id: tokenized-money-market-fund-mmfs, issuer: varios,    rule: fixed, ticker: TBILL,  asset_class: tbill, confidence: 0.6 }

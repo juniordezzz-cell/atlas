@@ -1,0 +1,24 @@
+# Camada A — atualizada a cada 6h (seção 5.3 da especificação).
+# Tickers de ATIVOS DE REFERÊNCIA (não de tokens). Todos os tokens mapeados
+# para estes ativos, nas redes ativas, entram na camada A.
+# Para incluir um ativo: acrescente o ticker aqui (e, se for commodity ou algo
+# fora do padrão, declare-o em reference_assets.yaml).
+
+tier_a:
+  - NVDA
+  - TSLA
+  - AAPL
+  - MSFT
+  - AMZN
+  - META
+  - GOOGL
+  - SPY
+  - QQQ
+  - GOLD
+  - WTI
+
+# Camada B: todo ativo do catálogo cujo token passe no piso abaixo (atualizado a cada 24h).
+tier_b_floor_usd: 100000
+
+# Anos de histórico diário dos ativos de referência.
+history_years: 10

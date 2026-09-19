@@ -1,0 +1,60 @@
+[
+ {
+  "chainId": "solana",
+  "dexId": "raydium",
+  "url": "https://dexscreener.com/solana/49imatqtoyabsyaqc8gafvq6aebfvdxsrh44oiatyyw6",
+  "pairAddress": "49iMatQtoyabsYAQc8GafVq6aeBFVDxSRH44oiatyyw6",
+  "labels": [
+   "CLMM"
+  ],
+  "baseToken": {
+   "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+   "name": "NVIDIA xStock",
+   "symbol": "NVDAx"
+  },
+  "quoteToken": {
+   "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+   "name": "USD Coin",
+   "symbol": "USDC"
+  },
+  "priceNative": "222.4574",
+  "priceUsd": "222.45",
+  "txns": {
+   "m5": {
+    "buys": 0,
+    "sells": 4
+   },
+   "h1": {
+    "buys": 15,
+    "sells": 55
+   },
+   "h6": {
+    "buys": 873,
+    "sells": 781
+   },
+   "h24": {
+    "buys": 5470,
+    "sells": 5347
+   }
+  },
+  "volume": {
+   "h24": 1077838.81,
+   "h6": 155437.22,
+   "h1": 3672.07,
+   "m5": 18.18
+  },
+  "priceChange": {
+   "h1": 0.01,
+   "h6": 0.02,
+   "h24": 1.18
+  },
+  "liquidity": {
+   "usd": 2152952.86,
+   "base": 4353.4291,
+   "quote": 1184499
+  },
+  "fdv": 222457,
+  "marketCap": 41263965,
+  "pairCreatedAt": 1751420783000
+ }
+]

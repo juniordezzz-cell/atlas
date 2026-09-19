@@ -1,0 +1,35 @@
+{
+ "data": [
+  {
+   "id": "solana_Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+   "type": "token",
+   "attributes": {
+    "address": "Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh",
+    "name": "NVIDIA xStock",
+    "symbol": "NVDAx",
+    "decimals": 8,
+    "image_url": "https://coin-images.coingecko.com/coins/images/55633/large/Ticker_NVDA__Company_Name_NVIDIA_Corp__size_200x200_2x.png?1746862704",
+    "coingecko_coin_id": "nvidia-xstock",
+    "total_supply": "32127716017198.0",
+    "normalized_total_supply": "321277.16017198",
+    "price_usd": "222.5537774596",
+    "fdv_usd": "71501445.6077537",
+    "total_reserve_in_usd": "1809072.94261073073635476795",
+    "volume_usd": {
+     "h24": "4885034.46557697"
+    },
+    "market_cap_usd": "41281819.0208647"
+   },
+   "relationships": {
+    "top_pools": {
+     "data": [
+      {
+       "id": "solana_49iMatQtoyabsYAQc8GafVq6aeBFVDxSRH44oiatyyw6",
+       "type": "pool"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

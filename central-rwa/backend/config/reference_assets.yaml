@@ -1,0 +1,28 @@
+# Ativos de referência que NÃO seguem o padrão "ação dos EUA com o mesmo ticker".
+# Ações e ETFs comuns não precisam estar aqui: recebem os símbolos padrão
+# (yahoo = ticker, tiingo = ticker minúsculo, twelvedata/finnhub = ticker).
+
+# Tickers tratados como ETF (classe "etf").
+etfs: [SPY, QQQ, IWM, DIA, VTI, VOO, GLD, SLV, USO, TLT, IEF, SHY, BIL, SGOV, EEM, EFA, XLK, XLF, XLE, SMH, ARKK, IBIT]
+
+assets:
+  GOLD:
+    name: Ouro (spot/futuro)
+    asset_class: commodity
+    symbols: { yahoo: "GC=F", twelvedata: "XAU/USD" }
+  SILVER:
+    name: Prata (spot/futuro)
+    asset_class: commodity
+    symbols: { yahoo: "SI=F", twelvedata: "XAG/USD" }
+  WTI:
+    name: Petróleo WTI
+    asset_class: commodity
+    symbols: { yahoo: "CL=F", fred: "DCOILWTICO" }
+  BRENT:
+    name: Petróleo Brent
+    asset_class: commodity
+    symbols: { yahoo: "BZ=F", fred: "DCOILBRENTEU" }
+  TBILL:
+    name: T-bills dos EUA (rendimento — ver tbill_yields_daily)
+    asset_class: tbill
+    symbols: {}

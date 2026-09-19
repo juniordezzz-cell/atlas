@@ -1,0 +1,103 @@
+"""Integração com Postgres de verdade (pgserver embutido): aplica a migration e
+exercita o PostgresRepository. Pulado se o pgserver não estiver instalado."""
+
+from __future__ import annotations
+
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
+
+import pytest
+
+pgserver = pytest.importorskip("pgserver")
+
+from central_rwa.db import PostgresRepository, SnapshotRow, apply_migrations  # noqa: E402
+from central_rwa.models import DailyBar, ReferenceQuote, TbillRate, TokenListing  # noqa: E402
+from central_rwa.reference import ReferenceRegistry  # noqa: E402
+from central_rwa.router.state import ProviderState  # noqa: E402
+
+MIGRATIONS = Path(__file__).resolve().parents[2] / "supabase" / "migrations"
+TS = datetime(2026, 9, 19, 12, tzinfo=timezone.utc)
+
+
+@pytest.fixture(scope="module")
+def dsn(tmp_path_factory):
+    server = pgserver.get_server(tmp_path_factory.mktemp("pg"), cleanup_mode="stop")
+    uri = server.get_uri()
+    apply_migrations(uri, MIGRATIONS)
+    apply_migrations(uri, MIGRATIONS)  # idempotente: rodar de novo não quebra
+    yield uri
+    server.cleanup()
+
+
+@pytest.fixture
+def repo(dsn):
+    r = PostgresRepository(dsn)
+    yield r
+    r.close()
+
+
+def test_rls_ligado_em_todas_as_tabelas(repo):
+    rows = repo._query(
+        "select relname, relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace "
+        "where n.nspname='central_rwa' and c.relkind='r'"
+    )
+    assert rows and all(rls for _, rls in rows)
+
+
+def test_catalogo_tokens_e_upsert_idempotente(repo):
+    reg = ReferenceRegistry({"assets": {"GOLD": {"asset_class": "commodity", "symbols": {"yahoo": "GC=F"}}}})
+    repo.ensure_reference_assets([reg.get("NVDA"), reg.get("GOLD")])
+    l = TokenListing(issuer="xstocks", network="solana", address="Xsc9", symbol="NVDAx", reference_ticker="NVDA",
+                     mapping_confidence=1.0, mapping_origin="api_emissor", source="xstocks")
+    repo.upsert_tokens([l])
+    repo.upsert_tokens([l.model_copy(update={"symbol": "NVDAx2"})])
+    toks = repo.tokens({"NVDA"}, 0.8)
+    assert len(toks) == 1 and toks[0].symbol == "NVDAx2"
+
+
+def test_historico_idempotente_e_range(repo):
+    repo.ensure_reference_assets([ReferenceRegistry({}).get("AAPL")])
+    bars = [DailyBar(day=date(2026, 9, 1) + timedelta(days=i), close=100 + i) for i in range(5)]
+    repo.upsert_daily_bars("AAPL", bars, "yahoo")
+    repo.upsert_daily_bars("AAPL", bars, "yahoo")
+    first, last, n = repo.history_range("AAPL")
+    assert (first, last, n) == (date(2026, 9, 1), date(2026, 9, 5), 5)
+
+
+def test_snapshots_liquidez_e_camadas(repo):
+    reg = ReferenceRegistry({})
+    repo.ensure_reference_assets([reg.get("TSLA")])
+    repo.upsert_tokens([TokenListing(issuer="ondo", network="ethereum", address="0xt", symbol="TSLAON", reference_ticker="TSLA",
+                                     mapping_confidence=0.8, mapping_origin="sufixo", source="coingecko")])
+    [t] = repo.tokens({"TSLA"})
+    row = SnapshotRow(t.id, TS, 360.0, 50_000, 250_000, "dexscreener", 2, 0.3, "B")
+    assert repo.insert_snapshots([row]) == 1
+    repo.insert_snapshots([row])  # mesma (token, ts): ignorado
+    assert repo.latest_liquidity_by_ticker()["TSLA"] == 250_000
+    repo.set_tiers({"NVDA"}, {"TSLA", "NVDA"})
+    tiers = dict(repo._query("select ticker, tier from watch_tiers"))
+    assert tiers == {"NVDA": "A", "TSLA": "B"}
+
+
+def test_cotacoes_tbills_e_job(repo):
+    repo.ensure_reference_assets([ReferenceRegistry({}).get("SPY")])
+    assert repo.insert_quotes([ReferenceQuote(ticker="SPY", price=761.7, previous_close=760, source="yahoo", observed_at=TS)]) == 1
+    repo.upsert_tbill_rates([TbillRate(day=date(2026, 9, 18), tenor="13w", rate=4.08, source="treasury")] * 2)
+    assert repo.tbill_last_day() == date(2026, 9, 18)
+    assert repo.tbill_years() == {2026}
+    repo.record_job("teste", TS, TS, "ok", {"a": 1, "quando": TS})
+    assert repo._query("select count(*) from job_runs where job='teste'")[0][0] == 1
+    assert any(t == "token_snapshots" for t, _, _ in repo.size_report())
+
+
+def test_estado_do_roteador_ida_e_volta(repo):
+    st = ProviderState()
+    st.increment(TS)
+    st.increment(TS)
+    st.health.consecutive_failures = 2
+    st.health.cooldown_until = TS + timedelta(minutes=5)
+    st.health.last_error = "HTTP 429"
+    repo.save({"dexscreener": st})
+    loaded = repo.load()["dexscreener"]
+    assert loaded.count("day", TS) == 2 and loaded.count("minute", TS) == 2
+    assert loaded.health.consecutive_failures == 2 and loaded.health.cooldown_until == TS + timedelta(minutes=5)
