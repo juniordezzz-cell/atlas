@@ -30,6 +30,21 @@ html[data-theme="light"] {
   --sereno-fill-hi:   rgba(15, 30, 60, 0.06);
 }
 
+/* ---------- 0b. Números sem cara de terminal ----------
+   Os módulos apontam para a fonte mono por quatro nomes (--mono,
+   --font-mono, --fonte-mono, --atlas-font-mono) em ~140 regras. Em vez
+   de caçar cada uma, os nomes passam a valer Inter; com tabular-nums no
+   corpo, os dígitos seguem com largura fixa e as colunas alinhadas.
+   html:root:root vence os :root e html[data-module] dos módulos. */
+html:root:root {
+  --atlas-font-mono: var(--atlas-font-ui);
+  --atlas-mono: var(--atlas-font-ui);
+  --mono: var(--atlas-font-ui);
+  --font-mono: var(--atlas-font-ui);
+  --fonte-mono: var(--atlas-font-ui);
+}
+body { font-variant-numeric: tabular-nums; }
+
 /* ---------- 1. Fundo liso ---------- */
 /* degradê só na altura da tela, sem "fixed": attachment fixo força
    repintura a cada rolagem e embaralhava a topbar grudada */
@@ -490,3 +505,28 @@ html :is(.nav-back, .side-back, .atlas-backfoot):hover {
   border-color: transparent;
   background: var(--sereno-fill-hi);
 }
+
+/* ===================================================================
+   RWA
+   =================================================================== */
+/* marca do RWA: ".side-brand .txt .tag" (0,3,0) vencia a regra comum */
+html .side-brand .txt .tag[class] {
+  font-family: var(--atlas-font-ui);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 11.5px;
+}
+html :is(.side-brand .txt .s, .tb-metric .k, .narrative-hero .nh-label)[class] {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--atlas-fs-sm);
+}
+/* destaque da narrativa: contêiner preenchido, sem borda */
+html .narrative-hero {
+  background: var(--sereno-fill);
+  border-color: transparent;
+  border-radius: var(--sereno-r);
+  box-shadow: none;
+}
+html .tb-metric { border-color: transparent; }
+html .roo-track i { box-shadow: none; }
