@@ -30,12 +30,21 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.job == "migrate":
         from .db import apply_migrations
+        from .db.connect import diagnose
+        from .gha import annotate
 
         dsn = os.environ.get("SUPABASE_DB_URL")
         if not dsn:
             sys.exit("SUPABASE_DB_URL não definida.")
-        for name in apply_migrations(dsn, backend.parent / "supabase" / "migrations"):
+        try:
+            applied = apply_migrations(dsn, backend.parent / "supabase" / "migrations")
+        except Exception as e:
+            hint = diagnose(dsn, e)
+            annotate("error", "Migrations", hint)
+            sys.exit(hint)
+        for name in applied:
             print("aplicada:", name)
+        annotate("notice", "Migrations", "aplicadas: " + ", ".join(applied))
         return
 
     from .jobs.runner import job

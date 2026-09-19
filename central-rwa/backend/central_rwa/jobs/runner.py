@@ -13,6 +13,8 @@ from pathlib import Path
 
 from ..config import load_env_file, load_providers, load_yaml
 from ..db import MemoryRepository, PostgresRepository, Repository
+from ..db.connect import diagnose
+from ..gha import annotate
 from ..providers import build_providers
 from ..reference import ReferenceRegistry
 from ..router import Router
@@ -50,7 +52,12 @@ def make_repo(dry_run: bool) -> Repository:
     dsn = os.environ.get("SUPABASE_DB_URL")
     if not dsn:
         sys.exit("SUPABASE_DB_URL não definida. Use --dry-run para rodar sem banco.")
-    return PostgresRepository(dsn)
+    try:
+        return PostgresRepository(dsn)
+    except Exception as e:
+        hint = diagnose(dsn, e)
+        annotate("error", "Banco", hint)
+        sys.exit(hint)
 
 
 @contextmanager
@@ -82,9 +89,40 @@ def job(name: str, dry_run: bool = False, only: set[str] | None = None):
             summary["falha_ao_gravar_resumo"] = str(e)
             ctx.status = "erro"
         print_summary(name, ctx.status, summary)
+        annotate(
+            {"ok": "notice", "parcial": "warning"}.get(ctx.status, "error"),
+            f"Central RWA {name} ({ctx.status})",
+            short_summary(summary),
+        )
         repo.close()
         if ctx.status == "erro":
             sys.exit(1)
+
+
+def short_summary(summary: dict) -> str:
+    """Versão curta do resumo para a anotação pública do Actions (sem segredos)."""
+    lines = [f"duração {summary.get('duracao_s')}s"]
+    r = summary.get("roteador", {})
+    lines.append(f"chamadas: {r.get('calls')}")
+    if r.get("fallbacks"):
+        lines.append(f"fallbacks: {r['fallbacks']}")
+    for key, val in summary.items():
+        if not isinstance(val, dict) or key in ("roteador", "provedores"):
+            if key == "falha":
+                lines.append(f"FALHA: {val}")
+            continue
+        picks = {k: val[k] for k in ("tokens", "requested", "saved", "confirmed", "missing_total", "B_total", "rows", "low_confidence_total") if k in val}
+        if "updated" in val:
+            picks["atualizados"] = len(val["updated"])
+            picks["completos"] = len(val.get("skipped_complete", []))
+        if val.get("errors"):
+            picks["erros"] = len(val["errors"])
+            lines.append(f"{key} erro exemplo: {str(val['errors'][0])[:200]}")
+        if picks:
+            lines.append(f"{key}: {picks}")
+    if "total_mb" in summary:
+        lines.append(f"banco: {summary['total_mb']} MB")
+    return "\n".join(lines)
 
 
 def print_summary(name: str, status: str, summary: dict) -> None:

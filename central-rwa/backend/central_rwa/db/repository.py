@@ -11,6 +11,9 @@ from pathlib import Path
 from ..models import DailyBar, ReferenceQuote, TbillRate, TokenListing
 from ..reference import ReferenceAsset
 from ..router.state import Health, ProviderState, StateStore, Usage
+from .connect import connect
+
+SEARCH_PATH = "set local search_path to central_rwa, public"
 
 
 @dataclass
@@ -166,15 +169,20 @@ class MemoryRepository(Repository):
 
 class PostgresRepository(Repository):
     def __init__(self, dsn: str):
-        import psycopg
+        self.conn = connect(dsn, autocommit=False)
 
-        self.conn = psycopg.connect(dsn, autocommit=False, options="-c search_path=central_rwa,public")
+    def _cursor(self):
+        """Cursor com o schema definido NA TRANSAÇÃO (set local): funciona no pooler
+        do Supabase em modo sessão e em modo transação."""
+        cur = self.conn.cursor()
+        cur.execute(SEARCH_PATH)
+        return cur
 
     def close(self):
         self.conn.close()
 
     def _query(self, sql: str, params=None):
-        with self.conn.cursor() as cur:
+        with self._cursor() as cur:
             cur.execute(sql, params)
             rows = cur.fetchall() if cur.description else None
         self.conn.commit()
@@ -183,7 +191,7 @@ class PostgresRepository(Repository):
     def _many(self, sql: str, rows: list[tuple]) -> int:
         if not rows:
             return 0
-        with self.conn.cursor() as cur:
+        with self._cursor() as cur:
             cur.executemany(sql, rows)
         self.conn.commit()
         return len(rows)
@@ -296,7 +304,7 @@ class PostgresRepository(Repository):
 
     def set_tiers(self, tier_a, tier_b):
         rows = [(t, "A", "manual") for t in tier_a] + [(t, "B", "padrao") for t in tier_b - tier_a]
-        with self.conn.cursor() as cur:
+        with self._cursor() as cur:
             # Promoções por evento (Fase 3) são preservadas; o resto é recalculado.
             cur.execute("delete from watch_tiers where reason <> 'evento'")
             cur.executemany(
@@ -331,10 +339,8 @@ class PostgresRepository(Repository):
 
 
 def apply_migrations(dsn: str, folder: Path) -> list[str]:
-    import psycopg
-
     applied = []
-    with psycopg.connect(dsn, autocommit=True) as conn:
+    with connect(dsn, autocommit=True) as conn:
         for path in sorted(folder.glob("*.sql")):
             with conn.cursor() as cur:
                 cur.execute(path.read_text(encoding="utf-8"))
