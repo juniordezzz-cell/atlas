@@ -111,7 +111,9 @@
    (.atlas-marquee em atlas-magic.css) no Command Center do Academy. */
 /* v59 = correções de segurança SEC-001/002/012 (escape de HTML no
    Dashboard, DeFi, RWA, Finanças e Scanner Pools). */
-var VERSAO = "atlas-v59";
+/* v60 = visual sereno (themes/atlas-sereno.css): fundo liso, seções
+   abertas, faixa de números; sai spotlight/feixe do Magic UI. */
+var VERSAO = "atlas-v60";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
@@ -134,6 +136,7 @@ var CASCA = [
   "assets/fonts/jetbrains-mono-latin.woff2",
   "themes/atlas-theme.css",
   "themes/atlas-effects.css",
+  "themes/atlas-sereno.css",
   "core/atlas-storage.js",
   "core/settings.js",
   "core/i18n.js",

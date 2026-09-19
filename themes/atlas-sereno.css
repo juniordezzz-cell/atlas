@@ -1,0 +1,219 @@
+/* ===================================================================
+   ATLAS — VISUAL SERENO
+   -------------------------------------------------------------------
+   Camada final do visual. Carregada POR ÚLTIMO em cada página, ela
+   troca a linguagem "painel de terminal" (caixa dentro de caixa,
+   malha no fundo, fio de luz, cantoneiras de HUD) por uma linguagem
+   de relatório de portfólio: fundo liso, seções abertas separadas por
+   espaço e linha fina, números grandes como protagonistas.
+
+   Remover o <link> deste arquivo devolve o visual anterior inteiro.
+   Spec: docs/superpowers/specs/2026-09-18-visual-sereno-design.md
+   =================================================================== */
+
+/* ---------- 0. Tokens ---------- */
+:root,
+html[data-theme="dark"] {
+  --sereno-bg-top:    #0B1120;
+  --sereno-bg-bottom: #070B15;
+  --sereno-rule:      rgba(160, 185, 230, 0.08);   /* linha entre seções */
+  --sereno-fill:      rgba(148, 170, 215, 0.045);  /* contêiner necessário */
+  --sereno-fill-hi:   rgba(148, 170, 215, 0.075);  /* hover de clicável */
+  --sereno-r:         20px;
+  --sereno-gap:       40px;                        /* respiro entre seções */
+}
+html[data-theme="light"] {
+  --sereno-bg-top:    #F6F8FC;
+  --sereno-bg-bottom: #EEF2F8;
+  --sereno-rule:      rgba(15, 30, 60, 0.09);
+  --sereno-fill:      rgba(15, 30, 60, 0.035);
+  --sereno-fill-hi:   rgba(15, 30, 60, 0.06);
+}
+
+/* ---------- 1. Fundo liso ---------- */
+/* degradê só na altura da tela, sem "fixed": attachment fixo força
+   repintura a cada rolagem e embaralhava a topbar grudada */
+html {
+  background: linear-gradient(180deg, var(--sereno-bg-top) 0%, var(--sereno-bg-bottom) 100%) no-repeat;
+  background-size: 100% 100vh;
+  background-color: var(--sereno-bg-bottom);
+}
+/* a malha de engenharia e os brilhos de canto (atlas-effects §9) */
+body::before { content: none !important; }
+
+/* ---------- 2. Seções abertas: o cartão de conteúdo perde a caixa ---------- */
+html .card,
+html .panel,
+html .set-card,
+html .wcard,
+html .est__card,
+html .fin-card,
+html .pos-card,
+html .hpanel,
+html .chart-card,
+html .rep-card {
+  background: transparent;
+  background-image: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+/* sem pulinho, sem sombra, sem borda acesa no hover */
+html .card:hover, html .panel:hover, html .set-card:hover, html .wcard:hover,
+html .est__card:hover, html .fin-card:hover, html .pos-card:hover,
+html .kpi:hover, html .hpanel:hover, html .chart-card:hover, html .rep-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+/* fio de luz (§10) e cantoneiras de HUD (§11) */
+html .card::before, html .panel::before, html .set-card::before, html .kpi::before,
+html .kpi::after {
+  content: none;
+}
+
+/* linha fina entre FILEIRAS de seções (não entre colunas lado a lado:
+   a linha no irmão da mesma grade desalinhava as colunas) */
+html :is(.grid, .row):has(> :is(.card, .panel, .hpanel, .chart-card))
+  + :is(.grid, .row):has(> :is(.card, .panel, .hpanel, .chart-card)) {
+  border-top: 1px solid var(--sereno-rule);
+  padding-top: var(--atlas-sp-6);
+}
+
+/* estado vazio dentro de seção: sem a moldura tracejada */
+html :is(.card, .panel, .hpanel, .chart-card, .set-card, .rep-card)
+  :is(.empty, .empty-state, .empty-box) {
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* cabeçalho e corpo da seção alinham com o resto da página; o título
+   não ganha linha própria embaixo (seria linha demais) */
+html :is(.card, .panel) > :is(.card-head, .card-header, .panel-head, .panel-header) {
+  border-bottom: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+html :is(.card, .panel) > :is(.card-body, .panel-body) {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* cartões clicáveis: só clareiam o fundo */
+html :is(a.card, .card--link, .card[role="button"], .card.is-clickable, .tool-card, .lp-card, .wcard[role="button"]) {
+  background: var(--sereno-fill);
+  border: 0;
+  border-radius: var(--sereno-r);
+  box-shadow: none;
+  padding-left: var(--atlas-sp-5);
+  padding-right: var(--atlas-sp-5);
+}
+html :is(a.card, .card--link, .card[role="button"], .card.is-clickable, .tool-card, .lp-card, .wcard[role="button"]):hover {
+  background: var(--sereno-fill-hi);
+  transform: none;
+  box-shadow: none;
+}
+
+/* ---------- 3. Faixa de números ---------- */
+/* a linha que contém KPIs vira uma faixa: sem caixas, traço fino entre eles */
+html :has(> .kpi + .kpi) {
+  gap: 0;
+}
+html .kpi {
+  background: transparent;
+  background-image: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--atlas-sp-2) var(--atlas-sp-6);
+}
+html .kpi + .kpi { border-left: 1px solid var(--sereno-rule); }
+html .kpi:first-child { padding-left: 0; }
+/* ícone decorativo no canto do KPI */
+html .kpi :is(.kpi-ic, .kpi__ic, .kpi-icon, .kpi__icon) { display: none; }
+
+/* tudo dentro do KPI em Inter (a sublinha herdava a monoespaçada) */
+/* .kpi.kpi: classe dobrada de propósito, para vencer ".kpi .kpi-delta"
+   (0,2,0) do Hold sem recorrer a !important */
+html .kpi.kpi, html .kpi.kpi * { font-family: var(--atlas-font-ui); font-variant-numeric: tabular-nums; }
+
+html :is(.kpi-val, .kpi-v, .kpi__value, .kpi .valor, .stat-value, .metric-value) {
+  font-family: var(--atlas-font-ui);
+  font-size: clamp(1.5rem, 1.1rem + 0.9vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+/* o primeiro KPI é o número principal da tela */
+html .kpi:first-child :is(.kpi-val, .kpi-v, .kpi__value, .valor) {
+  font-size: clamp(1.8rem, 1.2rem + 1.4vw, 2.5rem);
+}
+/* rótulo do KPI: discreto, caixa normal */
+html :is(.kpi-label, .kpi__label, .kpi .rotulo) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--atlas-fs-sm);
+  font-weight: 500;
+  color: var(--atlas-text-mut, var(--atlas-text));
+}
+
+/* números fora do KPI também saem da monoespaçada */
+html :is(.money, .num, [data-num], td.num, .est__ticker) {
+  font-family: var(--atlas-font-ui);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* no celular a faixa quebra em duas colunas; o traço vira espaço */
+@media (max-width: 640px) {
+  html :has(> .kpi + .kpi) { row-gap: var(--atlas-sp-5); }
+  html .kpi, html .kpi:first-child { padding-left: 0; padding-right: var(--atlas-sp-4); }
+  html .kpi + .kpi { border-left: 0; }
+}
+
+/* ---------- 4. Tipografia de seção ---------- */
+html :is(.eyebrow, .card-eyebrow, .panel-eyebrow, .sec-eyebrow) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: var(--atlas-fs-sm);
+  color: var(--atlas-text-mut, var(--atlas-text));
+}
+html :is(.card, .panel, .hpanel, .chart-card) :is(h2, h3, .card-title, .panel-title) {
+  font-size: var(--atlas-fs-h2);
+  letter-spacing: var(--atlas-track-display);
+}
+
+/* ---------- 5. Contêineres necessários: preenchidos, sem contorno ---------- */
+html :is(.onboard, .modal, .rmodal, .atlas-applauncher__panel, .atlas-bell__pop, .atlas-oraculo__panel, .atlas-cal) {
+  border-color: transparent;
+  border-radius: var(--sereno-r);
+}
+html .onboard {
+  background: var(--sereno-fill);
+  box-shadow: none;
+}
+html :is(.onboard-card, .quick-item, .mini-stat, .scenario, .cap-calc, .obj-item, .fee-item, .cmp) {
+  background: var(--sereno-fill);
+  border-color: transparent;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+/* ---------- 6. Sem glow em lugar nenhum ---------- */
+html {
+  --atlas-glow: none;
+  --atlas-glow-strong: none;
+}
+html :is(.btn, .btn-primary, .btn--primary, button):hover {
+  box-shadow: none;
+}
+
+/* ---------- 7. Respiro entre blocos ---------- */
+html :is(.grid, .row) + :is(.grid, .row) { margin-top: var(--atlas-sp-7); }
