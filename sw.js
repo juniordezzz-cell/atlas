@@ -115,9 +115,9 @@
    abertas, faixa de números; sai spotlight/feixe do Magic UI. */
 /* v61 = modo demonstração (core/atlas-demo.js), correções de celular e
    datas locais. */
-/* v63 = abas Eventos e Agentes da Central RWA (Fases 3 e 4). */
 /* v62 = Central RWA (RWA/js/central.js + core/atlas-supabase-config.js):
    primeira tela que lê o backend central-rwa/ no Supabase. */
+/* v63 = abas Eventos e Agentes da Central RWA (Fases 3 e 4). */
 var VERSAO = "atlas-v63";
 var CACHE = VERSAO;
 
