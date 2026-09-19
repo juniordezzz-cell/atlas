@@ -746,3 +746,25 @@ html .awd__scope[class] {
   font-size: var(--atlas-fs-sm);
   font-weight: 600;
 }
+
+/* ============================================================
+   RWA · Central RWA (RWA/js/central.js)
+   Linhas clicáveis sem hover-lift; etiquetas sem contorno nem caixa alta.
+   ============================================================ */
+html[data-module="rwa"] .crwa-table tr.clickable { cursor: pointer; }
+html[data-module="rwa"] .crwa-table tr.clickable:hover td {
+  background: color-mix(in srgb, var(--atlas-accent, #4F8CFF) 6%, transparent);
+}
+html[data-module="rwa"] .crwa-table td,
+html[data-module="rwa"] .crwa-table th { white-space: nowrap; }
+html[data-module="rwa"] .crwa-tag {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warn, #F59E0B) 16%, transparent);
+  color: var(--warn, #F59E0B);
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+html[data-module="rwa"] .crwa-warn { color: var(--warn, #F59E0B); font-weight: 600; }

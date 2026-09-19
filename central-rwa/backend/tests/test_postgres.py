@@ -23,6 +23,11 @@ TS = datetime(2026, 9, 19, 12, tzinfo=timezone.utc)
 def dsn(tmp_path_factory):
     server = pgserver.get_server(tmp_path_factory.mktemp("pg"), cleanup_mode="stop")
     uri = server.get_uri()
+    import psycopg
+
+    with psycopg.connect(uri, autocommit=True) as c:  # papéis que o Supabase já tem
+        c.execute("do $$ begin create role anon; exception when duplicate_object then null; end $$")
+        c.execute("do $$ begin create role authenticated; exception when duplicate_object then null; end $$")
     apply_migrations(uri, MIGRATIONS)
     apply_migrations(uri, MIGRATIONS)  # idempotente: rodar de novo não quebra
     yield uri
@@ -112,6 +117,33 @@ def test_historico_de_ativo_sem_token_no_catalogo(repo, clock):
     res = update_history(router, repo, reg, ["WTI"], date(2026, 9, 19), 10, allow_full={"WTI"})
     assert res.updated == {"WTI": 1} and not res.errors
     assert repo._query("select asset_class from reference_assets where ticker='WTI'") == [("commodity",)]
+
+
+def test_visoes_do_site_e_permissoes(repo, dsn):
+    """As visões públicas trazem o dado; o papel anon lê as visões mas NÃO as tabelas."""
+    import psycopg
+
+    reg = ReferenceRegistry({})
+    repo.ensure_reference_assets([reg.get("MSFT")])
+    repo.upsert_tokens([TokenListing(issuer="xstocks", network="solana", address="Msft1", symbol="MSFTx", reference_ticker="MSFT",
+                                     mapping_confidence=1.0, mapping_origin="api_emissor", source="xstocks")])
+    [t] = repo.tokens({"MSFT"})
+    repo.insert_snapshots([SnapshotRow(t.id, TS, 494.0, 1e6, 2e6, "dexscreener", 2, 0.1, "A")])
+    repo.upsert_daily_bars("MSFT", [DailyBar(day=date.today() - timedelta(days=2), close=490), DailyBar(day=date.today() - timedelta(days=1), close=493.8)], "yahoo")
+    repo.insert_quotes([ReferenceQuote(ticker="MSFT", price=493.8, previous_close=490, source="yahoo", observed_at=TS)])
+    repo.set_tiers({"MSFT"}, set())
+
+    with psycopg.connect(dsn, autocommit=True) as c:
+        c.execute("set role anon")
+        ativo = c.execute("select ticker, camada, ref_preco, ult_fechamento, fechamento_anterior, tokens, pregoes from crwa_ativos where ticker='MSFT'").fetchone()
+        assert ativo == ("MSFT", "A", 493.8, 493.8, 490, 1, 2)
+        tok = c.execute("select simbolo, rede, preco, fontes_confirmadas from crwa_tokens where ticker='MSFT'").fetchone()
+        assert tok == ("MSFTx", "solana", 494.0, 2)
+        assert c.execute("select count(*) from crwa_historico where ticker='MSFT'").fetchone()[0] == 2
+        c.execute("select * from crwa_execucoes").fetchall()
+        c.execute("select * from crwa_tbills").fetchall()
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            c.execute("select * from central_rwa.tokens")
 
 
 def test_estado_do_roteador_ida_e_volta(repo):

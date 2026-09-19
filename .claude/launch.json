@@ -11,6 +11,17 @@
         "8777"
       ],
       "port": 8777
+    },
+    {
+      "name": "atlas-8778",
+      "runtimeExecutable": "py",
+      "runtimeArgs": [
+        "-3",
+        "-m",
+        "http.server",
+        "8778"
+      ],
+      "port": 8778
     }
   ]
 }

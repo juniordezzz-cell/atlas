@@ -36,6 +36,8 @@
      SHELL — sidebar + topbar
      ============================================================ */
   var NAV = [
+    /* Central RWA: lê o backend (central-rwa/, Supabase). É a abertura do módulo. */
+    { id: "central",   label: "Central RWA", icon: "layers",    route: "#/central" },
     { id: "dashboard", label: "Dashboard",   icon: "grid",      route: "#/dashboard" },
     { id: "portfolio", label: "Portfolio",   icon: "portfolio", route: "#/portfolio" },
     { id: "macro",     label: "Macro",       icon: "macro",     route: "#/macro" },
@@ -199,7 +201,7 @@
       });
       hash = hash.slice(0, qi);
     }
-    return { path: hash || "dashboard", query: query };
+    return { path: hash || "central", query: query };
   }
   function matchRoute(path) {
     var segs = path.split("/");
@@ -232,7 +234,7 @@
     },
     start: function () {
       window.addEventListener("hashchange", this.resolve.bind(this));
-      if (!location.hash) { try { history.replaceState(null, "", "#/dashboard"); } catch (e) {} }
+      if (!location.hash) { try { history.replaceState(null, "", "#/central"); } catch (e) {} }
       this.resolve();
     },
     go: function (h) { location.hash = h; }
@@ -1249,7 +1251,13 @@
      ============================================================ */
   function boot() {
     Shell.mount("#shell");
+    function central(ctx) {
+      if (window.RWACentral) return window.RWACentral.render(ctx);
+      throw new Error("js/central.js não carregou");
+    }
     Router
+      .register("central", central, "central")
+      .register("central/:ticker", central, "central")
       .register("dashboard", V.dashboard, "dashboard")
       .register("portfolio", V.portfolio, "portfolio")
       .register("asset/:id", V.asset, "portfolio")
