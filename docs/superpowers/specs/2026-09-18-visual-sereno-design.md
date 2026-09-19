@@ -74,6 +74,20 @@ topbar, seletor de carteira, Oráculo, toasts) e o tema claro.
 - Mantidos: contagem dos totais (number ticker), entrada suave das telas,
   fita de cotações do Academy.
 
+### Adições aprovadas no checkpoint (2026-09-18)
+- **Controles da topbar** (seletor de carteira, app launcher, sino,
+  botão de tema, busca): saem as caixinhas com contorno; viram controles
+  sem borda, fundo só no hover/aberto, cantos arredondados, sem glow
+  (inclusive o avatar).
+- **Marca** "ATLAS / SEU MAPA DE INVESTIMENTOS": a tagline vaza da
+  sidebar (o "S" final passa da borda). Corrigir em todos os módulos para
+  caber sem cortar nem vazar.
+- **Ícones do menu em duotone**: o traço do ícone sobre um círculo suave
+  na cor do módulo (≈14% de opacidade; ≈28% no item ativo). Vale para a
+  navegação lateral e superior de todos os módulos do escopo. O desenho
+  dos ícones pode ser trocado por glifos mais consistentes quando o
+  atual for fraco.
+
 ### Intocados
 Botões (exceto perder glow), campos de formulário (mantêm contorno),
 tabelas (perdem só o contorno externo; linhas entre fileiras ficam),

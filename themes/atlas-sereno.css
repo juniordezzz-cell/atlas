@@ -40,6 +40,8 @@ html {
 }
 /* a malha de engenharia e os brilhos de canto (atlas-effects §9) */
 body::before { content: none !important; }
+/* a grade própria do Trade (trade/assets/css/base.css) mora no ::after */
+body::after { content: none !important; }
 
 /* ---------- 2. Seções abertas: o cartão de conteúdo perde a caixa ---------- */
 html .card,
@@ -170,8 +172,9 @@ html :is(.money, .num, [data-num], td.num, .est__ticker) {
   letter-spacing: -0.01em;
 }
 
-/* no celular a faixa quebra em duas colunas; o traço vira espaço */
-@media (max-width: 640px) {
+/* abaixo de 1280px a faixa costuma quebrar em mais de uma linha, e o
+   traço/recuo cairia no começo da segunda linha: vira só espaço */
+@media (max-width: 1280px) {
   html :has(> .kpi + .kpi) { row-gap: var(--atlas-sp-5); }
   html .kpi, html .kpi:first-child { padding-left: 0; padding-right: var(--atlas-sp-4); }
   html .kpi + .kpi { border-left: 0; }
@@ -217,3 +220,111 @@ html :is(.btn, .btn-primary, .btn--primary, button):hover {
 
 /* ---------- 7. Respiro entre blocos ---------- */
 html :is(.grid, .row) + :is(.grid, .row) { margin-top: var(--atlas-sp-7); }
+
+/* ===================================================================
+   SHELL — topbar, marca e navegação (todos os módulos)
+   =================================================================== */
+
+/* ---------- Controles da topbar: sem caixinha ---------- */
+/* carteira, busca, sino, tema, app launcher: sem contorno; o seletor de
+   carteira e a busca mantêm um fundo leve porque carregam informação,
+   os botões de ícone só ganham fundo no hover */
+html :is(.awsel .awsel__btn, .atlas-side-search, .atlas-cmdk) {
+  border-color: transparent;
+  background: var(--sereno-fill);
+  border-radius: 12px;
+  box-shadow: none;
+}
+html :is(.atlas-bell__btn, .atlas-theme-toggle, .nav-toggle),
+html :is(.topbar, .topnav) .icon-btn {
+  border-color: transparent;
+  background: transparent;
+  border-radius: 12px;
+  box-shadow: none;
+}
+html :is(.awsel .awsel__btn, .atlas-side-search, .atlas-cmdk, .atlas-bell__btn, .atlas-theme-toggle, .nav-toggle):hover,
+html :is(.topbar, .topnav) .icon-btn:hover,
+html .awsel .awsel__btn[aria-expanded="true"] {
+  border-color: transparent;
+  background: var(--sereno-fill-hi);
+  box-shadow: none;
+}
+html :is(.atlas-side-search, .atlas-cmdk) kbd {
+  border-color: transparent;
+  background: var(--sereno-fill-hi);
+}
+/* avatar: sem halo luminoso */
+html :is(.topbar, .topnav) .avatar { box-shadow: none; }
+
+/* topbar e sidebar: sem moldura própria além da linha fina */
+html :is(.topbar, .topnav) {
+  box-shadow: none;
+  border-bottom-color: var(--sereno-rule);
+}
+html .sidebar {
+  box-shadow: none;
+  border-right-color: var(--sereno-rule);
+}
+
+/* ---------- Marca: a tagline cabe na coluna ---------- */
+/* Era JetBrains Mono em caixa alta a 10px: 170px de largura, e o "S"
+   final passava 7px da borda da sidebar. Em Inter e caixa normal ela
+   fica mais curta que "ATLAS" e alinha com ele. */
+html :is(.sidebar .logo-tag, .brand-tag, .brand__tag, .sidebar .txt .tag) {
+  font-family: var(--atlas-font-ui);
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--atlas-text-mut, var(--atlas-text));
+}
+
+/* ---------- Navegação: ícones em duotone ---------- */
+/* sem o trilho luminoso à esquerda e sem o empurrãozinho no hover */
+html :is(.nav-item, .nav__item, .nav-link)::before,
+html :is(.nav-item, .nav-link).active::before,
+html .nav__item[aria-current="true"]::before,
+html .nav-item[aria-current="true"]::before { content: none; }
+html :is(.nav-item, .nav__item, .nav-link):hover { transform: none; }
+
+html :is(.nav-item, .nav__item).active,
+html :is(.nav-item, .nav__item)[aria-current="true"],
+html :is(.nav-item, .nav__item)[aria-current="page"] {
+  background: var(--sereno-fill-hi);
+  box-shadow: none;
+  border-color: transparent;
+}
+
+/* o traço do ícone sobre um círculo suave na cor do módulo */
+html :is(.nav-item, .nav__item):not(.nav__back) > svg {
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--atlas-accent) 13%, transparent);
+  color: color-mix(in srgb, var(--atlas-accent) 62%, var(--atlas-text-hi));
+  transition: background var(--atlas-dur) var(--atlas-ease), color var(--atlas-dur) var(--atlas-ease);
+}
+html :is(.nav-item, .nav__item):not(.nav__back):hover > svg {
+  background: color-mix(in srgb, var(--atlas-accent) 20%, transparent);
+}
+html :is(.nav-item, .nav__item).active > svg,
+html :is(.nav-item, .nav__item)[aria-current="true"] > svg,
+html :is(.nav-item, .nav__item)[aria-current="page"] > svg {
+  background: color-mix(in srgb, var(--atlas-accent) 28%, transparent);
+  color: color-mix(in srgb, var(--atlas-accent) 35%, #FFFFFF);
+}
+html[data-theme="light"] :is(.nav-item, .nav__item):not(.nav__back) > svg {
+  color: color-mix(in srgb, var(--atlas-accent) 80%, #0B1120);
+}
+html[data-theme="light"] :is(.nav-item, .nav__item).active > svg {
+  color: color-mix(in srgb, var(--atlas-accent) 70%, #0B1120);
+}
+/* o círculo de 28px já dá altura ao item: menos preenchimento vertical */
+html :is(.sidebar .nav-item, .nav__item) {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
