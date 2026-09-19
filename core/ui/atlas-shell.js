@@ -206,9 +206,22 @@
      rótulo. A ancoragem é a mesma ideia do Oráculo, do outro lado.
      ------------------------------------------------------------ */
   function mountBackFoot() {
-    if (document.querySelector('[data-atlas-ui="backfoot"]')) return;
-    var el = buildBackFoot();
     var side = findSidebar();
+    var atual = document.querySelector('[data-atlas-ui="backfoot"]');
+    if (atual) {
+      /* Nasceu solto porque a sidebar do módulo ainda não existia: o Hold
+         monta a dele DEPOIS do shell. Sem esta mudança de casa o botão
+         ficava flutuando sobre o conteúdo para sempre — no celular, com
+         o rótulo inteiro por cima da tela. Quando a sidebar aparece, ele
+         vai para o rodapé dela, como no Trade e no RWA. */
+      if (side && atual.classList.contains("atlas-backfoot--solto")) {
+        atual.classList.remove("atlas-backfoot--solto");
+        side.setAttribute("data-atlas-sidebar", "on");
+        side.appendChild(atual);
+      }
+      return;
+    }
+    var el = buildBackFoot();
     if (side) {
       side.setAttribute("data-atlas-sidebar", "on");
       side.appendChild(el);
