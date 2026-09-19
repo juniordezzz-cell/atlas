@@ -113,6 +113,9 @@ def daily(ctx: Context) -> None:
 
 def _agents(ctx: Context, today) -> None:
     """Fases 3/4: treino histórico (walk-forward) + eventos do dia + posições ao vivo."""
+    # A lista de observação precisa estar no banco: os agentes leem watch_tiers.
+    ctx.repo.ensure_reference_assets([ctx.registry.get(t) for t in sorted(ctx.tier_a)])
+    ctx.repo.ensure_tier_a(ctx.tier_a)
     ctx.section("agente_treino", agents.train(ctx.repo, ctx.registry, today, ctx.only))
     ctx.section("agente_ao_vivo", agents.live(ctx.repo, ctx.registry, today, ctx.only))
 
