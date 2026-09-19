@@ -352,3 +352,28 @@ html :is([class*="eyebrow"], .nav-section, .nav__group-label, .side-label, .tb-m
          .atlas-applauncher__glabel, .awsel__head, .atlas-bell__head)[class][class] {
   color: var(--atlas-text-mut, var(--atlas-text));
 }
+
+/* ===================================================================
+   HOLD
+   =================================================================== */
+/* card clicável (tese, ativo): preenchido, sem borda acesa nem brilho */
+html .card.hoverable {
+  background: var(--sereno-fill);
+  border-radius: var(--sereno-r);
+  padding-left: var(--atlas-sp-5);
+  padding-right: var(--atlas-sp-5);
+}
+html .card.hoverable:hover {
+  background: var(--sereno-fill-hi);
+  border-color: transparent;
+  box-shadow: none;
+}
+/* estado vazio solto na página também sem moldura tracejada */
+html[data-module="hold"] .empty { border: 0; }
+/* pílula da idade do preço na topbar: sem contorno (o ponto já diz a idade) */
+html .market-pill,
+html .market-pill.velho {
+  border-color: transparent;
+  background: var(--sereno-fill);
+}
+html .market-pill.fresco .dot { box-shadow: none; }
