@@ -19,6 +19,13 @@ def test_placeholder_de_senha():
     assert "[YOUR-PASSWORD]" in diagnose("postgresql://postgres.x:[YOUR-PASSWORD]@h.pooler.supabase.com:5432/postgres", Exception("x"))
 
 
+def test_string_de_exemplo_e_host_inexistente():
+    exemplo = "postgresql://postgres.xxxx:abc@aws-0-REGIAO.pooler.supabase.com:5432/postgres"
+    assert "EXEMPLO" in diagnose(exemplo, Exception("failed to resolve host"))
+    real = "postgresql://postgres.abc:x@aws-0-zz.pooler.supabase.com:5432/postgres"
+    assert "Host não encontrado" in diagnose(real, Exception("failed to resolve host 'aws-0-zz': Name or service not known"))
+
+
 def test_senha_errada_e_usuario_do_pooler():
     assert "Senha recusada" in diagnose(POOLER, Exception('FATAL: password authentication failed for user "postgres"'))
     assert "postgres.<id" in diagnose(POOLER, Exception("FATAL: Tenant or user not found"))

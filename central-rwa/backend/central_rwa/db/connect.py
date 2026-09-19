@@ -26,6 +26,11 @@ def diagnose(dsn: str, err: Exception) -> str:
     host = safe_host(dsn)
     if "[YOUR-PASSWORD]" in dsn or "YOUR-PASSWORD" in dsn:
         return f"A string de conexão ainda tem o texto [YOUR-PASSWORD]: troque pela senha do banco. Host: {host}"
+    if any(p in dsn for p in ("REGIAO", "postgres.xxxx", "SUA-SENHA", "@db.xxxx")):
+        return (
+            f"A string de conexão é o EXEMPLO da documentação ({host}), não a do seu projeto. "
+            "Copie a real em Supabase → Connect → 'Session pooler' e atualize o segredo SUPABASE_DB_URL."
+        )
     if "Network is unreachable" in msg or "Cannot assign requested address" in msg or (
         "db." in host and ".supabase.co" in host
     ):
@@ -38,7 +43,7 @@ def diagnose(dsn: str, err: Exception) -> str:
         return f"Senha recusada em {host}. Confira a senha do banco (caracteres como @ # / ? precisam ser codificados na URL)."
     if "Tenant or user not found" in msg:
         return f"Usuário do pooler inválido em {host}: no pooler o usuário é 'postgres.<id-do-projeto>'."
-    if "could not translate host name" in msg or "nodename nor servname" in msg:
+    if any(s in msg for s in ("could not translate host name", "nodename nor servname", "failed to resolve host", "Name or service not known")):
         return f"Host não encontrado: {host}. Confira se copiou a string inteira."
     if "timeout" in msg.lower():
         return f"Tempo esgotado ao conectar em {host}. O projeto pode estar pausado: reative no painel do Supabase."
