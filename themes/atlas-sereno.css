@@ -672,3 +672,16 @@ html .cx-donut-legend li {
 /* calendário: contêiner preenchido sem contorno (o contorno do dia de
    hoje fica: é informação) */
 html .atlas-cal { border-color: transparent; background: var(--sereno-fill); box-shadow: none; }
+
+/* ===================================================================
+   ENTRADA — Login, Landing, Boas-vindas
+   O céu do Boas-vindas (.sky) e o gradiente do Login ficam: são a porta
+   de entrada, como o Boot. Saem contorno e halo dos cartões.
+   =================================================================== */
+html .login-card {
+  border-color: transparent;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  border-radius: 24px;
+}
+html .lp-card { box-shadow: none; }
+html .lp-brand { letter-spacing: 0.12em; }
