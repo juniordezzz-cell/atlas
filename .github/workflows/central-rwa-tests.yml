@@ -1,0 +1,28 @@
+name: Central RWA · testes
+
+on:
+  push:
+    paths: ["central-rwa/**", ".github/workflows/central-rwa-*.yml"]
+  pull_request:
+    paths: ["central-rwa/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: central-rwa/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: central-rwa/backend/pyproject.toml
+      - run: pip install -e ".[dev]"
+      - run: python -m pytest -q

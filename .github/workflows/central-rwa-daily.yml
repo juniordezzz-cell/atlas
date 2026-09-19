@@ -1,0 +1,46 @@
+name: Central RWA · diário (camada B + histórico + T-bills)
+
+on:
+  schedule:
+    - cron: "30 0 * * *"    # 00h30 UTC, depois da camada A das 00h
+  workflow_dispatch:
+
+concurrency:
+  group: central-rwa-db
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: central-rwa/backend
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      COINGECKO_DEMO_KEY: ${{ secrets.COINGECKO_DEMO_KEY }}
+      FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+      TWELVEDATA_KEY: ${{ secrets.TWELVEDATA_KEY }}
+      TIINGO_KEY: ${{ secrets.TIINGO_KEY }}
+      FRED_KEY: ${{ secrets.FRED_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: central-rwa/backend/pyproject.toml
+      - run: pip install -e .
+      - name: Rodar job diário
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::warning::SUPABASE_DB_URL não configurada — job pulado (configure o segredo para ativar)."
+            exit 0
+          fi
+          python -m central_rwa daily
+      - name: Tamanho do banco
+        if: env.SUPABASE_DB_URL != ''
+        run: python -m central_rwa report
