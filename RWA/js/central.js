@@ -392,83 +392,159 @@
   }
 
   /* ============================================================
-     AGENTES (Fase 4) — placar do paper trading (seção 9.3)
+     AGENTES (Fase 4) — um agente por CESTA, cada um com página própria.
+     Placar em três períodos: treino (antes do corte, onde as regras foram
+     escolhidas), validação (depois do corte, que a escolha nunca viu) e
+     ao vivo. O número que vale é o da validação.
      ============================================================ */
 
-  var REGRAS_V1 = [
-    "Gatilho: variação acima de " + GATILHO_PCT + "% no pregão (alta ou queda).",
-    "Só opera com pelo menos 10 eventos semelhantes no histórico.",
-    "Entra se a mediana de 7 pregões dos semelhantes for positiva e ≥ 55% deles tiverem subido; senão fica de fora (sem venda a descoberto).",
-    "Alvo = mediana de 7 pregões (mínimo 1%). Stop = pior queda típica (percentil 20), entre −1,5% e −8%.",
-    "Prazo de 7 pregões. Se alvo e stop cabem no mesmo pregão, conta o stop.",
-    "Desconta 0,3% de custo por operação (ida e volta)."
-  ];
+  var PERIODO = { treino: "Treino", validacao: "Validação", ao_vivo: "Ao vivo" };
+  var AMOSTRA_PEQUENA = 20;
 
-  function agentes(app, atual) {
-    return Promise.all([
-      get("crwa_placar", "select=*"),
-      get("crwa_placar_setup", "select=*&order=soma_pct.desc"),
-      get("crwa_posicoes", "select=*&modo=eq.live&order=entrada_dia.desc&limit=50"),
-      get("crwa_posicoes", "select=*&modo=eq.backtest&order=entrada_dia.desc&limit=30")
-    ]).then(function (r) {
-      if (!atual()) return;
-      var placar = r[0], porSetup = r[1], vivas = r[2], treino = r[3];
-      var bt = placar.filter(function (p) { return p.modo === "backtest"; })[0] || null;
-      var lv = placar.filter(function (p) { return p.modo === "live"; })[0] || null;
-      var abertas = vivas.filter(function (p) { return p.status === "aberta"; });
-
-      mount(app,
-        h("div", { class: "view-head" },
-          h("div", null, h("div", { class: "eyebrow" }, "Central RWA"), h("h1", { class: "view-title" }, "Agentes"),
-            h("div", { class: "view-sub" }, "Paper trading: os agentes abrem e fecham posições SIMULADAS. Nenhuma ordem real é executada. O placar é o que diz se um agente merece confiança.")),
-          h("div", { class: "vh-right" }, botaoRecarregar())),
-
-        h("div", { class: "section" }, panel("Swing v1 — treino em 10 anos", blocoPlacar(bt,
-          "Walk-forward: em cada evento do passado, o agente só conhecia o histórico anterior àquela data."), null, "Agente swing_v1 · histórico")),
-        h("div", { class: "section" }, panel("Swing v1 — ao vivo", blocoPlacar(lv,
-          "Posições abertas a partir dos eventos detectados pelo job diário, acompanhadas a cada 6h pelo preço do token."), null, "Agente swing_v1 · desde a ativação")),
-
-        h("div", { class: "section" }, panel("Posições abertas agora", tabelaPosicoes(abertas, true), null, "Ao vivo")),
-        h("div", { class: "grid g-2 section" },
-          panel("Resultado por ativo e setup", tabelaSetup(porSetup.filter(function (s) { return s.modo === "backtest" && s.fechadas; })), null, "Treino"),
-          panel("Regras da v1", h("ul", { class: "t2", style: "margin:0;padding-left:18px;line-height:1.7;font-size:13px" },
-            REGRAS_V1.map(function (x) { return h("li", null, x); })), null, "Seção 9.4 da especificação")),
-        h("div", { class: "section" }, panel("Últimas operações do treino", tabelaPosicoes(treino, false), null, "Histórico")));
-    });
+  function periodosDe(placar, id) {
+    var out = {};
+    placar.forEach(function (p) { if (p.agente === id) out[p.periodo] = p; });
+    return out;
   }
 
-  function blocoPlacar(p, explica) {
-    if (!p || !p.fechadas) {
-      return h("p", { class: "t3", style: "margin:0;font-size:13px" },
-        p && p.abertas ? p.abertas + " posição(ões) aberta(s), nenhuma fechada ainda. " + explica : "Sem operações ainda. " + explica);
-    }
-    var perde = p.retorno_medio_pct != null && p.base_media_pct != null && p.retorno_medio_pct < p.base_media_pct;
+  /* Veredito honesto, olhando a VALIDAÇÃO contra o "não fazer nada". */
+  function veredito(per) {
+    var v = per.validacao;
+    if (!v || !v.fechadas) return { cls: "t3", txt: "Sem operações na validação ainda." };
+    var ganha = v.retorno_medio_pct != null && v.base_media_pct != null && v.retorno_medio_pct > v.base_media_pct;
+    var pouca = v.fechadas < AMOSTRA_PEQUENA;
+    if (ganha && !pouca) return { cls: "crwa-ok", txt: "A vantagem se manteve em dados que a escolha das regras nunca viu." };
+    if (ganha) return { cls: "t2", txt: "Promissor: ganhou de “não fazer nada” na validação, mas com só " + v.fechadas + " operações — ainda não é prova." };
+    return { cls: "crwa-warn", txt: "Não se sustentou: na validação rendeu menos do que ficar comprado num dia qualquer" +
+      (pouca ? " (com só " + v.fechadas + " operações)." : ".") };
+  }
+
+  function regrasTexto(r) {
+    r = r || {};
+    var setups = (r.setups || []).map(function (s) { return (TIPO[s] || s).toLowerCase(); }).join(" e ");
+    var alvo = r.alvo_modo === "nenhum" ? "sem alvo — sai no stop ou no prazo"
+      : r.alvo_modo === "mediana_max" ? "alvo = " + U.num(r.alvo_fator || 1, 1) + "× a alta típica dos semelhantes em " + r.prazo_pregoes + " pregões"
+      : "alvo = " + (r.alvo_fator && r.alvo_fator !== 1 ? U.num(r.alvo_fator, 1) + "× " : "") + "a mediana dos semelhantes em " + r.prazo_pregoes + " pregões";
+    var stop = r.stop_modo === "fixo" ? "stop fixo de " + num2(r.stop_fixo_pct)
+      : "stop = queda típica dos semelhantes (" + (r.stop_modo === "p50" ? "mediana" : "percentil 20") + "), entre " + num2(r.stop_minimo_pct) + " e " + num2(r.stop_maximo_pct);
     return [
-      h("div", { class: "grid g-4" },
-        kpi({ k: "Operações fechadas", v: String(p.fechadas), icon: "layers", foot: (p.abertas || 0) + " abertas · " + (p.desde || "") + " a " + (p.ate || "") }),
-        kpi({ k: "Taxa de acerto", v: p.taxa_acerto_pct != null ? U.num(p.taxa_acerto_pct, 0) + "%" : "—", icon: "check", foot: "operações com lucro líquido" }),
-        kpi({ k: "Retorno médio", v: num2(p.retorno_medio_pct), icon: "trend", accent: perde ? "awarn" : "apos",
-              foot: "mediana " + num2(p.retorno_mediano_pct) + " · pior " + num2(p.pior_pct) }),
-        kpi({ k: "Não fazer nada", v: num2(p.base_media_pct), icon: "gauge", foot: "retorno médio de 7 pregões num dia qualquer" })),
-      h("p", { class: perde ? "crwa-warn" : "t2", style: "margin:12px 0 0;font-size:13px;line-height:1.6" },
-        perde
-          ? "Veredito: por operação, o agente rende MENOS do que ficar comprado num dia qualquer. Acerta muito, mas as perdas no stop apagam os ganhos pequenos no alvo — as regras precisam evoluir."
-          : "Veredito: por operação, o agente rende mais do que ficar comprado num dia qualquer."),
-      h("p", { class: "t3", style: "margin:6px 0 0;font-size:12px" }, explica)
+      "Olha eventos com variação acima de " + U.num(r.gatilho_pct, 1) + "% no pregão; opera " + setups + ".",
+      "Só opera com pelo menos " + r.amostra_minima + " eventos semelhantes, se ≥ " + U.num(r.pct_positivo_minimo, 0) + "% deles subiram em " + r.prazo_pregoes + " pregões e a mediana passou de " + num2(r.mediana_minima_pct) + ".",
+      "Entra na abertura seguinte; " + alvo + "; " + stop + ".",
+      "Prazo de " + r.prazo_pregoes + " pregões (máximo " + r.prazo_maximo_pregoes + "). Se alvo e stop cabem no mesmo pregão, conta o stop.",
+      "Desconta " + U.num(r.custo_ida_volta_pct, 1) + "% de custo por operação. Sem venda a descoberto: quando o histórico é de queda, fica de fora."
     ];
   }
 
+  function cestaChips(cesta) {
+    return h("div", { class: "crwa-chips" }, (cesta || []).map(function (t) {
+      return h("a", { class: "crwa-chip", href: "#/central/" + encodeURIComponent(t) }, t);
+    }));
+  }
+
+  function numPeriodo(p, campo) { return p && p.fechadas ? num2(p[campo]) : "—"; }
+
+  function cartaoAgente(a, per) {
+    var ve = veredito(per), v = per.validacao, t = per.treino, lv = per.ao_vivo;
+    return h("div", { class: "panel panel-pad crwa-agent", on: { click: function () { location.hash = "#/agentes/" + encodeURIComponent(a.id); } } },
+      h("div", { class: "panel-head" },
+        h("div", null, h("div", { class: "eyebrow" }, (a.cesta || []).length + " ativos"), h("h2", null, a.nome)),
+        h("span", { class: "t3", style: "font-size:12px" }, "abrir →")),
+      h("p", { class: "t2", style: "margin:0 0 10px;font-size:13px;line-height:1.55" }, a.descricao),
+      cestaChips(a.cesta),
+      h("div", { class: "crwa-strip" },
+        h("div", null, h("span", { class: "k" }, "Treino"), h("b", null, numPeriodo(t, "retorno_medio_pct")), t3((t ? t.fechadas : 0) + " op.")),
+        h("div", null, h("span", { class: "k" }, "Validação"), h("b", { class: v && v.retorno_medio_pct > (v.base_media_pct || 0) ? "delta up" : "delta down" }, numPeriodo(v, "retorno_medio_pct")), t3((v ? v.fechadas : 0) + " op.")),
+        h("div", null, h("span", { class: "k" }, "Não fazer nada"), h("b", null, numPeriodo(v, "base_media_pct")), t3("na validação")),
+        h("div", null, h("span", { class: "k" }, "Ao vivo"), h("b", null, lv ? (lv.fechadas ? num2(lv.retorno_medio_pct) : "—") : "—"),
+          t3(lv ? (lv.abertas || 0) + " aberta(s)" : "sem posições"))),
+      h("p", { class: ve.cls, style: "margin:10px 0 0;font-size:12.5px;line-height:1.5" }, ve.txt));
+  }
+
+  function agentes(app, atual) {
+    return Promise.all([get("crwa_agentes", "select=*&order=id"), get("crwa_placar_periodo", "select=*")]).then(function (r) {
+      if (!atual()) return;
+      var ags = r[0], placar = r[1];
+      mount(app,
+        h("div", { class: "view-head" },
+          h("div", null, h("div", { class: "eyebrow" }, "Central RWA"), h("h1", { class: "view-title" }, "Agentes"),
+            h("div", { class: "view-sub" }, "Cada agente opera uma cesta de ativos com regras próprias, em paper trading — posições SIMULADAS, nenhuma ordem real. As regras foram escolhidas só com os pregões de antes do corte; a validação mostra o que aconteceu depois, em dados que a escolha nunca viu.")),
+          h("div", { class: "vh-right" }, botaoRecarregar())),
+        ags.length
+          ? h("div", { class: "grid g-2 section" }, ags.map(function (a) { return cartaoAgente(a, periodosDe(placar, a.id)); }))
+          : h("div", { class: "section" }, panel("Nenhum agente ainda", h("p", { class: "t3", style: "margin:0" },
+              "Os agentes aparecem depois do próximo deploy do backend (config/agents.yaml)."))));
+    });
+  }
+
+  function agentePagina(app, atual, id) {
+    return Promise.all([
+      get("crwa_agentes", "select=*&id=eq." + encodeURIComponent(id)),
+      get("crwa_placar_periodo", "select=*&agente=eq." + encodeURIComponent(id)),
+      get("crwa_placar_setup", "select=*&agente=eq." + encodeURIComponent(id) + "&modo=eq.backtest&order=soma_pct.desc"),
+      get("crwa_posicoes", "select=*&agente=eq." + encodeURIComponent(id) + "&modo=eq.live&order=entrada_dia.desc&limit=50"),
+      get("crwa_posicoes", "select=*&agente=eq." + encodeURIComponent(id) + "&modo=eq.backtest&order=entrada_dia.desc&limit=40")
+    ]).then(function (r) {
+      if (!atual()) return;
+      var a = r[0][0];
+      var voltar = h("a", { class: "bck", href: "#/agentes" }, icon("back"), " Agentes");
+      if (!a) { mount(app, head("Agente não encontrado."), h("div", { class: "section" }, voltar)); return; }
+      var per = {};
+      r[1].forEach(function (p) { per[p.periodo] = p; });
+      var ve = veredito(per);
+      var abertas = r[3].filter(function (p) { return p.status === "aberta"; });
+      var fechadasVivo = r[3].filter(function (p) { return p.status === "fechada"; });
+
+      mount(app,
+        h("div", { class: "view-head" },
+          h("div", null, voltar, h("h1", { class: "view-title" }, a.nome), h("div", { class: "view-sub" }, a.descricao)),
+          h("div", { class: "vh-right" }, botaoRecarregar())),
+        h("div", { class: "section" }, cestaChips(a.cesta)),
+        h("p", { class: ve.cls, style: "margin:0 0 4px;font-size:13.5px;line-height:1.55" }, "Veredito: " + ve.txt),
+
+        h("div", { class: "section" }, panel("Placar por período", tabelaPeriodos(per, a.corte_validacao), null,
+          "Corte da validação: " + a.corte_validacao)),
+        h("div", { class: "section" }, panel("Posições abertas agora", tabelaPosicoes(abertas, true), null, "Ao vivo")),
+        h("div", { class: "grid g-2 section" },
+          panel("Resultado por ativo", tabelaSetup(r[2].filter(function (s) { return s.fechadas; })), null, "Treino + validação"),
+          panel("Regras", h("ul", { class: "t2", style: "margin:0;padding-left:18px;line-height:1.7;font-size:13px" },
+            regrasTexto(a.regras).map(function (x) { return h("li", null, x); })), null, "config/agents.yaml")),
+        fechadasVivo.length ? h("div", { class: "section" }, panel("Operações ao vivo encerradas", tabelaPosicoes(fechadasVivo, false), null, "Ao vivo")) : null,
+        h("div", { class: "section" }, panel("Últimas operações simuladas no histórico", tabelaPosicoes(r[4], false), null, "Treino + validação")));
+    });
+  }
+
+  function tabelaPeriodos(per, corte) {
+    var ordem = ["treino", "validacao", "ao_vivo"];
+    var sub = { treino: "antes de " + corte + " · regras escolhidas aqui", validacao: "depois de " + corte + " · dados nunca vistos", ao_vivo: "desde a ativação" };
+    return tabela(
+      [{ t: "Período" }, { t: "Operações", num: 1 }, { t: "Acerto", num: 1 }, { t: "Médio / op.", num: 1 }, { t: "Mediana", num: 1 },
+       { t: "Pior", num: 1 }, { t: "Melhor", num: 1 }, { t: "Não fazer nada", num: 1 }, { t: "Soma", num: 1 }],
+      ordem.map(function (k) {
+        var p = per[k];
+        if (!p) return h("tr", null, td([h("b", null, PERIODO[k]), " ", t3(sub[k])]), td("0", "num"), td("—", "num"), td("—", "num"), td("—", "num"), td("—", "num"), td("—", "num"), td("—", "num"), td("—", "num"));
+        var ganha = p.retorno_medio_pct != null && p.base_media_pct != null && p.retorno_medio_pct > p.base_media_pct;
+        return h("tr", null,
+          td([h("b", null, PERIODO[k]), " ", t3(sub[k])]),
+          td(String(p.fechadas) + (p.abertas ? " (+" + p.abertas + " abertas)" : ""), "num"),
+          td(p.taxa_acerto_pct != null ? U.num(p.taxa_acerto_pct, 0) + "%" : "—", "num"),
+          td(h("span", { class: p.fechadas ? (ganha ? "delta up" : "delta down") : "t3" }, numPeriodo(p, "retorno_medio_pct")), "num"),
+          td(numPeriodo(p, "retorno_mediano_pct"), "num t2"), td(numPeriodo(p, "pior_pct"), "num t2"), td(numPeriodo(p, "melhor_pct"), "num t2"),
+          td(numPeriodo(p, "base_media_pct"), "num t2"), td(numPeriodo(p, "soma_pct"), "num t2"));
+      }), "");
+  }
+
   function tabelaPosicoes(rows, abertas) {
-    var MOTIVO = { alvo: "alvo", stop: "stop", prazo: "prazo" };
     return tabela(
       [{ t: "Ativo" }, { t: "Setup" }, { t: "Entrada" }, { t: "Preço", num: 1 }, { t: "Alvo", num: 1 }, { t: "Stop", num: 1 },
        { t: abertas ? "Via" : "Saída" }, { t: abertas ? "Racional" : "Resultado", num: !abertas }],
       rows.map(function (p) {
         var res = p.retorno_liquido_pct;
+        var alvo = p.alvo_pct >= 999 ? "sem alvo" : num2(p.alvo_pct);
         return h("tr", { class: "clickable", on: { click: irPara(p.ticker) } },
           td(h("b", null, p.ticker)), td(TIPO[p.setup] || p.setup, "t2"), td(p.entrada_dia, "t2"), td(usd(p.entrada_preco), "num"),
-          td(num2(p.alvo_pct), "num t2"), td(num2(p.stop_pct), "num t2"),
-          abertas ? td(p.token ? [p.token, " ", t3(REDE[p.rede] || p.rede || "")] : t3("ativo de referência")) : td([p.saida_dia || "—", " ", t3(MOTIVO[p.motivo_saida] || "")], "t2"),
+          td(alvo, "num t2"), td(num2(p.stop_pct), "num t2"),
+          abertas ? td(p.token ? [p.token, " ", t3(REDE[p.rede] || p.rede || "")] : t3("ativo de referência")) : td([p.saida_dia || "—", " ", t3(p.motivo_saida || "")], "t2"),
           abertas ? td(p.racional || "", "t3") : td(h("span", { class: res > 0 ? "delta up" : "delta down" }, num2(res)), "num"));
       }),
       abertas ? "Nenhuma posição aberta agora." : "Sem operações ainda.");
@@ -482,7 +558,7 @@
           td(s.taxa_acerto_pct != null ? U.num(s.taxa_acerto_pct, 0) + "%" : "—", "num"),
           td(h("span", { class: s.retorno_medio_pct > 0 ? "delta up" : "delta down" }, num2(s.retorno_medio_pct)), "num"),
           td(num2(s.soma_pct), "num t2"));
-      }), "Sem operações no treino ainda.");
+      }), "Sem operações ainda.");
   }
 
   var seq = 0;
@@ -508,6 +584,10 @@
       });
     },
     eventos: function () { run(eventos); },
-    agentes: function () { run(agentes); }
+    agentes: function () { run(agentes); },
+    agente: function (ctx) {
+      var id = ctx && ctx.params && ctx.params.id;
+      run(function (app, atual) { return agentePagina(app, atual, id); });
+    }
   };
 })();

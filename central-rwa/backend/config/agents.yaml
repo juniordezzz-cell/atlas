@@ -1,0 +1,71 @@
+# Agentes da Central RWA — um por CESTA de ativos, cada um com regras próprias.
+#
+# Mudar a cesta ou uma regra é editar este arquivo: o próximo deploy retreina
+# o agente nos 10 anos e o placar mostra o efeito.
+#
+# METODOLOGIA (evita "decorar o passado"):
+#   as regras de cada agente foram ESCOLHIDAS olhando só os pregões ANTES de
+#   corte_validacao; o placar mostra à parte o resultado DEPOIS do corte, que
+#   a escolha nunca viu. É o número da validação que vale.
+#
+# Regras disponíveis (padrão = v1, seção 9.4 da especificação):
+#   gatilho_pct            variação no pregão que faz o agente olhar o evento (5)
+#   setups                 [queda_brusca] | [alta_brusca] | os dois
+#   alvo_modo              mediana_fwd | mediana_max | nenhum (sai no stop ou no prazo)
+#   alvo_fator             multiplica o alvo (1.0)
+#   stop_modo              p20 | p50 | fixo
+#   stop_fixo_pct          stop quando stop_modo = fixo (-5)
+#   pct_positivo_minimo    % de semelhantes que subiram em N pregões (55)
+#   mediana_minima_pct     mediana mínima dos semelhantes (0)
+#   amostra_minima         semelhantes mínimos para operar (10)
+#   prazo_pregoes          prazo da posição (7); prazo_maximo_pregoes (10)
+#   stop_maximo_pct / stop_minimo_pct   limites do stop (-8 / -1.5)
+#   custo_ida_volta_pct    custo descontado por operação (0.3)
+
+corte_validacao: 2023-01-01
+
+agents:
+  - id: bigtech
+    nome: Big Tech
+    descricao: Compra quedas bruscas das grandes de tecnologia quando o histórico mostra recuperação; sem alvo, sai no prazo ou no stop.
+    cesta: [NVDA, TSLA, AAPL, MSFT, AMZN, META, GOOGL]
+    regras:
+      gatilho_pct: 5
+      setups: [queda_brusca]
+      alvo_modo: nenhum
+      stop_modo: p20
+      pct_positivo_minimo: 60
+      prazo_pregoes: 5
+      prazo_maximo_pregoes: 8
+
+  - id: indices
+    nome: Índices
+    descricao: Compra quedas do S&P 500 e do Nasdaq-100. Como índices raramente se movem 5%, o gatilho é 2,5%.
+    cesta: [SPY, QQQ]
+    regras:
+      gatilho_pct: 2.5
+      setups: [queda_brusca]
+      alvo_modo: mediana_max
+      alvo_fator: 1.5
+      stop_modo: p20
+      pct_positivo_minimo: 60
+      prazo_pregoes: 7
+
+  - id: commodities
+    nome: Commodities
+    descricao: Segue altas bruscas de ouro e petróleo (momentum); sem alvo, stop fixo de 3%.
+    cesta: [GOLD, WTI]
+    regras:
+      gatilho_pct: 5
+      setups: [alta_brusca]
+      alvo_modo: nenhum
+      stop_modo: fixo
+      stop_fixo_pct: -3
+      pct_positivo_minimo: 55
+      prazo_pregoes: 7
+
+  - id: swing_v1
+    nome: Referência v1
+    descricao: As regras originais da seção 9.4 em todos os ativos da lista de observação. Fica como régua para medir os outros.
+    cesta: [NVDA, TSLA, AAPL, MSFT, AMZN, META, GOOGL, SPY, QQQ, GOLD, WTI]
+    regras: {}

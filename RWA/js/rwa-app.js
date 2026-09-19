@@ -1262,6 +1262,7 @@
       .register("central/:ticker", central, "central")
       .register("eventos", function () { if (!window.RWACentral) throw new Error("js/central.js não carregou"); RWACentral.eventos(); }, "eventos")
       .register("agentes", function () { if (!window.RWACentral) throw new Error("js/central.js não carregou"); RWACentral.agentes(); }, "agentes")
+      .register("agentes/:id", function (ctx) { if (!window.RWACentral) throw new Error("js/central.js não carregou"); RWACentral.agente(ctx); }, "agentes")
       .register("dashboard", V.dashboard, "dashboard")
       .register("portfolio", V.portfolio, "portfolio")
       .register("asset/:id", V.asset, "portfolio")

@@ -20,6 +20,15 @@ AGENT = "swing_v1"
 
 @dataclass(frozen=True)
 class Rules:
+    """Regras de um agente. Os padrões são a v1 (seção 9.4)."""
+
+    gatilho_pct: float = 5.0  # variação no pregão que faz o agente olhar o evento
+    setups: tuple[str, ...] = ("queda_brusca", "alta_brusca")
+    alvo_modo: str = "mediana_fwd"  # mediana_fwd | mediana_max | nenhum (sai só no stop ou no prazo)
+    alvo_fator: float = 1.0  # multiplica o alvo calculado
+    stop_modo: str = "p20"  # p20 | p50 | fixo
+    stop_fixo_pct: float = -5.0
+    mediana_minima_pct: float = 0.0  # a mediana de 7 pregões precisa passar disso
     amostra_minima: int = 10
     prazo_pregoes: int = 7
     prazo_maximo_pregoes: int = 10
@@ -41,21 +50,36 @@ class Decision:
     stop_pct: float | None = None
 
 
-def decide(stats: EventStats, rules: Rules = RULES_V1) -> Decision:
+SEM_ALVO_PCT = 1000.0  # alvo "infinito": a posição sai no stop ou no prazo
+
+
+def decide(stats: EventStats, rules: Rules = RULES_V1, setup: str | None = None) -> Decision:
     h = rules.prazo_pregoes
+    if setup and setup not in rules.setups:
+        return Decision(False, f"setup {setup} fora da estratégia deste agente")
     if stats.n < rules.amostra_minima:
         return Decision(False, f"amostra pequena ({stats.n} < {rules.amostra_minima})")
     med = stats.mediana.get(h)
     pos = stats.pct_positivo.get(h)
     if med is None or pos is None:
         return Decision(False, "sem estatística no prazo")
-    if med <= 0 or pos < rules.pct_positivo_minimo:
+    if med <= rules.mediana_minima_pct or pos < rules.pct_positivo_minimo:
         # Tokens à vista não permitem venda a descoberto: o agente fica de fora.
         return Decision(False, f"histórico desfavorável (mediana {h}d {med:+.1f}%, {pos:.0f}% positivos)")
-    alvo = max(med, rules.alvo_minimo_pct)
-    stop = stats.p20_min_7d if stats.p20_min_7d is not None else rules.stop_maximo_pct
-    stop = max(stop, rules.stop_maximo_pct)  # nunca mais fundo que -8%
-    stop = min(stop, rules.stop_minimo_pct)  # nem mais raso que -1,5%
+
+    if rules.alvo_modo == "nenhum":
+        alvo = SEM_ALVO_PCT
+    else:
+        base = stats.mediana_max_7d if rules.alvo_modo == "mediana_max" and stats.mediana_max_7d is not None else med
+        alvo = max(base * rules.alvo_fator, rules.alvo_minimo_pct)
+
+    if rules.stop_modo == "fixo":
+        stop = rules.stop_fixo_pct
+    else:
+        ref = stats.p50_min_7d if rules.stop_modo == "p50" else stats.p20_min_7d
+        stop = ref if ref is not None else rules.stop_maximo_pct
+    stop = max(stop, rules.stop_maximo_pct)  # nunca mais fundo que o máximo
+    stop = min(stop, rules.stop_minimo_pct)  # nem mais raso que o mínimo
     return Decision(True, f"mediana {h}d {med:+.1f}%, {pos:.0f}% positivos em {stats.n} eventos", round(alvo, 2), round(stop, 2))
 
 

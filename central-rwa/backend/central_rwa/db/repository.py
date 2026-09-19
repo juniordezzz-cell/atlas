@@ -112,6 +112,7 @@ class Repository(StateStore):
     def close_position(self, row: PositionRow) -> None: ...
     def best_token_price(self, ticker: str) -> tuple[int, float, datetime] | None: ...
     def token_price(self, token_id: int) -> tuple[float, datetime] | None: ...
+    def sync_agents(self, agents) -> None: ...
 
 
 # ======================================================================
@@ -266,6 +267,11 @@ class MemoryRepository(Repository):
                 if best is None or (sn.liquidity_usd or 0) > (best[3] or 0):
                     best = (tid, sn.price_usd, sn.ts, sn.liquidity_usd)
         return best[:3] if best else None
+
+    def sync_agents(self, agents):
+        ids = {a.id for a in agents}
+        self.agents = {a.id: a for a in agents}
+        self.positions = [p for p in self.positions if p.agent in ids or p.mode == "live"]
 
     def token_price(self, token_id):
         snaps = [sn for sn in self.snapshots if sn.token_id == token_id]
@@ -534,6 +540,22 @@ class PostgresRepository(Repository):
     def token_price(self, token_id):
         rows = self._query("select price_usd, ts from token_snapshots where token_id=%s order by ts desc limit 1", (token_id,))
         return tuple(rows[0]) if rows else None
+
+    def sync_agents(self, agents):
+        """Espelha config/agents.yaml: grava/atualiza os agentes, desativa os que
+        saíram do arquivo e apaga o treino deles (as posições ao vivo ficam)."""
+        ids = [a.id for a in agents]
+        with self._cursor() as cur:
+            cur.executemany(
+                """insert into agents (id, nome, descricao, cesta, regras, corte_validacao, ativo, updated_at)
+                   values (%s,%s,%s,%s,%s,%s,true,now())
+                   on conflict (id) do update set nome=excluded.nome, descricao=excluded.descricao, cesta=excluded.cesta,
+                     regras=excluded.regras, corte_validacao=excluded.corte_validacao, ativo=true, updated_at=now()""",
+                [(a.id, a.nome, a.descricao, json.dumps(list(a.cesta)), json.dumps(a.regras_dict()), a.corte_validacao) for a in agents],
+            )
+            cur.execute("update agents set ativo=false where not (id = any(%s))", (ids,))
+            cur.execute("delete from paper_positions where mode='backtest' and not (agent = any(%s))", (ids,))
+        self.conn.commit()
 
 
 def apply_migrations(dsn: str, folder: Path) -> list[str]:

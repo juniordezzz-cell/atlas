@@ -118,7 +118,8 @@
 /* v62 = Central RWA (RWA/js/central.js + core/atlas-supabase-config.js):
    primeira tela que lê o backend central-rwa/ no Supabase. */
 /* v63 = abas Eventos e Agentes da Central RWA (Fases 3 e 4). */
-var VERSAO = "atlas-v63";
+/* v64 = agentes por cesta, com página própria (#/agentes/:id). */
+var VERSAO = "atlas-v64";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

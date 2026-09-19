@@ -193,6 +193,36 @@ def test_eventos_posicoes_e_placar(repo, dsn):
         assert c.execute("select count(*) from crwa_placar_setup where ticker='AMD'").fetchone()[0] == 2
 
 
+def test_agentes_e_placar_por_periodo(repo, dsn):
+    import psycopg
+
+    from central_rwa.db.repository import PositionRow
+    from central_rwa.engine.agents import AgentDef
+    from central_rwa.engine.swing import Rules
+
+    repo.ensure_reference_assets([ReferenceRegistry({}).get("CCC")])
+    ag = AgentDef("cesta_c", "Cesta C", "desc", ("CCC",), Rules(gatilho_pct=2.5), date(2023, 1, 1))
+    velho = AgentDef("velho", "Velho", "", ("CCC",), Rules(), date(2023, 1, 1))
+    repo.sync_agents([ag, velho])
+    base = dict(ticker="CCC", setup="queda_brusca", entry_price=100.0, target_pct=2.0, stop_pct=-5.0, horizon_days=7,
+                status="fechada", exit_reason="prazo", ret_pct=1.0)
+    rows = [PositionRow(agent="cesta_c", mode="backtest", event_day=d, entry_day=d, exit_day=d, ret_net_pct=r, baseline_pct=0.5, **base)
+            for d, r in ((date(2020, 5, 1), 2.0), (date(2021, 5, 1), -1.0), (date(2024, 5, 1), 3.0))]
+    repo.replace_backtest("cesta_c", rows)
+    repo.replace_backtest("velho", [PositionRow(agent="velho", mode="backtest", event_day=date(2020, 1, 1), entry_day=date(2020, 1, 1),
+                                                exit_day=date(2020, 1, 2), ret_net_pct=1.0, **base)])
+    repo.sync_agents([ag])  # o agente "velho" saiu da configuração
+
+    with psycopg.connect(dsn, autocommit=True) as c:
+        c.execute("set role anon")
+        agentes = c.execute("select id, nome, cesta, regras->>'gatilho_pct' from crwa_agentes").fetchall()
+        assert agentes == [("cesta_c", "Cesta C", ["CCC"], "2.5")]
+        per = {r[0]: (r[1], float(r[2])) for r in c.execute(
+            "select periodo, fechadas, retorno_medio_pct from crwa_placar_periodo where agente='cesta_c'").fetchall()}
+        assert per == {"treino": (2, 0.5), "validacao": (1, 3.0)}
+    assert repo._query("select count(*) from paper_positions where agent='velho' and mode='backtest'")[0][0] == 0
+
+
 def test_estado_do_roteador_ida_e_volta(repo):
     st = ProviderState()
     st.increment(TS)

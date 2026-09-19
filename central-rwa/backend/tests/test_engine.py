@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 from central_rwa.db import MemoryRepository
 from central_rwa.engine import runner
+from central_rwa.engine.agents import AgentDef, parse_agents
 from central_rwa.engine.events import (
     compute_stats,
     daily_moves,
@@ -121,6 +122,9 @@ def test_check_live():
     assert check_live(100, 101, 2, -5) is None
 
 
+AGENTE = AgentDef("teste", "Teste", "", ("XYZ",), Rules(), date(2021, 9, 1))
+
+
 def test_train_e_live_ponta_a_ponta():
     repo = MemoryRepository()
     reg = ReferenceRegistry({})
@@ -128,26 +132,82 @@ def test_train_e_live_ponta_a_ponta():
     repo.upsert_daily_bars("XYZ", bars, "t")
     repo.set_tiers({"XYZ"}, set())
     last = bars[-1].day
-    res = runner.train(repo, reg, last)
-    assert res.posicoes > 0 and res.acertos == res.posicoes
-    assert all(p.mode == "backtest" and p.status == "fechada" for p in repo.positions)
-    n = res.posicoes
-    runner.train(repo, reg, last)  # substitui, não duplica
+    res = runner.train(repo, reg, last, agents=[AGENTE])
+    info = res.agentes["teste"]
+    assert info["posicoes"] > 0 and info["acertos"] == info["posicoes"]
+    assert info["treino_medio_pct"] is not None and info["validacao_n"] > 0  # divide no corte
+    assert all(p.mode == "backtest" and p.status == "fechada" and p.agent == "teste" for p in repo.positions)
+    n = info["posicoes"]
+    runner.train(repo, reg, last, agents=[AGENTE])  # substitui, não duplica
     assert len([p for p in repo.positions if p.mode == "backtest"]) == n
 
-    # ao vivo: nova queda de 6% no último pregão → agente abre posição
+    # ao vivo: nova queda de 6% no último pregão -> agente abre posição
     novo = bars + serie([bars[-1].close * 0.94], start=last + timedelta(days=1))
     repo.upsert_daily_bars("XYZ", novo[-1:], "t")
     hoje = novo[-1].day
-    lv = runner.live(repo, reg, hoje)
+    lv = runner.live(repo, reg, hoje, agents=[AGENTE])
     assert lv.abertas and lv.em_aberto == 1
-    assert runner.live(repo, reg, hoje).abertas == []  # idempotente
-    # preço sobe acima do alvo → fecha no acompanhamento
-    pos = repo.open_positions("swing_v1")[0]
+    assert runner.live(repo, reg, hoje, agents=[AGENTE]).abertas == []  # idempotente
+    # preço sobe acima do alvo -> fecha no acompanhamento
+    pos = repo.open_positions("teste")[0]
     repo.upsert_daily_bars("XYZ", serie([pos.entry_price * 1.2], start=hoje + timedelta(days=1)), "t")
-    mon = runner.monitor(repo, hoje + timedelta(days=1))
+    mon = runner.monitor(repo, hoje + timedelta(days=1), agents=[AGENTE])
     assert mon.fechadas and mon.em_aberto == 0
     assert repo.positions[-1].exit_reason == "alvo"
+
+
+def test_agente_so_opera_a_propria_cesta_e_setup():
+    repo = MemoryRepository()
+    reg = ReferenceRegistry({})
+    repo.upsert_daily_bars("XYZ", com_quedas(20, recupera=True), "t")
+    repo.upsert_daily_bars("OUT", com_quedas(20, recupera=True), "t")
+    repo.set_tiers({"XYZ", "OUT"}, set())
+    so_alta = AgentDef("alta", "Só alta", "", ("XYZ",), Rules(setups=("alta_brusca",)), date(2021, 1, 1))
+    so_xyz = AgentDef("xyz", "XYZ", "", ("XYZ",), Rules(), date(2021, 1, 1))
+    res = runner.train(repo, reg, date(2021, 6, 1), agents=[so_alta, so_xyz])
+    assert res.agentes["alta"]["posicoes"] == 0  # a série só tem quedas
+    assert {p.ticker for p in repo.positions if p.agent == "xyz"} == {"XYZ"}
+    # agente removido da configuração: o treino dele some
+    runner.train(repo, reg, date(2021, 6, 1), agents=[so_alta])
+    assert not [p for p in repo.positions if p.agent == "xyz" and p.mode == "backtest"]
+
+
+def test_gatilho_por_agente():
+    repo = MemoryRepository()
+    reg = ReferenceRegistry({})
+    closes = [100.0] * 40
+    for _ in range(20):  # quedas de 3% (abaixo dos 5% globais) com recuperação
+        closes.append(closes[-1] * 0.97)
+        topo = closes[-1]
+        closes += [topo * 1.004 ** k for k in range(1, 13)] + [topo * 1.004 ** 12] * 30
+    repo.upsert_daily_bars("IDX", serie(closes), "t")
+    repo.set_tiers({"IDX"}, set())
+    g5 = AgentDef("g5", "5%", "", ("IDX",), Rules(), date(2021, 1, 1))
+    g25 = AgentDef("g25", "2,5%", "", ("IDX",), Rules(gatilho_pct=2.5), date(2021, 1, 1))
+    res = runner.train(repo, reg, date(2021, 6, 1), agents=[g5, g25])
+    assert res.agentes["g5"]["posicoes"] == 0 and res.agentes["g25"]["posicoes"] > 0
+
+
+def test_parse_agents_valida_e_converte():
+    import pytest
+
+    ags = parse_agents({"corte_validacao": "2023-01-01", "agents": [
+        {"id": "a", "nome": "A", "cesta": ["X"], "regras": {"setups": ["queda_brusca"], "gatilho_pct": 2.5}},
+        {"id": "b", "cesta": ["Y"], "ativo": False}]})
+    assert ags[0].rules.setups == ("queda_brusca",) and ags[0].rules.gatilho_pct == 2.5
+    assert ags[0].corte_validacao == date(2023, 1, 1) and ags[1].ativo is False
+    with pytest.raises(ValueError):
+        parse_agents({"agents": [{"id": "a", "regras": {"regra_que_nao_existe": 1}}]})
+    with pytest.raises(ValueError):
+        parse_agents({"agents": [{"id": "a"}, {"id": "a"}]})
+
+
+def test_agents_yaml_do_projeto_e_valido():
+    from central_rwa.engine.agents import load_agents
+
+    ags = load_agents()
+    assert {a.id for a in ags} >= {"bigtech", "indices", "commodities", "swing_v1"}
+    assert all(a.cesta for a in ags)
 
 
 def test_preco_negativo_fica_fora_da_estatistica():

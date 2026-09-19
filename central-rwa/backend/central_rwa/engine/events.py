@@ -64,6 +64,7 @@ class ForwardPath:
     max_up_pct: float  # melhor máxima nos 10 pregões seguintes, vs. fechamento do evento
     max_down_pct: float  # pior mínima nos 10 pregões seguintes
     min_7d_pct: float  # pior mínima nos 7 pregões seguintes (base do stop)
+    max_7d_pct: float  # melhor máxima nos 7 pregões seguintes
 
 
 def forward_path(bars: list[DailyBar], idx: int) -> ForwardPath | None:
@@ -86,6 +87,7 @@ def forward_path(bars: list[DailyBar], idx: int) -> ForwardPath | None:
         max_up_pct=(max(highs) - base) / base * 100,
         max_down_pct=(min(lows) - base) / base * 100,
         min_7d_pct=(min(lows[:7]) - base) / base * 100,
+        max_7d_pct=(max(highs[:7]) - base) / base * 100,
     )
 
 
@@ -133,6 +135,8 @@ class EventStats:
     pct_sobe_3_em_5d: float | None = None
     pct_cai_mais_3_em_5d: float | None = None
     p20_min_7d: float | None = None  # pior mínima típica em 7 pregões (percentil 20)
+    mediana_max_7d: float | None = None  # alta máxima típica dentro de 7 pregões (mediana das máximas)
+    p50_min_7d: float | None = None  # queda máxima típica dentro de 7 pregões (mediana das mínimas)
     melhor_10d: float | None = None
     pior_10d: float | None = None
     desde: date | None = None
@@ -142,7 +146,7 @@ class EventStats:
         d["desde"] = self.desde.isoformat() if self.desde else None
         for k in ("mediana", "media", "pct_positivo"):
             d[k] = {str(h): round(v, 2) for h, v in d[k].items()}
-        for k in ("p20_min_7d", "melhor_10d", "pior_10d"):
+        for k in ("p20_min_7d", "p50_min_7d", "mediana_max_7d", "melhor_10d", "pior_10d"):
             d[k] = round(d[k], 2) if d[k] is not None else None
         return d
 
@@ -159,6 +163,8 @@ def compute_stats(paths: list[ForwardPath]) -> EventStats:
     st.pct_sobe_3_em_5d = _pct([p.fwd[5] >= 3 for p in paths])
     st.pct_cai_mais_3_em_5d = _pct([p.fwd[5] <= -3 for p in paths])
     st.p20_min_7d = _quantile([p.min_7d_pct for p in paths], 0.2)
+    st.p50_min_7d = _quantile([p.min_7d_pct for p in paths], 0.5)
+    st.mediana_max_7d = _quantile([p.max_7d_pct for p in paths], 0.5)
     st.melhor_10d = max(p.max_up_pct for p in paths)
     st.pior_10d = min(p.max_down_pct for p in paths)
     st.desde = paths[0].day
