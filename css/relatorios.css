@@ -146,6 +146,12 @@
 .rep-compare tr:last-child td { border-bottom: 0; }
 .rep-compare .val-pos { color: var(--atlas-pos); }
 .rep-compare .val-neg { color: var(--atlas-neg); }
+/* No celular a tabela (5 colunas) tinha ~450px e alargava a página
+   inteira. Vira bloco com rolagem própria: a página fica na largura da
+   tela e só a tabela desliza. */
+@media (max-width: 720px) {
+  .rep-compare { display: block; overflow-x: auto; max-width: 100%; }
+}
 .rep-delta { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-size: 12px; }
 .rep-delta svg { width: 12px; height: 12px; }
 
