@@ -103,6 +103,8 @@
        ------------------------------------------------------------ */
     "atlas.caixa.v1",
     "atlas.intro.seen.v1",
+    /* modo demonstração: ausente | "ativo" | "limpo" (core/atlas-demo.js) */
+    "atlas.demo.v1",
     "atlas.onboarding.v1",
     "atlas.notifications.v1",
     /* A sessão é do DISPOSITIVO, não do usuário: restaurar um backup

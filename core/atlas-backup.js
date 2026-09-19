@@ -130,6 +130,7 @@
     "atlas.movements.v1":      "Movimentações (nome antigo)",
     "atlas.future_studies.v1": "Estudos",
     "atlas.intro.seen.v1":     "Apresentação já vista",
+    "atlas.demo.v1":           "Demonstração",
     "atlas.hold.state.v2":     "Hold",
     "atlas.hold.wallet.v1":    "Hold · carteira local",
     "atlas.trade.state.v1":    "Trade",
