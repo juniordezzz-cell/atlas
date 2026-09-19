@@ -38,6 +38,8 @@
   var NAV = [
     /* Central RWA: lê o backend (central-rwa/, Supabase). É a abertura do módulo. */
     { id: "central",   label: "Central RWA", icon: "layers",    route: "#/central" },
+    { id: "eventos",   label: "Eventos",     icon: "pulse",     route: "#/eventos" },
+    { id: "agentes",   label: "Agentes",     icon: "trend",     route: "#/agentes" },
     { id: "dashboard", label: "Dashboard",   icon: "grid",      route: "#/dashboard" },
     { id: "portfolio", label: "Portfolio",   icon: "portfolio", route: "#/portfolio" },
     { id: "macro",     label: "Macro",       icon: "macro",     route: "#/macro" },
@@ -1258,6 +1260,8 @@
     Router
       .register("central", central, "central")
       .register("central/:ticker", central, "central")
+      .register("eventos", function () { if (!window.RWACentral) throw new Error("js/central.js não carregou"); RWACentral.eventos(); }, "eventos")
+      .register("agentes", function () { if (!window.RWACentral) throw new Error("js/central.js não carregou"); RWACentral.agentes(); }, "agentes")
       .register("dashboard", V.dashboard, "dashboard")
       .register("portfolio", V.portfolio, "portfolio")
       .register("asset/:id", V.asset, "portfolio")

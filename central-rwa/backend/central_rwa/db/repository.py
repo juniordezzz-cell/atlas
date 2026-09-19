@@ -40,6 +40,51 @@ class SnapshotRow:
     tier: str
 
 
+@dataclass
+class EventRow:
+    ticker: str
+    kind: str
+    day: date
+    magnitude_pct: float
+    volume_ratio: float | None
+    level: str
+    stats: dict
+    source: str = "daily"
+
+
+@dataclass
+class PositionRow:
+    agent: str
+    mode: str
+    ticker: str
+    setup: str
+    event_day: date
+    entry_day: date
+    entry_price: float
+    target_pct: float
+    stop_pct: float
+    horizon_days: int
+    status: str = "aberta"
+    token_id: int | None = None
+    event_id: int | None = None
+    exit_day: date | None = None
+    exit_price: float | None = None
+    exit_reason: str | None = None
+    ret_pct: float | None = None
+    ret_net_pct: float | None = None
+    baseline_pct: float | None = None
+    rationale: str | None = None
+    stats: dict | None = None
+    id: int | None = None
+
+
+POSITION_COLS = (
+    "agent", "mode", "ticker", "token_id", "setup", "event_day", "event_id", "entry_day", "entry_price", "target_pct",
+    "stop_pct", "horizon_days", "status", "exit_day", "exit_price", "exit_reason", "ret_pct", "ret_net_pct",
+    "baseline_pct", "rationale", "stats",
+)
+
+
 class Repository(StateStore):
     def ensure_reference_assets(self, assets: list[ReferenceAsset]) -> None: ...
     def upsert_tokens(self, listings: list[TokenListing]) -> int: ...
@@ -57,6 +102,16 @@ class Repository(StateStore):
     def record_job(self, job: str, started: datetime, finished: datetime, status: str, summary: dict) -> None: ...
     def size_report(self) -> list[tuple[str, str, int]]: ...
     def close(self) -> None: ...
+    # --- Fases 3/4 ---
+    def daily_bars(self, ticker: str) -> list[DailyBar]: ...
+    def watched_tickers(self) -> list[str]: ...
+    def upsert_event(self, e: EventRow) -> int: ...
+    def replace_backtest(self, agent: str, rows: list[PositionRow]) -> int: ...
+    def open_positions(self, agent: str, mode: str = "live") -> list[PositionRow]: ...
+    def insert_position(self, row: PositionRow) -> bool: ...
+    def close_position(self, row: PositionRow) -> None: ...
+    def best_token_price(self, ticker: str) -> tuple[int, float, datetime] | None: ...
+    def token_price(self, token_id: int) -> tuple[float, datetime] | None: ...
 
 
 # ======================================================================
@@ -75,6 +130,8 @@ class MemoryRepository(Repository):
         self.tiers: dict[str, str] = {}
         self.jobs: list[dict] = []
         self.router_states: dict[str, ProviderState] = {}
+        self.events: dict[tuple, tuple[int, EventRow]] = {}
+        self.positions: list[PositionRow] = []
 
     def load(self) -> dict[str, ProviderState]:
         return self.router_states
@@ -164,6 +221,58 @@ class MemoryRepository(Repository):
 
     def close(self):
         pass
+
+    # --- Fases 3/4 ---
+    def daily_bars(self, ticker):
+        return [b for (t, _), (b, _) in sorted(self.bars.items(), key=lambda kv: kv[0][1]) if t == ticker]
+
+    def watched_tickers(self):
+        return sorted(self.tiers)
+
+    def upsert_event(self, e):
+        key = (e.ticker, e.kind, e.day)
+        eid = self.events[key][0] if key in self.events else len(self.events) + 1
+        self.events[key] = (eid, e)
+        return eid
+
+    def replace_backtest(self, agent, rows):
+        self.positions = [p for p in self.positions if not (p.agent == agent and p.mode == "backtest")]
+        self.positions.extend(rows)
+        return len(rows)
+
+    def open_positions(self, agent, mode="live"):
+        return [p for p in self.positions if p.agent == agent and p.mode == mode and p.status == "aberta"]
+
+    def insert_position(self, row):
+        if any(p.agent == row.agent and p.mode == row.mode and p.ticker == row.ticker and p.event_day == row.event_day for p in self.positions):
+            return False
+        row.id = len(self.positions) + 1
+        self.positions.append(row)
+        return True
+
+    def close_position(self, row):
+        pass  # o objeto já foi alterado no lugar
+
+    def best_token_price(self, ticker):
+        by_id = {t.id: t for t in self.token_rows.values()}
+        latest: dict[int, SnapshotRow] = {}
+        for sn in self.snapshots:
+            if sn.token_id not in latest or sn.ts > latest[sn.token_id].ts:
+                latest[sn.token_id] = sn
+        best = None
+        for tid, sn in latest.items():
+            t = by_id.get(tid)
+            if t and t.reference_ticker == ticker and t.mapping_confidence >= 0.8:
+                if best is None or (sn.liquidity_usd or 0) > (best[3] or 0):
+                    best = (tid, sn.price_usd, sn.ts, sn.liquidity_usd)
+        return best[:3] if best else None
+
+    def token_price(self, token_id):
+        snaps = [sn for sn in self.snapshots if sn.token_id == token_id]
+        if not snaps:
+            return None
+        sn = max(snaps, key=lambda x: x.ts)
+        return sn.price_usd, sn.ts
 
 
 # ======================================================================
@@ -349,6 +458,82 @@ class PostgresRepository(Repository):
 
     def size_report(self):
         return [(r[0], r[1], int(r[2])) for r in self._query("select tabela, tamanho, bytes from db_size") or []]
+
+
+    # --- Fases 3/4 ---
+    def daily_bars(self, ticker):
+        rows = self._query(
+            "select day, open, high, low, close, adj_close, volume from reference_prices_daily where ticker=%s order by day", (ticker,)
+        ) or []
+        return [DailyBar(day=r[0], open=r[1], high=r[2], low=r[3], close=r[4], adj_close=r[5], volume=r[6]) for r in rows]
+
+    def watched_tickers(self):
+        return [r[0] for r in self._query("select ticker from watch_tiers order by ticker") or []]
+
+    def upsert_event(self, e):
+        return self._query(
+            """insert into events (ticker, kind, day, magnitude_pct, volume_ratio, level, stats, source)
+               values (%s,%s,%s,%s,%s,%s,%s,%s)
+               on conflict (ticker, kind, day) do update set magnitude_pct=excluded.magnitude_pct,
+                 volume_ratio=excluded.volume_ratio, level=excluded.level, stats=excluded.stats
+               returning id""",
+            (e.ticker, e.kind, e.day, e.magnitude_pct, e.volume_ratio, e.level, json.dumps(e.stats, default=str), e.source),
+        )[0][0]
+
+    def _pos_values(self, p):
+        v = [getattr(p, c) for c in POSITION_COLS]
+        v[-1] = json.dumps(p.stats or {}, default=str)
+        return tuple(v)
+
+    def replace_backtest(self, agent, rows):
+        cols = ", ".join(POSITION_COLS)
+        marks = ", ".join(["%s"] * len(POSITION_COLS))
+        with self._cursor() as cur:
+            cur.execute("delete from paper_positions where agent=%s and mode='backtest'", (agent,))
+            if rows:
+                cur.executemany(f"insert into paper_positions ({cols}) values ({marks})", [self._pos_values(p) for p in rows])
+        self.conn.commit()
+        return len(rows)
+
+    def open_positions(self, agent, mode="live"):
+        cols = ", ".join(POSITION_COLS)
+        rows = self._query(
+            f"select id, {cols} from paper_positions where agent=%s and mode=%s and status='aberta' order by entry_day",
+            (agent, mode),
+        ) or []
+        return [PositionRow(**dict(zip(("id",) + POSITION_COLS, r))) for r in rows]
+
+    def insert_position(self, row):
+        cols = ", ".join(POSITION_COLS)
+        marks = ", ".join(["%s"] * len(POSITION_COLS))
+        got = self._query(
+            f"insert into paper_positions ({cols}) values ({marks}) on conflict (agent, mode, ticker, event_day) do nothing returning id",
+            self._pos_values(row),
+        )
+        if got:
+            row.id = got[0][0]
+        return bool(got)
+
+    def close_position(self, row):
+        self._query(
+            """update paper_positions set status=%s, exit_day=%s, exit_price=%s, exit_reason=%s, ret_pct=%s, ret_net_pct=%s
+               where id=%s""",
+            (row.status, row.exit_day, row.exit_price, row.exit_reason, row.ret_pct, row.ret_net_pct, row.id),
+        )
+
+    def best_token_price(self, ticker):
+        rows = self._query(
+            """select t.id, s.price_usd, s.ts from tokens t
+               join lateral (select price_usd, ts, liquidity_usd from token_snapshots where token_id=t.id order by ts desc limit 1) s on true
+               where t.reference_ticker=%s and t.active and t.mapping_confidence >= 0.8
+               order by coalesce(s.liquidity_usd, 0) desc limit 1""",
+            (ticker,),
+        )
+        return tuple(rows[0]) if rows else None
+
+    def token_price(self, token_id):
+        rows = self._query("select price_usd, ts from token_snapshots where token_id=%s order by ts desc limit 1", (token_id,))
+        return tuple(rows[0]) if rows else None
 
 
 def apply_migrations(dsn: str, folder: Path) -> list[str]:

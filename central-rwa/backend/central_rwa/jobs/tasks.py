@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 
 from ..collectors import run_catalog, snapshot_tokens, update_history, update_tbills
+from ..engine import runner as agents
 from ..mapping import MIN_CONFIDENCE_TIER_A
 from ..router import NoProviderAvailable
 from .runner import Context
@@ -71,6 +72,7 @@ def tier_a(ctx: Context) -> None:
     objs = ref.pop("_objs")
     ctx.section("referencia_camada_a", ref)
     ctx.section("token_vs_ativo_acima_de_2pct", _token_vs_asset(tokens, snap, objs))
+    ctx.section("agente_acompanhamento", agents.monitor(ctx.repo, datetime.now(timezone.utc).date()))
 
 
 def daily(ctx: Context) -> None:
@@ -106,6 +108,18 @@ def daily(ctx: Context) -> None:
         update_history(ctx.router, ctx.repo, ctx.registry, ordered, today, years, allow_full=set(tickers), max_full=MAX_FULL_PER_DAILY),
     )
     ctx.section("tbills", update_tbills(ctx.router, ctx.repo, today, years))
+    _agents(ctx, today)
+
+
+def _agents(ctx: Context, today) -> None:
+    """Fases 3/4: treino histórico (walk-forward) + eventos do dia + posições ao vivo."""
+    ctx.section("agente_treino", agents.train(ctx.repo, ctx.registry, today, ctx.only))
+    ctx.section("agente_ao_vivo", agents.live(ctx.repo, ctx.registry, today, ctx.only))
+
+
+def agents_job(ctx: Context) -> None:
+    """Manual: roda só os eventos e o agente sobre o histórico já gravado."""
+    _agents(ctx, datetime.now(timezone.utc).date())
 
 
 def backfill(ctx: Context) -> None:
@@ -122,6 +136,7 @@ def backfill(ctx: Context) -> None:
     ctx.section("historico", update_history(ctx.router, ctx.repo, ctx.registry, tickers, today, years, allow_full=set(tickers)))
     ctx.repo.ensure_tier_a(ctx.tier_a)
     ctx.section("tbills", update_tbills(ctx.router, ctx.repo, today, years))
+    _agents(ctx, today)
 
 
 def catalog(ctx: Context) -> None:
@@ -164,4 +179,4 @@ def probe(ctx: Context) -> None:
     ctx.section("sondas", results)
 
 
-JOBS = {"tier_a": tier_a, "daily": daily, "backfill": backfill, "catalog": catalog, "report": report, "probe": probe}
+JOBS = {"tier_a": tier_a, "daily": daily, "backfill": backfill, "agents": agents_job, "catalog": catalog, "report": report, "probe": probe}

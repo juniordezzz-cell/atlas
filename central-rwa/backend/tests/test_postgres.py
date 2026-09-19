@@ -156,6 +156,43 @@ def test_ensure_tier_a_nao_apaga_camada_b(repo):
     assert tiers == {"AAA": "A", "BBB": "B"}
 
 
+def test_eventos_posicoes_e_placar(repo, dsn):
+    import psycopg
+
+    from central_rwa.db.repository import EventRow, PositionRow
+
+    reg = ReferenceRegistry({})
+    repo.ensure_reference_assets([reg.get("AMD")])
+    ev = EventRow("AMD", "queda_brusca", date.today() - timedelta(days=3), -6.2, 1.8, "ATENCAO", {"n": 14, "mediana": {"7": 1.9}})
+    eid = repo.upsert_event(ev)
+    assert repo.upsert_event(ev) == eid  # mesmo evento: atualiza, não duplica
+
+    base = dict(agent="swing_v1", ticker="AMD", setup="queda_brusca", entry_price=100.0, target_pct=2.0, stop_pct=-5.0, horizon_days=7)
+    bt = [PositionRow(mode="backtest", event_day=date(2020, 1, d), entry_day=date(2020, 1, d + 1), status="fechada",
+                      exit_day=date(2020, 1, d + 3), exit_price=102, exit_reason="alvo", ret_pct=2.0, ret_net_pct=r,
+                      baseline_pct=1.0, stats={"n": 12}, **base) for d, r in ((2, 1.7), (10, -5.3), (20, 1.7))]
+    assert repo.replace_backtest("swing_v1", bt) == 3
+    assert repo.replace_backtest("swing_v1", bt) == 3  # substitui
+
+    live = PositionRow(mode="live", event_day=ev.day, entry_day=date.today(), event_id=eid, **base)
+    assert repo.insert_position(live) is True
+    assert repo.insert_position(PositionRow(mode="live", event_day=ev.day, entry_day=date.today(), **base)) is False
+    [aberta] = repo.open_positions("swing_v1", "live")
+    aberta.status, aberta.exit_day, aberta.exit_price, aberta.exit_reason, aberta.ret_pct, aberta.ret_net_pct = (
+        "fechada", date.today(), 102.0, "alvo", 2.0, 1.7)
+    repo.close_position(aberta)
+    assert repo.open_positions("swing_v1", "live") == []
+
+    with psycopg.connect(dsn, autocommit=True) as c:
+        c.execute("set role anon")
+        placar = dict((m, (f, a, float(t))) for _, m, f, a, t in c.execute(
+            "select agente, modo, fechadas, abertas, taxa_acerto_pct from crwa_placar where agente='swing_v1'").fetchall())
+        assert placar["backtest"] == (3, 0, 66.7) and placar["live"] == (1, 0, 100.0)
+        assert c.execute("select count(*) from crwa_eventos where ticker='AMD'").fetchone()[0] == 1
+        assert c.execute("select count(*) from crwa_posicoes where ticker='AMD'").fetchone()[0] == 4
+        assert c.execute("select count(*) from crwa_placar_setup where ticker='AMD'").fetchone()[0] == 2
+
+
 def test_estado_do_roteador_ida_e_volta(repo):
     st = ProviderState()
     st.increment(TS)

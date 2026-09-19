@@ -169,7 +169,7 @@
   }
   var REDE = { solana: "Solana", ethereum: "Ethereum", bnb_chain: "BNB Chain", robinhood_chain: "Robinhood Chain" };
   var CLASSE = { stock: "Ação", etf: "ETF", commodity: "Commodity", tbill: "T-bill", br_stock: "Ação BR" };
-  var JOB = { tier_a: "Camada A (6h)", daily: "Diário", backfill: "Backfill", catalog: "Catálogo", report: "Relatório", probe: "Sondas" };
+  var JOB = { tier_a: "Camada A (6h)", daily: "Diário", backfill: "Backfill", catalog: "Catálogo", report: "Relatório", probe: "Sondas", agents: "Agentes" };
   var SUB = "Ações, ETFs, commodities e T-bills tokenizados, com o ativo tradicional como referência.";
 
   /* ---------------- blocos ---------------- */
@@ -340,21 +340,174 @@
     mount(app, head("Carregando dados do backend…"), h("div", { class: "section" }, h("p", { class: "t3" }, "Carregando…")));
   }
 
+  /* ============================================================
+     EVENTOS (Fase 3) — seção 12/13 da especificação
+     ============================================================ */
+
+  var TIPO = { queda_brusca: "Queda brusca", alta_brusca: "Alta brusca", intradiario: "Intradiário" };
+  var NIVEL_COR = { EXTREMO: "var(--neg)", ATENCAO: "var(--warn)", INFO: "var(--text-2)" };
+  var NIVEL_TXT = { EXTREMO: "Extremo", ATENCAO: "Atenção", INFO: "Info" };
+
+  function num2(v, suf) { return v == null || !isFinite(v) ? "—" : (v > 0 ? "+" : "") + U.num(v, 1) + (suf || "%"); }
+
+  function eventos(app, atual) {
+    return get("crwa_eventos", "select=*&order=dia.desc,id.desc&limit=200").then(function (rows) {
+      if (!atual()) return;
+      var ext = rows.filter(function (e) { return e.nivel === "EXTREMO"; }).length;
+      var quedas = rows.filter(function (e) { return e.tipo === "queda_brusca"; }).length;
+      mount(app,
+        h("div", { class: "view-head" },
+          h("div", null, h("div", { class: "eyebrow" }, "Central RWA"), h("h1", { class: "view-title" }, "Eventos"),
+            h("div", { class: "view-sub" }, "Movimentos acima de " + GATILHO_PCT + "% no pregão, nos últimos 180 dias, com o que aconteceu depois em eventos semelhantes dos últimos 10 anos.")),
+          h("div", { class: "vh-right" }, botaoRecarregar())),
+        h("div", { class: "grid g-4" },
+          kpi({ k: "Eventos em 180 dias", v: String(rows.length), icon: "pulse", foot: "ativos monitorados" }),
+          kpi({ k: "Quedas bruscas", v: String(quedas), icon: "down", foot: (rows.length - quedas) + " altas bruscas" }),
+          kpi({ k: "Extremos", v: String(ext), icon: "alert", accent: ext ? "awarn" : "", foot: "acima de 10% ou raros no ativo" }),
+          kpi({ k: "Base histórica", v: "10 anos", icon: "layers", foot: "estatística só com o passado de cada data" })),
+        h("div", { class: "section" }, panel("Eventos detectados", tabelaEventos(rows),
+          t3("“Eventos semelhantes tiveram historicamente este comportamento” — não é previsão.", "font-size:12px"), "Últimos 180 dias")));
+    });
+  }
+
+  function tabelaEventos(rows) {
+    return tabela(
+      [{ t: "Pregão" }, { t: "Ativo" }, { t: "Evento" }, { t: "Variação", num: 1 }, { t: "Volume", num: 1 }, { t: "Nível" },
+       { t: "Semelhantes", num: 1 }, { t: "Mediana 7d", num: 1 }, { t: "Subiu em 7d", num: 1 }, { t: "+3% em 5d", num: 1 }, { t: "Pior em 10d", num: 1 }],
+      rows.map(function (e) {
+        var s = e.estatistica || {};
+        var med = s.mediana && s.mediana["7"], pos = s.pct_positivo && s.pct_positivo["7"];
+        return h("tr", { class: "clickable", on: { click: irPara(e.ticker) } },
+          td(e.dia, "t2"), td([h("b", null, e.ticker), " ", t3(CLASSE[e.classe] || "")]), td(TIPO[e.tipo] || e.tipo),
+          td(h("span", { class: "delta " + (e.variacao_pct > 0 ? "up" : "down") }, U.pct(e.variacao_pct, true)), "num"),
+          td(e.volume_x_media ? U.num(e.volume_x_media, 1) + "× média" : "—", "num t2"),
+          td(h("span", { style: "color:" + (NIVEL_COR[e.nivel] || "inherit") + ";font-weight:600" }, NIVEL_TXT[e.nivel] || e.nivel)),
+          td(s.n != null ? String(s.n) : "—", "num"),
+          td(h("span", { class: med > 0 ? "delta up" : med < 0 ? "delta down" : "t3" }, num2(med)), "num"),
+          td(pos != null ? U.num(pos, 0) + "%" : "—", "num"),
+          td(s.pct_sobe_3_em_5d != null ? U.num(s.pct_sobe_3_em_5d, 0) + "%" : "—", "num"),
+          td(num2(s.pior_10d), "num t2"));
+      }),
+      "Nenhum evento ainda. Os eventos aparecem depois que o job diário (ou o backfill) roda com a migration de eventos.");
+  }
+
+  /* ============================================================
+     AGENTES (Fase 4) — placar do paper trading (seção 9.3)
+     ============================================================ */
+
+  var REGRAS_V1 = [
+    "Gatilho: variação acima de " + GATILHO_PCT + "% no pregão (alta ou queda).",
+    "Só opera com pelo menos 10 eventos semelhantes no histórico.",
+    "Entra se a mediana de 7 pregões dos semelhantes for positiva e ≥ 55% deles tiverem subido; senão fica de fora (sem venda a descoberto).",
+    "Alvo = mediana de 7 pregões (mínimo 1%). Stop = pior queda típica (percentil 20), entre −1,5% e −8%.",
+    "Prazo de 7 pregões. Se alvo e stop cabem no mesmo pregão, conta o stop.",
+    "Desconta 0,3% de custo por operação (ida e volta)."
+  ];
+
+  function agentes(app, atual) {
+    return Promise.all([
+      get("crwa_placar", "select=*"),
+      get("crwa_placar_setup", "select=*&order=soma_pct.desc"),
+      get("crwa_posicoes", "select=*&modo=eq.live&order=entrada_dia.desc&limit=50"),
+      get("crwa_posicoes", "select=*&modo=eq.backtest&order=entrada_dia.desc&limit=30")
+    ]).then(function (r) {
+      if (!atual()) return;
+      var placar = r[0], porSetup = r[1], vivas = r[2], treino = r[3];
+      var bt = placar.filter(function (p) { return p.modo === "backtest"; })[0] || null;
+      var lv = placar.filter(function (p) { return p.modo === "live"; })[0] || null;
+      var abertas = vivas.filter(function (p) { return p.status === "aberta"; });
+
+      mount(app,
+        h("div", { class: "view-head" },
+          h("div", null, h("div", { class: "eyebrow" }, "Central RWA"), h("h1", { class: "view-title" }, "Agentes"),
+            h("div", { class: "view-sub" }, "Paper trading: os agentes abrem e fecham posições SIMULADAS. Nenhuma ordem real é executada. O placar é o que diz se um agente merece confiança.")),
+          h("div", { class: "vh-right" }, botaoRecarregar())),
+
+        h("div", { class: "section" }, panel("Swing v1 — treino em 10 anos", blocoPlacar(bt,
+          "Walk-forward: em cada evento do passado, o agente só conhecia o histórico anterior àquela data."), null, "Agente swing_v1 · histórico")),
+        h("div", { class: "section" }, panel("Swing v1 — ao vivo", blocoPlacar(lv,
+          "Posições abertas a partir dos eventos detectados pelo job diário, acompanhadas a cada 6h pelo preço do token."), null, "Agente swing_v1 · desde a ativação")),
+
+        h("div", { class: "section" }, panel("Posições abertas agora", tabelaPosicoes(abertas, true), null, "Ao vivo")),
+        h("div", { class: "grid g-2 section" },
+          panel("Resultado por ativo e setup", tabelaSetup(porSetup.filter(function (s) { return s.modo === "backtest" && s.fechadas; })), null, "Treino"),
+          panel("Regras da v1", h("ul", { class: "t2", style: "margin:0;padding-left:18px;line-height:1.7;font-size:13px" },
+            REGRAS_V1.map(function (x) { return h("li", null, x); })), null, "Seção 9.4 da especificação")),
+        h("div", { class: "section" }, panel("Últimas operações do treino", tabelaPosicoes(treino, false), null, "Histórico")));
+    });
+  }
+
+  function blocoPlacar(p, explica) {
+    if (!p || !p.fechadas) {
+      return h("p", { class: "t3", style: "margin:0;font-size:13px" },
+        p && p.abertas ? p.abertas + " posição(ões) aberta(s), nenhuma fechada ainda. " + explica : "Sem operações ainda. " + explica);
+    }
+    var perde = p.retorno_medio_pct != null && p.base_media_pct != null && p.retorno_medio_pct < p.base_media_pct;
+    return [
+      h("div", { class: "grid g-4" },
+        kpi({ k: "Operações fechadas", v: String(p.fechadas), icon: "layers", foot: (p.abertas || 0) + " abertas · " + (p.desde || "") + " a " + (p.ate || "") }),
+        kpi({ k: "Taxa de acerto", v: p.taxa_acerto_pct != null ? U.num(p.taxa_acerto_pct, 0) + "%" : "—", icon: "check", foot: "operações com lucro líquido" }),
+        kpi({ k: "Retorno médio", v: num2(p.retorno_medio_pct), icon: "trend", accent: perde ? "awarn" : "apos",
+              foot: "mediana " + num2(p.retorno_mediano_pct) + " · pior " + num2(p.pior_pct) }),
+        kpi({ k: "Não fazer nada", v: num2(p.base_media_pct), icon: "gauge", foot: "retorno médio de 7 pregões num dia qualquer" })),
+      h("p", { class: perde ? "crwa-warn" : "t2", style: "margin:12px 0 0;font-size:13px;line-height:1.6" },
+        perde
+          ? "Veredito: por operação, o agente rende MENOS do que ficar comprado num dia qualquer. Acerta muito, mas as perdas no stop apagam os ganhos pequenos no alvo — as regras precisam evoluir."
+          : "Veredito: por operação, o agente rende mais do que ficar comprado num dia qualquer."),
+      h("p", { class: "t3", style: "margin:6px 0 0;font-size:12px" }, explica)
+    ];
+  }
+
+  function tabelaPosicoes(rows, abertas) {
+    var MOTIVO = { alvo: "alvo", stop: "stop", prazo: "prazo" };
+    return tabela(
+      [{ t: "Ativo" }, { t: "Setup" }, { t: "Entrada" }, { t: "Preço", num: 1 }, { t: "Alvo", num: 1 }, { t: "Stop", num: 1 },
+       { t: abertas ? "Via" : "Saída" }, { t: abertas ? "Racional" : "Resultado", num: !abertas }],
+      rows.map(function (p) {
+        var res = p.retorno_liquido_pct;
+        return h("tr", { class: "clickable", on: { click: irPara(p.ticker) } },
+          td(h("b", null, p.ticker)), td(TIPO[p.setup] || p.setup, "t2"), td(p.entrada_dia, "t2"), td(usd(p.entrada_preco), "num"),
+          td(num2(p.alvo_pct), "num t2"), td(num2(p.stop_pct), "num t2"),
+          abertas ? td(p.token ? [p.token, " ", t3(REDE[p.rede] || p.rede || "")] : t3("ativo de referência")) : td([p.saida_dia || "—", " ", t3(MOTIVO[p.motivo_saida] || "")], "t2"),
+          abertas ? td(p.racional || "", "t3") : td(h("span", { class: res > 0 ? "delta up" : "delta down" }, num2(res)), "num"));
+      }),
+      abertas ? "Nenhuma posição aberta agora." : "Sem operações ainda.");
+  }
+
+  function tabelaSetup(rows) {
+    return tabela([{ t: "Ativo" }, { t: "Setup" }, { t: "Operações", num: 1 }, { t: "Acerto", num: 1 }, { t: "Médio", num: 1 }, { t: "Soma", num: 1 }],
+      rows.map(function (s) {
+        return h("tr", { class: "clickable", on: { click: irPara(s.ticker) } },
+          td(h("b", null, s.ticker)), td(TIPO[s.setup] || s.setup, "t2"), td(String(s.fechadas), "num"),
+          td(s.taxa_acerto_pct != null ? U.num(s.taxa_acerto_pct, 0) + "%" : "—", "num"),
+          td(h("span", { class: s.retorno_medio_pct > 0 ? "delta up" : "delta down" }, num2(s.retorno_medio_pct)), "num"),
+          td(num2(s.soma_pct), "num t2"));
+      }), "Sem operações no treino ainda.");
+  }
+
   var seq = 0;
+  function run(fn) {
+    var app = document.getElementById("app");
+    if (!cfg()) return naoConfigurado(app);
+    var mine = ++seq;
+    carregando(app);
+    fn(app, function () { return mine === seq; }).catch(function (e) {
+      if (mine === seq) erro(app, e);
+    });
+  }
+
   window.RWACentral = {
     render: function (ctx) {
-      var app = document.getElementById("app");
-      if (!cfg()) return naoConfigurado(app);
       var ticker = ctx && ctx.params && ctx.params.ticker;
-      var mine = ++seq;
-      carregando(app);
-      loadAll().then(function (d) {
-        if (mine !== seq) return; // o usuário já navegou para outra tela
-        if (ticker) detalhe(app, d, ticker);
-        else visaoGeral(app, d);
-      }).catch(function (e) {
-        if (mine === seq) erro(app, e);
+      run(function (app, atual) {
+        return loadAll().then(function (d) {
+          if (!atual()) return; // o usuário já navegou para outra tela
+          if (ticker) detalhe(app, d, ticker);
+          else visaoGeral(app, d);
+        });
       });
-    }
+    },
+    eventos: function () { run(eventos); },
+    agentes: function () { run(agentes); }
   };
 })();
