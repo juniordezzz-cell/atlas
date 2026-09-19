@@ -32,10 +32,26 @@
 
   /* A raiz muda conforme a profundidade da página: um módulo vive um
      nível abaixo. Registrar com escopo errado faz o service worker
-     controlar só a pasta do módulo, e o Dashboard ficaria de fora. */
+     controlar só a pasta do módulo, e o Dashboard ficaria de fora.
+
+     Vem do endereço deste próprio script ("../core/atlas-pwa.js" → "../"),
+     como o atlas-shell.js faz. Antes era uma lista de pastas de módulo, e
+     Login, Landing e Boas-vindas — em pages/, sem o shell — caíam fora
+     dela: a raiz virava "" e o navegador pedia pages/sw.js (404) a cada
+     carga. Lido já na execução: document.currentScript não existe mais
+     quando registrar() roda, no load. */
+  var RAIZ_SCRIPT = (function () {
+    var el = document.currentScript ||
+             document.querySelector('script[src*="core/atlas-pwa.js"]');
+    var src = (el && el.getAttribute) ? (el.getAttribute("src") || "") : "";
+    var i = src.indexOf("core/atlas-pwa.js");
+    return i >= 0 ? src.slice(0, i) : null;
+  })();
+
   function raiz() {
+    if (RAIZ_SCRIPT !== null) return RAIZ_SCRIPT;
     if (window.AtlasShell && AtlasShell.raiz) return AtlasShell.raiz();
-    return /\/(hold|trade|defi|RWA|academy)\//i.test(location.pathname) ? "../" : "";
+    return /\/(hold|trade|defi|RWA|academy|pages)\//i.test(location.pathname) ? "../" : "";
   }
 
   function registrar() {
