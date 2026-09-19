@@ -17,7 +17,7 @@
   "use strict";
 
   global.ATLAS_SUPABASE = {
-    url: "",
-    publishableKey: ""
+    url: "https://opaimjoimbndwuwkxuva.supabase.co",
+    publishableKey: "sb_publishable_zScdAIDPAuKQ-Z5XXm-49A_hs9W-2cT"
   };
 })(window);

@@ -67,6 +67,7 @@ def tier_a(ctx: Context) -> None:
     snap = snapshot_tokens(ctx.router, ctx.repo, tokens, "A", _ts(), ctx.router.config.router.price_tolerance_pct)
     ctx.section("tokens_camada_a", snap)
     ref = _quotes(ctx, ctx.tier_a)
+    ctx.repo.ensure_tier_a(ctx.tier_a)
     objs = ref.pop("_objs")
     ctx.section("referencia_camada_a", ref)
     ctx.section("token_vs_ativo_acima_de_2pct", _token_vs_asset(tokens, snap, objs))
@@ -119,6 +120,7 @@ def backfill(ctx: Context) -> None:
         tier_b &= ctx.only
     tickers = sorted(ctx.tier_a | tier_b)
     ctx.section("historico", update_history(ctx.router, ctx.repo, ctx.registry, tickers, today, years, allow_full=set(tickers)))
+    ctx.repo.ensure_tier_a(ctx.tier_a)
     ctx.section("tbills", update_tbills(ctx.router, ctx.repo, today, years))
 
 

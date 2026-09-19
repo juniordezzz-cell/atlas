@@ -146,6 +146,16 @@ def test_visoes_do_site_e_permissoes(repo, dsn):
             c.execute("select * from central_rwa.tokens")
 
 
+def test_ensure_tier_a_nao_apaga_camada_b(repo):
+    reg = ReferenceRegistry({})
+    repo.ensure_reference_assets([reg.get("AAA"), reg.get("BBB")])
+    repo.set_tiers(set(), {"BBB"})
+    repo.ensure_tier_a({"AAA"})
+    repo.ensure_tier_a({"AAA"})  # idempotente
+    tiers = dict(repo._query("select ticker, tier from watch_tiers where ticker in ('AAA','BBB')"))
+    assert tiers == {"AAA": "A", "BBB": "B"}
+
+
 def test_estado_do_roteador_ida_e_volta(repo):
     st = ProviderState()
     st.increment(TS)

@@ -50,6 +50,7 @@ class Repository(StateStore):
     def latest_liquidity_by_ticker(self) -> dict[str, float]: ...
     def insert_quotes(self, quotes: list[ReferenceQuote]) -> int: ...
     def set_tiers(self, tier_a: set[str], tier_b: set[str]) -> None: ...
+    def ensure_tier_a(self, tier_a: set[str]) -> None: ...
     def tbill_last_day(self) -> date | None: ...
     def tbill_years(self) -> set[int]: ...
     def upsert_tbill_rates(self, rates: list[TbillRate]) -> int: ...
@@ -140,6 +141,9 @@ class MemoryRepository(Repository):
 
     def set_tiers(self, tier_a, tier_b):
         self.tiers = {t: "A" for t in tier_a} | {t: "B" for t in tier_b - tier_a}
+
+    def ensure_tier_a(self, tier_a):
+        self.tiers.update({t: "A" for t in tier_a})
 
     def tbill_last_day(self):
         return max((d for (_, d) in self.tbills), default=None)
@@ -312,6 +316,15 @@ class PostgresRepository(Repository):
                 rows,
             )
         self.conn.commit()
+
+    def ensure_tier_a(self, tier_a):
+        """Garante a lista de observação como camada A sem mexer na camada B
+        (usado pela camada A e pelo backfill; o recálculo completo é do diário)."""
+        self._many(
+            """insert into watch_tiers (ticker, tier, reason) values (%s, 'A', 'manual')
+               on conflict (ticker) do update set tier='A', reason=case when watch_tiers.reason='evento' then 'evento' else 'manual' end""",
+            [(t,) for t in sorted(tier_a)],
+        )
 
     # --- T-bills ---
     def tbill_last_day(self):
