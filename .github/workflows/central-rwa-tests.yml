@@ -26,3 +26,36 @@ jobs:
           cache-dependency-path: central-rwa/backend/pyproject.toml
       - run: pip install -e ".[dev]"
       - run: python -m pytest -q
+
+  # Deploy automático: com os testes verdes num push na main, aplica as
+  # migrations e roda eventos + agentes. Assim ninguém precisa disparar o
+  # backfill à mão depois de cada mudança no backend.
+  deploy:
+    needs: pytest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: central-rwa-db
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: central-rwa/backend
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: central-rwa/backend/pyproject.toml
+      - run: pip install -e .
+      - name: Migrations + eventos e agentes
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::warning::SUPABASE_DB_URL não configurada — deploy pulado."
+            exit 0
+          fi
+          python -m central_rwa migrate
+          python -m central_rwa agents
