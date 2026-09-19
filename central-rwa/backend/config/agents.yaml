@@ -1,7 +1,10 @@
 # Agentes da Central RWA — um por CESTA de ativos, cada um com regras próprias.
 #
-# Mudar a cesta ou uma regra é editar este arquivo: o próximo deploy retreina
-# o agente nos 10 anos e o placar mostra o efeito.
+# Este arquivo é a CONFIGURAÇÃO. A lista das cestas em português, com o critério
+# de cada uma e o que pedir para mudar, está em docs/central-rwa/CESTAS.md.
+#
+# Mudar a cesta ou uma regra é editar aqui: o próximo push retreina o agente nos
+# 10 anos e o placar do site mostra o efeito.
 #
 # METODOLOGIA (evita "decorar o passado"):
 #   as regras de cada agente foram ESCOLHIDAS olhando só os pregões ANTES de
@@ -25,9 +28,23 @@
 corte_validacao: 2023-01-01
 
 agents:
+  # ---------------- CESTA 1 ----------------
+  - id: macro
+    nome: Macro & Índices
+    descricao: Mercados gigantes que se movem pouco (2–3% já é muito) — ouro, petróleo, S&P 500 e Nasdaq-100. Segue altas bruscas; sem alvo, sai no prazo ou no stop.
+    cesta: [GOLD, WTI, SPY, QQQ]
+    regras:
+      gatilho_pct: 3
+      setups: [alta_brusca]
+      alvo_modo: nenhum
+      stop_modo: p50
+      pct_positivo_minimo: 55
+      prazo_pregoes: 7
+
+  # ---------------- CESTA 2 ----------------
   - id: bigtech
     nome: Big Tech
-    descricao: Compra quedas bruscas das grandes de tecnologia quando o histórico mostra recuperação; sem alvo, sai no prazo ou no stop.
+    descricao: Grandes de tecnologia, que se movem 5% com frequência. Compra quedas bruscas quando o histórico mostra recuperação; sem alvo, sai no prazo ou no stop.
     cesta: [NVDA, TSLA, AAPL, MSFT, AMZN, META, GOOGL]
     regras:
       gatilho_pct: 5
@@ -38,32 +55,7 @@ agents:
       prazo_pregoes: 5
       prazo_maximo_pregoes: 8
 
-  - id: indices
-    nome: Índices
-    descricao: Compra quedas do S&P 500 e do Nasdaq-100. Como índices raramente se movem 5%, o gatilho é 2,5%.
-    cesta: [SPY, QQQ]
-    regras:
-      gatilho_pct: 2.5
-      setups: [queda_brusca]
-      alvo_modo: mediana_max
-      alvo_fator: 1.5
-      stop_modo: p20
-      pct_positivo_minimo: 60
-      prazo_pregoes: 7
-
-  - id: commodities
-    nome: Commodities
-    descricao: Segue altas bruscas de ouro e petróleo (momentum); sem alvo, stop fixo de 3%.
-    cesta: [GOLD, WTI]
-    regras:
-      gatilho_pct: 5
-      setups: [alta_brusca]
-      alvo_modo: nenhum
-      stop_modo: fixo
-      stop_fixo_pct: -3
-      pct_positivo_minimo: 55
-      prazo_pregoes: 7
-
+  # ---------------- RÉGUA (não é cesta temática) ----------------
   - id: swing_v1
     nome: Referência v1
     descricao: As regras originais da seção 9.4 em todos os ativos da lista de observação. Fica como régua para medir os outros.

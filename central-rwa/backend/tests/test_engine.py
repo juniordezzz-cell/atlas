@@ -206,7 +206,7 @@ def test_agents_yaml_do_projeto_e_valido():
     from central_rwa.engine.agents import load_agents
 
     ags = load_agents()
-    assert {a.id for a in ags} >= {"bigtech", "indices", "commodities", "swing_v1"}
+    assert {a.id for a in ags} >= {"macro", "bigtech", "swing_v1"}
     assert all(a.cesta for a in ags)
 
 
