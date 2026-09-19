@@ -124,7 +124,8 @@ html :is(a.card, .card--link, .card[role="button"], .card.is-clickable, .tool-ca
 /* ---------- 3. Faixa de números ---------- */
 /* a linha que contém KPIs vira uma faixa: sem caixas, traço fino entre eles */
 html :has(> .kpi + .kpi) {
-  gap: 0;
+  column-gap: 0;
+  row-gap: var(--atlas-sp-5);   /* faixas em grade (2×2 do Trade) não colam */
 }
 html .kpi {
   background: transparent;
@@ -377,3 +378,48 @@ html .market-pill.velho {
   background: var(--sereno-fill);
 }
 html .market-pill.fresco .dot { box-shadow: none; }
+
+/* ===================================================================
+   TRADE
+   =================================================================== */
+html .banca__value {
+  font-family: var(--atlas-font-ui);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+html .banca__axis span { font-family: var(--atlas-font-ui); }
+/* halo do resumo do Oráculo, orbe e ponto de status: sem brilho */
+html .nsum::after { content: none; }
+html .nsum__orb { border-color: transparent; background: var(--sereno-fill-hi); }
+html .nsum__orb i,
+html .status__dot { box-shadow: none; }
+/* ícone do estado vazio: sem moldura nem halo */
+html .empty__glyph {
+  border-color: transparent;
+  background: var(--sereno-fill);
+  box-shadow: none;
+}
+/* ícone das listas (estudos, trades) */
+html .list__icon { border-color: transparent; background: var(--sereno-fill); }
+/* "Voltar ao Atlas" do Trade: linha fina em vez de borda cheia */
+html .nav__back { border-bottom-color: var(--sereno-rule); }
+/* rótulos de campo e de número do Trade: caixa normal */
+html :is(.field > span, .kpi__label, .an__side-h, .rd__conf-lbl, .rd__field-lbl,
+         .rd__risk-cell span, .tr__card-nums span, .tr__stat span, .tl__time,
+         .oraculo__panel-head p) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--atlas-font-ui);
+  font-size: var(--atlas-fs-sm);
+}
+/* abas de filtro: pílula preenchida, sem contorno */
+html .est__tab {
+  border-color: transparent;
+  background: var(--sereno-fill);
+}
+html .est__tab:hover { border-color: transparent; background: var(--sereno-fill-hi); }
+html .est__tab[aria-current="true"] {
+  border-color: transparent;
+  box-shadow: none;
+}
