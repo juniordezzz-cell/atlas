@@ -618,3 +618,57 @@ html .cc-dot { box-shadow: none; }
 html :is(.ac-back, .cc-chip, .searchbox) { border-color: transparent; background: var(--sereno-fill); box-shadow: none; }
 html :is(.ac-back, .cc-chip):hover { border-color: transparent; background: var(--sereno-fill-hi); }
 html :is(.chainrow-badge, .cc-ro-badge) { border-color: transparent; }
+
+/* ===================================================================
+   CARTEIRAS · RELATÓRIOS · CONFIGURAÇÕES · FERRAMENTAS
+   =================================================================== */
+/* Relatórios: a fileira de indicadores vira a mesma faixa de números */
+html .rep-kpis { column-gap: 0; row-gap: var(--atlas-sp-5); }
+html .rep-kpi {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--atlas-sp-2) var(--atlas-sp-6);
+}
+html .rep-kpi:first-child { padding-left: 0; }
+html .rep-kpi + .rep-kpi { border-left: 1px solid var(--sereno-rule); }
+html .rep-kpi__label svg { display: none; }
+html .rep-kpi__value {
+  font-size: clamp(1.5rem, 1.1rem + 0.9vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+@media (max-width: 1280px) {
+  html .rep-kpi, html .rep-kpi:first-child { padding-left: 0; padding-right: var(--atlas-sp-4); }
+  html .rep-kpi + .rep-kpi { border-left: 0; }
+}
+html .rep-proj { border-color: transparent; border-radius: var(--sereno-r); box-shadow: none; }
+
+/* rótulos em caixa alta destas telas */
+html :is(.rep-kpi__label, .rep-proj__label, .rep-field > label, .cx-sub__cab, .cx-ev__tipo, .set-sep)[class] {
+  text-transform: none;
+  letter-spacing: 0;
+}
+html .rep-field > label { text-transform: none; letter-spacing: 0; }
+
+/* Carteiras: cartões de carteira são objeto clicável — preenchidos */
+html :is(.cx-hero-card, .cx-wallet-card) {
+  background: var(--sereno-fill);
+  border-color: transparent;
+  border-radius: 16px;
+  box-shadow: none;
+}
+/* Configurações: seção aberta já cobre .set-card; bloco "bloqueado" e
+   o relatório de suporte ficam preenchidos */
+html :is(.locked, .sup-relatorio) { border-color: transparent; background: var(--sereno-fill); border-radius: 16px; }
+/* legenda da distribuição: linha de lista, não caixinha */
+html .cx-donut-legend li {
+  border: 0;
+  border-bottom: 1px solid var(--sereno-rule);
+  border-radius: 0;
+  background: transparent;
+}
+/* calendário: contêiner preenchido sem contorno (o contorno do dia de
+   hoje fica: é informação) */
+html .atlas-cal { border-color: transparent; background: var(--sereno-fill); box-shadow: none; }
