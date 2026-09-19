@@ -38,6 +38,9 @@ def update_history(
 ) -> HistoryResult:
     res = HistoryResult()
     target_start = date(today.year - years, today.month, min(today.day, 28))
+    # Um ativo da lista (ex.: WTI) pode não ter nenhum token no catálogo ainda:
+    # registra antes de gravar, senão a chave estrangeira recusa o histórico.
+    repo.ensure_reference_assets([registry.get(t) for t in tickers])
     for ticker in tickers:
         asset = registry.get(ticker)
         if asset.asset_class == "tbill":

@@ -90,6 +90,30 @@ def test_cotacoes_tbills_e_job(repo):
     assert any(t == "token_snapshots" for t, _, _ in repo.size_report())
 
 
+def test_historico_de_ativo_sem_token_no_catalogo(repo, clock):
+    """Regressão (backfill #3 no Actions): WTI está na camada A, mas nenhum token aponta
+    para ele; o histórico falhava na chave estrangeira de reference_assets."""
+    from central_rwa.collectors.history import update_history
+    from central_rwa.models import DailySeries
+
+    from .conftest import make_router
+
+    class P:
+        name = "h"
+
+        def bind_gate(self, g):
+            pass
+
+        def daily_history(self, asset, start, end=None):
+            return DailySeries(ticker=asset.ticker, bars=[DailyBar(day=date(2026, 9, 18), close=100.3)], source="h")
+
+    reg = ReferenceRegistry({"assets": {"WTI": {"asset_class": "commodity", "symbols": {"yahoo": "CL=F"}}}})
+    router = make_router({"h": P()}, {"h": {}}, {"reference_history_daily": ["h"]}, clock)
+    res = update_history(router, repo, reg, ["WTI"], date(2026, 9, 19), 10, allow_full={"WTI"})
+    assert res.updated == {"WTI": 1} and not res.errors
+    assert repo._query("select asset_class from reference_assets where ticker='WTI'") == [("commodity",)]
+
+
 def test_estado_do_roteador_ida_e_volta(repo):
     st = ProviderState()
     st.increment(TS)

@@ -43,6 +43,7 @@ def _token_vs_asset(tokens, snap, quotes: dict) -> list[str]:
 def _quotes(ctx: Context, tickers: set[str]) -> dict:
     out, errors = {}, []
     quotes = []
+    ctx.repo.ensure_reference_assets([ctx.registry.get(t) for t in sorted(tickers)])
     for t in sorted(tickers):
         asset = ctx.registry.get(t)
         if asset.asset_class == "tbill":
@@ -89,6 +90,7 @@ def daily(ctx: Context) -> None:
     tier_b = {t for t, v in size.items() if v >= floor}
     if ctx.only:
         tier_b &= ctx.only
+    ctx.repo.ensure_reference_assets([ctx.registry.get(t) for t in sorted(ctx.tier_a | tier_b)])
     ctx.repo.set_tiers(ctx.tier_a, tier_b)
     ctx.section("camadas", {"A": sorted(ctx.tier_a), "B_total": len(tier_b - ctx.tier_a), "piso_usd": floor})
 
