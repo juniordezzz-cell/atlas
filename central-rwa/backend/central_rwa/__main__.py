@@ -1,6 +1,7 @@
 """python -m central_rwa <job> [--dry-run] [--only NVDA,GOLD]
 
 Jobs: tier_a | daily | backfill | catalog | report | probe | migrate
+Fora dos jobs: `lab` (testa cesta e regras sem banco) — veja `lab --help`.
 """
 
 from __future__ import annotations
@@ -17,6 +18,13 @@ def main(argv: list[str] | None = None) -> None:
     # Console do Windows: garante UTF-8 no resumo.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] == "lab":  # laboratório: não toca no banco, tem opções próprias
+        from .engine.lab import rodar
+
+        rodar(argv[1:])
+        return
+
     from .jobs import JOBS
 
     parser = argparse.ArgumentParser(prog="central_rwa")

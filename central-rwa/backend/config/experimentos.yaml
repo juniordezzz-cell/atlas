@@ -1,0 +1,56 @@
+# Laboratório — grades testadas com `python -m central_rwa lab`.
+#
+# Isto NÃO é produção: nada aqui muda o placar do site. O que vale é o que
+# está em agents.yaml. Este arquivo guarda o que já foi testado, para o
+# experimento poder ser refeito igual (e conferido) depois.
+#
+# A variante é escolhida pelo TREINO (antes de corte_validacao); a validação
+# só é relatada. Ordenar pela validação seria escolher olhando a resposta.
+#
+# A regra é escolhida por NÍVEL DE RISCO, não por cesta: é o risco que decide
+# como o agente opera. Por isso cada experimento roda na união dos ativos das
+# cestas daquele nível — a regra escolhida vale para todas elas, e o placar de
+# cada cesta é medido depois, uma a uma (`lab placar`).
+
+cestas:
+  conservadoras: [SPY, QQQ, IWM, GOLD, XLE, PPLT,
+                  AAPL, MSFT, GOOGL, AMZN, META, CSCO,
+                  LMT, RTX, NOC, GD, LHX, HII, ITA,
+                  EQIX, DLR, AMT, CCI, SBAC, IRM]
+
+  medianas: [NVDA, AVGO, TSM, ASML, AMD,
+             AMAT, KLAC, ANET, QCOM, "ON", MPWR,
+             FSLR, URA, NRG, NLR, VLO,
+             SCCO, FCX, NEM, GDX, SLV, RGLD, COPX, TPL]
+
+  agressivas: [MSTR, MARA, RIOT, CLSK, HUT, BTBT, SBET,
+               MU, MRVL, SMCI, LRCX, INTC, TER, ONTO, LSCC]
+
+experimentos:
+  - agente: macro
+    titulo: "Nível CONSERVADOR (ATR% ≤ 3,33) — 4 cestas"
+    cestas: [conservadoras]
+    grade: &grade_comum
+      setups:
+        - [queda_brusca]              # comprar a queda
+        - [alta_brusca]               # seguir a alta
+        - [queda_brusca, alta_brusca]
+      pct_positivo_minimo: [55, 60]
+      prazo:
+        - {prazo_pregoes: 5, prazo_maximo_pregoes: 8}
+        - {prazo_pregoes: 7, prazo_maximo_pregoes: 10}
+      gatilho_pct: [2, 3, 4]
+
+  - agente: ia_chips
+    titulo: "Nível MEDIANO (ATR% ≤ 5,66) — 4 cestas"
+    cestas: [medianas]
+    grade:
+      <<: *grade_comum
+      gatilho_pct: [4, 5, 6]
+
+  - agente: cripto
+    titulo: "Nível AGRESSIVO (ATR% > 5,66) — 2 cestas"
+    cestas: [agressivas]
+    grade:
+      <<: *grade_comum
+      gatilho_pct: [6, 8, 10]

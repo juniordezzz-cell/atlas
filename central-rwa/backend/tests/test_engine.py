@@ -191,15 +191,16 @@ def test_gatilho_por_agente():
 def test_parse_agents_valida_e_converte():
     import pytest
 
+    cinco, outros = list("ABCDE"), list("FGHIJ")
     ags = parse_agents({"corte_validacao": "2023-01-01", "agents": [
-        {"id": "a", "nome": "A", "cesta": ["X"], "regras": {"setups": ["queda_brusca"], "gatilho_pct": 2.5}},
-        {"id": "b", "cesta": ["Y"], "ativo": False}]})
+        {"id": "a", "nome": "A", "cesta": cinco, "regras": {"setups": ["queda_brusca"], "gatilho_pct": 2.5}},
+        {"id": "b", "cesta": outros, "ativo": False}]})
     assert ags[0].rules.setups == ("queda_brusca",) and ags[0].rules.gatilho_pct == 2.5
     assert ags[0].corte_validacao == date(2023, 1, 1) and ags[1].ativo is False
     with pytest.raises(ValueError):
-        parse_agents({"agents": [{"id": "a", "regras": {"regra_que_nao_existe": 1}}]})
+        parse_agents({"agents": [{"id": "a", "cesta": cinco, "regras": {"regra_que_nao_existe": 1}}]})
     with pytest.raises(ValueError):
-        parse_agents({"agents": [{"id": "a"}, {"id": "a"}]})
+        parse_agents({"agents": [{"id": "a", "cesta": cinco}, {"id": "a", "cesta": cinco}]})
 
 
 def test_agents_yaml_do_projeto_e_valido():
@@ -221,3 +222,48 @@ def test_preco_negativo_fica_fora_da_estatistica():
         p = forward_path(bars, m.idx)
         if p:
             assert p.max_down_pct > -100 and p.min_7d_pct > -100
+
+
+def test_regra_de_estrutura_das_cestas():
+    """5 a 8 ativos por cesta, no máximo 10 cestas — a régua fica de fora."""
+    import pytest
+
+    from central_rwa.engine.agents import MAX_CESTAS
+
+    def cfg(**kw):
+        return {"agents": [{"id": "a", "cesta": ["A", "B", "C", "D", "E"], **kw}]}
+
+    assert parse_agents(cfg())[0].tipo == "cesta"
+    with pytest.raises(ValueError, match="de 5 a 8"):
+        parse_agents(cfg(cesta=["A", "B", "C", "D"]))
+    with pytest.raises(ValueError, match="de 5 a 8"):
+        parse_agents(cfg(cesta=list("ABCDEFGHI")))
+    with pytest.raises(ValueError, match="repetido"):
+        parse_agents(cfg(cesta=["A", "A", "B", "C", "D"]))
+    with pytest.raises(ValueError, match="tipo"):
+        parse_agents(cfg(tipo="qualquer"))
+    # régua: roda em todos os ativos de propósito
+    assert parse_agents(cfg(tipo="regua", cesta=list("ABCDEFGHIJK")))[0].tipo == "regua"
+    demais = {"agents": [{"id": f"c{i}", "cesta": list("ABCDE")} for i in range(MAX_CESTAS + 1)]}
+    with pytest.raises(ValueError, match="o máximo é"):
+        parse_agents(demais)
+
+
+def test_agents_yaml_respeita_a_regra_de_estrutura():
+    from central_rwa.engine.agents import MAX_ATIVOS, MIN_ATIVOS, load_agents
+
+    for a in load_agents():
+        if a.tipo == "cesta":
+            assert MIN_ATIVOS <= len(a.cesta) <= MAX_ATIVOS, f"{a.id}: {len(a.cesta)} ativos"
+
+
+def test_watchlist_cobre_todos_os_ativos_das_cestas():
+    """Ativo numa cesta e fora da lista de observação não recebe histórico:
+    o agente fica com 'sem_historico' e a cesta encolhe em silêncio."""
+    from central_rwa.config import load_yaml
+    from central_rwa.engine.agents import load_agents
+    from central_rwa.engine.risco import tickers_validos
+
+    tier_a = set(tickers_validos(load_yaml("watchlist.yaml").get("tier_a"), "watchlist"))
+    faltam = {t for a in load_agents() for t in a.cesta} - tier_a
+    assert not faltam, f"fora da lista de observação: {sorted(faltam)}"

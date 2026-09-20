@@ -1,0 +1,50 @@
+# Candidatos a cesta, por TEMA. O tema é o filtro para escolher os ativos;
+# quem decide em qual cesta cada um cai é o RISCO, medido pelo ATR% (veja
+# `python -m central_rwa lab risco` e docs/central-rwa/CESTAS.md).
+#
+# Todo ticker aqui foi conferido contra o catálogo de tokens do xStocks em
+# 2026-09-20: os 132 têm token em pelo menos uma das 4 redes. Exceções
+# declaradas de propósito:
+#   GOLD e WTI — commodity de referência (Yahoo GC=F / CL=F). Há token de ouro
+#     (GLD), não há de petróleo; o agente entra pelo ativo de referência.
+#   DXY e VIX  — pedidos na conversa, mas NÃO existem tokenizados e o backend
+#     não tem símbolo para eles. Ficam de fora até virarem fonte de verdade.
+#
+# Acrescentar candidato: coloque o ticker no tema e rode `lab risco` de novo.
+# ATENÇÃO: tickers que o YAML confunde com outra coisa precisam de aspas —
+# ON, NO, Y, N, ON/OFF viram booleano ("ON" é a ON Semiconductor).
+
+temas:
+  ia_infraestrutura:
+    nome: IA — infraestrutura
+    tickers: [NVDA, AMD, AVGO, ARM, ALAB, MRVL, MU, TSM, ASML, SMCI, LRCX, AMAT, KLAC, ANET, CRWV, NBIS, SOXX, SMH,
+              QCOM, INTC, "ON", MPWR, TER, COHR, LSCC, ONTO]
+
+  ia_aplicacao:
+    nome: IA — aplicação
+    tickers: [PLTR, MSFT, GOOGL, META, NOW, CRM, SNOW, DDOG, AI, APP, IOT, U, RBLX, TEAM, HUBS, MDB, NET, AAPL, AMZN, TSLA,
+              ORCL, ADBE, CSCO, IBM, ACN, INTU]
+
+  data_center:
+    nome: Data center e energia de data center
+    tickers: [DLR, EQIX, VRT, IRM, AMT, CCI, SBAC, ETN, PWR, APLD, IREN, CORZ, WULF]
+
+  energia:
+    nome: Energia
+    tickers: [CEG, NRG, TLN, OKLO, SMR, NLR, URA, XLE, XOM, CVX, COP, PSX, VLO, FSLR, LNG, OKE, WMB, SO, DUK, NEE, D, AEP, EXC]
+
+  commodities:
+    nome: Commodities e mineração
+    tickers: [GOLD, WTI, SLV, PPLT, PALL, GDX, COPX, MOO, SCCO, NEM, FCX, RGLD, CDE, HL, MP, UUUU, XOP, TPL, ADM, CTVA]
+
+  seguranca:
+    nome: Segurança — defesa e cibersegurança
+    tickers: [LMT, RTX, NOC, GD, LHX, HII, BWXT, KTOS, AXON, ITA, PANW, CRWD, FTNT, ZS, OKTA, RBRK, SAIL]
+
+  descentralizacao:
+    nome: Descentralização e cripto
+    tickers: [COIN, MSTR, HOOD, GLXY, CRCL, MARA, RIOT, CLSK, HUT, BITX, BMNR, SBET, DFDV, BTBT]
+
+  macro_indices:
+    nome: Macro e índices
+    tickers: [SPY, QQQ, VOO, IWM, IJR, SGOV, TBLL, JPST]

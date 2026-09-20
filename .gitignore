@@ -25,3 +25,7 @@ config.local.*
 # Sem esta linha o git o trataria como submódulo (gitlink) e o commit
 # nasceria quebrado. Pode ser apagado do disco quando você quiser.
 atlas/
+
+# Auditoria local: SECRETS.local.md e o relatório de vulnerabilidades.
+# O repositório é PÚBLICO — esta pasta fica só no disco.
+analysis/

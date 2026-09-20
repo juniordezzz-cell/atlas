@@ -32,6 +32,47 @@ Para gravar no banco, copie `.env.example` para `.env` e preencha `SUPABASE_DB_U
 
 Opções: `--dry-run` (usa um banco em memória) e `--only NVDA,GOLD` (limita os ativos).
 
+## Laboratório: testar cesta e regras sem banco
+
+```bash
+.venv/Scripts/python -m central_rwa lab risco                # mede o ATR% dos candidatos e corta em tercis
+.venv/Scripts/python -m central_rwa lab placar --sem-rede    # placar dos agentes como estão em agents.yaml
+.venv/Scripts/python -m central_rwa lab --agente macro       # roda a grade de config/experimentos.yaml
+```
+
+O `lab` roda os agentes **fora do banco**, com o mesmo motor do job (`train_agent`),
+para responder "e se a cesta 2 tivesse mais ativos?" sem tocar no placar do site.
+O histórico vem do Yahoo e fica em `central-rwa/backend/.cache/bars/` (fora do git);
+a série é cortada no mesmo primeiro dia do backfill, senão os números não batem com
+os do site — **o resultado de um agente muda conforme o início da série**, porque a
+estatística de cada evento olha todos os eventos anteriores.
+
+O que sai: uma linha por variante com treino e validação lado a lado, e no fim a
+variante **escolhida pelo treino** (`escolher()`), com o detalhe do que aconteceu
+com cada gatilho — quantos viraram operação e quantos foram recusados, por motivo.
+Ordenar pela validação seria escolher olhando a resposta: a tabela é ordenada pelo
+treino e a validação é só relatada.
+
+As grades já rodadas ficam em [`config/experimentos.yaml`](config/experimentos.yaml),
+para o experimento poder ser refeito igual depois.
+
+Toda tabela traz a coluna **maior ativo**: a fatia das operações que veio de um
+ativo só. Uma cesta em que um ativo responde por quase tudo não é uma cesta —
+foi assim que a "Macro & Índices" acabou sendo um agente de petróleo (100% das
+operações) e a "Big Tech" um agente de TSLA.
+
+### `lab risco` — de onde saem as cestas
+
+`lab risco` lê [`config/candidatos.yaml`](config/candidatos.yaml) (candidatos por
+tema, todos conferidos contra o catálogo de tokens), mede o **ATR% de 14 pregões**
+de cada um (mediana dos últimos 180 dias) e corta a lista em **tercis**:
+conservador, mediano, agressivo. Depois agrupa por (risco × tema) e monta as
+cestas possíveis dentro da regra de 5 a 8 ativos. Quem estreou na bolsa depois
+do corte da validação fica de fora: entraria sem nunca ter sido treinado.
+
+A classificação é **relativa à lista de candidatos** — acrescentar 14 mineradoras
+de bitcoin empurra os outros para baixo no ranking. Refazer a cada trimestre.
+
 ## Primeira vez em produção
 
 1. Crie o projeto no Supabase e cadastre `SUPABASE_DB_URL` nos Secrets do repositório.

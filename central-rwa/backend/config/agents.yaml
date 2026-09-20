@@ -3,8 +3,17 @@
 # Este arquivo é a CONFIGURAÇÃO. A lista das cestas em português, com o critério
 # de cada uma e o que pedir para mudar, está em docs/central-rwa/CESTAS.md.
 #
-# Mudar a cesta ou uma regra é editar aqui: o próximo push retreina o agente nos
-# 10 anos e o placar do site mostra o efeito.
+# REGRA DE ESTRUTURA: no máximo 10 cestas, cada uma com 5 a 8 ativos. Cestas de
+# tamanhos diferentes não dão para comparar entre si. Tema grande demais vira
+# duas sub-cestas (ex.: "IA — chips" e "IA — equipamento e redes"). A régua
+# (tipo: regua) roda em todos os ativos de propósito e fica fora dessa conta.
+#
+# COMO A CESTA É MONTADA: o eixo que manda é o RISCO, medido pelo ATR% de 14
+# pregões (mediana dos últimos 180 dias) e cortado em tercis sobre a lista de
+# config/candidatos.yaml — `python -m central_rwa lab risco` refaz a conta.
+# O tema é o filtro para escolher os ativos dentro de cada nível de risco.
+# Medido em 2026-09-20: conservador ATR% ≤ 3,33 · mediano ≤ 5,66 · acima disso
+# agressivo. Refazer a cada trimestre: volatilidade muda de regime.
 #
 # METODOLOGIA (evita "decorar o passado"):
 #   as regras de cada agente foram ESCOLHIDAS olhando só os pregões ANTES de
@@ -28,36 +37,155 @@
 corte_validacao: 2023-01-01
 
 agents:
-  # ---------------- CESTA 1 ----------------
+  # ======================= CONSERVADORAS (ATR% ≤ 3,33) =======================
+  # Regra escolhida no TREINO, na união dos ativos das 4 cestas (36 variantes).
+  # NENHUMA das 36 ganhou do "não fazer nada" no treino: esta é a menos ruim
+  # (-0,36 p.p. em 2.014 operações). O placar do site diz isso na cara.
+
   - id: macro
-    nome: Macro & Índices
-    descricao: Mercados gigantes que se movem pouco (2–3% já é muito) — ouro, petróleo, S&P 500 e Nasdaq-100. Segue altas bruscas; sem alvo, sai no prazo ou no stop.
-    cesta: [GOLD, WTI, SPY, QQQ]
+    nome: Macro, ouro e energia
+    descricao: Índices, ouro, platina e o ETF de energia — mercados gigantes que se movem pouco. Segue altas bruscas; sem alvo, sai no prazo ou no stop.
+    cesta: [SPY, QQQ, IWM, GOLD, XLE, PPLT]
     regras:
-      gatilho_pct: 3
-      setups: [alta_brusca]
+      gatilho_pct: 2
+      setups: [queda_brusca, alta_brusca]
       alvo_modo: nenhum
       stop_modo: p50
       pct_positivo_minimo: 55
-      prazo_pregoes: 7
+      prazo_pregoes: 5
+      prazo_maximo_pregoes: 8
 
-  # ---------------- CESTA 2 ----------------
   - id: bigtech
     nome: Big Tech
-    descricao: Grandes de tecnologia, que se movem 5% com frequência. Compra quedas bruscas quando o histórico mostra recuperação; sem alvo, sai no prazo ou no stop.
-    cesta: [NVDA, TSLA, AAPL, MSFT, AMZN, META, GOOGL]
+    descricao: As grandes de software e plataformas, que o ATR% põe no tercil mais calmo. Segue altas bruscas; sem alvo, sai no prazo ou no stop.
+    cesta: [AAPL, MSFT, GOOGL, AMZN, META, CSCO]
     regras:
-      gatilho_pct: 5
+      gatilho_pct: 2
+      setups: [queda_brusca, alta_brusca]
+      alvo_modo: nenhum
+      stop_modo: p50
+      pct_positivo_minimo: 55
+      prazo_pregoes: 5
+      prazo_maximo_pregoes: 8
+
+  - id: defesa
+    nome: Defesa
+    descricao: Defesa e aeroespacial — receita de contrato público, movimento curto. Segue altas bruscas; sem alvo, sai no prazo ou no stop.
+    cesta: [LMT, RTX, NOC, GD, LHX, HII, ITA]
+    regras:
+      gatilho_pct: 2
+      setups: [queda_brusca, alta_brusca]
+      alvo_modo: nenhum
+      stop_modo: p50
+      pct_positivo_minimo: 55
+      prazo_pregoes: 5
+      prazo_maximo_pregoes: 8
+
+  - id: infra_digital
+    nome: Infraestrutura digital
+    descricao: Data centers e torres (REITs de infraestrutura) — o chão físico da IA, com preço de imóvel e não de tecnologia. Segue altas bruscas.
+    cesta: [EQIX, DLR, AMT, CCI, SBAC, IRM]
+    regras:
+      gatilho_pct: 2
+      setups: [queda_brusca, alta_brusca]
+      alvo_modo: nenhum
+      stop_modo: p50
+      pct_positivo_minimo: 55
+      prazo_pregoes: 5
+      prazo_maximo_pregoes: 8
+
+  # ========================= MEDIANAS (ATR% ≤ 5,66) =========================
+  # Regra escolhida no TREINO, na união dos ativos das 4 cestas (36 variantes).
+  # Também aqui nenhuma das 36 ganhou do "não fazer nada" no treino: esta é a
+  # menos ruim (-0,25 p.p. em 547 operações).
+
+  - id: ia_chips
+    nome: IA — chips
+    descricao: Quem projeta e fabrica o silício da IA. Compra quedas bruscas quando o histórico mostra recuperação; sem alvo, sai no prazo ou no stop.
+    cesta: [NVDA, AVGO, TSM, ASML, AMD]
+    regras:
+      gatilho_pct: 4
+      setups: [alta_brusca]
+      alvo_modo: nenhum
+      stop_modo: p20
+      pct_positivo_minimo: 55
+      prazo_pregoes: 7
+      prazo_maximo_pregoes: 10
+
+  - id: ia_equipamento
+    nome: IA — equipamento e redes
+    descricao: Equipamento de fabricação, conectividade e redes — a sub-cesta do mesmo tema que não cabia em 8 ativos. Compra quedas bruscas.
+    cesta: [AMAT, KLAC, ANET, QCOM, "ON", MPWR]
+    regras:
+      gatilho_pct: 4
+      setups: [alta_brusca]
+      alvo_modo: nenhum
+      stop_modo: p20
+      pct_positivo_minimo: 55
+      prazo_pregoes: 7
+      prazo_maximo_pregoes: 10
+
+  - id: energia
+    nome: Energia nova
+    descricao: Solar, nuclear, urânio e geração — a conta de luz da IA. Compra quedas bruscas quando o histórico mostra recuperação.
+    cesta: [FSLR, URA, NRG, NLR, VLO]
+    regras:
+      gatilho_pct: 4
+      setups: [alta_brusca]
+      alvo_modo: nenhum
+      stop_modo: p20
+      pct_positivo_minimo: 55
+      prazo_pregoes: 7
+      prazo_maximo_pregoes: 10
+
+  - id: mineracao
+    nome: Commodities e mineração
+    descricao: Cobre, ouro, prata e terras raras — o metal que entra no data center. Compra quedas bruscas quando o histórico mostra recuperação.
+    cesta: [SCCO, FCX, NEM, GDX, SLV, RGLD, COPX, TPL]
+    regras:
+      gatilho_pct: 4
+      setups: [alta_brusca]
+      alvo_modo: nenhum
+      stop_modo: p20
+      pct_positivo_minimo: 55
+      prazo_pregoes: 7
+      prazo_maximo_pregoes: 10
+
+  # ======================== AGRESSIVAS (ATR% > 5,66) ========================
+  # Regra escolhida no TREINO, na união dos ativos das 2 cestas (36 variantes).
+  # Único nível em que a ideia funcionou no treino: 27 das 36 variantes ganharam
+  # do "não fazer nada" (esta, +5,10 p.p. em 37 operações). Na validação, 9.
+
+  - id: cripto
+    nome: Descentralização e cripto
+    descricao: Mineradoras de bitcoin, tesourarias em cripto e corretoras — anda com o bitcoin, não com a bolsa. Compra quedas bruscas.
+    cesta: [MSTR, MARA, RIOT, CLSK, HUT, BTBT, SBET]
+    regras:
+      gatilho_pct: 8
       setups: [queda_brusca]
       alvo_modo: nenhum
       stop_modo: p20
       pct_positivo_minimo: 60
-      prazo_pregoes: 5
-      prazo_maximo_pregoes: 8
+      prazo_pregoes: 7
+      prazo_maximo_pregoes: 10
+
+  - id: ia_agressiva
+    nome: IA — memória e equipamento agressivo
+    descricao: Memória, servidores e óptica — o pedaço cíclico e volátil da cadeia de IA. Compra quedas bruscas quando o histórico mostra recuperação.
+    cesta: [MU, MRVL, SMCI, LRCX, INTC, TER, ONTO, LSCC]
+    regras:
+      gatilho_pct: 8
+      setups: [queda_brusca]
+      alvo_modo: nenhum
+      stop_modo: p20
+      pct_positivo_minimo: 60
+      prazo_pregoes: 7
+      prazo_maximo_pregoes: 10
 
   # ---------------- RÉGUA (não é cesta temática) ----------------
   - id: swing_v1
     nome: Referência v1
+    tipo: regua   # roda em todos os ativos de propósito: fica fora da regra de 5 a 8
     descricao: As regras originais da seção 9.4 em todos os ativos da lista de observação. Fica como régua para medir os outros.
     cesta: [NVDA, TSLA, AAPL, MSFT, AMZN, META, GOOGL, SPY, QQQ, GOLD, WTI]
     regras: {}

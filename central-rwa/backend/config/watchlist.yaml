@@ -5,17 +5,75 @@
 # fora do padrão, declare-o em reference_assets.yaml).
 
 tier_a:
-  - NVDA
-  - TSLA
+  # Todos os ativos das 10 cestas de agents.yaml (+ os da régua). Mantenha os
+  # dois arquivos juntos: ativo que está numa cesta e não está aqui não recebe
+  # preço nem histórico, e o agente o reporta como "sem histórico".
   - AAPL
-  - MSFT
+  - AMAT
+  - AMD
+  - AMT
   - AMZN
-  - META
-  - GOOGL
-  - SPY
-  - QQQ
+  - ANET
+  - ASML
+  - AVGO
+  - BTBT
+  - CCI
+  - CLSK
+  - COPX
+  - CSCO
+  - DLR
+  - EQIX
+  - FCX
+  - FSLR
+  - GD
+  - GDX
   - GOLD
+  - GOOGL
+  - HII
+  - HUT
+  - INTC
+  - IRM
+  - ITA
+  - IWM
+  - KLAC
+  - LHX
+  - LMT
+  - LRCX
+  - LSCC
+  - MARA
+  - META
+  - MPWR
+  - MRVL
+  - MSFT
+  - MSTR
+  - MU
+  - NEM
+  - NLR
+  - NOC
+  - NRG
+  - NVDA
+  - "ON"
+  - ONTO
+  - PPLT
+  - QCOM
+  - QQQ
+  - RGLD
+  - RIOT
+  - RTX
+  - SBAC
+  - SBET
+  - SCCO
+  - SLV
+  - SMCI
+  - SPY
+  - TER
+  - TPL
+  - TSLA
+  - TSM
+  - URA
+  - VLO
   - WTI
+  - XLE
 
 # Camada B: todo ativo do catálogo cujo token passe no piso abaixo (atualizado a cada 24h).
 tier_b_floor_usd: 100000

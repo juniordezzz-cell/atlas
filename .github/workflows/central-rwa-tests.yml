@@ -45,6 +45,8 @@ jobs:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2   # para saber se a configuração mudou neste push
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -58,4 +60,12 @@ jobs:
             exit 0
           fi
           python -m central_rwa migrate
-          python -m central_rwa agents
+          # Mudou config/ (cesta nova, ativo novo na lista de observação)? Então
+          # os ativos novos ainda não têm histórico, e sem histórico o agente
+          # nasce mudo. O backfill é retomável e pula quem já está completo.
+          if ! git diff --quiet HEAD~1 HEAD -- config 2>/dev/null; then
+            echo "configuração mudou: baixando o histórico dos ativos novos"
+            python -m central_rwa backfill
+          else
+            python -m central_rwa agents
+          fi

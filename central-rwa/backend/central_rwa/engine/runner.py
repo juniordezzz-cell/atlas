@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, timedelta
+from typing import Callable
 
 from ..db import Repository
 from ..db.repository import EventRow, PositionRow
@@ -18,6 +19,7 @@ from ..reference import ReferenceRegistry
 from .agents import AgentDef, load_agents
 from .events import (
     GATILHO_PCT,
+    DayMove,
     baseline_mean,
     compute_stats,
     daily_moves,
@@ -31,6 +33,8 @@ from .swing import check_live, decide, simulate
 EVENTS_WINDOW_DAYS = 180
 LIVE_LOOKBACK_DAYS = 5  # pega eventos de pregões que um job perdido deixou para trás
 MIN_BARS = 300
+
+Trace = Callable[[str, "DayMove", str], None]
 
 
 @dataclass
@@ -91,7 +95,10 @@ def record_events(repo: Repository, bars_of, tickers: list[str], since: date, so
     return out
 
 
-def train_agent(agent: AgentDef, bars_of, tickers: list[str]) -> tuple[list[PositionRow], AgentTrain]:
+def train_agent(agent: AgentDef, bars_of, tickers: list[str], trace: Trace | None = None) -> tuple[list[PositionRow], AgentTrain]:
+    """`trace` (opcional, só o laboratório usa) recebe cada gatilho e o que
+    aconteceu com ele: 'abriu', 'posicao_aberta', 'sem_pregao_seguinte' ou o
+    motivo da recusa."""
     r = agent.rules
     positions: list[PositionRow] = []
     info = AgentTrain()
@@ -103,10 +110,16 @@ def train_agent(agent: AgentDef, bars_of, tickers: list[str]) -> tuple[list[Posi
         moves = daily_moves(bars)
         busy_until = -1  # uma posição por vez em cada ativo
         for m in moves:
-            if not is_trigger(m.ret_pct, r.gatilho_pct) or m.idx <= busy_until or m.idx + 1 >= len(bars):
+            if not is_trigger(m.ret_pct, r.gatilho_pct):
+                continue
+            if m.idx <= busy_until or m.idx + 1 >= len(bars):
+                if trace:
+                    trace(ticker, m, "posicao_aberta" if m.idx <= busy_until else "sem_pregao_seguinte")
                 continue
             stats = compute_stats(similar_events(bars, moves, m, r.gatilho_pct))
             d = decide(stats, r, kind_of(m.ret_pct))
+            if trace:
+                trace(ticker, m, "abriu" if d.abrir else d.motivo)
             if not d.abrir:
                 continue
             entry_bar = bars[m.idx + 1]
