@@ -654,7 +654,13 @@
          cadeia de resolução. Aqui o valor volta a ser o que sempre
          deveria ter sido: quantidade × preço, seja o preço de onde
          for. O campo precoFonte agora só REGISTRA a origem dominante. */
-      if (_perf && _perf.precoOk) {
+      /* Sem quantidade nenhuma (nem de entrada nem atual), quantidade ×
+         preço dá ZERO — e gravar isso apagava o valor da posição ao
+         simplesmente abrir a página. Sem composição, o valor informado
+         continua valendo. */
+      var temComposicao = (Number(p.qtyBase) || 0) + (Number(p.qtyQuote) || 0) +
+                          (Number(p.qtyBaseNow) || 0) + (Number(p.qtyQuoteNow) || 0) > 0;
+      if (_perf && _perf.precoOk && temComposicao) {
         var fB = _precoFonte[String(p.base).toUpperCase()];
         var fQ = _precoFonte[String(p.quote).toUpperCase()];
         S.updatePool(p.id, {
@@ -764,6 +770,25 @@
         '</div>' +
       '</div>' +
 
+      /* Rede e plataforma corrigíveis. Sem isso, errar a plataforma no
+         wizard (Raydium no lugar de Orca) só se desfazia excluindo a
+         pool — e junto iam taxas, diário e histórico. A plataforma é
+         texto livre com sugestões do catálogo da rede. */
+      '<div class="eyebrow" style="margin-bottom:8px">Onde a pool está</div>' +
+      '<div class="col-2" style="gap:0 16px">' +
+        '<div class="field"><label>Rede</label>' +
+          '<select class="select" id="eChain">' +
+            (S.redes ? S.redes() : []).concat(
+              (S.redes && S.redes().indexOf(p.chain) === -1 && p.chain) ? [p.chain] : []
+            ).map(function (c) {
+              return '<option value="' + esc(c) + '"' + (c === p.chain ? " selected" : "") + '>' + esc(c) + '</option>';
+            }).join("") +
+          '</select></div>' +
+        '<div class="field"><label>Plataforma</label>' +
+          '<input class="input" id="eProto" list="eProtoLista" autocomplete="off" maxlength="40" value="' + esc(p.protocol || "") + '" />' +
+          '<datalist id="eProtoLista"></datalist></div>' +
+      '</div>' +
+
       '<div class="eyebrow" style="margin-bottom:8px">Composição atual (o que a corretora mostra hoje)</div>' +
       '<div class="col-2" style="gap:0 16px">' +
         '<div class="field"><label>' + esc(p.base) + ' agora</label>' +
@@ -825,6 +850,20 @@
          conclusão do preço contra a faixa, não uma opção de menu —
          ver DeFiStore.statusDe(). */
 
+    /* sugestões de plataforma acompanham a rede escolhida */
+    function sugerirPlataformas() {
+      var dl = U.qs("#eProtoLista"), sel = U.qs("#eChain");
+      if (!dl || !sel || !S.plataformasLP) return;
+      while (dl.firstChild) dl.removeChild(dl.firstChild);
+      S.plataformasLP(sel.value).forEach(function (nome) {
+        var o = document.createElement("option");
+        o.value = nome;
+        dl.appendChild(o);
+      });
+    }
+    sugerirPlataformas();
+    if (U.qs("#eChain")) U.qs("#eChain").addEventListener("change", sugerirPlataformas);
+
     var bt = U.qs("#eRefresh");
     if (bt) bt.addEventListener("click", function () {
       S.updatePool(p.id, { precoFonte: "api" });
@@ -844,7 +883,15 @@
       return;
     }
 
+    var proto = U.qs("#eProto") ? U.qs("#eProto").value.trim() : p.protocol;
+    if (!proto) {
+      U.toast("Informe a plataforma da pool.", "warn");
+      return;
+    }
+
     var patch = {
+      chain: U.qs("#eChain") ? U.qs("#eChain").value : p.chain,
+      protocol: proto,
       qtyBaseNow: num(U.qs("#eQtyBase")) || null,
       qtyQuoteNow: num(U.qs("#eQtyQuote")) || null,
       rangeLow: lo, rangeHigh: hi,
@@ -878,6 +925,15 @@
     U.toast("Posição atualizada.", "ok");
     carregarMercado();
     rerender();
+    /* o cabeçalho é pintado uma vez só; rede e plataforma agora podem
+       mudar pelo Editar, então as etiquetas são atualizadas aqui */
+    var tProto = U.qs(".ph-tags .tag-proto"), tChain = U.qs(".ph-tags .tag-chain");
+    if (tProto) tProto.textContent = p.protocol || "";
+    if (tChain) {
+      var dot = tChain.querySelector(".dot");
+      if (dot) dot.style.background = S.colorOf("chain", p.chain);
+      if (tChain.lastChild && tChain.lastChild.nodeType === 3) tChain.lastChild.nodeValue = p.chain || "";
+    }
   }
 
   /* ============================================================

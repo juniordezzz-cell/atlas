@@ -119,7 +119,7 @@
    primeira tela que lê o backend central-rwa/ no Supabase. */
 /* v63 = abas Eventos e Agentes da Central RWA (Fases 3 e 4). */
 /* v64 = agentes por cesta, com página própria (#/agentes/:id). */
-var VERSAO = "atlas-v65";
+var VERSAO = "atlas-v66";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
