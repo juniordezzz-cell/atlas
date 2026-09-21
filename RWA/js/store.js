@@ -524,7 +524,8 @@
     },
 
     /* ---- Mutações de ativos (CRUD do portfólio) ---- */
-    addAsset: function (a) {
+    addAsset: function (a, opts) {
+      opts = opts || {};
       var s = _read();
       a.id = a.id || (String(a.ticker || "ast").toLowerCase().replace(/[^a-z0-9]/g, "") + "_" + Date.now().toString(36));
       a.color = a.color || PALETTE[s.assets.length % PALETTE.length];
@@ -547,10 +548,27 @@
          recusa por conta própria (wallets/walletCaixa.js) — mas se a
          checagem ficasse só lá, o ativo seria criado e o débito não,
          o que é pior que recusar: posição sem dinheiro por trás.
+
+         Com opts.cobrirFalta (o formulário), o caixa que faltar entra
+         antes como depósito automático nesta carteira — ver
+         AtlasCaixa.cobrirFalta.
          ------------------------------------------------------------ */
+      var depAuto = null;
+      Store._ultimoDeposito = 0;
+      if (opts.cobrirFalta && window.AtlasCaixa && window.AtlasCaixa.cobrirFalta && a.entry > 0) {
+        depAuto = window.AtlasCaixa.cobrirFalta(widA, a.entry, {
+          module: "rwa", refId: "rwa:" + a.id, data: a.date,
+          obs: "Depósito automático para comprar " + (a.ticker || a.name || "RWA")
+        });
+        if (depAuto === false) {
+          Store._ultimoErro = "O caixa da carteira não pôde ser registrado.";
+          return null;
+        }
+      }
       if (window.AtlasCaixa && a.entry > 0) {
         var podeRWA = window.AtlasCaixa.podeGastar(widA, a.entry);
         if (!podeRWA.ok) {
+          if (depAuto) window.AtlasCaixa.remover(depAuto.id);
           Store._ultimoErro = "Caixa insuficiente: há US$ " + podeRWA.saldo.toFixed(2) +
             " e o ativo custa US$ " + Number(a.entry).toFixed(2) +
             ". Registre um depósito em Carteiras & Movimentações.";
@@ -568,6 +586,7 @@
           obs: "Compra de " + (a.ticker || a.name || "RWA")
         });
       }
+      Store._ultimoDeposito = depAuto ? depAuto.valorUSD : 0;
       return a;
     },
     updateAsset: function (id, patch) {

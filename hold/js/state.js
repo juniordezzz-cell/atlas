@@ -873,16 +873,26 @@
       if (qty <= 0 || price <= 0) return { error: "Quantidade e preço devem ser positivos." };
 
       /* ------------------------------------------------------------
-         SÓ COMPRA QUEM TEM CAIXA
+         O CUSTO SAI DO CAIXA DA CARTEIRA ESCOLHIDA
 
          A compra criava a posição do nada: o patrimônio subia sozinho
          e nenhum dinheiro saía de lugar nenhum. Agora o custo sai do
-         caixa da carteira ativa, e carteira sem caixa não compra.
+         caixa da carteira da posição. Com data.cobrirFalta (o
+         formulário), o que faltar entra antes como depósito automático
+         (AtlasCaixa.cobrirFalta); sem ela, carteira sem caixa não compra.
          ------------------------------------------------------------ */
       var custo = qty * price;
       var widC = data.walletId || activeWalletId();
       if (window.AtlasWallets && (!window.AtlasWallets.get || !window.AtlasWallets.get(widC))) {
         return { error: "Carteira inválida para registrar a compra." };
+      }
+      var depAuto = null;
+      if (data.cobrirFalta && window.AtlasCaixa && window.AtlasCaixa.cobrirFalta) {
+        depAuto = window.AtlasCaixa.cobrirFalta(widC, custo, {
+          module: "hold", refId: "hold:" + a.id, data: data.data,
+          obs: "Depósito automático para comprar " + (a.ticker || "")
+        });
+        if (depAuto === false) return { error: "O caixa da carteira não pôde ser registrado." };
       }
       if (window.AtlasCaixa) {
         var conf = window.AtlasCaixa.podeGastar(widC, custo);
@@ -928,7 +938,7 @@
           obs: "Compra de " + qty + " " + (a.ticker || "")
         });
       }
-      return { position: pos };
+      return { position: pos, depositoAuto: depAuto ? depAuto.valorUSD : 0 };
     },
 
     // Venda. Regra: exige invalidação OU realização declarada.

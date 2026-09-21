@@ -48,11 +48,16 @@
   var PALETTE = {
     chain: {
       Solana:   "#14F195", Ethereum: "#627EEA", Base: "#0052FF",
-      Arbitrum: "#28A0F0", Polygon:  "#8247E5", BNB:  "#F0B90B", Optimism: "#FF0420"
+      Arbitrum: "#28A0F0", Polygon:  "#8247E5", BNB:  "#F0B90B", "BNB Chain": "#F0B90B",
+      Optimism: "#FF0420", Avalanche: "#E84142", Sui: "#4DA2FF"
     },
     proto: {
       Kamino: "#5B9BFF", Meteora: "#8B5CF6", Orca: "#22D3EE", Raydium: "#3B82F6",
-      Aave:   "#B6509E", Marinade: "#4B9BFF", Jito: "#67E8F9", Pendle: "#3B82F6", Aerodrome: "#0052FF"
+      Aave:   "#B6509E", Marinade: "#4B9BFF", Jito: "#67E8F9", Pendle: "#3B82F6", Aerodrome: "#0052FF",
+      PancakeSwap: "#1FC7D4", Uniswap: "#FF007A", SushiSwap: "#FA52A0", Curve: "#3465A4",
+      Balancer: "#1E1E1E", Velodrome: "#FF1100", Camelot: "#FFAF1D", QuickSwap: "#418AC9",
+      LFJ: "#F2716A", THENA: "#D63CF3", Cetus: "#2EB3FF", Turbos: "#1E90FF",
+      Bluefin: "#2F6FED", Momentum: "#7C5CFF"
     },
     token: {
       SOL: "#14F195", ETH: "#627EEA", USDC: "#2775CA", ORCA: "#22D3EE", JUP: "#C7F284",
@@ -80,12 +85,54 @@
     chain: "https://icons.llamao.fi/icons/chains/rsz_",
     proto: "https://icons.llamao.fi/icons/protocols/"
   };
+  /* Nomes cujo slug na DeFiLlama não é o próprio nome em minúsculas.
+     Conferidos contra o CDN em 21/09/2026. */
+  var LOGO_SLUG = {
+    chain: { "bnb chain": "binance", bnb: "binance" },
+    proto: { sushiswap: "sushi", curve: "curve-dex" }
+  };
   function logoOf(kind, name) {
     var base = LOGO_BASE[kind];
     if (!base || !name) return "";
     var slug = String(name).trim().toLowerCase();
+    slug = (LOGO_SLUG[kind] && LOGO_SLUG[kind][slug]) || slug;
     return kind === "chain" ? base + slug + ".jpg" : base + slug;
   }
+
+  /* ------------------------------------------------------------
+     CATÁLOGO DE REDES E PLATAFORMAS
+
+     Era uma lista fixa de 6 redes e 7 protocolos dentro do wizard —
+     sem BNB Chain, sem PancakeSwap, sem Uniswap — e com a Aave, que
+     não tem pool de liquidez. Agora cada plataforma diz em quais
+     redes existe, e o wizard mostra só as da rede escolhida. O que
+     não estiver aqui entra pela opção "Outra", em texto livre: o
+     catálogo facilita, não limita.
+     ------------------------------------------------------------ */
+  var REDES = ["Solana", "Ethereum", "BNB Chain", "Base", "Arbitrum",
+               "Polygon", "Optimism", "Avalanche", "Sui"];
+  var PLATAFORMAS_LP = [
+    { nome: "Raydium",     redes: ["Solana"] },
+    { nome: "Orca",        redes: ["Solana"] },
+    { nome: "Meteora",     redes: ["Solana"] },
+    { nome: "Kamino",      redes: ["Solana"] },
+    { nome: "PancakeSwap", redes: ["BNB Chain", "Ethereum", "Base", "Arbitrum", "Solana"] },
+    { nome: "Uniswap",     redes: ["Ethereum", "Base", "Arbitrum", "Polygon", "Optimism", "BNB Chain", "Avalanche"] },
+    { nome: "Aerodrome",   redes: ["Base"] },
+    { nome: "Velodrome",   redes: ["Optimism"] },
+    { nome: "Camelot",     redes: ["Arbitrum"] },
+    { nome: "QuickSwap",   redes: ["Polygon"] },
+    { nome: "THENA",       redes: ["BNB Chain"] },
+    { nome: "LFJ",         redes: ["Avalanche", "Arbitrum"] },
+    { nome: "SushiSwap",   redes: ["Ethereum", "Arbitrum", "Base", "Polygon", "Optimism", "BNB Chain", "Avalanche"] },
+    { nome: "Curve",       redes: ["Ethereum", "Arbitrum", "Base", "Polygon", "Optimism", "Avalanche"] },
+    { nome: "Balancer",    redes: ["Ethereum", "Arbitrum", "Base", "Polygon", "Optimism", "Avalanche"] },
+    { nome: "Pendle",      redes: ["Ethereum", "Arbitrum", "Base", "BNB Chain"] },
+    { nome: "Cetus",       redes: ["Sui"] },
+    { nome: "Turbos",      redes: ["Sui"] },
+    { nome: "Bluefin",     redes: ["Sui"] },
+    { nome: "Momentum",    redes: ["Sui"] }
+  ];
 
   /* "YYYY-MM-DD" lido como MEIA-NOITE LOCAL. Sem o T00:00:00 o
      navegador interpreta como UTC e, no Brasil, a data volta um dia —
@@ -228,6 +275,12 @@
     palette: PALETTE,
     colorOf: colorOf,
     logoOf: logoOf,
+    redes: function () { return REDES.slice(); },
+    /* plataformas de pool de liquidez; com `rede`, só as que existem nela */
+    plataformasLP: function (rede) {
+      return PLATAFORMAS_LP.filter(function (p) { return !rede || p.redes.indexOf(rede) !== -1; })
+        .map(function (p) { return p.nome; });
+    },
 
     all: function () { return _read(); },
     meta: function () { return _read().meta; },
@@ -478,7 +531,8 @@
     pool: function (id) {
       return _wallet(_read()).pools.filter(function (p) { return p.id === id; })[0] || null;
     },
-    addPool: function (p) {
+    addPool: function (p, opts) {
+      opts = opts || {};
       var s = _read();
       /* ------------------------------------------------------------
          Date.now() SOZINHO COLIDE
@@ -498,8 +552,17 @@
       if (!widPool) return null;
       if (W && W.get && !W.get(widPool)) return null;
       var wd = _walletById(s, widPool);
+      /* o que falta de caixa entra como depósito: ver _cobrirFalta */
+      var depAuto = opts.cobrirFalta
+        ? Store._cobrirFalta(widPool, Number(p.capital) || 0, p.id, p.openedAt || p.createdAt,
+            "Depósito automático para abrir a pool " + (p.base || "") + "/" + (p.quote || ""))
+        : null;
+      if (depAuto === false) return null;
       /* recusa antes de criar: ver _temCaixa */
-      if (!Store._temCaixa(widPool, Number(p.capital) || 0)) return null;
+      if (!Store._temCaixa(widPool, Number(p.capital) || 0)) {
+        if (depAuto) global_.AtlasCaixa.remover(depAuto.id);
+        return null;
+      }
       if (W && W.stamp) Object.assign(p, W.stamp("defi", p.origem || "manual", widPool));
       else { p.walletId = widPool; p.module = "defi"; p.data = new Date().toISOString(); }
       var abertura = p.openedAt || p.createdAt || _hoje();
@@ -551,6 +614,16 @@
     _temCaixa: function (walletId, valor) {
       if (!global_.AtlasCaixa || !(valor > 0)) return true;
       return global_.AtlasCaixa.podeGastar(walletId, valor).ok;
+    },
+
+    /* O caixa que falta entra junto com a posição (opts.cobrirFalta).
+       A regra mora no livro de caixa — AtlasCaixa.cobrirFalta — porque
+       vale igual para todos os módulos. Devolve o depósito, null se não
+       precisou, ou false se o livro recusou. */
+    _cobrirFalta: function (walletId, valor, refId, data, obs) {
+      if (!global_.AtlasCaixa || !global_.AtlasCaixa.cobrirFalta) return null;
+      return global_.AtlasCaixa.cobrirFalta(walletId, valor,
+        { module: "defi", refId: refId, data: data || _hoje(), obs: obs });
     },
 
     _caixaAporte: function (p, valor, obs) {
@@ -1244,20 +1317,40 @@
       return Store._rendLista(tipo).filter(function (x) { return x.id === id; })[0] || null;
     },
 
-    addRendimento: function (tipo, data) {
+    /* data.walletId: a carteira da posição, escolhida no formulário.
+       É nela que o capital sai e é para ela que o encerramento
+       devolve — sem ele, vale a carteira ativa. */
+    addRendimento: function (tipo, data, opts) {
       if (!Store._rendOk(tipo) || !data) return null;
-      var s = _read(), lista = Store._rendLista(tipo, s);
+      opts = opts || {};
+      var s = _read();
+      var wid = String(data.walletId || s.currentWalletId || "").trim();
+      if (!wid) return null;
+      if (W && W.get && !W.get(wid)) return null;
+      var wd = _walletById(s, wid);
+      if (!wd[tipo]) wd[tipo] = [];
+      var lista = wd[tipo];
 
       var qtd = Number(data.amount) || 0;
       var preco = Number(data.precoEntrada) || 0;
       if (!(qtd > 0) || !(preco > 0)) return null;
 
-      if (!Store._temCaixa(s.currentWalletId, qtd * preco)) return null;
+      var idNovo = Store._uid(tipo === "staking" ? "st" : "ln");
+      var token = String(data.token || "").toUpperCase();
+      var depAuto = opts.cobrirFalta
+        ? Store._cobrirFalta(wid, qtd * preco, idNovo, data.openedAt,
+            "Depósito automático para abrir " + (tipo === "staking" ? "staking" : "lending") + " de " + token)
+        : null;
+      if (depAuto === false) return null;
+      if (!Store._temCaixa(wid, qtd * preco)) {
+        if (depAuto) global_.AtlasCaixa.remover(depAuto.id);
+        return null;
+      }
 
       var item = {
-        id: Store._uid(tipo === "staking" ? "st" : "ln"),
+        id: idNovo,
         tipo: tipo,
-        token: String(data.token || "").toUpperCase(),
+        token: token,
         protocol: data.protocol || "",
         chain: data.chain || "",
         amount: qtd,
@@ -1272,8 +1365,8 @@
         closedAt: null,
         note: data.note || ""
       };
-      if (W && W.stamp) Object.assign(item, W.stamp("defi", "manual", s.currentWalletId));
-      else { item.walletId = s.currentWalletId; item.module = "defi"; }
+      if (W && W.stamp) Object.assign(item, W.stamp("defi", "manual", wid));
+      else { item.walletId = wid; item.module = "defi"; }
 
       lista.unshift(item);
       _persist();

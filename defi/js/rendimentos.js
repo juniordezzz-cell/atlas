@@ -43,7 +43,7 @@
     }
   };
 
-  var CHAINS = ["Solana", "Ethereum", "Base", "Arbitrum", "Polygon", "Optimism"];
+  var CHAINS = S.redes ? S.redes() : ["Solana", "Ethereum", "BNB Chain", "Base", "Arbitrum", "Polygon", "Optimism"];
 
   function esc(t) {
     return String(t == null ? "" : t)
@@ -234,7 +234,9 @@
           '<div class="field"><label>Data de abertura</label>' +
             '<input class="input" id="rData" type="date" value="' + U.hoje() + '" /></div>' +
         '</div>' +
-        '<div class="hint" id="rCaixa"></div>',
+        '<div class="field"><label>Carteira da posição</label>' +
+          '<select class="select" id="rWallet">' + opcoesCarteira() + '</select>' +
+          '<div class="hint" id="rCaixa"></div></div>',
         salvarNovo, "Abrir posição");
 
       /* preço sugerido pela cadeia do ATLAS, e o saldo disponível à
@@ -244,15 +246,48 @@
       if (window.AtlasAssets) AtlasAssets.autoBind(U.qs("#rendBody"));
       if (tk) tk.addEventListener("change", sugerirPreco);
       if (tk) tk.addEventListener("blur", sugerirPreco);
+      ["#rWallet", "#rQtd", "#rPreco"].forEach(function (sel) {
+        var e = U.qs(sel);
+        if (e) { e.addEventListener("input", mostrarCaixa); e.addEventListener("change", mostrarCaixa); }
+      });
       mostrarCaixa();
     }
 
+    /* A posição nasce na carteira escolhida — não na que estiver ativa
+       por acaso — e o encerramento devolve o dinheiro para ela. */
+    function carteiras() {
+      if (window.AtlasWallets && AtlasWallets.forModule) return AtlasWallets.forModule("defi");
+      return [{ id: "principal", name: "Principal" }];
+    }
+    function opcoesCarteira() {
+      var ativa = S.activeWallet && S.activeWallet();
+      return carteiras().map(function (w) {
+        return '<option value="' + esc(w.id) + '"' + (ativa && w.id === ativa.id ? " selected" : "") + '>' +
+          esc(w.name) + '</option>';
+      }).join("");
+    }
+    function carteiraEscolhida() {
+      var id = txt("#rWallet");
+      return carteiras().filter(function (w) { return w.id === id; })[0] || null;
+    }
+
+    /* Mostra o caixa da carteira escolhida e, se não cobrir o capital,
+       quanto vai entrar como depósito automático. */
     function mostrarCaixa() {
       var el = U.qs("#rCaixa");
-      if (!el || !window.AtlasCaixa) return;
-      var w = S.activeWallet();
-      el.innerHTML = "Caixa disponível em <b>" + esc(w.name) + "</b>: <b>" +
-        U.money(AtlasCaixa.saldo(w.id)) + "</b>. O capital sai daqui.";
+      var w = carteiraEscolhida();
+      if (!el || !w) return;
+      var msg = "A posição é aberta nesta carteira e, ao encerrar, o retorno cai nela.";
+      if (window.AtlasCaixa) {
+        var saldo = AtlasCaixa.saldo(w.id);
+        var capital = num("#rQtd") * num("#rPreco");
+        var falta = capital - saldo;
+        msg += " Caixa em " + w.name + ": " + U.money(saldo) + "." +
+          (capital > 0 && falta > 0.01
+            ? " Faltam " + U.money(falta) + " — entram como depósito automático nesta carteira."
+            : "");
+      }
+      el.textContent = msg;
     }
 
     function sugerirPreco() {
@@ -263,7 +298,7 @@
       dica.textContent = "Buscando o preço de " + sim + "…";
       AtlasPrecos.de(sim).then(function (r) {
         if (r && r.usd != null) {
-          if (!campo.value) campo.value = r.usd;
+          if (!campo.value) { campo.value = r.usd; mostrarCaixa(); }
           dica.innerHTML = "Preço de mercado: <b>" + U.money(r.usd) + "</b> · " +
             esc(AtlasPrecos.fonteLabel(r.fonte)) + ". Corrija se você entrou noutra data.";
         } else {
@@ -279,29 +314,32 @@
       if (!qtd) return U.toast("Informe a quantidade.", "warn");
       if (!preco) return U.toast("Informe o preço de entrada.", "warn");
 
+      var w = carteiraEscolhida();
+      if (!w) return U.toast("Escolha a carteira da posição.", "warn");
+
       var capital = qtd * preco;
-      /* Mesma regra das pools: sem caixa não abre, e a mensagem diz
-         quanto falta. */
+      /* Mesma regra das pools: o caixa da carteira é usado primeiro e
+         o que faltar entra como depósito automático (ver addRendimento). */
+      var depositoAuto = 0;
       if (window.AtlasCaixa) {
-        var w = S.activeWallet();
         var c = AtlasCaixa.podeGastar(w.id, capital);
-        if (!c.ok) {
-          return U.toast("Caixa insuficiente em " + w.name + ": há " + U.money(c.saldo) +
-                         " e a posição pede " + U.money(capital) + ".", "warn");
-        }
+        if (!c.ok) depositoAuto = capital - c.saldo;
       }
 
       var dados = {
         token: token, amount: qtd, precoEntrada: preco,
         protocol: txt("#rProto"), chain: txt("#rChain"),
-        openedAt: txt("#rData") || U.hoje()
+        openedAt: txt("#rData") || U.hoje(),
+        walletId: w.id
       };
       dados[V.campoTaxa] = num("#rTaxa");
 
-      var it = S.addRendimento(tipo, dados);
+      var it = S.addRendimento(tipo, dados, { cobrirFalta: true });
       if (!it) return U.toast("Não consegui abrir a posição — confira os campos.", "warn");
       U.closeModal("#modalRend");
-      U.toast(V.titulo + " de " + token + " aberto — " + U.money(capital) + " saíram do caixa.", "ok");
+      U.toast(V.titulo + " de " + token + " aberto em " + w.name + "." +
+              (depositoAuto > 0 ? " Depósito de " + U.money(depositoAuto) + " registrado automaticamente." : ""),
+              "ok");
       repintar();
     }
 

@@ -60,7 +60,13 @@
   border: 1px solid var(--glass-border); background: var(--bg-2); transition: all var(--med) var(--ease);
 }
 .wstep .lbl { font-size: 12.5px; color: var(--text-mut); font-weight: 500; }
-.wstep .line { flex: 1; height: 1px; background: var(--glass-border); margin: 0 10px; }
+.wstep .line { flex: 1; min-width: 8px; height: 1px; background: var(--glass-border); margin: 0 6px; }
+/* Os cinco passos não cabiam nos 560px do modal: o último rótulo era
+   cortado e surgia rolagem horizontal. Rótulo sem quebra, linha
+   encolhível e o modal do wizard um pouco mais largo resolvem. */
+.wstep { min-width: 0; }
+.wstep .lbl { white-space: nowrap; }
+#modalNew .modal { max-width: 640px; overflow-x: hidden; }
 .wstep.active .dot { color: #fff; background: var(--grad-brand); border-color: transparent; box-shadow: 0 4px 12px -4px var(--blue-glow); }
 .wstep.active .lbl { color: var(--text-hi); }
 .wstep.done .dot { color: var(--ok); border-color: rgba(52,211,153,0.4); background: var(--ok-bg); }

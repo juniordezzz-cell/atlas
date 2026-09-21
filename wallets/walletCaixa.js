@@ -377,6 +377,50 @@
     },
 
     /* ------------------------------------------------------------
+       COBRIR A FALTA — o depósito que acompanha a posição
+
+       Exigir o depósito ANTES de abrir a posição obrigava quem
+       registra posições que já existem de verdade — cinco pools em
+       cinco carteiras — a ir cinco vezes a Carteiras & Movimentações
+       antes de cadastrar cada uma. O dinheiro dessas posições veio de
+       fora; o registro honesto disso é um depósito seguido do aporte.
+
+       Grava só a DIFERENÇA entre o valor e o caixa que a carteira já
+       tem, para não ignorar dinheiro que já estava lá. O depósito
+       leva module/refId da posição: é rastreável até ela, e excluir a
+       posição (removerPorRef) o apaga junto.
+
+       Uma função só para todos os módulos. Quem não pede (importação,
+       backup, testes) continua na trava: sem caixa, sem posição.
+
+       Devolve o evento de depósito, null se não precisou, ou false se
+       o livro recusou.
+       ------------------------------------------------------------ */
+    cobrirFalta: function (walletId, valor, opts) {
+      opts = opts || {};
+      var v = num(valor);
+      if (!walletId || !(v > 0)) return null;
+      var conf = API.podeGastar(walletId, v);
+      if (conf.ok) return null;
+      /* conf.falta vem arredondada ao centavo; aqui vai o valor exato,
+         para o aporte seguinte não ser recusado por fração */
+      var dep = API.registrar({
+        tipo: "deposito", valorUSD: v - conf.saldo, walletId: walletId,
+        module: opts.module || null, refId: opts.refId || null,
+        data: opts.data, obs: opts.obs || "Depósito automático para abrir posição"
+      });
+      return dep || false;
+    },
+
+    /* Quanto cobrirFalta depositaria — para a tela avisar ANTES. */
+    faltaPara: function (walletId, valor) {
+      var v = num(valor);
+      if (!walletId || !(v > 0)) return 0;
+      var conf = API.podeGastar(walletId, v);
+      return conf.ok ? 0 : Math.round((v - conf.saldo) * 100) / 100;
+    },
+
+    /* ------------------------------------------------------------
        PATRIMÔNIO PELO LIVRO — a conta de conferência
 
        Só depósito e saque mudam o total. Se esta soma não bater com

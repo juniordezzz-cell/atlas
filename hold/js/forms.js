@@ -368,9 +368,12 @@
       var w = carteiraSelecionada();
       var caixa = (window.AtlasCaixa && w) ? AtlasCaixa.saldo(w.id) : null;
       var p = S.get.positionOf(assetId, w ? w.id : null);
-      if (!isSell && caixa != null && w) {
+      if (currentSide !== "sell" && caixa != null && w) {
+        var custo = (parseFloat(qtdI.value) || 0) * (parseFloat(precoI.value) || 0);
+        var falta = AtlasCaixa.faltaPara ? AtlasCaixa.faltaPara(w.id, custo) : 0;
         infoCaixa.textContent = "Caixa em " + w.name + ": " + U.money(caixa) +
-          " — é daqui que sai o valor da compra.";
+          " — é daqui que sai o valor da compra." +
+          (falta > 0 ? " Faltam " + U.money(falta) + ", que entram como depósito automático nesta carteira." : "");
         infoCaixa.style.display = "";
       } else {
         infoCaixa.textContent = "";
@@ -401,6 +404,8 @@
       setSide("sell");
     });
     walletSel.addEventListener("change", atualizarResumoCarteira);
+    qtdI.addEventListener("input", atualizarResumoCarteira);
+    precoI.addEventListener("input", atualizarResumoCarteira);
 
     var confirmBtn = U.button(isSell ? "Registrar venda" : "Registrar compra", {
       variant: isSell ? "danger" : "primary", icon: "check", onClick: function () {
@@ -410,10 +415,13 @@
         };
         var res;
         if (currentSide === "sell") { payload.motivo = motivo.value; res = S.actions.executeSell(payload); }
-        else res = S.actions.executeBuy(payload);
+        else { payload.cobrirFalta = true; res = S.actions.executeBuy(payload); }
         if (res && res.error) return U.toast("Não foi possível", res.error, "warning");
         U.closeModal();
-        U.toast(currentSide === "sell" ? "Venda registrada" : "Compra registrada", a.ticker + " atualizado.", "success");
+        U.toast(currentSide === "sell" ? "Venda registrada" : "Compra registrada",
+          a.ticker + " atualizado." +
+          (res && res.depositoAuto > 0 ? " Depósito de " + U.money(res.depositoAuto) + " registrado automaticamente." : ""),
+          "success");
         afterChange();
       }
     });

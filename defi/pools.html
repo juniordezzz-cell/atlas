@@ -118,7 +118,7 @@
 
         <div class="wizard-steps" id="wsteps">
           <div class="wstep active" data-s="0"><span class="dot">1</span><span class="lbl">Blockchain</span><span class="line"></span></div>
-          <div class="wstep" data-s="1"><span class="dot">2</span><span class="lbl">Protocolo</span><span class="line"></span></div>
+          <div class="wstep" data-s="1"><span class="dot">2</span><span class="lbl">Plataforma</span><span class="line"></span></div>
           <div class="wstep" data-s="2"><span class="dot">3</span><span class="lbl">Tokens</span><span class="line"></span></div>
           <div class="wstep" data-s="3"><span class="dot">4</span><span class="lbl">Capital</span><span class="line"></span></div>
           <div class="wstep" data-s="4"><span class="dot">5</span><span class="lbl">Objetivo</span></div>
@@ -132,8 +132,11 @@
         </div>
         <!-- Passo 2: Protocolo -->
         <div class="wizard-panel" data-panel="1">
-          <div class="field"><label>Escolha o protocolo</label>
+          <div class="field"><label>Escolha a plataforma</label>
+            <div class="hint" id="protoRede" style="margin:-2px 0 10px"></div>
             <div class="opt-grid" id="optProto"></div>
+            <input class="input" id="protoOutro" placeholder="Nome da plataforma" autocomplete="off"
+                   style="display:none;margin-top:10px" maxlength="40" />
           </div>
         </div>
         <!-- Passo 3: Tokens -->

@@ -496,12 +496,14 @@
            Sem este ramo, o botão "Adicionar" não faria nada e o usuário
            não teria como saber por quê — falha silenciosa é o modo de
            errar que esta auditoria passou inteira removendo. */
-        var criado = S.addAsset(data);
+        var criado = S.addAsset(data, { cobrirFalta: true });
         if (!criado) {
           U.toast(S._ultimoErro || "Não consegui adicionar o ativo.", "warn");
           return;
         }
-        U.toast("Ativo adicionado.");
+        U.toast("Ativo adicionado." + (S._ultimoDeposito > 0
+          ? " Depósito de US$ " + S._ultimoDeposito.toFixed(2) + " registrado automaticamente."
+          : ""));
       }
       closeModal(); Router.resolve();
     });

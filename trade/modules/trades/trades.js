@@ -419,33 +419,24 @@
           "Informe quanto capital sai do caixa. É ele que volta quando o trade fecha.");
       }
 
-      /* Sem caixa não abre. A mensagem diz quanto falta — mandar a
-         pessoa procurar o saldo noutra tela é o que fazia o número
-         parecer arbitrário. */
-      if (window.AtlasCaixa && window.AtlasWallets) {
-        var w = window.AtlasWallets.get(wid);
-        if (!w) return ATLAS.util.invalido(mount.querySelector('[data-f="walletId"]'), "Carteira inválida.");
-        var conf = AtlasCaixa.podeGastar(w.id, capital);
-        if (!conf.ok) {
-          return ATLAS.util.invalido(mount.querySelector('[data-f="sizeUSD"]'),
-            "Caixa insuficiente em " + w.name + ": há US$ " + conf.saldo.toFixed(2) +
-            " e faltam US$ " + conf.falta.toFixed(2) + ".");
-        }
-      }
+      /* O capital sai do caixa da carteira escolhida; o que faltar
+         entra como depósito automático nela (cobrirFalta). */
+      var w = window.AtlasWallets ? window.AtlasWallets.get(wid) : null;
+      if (window.AtlasWallets && !w) return ATLAS.util.invalido(mount.querySelector('[data-f="walletId"]'), "Carteira inválida.");
 
       var tr = app.openTrade({
         asset: asset, side: sideState.side, rdId: val("rdId") || null, studyId: val("studyId") || null,
         entry: numOr("entry"), stop: numOr("stop"), target: numOr("target"),
-        sizeUSD: capital, walletId: wid,
+        sizeUSD: capital, walletId: wid, cobrirFalta: true,
         size: val("size"), leverage: val("leverage"), note: val("note")
       });
-      /* openTrade devolve null quando o caixa não cobre. A tela já
-         checou acima e deu a mensagem com o valor que falta; este ramo
-         cobre o caso de o saldo ter mudado noutra aba entre a
-         verificação e o clique. */
       if (!tr) {
         return ATLAS.util.invalido(mount.querySelector('[data-f="sizeUSD"]'),
-          "Caixa insuficiente para abrir esta operação.");
+          "Não consegui abrir a operação — o caixa da carteira não pôde ser registrado.");
+      }
+      if (tr._depositoAuto > 0 && ATLAS.util.toast) {
+        ATLAS.util.toast("Depósito de US$ " + tr._depositoAuto.toFixed(2) + " registrado automaticamente em " +
+          (w ? w.name : "carteira") + ".");
       }
       if (app.currentWallet && app.currentWallet().id !== wid && app.setWallet) app.setWallet(wid);
       selectedId = tr.id; show("detail");

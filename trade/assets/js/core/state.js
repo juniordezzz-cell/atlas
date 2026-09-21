@@ -495,14 +495,29 @@
       if (!wid) return null;
       if (global.AtlasWallets && global.AtlasWallets.get && !global.AtlasWallets.get(wid)) return null;
       if (!isFinite(capital) || capital < 0) capital = 0;
+      var idNovo = genId("t");
+      /* Com data.cobrirFalta (o formulário), o caixa que faltar entra
+         antes como depósito automático na carteira do trade — ver
+         AtlasCaixa.cobrirFalta. */
+      var depAuto = null;
+      if (data.cobrirFalta && capital > 0 && global.AtlasCaixa && global.AtlasCaixa.cobrirFalta) {
+        depAuto = global.AtlasCaixa.cobrirFalta(wid, capital, {
+          module: "trade", refId: idNovo,
+          obs: "Depósito automático para abrir trade " + String(data.asset || "").toUpperCase()
+        });
+        if (depAuto === false) return null;
+      }
       /* Sem caixa a operação nem nasce. O livro recusaria o débito de
          qualquer forma, mas aí sobraria um trade aberto sem dinheiro
-         por trás — patrimônio do nada. A tela checa antes para poder
-         dizer quanto falta; esta é a trava de qualquer caminho. */
+         por trás — patrimônio do nada. Esta é a trava de qualquer
+         caminho que não peça cobrirFalta. */
       if (capital > 0 && global.AtlasCaixa &&
-          !global.AtlasCaixa.podeGastar(wid, capital).ok) return null;
+          !global.AtlasCaixa.podeGastar(wid, capital).ok) {
+        if (depAuto) global.AtlasCaixa.remover(depAuto.id);
+        return null;
+      }
       var tr = {
-        id: genId("t"),
+        id: idNovo,
         asset: (data.asset || "").toUpperCase(),
         side: data.side || "long",
         studyId: data.studyId || null,
@@ -531,6 +546,8 @@
       if (tr.rdId) { var rd = app.getRd(tr.rdId); if (rd) { rd.status = "convertido"; } }
       persist();
       app._caixa("aporte", tr, capital, "Abertura de trade " + tr.asset);
+      /* não persistido: só para a tela avisar o depósito */
+      Object.defineProperty(tr, "_depositoAuto", { value: depAuto ? depAuto.valorUSD : 0, enumerable: false });
       emit();
       return tr;
     },

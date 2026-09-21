@@ -943,6 +943,62 @@
            "mas só para poder dizer quanto falta — a garantia é do store, e vale " +
            "para importação, restauração de backup e qualquer tela futura.");
 
+      /* -- o wizard cobre a falta com um depósito ligado à pool -- */
+      var p20b = S.addPool(base({ capital: 500, currentValue: 500 }), { cobrirFalta: true });
+      ok("com cobrirFalta, a pool nasce mesmo sem caixa suficiente", !!p20b, p20b ? "sim" : "não");
+      var dep20 = p20b ? CX2.eventos({ tipo: "deposito", refId: p20b.id }) : [];
+      eq("e entra um depósito ligado a ela", dep20.length, 1);
+      eq("só da diferença — os 300 que já estavam lá são usados", dep20.length ? dep20[0].valorUSD : 0, 200);
+      eq("o caixa termina zerado, não negativo", CX2.saldo(w20), 0);
+      var p20c = S.addPool(base({ capital: 50, currentValue: 50 }), { cobrirFalta: true });
+      eq("carteira vazia: o depósito é o capital inteiro",
+         p20c ? CX2.eventos({ tipo: "deposito", refId: p20c.id })[0].valorUSD : 0, 50);
+      var p20d = S.addPool(base({ capital: 0, currentValue: 0 }), { cobrirFalta: true });
+      eq("capital zero não gera depósito",
+         p20d ? CX2.eventos({ tipo: "deposito", refId: p20d.id }).length : 0, 0);
+
+      /* -- a função do livro, usada pelos cinco módulos -- */
+      eq("faltaPara mostra antes quanto vai entrar", CX2.faltaPara(w20, 75), 75);
+      var dep20x = CX2.cobrirFalta(w20, 75, { module: "x", refId: "x:1" });
+      eq("cobrirFalta deposita a diferença", dep20x ? dep20x.valorUSD : 0, 75);
+      is("e nada quando o caixa já cobre", CX2.cobrirFalta(w20, 75, { module: "x", refId: "x:2" }), null);
+      CX2.remover(dep20x.id);
+      eq("(desfeito)", CX2.saldo(w20), 0);
+
+      /* -- staking/lending: mesma regra, e na carteira ESCOLHIDA -- */
+      var s20b = S.addRendimento("staking", { token: "SOL", amount: 2, precoEntrada: 100 }, { cobrirFalta: true });
+      ok("staking com cobrirFalta nasce sem caixa", !!s20b, s20b ? "sim" : "não");
+      eq("com depósito do capital inteiro",
+         s20b ? CX2.eventos({ tipo: "deposito", refId: s20b.id })[0].valorUSD : 0, 200);
+      eq("e o caixa volta a zero depois do aporte", CX2.saldo(w20), 0);
+
+      /* outra carteira, que NÃO é a ativa: a posição é dela, e o
+         encerramento devolve para ela */
+      var outraCriada = AtlasWallets.create ? AtlasWallets.create({ name: "Teste 20 · outra", type: "global" }) : null;
+      var outra = outraCriada;
+      if (!outra) {
+        nota("central de carteiras sem create — caso de carteira escolhida pulado.");
+      } else {
+        var saldoOutra0 = CX2.saldo(outra.id);
+        var l20 = S.addRendimento("lending", { token: "USDC", amount: 100, precoEntrada: 1, walletId: outra.id },
+                                  { cobrirFalta: true });
+        ok("lending abre na carteira escolhida", !!l20 && l20.walletId === outra.id, l20 ? l20.walletId : "null");
+        is("o depósito cai nela, não na ativa",
+           l20 ? CX2.eventos({ tipo: "deposito", refId: l20.id })[0].walletId : "", outra.id);
+        eq("a carteira ativa não foi tocada", CX2.saldo(w20), 0);
+        eq("a escolhida termina como começou (depósito − aporte)", CX2.saldo(outra.id), Math.max(0, saldoOutra0));
+        if (l20) {
+          /* o store lista pela carteira ativa: encerrar exige estar nela */
+          var ativaAntes = AtlasWallets.activeGlobalId();
+          AtlasWallets.setActiveGlobal(outra.id);
+          S.closeRendimento("lending", l20.id, "teste");
+          AtlasWallets.setActiveGlobal(ativaAntes);
+          eq("encerrar devolve o valor para a carteira da posição",
+             CX2.saldo(outra.id), Math.max(0, saldoOutra0) + 100, 0.001);
+        }
+        try { AtlasWallets.remove(outraCriada.id); } catch (e) {}
+      }
+
       try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
       CX2._reload();
     }
@@ -1002,6 +1058,18 @@
       ok("com caixa, a compra passa", !!(compra && compra.position), compra && compra.position ? "sim" : "não");
       eq("o custo saiu do caixa", CX3.saldo(wH), 500);
       is("e o status virou investido sozinho", H.get.statusDe(sol), "invested");
+
+      /* -- o formulário cobre a falta com depósito automático -- */
+      var compraAuto = H.actions.executeBuy({ ativo_id: sol.id, quantidade: 8, preco: 100, cobrirFalta: true });
+      ok("com cobrirFalta, compra acima do caixa passa", !!(compraAuto && compraAuto.position),
+         compraAuto && compraAuto.error ? compraAuto.error : "sim");
+      eq("o depósito automático foi só a diferença (800 − 500)", compraAuto ? compraAuto.depositoAuto : 0, 300);
+      eq("e o caixa termina zerado", CX3.saldo(wH), 0);
+      /* desfaz para os casos abaixo continuarem medindo a partir de 5 SOL e 500 de caixa */
+      CX3.registrar({ tipo: "deposito", valorUSD: 500, walletId: wH });
+      H.actions.executeSell({ ativo_id: sol.id, quantidade: 8, preco: 100, motivo: "realizacao" });
+      eq("(estado restaurado: caixa 500 + venda 800 − 800 de volta)", CX3.saldo(wH), 1300);
+      CX3.registrar({ tipo: "saque", valorUSD: 800, walletId: wH });
 
       /* -- a tese não bloqueia, mas é cobrada -- */
       ok("comprar sem tese é permitido", !!compra.position, "permitido");

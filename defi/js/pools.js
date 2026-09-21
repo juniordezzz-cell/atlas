@@ -122,8 +122,11 @@
   /* ============================================================
      WIZARD — Nova Pool
      ============================================================ */
-  var CHAINS = ["Solana", "Ethereum", "Base", "Arbitrum", "Polygon", "Optimism"];
-  var PROTOS = ["Kamino", "Meteora", "Orca", "Raydium", "Aerodrome", "Aave", "Pendle"];
+  /* Redes e plataformas vêm do catálogo do store (DeFiStore.redes /
+     plataformasLP): o passo 2 mostra só as plataformas da rede
+     escolhida, e "Outra" aceita qualquer nome. */
+  var CHAINS = S.redes();
+  var OUTRA = "__outra__";
   /* wz.range NÃO existe mais. Havia três botões no passo 4 ("Dentro do
      range" / "Fora do range" / "Em análise") cuja escolha era gravada
      como p.status e virava o selo do card — um veredito digitado por
@@ -473,25 +476,87 @@
            '</span>';
   }
 
-  U.qs("#optChain").innerHTML = CHAINS.map(function (c) {
-    return '<div class="opt" data-v="' + c + '">' + swatch("chain", c) + c + '</div>';
-  }).join("");
-  U.qs("#optProto").innerHTML = PROTOS.map(function (p) {
-    return '<div class="opt" data-v="' + p + '">' + swatch("proto", p) + p + '</div>';
-  }).join("");
+  /* Mesmo selo de swatch(), montado por DOM: os nomes vêm do catálogo
+     ou do campo livre "Outra", e texto digitado não passa por HTML. */
+  function opcao(kind, nome, valor) {
+    var o = document.createElement("div");
+    o.className = "opt";
+    o.dataset.v = valor;
+    var sw = document.createElement("span");
+    sw.className = "swatch";
+    sw.style.background = kind ? S.colorOf(kind, nome) : "#334155";
+    var ini = document.createElement("span");
+    ini.className = "swatch-ini";
+    ini.textContent = kind ? String(nome).slice(0, 2).toUpperCase() : "+";
+    sw.appendChild(ini);
+    var logo = kind && S.logoOf ? S.logoOf(kind, nome) : "";
+    if (logo) {
+      var img = document.createElement("img");
+      img.className = "swatch-logo"; img.alt = ""; img.loading = "lazy";
+      img.referrerPolicy = "no-referrer";
+      img.onerror = function () { img.remove(); };
+      img.src = logo;
+      sw.appendChild(img);
+    }
+    o.appendChild(sw);
+    o.appendChild(document.createTextNode(nome));
+    return o;
+  }
 
-  U.qsa("#optChain .opt").forEach(function (o) {
+  var hostChain = U.qs("#optChain");
+  CHAINS.forEach(function (c) {
+    var o = opcao("chain", c, c);
     o.addEventListener("click", function () {
       U.qsa("#optChain .opt").forEach(function (x) { x.classList.remove("selected"); });
-      o.classList.add("selected"); wz.chain = o.dataset.v;
+      o.classList.add("selected"); wz.chain = c;
+      pintarPlataformas();
     });
+    hostChain.appendChild(o);
   });
-  U.qsa("#optProto .opt").forEach(function (o) {
-    o.addEventListener("click", function () {
-      U.qsa("#optProto .opt").forEach(function (x) { x.classList.remove("selected"); });
-      o.classList.add("selected"); wz.proto = o.dataset.v;
-    });
-  });
+
+  /* ------------------------------------------------------------
+     Plataformas da rede escolhida, mais "Outra".
+
+     Uma plataforma do catálogo que não existe na nova rede é
+     descartada — Raydium na BNB Chain seria uma pool impossível. Um
+     nome fora do catálogo (vindo de rascunho ou de "Outra") continua
+     valendo pelo campo livre.
+     ------------------------------------------------------------ */
+  function pintarPlataformas() {
+    var lista = S.plataformasLP(wz.chain);
+    var host = U.qs("#optProto"), outro = U.qs("#protoOutro"), dica = U.qs("#protoRede");
+    if (dica) dica.textContent = wz.chain
+      ? "Plataformas com pool de liquidez em " + wz.chain + ". Não achou a sua? Use \"Outra\"."
+      : "";
+    var ehOutra = !!wz.proto && lista.indexOf(wz.proto) === -1;
+    if (ehOutra && S.plataformasLP().indexOf(wz.proto) !== -1) { wz.proto = ""; ehOutra = false; }
+
+    while (host.firstChild) host.removeChild(host.firstChild);
+    lista.map(function (p) { return opcao("proto", p, p); })
+      .concat([opcao(null, "Outra", OUTRA)])
+      .forEach(function (o) {
+        var v = o.dataset.v;
+        if (v === OUTRA ? ehOutra : v === wz.proto) o.classList.add("selected");
+        o.addEventListener("click", function () {
+          U.qsa("#optProto .opt").forEach(function (x) { x.classList.remove("selected"); });
+          o.classList.add("selected");
+          if (v === OUTRA) {
+            outro.style.display = "";
+            wz.proto = outro.value.trim();
+            setTimeout(function () { try { outro.focus(); } catch (e) {} }, 30);
+          } else {
+            outro.style.display = "none";
+            wz.proto = v;
+          }
+        });
+        host.appendChild(o);
+      });
+
+    outro.style.display = ehOutra ? "" : "none";
+    if (ehOutra) outro.value = wz.proto;
+  }
+  U.qs("#protoOutro").addEventListener("input", function (e) { wz.proto = e.target.value.trim(); });
+  pintarPlataformas();
 
   function showStep(n) {
     wz.step = n;
@@ -512,7 +577,11 @@
 
   function validate(n) {
     if (n === 0 && !wz.chain) { U.toast("Selecione a blockchain.", "warn"); return false; }
-    if (n === 1 && !wz.proto) { U.toast("Selecione o protocolo.", "warn"); return false; }
+    if (n === 1 && !wz.proto) {
+      var outraAberta = U.qs("#protoOutro") && U.qs("#protoOutro").style.display !== "none";
+      U.toast(outraAberta ? "Digite o nome da plataforma." : "Selecione a plataforma.", "warn");
+      return false;
+    }
     if (n === 2 && (!U.qs("#tkBase").value.trim() || !U.qs("#tkQuote").value.trim())) { U.toast("Informe os dois tokens.", "warn"); return false; }
     /* Com o par 100% manual não há mais um catálogo para conferir o
        que foi digitado. O mesmo token nos dois campos produziria uma
@@ -589,7 +658,7 @@
     wz.chain = d.chain || "";
     wz.proto = d.proto || "";
     U.qsa("#optChain .opt").forEach(function (x) { x.classList.toggle("selected", x.dataset.v === wz.chain); });
-    U.qsa("#optProto .opt").forEach(function (x) { x.classList.toggle("selected", x.dataset.v === wz.proto); });
+    pintarPlataformas();
     pintarObjetivos();
     (d.objetivos || []).forEach(function (oid) {
       var n = U.qs('#objList .obj-item[data-id="' + oid + '"]');
@@ -607,6 +676,8 @@
     var rd = U.qs("#rngDenom"); if (rd) rd.value = "base_por_quote";
     precoBuscado = { base: null, quote: null };
     wz = { step: 0, chain: "", proto: "" };
+    var po = U.qs("#protoOutro"); if (po) po.value = "";
+    pintarPlataformas();
     var dt = U.qs("#openedAt");
     /* `max` no próprio seletor: barrar a data futura ANTES da escolha é
        melhor que aceitá-la e corrigir em silêncio no salvamento, que é
@@ -681,16 +752,14 @@
     if (dtAbertura > hoje) dtAbertura = hoje;      // nada de data no futuro
 
     /* ------------------------------------------------------------
-       SÓ ABRE POSIÇÃO QUEM TEM CAIXA
+       O CAPITAL SAI DO CAIXA — E O QUE FALTA ENTRA COMO DEPÓSITO
 
-       Antes, criar uma pool de US$ 50 não perguntava nada a ninguém: o
-       dinheiro aparecia do nada dentro da posição e o patrimônio total
-       subia sozinho. Agora o capital sai do caixa da carteira ativa, e
-       carteira sem caixa não abre posição.
-
-       A mensagem diz QUANTO falta e onde depositar — "saldo
-       insuficiente" sem número obriga a pessoa a sair da tela para
-       descobrir o que fazer.
+       O capital continua saindo do caixa da carteira (a posição não
+       nasce do nada). Mas exigir o depósito ANTES travava o caso comum:
+       registrar pools que já existem, espalhadas por várias carteiras,
+       obrigava a depositar em cada uma antes de cadastrar. Agora o
+       caixa que a carteira tem é usado primeiro e a diferença entra
+       como depósito automático, ligado à pool (ver addPool).
        ------------------------------------------------------------ */
     var walletId = U.qs("#poolWallet").value;
     var carteira = (window.AtlasWallets && AtlasWallets.get) ? AtlasWallets.get(walletId) : null;
@@ -698,14 +767,10 @@
       U.toast("Escolha uma carteira válida para abrir a pool.", "warn");
       return;
     }
+    var depositoAuto = 0;
     if (window.AtlasCaixa) {
       var conf = AtlasCaixa.podeGastar(carteira.id, cap);
-      if (!conf.ok) {
-        U.toast("Caixa insuficiente em " + carteira.name + ": há " +
-                U.money(conf.saldo) + " e a posição pede " + U.money(cap) +
-                ". Registre um depósito em Carteiras & Movimentações.", "warn");
-        return;
-      }
+      if (!conf.ok) depositoAuto = cap - conf.saldo;
     }
 
     var p = S.addPool({
@@ -740,16 +805,18 @@
       objectives: marcados,
       objectiveLabels: rotulos,
       goal: goal || (rotulos.length ? rotulos.join(" · ") : "Sem objetivo definido ainda.")
-    });
+    }, { cobrirFalta: true });
     if (!p) {
-      U.toast("Caixa insuficiente — a posição não foi criada.", "warn");
+      U.toast("A posição não foi criada — o caixa de " + carteira.name + " não pôde ser registrado.", "warn");
       return;
     }
     /* Criou: o rascunho cumpriu o papel e sai de cena. */
     limparRascunho();
     pintarAvisoRascunho(false);
     U.closeModal("#modalNew");
-    U.toast("Pool " + p.base + "/" + p.quote + " criada.", "ok");
+    U.toast("Pool " + p.base + "/" + p.quote + " criada." +
+            (depositoAuto > 0 ? " Depósito de " + U.money(depositoAuto) + " registrado em " + carteira.name + "." : ""),
+            "ok");
     rerun();
     /* Cota de novo: a posição recém-criada traz tokens que talvez não
        estivessem na última busca, e sem isso o card dela nasceria
