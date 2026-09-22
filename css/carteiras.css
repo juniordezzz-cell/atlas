@@ -319,3 +319,50 @@
   }
   .cx-asset-col--action { justify-items: start; }
 }
+
+/* ---------- Caixa por rede ----------
+   Cada carteira dividida pelas redes onde o dinheiro está (Base,
+   Arbitrum, Solana...), com os tokens de cada rede. Mesmo tom da
+   tabela de ativos: borda fina, sem brilho. */
+.cx-redes { display: grid; gap: 12px; }
+.cx-rede-card {
+  border: 1px solid var(--atlas-border, rgba(140,170,225,.12));
+  border-radius: 12px; overflow: hidden;
+}
+.cx-rede-card__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 12px; background: rgba(120,150,220,.06);
+  border-bottom: 1px solid var(--atlas-border, rgba(140,170,225,.12));
+}
+.cx-rede-card__nome { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 14px; }
+.cx-rede-card__tot { font-family: var(--font-mono, monospace); font-weight: 650; font-size: 14px; }
+.cx-rede-barra { display: flex; height: 6px; gap: 2px; padding: 10px 12px 0; }
+.cx-rede-barra i { display: block; height: 6px; border-radius: 4px; min-width: 3px; }
+.cx-rede-linha {
+  display: grid; grid-template-columns: 1.1fr .8fr 2fr; gap: 12px; align-items: center;
+  padding: 10px 12px; border-bottom: 1px solid var(--atlas-border, rgba(140,170,225,.08));
+}
+.cx-rede-linha:last-child { border-bottom: 0; }
+.cx-rede-linha__rede { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.cx-rede-linha__rede strong { font-size: 13.5px; font-weight: 650; }
+.cx-rede-linha__rede span { display: block; font-size: 11.5px; color: var(--text-3, #6b7a8f); }
+.cx-rede-linha__val strong { display: block; font-size: 14px; font-weight: 650; font-family: var(--font-mono, monospace); }
+.cx-rede-linha__val span { font-size: 11.5px; color: var(--text-3, #6b7a8f); }
+.cx-rede-tokens { display: flex; flex-wrap: wrap; gap: 6px; }
+.cx-rede-token {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px;
+  border: 1px solid var(--atlas-border, rgba(140,170,225,.14)); border-radius: 999px;
+  font-size: 12px; white-space: nowrap;
+}
+.cx-rede-token b { font-weight: 650; }
+.cx-rede-token em { font-style: normal; color: var(--text-3, #6b7a8f); font-family: var(--font-mono, monospace); }
+.cx-rede-ico {
+  width: 22px; height: 22px; border-radius: 50%; overflow: hidden; flex: none; position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9.5px; font-weight: 700; color: #fff;
+}
+.cx-rede-ico img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 640px) {
+  .cx-rede-linha { grid-template-columns: 1fr auto; }
+  .cx-rede-tokens { grid-column: 1 / -1; }
+}

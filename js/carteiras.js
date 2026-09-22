@@ -720,6 +720,124 @@
   }
 
   /* ============================================================
+     CAIXA POR REDE
+     ------------------------------------------------------------
+     Uma carteira EVM guarda o mesmo token em várias redes: USDC na
+     Base, ETH na Arbitrum e na Ethereum. O "Caixa por ativo" soma
+     tudo num ETH só; aqui cada carteira aparece dividida pelas redes,
+     com os tokens de cada uma — o mesmo recorte que a própria
+     carteira (Rabby, MetaMask) mostra.
+
+     Montado por DOM: rede e nome de token são texto digitado.
+     ============================================================ */
+  var COR_REDE = {
+    solana: "#14F195", ethereum: "#627EEA", base: "#0052FF", arbitrum: "#28A0F0",
+    "bnb chain": "#F0B90B", polygon: "#8247E5", optimism: "#FF0420",
+    avalanche: "#E84142", sui: "#4DA2FF", hyperevm: "#50D2C1"
+  };
+  var SLUG_REDE = { "bnb chain": "binance", hyperevm: "hyperliquid" };
+
+  function el(tag, cls, texto) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (texto != null) e.textContent = texto;
+    return e;
+  }
+
+  function icoRede(rede) {
+    var k = String(rede || "").trim().toLowerCase();
+    var i = el("span", "cx-rede-ico", rede ? String(rede).slice(0, 2).toUpperCase() : "?");
+    i.style.background = COR_REDE[k] || "#475569";
+    if (rede) {
+      var img = document.createElement("img");
+      img.alt = ""; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+      img.onerror = function () { img.remove(); };
+      img.src = "https://icons.llamao.fi/icons/chains/rsz_" + (SLUG_REDE[k] || k) + ".jpg";
+      i.appendChild(img);
+    }
+    return i;
+  }
+
+  function pintarCaixaPorRede() {
+    var host = qs("#cxRedes");
+    if (!host || !CX.caixaPorRede) return;
+    while (host.firstChild) host.removeChild(host.firstChild);
+
+    var cartoes = 0;
+    globais().forEach(function (w) {
+      var grupos = CX.caixaPorRede(w.id).map(function (g) {
+        var ativos = g.ativos.map(function (a) {
+          return { ativo: a.ativo, qtd: a.qtd, usd: valorMercadoAtivoCaixa(a) };
+        });
+        return { rede: g.rede, ativos: ativos,
+                 usd: ativos.reduce(function (s, a) { return s + a.usd; }, 0) };
+      }).filter(function (g) { return Math.abs(g.usd) > 1e-6 || g.ativos.length; });
+      if (!grupos.length) return;
+      var total = grupos.reduce(function (s, g) { return s + g.usd; }, 0);
+
+      var card = el("article", "cx-rede-card");
+      var head = el("div", "cx-rede-card__head");
+      var nome = el("div", "cx-rede-card__nome");
+      var ponto = el("span", "cx-ponto");
+      ponto.style.background = w.color || "#4C9AFF";
+      ponto.style.width = "10px"; ponto.style.height = "10px";
+      nome.appendChild(ponto);
+      nome.appendChild(document.createTextNode(w.name));
+      head.appendChild(nome);
+      head.appendChild(el("div", "cx-rede-card__tot", money(total)));
+      card.appendChild(head);
+
+      /* barra de proporção entre as redes */
+      var barra = el("div", "cx-rede-barra");
+      grupos.forEach(function (g) {
+        var i = el("i");
+        i.style.flex = String(Math.max(0.001, g.usd));
+        i.style.background = COR_REDE[String(g.rede || "").toLowerCase()] || "#475569";
+        i.title = (g.rede || "Sem rede") + " · " + money(g.usd);
+        barra.appendChild(i);
+      });
+      card.appendChild(barra);
+
+      grupos.forEach(function (g) {
+        var linha = el("div", "cx-rede-linha");
+
+        var r = el("div", "cx-rede-linha__rede");
+        r.appendChild(icoRede(g.rede));
+        var rt = el("div");
+        rt.appendChild(el("strong", null, g.rede || "Sem rede informada"));
+        rt.appendChild(el("span", null, g.ativos.length + (g.ativos.length === 1 ? " token" : " tokens")));
+        r.appendChild(rt);
+        linha.appendChild(r);
+
+        var v = el("div", "cx-rede-linha__val");
+        v.appendChild(el("strong", null, money(g.usd)));
+        v.appendChild(el("span", null, pct(g.usd, total).toFixed(1) + "% da carteira"));
+        linha.appendChild(v);
+
+        var toks = el("div", "cx-rede-tokens");
+        g.ativos.forEach(function (a) {
+          var t = el("span", "cx-rede-token");
+          t.appendChild(el("b", null, a.ativo));
+          if (Math.abs(a.qtd) > 1e-8) t.appendChild(el("em", null, qtd(a.qtd)));
+          t.appendChild(el("span", null, money(a.usd)));
+          toks.appendChild(t);
+        });
+        linha.appendChild(toks);
+
+        card.appendChild(linha);
+      });
+
+      host.appendChild(card);
+      cartoes++;
+    });
+
+    if (!cartoes) {
+      host.appendChild(el("div", "cx-vazio",
+        "Sem dinheiro parado em caixa. Informe a rede ao registrar um depósito para separar o caixa por rede."));
+    }
+  }
+
+  /* ============================================================
      EXTRATO
      ============================================================ */
   var filtroCarteira = "";
@@ -776,6 +894,7 @@
       var meta = [e.data];
       if (e.module) meta.push(NOMES[e.module] || e.module);
       if (e.tipo !== "swap" && e.ativo && e.ativo !== "USDT") meta.push(e.ativo);
+      if (e.rede) meta.push(esc(e.rede));
       if (e.obs) meta.push(esc(e.obs));
 
       return '<div class="cx-ev">' +
@@ -939,12 +1058,26 @@
     });
   }
 
+  /* Rede opcional em todo movimento: a mesma carteira EVM guarda
+     tokens em várias redes, e o caixa passa a separar por elas
+     ("Caixa por rede"). Texto livre, com sugestões. */
+  function campoRede() {
+    var redes = (CX && CX.REDES) ? CX.REDES : [];
+    return campo("Rede (opcional)",
+      '<input id="cxRede" list="cxRedeLista" autocomplete="off" maxlength="30" placeholder="ex.: Base, Arbitrum, Solana" />' +
+      '<datalist id="cxRedeLista">' + redes.map(function (r) {
+        return '<option value="' + esc(r) + '"></option>';
+      }).join("") + '</datalist>',
+      "Em que rede esse dinheiro está. Separa o caixa por rede na seção \"Caixa por rede\".");
+  }
+
   var FORMS = {
     deposito: function () {
       return campo("Carteira de destino", '<select id="cxW">' + opcoesCarteira(W.activeGlobalId()) + '</select>',
                    "Não achou a carteira? Crie em qualquer seletor de carteira do ATLAS.") +
              campo("Ativo", '<input id="cxAtivo" value="USDT" data-atlas-asset="symbol" />',
                    "O caixa é dinheiro parado — normalmente USDT ou USDC.") +
+             campoRede() +
              campo("Quantidade (opcional)", '<input id="cxQtd" type="number" step="any" min="0" placeholder="0" />',
                    "Use quando quiser acompanhar a quantidade por token no caixa.") +
              campo("Valor (US$)", '<input id="cxValor" type="number" step="any" min="0" placeholder="0,00" />') +
@@ -956,6 +1089,7 @@
     saque: function () {
       return campo("Carteira de origem", '<select id="cxW">' + opcoesCarteira(W.activeGlobalId()) + '</select>') +
              campo("Ativo", '<input id="cxAtivo" value="USDT" data-atlas-asset="symbol" />') +
+             campoRede() +
              campo("Quantidade (opcional)", '<input id="cxQtd" type="number" step="any" min="0" placeholder="0" />',
                    "Use quando o saque for de um token específico do caixa.") +
              campo("Valor (US$)", '<input id="cxValor" type="number" step="any" min="0" placeholder="0,00" />',
@@ -969,6 +1103,7 @@
       return campo("De", '<select id="cxW">' + opcoesCarteira(ativa) + '</select>') +
              campo("Para", '<select id="cxW2">' + opcoesCarteira(null, ativa) + '</select>') +
              campo("Ativo", '<input id="cxAtivo" value="USDT" data-atlas-asset="symbol" />') +
+             campoRede() +
              campo("Quantidade (opcional)", '<input id="cxQtd" type="number" step="any" min="0" placeholder="0" />') +
              campo("Valor (US$)", '<input id="cxValor" type="number" step="any" min="0" placeholder="0,00" />') +
              campo("Data", '<input id="cxData" type="date" value="' + hoje() + '" />') +
@@ -977,6 +1112,7 @@
     },
     swap: function () {
       return campo("Carteira", '<select id="cxW">' + opcoesCarteira(W.activeGlobalId()) + '</select>') +
+             campoRede() +
              campo("De", '<input id="cxAtivo" placeholder="USDT" data-atlas-asset="symbol" />') +
              campo("Quantidade enviada", '<input id="cxQtd1" type="number" step="any" min="0" placeholder="0" />') +
              campo("Para", '<input id="cxAtivo2" placeholder="SOL" data-atlas-asset="symbol" />') +
@@ -1059,6 +1195,7 @@
       ativoNome: ativoOrigem.name,
       ativoThumb: ativoOrigem.thumb,
       qtd: qtdBase,
+      rede: textoDe("cxRede") || null,
       obs: textoDe("cxObs")
     };
 
@@ -1336,6 +1473,7 @@
     safePaint("distribuicao", pintarDistribuicao);
     safePaint("carteiras", pintarCarteiras);
     safePaint("ativos-parados", pintarAtivosParados);
+    safePaint("caixa-por-rede", pintarCaixaPorRede);
     safePaint("filtro", pintarFiltro);
     safePaint("extrato", pintarExtrato);
   }

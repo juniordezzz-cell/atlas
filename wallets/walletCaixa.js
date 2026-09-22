@@ -148,6 +148,10 @@
       qtd: ev.qtd != null ? pos(ev.qtd) : null,
       qtdOrigem: ev.qtdOrigem != null ? pos(ev.qtdOrigem) : null,
       qtdDestino: ev.qtdDestino != null ? pos(ev.qtdDestino) : null,
+      /* Em que rede o dinheiro está (Base, Arbitrum, Solana...). Opcional:
+         uma carteira EVM guarda o mesmo token em várias redes, e sem
+         isto o ETH da Base e o da Arbitrum viravam um ETH só. */
+      rede: txt(ev.rede) || null,
       obs: ev.obs || "",
       criadoEm: ev.criadoEm || new Date().toISOString()
     };
@@ -346,6 +350,65 @@
         return Math.abs(b.usd) - Math.abs(a.usd);
       });
     },
+
+    /* ------------------------------------------------------------
+       O CAIXA DE UMA CARTEIRA, POR REDE
+
+       Mesma conta de caixaPorAtivo, agrupada antes pela rede do
+       evento. Movimento sem rede cai em `rede: null` ("sem rede
+       informada") — nada some por não ter a etiqueta. Transferência
+       e swap acontecem na rede do próprio evento.
+
+       Devolve [{ rede, usd, ativos: [{ativo, nome, thumb, usd, qtd}] }],
+       redes com mais dinheiro primeiro, "sem rede" por último.
+       ------------------------------------------------------------ */
+    caixaPorRede: function (walletId) {
+      if (!walletId) return [];
+      var grupos = {};
+      function add(rede, symbol, usdDelta, qtdDelta, nome, thumb) {
+        var r = rede || "";
+        if (!grupos[r]) grupos[r] = {};
+        var mapa = grupos[r], key = ativo(symbol);
+        if (!mapa[key]) mapa[key] = { ativo: key, nome: nome || key, thumb: thumb || "", usd: 0, qtd: 0 };
+        if (!mapa[key].thumb && thumb) mapa[key].thumb = thumb;
+        mapa[key].usd += Number(usdDelta) || 0;
+        if (qtdDelta != null && isFinite(qtdDelta)) mapa[key].qtd += Number(qtdDelta) || 0;
+      }
+      ler().forEach(function (e) {
+        var t = TIPOS[e.tipo];
+        if (!t) return;
+        if (e.walletId === walletId) {
+          if (e.tipo === "swap") {
+            add(e.rede, e.ativo, -e.valorUSD, e.qtdOrigem != null ? -e.qtdOrigem : null, e.ativoNome, e.ativoThumb);
+            add(e.rede, e.ativoDestino || "USDT", +e.valorUSD, e.qtdDestino, e.ativoDestinoNome, e.ativoDestinoThumb);
+            return;
+          }
+          add(e.rede, e.ativo, t.sinal * e.valorUSD, e.qtd != null ? t.sinal * e.qtd : null, e.ativoNome, e.ativoThumb);
+          return;
+        }
+        if (t.contra && e.contraWalletId === walletId) {
+          add(e.rede, e.ativo, +e.valorUSD, e.qtd, e.ativoNome, e.ativoThumb);
+        }
+      });
+      return Object.keys(grupos).map(function (r) {
+        var ativos = Object.keys(grupos[r]).map(function (k) {
+          var a = grupos[r][k];
+          return { ativo: a.ativo, nome: a.nome || a.ativo, thumb: a.thumb || "",
+                   usd: Math.round(a.usd * 1e6) / 1e6, qtd: Math.round(a.qtd * 1e8) / 1e8 };
+        }).filter(function (a) { return Math.abs(a.usd) > 1e-6 || Math.abs(a.qtd) > 1e-8; })
+          .sort(function (a, b) { return Math.abs(b.usd) - Math.abs(a.usd); });
+        var usd = ativos.reduce(function (s, a) { return s + a.usd; }, 0);
+        return { rede: r || null, usd: Math.round(usd * 1e6) / 1e6, ativos: ativos };
+      }).filter(function (g) { return g.ativos.length; })
+        .sort(function (a, b) {
+          if (!a.rede !== !b.rede) return a.rede ? -1 : 1;
+          return b.usd - a.usd;
+        });
+    },
+
+    /* Redes sugeridas nos formulários. Texto livre continua valendo. */
+    REDES: ["Solana", "Ethereum", "Base", "Arbitrum", "BNB Chain", "Polygon",
+            "Optimism", "Avalanche", "Sui", "HyperEVM"],
 
     /* Caixa somado de todas as carteiras GLOBAIS — é o que sobe para o
        patrimônio consolidado. Carteira local fica fora, pela mesma
