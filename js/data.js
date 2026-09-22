@@ -36,7 +36,13 @@ function buildAtlasDataReal() {
     if (window.AtlasCurrency) return AtlasCurrency.format(n(v), { decimals: 2 });
     return "US$ " + n(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  function pct(v) { v = n(v); return (v > 0 ? "+" : "") + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%"; }
+  /* null = sem base para afirmar rentabilidade (ver snapshot.pnlPct).
+     Vira "—", não "0,00%": zero é uma afirmação ("ficou de lado"), e o
+     Oráculo, perguntado, responde "sem rentabilidade" — a tela não
+     pode dizer outra coisa. */
+  function pct(v) {
+    if (v == null || !isFinite(v)) return "—";
+    v = n(v); return (v > 0 ? "+" : "") + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%"; }
   function tipo(v) { return v > 0 ? "pos" : v < 0 ? "neg" : "neutro"; }
   function saudacao() { const h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }
   function dataBR(iso) {
@@ -80,11 +86,17 @@ function buildAtlasDataReal() {
     labelsCheios.push((i % 7 === 0 || i === 0) ? lbl : "");
   }
 
-  /* KPIs reais */
+  /* KPIs reais
+
+     pnl e pnlPct são ACUMULADOS — resultado desde a entrada em cada
+     posição, sobre o capital investido (core/atlas-contabilidade.js).
+     O snapshot não os recorta por período: trocar 7/30/90 dias no
+     gráfico não muda o número. Os rótulos diziam "(30d)" e "Período",
+     e o Oráculo, ao explicar a conta, teria de desmentir a tela. */
   const kpis = [
-    { rotulo: "Patrimônio Total", valor: usd(snap.total), variacao: pct(snap.pnlPct), periodo: "(30d)", tipo: tipo(snap.pnl) },
-    { rotulo: "Lucro Total",      valor: usd(snap.pnl),   variacao: pct(snap.pnlPct), periodo: "(30d)", tipo: tipo(snap.pnl) },
-    { rotulo: "Rentabilidade",    valor: pct(snap.pnlPct), variacao: "Período",       periodo: "", tipo: tipo(snap.pnl), destaque: true },
+    { rotulo: "Patrimônio Total", valor: usd(snap.total), variacao: pct(snap.pnlPct), periodo: "(acumulado)", tipo: tipo(snap.pnl) },
+    { rotulo: "Lucro Total",      valor: usd(snap.pnl),   variacao: pct(snap.pnlPct), periodo: "(acumulado)", tipo: tipo(snap.pnl) },
+    { rotulo: "Rentabilidade",    valor: pct(snap.pnlPct), variacao: "Acumulada",     periodo: "", tipo: tipo(snap.pnl), destaque: true },
     { rotulo: "Renda Passiva",    valor: usd(snap.passiveIncome), variacao: "estimada", periodo: "(mês)", tipo: "pos" },
     { rotulo: "Carteiras",        valor: String(snap.wallets.total), variacao: snap.wallets.globals + " globais", periodo: "", tipo: "neutro" },
     { rotulo: "Protocolos",       valor: String(snap.protocols || 0), variacao: "Conectados", periodo: "", tipo: "neutro" }
@@ -218,7 +230,7 @@ function buildAtlasDataReal() {
   return {
     usuario: { nome: perfil.name, iniciais: perfil.initials, saudacao: saudacao() },
     kpis,
-    evolucao: { total: usd(snap.total), variacao: pct(snap.pnlPct) + " no período",
+    evolucao: { total: usd(snap.total), variacao: pct(snap.pnlPct) + " acumulado",
                 labels, valores: snap.evolution, labelsCheios,
                 /* quantos dias a serie tem de MEDICAO — ver
                    evolutionMedidos em js/atlas-consolidation.js */

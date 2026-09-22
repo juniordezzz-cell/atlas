@@ -103,7 +103,10 @@
       "O que precisa da minha atenção?": "What needs my attention?",
       "Como estão minhas carteiras?": "How are my wallets?",
       "Qual meu fluxo de movimentos?": "What's my movement flow?",
-      "Por que não consigo abrir posição?": "Why can't I open a position?"
+      "Por que não consigo abrir posição?": "Why can't I open a position?",
+      "Como é calculada a rentabilidade?": "How is the return calculated?",
+      "Como é calculado o resultado?": "How is the result calculated?",
+      "Como é calculado o patrimônio?": "How is net worth calculated?"
     });
   }
   function esc(s) {
@@ -333,6 +336,18 @@
     };
   }
 
+  /* Com centavos: é o formato de quem MOSTRA a conta. dinheiro() tira
+     as casas, e aí a divisão exibida não fecha com o percentual. */
+  function dinheiroExato(v) {
+    if (window.AtlasCurrency && AtlasCurrency.format) return AtlasCurrency.format(v || 0, { decimals: 2 });
+    return "US$ " + Number(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function pctExato(p) {
+    return (p > 0 ? "+" : "") + Number(p).toLocaleString(L("pt-BR", "en-US"),
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+  }
+
   function consolidado() {
     if (demoNaTela()) { try { return snapshotDemo(); } catch (e) { /* cai no real */ } }
     if (!window.AtlasConsolidation || !AtlasConsolidation.snapshot) return null;
@@ -497,7 +512,10 @@
   var SEGUIMENTOS = [
     { rx: /quanto eu tenho|patrim|net worth/, prox: ["Quanto tenho em caixa?", "Qual meu resultado?"] },
     { rx: /caixa|dispon|cash/, prox: ["Como estão minhas carteiras?", "Qual meu fluxo de movimentos?"] },
-    { rx: /resultado|lucro|rentab/, prox: ["Quanto eu tenho?", "O que precisa da minha atenção?"] },
+    /* Depois de ver o número, a pergunta seguinte natural é de onde
+       ele vem. */
+    { rx: /resultado|lucr|rentab/, prox: ["Como é calculada a rentabilidade?", "Quanto eu tenho?"] },
+    { rx: /calcul|explic|por ?que (?!nao)/, prox: ["Como é calculado o resultado?", "Como é calculado o patrimônio?"] },
     { rx: /tese/, prox: ["O que preciso revisar?"] },
     { rx: /carteira/, prox: ["Quanto tenho em caixa?", "Qual meu fluxo de movimentos?"] },
     { rx: /abrir posi|nao consigo/, prox: ["Quanto tenho em caixa?", "Como estão minhas carteiras?"] }
@@ -545,8 +563,71 @@
     { id: "backup",     rx: /backup|export|salvar|perder (os |meus )?dados|perder tudo|guardar/ }
   ];
 
+  /* ------------------------------------------------------------
+     "POR QUE 15,98%?" — EXPLICAR A CONTA
+
+     O pedido de explicação vem antes de tudo: "como é calculado o
+     patrimônio?" contém "patrim" e cairia na resposta do patrimônio,
+     que dá o número, não a conta. "por que não consigo…" fica de fora
+     de propósito — é a trava de posição, não um pedido de conta.
+     ------------------------------------------------------------ */
+  var RX_EXPLICAR = /\bexplic|\bcalcul|\bformula|\bconta d[aoe]|de onde (vem|vieram|veio|sai|saiu)|\bpor ?que (?!nao)|\bpq (?!nao)|\bwhy (?!can)|\bhow (is|was|do you) .*(calc|comput)/;
+
+  var ASSUNTOS_EXPLICAR = [
+    { id: "renda",         rx: /renda|passiv|passive/ },
+    { id: "rentabilidade", rx: /rentab|%|percent|por cento|retorno|return/ },
+    { id: "resultado",     rx: /lucr|resultado|pnl|ganho|preju|profit/ },
+    { id: "caixa",         rx: /caixa|saldo|dispon|cash/ },
+    { id: "patrimonio",    rx: /patrim|total|net worth|quanto (eu )?tenho/ }
+  ];
+
+  /* "de onde vem 321?" — o número diz de qual conta se fala. Compara
+     com a precisão que a pessoa digitou: "15,98" casa com 15,9812, e
+     "16" também, mas "15" não. */
+  function numerosDe(q) {
+    var out = [];
+    q.replace(/(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d+))?/g, function (_, inteiro, dec) {
+      dec = dec || "";
+      out.push({ v: parseFloat(inteiro.replace(/\./g, "") + (dec ? "." + dec : "")), casas: dec.length });
+      return _;
+    });
+    return out;
+  }
+
+  function assuntoPeloNumero(q) {
+    var nums = numerosDe(q);
+    if (!nums.length) return null;
+    var s = consolidado();
+    if (!s) return null;
+    var soPct = q.indexOf("%") >= 0;
+    var candidatos = [["rentabilidade", s.pnlPct]];
+    if (!soPct) {
+      candidatos.push(["patrimonio", s.total], ["resultado", s.pnl],
+                      ["caixa", s.caixa], ["renda", s.passiveIncome]);
+    }
+    for (var i = 0; i < nums.length; i++) {
+      var tol = 0.5 * Math.pow(10, -nums[i].casas) + 1e-9;
+      for (var j = 0; j < candidatos.length; j++) {
+        var alvo = candidatos[j][1];
+        if (alvo != null && isFinite(alvo) && Math.abs(Math.abs(alvo) - nums[i].v) <= tol) return candidatos[j][0];
+      }
+    }
+    return null;
+  }
+
+  function assuntoExplicar(q) {
+    q = normalizar(q);
+    if (!RX_EXPLICAR.test(q)) return null;
+    for (var i = 0; i < ASSUNTOS_EXPLICAR.length; i++) {
+      if (ASSUNTOS_EXPLICAR[i].rx.test(q)) return ASSUNTOS_EXPLICAR[i].id;
+    }
+    return assuntoPeloNumero(q);
+  }
+
   function intencao(q) {
     q = normalizar(q);
+
+    if (assuntoExplicar(q)) return "explicar";
 
     /* O VOCABULÁRIO TENTA PRIMEIRO. core/atlas-vocabulario.js decompõe
        a pergunta em métrica × módulo × período × carteira — o que
@@ -702,6 +783,103 @@
                "Available cash: " + dinheiro(total) + (det ? " — " + det + "." : "."));
     },
 
+    /* ------------------------------------------------------------
+       EXPLICAR A CONTA — com as parcelas que a própria conta usou
+
+       Cada número sai do snapshot da consolidação, que por sua vez sai
+       de core/atlas-contabilidade.js. Nada é recalculado aqui: se a
+       explicação refizesse a conta por fora, poderia fechar num número
+       diferente do que a tela mostra — e a explicação existiria para
+       desmenti-la. Os centavos aparecem porque "US$ 18 ÷ US$ 115"
+       não dá 15,98%; "US$ 18,41 ÷ US$ 115,21" dá.
+       ------------------------------------------------------------ */
+    explicar: function (assunto) {
+      var s = consolidado();
+      if (!s) return L("Não consigo ler os números a partir desta tela.",
+                       "I can't read the numbers from this screen.");
+
+      if (s.demo) {
+        return L("Na demonstração os números são ilustrativos e não saem da conta real. " +
+                 "No seu ATLAS: patrimônio = caixa + valor de mercado das posições; " +
+                 "resultado = posições abertas (valor − custo) + operações encerradas; " +
+                 "rentabilidade = resultado ÷ capital investido, acumulada desde a entrada." +
+                 AVISO_DEMO(),
+                 "Demo numbers are illustrative and don't come from the real calculation." + AVISO_DEMO());
+      }
+
+      var ex = dinheiroExato;
+      var temRealizado = Math.abs(s.pnlRealizado || 0) > 0.005;
+
+      if (assunto === "rentabilidade") {
+        if (s.pnlPct == null) {
+          return s.pnlBaseIncompleta
+            ? L("Sem rentabilidade: há resultado de operação encerrada sem o capital que o produziu. " +
+                "Dividir por outra base daria um percentual que não corresponde a nada, então o ATLAS não mostra.",
+                "No return: there is closed-trade result without the capital that produced it.")
+            : L("Sem rentabilidade: não há capital investido para servir de base. " +
+                "Caixa parado não entra na conta — rentabilidade mede o que foi aplicado.",
+                "No return: there is no invested capital to use as the base.");
+        }
+        var linhas = [
+          L("Rentabilidade = resultado ÷ capital investido.", "Return = result ÷ invested capital."),
+          L("Resultado: ", "Result: ") + ex(s.pnl) + (temRealizado
+            ? L(" (" + ex(s.pnlAberto) + " em posições abertas + " + ex(s.pnlRealizado) + " em operações encerradas)",
+                " (" + ex(s.pnlAberto) + " open + " + ex(s.pnlRealizado) + " closed)")
+            : "") + ".",
+          L("Capital investido: ", "Invested capital: ") + ex(s.base) + (temRealizado
+            ? L(" — o custo das posições abertas mais o capital das operações encerradas.",
+                " — cost of open positions plus capital of closed trades.")
+            : L(" — o que foi pago pelas posições abertas.", " — what was paid for open positions.")),
+          ex(s.pnl) + " ÷ " + ex(s.base) + " = " + pctExato(s.pnlPct) + ".",
+          L("É acumulada desde a entrada em cada posição, não de um período. Caixa parado não entra na base.",
+            "Accumulated since each position was opened, not over a period. Idle cash is not in the base.")
+        ];
+        return linhas.join(NL);
+      }
+
+      if (assunto === "resultado") {
+        return [
+          L("Resultado = posições abertas + operações encerradas.", "Result = open positions + closed trades."),
+          L("Abertas: valor de mercado − custo, somando a taxa já coletada das pools, que saiu da posição para o caixa: ",
+            "Open: market value − cost, plus pool fees already collected: ") + ex(s.pnlAberto) + ".",
+          L("Encerradas (Trade): ", "Closed (Trade): ") + ex(s.pnlRealizado || 0) + ".",
+          ex(s.pnlAberto) + " + " + ex(s.pnlRealizado || 0) + " = " + ex(s.pnl) + "."
+        ].join(NL);
+      }
+
+      if (assunto === "patrimonio") {
+        var investido = (s.investido != null) ? s.investido : (s.total - (s.caixa || 0));
+        return [
+          L("Patrimônio = caixa + valor de mercado das posições.", "Net worth = cash + market value of positions."),
+          ex(s.caixa || 0) + L(" em caixa + ", " cash + ") + ex(investido) + L(" em posições = ", " positions = ") + ex(s.total) + ".",
+          L("Só carteiras globais entram; as isoladas ficam dentro do módulo. Comprar ou vender troca " +
+            "caixa por posição sem mudar o total — ele muda com depósito, saque e resultado.",
+            "Only global wallets count. Buying or selling swaps cash for a position without changing the total.")
+        ].join(NL);
+      }
+
+      if (assunto === "caixa") {
+        return [
+          L("Caixa = cada ativo parado nas carteiras globais × preço de mercado agora.",
+            "Cash = each idle asset in global wallets × current market price."),
+          L("Ativo sem cotação entra pelo valor depositado, para nunca sumir da conta.",
+            "An asset without a quote counts at its deposited value."),
+          L("Total: ", "Total: ") + ex(s.caixa || 0) + "."
+        ].join(NL);
+      }
+
+      if (assunto === "renda") {
+        return [
+          L("Renda passiva estimada = (valor × APR de cada staking + valor × APY de cada lending) ÷ 12.",
+            "Estimated passive income = (value × APR of each staking + value × APY of each lending) ÷ 12."),
+          L("Hoje: ", "Now: ") + ex(s.passiveIncome || 0) + L(" por mês.", " per month."),
+          L("Pools não entram nesta estimativa.", "Pools are not part of this estimate.")
+        ].join(NL);
+      }
+
+      return null;
+    },
+
     atencao: function () {
       var sd = demoNaTela() ? consolidado() : null;
       if (sd && sd.demo && sd.alertas.length) {
@@ -790,6 +968,11 @@
 
       if (rota === "vocabulario") {
         try { return AtlasVocabulario.responder(q); } catch (e) { /* cai na tabela */ }
+      }
+
+      if (rota === "explicar") {
+        var exp = baseBrain.explicar(assuntoExplicar(q));
+        if (exp) return exp;
       }
 
       if (rota === "teses") {

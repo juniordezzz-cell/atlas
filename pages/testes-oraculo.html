@@ -179,6 +179,21 @@
       ["como faço backup?", "backup"],
       ["posso perder meus dados?", "backup"]
     ]],
+    /* Pedido de explicação vence o assunto: "como é calculado o
+       patrimônio?" quer a conta, não o número. "por que não consigo"
+       continua sendo a trava. */
+    ["Explicar a conta", [
+      ["Como é calculada a rentabilidade?", "explicar"],
+      ["por que 15%?", "explicar"],
+      ["de onde vem o lucro?", "explicar"],
+      ["explica o patrimônio", "explicar"],
+      ["como calcula o caixa?", "explicar"],
+      ["qual a fórmula da renda passiva?", "explicar"],
+      ["why is my return so high?", "explicar"],
+      ["Por que não consigo abrir posição?", "trava"],
+      ["por que a pool saiu da faixa?", null],
+      ["qual meu resultado?", "resultado"]
+    ]],
     /* O cruzamento de dimensões (core/atlas-vocabulario.js) só assume
        com filtro de verdade; a pergunta seca é da tabela. */
     ["Vocabulário x tabela", [

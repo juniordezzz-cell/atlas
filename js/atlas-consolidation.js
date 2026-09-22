@@ -671,6 +671,13 @@
          "—". Antes isto era 0, que se lê como "ficou de lado". */
       pnlPct: contas ? contas.rentabilidade : (cost > 0 ? (pnl / cost) * 100 : null),
       pnlBaseIncompleta: contas ? contas.baseIncompleta : false,
+      /* As parcelas da conta, para quem precisa MOSTRÁ-LA (o Oráculo
+         explica "por que 15,98%?" com estes números, não com outros
+         recalculados por fora): resultado = aberto + realizado;
+         rentabilidade = resultado ÷ base; base = custo + baseRealizada. */
+      pnlRealizado: realizado,
+      pnlAberto: pnl - realizado,
+      base: contas ? contas.base : cost,
       passiveIncome: passiveIncome(),
       protocols: protocolsCount(),
       byModule: byModule,

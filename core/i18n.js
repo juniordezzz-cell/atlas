@@ -244,6 +244,8 @@
     "Ontem": "Yesterday",
     "Data": "Date",
     "Período": "Period",
+    "Acumulada": "Accumulated",
+    "(acumulado)": "(accumulated)",
     "Mês": "Month",
     "Ano": "Year",
     "Bom dia": "Good morning",

@@ -579,7 +579,8 @@ pintarTudo();
   }
   function usd(v) { return 'US$ ' + Math.round(v || 0).toLocaleString('pt-BR'); }
   function pct(v) {
-    v = (typeof v === 'number' && isFinite(v)) ? v : 0;
+    /* sem base → "—", como os cards (js/data.js) */
+    if (typeof v !== 'number' || !isFinite(v)) return '—';
     return (v > 0 ? '+' : '') + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
   }
 
@@ -608,7 +609,10 @@ pintarTudo();
     const varia = document.getElementById('evoVar');
     if (total) total.textContent = usd(snap.total);
     if (varia) {
-      varia.textContent = pct(snap.pnlPct) + ' no período';
+      /* O real é acumulado (não muda com a janela); o exemplo da
+         demonstração é calculado sobre a própria janela. */
+      varia.textContent = pct(snap.pnlPct) +
+        ((window.AtlasDemo && AtlasDemo.exibindo()) ? ' no período' : ' acumulado');
       varia.className = snap.pnl < 0 ? 'neg' : 'pos';
     }
 
