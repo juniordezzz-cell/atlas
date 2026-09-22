@@ -109,8 +109,10 @@
     return "US$ " + (Number(v) || 0).toLocaleString("pt-BR",
       { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
-  function saldo(opts, id) {
-    var base = W.balanceOf(id, opts.balanceModule || null);
+  function saldo(opts, id) { return money(opts, saldoValor(opts, id)); }
+
+  function saldoValor(opts, id) {
+    var base = Number(W.balanceOf(id, opts.balanceModule || null)) || 0;
     /* PATRIMÔNIO da carteira inteira = caixa + posições.
 
        O seletor mostrava só `balanceOf` (valor das POSIÇÕES) e ignorava
@@ -133,7 +135,23 @@
       if (C && C.caixaMercadoDe) base += Number(C.caixaMercadoDe(id)) || 0;
       else if (global.AtlasCaixa && global.AtlasCaixa.saldo) base += Number(global.AtlasCaixa.saldo(id)) || 0;
     }
-    return money(opts, base);
+    return base;
+  }
+
+  /* ------------------------------------------------------------
+     DA MAIOR PARA A MENOR
+
+     A lista seguia a ordem de criação: com seis carteiras, a de
+     US$ 128 aparecia em quinto, entre duas de US$ 0. Agora ela é
+     ordenada pelo MESMO número que aparece embaixo de cada nome —
+     patrimônio da carteira, ou a fatia do módulo quando a tela é de
+     um módulo —, então a ordem nunca contradiz o que está escrito.
+     Empate (ex.: várias em zero) mantém a ordem de criação.
+     ------------------------------------------------------------ */
+  function porSaldo(opts, list) {
+    return list.map(function (w, i) { return { w: w, i: i, v: saldoValor(opts, w.id) }; })
+      .sort(function (a, b) { return (b.v - a.v) || (a.i - b.i); })
+      .map(function (x) { return x.w; });
   }
 
   /* ---------------- escopo e carteira ativa ---------------- */
@@ -155,7 +173,7 @@
   function html(opts, active, list) {
     var podeExcluir = W.globals().length > 1;
 
-    var linhas = list.map(function (w) {
+    var linhas = porSaldo(opts, list).map(function (w) {
       var on = w.id === active.id;
       /* a última carteira global não pode ser excluída: o ATLAS
          precisa de pelo menos uma para consolidar patrimônio */

@@ -595,7 +595,12 @@
   function pintarCarteiras() {
     var host = qs("#cxCarteiras");
     if (!host) return;
-    var lista = todas();
+    /* Da maior para a menor, pelo total do próprio cartão — a mesma
+       regra do seletor de carteira (wallets/walletSelector.js). Empate
+       mantém a ordem de criação. */
+    var lista = todas().map(function (w, i) { return { w: w, i: i, t: Number(dadosCarteira(w.id).total) || 0 }; })
+      .sort(function (a, b) { return (b.t - a.t) || (a.i - b.i); })
+      .map(function (x) { return x.w; });
     if (!lista.length) { host.innerHTML = '<div class="cx-vazio">Nenhuma carteira.</div>'; return; }
 
     host.innerHTML = lista.map(function (w) {
