@@ -296,7 +296,45 @@
     return "US$ " + Math.round(v || 0).toLocaleString("pt-BR");
   }
 
+  /* ------------------------------------------------------------
+     MODO DEMONSTRAÇÃO — o Oráculo lê o que a tela mostra
+
+     Com o ATLAS vazio, o Dashboard exibe números de exemplo
+     (core/atlas-demo.js) e o Oráculo lia os stores reais: a tela dizia
+     US$ 48.320 e ele respondia "Patrimônio zerado". Duas verdades na
+     mesma tela. Agora, só ali e só enquanto a demonstração está à
+     vista, ele lê o mesmo exemplo — e toda resposta feita com esses
+     números leva o aviso, para exemplo nunca passar por dado.
+     ------------------------------------------------------------ */
+  function demoNaTela() {
+    if (MODULE !== "atlas" || !window.AtlasDemo || !AtlasDemo.exibindo) return false;
+    try { return AtlasDemo.exibindo() && /dashboard\.html$/.test(location.pathname); }
+    catch (e) { return false; }
+  }
+
+  var NL = "\n";
+
+  var AVISO_DEMO = function () {
+    return L(" Números de exemplo da demonstração — limpe-a para usar os seus.",
+             " Demo sample numbers — clear the demo to use your own.");
+  };
+
+  function snapshotDemo() {
+    var s = AtlasDemo.snapshot(30);
+    var d = AtlasDemo.dados();
+    var caixa = 0, byModule = [];
+    (AtlasDemo.composicao ? AtlasDemo.composicao() : []).forEach(function (p) {
+      if (/caixa/i.test(p.label)) caixa = p.value; else byModule.push(p);
+    });
+    return {
+      total: s.total, caixa: caixa, investido: s.total - caixa,
+      pnl: s.pnl, pnlPct: s.pnlPct, passiveIncome: AtlasDemo.rendaPassiva || 0,
+      byModule: byModule, alertas: d.alertas || [], demo: true
+    };
+  }
+
   function consolidado() {
+    if (demoNaTela()) { try { return snapshotDemo(); } catch (e) { /* cai no real */ } }
     if (!window.AtlasConsolidation || !AtlasConsolidation.snapshot) return null;
     try { return AtlasConsolidation.snapshot(); } catch (e) { return null; }
   }
@@ -393,8 +431,12 @@
     partes.push(n ? L(n + (n === 1 ? " alerta ativo" : " alertas ativos"),
                       n + (n === 1 ? " active alert" : " active alerts"))
                   : L("sem alertas", "no alerts"));
+    if (s && s.demo) {
+      /* Os alertas do exemplo estão no card; os reais (nenhum) no sino. */
+      partes[partes.length - 1] = L(s.alertas.length + " alertas de exemplo", s.alertas.length + " sample alerts");
+    }
     var txt = partes.join(", ");
-    return txt.charAt(0).toUpperCase() + txt.slice(1) + ".";
+    return txt.charAt(0).toUpperCase() + txt.slice(1) + "." + (s && s.demo ? AVISO_DEMO() : "");
   }
 
   var RX_SAUDACAO = /^(oi+|ola|opa|e ai|eai|salve|bom dia|boa tarde|boa noite|hello|hi|hey|good (morning|afternoon|evening))\b[\s,.!?;:-]*/;
@@ -522,11 +564,11 @@
       return L("Patrimônio total: " + dinheiro(total) + " — " + dinheiro(caixa) +
                " em caixa e " + dinheiro(alocado) + " alocado. Resultado acumulado " +
                sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) + ". " +
-               "Distribuição: " + partes.join(", ") + ".",
+               "Distribuição: " + partes.join(", ") + "." + (s.demo ? AVISO_DEMO() : ""),
                "Total net worth: " + dinheiro(total) + " — " + dinheiro(caixa) +
                " in cash and " + dinheiro(alocado) + " allocated. Accumulated result " +
                sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) + ". " +
-               "Split: " + partes.join(", ") + ".");
+               "Split: " + partes.join(", ") + "." + (s.demo ? AVISO_DEMO() : ""));
     },
 
     /* ------------------------------------------------------------
@@ -538,6 +580,11 @@
        posição, então é a pergunta mais operacional do ATLAS.
        ------------------------------------------------------------ */
     caixa: function () {
+      var sd = demoNaTela() ? consolidado() : null;
+      if (sd && sd.demo) {
+        return L("Caixa disponível: " + dinheiro(sd.caixa) + "." + AVISO_DEMO(),
+                 "Available cash: " + dinheiro(sd.caixa) + "." + AVISO_DEMO());
+      }
       if (!window.AtlasCaixa) {
         return L("O livro de caixa não está disponível nesta tela.",
                  "The cash ledger isn't available on this screen.");
@@ -566,6 +613,13 @@
     },
 
     atencao: function () {
+      var sd = demoNaTela() ? consolidado() : null;
+      if (sd && sd.demo && sd.alertas.length) {
+        return L(sd.alertas.length + " alertas de exemplo:" + NL + sd.alertas.map(function (a) {
+                   return "• " + String(a.module || "").toUpperCase() + ": " + a.texto;
+                 }).join(NL) + NL + AVISO_DEMO().trim(),
+                 sd.alertas.length + " sample alerts." + AVISO_DEMO());
+      }
       var todos = alertasAbertos();
       if (!todos.length) {
         return L("Nada pedindo atenção agora — sem alerta em nenhum dos quatro módulos.",
@@ -741,10 +795,10 @@
         var sinal = s.pnl >= 0 ? "+" : "";
         return L("Resultado acumulado: " + sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) +
                  " sobre o capital investido. " +
-                 "Renda passiva estimada: " + dinheiro(s.passiveIncome) + ".",
+                 "Renda passiva estimada: " + dinheiro(s.passiveIncome) + "." + (s.demo ? AVISO_DEMO() : ""),
                  "Accumulated result: " + sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) +
                  ". Estimated passive income: " +
-                 dinheiro(s.passiveIncome) + ".");
+                 dinheiro(s.passiveIncome) + "." + (s.demo ? AVISO_DEMO() : ""));
       }
 
       if (/modul|module|resum|summary|status|como est|how is/.test(q)) return baseBrain.summary();
@@ -1020,8 +1074,7 @@
        nos módulos continua o resumo de teses de cada um. */
     var resumo = "";
     try { resumo = brain.summary() || ""; } catch (e) { resumo = ""; }
-    push(saudacaoComNome() + " " + (MODULE === "atlas" && !/demonstra/i.test(resumo)
-      ? estadoCurto() : resumo), "bot");
+    push(saudacaoComNome() + " " + (MODULE === "atlas" ? estadoCurto() : resumo), "bot");
 
     wrap._ask = ask;
     wrap._setOpen = setOpen;

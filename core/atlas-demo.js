@@ -48,7 +48,7 @@
      Random walk com semente fixa: a curva é a mesma a cada abertura
      (um gráfico de exemplo que muda sozinho a cada F5 pareceria dado
      vivo). 90 pontos, terminando exatamente no total. */
-  var TOTAL = 48320, INICIO = 41900, DIAS = 90;
+  var TOTAL = 48320, INICIO = 41900, DIAS = 90, RENDA = 312;
   var SERIE = (function () {
     var s = 20260919;
     function rnd() { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }
@@ -84,6 +84,17 @@
     return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
   }
 
+  /* composição: caixa + quatro módulos = TOTAL. Fora de dados() para o
+     Oráculo ler os valores exatos, não reconstruí-los das porcentagens
+     arredondadas do gráfico. */
+  var PARTES = [
+    { label: "Caixa disponível", value: 5320,  color: "#5eead4" },
+    { label: "Hold",             value: 21400, color: "#22C55E" },
+    { label: "DeFi",             value: 12650, color: "#8B5CF6" },
+    { label: "RWA",              value: 6150,  color: "#22D3EE" },
+    { label: "Trade",            value: 2800,  color: "#4F8CFF" }
+  ];
+
   function dados(usuario) {
     var s30 = snapshot(30);
     var mes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -93,14 +104,7 @@
       var l = d.getDate() + " " + mes[d.getMonth()];
       labels.push(l); labelsCheios.push((i % 7 === 0 || i === 0) ? l : "");
     }
-    /* composição: caixa + quatro módulos = TOTAL */
-    var partes = [
-      { label: "Caixa disponível", value: 5320,  color: "#5eead4" },
-      { label: "Hold",             value: 21400, color: "#22C55E" },
-      { label: "DeFi",             value: 12650, color: "#8B5CF6" },
-      { label: "RWA",              value: 6150,  color: "#22D3EE" },
-      { label: "Trade",            value: 2800,  color: "#4F8CFF" }
-    ];
+    var partes = PARTES;
     var soma = partes.reduce(function (a, p) { return a + p.value; }, 0) || 1;
     var bc = [["Solana", 38], ["Ethereum", 27], ["Base", 14], ["Arbitrum", 11], ["Bitcoin", 10]];
     var bcCores = ["#22D3EE", "#4F8CFF", "#8B5CF6", "#F59E0B", "#22C55E"];
@@ -111,7 +115,7 @@
         { rotulo: "Patrimônio Total", valor: usd(TOTAL), variacao: pct(s30.pnlPct), periodo: "(30d)", tipo: "pos" },
         { rotulo: "Lucro Total",      valor: usd(s30.pnl), variacao: pct(s30.pnlPct), periodo: "(30d)", tipo: "pos" },
         { rotulo: "Rentabilidade",    valor: pct(s30.pnlPct), variacao: "Período", periodo: "", tipo: "pos", destaque: true },
-        { rotulo: "Renda Passiva",    valor: usd(312), variacao: "estimada", periodo: "(mês)", tipo: "pos" },
+        { rotulo: "Renda Passiva",    valor: usd(RENDA), variacao: "estimada", periodo: "(mês)", tipo: "pos" },
         { rotulo: "Carteiras",        valor: "3", variacao: "2 globais", periodo: "", tipo: "neutro" },
         { rotulo: "Protocolos",       valor: "4", variacao: "Conectados", periodo: "", tipo: "neutro" }
       ],
@@ -186,6 +190,8 @@
     limpar: limpar,
     dados: dados,
     snapshot: snapshot,
+    rendaPassiva: RENDA,
+    composicao: function () { return PARTES.map(function (p) { return { label: p.label, value: p.value }; }); },
     bloquear: bloquear,
     TEXTOS: TXT
   };
