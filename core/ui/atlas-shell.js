@@ -105,6 +105,8 @@
       "Qual meu fluxo de movimentos?": "What's my movement flow?",
       "Por que não consigo abrir posição?": "Why can't I open a position?",
       "Como é calculada a rentabilidade?": "How is the return calculated?",
+      "E no mês passado?": "And last month?",
+      "E neste mês?": "And this month?",
       "Como é calculado o resultado?": "How is the result calculated?",
       "Como é calculado o patrimônio?": "How is net worth calculated?"
     });
@@ -514,6 +516,10 @@
     { rx: /caixa|dispon|cash/, prox: ["Como estão minhas carteiras?", "Qual meu fluxo de movimentos?"] },
     /* Depois de ver o número, a pergunta seguinte natural é de onde
        ele vem. */
+    /* Resultado, taxas e movimentos aceitam período: a continuação
+       natural é o mesmo número em outra janela (ver criarConversa). */
+    { rx: /^(?!.*calcul).*(resultado|lucr|\brend|taxa|movimento|fluxo|extrato)/, prox: ["E no mês passado?"] },
+    { rx: /mes passado/, prox: ["E neste mês?"] },
     { rx: /resultado|lucr|rentab/, prox: ["Como é calculada a rentabilidade?", "Quanto eu tenho?"] },
     { rx: /calcul|explic|por ?que (?!nao)/, prox: ["Como é calculado o resultado?", "Como é calculado o patrimônio?"] },
     { rx: /tese/, prox: ["O que preciso revisar?"] },
@@ -652,6 +658,102 @@
       if (ROTAS[i].rx.test(q)) return ROTAS[i].id;
     }
     return null;
+  }
+
+  /* ------------------------------------------------------------
+     CONTINUAR O ASSUNTO — "e no mês passado?"
+
+     Cada pergunta era respondida sozinha: depois de "quanto rendi em
+     pool?", "e no mês passado?" caía em "não entendi", porque não tem
+     métrica nem módulo. Agora a conversa guarda a CONSULTA da última
+     resposta (métrica × módulo × período × carteira, do vocabulário) e
+     a continuação troca só o que trouxe de novo:
+
+       "quanto rendi em pool?"   → resultado · DeFi
+       "e no mês passado?"       → resultado · DeFi · mês passado
+       "e na Reserva?"           → resultado · DeFi · mês passado · Reserva
+       "e o caixa?"              → caixa     · DeFi · mês passado · Reserva
+
+     É continuação quando começa com "e …" (ou "and", "what about"), ou
+     quando só traz filtro, sem assunto ("no mês passado?"). Pergunta
+     com assunto próprio começa uma consulta nova.
+
+     O que NÃO faz: adivinhar. Se o assunto anterior não aceita filtro
+     (alertas, teses sem métrica), diz isso em vez de responder outra
+     coisa com o filtro pendurado.
+     ------------------------------------------------------------ */
+  var RX_CONTINUA = /^(e quanto a|e sobre|e|and|what about|how about)\s+/;
+
+  function temFiltro(Q) { return !!(Q && (Q.modulo || Q.periodo || Q.carteira)); }
+
+  function assuntoPorPalavra(q) {
+    for (var i = 0; i < ASSUNTOS_EXPLICAR.length; i++) {
+      if (ASSUNTOS_EXPLICAR[i].rx.test(q)) return ASSUNTOS_EXPLICAR[i].id;
+    }
+    return null;
+  }
+
+  function descreverFiltro(Q) {
+    var V = window.AtlasVocabulario, p = [];
+    if (Q.modulo) p.push((V && V.NOME_MODULO && V.NOME_MODULO[Q.modulo]) || Q.modulo);
+    if (Q.periodo) p.push(Q.periodo.rotulo);
+    if (Q.carteira) p.push(L("a carteira ", "wallet ") + Q.carteira.nome);
+    return p.join(", ");
+  }
+
+  function criarConversa() {
+    var ctx = null;          /* { rota, Q } da última resposta que valeu */
+
+    function responder(resto, brain) {
+      var V = window.AtlasVocabulario;
+      var n = normalizar(resto).trim();
+      var lead = n.match(RX_CONTINUA);
+      var F = lead ? n.slice(lead[0].length) : n;
+      var Qf = V ? V.interpretar(F) : null;
+      var trazAlgo = !!(Qf && (Qf.metrica || temFiltro(Qf)));
+      var soFiltro = !!(Qf && !Qf.metrica && temFiltro(Qf) && !intencao(F));
+
+      if (ctx && ((lead && trazAlgo) || soFiltro || (lead && ctx.rota === "explicar"))) {
+        /* "por que 15,98%?" → "e o patrimônio?" explica o patrimônio */
+        if (ctx.rota === "explicar") {
+          var as = assuntoPorPalavra(F);
+          var ex = as ? baseBrain.explicar(as) : null;
+          if (ex) { ctx = { rota: "explicar", Q: ctx.Q }; return ex; }
+        }
+        if (V && V.responderQ && ctx.Q && Qf) {
+          var Qm = {
+            metrica:  Qf.metrica  || ctx.Q.metrica,
+            modulo:   Qf.modulo   || ctx.Q.modulo,
+            periodo:  Qf.periodo  || ctx.Q.periodo,
+            carteira: Qf.carteira || ctx.Q.carteira
+          };
+          if (Qm.metrica && temFiltro(Qm)) {
+            var rv = null;
+            try { rv = V.responderQ(Qm); } catch (e) { rv = null; }
+            if (rv) { ctx = { rota: "vocabulario", Q: Qm }; return rv; }
+          }
+        }
+        if (soFiltro) {
+          return L("Esse filtro (" + descreverFiltro(Qf) + ") não se aplica à pergunta anterior. " +
+                   "Módulo, período e carteira valem para resultado, taxas, movimentos, " +
+                   "caixa, patrimônio e posições.",
+                   "That filter (" + descreverFiltro(Qf) + ") doesn't apply to the previous question.");
+        }
+        /* "e o lucro?" sem filtro nenhum para herdar: é pergunta nova */
+        n = F;
+      }
+
+      var r = brain.answer(n);
+      var naoEntendeu = r && typeof r === "object" && r.sugestoes;
+      if (!naoEntendeu) ctx = { rota: intencao(n), Q: V ? V.interpretar(n) : null };
+      return r;
+    }
+
+    return {
+      responder: responder,
+      estado: function () { return ctx; },
+      reset: function () { ctx = null; }
+    };
   }
 
   var baseBrain = {
@@ -1182,11 +1284,13 @@
       log.scrollTop = log.scrollHeight;
     }
 
+    var conversa = criarConversa();
+
     function responder(q) {
       var c = cortesia(q);
       var r = null;
       if (c.resto) {
-        try { r = brain.answer(c.resto); } catch (e) { r = null; }
+        try { r = conversa.responder(c.resto, brain); } catch (e) { r = null; }
         if (r == null || r === "") {
           r = L("Não consegui calcular isso agora.", "I couldn't compute that right now.");
         }
@@ -1882,6 +1986,15 @@
       intencao: intencao,
       cortesia: cortesia,
       saudacaoAgora: saudacaoAgora,
+      /* Uma conversa nova, isolada da do painel: a bateria encadeia
+         perguntas sem herdar o que a pessoa perguntou antes. */
+      conversa: function () {
+        var c = criarConversa(), brain = resolveBrain();
+        return {
+          perguntar: function (q) { return c.responder(cortesia(q).resto || normalizar(q), brain); },
+          estado: c.estado
+        };
+      },
       responder: function (q) {
         var el = document.querySelector('[data-atlas-ui="oraculo"]');
         return (el && el._responder) ? el._responder(q) : null;

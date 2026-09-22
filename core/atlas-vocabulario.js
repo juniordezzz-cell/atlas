@@ -426,8 +426,15 @@
      moeda e backup.
      ------------------------------------------------------------ */
   function responder(pergunta) {
-    var Q = interpretar(pergunta);
-    if (!Q.metrica || !RESOLVE[Q.metrica]) return null;
+    return responderQ(interpretar(pergunta));
+  }
+
+  /* A mesma porta, para quem já tem a consulta montada. O Oráculo usa
+     para a CONTINUAÇÃO: "quanto rendi em pool?" → "e no mês passado?"
+     troca só o período da consulta anterior e mantém métrica e
+     módulo — sem colar textos, que duplicaria o período antigo. */
+  function responderQ(Q) {
+    if (!Q || !Q.metrica || !RESOLVE[Q.metrica]) return null;
 
     /* Período pedido numa métrica que é fotografia de agora: dizer
        isso é mais útil que devolver o valor atual como se fosse o
@@ -446,6 +453,7 @@
   global.AtlasVocabulario = {
     interpretar: interpretar,
     responder: responder,
+    responderQ: responderQ,
     RESOLVE: RESOLVE,
     METRICAS: METRICAS,
     MODULOS: MODULOS,

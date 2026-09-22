@@ -241,6 +241,27 @@
     ["Quanto eu tenho?", false]
   ];
 
+  /* Continuação: [perguntas em sequência, consulta esperada depois da
+     última]. Confere a CONSULTA guardada (métrica, módulo, período,
+     carteira), não a frase — o valor muda com os dados, a consulta não.
+     "rota" confere o assunto quando a última não é do vocabulário. */
+  var CARTEIRA = (function () {
+    try { var g = AtlasWallets.globals(); return (g && g[0] && g[0].name) || "Principal"; }
+    catch (e) { return "Principal"; }
+  })();
+
+  var CONTINUACAO = [
+    [["quanto rendi em pool?", "e no mês passado?"], { m: "resultado", mod: "defi", p: "no mês passado" }],
+    [["quanto rendi em pool?", "no mês passado?"], { m: "resultado", mod: "defi", p: "no mês passado" }],
+    [["quanto rendi em pool?", "e no mês passado?", "e na " + CARTEIRA + "?"], { m: "resultado", mod: "defi", p: "no mês passado", c: CARTEIRA }],
+    [["quanto rendi em pool?", "e o caixa?"], { m: "caixa", mod: "defi" }],
+    [["quanto rendi no trade?", "e no hold?"], { m: "resultado", mod: "hold" }],
+    [["quanto eu tenho?", "e o lucro?"], { rota: "resultado" }],
+    [["por que 15%?", "e o patrimônio?"], { rota: "explicar" }],
+    [["quanto rendi em pool?", "e amanhã vai subir?"], { rota: null }],
+    [["quanto rendi em pool?", "qual meu saldo?"], { rota: "caixa" }]
+  ];
+
   var T = window.AtlasOraculo && AtlasOraculo.teste;
   var grupos = [], ok = 0, falha = 0;
 
@@ -278,6 +299,27 @@
     caso(gc, "responder(\"obrigado\")", T.responder("obrigado"), "Disponha.");
     caso(gc, "responder(\"por favor\") não fica mudo", textoDe(T.responder("por favor")).length > 0, true);
     grupos.push(gc);
+
+    var gk = { titulo: "Continuação do assunto", casos: [] };
+    CONTINUACAO.forEach(function (c) {
+      var conv = T.conversa();
+      c[0].forEach(function (q) { conv.perguntar(q); });
+      var e = conv.estado() || {};
+      var Q = e.Q || {};
+      var obtido = {}, esp = c[1];
+      if ("rota" in esp) obtido.rota = e.rota == null ? null : e.rota;
+      if ("m" in esp) obtido.m = Q.metrica || null;
+      if ("mod" in esp) obtido.mod = Q.modulo || null;
+      if ("p" in esp) obtido.p = Q.periodo ? Q.periodo.rotulo : null;
+      if ("c" in esp) obtido.c = Q.carteira ? Q.carteira.nome : null;
+      caso(gk, c[0].join(" → "), JSON.stringify(obtido), JSON.stringify(esp));
+    });
+    /* Filtro que não se aplica: diz isso, não responde outra coisa */
+    var cv = T.conversa();
+    cv.perguntar("o que precisa da minha atenção?");
+    caso(gk, "atenção → \"no mês passado?\" avisa que o filtro não se aplica",
+         textoDe(cv.perguntar("no mês passado?")).indexOf("não se aplica") > -1, true);
+    grupos.push(gk);
 
     var gp = { titulo: "Recusa de previsão", casos: [] };
     PREVISAO.forEach(function (c) {
