@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="atlas">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bateria de testes do Oraculo do ATLAS: assunto de cada pergunta, cortesia e recusa de previsao.">
+  <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
+  <title>Testes · Oráculo</title>
+  <link rel="stylesheet" href="../themes/atlas-fonts.css">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+
+  <script src="../core/atlas-storage.js"></script>
+  <script src="../core/atlas-snapshots.js"></script>
+  <script src="../core/atlas-contabilidade.js"></script>
+  <script src="../core/atlas-supervisor.js"></script>
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+  <script src="../core/atlas-auth.js"></script>
+  <script src="../core/atlas-secure.js"></script>
+  <style>
+    body { background: var(--atlas-bg, #05080F); color: var(--atlas-text, #dbe4f0); }
+    .t-wrap { max-width: 940px; margin: 0 auto; padding: 32px 20px 120px; }
+    .t-head h1 { font-size: 24px; margin: 0 0 6px; }
+    .t-head p { color: var(--atlas-text-mut); font-size: 13.5px; margin: 0 0 20px; line-height: 1.6; }
+    .t-score { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0 24px; }
+    .t-pill { padding: 10px 16px; border-radius: 10px; font-family: var(--atlas-font-mono, monospace); font-size: 14px; font-weight: 650; }
+    .t-pill.ok { background: rgba(0,200,83,.14); color: #00c853; }
+    .t-pill.bad { background: rgba(255,86,86,.16); color: #ff7676; }
+    .t-pill.neutro { background: var(--atlas-surface); color: var(--atlas-text-mut); }
+    .t-grupo { margin-bottom: 22px; }
+    .t-grupo h2 { font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--atlas-text-mut); margin: 0 0 10px; }
+    .t-caso { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center;
+              padding: 7px 12px; border-bottom: 1px solid var(--atlas-border); font-size: 13px; }
+    .t-caso:last-child { border-bottom: 0; }
+    .t-caso .st { font-weight: 700; }
+    .t-caso.pass .st { color: #00c853; }
+    .t-caso.fail .st { color: #ff7676; }
+    .t-caso .val { font-family: var(--atlas-font-mono, monospace); font-size: 12px; color: var(--atlas-text-mut); text-align: right; }
+    .t-caso.fail .val { color: #ff7676; }
+    @media (max-width: 640px) {
+      .t-caso { grid-template-columns: 22px 1fr; }
+      .t-caso .val { grid-column: 2; text-align: left; }
+    }
+  </style>
+</head>
+<body>
+<main class="app">
+  <div class="t-wrap">
+    <div class="t-head">
+      <h1>Testes do Oráculo</h1>
+      <p>
+        Cada pergunta é conferida contra o <b>assunto</b> que ela deveria acionar — não contra a
+        frase da resposta, que muda com os seus números. Quando uma regra nova do Oráculo desviar
+        uma pergunta que já funcionava, o caso fica vermelho aqui. Só leitura: nada é gravado.
+      </p>
+    </div>
+    <div class="t-score" id="score"></div>
+    <div id="saida"></div>
+  </div>
+</main>
+
+<!-- As mesmas camadas que o Oráculo lê no Dashboard, sem js/data.js e
+     js/dashboard.js: montar o Dashboard decide o estado da demonstração
+     (atlas.demo.v1), e esta página não pode gravar nada. -->
+<script src="../wallets/walletStore.js"></script>
+<script src="../wallets/walletTypes.js"></script>
+<script src="../wallets/walletLedger.js"></script>
+<script src="../wallets/walletCaixa.js"></script>
+<script src="../wallets/walletManager.js"></script>
+<script src="../core/http.js"></script>
+<script src="../core/providers/registry.js"></script>
+<script src="../core/providers/coingecko.js"></script>
+<script src="../core/atlas-price.js"></script>
+<script src="../core/providers/geckoterminal.js"></script>
+<script src="../core/atlas-precos.js"></script>
+<script src="../core/atlas-tokens.js"></script>
+<script src="../RWA/js/store.js"></script>
+<script src="../defi/js/tokens.js"></script>
+<script src="../defi/js/performance.js"></script>
+<script src="../defi/js/data.js"></script>
+<script src="../hold/data/seed.js"></script>
+<script src="../hold/js/state.js"></script>
+<script src="../trade/assets/js/core/util.js"></script>
+<script src="../trade/assets/js/core/store.js"></script>
+<script src="../trade/assets/js/core/seed.js"></script>
+<script src="../trade/assets/js/core/state.js"></script>
+<script src="../core/entities/theses.js"></script>
+<script src="../js/atlas-movements.js"></script>
+<script src="../core/atlas-demo.js"></script>
+<script src="../js/atlas-consolidation.js"></script>
+<script src="../core/ui/atlas-icons.js"></script>
+<script src="../core/ui/atlas-ui.js"></script>
+<script src="../core/atlas-notifications.js"></script>
+<script src="../core/atlas-vocabulario.js"></script>
+<script src="../core/ui/atlas-shell.js"></script>
+<script src="../js/oraculo.js"></script>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ------------------------------------------------------------
+     OS CASOS
+
+     [pergunta, assunto esperado]. O assunto é o id da rota em
+     core/ui/atlas-shell.js (ROTAS), "vocabulario" quando o cruzamento
+     de dimensões assume, ou null quando o certo é "não entendi".
+
+     Cada caso aqui é uma pergunta que alguém faria. Quando um caso
+     falha, a pergunta é que manda: conserta-se a rota, não o caso.
+     ------------------------------------------------------------ */
+  var ROTEAMENTO = [
+    ["Patrimônio", [
+      ["Quanto eu tenho?", "patrimonio"],
+      ["QUANTO EU TENHO", "patrimonio"],
+      ["qual meu patrimônio?", "patrimonio"],
+      ["quanto tenho em posições abertas?", "patrimonio"],
+      ["quanto vale tudo?", "patrimonio"],
+      ["how much do I have?", "patrimonio"],
+      ["what's my net worth?", "patrimonio"]
+    ]],
+    ["Caixa", [
+      ["Quanto tenho em caixa?", "caixa"],
+      ["qual é o meu saldo?", "caixa"],
+      ["quanto tenho disponível?", "caixa"],
+      ["tenho dinheiro parado?", "caixa"],
+      ["como faço um depósito?", "caixa"],
+      ["quero sacar", "caixa"],
+      ["how much cash do I have?", "caixa"]
+    ]],
+    ["Resultado", [
+      ["Qual meu resultado?", "resultado"],
+      ["me conta o resultado", "resultado"],
+      ["quanto lucrei?", "resultado"],
+      ["qual a rentabilidade?", "resultado"],
+      ["tive prejuízo?", "resultado"],
+      ["qual minha renda passiva?", "resultado"]
+    ]],
+    ["Teses e revisão", [
+      ["Quais teses estão em aberto?", "teses"],
+      ["quanto tenho em teses?", "teses"],
+      ["o que está pendente?", "teses"],
+      ["O que preciso revisar?", "revisao"],
+      ["tem tese atrasada?", "revisao"],
+      ["alguma tese parada há dias?", "revisao"]
+    ]],
+    ["Atenção", [
+      ["O que precisa da minha atenção?", "atencao"],
+      ["tem algum alerta?", "atencao"],
+      ["qual o risco?", "atencao"],
+      ["what needs my attention?", "atencao"]
+    ]],
+    ["Trava de posição", [
+      ["Por que não consigo abrir posição?", "trava"],
+      ["nao consigo abrir posicao", "trava"],
+      ["minha posição foi bloqueada", "trava"]
+    ]],
+    ["Carteiras e movimentos", [
+      ["Como estão minhas carteiras?", "carteiras"],
+      ["quantas carteiras eu tenho?", "carteiras"],
+      ["minhas contas", "carteiras"],
+      ["na real, como estão minhas carteiras?", "carteiras"],
+      ["Qual meu fluxo de movimentos?", "fluxo"],
+      ["mostra o extrato", "fluxo"],
+      ["quais foram as saídas?", "fluxo"]
+    ]],
+    ["Resumo, moeda e backup", [
+      ["Como está o módulo?", "resumo"],
+      ["me dá um resumo", "resumo"],
+      ["em que moeda está?", "moeda"],
+      ["mostrar em reais", "moeda"],
+      ["qual o câmbio?", "moeda"],
+      ["como faço backup?", "backup"],
+      ["posso perder meus dados?", "backup"]
+    ]],
+    /* O cruzamento de dimensões (core/atlas-vocabulario.js) só assume
+       com filtro de verdade; a pergunta seca é da tabela. */
+    ["Vocabulário x tabela", [
+      ["quanto rendi em pool no mês passado?", "vocabulario"],
+      ["quanto paguei de taxas?", "vocabulario"],
+      ["como faço um depósito?", "caixa"],
+      ["mostra o extrato", "fluxo"]
+    ]],
+    ["Palavras que NÃO devem acionar nada", [
+      ["vale a pena?", null],
+      ["asdfgh", null],
+      ["qual a cor do céu?", null],
+      ["vou perder dinheiro?", null]
+    ]]
+  ];
+
+  /* [pergunta, campo, esperado] sobre cortesia(q) */
+  var CORTESIA = [
+    ["bom dia", "saudou", true],
+    ["bom dia", "resto", ""],
+    ["Boa tarde, quanto eu tenho?", "saudou", true],
+    ["Boa tarde, quanto eu tenho?", "resto", "quanto eu tenho?"],
+    ["oi", "saudou", true],
+    ["Olá", "saudou", true],
+    ["e aí", "saudou", true],
+    ["oito carteiras?", "saudou", false],
+    ["history", "saudou", false],
+    ["obrigado", "agradeceu", true],
+    ["obrigado", "resto", ""],
+    ["valeu, qual meu resultado?", "agradeceu", true],
+    ["valeu, qual meu resultado?", "resto", "qual meu resultado?"],
+    ["tchau", "despediu", true],
+    ["até mais", "despediu", true],
+    ["por favor", "resto", ""]
+  ];
+
+  /* [pergunta, deve recusar previsão?] via responder() completo */
+  var PREVISAO = [
+    ["vai subir?", true],
+    ["qual a previsão do SOL?", true],
+    ["previsao", true],
+    ["devo vender?", true],
+    ["é hora de comprar?", true],
+    ["O que preciso revisar?", false],
+    ["Quanto eu tenho?", false]
+  ];
+
+  var T = window.AtlasOraculo && AtlasOraculo.teste;
+  var grupos = [], ok = 0, falha = 0;
+
+  function mostra(v) { return v === null ? "null" : JSON.stringify(v); }
+
+  function caso(grupo, nome, obtido, esperado) {
+    var passou = obtido === esperado;
+    if (passou) ok++; else falha++;
+    grupo.casos.push({ nome: nome, passou: passou,
+      val: passou ? mostra(obtido) : "esperado " + mostra(esperado) + " · veio " + mostra(obtido) });
+  }
+
+  function textoDe(r) { return (r && typeof r === "object") ? String(r.texto || "") : String(r || ""); }
+
+  function rodar() {
+    if (!T) {
+      grupos.push({ titulo: "Carga", casos: [{ nome: "AtlasOraculo.teste disponível", passou: false, val: "shell não carregou" }] });
+      falha++;
+      return;
+    }
+
+    ROTEAMENTO.forEach(function (g) {
+      var grupo = { titulo: "Assunto · " + g[0], casos: [] };
+      g[1].forEach(function (c) { caso(grupo, c[0], T.intencao(c[0]), c[1]); });
+      grupos.push(grupo);
+    });
+
+    var gc = { titulo: "Cortesia", casos: [] };
+    CORTESIA.forEach(function (c) {
+      caso(gc, c[0] + " → " + c[1], T.cortesia(c[0])[c[1]], c[2]);
+    });
+    var sd = T.saudacaoAgora();
+    caso(gc, "responder(\"bom dia\") cumprimenta pelo horário real (" + sd + ")",
+         textoDe(T.responder("bom dia")).indexOf(sd) === 0, true);
+    caso(gc, "responder(\"obrigado\")", T.responder("obrigado"), "Disponha.");
+    caso(gc, "responder(\"por favor\") não fica mudo", textoDe(T.responder("por favor")).length > 0, true);
+    grupos.push(gc);
+
+    var gp = { titulo: "Recusa de previsão", casos: [] };
+    PREVISAO.forEach(function (c) {
+      caso(gp, c[0], textoDe(T.responder(c[0])).indexOf("Não faço previsões") === 0, c[1]);
+    });
+    grupos.push(gp);
+  }
+
+  function el(tag, cls, txt) {
+    var d = document.createElement(tag);
+    if (cls) d.className = cls;
+    if (txt != null) d.textContent = txt;
+    return d;
+  }
+
+  function pintar() {
+    var score = document.getElementById("score");
+    [[ok + " passaram", "ok"], [falha + " falharam", falha ? "bad" : "neutro"], [(ok + falha) + " casos", "neutro"]]
+      .forEach(function (p) { score.appendChild(el("span", "t-pill " + p[1], p[0])); });
+
+    var saida = document.getElementById("saida");
+    grupos.forEach(function (g) {
+      var sec = el("section", "t-grupo");
+      sec.appendChild(el("h2", "", g.titulo));
+      g.casos.forEach(function (c) {
+        var row = el("div", "t-caso " + (c.passou ? "pass" : "fail"));
+        row.appendChild(el("div", "st", c.passou ? "✓" : "✗"));
+        row.appendChild(el("div", "", c.nome));
+        row.appendChild(el("div", "val", c.val));
+        sec.appendChild(row);
+      });
+      saida.appendChild(sec);
+    });
+
+    /* Para quem roda pelo console ou por automação */
+    window.ORACULO_TESTES = { ok: ok, falha: falha,
+      falhas: grupos.reduce(function (a, g) {
+        return a.concat(g.casos.filter(function (c) { return !c.passou; })
+          .map(function (c) { return g.titulo + " | " + c.nome + " | " + c.val; }));
+      }, []) };
+  }
+
+  /* O shell monta o Oráculo no DOMContentLoaded e o refaz quando
+     js/oraculo.js registra o cérebro do Dashboard; roda depois disso. */
+  function iniciar() { setTimeout(function () { rodar(); pintar(); }, 60); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar);
+  else iniciar();
+})();
+</script>
+</body>
+</html>

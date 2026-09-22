@@ -503,6 +503,76 @@
     { rx: /abrir posi|nao consigo/, prox: ["Quanto tenho em caixa?", "Como estão minhas carteiras?"] }
   ];
 
+  /* ------------------------------------------------------------
+     O ROTEAMENTO, SEPARADO DA RESPOSTA
+
+     Qual é o assunto da pergunta? Antes isto vivia misturado com a
+     montagem do texto, numa cadeia de if (/regex/) — e só dava para
+     testar perguntando e lendo a frase, que muda com os dados. Agora
+     é uma tabela: pages/testes-oraculo.html confere dezenas de
+     perguntas contra o assunto esperado sem depender de número
+     nenhum.
+
+     A ORDEM IMPORTA: o padrão mais específico vem primeiro. "quanto
+     tenho em teses" é teses, não patrimônio; "qual meu saldo" é
+     caixa, não patrimônio.
+
+     Palavras soltas demais saíram, porque capturavam o assunto
+     errado: "aberto" mandava "posições abertas" para teses, "vale"
+     pegava "vale a pena", "conta" pegava "me conta", "real" pegava
+     "na real". \b na frente de "revis" impede que case dentro de
+     "pREVISao".
+     ------------------------------------------------------------ */
+  var ROTAS = [
+    /* revisão antes de teses: "tem tese atrasada?" é sobre o prazo,
+       não a lista de teses */
+    { id: "revisao",    rx: /\brevis|\breview|\batrasad|overdue|\bparad[ao]s? ha|stalled/ },
+    { id: "teses",      rx: /tese|thesis|estud|pendent|pending|andamento|progress/ },
+    { id: "atencao",    rx: /aten|attention|alerta|alert|risco|risk|problema|urgent/ },
+    /* caixa antes de patrimônio: "saldo" e "disponível" são caixa.
+       "saldo" chegou a estar só na regex de patrimônio — o comentário
+       dizia uma coisa e a tabela fazia outra. */
+    { id: "caixa",      rx: /caixa|saldo|dispon|livre|parado|cash|free|deposit|dep.sit|sacar|saque|withdraw|transfer/ },
+    /* resultado antes de patrimônio: "quanto lucrei?" começa com
+       "quanto" e é pergunta de resultado */
+    { id: "resultado",  rx: /lucr|resultado|pnl|rentab|\brend|performance|ganho|preju|profit/ },
+    { id: "patrimonio", rx: /quanto|how much|patrim|total|net worth|worth/ },
+    { id: "trava",      rx: /nao consigo|por que n|why can|bloque|recus|insuficien|abrir posi/ },
+    { id: "carteiras",  rx: /carteira|wallet|\bcontas\b/ },
+    { id: "fluxo",      rx: /movimento|fluxo|flow|entrada|saida|aporte|retirada|extrato/ },
+    { id: "resumo",     rx: /modul|module|resum|summary|status|como est|how is/ },
+    { id: "moeda",      rx: /moeda|currency|dolar|dollar|\breais\b|\bbrl\b|cambio|exchange/ },
+    { id: "backup",     rx: /backup|export|salvar|perder (os |meus )?dados|perder tudo|guardar/ }
+  ];
+
+  function intencao(q) {
+    q = normalizar(q);
+
+    /* O VOCABULÁRIO TENTA PRIMEIRO. core/atlas-vocabulario.js decompõe
+       a pergunta em métrica × módulo × período × carteira — o que
+       permite "quanto rendi em pool no mês passado na Principal", que
+       nenhuma regex de uma dimensão alcança. Só assume quando a
+       pergunta trouxe um FILTRO (carteira, módulo, período), ou pede
+       taxas, que a tabela não cobre. Para a pergunta seca a resposta
+       da tabela é mais rica.
+
+       "movimentos" saiu da lista: sozinho, ele fazia "como faço um
+       depósito?" e "mostra o extrato" receberem um seco "Nenhum
+       movimento." em vez da resposta de caixa ou de fluxo. */
+    if (window.AtlasVocabulario) {
+      try {
+        var Q = AtlasVocabulario.interpretar(q);
+        var especifica = Q.carteira || Q.modulo || Q.periodo || Q.metrica === "taxas";
+        if (especifica && AtlasVocabulario.responder(q)) return "vocabulario";
+      } catch (e) { /* segue para a tabela */ }
+    }
+
+    for (var i = 0; i < ROTAS.length; i++) {
+      if (ROTAS[i].rx.test(q)) return ROTAS[i].id;
+    }
+    return null;
+  }
+
   var baseBrain = {
     /* As sugestões mudam com o estado. Oferecer "o que precisa da minha
        atenção" quando não há alerta nenhum é fazer o usuário gastar um
@@ -715,45 +785,14 @@
     answer: function (q) {
       q = normalizar(q);
 
-      /* ------------------------------------------------------------
-         O VOCABULÁRIO TENTA PRIMEIRO
+      /* O assunto sai de intencao() — a tabela ROTAS e o vocabulário. */
+      var rota = intencao(q);
 
-         core/atlas-vocabulario.js decompõe a pergunta em métrica ×
-         módulo × período × carteira e responde cruzando as quatro. É o
-         que permite "quanto rendi em pool no mês passado na Principal"
-         — uma pergunta que nenhuma cadeia de `if (/regex/)` alcança,
-         porque uma expressão regular reconhece UMA dimensão.
-
-         Ele devolve null quando não reconhece a métrica ou quando a
-         métrica não tem como responder nesta tela, e aí a cadeia
-         abaixo assume. Ela continua sendo a dona de teses, alertas,
-         moeda e backup — coisas que não são cruzamento de dimensão.
-         ------------------------------------------------------------ */
-      if (window.AtlasVocabulario) {
-        var estruturada = null;
-        try { estruturada = AtlasVocabulario.responder(q); } catch (e) { estruturada = null; }
-        /* Só assume quando a pergunta trouxe MAIS de uma dimensão, ou
-           uma métrica que a cadeia antiga não cobre. Para "quanto eu
-           tenho" seco, a resposta do cérebro base é mais rica —
-           inclui distribuição e resultado acumulado. */
-        if (estruturada) {
-          var Q = AtlasVocabulario.interpretar(q);
-          var especifica = Q.carteira || Q.modulo || Q.periodo ||
-                           Q.metrica === "taxas" || Q.metrica === "movimentos";
-          if (especifica) return estruturada;
-        }
+      if (rota === "vocabulario") {
+        try { return AtlasVocabulario.responder(q); } catch (e) { /* cai na tabela */ }
       }
 
-      /* A ordem importa: "quanto tenho em teses abertas" é pergunta
-         sobre teses, não sobre patrimônio. O padrão mais específico
-         vem primeiro.
-
-         Palavras soltas demais saíram das regex, porque capturavam o
-         assunto errado: "aberto" mandava "posições abertas" para
-         teses, "vale" pegava "vale a pena", "conta" pegava "me conta",
-         "real" pegava qualquer "na real". */
-
-      if (/tese|thesis|estud|pendent|pending|andamento|progress/.test(q)) {
+      if (rota === "teses") {
         var p = baseBrain.pending();
         if (!p.length) return L("Nenhuma tese em aberto no " + LABEL + ". Fluxo em dia.",
                                 "No open theses in " + LABEL + ". All caught up.");
@@ -763,9 +802,7 @@
                  p.length + " open thesis(es): " + listStr + ".");
       }
 
-      /*  na frente: sem ele "revis" casava dentro de "pREVISao" e um
-         pedido de previsão recebia o relatório de teses atrasadas. */
-      if (/revis|review|atrasad|overdue|parad[ao]s? ha|stalled/.test(q)) {
+      if (rota === "revisao") {
         var old = baseBrain.pending().filter(function (x) {
           if (!x.createdAt) return false;
           return (Date.now() - new Date(x.createdAt).getTime()) > 72 * 3600 * 1000;
@@ -776,26 +813,14 @@
                  old.length + " thesis(es) open for over 72h — worth completing or archiving.");
       }
 
-      if (/aten|alerta|alert|risco|risk|problema|urgent/.test(q)) return baseBrain.atencao();
-
-      /* ------------------------------------------------------------
-         CAIXA VEM ANTES DE PATRIMÔNIO
-
-         "saldo" estava na regex de patrimônio, então "qual é o meu
-         saldo?" respondia com o valor das POSIÇÕES — o número que
-         justamente não é saldo. O padrão mais específico tem de vir
-         primeiro, mesma regra que já vale para "tese" acima.
-         ------------------------------------------------------------ */
-      if (/caixa|dispon|livre|parado|cash|free|deposit|dep.sit|sacar|saque|withdraw|transfer/.test(q)) {
-        return baseBrain.caixa();
-      }
-
-      if (/quanto|patrim|total|net worth|saldo|worth/.test(q)) return baseBrain.patrimonio();
+      if (rota === "atencao") return baseBrain.atencao();
+      if (rota === "caixa") return baseBrain.caixa();
+      if (rota === "patrimonio") return baseBrain.patrimonio();
 
       /* "por que não consigo abrir?" é a dúvida que a trava do caixa
          cria, e o Oráculo é onde a pessoa pergunta antes de procurar
          documentação. */
-      if (/n.o consigo|nao consigo|por que n|why can|bloque|recus|insuficien|abrir posi/.test(q)) {
+      if (rota === "trava") {
         var c = caixaGlobal();
         return L("Toda posição sai do caixa de uma carteira, e carteira sem caixa não abre " +
                  "posição — em módulo nenhum. Você tem " + dinheiro(c) + " disponível. " +
@@ -805,11 +830,10 @@
                  "can't open one. You have " + dinheiro(c) + " available.");
       }
 
-      if (/carteira|wallet|contas/.test(q)) return baseBrain.carteiras();
+      if (rota === "carteiras") return baseBrain.carteiras();
+      if (rota === "fluxo") return baseBrain.fluxo();
 
-      if (/movimento|fluxo|flow|entrada|sa.da|aporte|retirada|extrato/.test(q)) return baseBrain.fluxo();
-
-      if (/lucro|resultado|pnl|rentab|performance|ganho|preju/.test(q)) {
+      if (rota === "resultado") {
         var s = consolidado();
         if (!s || !s.total) return baseBrain.patrimonio();
         var sinal = s.pnl >= 0 ? "+" : "";
@@ -821,16 +845,16 @@
                  dinheiro(s.passiveIncome) + "." + (s.demo ? AVISO_DEMO() : ""));
       }
 
-      if (/modul|module|resum|summary|status|como est|how is/.test(q)) return baseBrain.summary();
+      if (rota === "resumo") return baseBrain.summary();
 
-      if (/moeda|currency|dolar|dollar|reais|brl|cambio|exchange/.test(q) && window.AtlasCurrency) {
+      if (rota === "moeda" && window.AtlasCurrency) {
         return L("Exibindo em " + AtlasCurrency.code() + ". Os dados continuam " +
                  "armazenados em USD — a moeda é só a camada de leitura.",
                  "Showing in " + AtlasCurrency.code() + ". Data is still stored " +
                  "in USD — currency is only the display layer.");
       }
 
-      if (/backup|export|salvar|perder (os |meus )?dados|perder tudo|guardar/.test(q)) {
+      if (rota === "backup") {
         return L("Seus dados vivem no armazenamento deste navegador — trocar de máquina " +
                  "ou limpar os dados de navegação apaga tudo. Exporte em Configurações → " +
                  "Dados e Backup, ou pelo Ctrl+K.",
@@ -1093,6 +1117,7 @@
     push(saudacaoComNome() + " " + (MODULE === "atlas" ? estadoCurto() : resumo), "bot");
 
     wrap._ask = ask;
+    wrap._responder = responder;
     wrap._setOpen = setOpen;
     wrap._alerts = brain.alerts;
     pintarPinOraculo(wrap);
@@ -1665,6 +1690,19 @@
     open: function () {
       var el = document.querySelector('[data-atlas-ui="oraculo"]');
       if (el && el._setOpen) el._setOpen(true);
+    },
+    /* Para pages/testes-oraculo.html: o raciocínio sem a interface.
+       responder() passa pela cortesia e pelos cérebros de módulo, como
+       uma pergunta digitada, mas não mexe no painel. */
+    teste: {
+      normalizar: normalizar,
+      intencao: intencao,
+      cortesia: cortesia,
+      saudacaoAgora: saudacaoAgora,
+      responder: function (q) {
+        var el = document.querySelector('[data-atlas-ui="oraculo"]');
+        return (el && el._responder) ? el._responder(q) : null;
+      }
     }
   };
 
