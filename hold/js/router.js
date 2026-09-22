@@ -148,12 +148,10 @@
        O ponto agora reflete a idade do preço mais VELHO da carteira, e
        a pastilha diz quando foi a última remarcação.
        ------------------------------------------------------------ */
-    var idade = idadeDosPrecos();
-    var pill = U.el("div", { class: "market-pill " + idade.nivel, title: idade.dica });
-    pill.appendChild(U.el("span", { class: "dot" }));
-    pill.appendChild(document.createTextNode("Carteira " + U.compact(S.get.portfolioValue())));
-    pill.appendChild(U.el("span", { class: "mp-idade", text: idade.rotulo }));
-    actions.appendChild(pill);
+    /* A pastilha "● Carteira US$ X · hoje" SAIU daqui: ela e o seletor
+       de carteira diziam quase a mesma coisa lado a lado. O seletor
+       virou a própria pastilha, e a idade do preço entra nele pela
+       opção `status` (ver buildWalletSelector). */
     tb.appendChild(actions);
   }
 
@@ -220,6 +218,8 @@
          ela que a partição dos dados do módulo é feita */
       getActive: S.wallets.active,
       onSelect: function (id) { S.wallets.set(id); },   // Hold reage via emit()
+      /* o ponto da pastilha diz a idade do preço mais velho das posições */
+      status: idadeDosPrecos,
       /* alimenta o ledger central. Antes reportava SÓ a carteira ativa,
          então as outras ficavam com o valor da última vez que foram
          abertas — ou com nada. Agora reporta todas as do módulo, com a

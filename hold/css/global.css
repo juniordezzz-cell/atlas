@@ -249,21 +249,8 @@ img.brand-mark { object-fit: contain; display: block; }
 }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 
-.market-pill {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px; color: var(--text-dim);
-  padding: 6px 11px; border: 1px solid var(--border);
-  border-radius: 20px; background: var(--surface);
-}
-/* O ponto informa a IDADE do preço, não uma conexão. Verde brilhante
-   fixo dizia "ao vivo" ao lado de números que podem ser de semanas
-   atrás. O brilho ficou só no estado realmente fresco. */
-.market-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); }
-.market-pill.fresco .dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
-.market-pill.morno  .dot { background: var(--warning); }
-.market-pill.velho  .dot { background: var(--danger); }
-.market-pill.velho  { border-color: rgba(239,68,68,0.28); }
-.market-pill .mp-idade { font-family: var(--mono); font-size: 11px; opacity: 0.8; }
+/* .market-pill saiu: a idade do preço agora vive no ponto do seletor
+   de carteira (wallets/walletSelector.css, opção `status`). */
 
 .view {
   flex: 1; padding: 26px 24px 60px;
@@ -391,7 +378,6 @@ body { animation: atlasPageFade .45s ease both; }
   .topbar .crumb .sep, .topbar .crumb .ctx { display: none; }
   .topbar .crumb { flex: 1 1 auto; overflow: hidden; }
   .topbar .crumb__atual { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .market-pill { display: none; }
 }
 
 /* Barra lateral recolhida (≤860px): o @media acima esconde os rótulos do

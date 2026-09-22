@@ -61,6 +61,7 @@
 
   var W = null;
 
+  function t(s) { return global.AtlasI18n ? global.AtlasI18n.t(s) : s; }
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;")
@@ -218,15 +219,32 @@
           '</button>'
         : "");
 
+    /* ------------------------------------------------------------
+       O BOTÃO É UMA PÍLULA: "● M4p  US$ 136,85 ⌄"
+
+       Era um cartão de duas linhas com avatar, e o Hold ainda punha ao
+       lado uma pílula "● Carteira US$ 0,00" — duas peças dizendo quase
+       a mesma coisa. Agora o seletor É a pílula: nome e saldo numa
+       linha, uma setinha discreta para trocar.
+
+       O ponto diz o TIPO (azul = global, dourado = local). Quem tem algo
+       mais útil a dizer nele passa `opts.status` — o Hold passa a idade
+       do preço mais velho das posições, e o ponto vira verde/amarelo/
+       vermelho com "· hoje", "· há 3d" ao lado.
+       ------------------------------------------------------------ */
+    var st = null;
+    if (typeof opts.status === "function") { try { st = opts.status() || null; } catch (e) { erro(e); } }
+    var tipo = active.type === "isolada" ? "Local" : "Global";
+    var rotulo = t("Carteira") + " " + active.name + " (" + tipo + "), " + saldo(opts, active.id) +
+                 (st && st.dica ? ". " + String(st.dica).replace(/\.\s*$/, "") : "") + ". " + t("Trocar carteira");
+
     return '' +
-      '<button type="button" class="awsel__btn" data-wbtn aria-haspopup="menu">' +
-        swatch(active) +
-        '<span class="awsel__meta">' +
-          '<span class="awsel__name">' + esc(active.name) + '</span>' +
-          '<span class="awsel__sub">' +
-            (active.type === "isolada" ? "Local" : "Global") + ' · ' + saldo(opts, active.id) +
-          '</span>' +
-        '</span>' +
+      '<button type="button" class="awsel__btn" data-wbtn aria-haspopup="menu" ' +
+              'aria-label="' + esc(rotulo) + '" title="' + esc(st && st.dica ? st.dica : tipo) + '">' +
+        '<span class="awsel__dot awsel__dot--' + esc(st && st.nivel ? st.nivel : (active.type === "isolada" ? "local" : "global")) + '" aria-hidden="true"></span>' +
+        '<span class="awsel__name">' + esc(active.name) + '</span>' +
+        '<span class="awsel__val">' + saldo(opts, active.id) + '</span>' +
+        (st && st.rotulo ? '<span class="awsel__idade">' + esc(st.rotulo) + '</span>' : "") +
         IC.chevron() +
       '</button>' +
       '<div class="awsel__menu" role="menu">' +

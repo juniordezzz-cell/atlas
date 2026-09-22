@@ -386,13 +386,6 @@ html .card.hoverable:hover {
 }
 /* estado vazio solto na página também sem moldura tracejada */
 html[data-module="hold"] .empty { border: 0; }
-/* pílula da idade do preço na topbar: sem contorno (o ponto já diz a idade) */
-html .market-pill,
-html .market-pill.velho {
-  border-color: transparent;
-  background: var(--sereno-fill);
-}
-html .market-pill.fresco .dot { box-shadow: none; }
 
 /* ===================================================================
    TRADE
