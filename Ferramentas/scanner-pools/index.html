@@ -734,7 +734,7 @@
     <button class="primary addbtn" onclick="openForm()" title="Adicionar uma pool na mão">+ Pool</button>
     <select id="perPage" onchange="state.page=1; render()">
       <option value="10">10 por página</option>
-      <option value="25">25 por página</option>
+      <option value="20" selected>20 por página</option>
       <option value="50">50 por página</option>
     </select>
   </div>
@@ -765,7 +765,7 @@
   <section id="tab-hist" style="display:none">
     <div class="scan-hero">
       <h2>📡 Radar</h2>
-      <p>Aqui você organiza as pools em <b>níveis</b>: ★ Favoritas, 🟢 Segura, 🟡 Mediana, 🔴 Agressiva e 👁 Observação (pool que você está testando antes de decidir). Classifica pelo seletor em cada pool — ou busca qualquer pool abaixo e classifica direto do resultado. Clique numa pool pra abrir a evolução: cartões antes→agora, gráfico de TVL, Volume 24h e Razão, e o histórico de cada atualização.</p>
+      <p>Aqui você organiza as pools em <b>níveis</b>: ★ Favoritas, 🟢 Segura, 🟡 Mediana, 🔴 Agressiva e 👁 Observação (pool que você está testando antes de decidir). Classifica pelo seletor em cada pool — ou busca qualquer pool abaixo e classifica direto do resultado. Clique numa pool pra abrir a evolução: cartões antes→agora, gráfico de TVL, Volume do dia e Razão, e o histórico de cada atualização.</p>
     </div>
 
     <div class="keybox">
@@ -1103,7 +1103,7 @@
         <h3>Checklist prático</h3>
         <p>Antes de entrar em qualquer pool, responde de cima pra baixo. Um "não" já é motivo pra pensar duas vezes:</p>
         <ul class="checklist">
-          <li>A Razão (Vol 24h / TVL) é ≥ 3×?</li>
+          <li>A Razão (Vol/dia ÷ TVL) é ≥ 3×?</li>
           <li>A Eficiência (Fee × Razão) é competitiva com as outras opções?</li>
           <li>O volume de 24h se confirma no de 30 dias (não é pico)?</li>
           <li>Eu sei o que o token é (categoria não é "?")?</li>
@@ -1126,7 +1126,7 @@
           <tbody>
             <tr><td class="tk">TVL</td><td>Total Value Locked. Capital total depositado na pool.</td></tr>
             <tr><td class="tk">Fee tier</td><td>Taxa cobrada por swap (0,01% a 1%). Fonte do rendimento do LP.</td></tr>
-            <tr><td class="tk">Razão (Vol/TVL)</td><td>Volume 24h ÷ TVL. Quantas vezes o capital gira por dia.</td></tr>
+            <tr><td class="tk">Razão (Vol/TVL)</td><td>Volume do dia (média de 7 dias, ou 24h quando a fonte não informa) ÷ TVL. Quantas vezes o capital gira por dia.</td></tr>
             <tr><td class="tk">Eficiência</td><td>Fee × Razão. Rendimento real de taxas por dia. Métrica de ranking.</td></tr>
             <tr><td class="tk">APR</td><td>Annual Percentage Rate. Retorno anual sem juros compostos.</td></tr>
             <tr><td class="tk">APY</td><td>Annual Percentage Yield. Retorno anual com juros compostos.</td></tr>
@@ -1488,7 +1488,7 @@ function aprOf(p){
 function fApr(p){
   const a = aprOf(p);
   if(!a) return "—";
-  return a.est ? `<span class="apr-est" title="Estimado: 365 × taxa × (vol 24h ÷ TVL). A fonte não informa APR.">~${fPct(a.v)}</span>` : fPct(a.v);
+  return a.est ? `<span class="apr-est" title="Estimado: 365 × taxa × (volume do dia ÷ TVL). A fonte não informa APR.">~${fPct(a.v)}</span>` : fPct(a.v);
 }
 function ratioClass(r){ return r>=3 ? "r-g" : (r>=1 ? "r-a" : "r-r"); } // verde a partir de 3x
 
@@ -1799,7 +1799,11 @@ function minhaPoolCard(p, wid){
   const r = S.poolSummary ? S.poolSummary(p) : null;
   const st = S.statusDe ? S.statusDe(p) : null;
   const fx = FAIXA_ROTULO[st && st.status] || {txt:"—", cls:"muted2"};
-  const mercado = state.pools.find(x=>candKey(x.platform, x.network, x.pool)===candKey(p.protocol, p.chain, par));
+  /* O DeFi não guarda a taxa da posição. Com o mesmo par em duas taxas
+     no Descobrir (WETH/USDC 0,05% e 0,3%), escolher uma seria comparar a
+     sua pool com outra — então só compara quando há UMA versão. */
+  const versoes = state.pools.filter(x=>candKey(x.platform, x.network, x.pool)===candKey(p.protocol, p.chain, par));
+  const mercado = versoes.length===1 ? versoes[0] : null;
   const aprMercado = mercado ? aprOf(mercado) : null;
   const aprMeu = r && r.dias>0 ? r.aprReal : null;
   const metrica = (rot, val, cls, dica) => h("div", {class:"rm"}, h("span", null, rot), h("b", {class:cls||null, title:dica||null}, val));
@@ -1821,7 +1825,9 @@ function minhaPoolCard(p, wid){
       metrica("Razão", mercado ? fRatio(ratio(mercado)) : "—", mercado ? `ratio ${ratioClass(ratio(mercado))}` : null),
       metrica("Dados do mercado", mercado ? fRelDate(mercado.updatedAt).txt : "—")),
     leitura ? h("div", {class:"simnote", style:"margin-top:8px"}, leitura) : null,
-    !mercado ? h("div", {class:"simnote", style:"margin-top:8px"},
+    versoes.length>1 ? h("div", {class:"simnote", style:"margin-top:8px"},
+      `Há ${versoes.length} versões desta pool no Descobrir (taxas ${versoes.map(v=>fFee(v.fee)).join(", ")}) e o DeFi não guarda qual é a sua — por isso não comparo. Veja cada uma no Descobrir.`) : null,
+    !versoes.length ? h("div", {class:"simnote", style:"margin-top:8px"},
       `Esta pool não está no Descobrir, então não há o que comparar. Busque por ${p.base||"ela"} em "Buscar pools novas" e adicione.`) : null,
     h("div", {class:"rc-foot"}, h("a", {class:"iconbtn", href:`../../defi/pool.html?id=${encodeURIComponent(p.id)}`}, "Abrir no DeFi")));
 }
@@ -1872,7 +1878,8 @@ function fPctSigned(pct){ return pct==null ? '—' : (pct>=0?'+':'')+pct.toLocal
 function radarSnaps(p){
   return (p.history||[]).slice().sort((a,b)=>a.ts-b.ts).map(s=>{
     const tvl=+s.tvl||0, vol=(s.vol7d!=null && +s.vol7d>0) ? (+s.vol7d)/7 : (+s.vol24h||0);
-    return { ts:s.ts, tvl, vol24h:vol, vol30d:(s.vol30d==null?null:+s.vol30d),
+    return { ts:s.ts, tvl, vol24h:vol, base:(s.vol7d!=null && +s.vol7d>0) ? "7d" : "24h",
+             vol30d:(s.vol30d==null?null:+s.vol30d),
              apr:(s.apr==null?null:+s.apr), ratio:(tvl>0?vol/tvl:0) };
   });
 }
@@ -1956,7 +1963,10 @@ function poolAlerts(p){
   const cur = h[h.length-1], prev = h[h.length-2];
   if((getAlertOk()[p.id]||0) >= cur.ts) return []; // já visto
   const out = [];
-  if(cur.ratio<1 && prev.ratio>=1) out.push({cls:"bad", icon:"🔻", txt:`Razão caiu pra ${fRatio(cur.ratio)} (era ${fRatio(prev.ratio)})`});
+  /* Razão só se compara na mesma régua: um registro pelo volume de 24h e
+     o seguinte pela média de 7 dias mudariam de valor sem a pool mudar
+     (é o que aconteceria na primeira atualização depois da troca). */
+  if(cur.base===prev.base && cur.ratio<1 && prev.ratio>=1) out.push({cls:"bad", icon:"🔻", txt:`Razão caiu pra ${fRatio(cur.ratio)} (era ${fRatio(prev.ratio)})`});
   const dT = pctChange(prev.tvl, cur.tvl);
   if(dT!=null && dT<=-30) out.push({cls:"bad", icon:"📉", txt:`TVL caiu ${fPctSigned(dT)} (${fUSD(prev.tvl)} → ${fUSD(cur.tvl)})`});
   const aP = snapApr(prev,p), aC = snapApr(cur,p);
@@ -2046,7 +2056,7 @@ function openCompare(){
         <tr><th>Nível</th>${cell(p=>{const l=RADAR_LEVEL_BY_KEY[p.level]; return l?`${l.icon} ${l.label}`:'—';})}</tr>
         ${rowNum("Taxa", pools.map(p=>p.fee), fFee)}
         ${rowNum("TVL", pools.map(p=>p.tvl), fUSD)}
-        ${rowNum("Vol 24h", pools.map(p=>p.vol24h), fUSD)}
+        ${rowNum("Vol/dia", pools.map(p=>volDia(p)), fUSD)}
         ${rowNum("Razão", pools.map(p=>ratio(p)), fRatio)}
         ${rowNum("Efic %/dia", pools.map(p=>efic(p)), v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+"%")}
         ${rowNum("APR", pools.map(p=>aprOf(p)?.v ?? null), fPct)}
@@ -2055,7 +2065,7 @@ function openCompare(){
         <tr><th>Registros</th>${cell(p=>(p.history||[]).length)}</tr>
       </tbody>
     </table></div>
-    <div class="cmp-charttitle">Razão (Vol 24h ÷ TVL) ao longo do tempo</div>
+    <div class="cmp-charttitle">Razão (Vol/dia ÷ TVL) ao longo do tempo</div>
     ${compareChartSVG(pools)}
     <p class="cmp-note">Verde = melhor valor da linha. O rendimento/dia supõe volume e TVL constantes e liquidez no range todo — é referência, não promessa.</p>`;
   document.getElementById("cmpCard").innerHTML = html;
@@ -2292,7 +2302,7 @@ function radarCards(snaps){
   const first = snaps[0];
   const cards = [];
   cards.push(radarCard("TVL", prev?prev.tvl:null, cur.tvl, prev?prev.ts:null, cur.ts, fUSD, false));
-  cards.push(radarCard("Volume 24h", prev?prev.vol24h:null, cur.vol24h, prev?prev.ts:null, cur.ts, fUSD, false));
+  cards.push(radarCard("Volume do dia", prev?prev.vol24h:null, cur.vol24h, prev?prev.ts:null, cur.ts, fUSD, false));
   if(cur.vol30d!=null) cards.push(radarCard("Volume 30d", prev?prev.vol30d:null, cur.vol30d, prev?prev.ts:null, cur.ts, fUSD, false));
   cards.push(radarCard("Razão (Vol/TVL)", prev?prev.ratio:null, cur.ratio, prev?prev.ts:null, cur.ts, fRatio, true));
 
@@ -2302,7 +2312,7 @@ function radarCards(snaps){
     const aT=trendArrow(dT), aV=trendArrow(dV), aR=trendArrow(dR);
     since = `<div style="font-size:12px;color:var(--mut);margin:-4px 2px 16px;font-variant-numeric:tabular-nums">Desde o 1º registro (${fmtHistDate(first.ts)}): `+
       `TVL <b class="trend ${aT.cls}">${aT.arrow} ${fPctSigned(dT)}</b> · `+
-      `Vol 24h <b class="trend ${aV.cls}">${aV.arrow} ${fPctSigned(dV)}</b> · `+
+      `Vol/dia <b class="trend ${aV.cls}">${aV.arrow} ${fPctSigned(dV)}</b> · `+
       `Razão <b class="trend ${aR.cls}">${aR.arrow} ${fPctSigned(dR)}</b></div>`;
   }
   return `<div class="rcards">${cards.join("")}</div>${since}`;
@@ -2341,7 +2351,7 @@ function radarTable(snaps){
     </tr>`);
   }
   return `<table class="histtable" style="margin-top:18px">
-    <thead><tr><th>Atualização</th><th>TVL</th><th>Vol 24h</th><th>Razão</th><th>APR</th></tr></thead>
+    <thead><tr><th>Atualização</th><th>TVL</th><th title="Média de 7 dias quando a fonte informou; senão 24h">Vol/dia</th><th>Razão</th><th>APR</th></tr></thead>
     <tbody>${rows.join("")}</tbody></table>`;
 }
 
@@ -2353,7 +2363,7 @@ function radarChartHTML(p){
   return `<div class="radar-chartwrap" id="${id}-wrap">
     <div class="radar-legend">
       ${radarLegBtn(id,'tvl','TVL',RADAR_COL.tvl)}
-      ${radarLegBtn(id,'vol24h','Vol 24h',RADAR_COL.vol24h)}
+      ${radarLegBtn(id,'vol24h','Vol/dia',RADAR_COL.vol24h)}
       ${radarLegBtn(id,'ratio','Razão',RADAR_COL.ratio)}
     </div>
     <div class="radar-chartbox">
@@ -2476,7 +2486,7 @@ function radarHover(id, clientX){
   if(tip){
     tip.innerHTML = `<div class="tip-date">${fmtHistDateFull(pt.ts)}</div>`+
       radarTipRow(RADAR_COL.tvl,'TVL',fUSD(pt.tvl),R.on.tvl)+
-      radarTipRow(RADAR_COL.vol24h,'Vol 24h',fUSD(pt.vol24h),R.on.vol24h)+
+      radarTipRow(RADAR_COL.vol24h,'Vol/dia',fUSD(pt.vol24h),R.on.vol24h)+
       radarTipRow(RADAR_COL.ratio,'Razão',fRatio(pt.ratio),R.on.ratio);
     tip.style.display="block";
     const box=svg.parentElement.getBoundingClientRect();
