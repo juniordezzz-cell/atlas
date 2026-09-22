@@ -595,6 +595,16 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
               box-shadow var(--atlas-dur) var(--atlas-ease);
 }
 .awd__field input::placeholder { color: var(--atlas-text-faint); }
+.awd__field input[aria-invalid="true"] { border-color: var(--atlas-neg, #f87171); }
+/* nome repetido: diz qual carteira já usa o nome (walletDialog.js) */
+.awd__erro {
+  display: block;
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--atlas-neg, #f87171);
+}
+.awd__erro[hidden] { display: none; }
 .awd__field input:focus {
   outline: none;
   border-color: var(--atlas-accent);

@@ -414,14 +414,19 @@
       { id: "t-m1p", name: "M1P", type: "global" },
       { id: "t-m2r", name: "M2R", type: "isolada", module: "defi" },
       { id: "t-res", name: "Reserva", type: "global" },
-      { id: "t-rel", name: "Reserva Longa", type: "global" }
+      { id: "t-rel", name: "Reserva Longa", type: "global" },
+      /* homônimas: mesmo nome com outra grafia */
+      { id: "t-m3a", name: "M3p", type: "global" },
+      { id: "t-m3b", name: "m3P", type: "global" }
     ];
     var NUM = {
       "t-m4p": { caixa: 187.64, defi: [133.70, 115.21, 18.41] },
       "t-m1p": { caixa: 50, hold: [1000, 900, 100], trade: [0, 0, 20] },
       "t-m2r": { caixa: 0, defi: [500, 520, -20] },
       "t-res": { caixa: 10 },
-      "t-rel": { caixa: 20 }
+      "t-rel": { caixa: 20 },
+      "t-m3a": { caixa: 8 },
+      "t-m3b": { caixa: 0 }
     };
     function linha(id, m) { return (NUM[id] && NUM[id][m]) || [0, 0, 0]; }
 
@@ -480,10 +485,21 @@
       var e2 = cv2.estado().Q || {};
       caso(g, "comparação → \"e no hold?\" continua comparando, no Hold", (!!e2.comparar) + "|" + e2.modulo, "true|hold");
 
+      /* nome repetido: não escolhe uma no escuro */
+      var amb = resp("quanto tenho na M3p?");
+      caso(g, "nome repetido: diz que há duas", amb.indexOf("Há 2 carteiras chamadas “M3p”") === 0, true);
+      caso(g, "nome repetido: mostra o valor de cada, mais antiga primeiro",
+           amb.indexOf("• M3p (global, a mais antiga): US$ 8,00") > -1 && amb.indexOf("• m3P (global, a mais recente): US$ 0,00") > -1, true);
+      caso(g, "nome repetido: pede para renomear", amb.indexOf("Renomeie uma delas") > -1, true);
+      caso(g, "nome repetido também dentro de comparação", resp("compara a M3p com a M1P").indexOf("Há 2 carteiras chamadas") === 0, true);
+      caso(g, "lista marca o nome repetido", resp("qual carteira tem mais?").indexOf("M3p (nome repetido)") > -1, true);
+      caso(g, "nomes iguais sem caixa, acento e espaço sobrando",
+           W.normalizeName ? W.normalizeName("  Méu  M3P ") === W.normalizeName("meu m3p") : false, true);
+
       /* a lista de "como estão minhas carteiras?" */
       var lst = String(T.responder("Como estão minhas carteiras?") || "").replace(/ /g, " ");
       caso(g, "\"como estão minhas carteiras?\" lista o saldo de cada uma",
-           lst.indexOf("5 carteiras: 4 global(is)") > -1 && lst.indexOf("• M1P: US$ 1.050 — caixa US$ 50,00, Hold US$ 1.000") > -1 &&
+           lst.indexOf("7 carteiras: 6 global(is)") > -1 && lst.indexOf("• M1P: US$ 1.050 — caixa US$ 50,00, Hold US$ 1.000") > -1 &&
            lst.indexOf("• M2R (local): US$ 500,00") > -1, true);
     } finally {
       W.all = orig.all; W.globals = orig.globals; W.get = orig.get;

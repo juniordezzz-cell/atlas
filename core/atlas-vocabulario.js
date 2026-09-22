@@ -207,14 +207,25 @@
       var rx = new RegExp("(^|\\W)" + alvo + "($|\\W)");
       var m = resto.match(rx);
       if (!m) return;
-      achadas.push({ w: c.w, pos: m.index });
+      /* Nome repetido (duas "M3p"): o texto não diz de qual se fala.
+         Todas as homônimas entram, marcadas, e a resposta pede para
+         renomear em vez de escolher uma em silêncio. */
+      var iguais = cands.filter(function (o) { return o.n === c.n; });
+      iguais.forEach(function (o, k) {
+        achadas.push({ w: o.w, pos: m.index + k / 100, ambigua: iguais.length > 1, ordem: k });
+      });
       resto = resto.slice(0, m.index) + " " + new Array(m[0].length).join("#") + resto.slice(m.index + m[0].length);
     });
-    return achadas.sort(function (a, b) { return a.pos - b.pos; }).map(function (x) { return x.w; });
+    /* homônimas já entraram juntas; não voltam a casar na próxima volta */
+    var vistos = {};
+    return achadas.sort(function (a, b) { return a.pos - b.pos; })
+      .filter(function (x) { if (vistos[x.w.id]) return false; vistos[x.w.id] = 1; return true; })
+      .map(function (x) { var w = Object.create(x.w); w.__ambigua = x.ambigua; w.__ordem = x.ordem; return w; });
   }
 
   function refCarteira(w) {
-    return { id: w.id, nome: w.name, tipo: w.type === "isolada" ? "isolada" : "global", modulo: w.module || null };
+    return { id: w.id, nome: w.name, tipo: w.type === "isolada" ? "isolada" : "global", modulo: w.module || null,
+             ambigua: !!w.__ambigua, ordem: w.__ordem || 0 };
   }
 
   /* "qual carteira tem mais?", "compara as carteiras", "por carteira" */
@@ -477,8 +488,13 @@
 
       var rotulo = { caixa: "Caixa", posicoes: "Alocado", resultado: "Resultado" }[Q.metrica] || "Patrimônio";
       var cab = rotulo + " por carteira" + (Q.modulo ? " em " + (NOME_MODULO[Q.modulo] || Q.modulo) : "") + ":";
+      var contaNome = {};
+      linhas.forEach(function (l) { var k = limpar(l.c.nome); contaNome[k] = (contaNome[k] || 0) + 1; });
+      var temRepetido = false;
       var corpo = linhas.map(function (l) {
-        var txt = "• " + l.c.nome + (l.c.tipo === "isolada" ? " (local)" : "") + ": ";
+        var rep = contaNome[limpar(l.c.nome)] > 1;
+        if (rep) temRepetido = true;
+        var txt = "• " + l.c.nome + (l.c.tipo === "isolada" ? " (local)" : "") + (rep ? " (nome repetido)" : "") + ": ";
         if (porResultado) {
           txt += l.valor == null ? "—" : sinalDe(l.valor) +
                  (l.pct != null ? " (" + (l.pct >= 0 ? "+" : "") + l.pct.toFixed(2).replace(".", ",") + "% sobre " + dinheiro(l.nd.capital) + ")" : "");
@@ -503,7 +519,8 @@
       }
       var locais = linhas.some(function (l) { return l.c.tipo === "isolada"; })
         ? "Carteiras locais não somam no patrimônio total." : "";
-      return [cab].concat(corpo, [fecho, locais].filter(Boolean)).join("\n");
+      var aviso = temRepetido ? "Há carteiras com o mesmo nome — renomeie uma delas para distingui-las." : "";
+      return [cab].concat(corpo, [fecho, locais, aviso].filter(Boolean)).join("\n");
     },
 
     posicoes: function (Q) {
@@ -657,12 +674,35 @@
     return responderQ(interpretar(pergunta));
   }
 
+  function respostaAmbigua(amb, Q) {
+    var porNome = {};
+    amb.forEach(function (c) { (porNome[limpar(c.nome)] = porNome[limpar(c.nome)] || []).push(c); });
+    var blocos = Object.keys(porNome).map(function (k) {
+      var lista = porNome[k];
+      var linhas = lista.map(function (c, i) {
+        var nd = numerosDa(c.id, Q.modulo);
+        var idade = lista.length > 1 ? (i === 0 ? ", a mais antiga" : (i === lista.length - 1 ? ", a mais recente" : "")) : "";
+        return "• " + c.nome + " (" + (c.tipo === "isolada" ? "local" : "global") + idade + "): " +
+               dinheiro(nd.total) + (Q.modulo ? " em " + (NOME_MODULO[Q.modulo] || Q.modulo) : "");
+      });
+      return "Há " + lista.length + " carteiras chamadas “" + lista[0].nome + "”:\n" + linhas.join("\n");
+    });
+    return blocos.join("\n") + "\nRenomeie uma delas (lápis ao lado do nome, no seletor de carteira) " +
+           "para eu saber de qual você está falando.";
+  }
+
   /* A mesma porta, para quem já tem a consulta montada. O Oráculo usa
      para a CONTINUAÇÃO: "quanto rendi em pool?" → "e no mês passado?"
      troca só o período da consulta anterior e mantém métrica e
      módulo — sem colar textos, que duplicaria o período antigo. */
   function responderQ(Q) {
     if (!Q || !Q.metrica || !RESOLVE[Q.metrica]) return null;
+
+    /* Nome de carteira que pertence a mais de uma: mostra as duas, com
+       o que se sabe para distingui-las, e pede para renomear. Responder
+       por uma delas seria escolher no escuro. */
+    var amb = (Q.carteiras || []).filter(function (c) { return c.ambigua; });
+    if (amb.length) return respostaAmbigua(amb, Q);
 
     /* Duas carteiras citadas, ou "qual carteira…": comparação. Com
        período não: a comparação é da fotografia de agora, e resultado

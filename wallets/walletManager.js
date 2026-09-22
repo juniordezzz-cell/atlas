@@ -42,6 +42,25 @@
     return list.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
   }
 
+  /* minúsculas, sem acento, espaços colapsados — ver API.nameTaken */
+  function normalizarNome(s) {
+    s = String(s == null ? "" : s).toLowerCase().replace(/\s+/g, " ").trim();
+    return s.normalize ? s.normalize("NFD").replace(/[̀-ͯ]/g, "") : s;
+  }
+
+  /* `nome`, ou "nome 2", "nome 3"… — o primeiro que nenhuma OUTRA
+     carteira usa (renomear para o próprio nome não conta como repetido) */
+  function nomeUnico(lista, nome, exceptId) {
+    var usados = {};
+    lista.forEach(function (w) { if (w.id !== exceptId) usados[normalizarNome(w.name)] = 1; });
+    if (!usados[normalizarNome(nome)]) return nome;
+    for (var n = 2; n < 1000; n++) {
+      var cand = nome + " " + n;
+      if (!usados[normalizarNome(cand)]) return cand;
+    }
+    return nome + " " + Date.now().toString(36);
+  }
+
   var API = {
     /* ---------------- LISTAGEM ---------------- */
     all: function () { return sorted(load().wallets); },
@@ -157,13 +176,36 @@
     },
 
     /* ---------------- CRIAR / EDITAR / EXCLUIR ---------------- */
+    /* ------------------------------------------------------------
+       NOME ÚNICO
+
+       Duas carteiras "M3p" — uma com US$ 128 e outra vazia — são
+       indistinguíveis na lista e no Oráculo ("quanto tenho na M3p?"
+       responderia por uma só). O diálogo impede quem digita
+       (walletDialog.js); aqui fica a garantia para quem chama por
+       código: nome repetido ganha número ("Nova carteira 2") em vez de
+       ser recusado, porque o Trade cria com o nome padrão e usa a
+       carteira devolvida na linha seguinte.
+
+       Comparação sem caixa, sem acento e sem espaço sobrando: "M3p" e
+       "m3P " são o mesmo nome para quem lê.
+       ------------------------------------------------------------ */
+    normalizeName: normalizarNome,
+    nameTaken: function (name, exceptId) {
+      var alvo = normalizarNome(name);
+      if (!alvo) return null;
+      return load().wallets.filter(function (w) {
+        return w.id !== exceptId && normalizarNome(w.name) === alvo;
+      })[0] || null;
+    },
+
     create: function (opts) {
       opts = opts || {};
       var d = load();
       var maxOrder = d.wallets.reduce(function (m, w) { return Math.max(m, w.order || 0); }, -1);
       var w = {
         id: genId(),
-        name: (opts.name || "Nova carteira").trim(),
+        name: nomeUnico(d.wallets, (opts.name || "Nova carteira").trim(), null),
         type: opts.type === "isolada" ? "isolada" : "global",
         module: opts.type === "isolada" ? (opts.module || null) : null,
         color: opts.color || "#4C9AFF",
@@ -180,7 +222,7 @@
       var d = load();
       var w = byId(d.wallets, id);
       if (!w) return false;
-      w.name = (name || w.name).trim();
+      w.name = nomeUnico(d.wallets, (name || w.name).trim(), w.id);
       save(d);
       return true;
     },

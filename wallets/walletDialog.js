@@ -188,7 +188,8 @@
           '<span>' + esc(t("Nome da carteira")) + '</span>' +
           '<input type="text" id="awdName" maxlength="32" autocomplete="off" ' +
                  'value="' + esc(modo === "rename" ? alvo.name : "") + '" ' +
-                 'placeholder="' + esc(t("Ex.: Reserva longo prazo")) + '">' +
+                 'placeholder="' + esc(t("Ex.: Reserva longo prazo")) + '" aria-describedby="awdErro">' +
+          '<small class="awd__erro" id="awdErro" role="alert" hidden></small>' +
         '</label>' +
 
         '<div class="awd__field">' +
@@ -227,16 +228,30 @@
     var preview = root.querySelector("#awdPreview");
     var btnOk   = root.querySelector("#awdOk");
 
+    var erro = root.querySelector("#awdErro");
+
+    /* Nome que outra carteira já usa (sem caixa nem acento): o botão
+       trava e a caixa diz qual é. Duas "M3p" não se distinguem na
+       lista nem no Oráculo. Renomear para o próprio nome vale. */
+    function repetida(v) {
+      if (!v || !W || !W.nameTaken) return null;
+      return W.nameTaken(v, modo === "rename" ? alvo.id : null);
+    }
+
     function atualizar() {
       var v = input.value.trim();
       preview.textContent = v || t("Sem nome");
       preview.classList.toggle("is-empty", !v);
-      btnOk.disabled = !v;
+      var dup = repetida(v);
+      erro.hidden = !dup;
+      erro.textContent = dup ? t("Já existe uma carteira chamada") + " “" + dup.name + "”. " + t("Escolha outro nome.") : "";
+      input.setAttribute("aria-invalid", dup ? "true" : "false");
+      btnOk.disabled = !v || !!dup;
     }
 
     input.addEventListener("input", atualizar);
     input.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && input.value.trim()) { e.preventDefault(); confirmar(); }
+      if (e.key === "Enter" && !btnOk.disabled) { e.preventDefault(); confirmar(); }
     });
 
     root.querySelector("#awdEmojis").addEventListener("click", function (e) {
@@ -279,7 +294,7 @@
 
     function confirmar() {
       var nome = input.value.trim();
-      if (!nome) return;
+      if (!nome || repetida(nome)) return;
       var dados = { name: nome, emoji: escolhido, type: currentType,
                     module: currentType === "isolada"
                       ? (modo === "rename" ? alvo.module : (opts.module || null))
