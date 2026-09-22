@@ -208,6 +208,9 @@
     ["Vocabulário x tabela", [
       ["quanto rendi em pool no mês passado?", "vocabulario"],
       ["quanto paguei de taxas?", "vocabulario"],
+      ["quanto rendeu minha pool?", "vocabulario"],
+      ["quanto lucrei no trade?", "vocabulario"],
+      ["quanto a pool rende por mês?", "vocabulario"],
       ["como faço um depósito?", "caixa"],
       ["mostra o extrato", "fluxo"]
     ]],
@@ -361,6 +364,21 @@
     var queda = T.descreverMudancas(agora, { ts: agoraTs, total: 300, pnl: 18.41, caixa: 0, alertas: agora.alertas, movs: agora.movs }, alertasAgora, movsAgora);
     caso(gm, "queda com sinal de menos", sp(queda.texto).indexOf("Patrimônio −US$ 21,34") > -1, true);
     grupos.push(gm);
+
+    /* Demonstração: pergunta filtrada diz que o registro não existe e
+       o caminho até ele — em vez de "nenhum resultado" ao lado de
+       pools de exemplo na tela */
+    var gd = { titulo: "Demonstração · pergunta filtrada", casos: [] };
+    var dp = T.respostaDemoFiltrada({ metrica: "resultado", modulo: "defi" });
+    caso(gd, "pool: diz que não há pool cadastrada", dp.indexOf("Você ainda não cadastrou nenhuma pool de liquidez") === 0, true);
+    caso(gd, "pool: diz o que ela quer saber", dp.indexOf("Para eu dizer quanto ela rendeu") > -1, true);
+    caso(gd, "pool: caminho até a resposta", dp.indexOf("limpe a demonstração") > -1 && dp.indexOf("cadastre a pool no DeFi") > -1, true);
+    caso(gd, "limpar não apaga nada seu", dp.indexOf("nada seu é apagado") > -1, true);
+    caso(gd, "hold: ativo, não pool", T.respostaDemoFiltrada({ metrica: "resultado", modulo: "hold" }).indexOf("nenhum ativo no Hold") > -1, true);
+    caso(gd, "trade: operação", T.respostaDemoFiltrada({ metrica: "resultado", modulo: "trade" }).indexOf("nenhuma operação no Trade") > -1, true);
+    caso(gd, "taxas da pool", T.respostaDemoFiltrada({ metrica: "taxas", modulo: "defi" }).indexOf("quanto ela rendeu de taxa") > -1, true);
+    caso(gd, "sem módulo (só período)", T.respostaDemoFiltrada({ metrica: "resultado", periodo: { rotulo: "no mês passado" } }).indexOf("Para eu dizer quanto rendeu:") > -1, true);
+    grupos.push(gd);
 
     var gp = { titulo: "Recusa de previsão", casos: [] };
     PREVISAO.forEach(function (c) {

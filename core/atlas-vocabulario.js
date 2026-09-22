@@ -80,7 +80,11 @@
   var METRICAS = [
     { id: "caixa",      ordem: 1, termos: ["caixa", "disponivel", "disponiveis", "livre", "parado", "sobrou", "cash"] },
     { id: "taxas",      ordem: 2, termos: ["taxa", "taxas", "rendimento", "recompensa", "juros", "fee", "fees", "apr", "apy"] },
-    { id: "resultado",  ordem: 3, termos: ["resultado", "lucro", "prejuizo", "pnl", "rendi", "rentab", "ganho", "ganhei", "perdi", "perda", "performance"] },
+    /* "lucr" e as formas de "render" por extenso: só "lucro" e "rendi"
+       deixavam "quanto lucrei no trade?" e "quanto rendeu minha pool?"
+       sem métrica — e sem métrica o filtro de módulo se perdia, e a
+       resposta vinha do consolidado. */
+    { id: "resultado",  ordem: 3, termos: ["resultado", "lucr", "prejuizo", "pnl", "rendi", "rendeu", "renderam", "rende ", "rentab", "ganho", "ganhei", "perdi", "perda", "performance"] },
     { id: "movimentos", ordem: 4, termos: ["movimento", "movimentacao", "movimentacoes", "extrato", "fluxo", "entrada", "entradas", "saida", "saidas", "deposito", "depositos", "saque", "saques", "transferencia", "aporte"] },
     { id: "posicoes",   ordem: 5, termos: ["posicao", "posicoes", "aberta", "abertas", "alocado", "investido", "aplicado"] },
     { id: "teses",      ordem: 6, termos: ["tese", "teses", "estudo", "estudos"] },

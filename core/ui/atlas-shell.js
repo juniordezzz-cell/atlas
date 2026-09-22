@@ -324,6 +324,46 @@
              " Demo sample numbers — clear the demo to use your own.");
   };
 
+  /* ------------------------------------------------------------
+     PERGUNTA FILTRADA NA DEMONSTRAÇÃO
+
+     "quanto rendeu minha pool?" na demonstração recebia "Nenhum
+     resultado realizado em DeFi" — verdade sobre os dados reais (que
+     estão vazios; é por isso que a demonstração aparece), mas dita ao
+     lado de quatro pools de exemplo na tela. A resposta certa é dizer
+     que não há o registro e o caminho até ele.
+
+     Vale para pergunta que depende de um registro específico (módulo,
+     período, carteira). A pergunta geral ("quanto eu tenho?") continua
+     respondida com o exemplo marcado: ali ela é sobre a tela.
+     ------------------------------------------------------------ */
+  var DEMO_O_QUE = {
+    defi:  { item: "nenhuma pool de liquidez", ond: "no DeFi",  cad: "a pool",   ela: "ela" },
+    hold:  { item: "nenhum ativo no Hold",      ond: "no Hold",  cad: "o ativo",  ela: "ele" },
+    trade: { item: "nenhuma operação no Trade", ond: "no Trade", cad: "a operação", ela: "ela" },
+    rwa:   { item: "nenhum ativo tokenizado",   ond: "no RWA",   cad: "o ativo",  ela: "ele" }
+  };
+
+  function respostaDemoFiltrada(Q) {
+    Q = Q || {};
+    var o = DEMO_O_QUE[Q.modulo] || { item: "nenhum dado seu", ond: "em Carteiras & Movimentações ou num módulo",
+                                      cad: "um depósito ou uma posição", ela: "isso" };
+    var pergunta = {
+      resultado:  "quanto " + o.ela + " rendeu",
+      taxas:      "quanto " + o.ela + " rendeu de taxa",
+      movimentos: "os movimentos " + (o.ela === "isso" ? "" : (o.ela === "ela" ? "dela" : "dele")),
+      posicoes:   "quanto está alocado",
+      caixa:      "o caixa",
+      patrimonio: "quanto vale"
+    }[Q.metrica] || "responder isso";
+    if (!DEMO_O_QUE[Q.modulo] && Q.metrica === "resultado") pergunta = "quanto rendeu";
+    return L("Você ainda não cadastrou " + o.item + " — o que aparece na tela é exemplo da demonstração. " +
+             "Para eu dizer " + pergunta.trim() + ": limpe a demonstração (botão na faixa do topo do Dashboard), " +
+             "cadastre " + o.cad + " " + o.ond + " e pergunte de novo. Limpar tira só os exemplos; nada seu é apagado.",
+             "You haven't registered any data for this yet — what's on screen is demo sample data. " +
+             "Clear the demo (button on the Dashboard banner), add it, and ask again. Clearing only removes the samples.");
+  }
+
   function snapshotDemo() {
     var s = AtlasDemo.snapshot(30);
     var d = AtlasDemo.dados();
@@ -732,6 +772,7 @@
             carteira: Qf.carteira || ctx.Q.carteira
           };
           if (Qm.metrica && temFiltro(Qm)) {
+            if (demoNaTela()) { ctx = { rota: "vocabulario", Q: Qm }; return respostaDemoFiltrada(Qm); }
             var rv = null;
             try { rv = V.responderQ(Qm); } catch (e) { rv = null; }
             if (rv) { ctx = { rota: "vocabulario", Q: Qm }; return rv; }
@@ -1222,6 +1263,7 @@
       var rota = intencao(q);
 
       if (rota === "vocabulario") {
+        if (demoNaTela()) return respostaDemoFiltrada(AtlasVocabulario.interpretar(q));
         try { return AtlasVocabulario.responder(q); } catch (e) { /* cai na tabela */ }
       }
 
@@ -2163,6 +2205,7 @@
       cortesia: cortesia,
       saudacaoAgora: saudacaoAgora,
       descreverMudancas: descreverMudancas,
+      respostaDemoFiltrada: respostaDemoFiltrada,
       /* Uma conversa nova, isolada da do painel: a bateria encadeia
          perguntas sem herdar o que a pessoa perguntou antes. */
       conversa: function () {
