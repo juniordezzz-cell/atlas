@@ -164,6 +164,11 @@
         /* Só grava com preço dos DOIS lados. Meio preço produziria um
            patrimônio menor que o real e assustaria à toa. */
         if (!m || !m.precoOk) return;
+        /* Sem quantidade nenhuma, quantidade × preço é ZERO: gravar isso
+           apagava o valor da posição só de abrir o painel. Mesma trava
+           de pool.js. */
+        if ((Number(p.qtyBase) || 0) + (Number(p.qtyQuote) || 0) +
+            (Number(p.qtyBaseNow) || 0) + (Number(p.qtyQuoteNow) || 0) <= 0) return;
 
         /* Grava SÓ o valor de mercado. O lucro deixou de ser escrito
            aqui: quem calcula resultado é DeFiStore.poolSummary, a
