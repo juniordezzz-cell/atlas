@@ -351,9 +351,29 @@
      "Patrimônio total: US$ 600". Cinquenta e quatro por cento do
      dinheiro fora da resposta, na pergunta mais direta que existe.
      ------------------------------------------------------------ */
+  /* A MESMA RÉGUA DA TELA
+
+     AtlasCaixa.saldo() é o CUSTO (quanto foi depositado); header,
+     Dashboard e Carteiras mostram o caixa A MERCADO
+     (AtlasConsolidation.caixaMercadoDe). Com SOL ou ETH parados, o
+     Oráculo dizia um número e a tela outro. Agora ele lê o mesmo; sem
+     a consolidação na página, cai no custo, que é o que existe. */
+  function caixaDe(id) {
+    if (window.AtlasConsolidation && AtlasConsolidation.caixaMercadoDe) {
+      return AtlasConsolidation.caixaMercadoDe(id) || 0;
+    }
+    return AtlasCaixa.saldo(id) || 0;
+  }
+
   function caixaGlobal() {
-    if (!window.AtlasCaixa || !AtlasCaixa.caixaGlobal) return 0;
-    try { return AtlasCaixa.caixaGlobal() || 0; } catch (e) { return 0; }
+    if (!window.AtlasCaixa) return 0;
+    var W = window.AtlasWallets;
+    try {
+      if (W && W.globals) {
+        return W.globals().reduce(function (a, w) { return a + caixaDe(w.id); }, 0);
+      }
+      return AtlasCaixa.caixaGlobal ? (AtlasCaixa.caixaGlobal() || 0) : 0;
+    } catch (e) { return 0; }
   }
 
   function caixaPorCarteira() {
@@ -361,8 +381,8 @@
     if (!window.AtlasCaixa || !W || !W.globals) return [];
     try {
       return W.globals().map(function (w) {
-        return { nome: w.name, id: w.id, saldo: AtlasCaixa.saldo(w.id) };
-      }).filter(function (x) { return x.saldo !== 0; });
+        return { nome: w.name, id: w.id, saldo: caixaDe(w.id) };
+      }).filter(function (x) { return Math.abs(x.saldo) > 1e-9; });
     } catch (e) { return []; }
   }
 
@@ -1065,10 +1085,6 @@
     wrap.querySelectorAll(".atlas-oraculo__chip").forEach(function (c) {
       c.addEventListener("click", function () { ask(c.getAttribute("data-q")); });
     });
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") setOpen(false);
-    });
-
     /* A abertura cumprimenta uma vez, pelo horário, e vai ao estado.
        No Dashboard o resumo vira a linha curta (patrimônio + alertas);
        nos módulos continua o resumo de teses de cada um. */
@@ -1106,6 +1122,15 @@
   document.addEventListener("atlas:movement", function () { pintarPinOraculo(); });
   document.addEventListener("atlas:theses", function () { pintarPinOraculo(); });
   document.addEventListener("atlas:alertas", function () { pintarPinOraculo(); });
+
+  /* Esc fecha o Oráculo. Um ouvinte só, aqui fora: dentro de
+     buildOraculo() cada registerBrain() — que refaz o componente —
+     somava mais um, preso a um painel que já tinha saído da página. */
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    var el = document.querySelector('[data-atlas-ui="oraculo"]');
+    if (el && el._setOpen) el._setOpen(false);
+  });
 
   /* ============================================================
      4. Montagem resistente
