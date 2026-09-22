@@ -197,6 +197,13 @@
     .topbar::-webkit-scrollbar{display:none}
     .topbar .tab{padding:14px 10px; font-size:13px; white-space:nowrap}
   }
+  /* celular: o nome sai e fica o ponto — senão a 4ª aba (Guia) ficava fora
+     da tela, numa rolagem sem barra que ninguém percebe */
+  @media(max-width:480px){
+    .brand{font-size:0; gap:0}
+    .topbar{gap:6px}
+    .topbar .tab{padding:14px 8px}
+  }
 
   /* ===== ABAS ===== */
   nav.tabs{display:flex; gap:4px; margin:0}
@@ -331,7 +338,6 @@
   .checklist li:last-child{border-bottom:none}
 
   /* ===== SCANNER IA ===== */
-  #tab-scan{max-width:1100px}
   .scan-hero{background:linear-gradient(135deg,#141c2c,#0d1320); border:1px solid var(--line); border-radius:16px; padding:22px 26px; margin-bottom:20px}
   .scan-hero h2{margin:0 0 8px; font-size:20px}
   .scan-hero p{margin:0 0 6px; color:#c3ccdb; font-size:13.5px; line-height:1.6}
@@ -343,6 +349,17 @@
   .keybox input[type=password]{flex:1; min-width:220px; color:var(--txt)}
   .keybox select{color:var(--txt)}
   .keybox .keystatus{font-size:12px; color:var(--mut)}
+  /* painéis recolhíveis da aba Descobrir (buscar pools / ler print) */
+  .dx-painel{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:0 16px; margin-bottom:14px}
+  .dx-painel > summary{cursor:pointer; list-style:none; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; padding:13px 0; user-select:none}
+  .dx-painel > summary::-webkit-details-marker{display:none}
+  .dx-painel > summary::before{content:"›"; color:var(--mut); transition:transform .15s; display:inline-block}
+  .dx-painel[open] > summary::before{transform:rotate(90deg)}
+  .dx-painel > summary b{font-size:14px}
+  .dx-painel > summary span{font-size:12px; color:var(--mut)}
+  .dx-painel[open]{padding-bottom:14px}
+  .dx-painel .keybox{background:transparent; border:0; padding:0; margin-bottom:0}
+  .volsrc{margin-left:5px; font-size:10px; color:var(--mut2); font-family:inherit}
   .keybox .keystatus.ok{color:var(--green)}
 
   .dropzone{border:2px dashed var(--line); border-radius:14px; padding:28px; text-align:center; color:var(--mut); cursor:pointer; transition:.15s; margin-bottom:20px}
@@ -618,15 +635,79 @@
   <header class="topbar">
     <div class="brand"><span class="brand-dot"></span>Scanner Pools</div>
     <nav class="tabs">
-      <button class="tab on" data-tab="dash" onclick="switchTab('dash')">📊 Dashboard</button>
-      <button class="tab" data-tab="scan" onclick="switchTab('scan')">🔎 Scanner</button>
-      <button class="tab" data-tab="hist" onclick="switchTab('hist')">📡 Radar<span class="tabbadge" id="radarBadge" style="display:none"></span></button>
-      <button class="tab" data-tab="learn" onclick="switchTab('learn')">📖 Guia</button>
+      <button class="tab on" data-tab="dash" onclick="switchTab('dash')">Descobrir</button>
+      <button class="tab" data-tab="hist" onclick="switchTab('hist')">Radar<span class="tabbadge" id="radarBadge" style="display:none"></span></button>
+      <button class="tab" data-tab="mine" onclick="switchTab('mine')">Minhas pools</button>
+      <button class="tab" data-tab="learn" onclick="switchTab('learn')">Guia</button>
     </nav>
   </header>
   <input type="file" id="importfile" accept="application/json" style="display:none" onchange="importJSON(event)">
 
   <section id="tab-dash">
+  <!-- DESCOBRIR = o ranking + a busca de pools novas + (avançado) o leitor
+       de prints. Era a aba "Dashboard" e a aba "Scanner" separadas; a busca
+       automática virou o caminho principal, e o print ficou como opção. -->
+  <details class="dx-painel" id="dxBusca">
+    <summary><b>Buscar pools novas</b><span>DefiLlama e GeckoTerminal · sem chave · nada entra sem você confirmar</span></summary>
+    <div class="keybox" style="flex-direction:column; align-items:stretch; gap:12px">
+      <div style="display:flex; align-items:flex-start; gap:10px">
+        <div>
+          <b style="font-size:13.5px">Puxar pools automaticamente</b>
+          <div class="keystatus" style="margin-top:2px">Busca os dados reais das pools — TVL, volume (média de 7 dias quando a fonte informa), taxa e APR — <b>sem chave e sem print</b>, e monta uma prévia editável logo abaixo. Uniswap/Raydium/Orca vêm da <b>DefiLlama</b> (com APR pronto); PancakeSwap (BNB, Base, Arbitrum, Robinhood) e Meteora vêm da <b>GeckoTerminal</b> (sem taxa/APR — complete à mão se quiser). O vol30d nenhuma fonte fornece; deixe em branco.</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
+        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">Rede
+          <select id="llamaChain" style="min-width:150px"><option value="">Minhas redes (todas)</option></select></label>
+        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">DEX / plataforma
+          <select id="llamaProject" style="min-width:170px"><option value="">Minhas DEXes (todas)</option></select></label>
+        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">TVL mínimo (US$)
+          <input id="llamaMinTvl" type="number" min="0" step="100000" value="1000000" style="width:130px"></label>
+        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">Trazer top
+          <input id="llamaLimit" type="number" min="1" max="200" step="5" value="30" style="width:80px"></label>
+        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">Filtrar token
+          <input id="llamaToken" placeholder="ex: ETH" style="width:110px"></label>
+        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)" title="Corta pool parada — volume 24h abaixo disso não entra.">Vol 24h mín. (US$)
+          <input id="llamaMinVol" type="number" min="0" step="10000" value="50000" style="width:110px"></label>
+        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)" title="Memecoin costuma ser pool recém-criada. Vale pra pools da GeckoTerminal (PancakeSwap, Meteora, Uniswap Robinhood) — a DefiLlama não informa a data de criação.">Idade mín. (dias)
+          <input id="llamaMinAge" type="number" min="0" step="1" value="7" style="width:80px"></label>
+        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)" title="Tokens que nunca devem entrar, separados por vírgula. Fica salvo.">Bloquear tokens
+          <input id="llamaBlock" placeholder="ex: PEPE, DOGE" style="width:150px" onchange="saveBlocklist(this.value)"></label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--mut); padding-bottom:7px" title="Deixa passar só pools que registram volume de troca — tira staking, lending e RWA, que têm TVL alto mas não geram taxa por giro (não servem pro estudo Vol/TVL).">
+          <input id="llamaDexOnly" type="checkbox" checked style="width:auto"> Só pools com volume (DEX de troca)</label>
+        <button class="primary" id="llamaSearchBtn" onclick="runLlamaSearch()">Puxar pools</button>
+      </div>
+      <span class="keystatus" id="llamaStatus">Clique em <b>"Puxar pools"</b> — na primeira vez baixa a lista completa (uns segundos), depois é só filtrar na hora. As redes e DEXes preenchem sozinhas após a primeira busca.</span>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid rgba(255,255,255,.07); padding-top:10px">
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--mut); cursor:pointer" title="Ao abrir o app (se já passou de 24h) ele atualiza sozinho os números — TVL, volume 24h e APR — SÓ das pools que você já tem. Nunca adiciona pool nova.">
+          <input id="autoUpdChk" type="checkbox" style="width:auto" onchange="onAutoUpdToggle()"> 🔄 Atualizar minhas pools sozinho a cada 24h</label>
+        <button id="updNowBtn" onclick="runUpdateNow()" title="Busca agora os números novos (TVL, vol 24h, APR) de TODAS as pools que já estão no painel. Nunca adiciona pool nova.">🔄 Atualizar minhas pools agora</button>
+        <span class="keystatus" id="autoUpdStatus" style="margin:0"></span>
+      </div>
+    </div>
+
+  </details>
+
+    <div id="scanItems"></div>
+
+    <div class="scan-footbar" id="scanFootbar" style="display:none">
+      <button class="primary" onclick="commitScan('update')" title="Atualiza os números SÓ das pools que já estão no painel. Linhas NOVA são ignoradas — nada entra.">🔄 Só atualizar as que já tenho</button>
+      <button onclick="commitScan('add')" title="Adiciona SÓ as linhas NOVA marcadas. Pools que já existem não são tocadas.">➕ Adicionar as novas marcadas</button>
+      <button class="ghost" onclick="commitScan('replace')">↻ Apagar grupo(s) (Plataforma+Rede) e recriar com as marcadas</button>
+      <span class="cnt" id="scanCnt"></span>
+    </div>
+
+
+  <details class="dx-painel" id="dxPrint">
+    <summary><b>Ler print</b><span>avançado · OCR no seu navegador ou preenchimento manual</span></summary>
+    <p class="keystatus" style="margin:4px 0 12px">Para pool que a busca não encontra. O OCR lê o texto do print aqui mesmo, sem internet e sem chave, e monta a mesma prévia editável. Se ele errar, corrija na tabela ou use "+ linha manual".</p>
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('scanFileInput').click()">
+      <b>Clica pra escolher os prints</b>, arrasta e solta, ou simplesmente <b>Ctrl+V</b> (cola direto de qualquer lugar da página, tipo no chat do Claude)
+      <input type="file" id="scanFileInput" accept="image/*" multiple style="display:none" onchange="onScanFiles(event)">
+    </div>
+
+  </details>
+
   <div class="platstats" id="platstats"></div>
 
   <div class="controls">
@@ -672,7 +753,7 @@
     <details class="logic">
     <summary>ℹ️ Como ler o ranking</summary>
     <div class="thesis">
-    <b>A lógica:</b> o rendimento de fees é <code>APR = 365 × Fee × (Vol&nbsp;24h / TVL)</code>.
+    <b>A lógica:</b> o rendimento de fees é <code>APR = 365 × Fee × (Vol&nbsp;do&nbsp;dia / TVL)</code>, com o volume do dia pela <b>média de 7 dias</b> quando a fonte informa (etiqueta 7d) ou pelas últimas 24h (etiqueta 24h). Pool sem taxa informada aparece como <b>taxa ?</b> e vai para o fim.
     O ranking é pela <b>Eficiência</b> (<code>Fee × Razão</code>), o <b>rendimento diário real</b> que já embute a taxa.
     <span class="rule">Semáforo da Razão: ≥ 3×</span> verde · 1–3× amarelo · &lt;1× vermelho.
     A coluna <b>Categoria</b> é o filtro que taxa e razão não dão: <span style="color:#a97bff;font-weight:600">RWA</span>, <span style="color:#2ec785;font-weight:600">Blue-chip</span> e <span style="color:#3aa0ff;font-weight:600">Stable</span> valem o risco; <span style="color:#f5943b;font-weight:600">Memecoin</span> paga fee gordo mas o IL morde; <span style="color:#7d8aa0;font-weight:600">❓</span> = token ainda não classificado (confirme antes de entrar).
@@ -680,101 +761,6 @@
     </div>
   </details>
 </section>
-
-  <section id="tab-scan" style="display:none">
-    <div class="scan-hero">
-      <h2>🔎 Scanner de prints</h2>
-      <p>Envie o print da pool aqui. O scanner lê os números direto no seu computador e monta uma prévia editável — nada entra no dashboard sem você confirmar.</p>
-      <div class="scan-steps">
-        <div class="scan-step"><b>1. Motor local (OCR)</b>Roda no seu navegador, sem internet, sem chave. Lê o texto do print e tenta encaixar nas colunas do layout que você escolher.</div>
-        <div class="scan-step"><b>2. IA (API) — opcional</b>Se o OCR errar ou o print for complicado, manda pra IA usando as chaves do arquivo <b>keys/keys.json</b>. O roteador reveza entre elas e troca sozinho se uma falhar. Mais precisa, mas consome a sua conta da API.</div>
-        <div class="scan-step"><b>3. Manual</b>Falhou os dois? Edita a linha na mão mesmo, na tabela de baixo. Sempre disponível.</div>
-      </div>
-    </div>
-
-    <div class="keybox" style="flex-direction:column; align-items:stretch; gap:12px">
-      <div style="display:flex; align-items:flex-start; gap:10px">
-        <span style="font-size:20px">🌐</span>
-        <div>
-          <b style="font-size:13.5px">Puxar pools automaticamente</b>
-          <div class="keystatus" style="margin-top:2px">Busca os dados reais das pools — TVL, volume 24h, taxa e APR — <b>sem chave e sem print</b>, e monta a mesma prévia editável aqui embaixo. Uniswap/Raydium/Orca vêm da <b>DefiLlama</b> (com APR pronto); PancakeSwap (BNB, Base, Arbitrum, Robinhood) e Meteora vêm da <b>GeckoTerminal</b> (sem taxa/APR — complete à mão se quiser). O vol30d nenhuma fonte fornece; deixe em branco.</div>
-        </div>
-      </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">Rede
-          <select id="llamaChain" style="min-width:150px"><option value="">Minhas redes (todas)</option></select></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">DEX / plataforma
-          <select id="llamaProject" style="min-width:170px"><option value="">Minhas DEXes (todas)</option></select></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">TVL mínimo (US$)
-          <input id="llamaMinTvl" type="number" min="0" step="100000" value="1000000" style="width:130px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">Trazer top
-          <input id="llamaLimit" type="number" min="1" max="200" step="5" value="30" style="width:80px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">Filtrar token
-          <input id="llamaToken" placeholder="ex: ETH" style="width:110px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)" title="Corta pool parada — volume 24h abaixo disso não entra.">Vol 24h mín. (US$)
-          <input id="llamaMinVol" type="number" min="0" step="10000" value="50000" style="width:110px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)" title="Memecoin costuma ser pool recém-criada. Vale pra pools da GeckoTerminal (PancakeSwap, Meteora, Uniswap Robinhood) — a DefiLlama não informa a data de criação.">Idade mín. (dias)
-          <input id="llamaMinAge" type="number" min="0" step="1" value="7" style="width:80px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)" title="Tokens que nunca devem entrar, separados por vírgula. Fica salvo.">Bloquear tokens
-          <input id="llamaBlock" placeholder="ex: PEPE, DOGE" style="width:150px" onchange="saveBlocklist(this.value)"></label>
-        <label style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--mut); padding-bottom:7px" title="Deixa passar só pools que registram volume de troca — tira staking, lending e RWA, que têm TVL alto mas não geram taxa por giro (não servem pro estudo Vol/TVL).">
-          <input id="llamaDexOnly" type="checkbox" checked style="width:auto"> Só pools com volume (DEX de troca)</label>
-        <button class="primary" id="llamaSearchBtn" onclick="runLlamaSearch()">Puxar pools</button>
-      </div>
-      <span class="keystatus" id="llamaStatus">Clique em <b>"Puxar pools"</b> — na primeira vez baixa a lista completa (uns segundos), depois é só filtrar na hora. As redes e DEXes preenchem sozinhas após a primeira busca.</span>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid rgba(255,255,255,.07); padding-top:10px">
-        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--mut); cursor:pointer" title="Ao abrir o app (se já passou de 24h) ele atualiza sozinho os números — TVL, volume 24h e APR — SÓ das pools que você já tem. Nunca adiciona pool nova.">
-          <input id="autoUpdChk" type="checkbox" style="width:auto" onchange="onAutoUpdToggle()"> 🔄 Atualizar minhas pools sozinho a cada 24h</label>
-        <button id="updNowBtn" onclick="runUpdateNow()" title="Busca agora os números novos (TVL, vol 24h, APR) de TODAS as pools que já estão no painel. Nunca adiciona pool nova.">🔄 Atualizar minhas pools agora</button>
-        <span class="keystatus" id="autoUpdStatus" style="margin:0"></span>
-      </div>
-    </div>
-
-    <div class="keybox">
-      <span style="font-size:20px">🎚️</span>
-      <label style="font-size:12.5px; color:var(--mut)">Máximo de pools por print (passo 2 · IA):</label>
-      <input type="number" id="maxPoolsInput" min="5" max="150" step="5" style="width:80px" value="20" oninput="onMaxPoolsInput()">
-      <span class="keystatus">Limita quanto a IA tenta extrair de uma vez — evita estourar o limite de resposta em prints com tabela gigante. Se a imagem tiver mais pools que isso, ela pega só as com maior liquidez.</span>
-    </div>
-
-    <div class="dropzone" id="dropzone" onclick="document.getElementById('scanFileInput').click()">
-      <b>Clica pra escolher os prints</b>, arrasta e solta, ou simplesmente <b>Ctrl+V</b> (cola direto de qualquer lugar da página, tipo no chat do Claude)
-      <input type="file" id="scanFileInput" accept="image/*" multiple style="display:none" onchange="onScanFiles(event)">
-    </div>
-
-    <div id="scanItems"></div>
-
-    <div class="scan-footbar" id="scanFootbar" style="display:none">
-      <button class="primary" onclick="commitScan('update')" title="Atualiza os números SÓ das pools que já estão no painel. Linhas NOVA são ignoradas — nada entra.">🔄 Só atualizar as que já tenho</button>
-      <button onclick="commitScan('add')" title="Adiciona SÓ as linhas NOVA marcadas. Pools que já existem não são tocadas.">➕ Adicionar as novas marcadas</button>
-      <button class="ghost" onclick="commitScan('replace')">↻ Apagar grupo(s) (Plataforma+Rede) e recriar com as marcadas</button>
-      <span class="cnt" id="scanCnt"></span>
-    </div>
-
-    <details id="keysDetails" style="margin:28px 0 4px; border:1px solid rgba(255,255,255,.10); border-radius:12px; padding:2px 12px; background:rgba(255,255,255,.02)">
-      <summary style="cursor:pointer; padding:9px 2px; font-size:13px; color:var(--mut); user-select:none">
-        🔑 Chaves de IA — importar / testar <span id="keySummaryBadge" style="color:var(--txt); font-weight:600"></span>
-      </summary>
-      <div style="padding:4px 0 8px">
-        <div class="keybox">
-          <span style="font-size:20px">🔑</span>
-          <div style="display:flex; flex-direction:column; gap:6px; flex:1; min-width:240px">
-            <span class="keystatus" id="keyStatus">Nenhuma chave carregada — passo 2 (IA) fica desligado, mas OCR e manual funcionam de boa.</span>
-            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
-              <button class="ghost" onclick="document.getElementById('keysFileInput').click()">Importar keys.json</button>
-              <button class="ghost" onclick="testAllKeys()" id="testKeyBtn">Testar chaves</button>
-              <button class="ghost" onclick="forgetKeys()">Esquecer chaves</button>
-              <input type="file" id="keysFileInput" accept=".json,application/json" style="display:none" onchange="onKeysFilePicked(event)">
-            </div>
-          </div>
-        </div>
-        <div class="keybox" style="align-items:flex-start">
-          <span style="font-size:20px">🧭</span>
-          <span class="keystatus">As chaves ficam no arquivo <b>keys/keys.json</b> (não é digitado aqui). Reconhece <b>Anthropic, OpenAI (ChatGPT), Gemini, Mistral, DeepSeek e OpenRouter</b> — cada linha do arquivo já vem rotulada, você só cola a chave na que tiver; as vazias o roteador ignora. Ele faz rodízio entre as preenchidas e, se uma falhar (sem crédito, limite, inválida), pula pra próxima sozinho. <b>Pra ler print</b> use OpenAI, Gemini, Mistral (Pixtral), Anthropic ou OpenRouter — <b>DeepSeek</b> hoje não lê imagem pela API. <b>Nunca suba o keys.json real pra um site público</b> — ele viraria uma URL pública e suas chaves seriam roubadas.</span>
-        </div>
-      </div>
-    </details>
-  </section>
 
   <section id="tab-hist" style="display:none">
     <div class="scan-hero">
@@ -789,6 +775,14 @@
 
     <div class="radar-toolbar" id="radarToolbar"></div>
     <div id="radarList"></div>
+  </section>
+
+  <section id="tab-mine" style="display:none">
+    <div class="scan-hero">
+      <h2>Minhas pools</h2>
+      <p>As pools que você tem abertas no módulo <b>DeFi</b> do ATLAS, lado a lado com o que o mercado está pagando nelas agora. Aqui só se lê: abrir, ajustar e encerrar posição continua sendo no DeFi.</p>
+    </div>
+    <div id="minhasList"></div>
   </section>
 
   <section id="tab-learn" style="display:none">
@@ -817,7 +811,7 @@
         <li><a href="#sec6">As 6 categorias</a></li>
         <li><a href="#sec7">Impermanent Loss</a></li>
         <li><a href="#sec8">Liquidez concentrada (v3/CLMM)</a></li>
-        <li><a href="#sec9">Volume 24h vs 30 dias</a></li>
+        <li><a href="#sec9">Volume do dia: 24h, 7 dias e 30 dias</a></li>
         <li><a href="#sec10">APR informado vs APR real</a></li>
         <li><a href="#sec11">Riscos e red flags</a></li>
         <li><a href="#sec12">O funil de decisão</a></li>
@@ -871,7 +865,8 @@
       <div class="lnum">3</div>
       <div class="lbody">
         <h3>A Razão — o giro do capital</h3>
-        <p>Razão = <b>Volume 24h ÷ TVL</b>. Quanto dinheiro passa por cada dólar preso. É o coração do método:</p>
+        <p>Razão = <b>Volume do dia ÷ TVL</b>. Quanto dinheiro passa por cada dólar preso. É o coração do método.</p>
+        <p>O "volume do dia" é a <b>média diária dos últimos 7 dias</b> sempre que a fonte informa (na tabela aparece a etiqueta <b>7d</b>); quando não informa, entra o volume das últimas 24h (etiqueta <b>24h</b>). O porquê está na seção 9.</p>
         <div class="vs">
           <div class="vscard good"><div class="vstag">Pool A · gira muito</div><div class="vsrow"><span>TVL</span><b>$1 M</b></div><div class="vsrow"><span>Volume 24h</span><b>$3 M</b></div><div class="vsbig r-g">Razão 3×</div><div class="vsnote">Cada dólar trabalha 3× por dia</div></div>
           <div class="vsvs">vs</div>
@@ -912,6 +907,7 @@
         </table>
         <div class="callout warn"><div class="cotip">⚠️</div><div><b>A armadilha:</b> USDC/USDT (Uniswap Arbitrum) tem razão <b>4,52×</b> — gira $10 M sobre $2 M — mas taxa <b>0,0008%</b>. Rende <b>~0,00%/dia</b>. O giro é enorme, quase nada vira taxa.</div></div>
         <div class="callout bad"><div class="cotip">🚩</div><div><b>A outra armadilha:</b> taxa alta não é qualidade. 1% costuma marcar par volátil/memecoin, onde o <i>impermanent loss</i> come a taxa. Taxa alta é prêmio de risco, não garantia.</div></div>
+        <div class="callout"><div class="cotip">❓</div><div><b>"taxa ?" na tabela</b> — a GeckoTerminal (PancakeSwap, Meteora) nem sempre informa a taxa da pool. Sem taxa, a Eficiência é <b>desconhecida</b>, não zero: a pool vai para o fim do ranking com "taxa ?" até você completar a taxa em <b>editar</b>. Antes, ela aparecia como 0% — como se fosse ruim, quando só faltava o dado.</div></div>
       </div>
     </div>
 
@@ -1000,18 +996,25 @@
     <div class="lsec" id="sec9">
       <div class="lnum">9</div>
       <div class="lbody">
-        <h3>Volume 24h vs 30 dias</h3>
-        <p>A razão usa o volume de 24h porque é o dado mais fresco. Mas 24h pode ser um <b>pico isolado</b> — uma listagem, uma notícia, um bot. Cruzar com o volume de 30 dias separa giro consistente de spike passageiro.</p>
+        <h3>Volume do dia: 24h, 7 dias e 30 dias</h3>
+        <p>O volume de 24h é o dado mais fresco, mas pode ser um <b>pico isolado</b> — uma listagem, uma notícia, um bot. Uma razão calculada num dia de pico põe no topo do ranking uma pool que amanhã volta ao normal.</p>
+        <p>Por isso o Scanner calcula a Razão, a Eficiência e o APR estimado com a <b>média diária dos últimos 7 dias</b> quando a fonte informa (DefiLlama: Uniswap, Raydium, Orca). Na GeckoTerminal, em print e no que você digita, só existe o de 24h — e a tabela avisa com a etiqueta <b>24h</b>.</p>
+        <div class="vs">
+          <div class="vscard bad"><div class="vstag">Pelo volume de 24h</div><div class="vsrow"><span>WETH/USDC · Uniswap · Base</span><b></b></div><div class="vsbig r-a">APR 57%</div><div class="vsnote">um dia forte</div></div>
+          <div class="vsvs">vs</div>
+          <div class="vscard good"><div class="vstag">Pela média de 7 dias</div><div class="vsrow"><span>a mesma pool, a mesma semana</span><b></b></div><div class="vsbig r-g">APR 17%</div><div class="vsnote">o que ela paga de verdade</div></div>
+        </div>
+        <p class="simnote">Medido na DefiLlama em 22/09/2026. O número de um dia era mais que o triplo do da semana.</p>
         <table class="ltable">
           <thead><tr><th>Sinal</th><th>Interpretação</th></tr></thead>
           <tbody>
-            <tr><td class="tk g">24h alto + 30d alto</td><td>Giro consistente. Confiável — trabalha todo dia.</td></tr>
-            <tr><td class="tk a">24h alto + 30d baixo</td><td>Pico isolado. A razão de hoje some amanhã. Cuidado.</td></tr>
-            <tr><td class="tk a">24h baixo + 30d alto</td><td>Esfriou. Já foi boa, perdeu tração.</td></tr>
-            <tr><td class="tk r">24h &lt; média 30d</td><td>Dia fraco. Espera ou confirma com mais dias.</td></tr>
+            <tr><td class="tk g">24h ≈ média 7d</td><td>Giro consistente. Confiável — trabalha todo dia.</td></tr>
+            <tr><td class="tk a">24h muito acima da média 7d</td><td>Pico isolado. A razão de hoje some amanhã. Cuidado.</td></tr>
+            <tr><td class="tk a">24h muito abaixo da média 7d</td><td>Dia fraco ou esfriando. Espera ou confirma com mais dias.</td></tr>
+            <tr><td class="tk r">média 7d caindo no Radar</td><td>Perdeu tração. Olha o gráfico da pool no Radar antes de entrar.</td></tr>
           </tbody>
         </table>
-        <div class="callout"><div class="cotip">📊</div><div>Antes de entrar por uma razão alta, vê se ela se sustenta. A coluna Vol 30d do dashboard (quando a plataforma fornece) serve exatamente pra isso. Prefere consistência a fogo de palha.</div></div>
+        <div class="callout"><div class="cotip">📊</div><div>Prefere consistência a fogo de palha. O Radar guarda cada atualização da pool: é lá que se vê se a razão se sustenta semana após semana.</div></div>
       </div>
     </div>
 
@@ -1208,6 +1211,26 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+<!-- As camadas do ATLAS que a aba "Minhas pools" lê: as carteiras e o
+     módulo DeFi (pools abertas, resumo e faixa). As mesmas que o Dashboard
+     carrega — aqui só se LÊ; abrir e ajustar posição continua no DeFi. -->
+<script src="../../core/atlas-storage.js"></script>
+<script src="../../core/atlas-snapshots.js"></script>
+<script src="../../wallets/walletStore.js"></script>
+<script src="../../wallets/walletTypes.js"></script>
+<script src="../../wallets/walletLedger.js"></script>
+<script src="../../wallets/walletCaixa.js"></script>
+<script src="../../wallets/walletManager.js"></script>
+<script src="../../core/http.js"></script>
+<script src="../../core/providers/registry.js"></script>
+<script src="../../core/providers/coingecko.js"></script>
+<script src="../../core/atlas-price.js"></script>
+<script src="../../core/providers/geckoterminal.js"></script>
+<script src="../../core/atlas-precos.js"></script>
+<script src="../../core/atlas-tokens.js"></script>
+<script src="../../defi/js/tokens.js"></script>
+<script src="../../defi/js/performance.js"></script>
+<script src="../../defi/js/data.js"></script>
 <script>
 /* ============ SEED (extraído das 6 imagens enviadas) ============ */
 /* fee em % · tvl/vol em USD · vol30d só onde a plataforma mostrava (Uniswap) */
@@ -1343,7 +1366,7 @@ const COLS = [
   {key:"cat",     label:"Categoria",  cls:"plat"},
   {key:"fee",     label:"Fee",        cls:""},
   {key:"tvl",     label:"TVL",        cls:""},
-  {key:"vol24h",  label:"Vol 24h",    cls:""},
+  {key:"vol24h",  label:"Vol/dia",    cls:""},
   {key:"trend",   label:"Δ TVL",      cls:""},
   {key:"ratio",   label:"Razão",      cls:""},
   {key:"efic",    label:"Efic %/dia", cls:""},
@@ -1377,7 +1400,7 @@ function load(){
   state.pools.forEach((p,i)=>{
     if(p.updatedAt==null) p.updatedAt = Date.parse(DATA_VERSION+"T00:00:00");
     if(!Array.isArray(p.history) || p.history.length===0){
-      p.history = [{ts:p.updatedAt, tvl:p.tvl, vol24h:p.vol24h, vol30d:p.vol30d, fee:p.fee, apr:p.apr}];
+      p.history = [{ts:p.updatedAt, tvl:p.tvl, vol24h:p.vol24h, vol7d:p.vol7d, vol30d:p.vol30d, fee:p.fee, apr:p.apr}];
     }
     if(p.notes==null) p.notes = "";
   });
@@ -1393,7 +1416,7 @@ function normalizePool(p){
   const id = Number(o.id);
   o.id = (Number.isFinite(id) && id>0) ? id : null;
   ["fee","tvl","vol24h"].forEach(k=>{ const v=Number(o[k]); o[k] = Number.isFinite(v) ? v : 0; });
-  ["vol30d","apr"].forEach(k=>{ if(o[k]==null || o[k]===""){ o[k]=null; return; } const v=Number(o[k]); o[k] = Number.isFinite(v) ? v : null; });
+  ["vol30d","vol7d","apr"].forEach(k=>{ if(o[k]==null || o[k]===""){ o[k]=null; return; } const v=Number(o[k]); o[k] = Number.isFinite(v) ? v : null; });
   if(o.updatedAt!=null){ const t=Number(o.updatedAt); o.updatedAt = Number.isFinite(t) ? t : null; }
   ["pool","platform","network","notes","level","cat","srcId"].forEach(k=>{ if(o[k]!=null) o[k]=String(o[k]); });
   o.fav = !!o.fav;
@@ -1401,6 +1424,7 @@ function normalizePool(p){
     o.history = o.history.filter(h=>h && typeof h==="object").map(h=>({
       ts:Number(h.ts)||0, tvl:Number(h.tvl)||0, vol24h:Number(h.vol24h)||0,
       vol30d: h.vol30d==null ? null : (Number(h.vol30d)||0),
+      vol7d: h.vol7d==null ? null : (Number(h.vol7d)||0),
       fee:Number(h.fee)||0, apr: h.apr==null ? null : (Number(h.apr)||0)
     }));
   }
@@ -1438,7 +1462,22 @@ function save(){
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
 /* ============ cálculos ============ */
-function ratio(p){ return p.tvl>0 ? p.vol24h/p.tvl : 0; }
+/* ------------------------------------------------------------
+   VOLUME DO DIA = MÉDIA DE 7 DIAS, QUANDO A FONTE INFORMA
+
+   A Razão usava o volume das últimas 24h: um dia de pico punha uma
+   pool no topo do ranking. Medido na DefiLlama (set/2026): WETH/USDC
+   na Base com APR de 57% pelo dia e 17% pela média da semana. Agora o
+   volume diário é vol7d ÷ 7 quando existe (DefiLlama); sem ele (Gecko,
+   print, digitado), fica o de 24h — e a tela diz qual dos dois é.
+   ------------------------------------------------------------ */
+function volDia(p){ return (p.vol7d!=null && p.vol7d>0) ? p.vol7d/7 : p.vol24h; }
+function volFonte(p){ return (p.vol7d!=null && p.vol7d>0) ? "7d" : "24h"; }
+function ratio(p){ return p.tvl>0 ? volDia(p)/p.tvl : 0; }
+/* Sem taxa conhecida (a GeckoTerminal nem sempre informa), a eficiência
+   NÃO é zero — é desconhecida. Zero jogava PancakeSwap e Meteora para o
+   fim do ranking por falta de dado, não por serem piores. */
+function temTaxa(p){ return p.fee>0; }
 function efic(p){ return p.fee * ratio(p); } // % ao dia
 /* APR da fonte quando existe; senão estima pela fórmula do app: 365 × taxa × razão */
 function aprOf(p){
@@ -1573,7 +1612,12 @@ function render(){
   list.sort((a,b)=>{
     let va,vb;
     if(k==="ratio"){ va=ratio(a); vb=ratio(b); }
-    else if(k==="efic"){ va=efic(a); vb=efic(b); }
+    else if(k==="efic"){
+      // sem taxa conhecida: fim da lista nas duas direções (não é "0%", é "não sei")
+      if(temTaxa(a)!==temTaxa(b)) return temTaxa(a) ? -1 : 1;
+      va=efic(a); vb=efic(b);
+    }
+    else if(k==="vol24h"){ va=volDia(a); vb=volDia(b); }
     else if(k==="apr"){ va=aprOf(a)?.v ?? -1; vb=aprOf(b)?.v ?? -1; }
     else if(k==="trend"){ va=trendOf(a) ?? -Infinity; vb=trendOf(b) ?? -Infinity; if(va===vb) return 0; }
     else if(k==="cat"){ va=getCat(a).toLowerCase(); vb=getCat(b).toLowerCase(); return va<vb?-1*dir:va>vb?1*dir:0; }
@@ -1624,10 +1668,10 @@ function rowHTML(p, rank){
     <td class="plat" data-label="Categoria"><span class="catbadge" style="color:${CAT_COLORS[getCat(p)]};border-color:${CAT_COLORS[getCat(p)]}44">${esc(getCat(p))}</span></td>
     <td class="num m-hide" data-label="Fee">${fFee(p.fee)}</td>
     <td class="num" data-label="TVL">${fUSD(p.tvl)}${low?`<span class="warn" title="TVL baixo (<$100k): razão pode enganar">⚠</span>`:''}</td>
-    <td class="num" data-label="Vol 24h">${fUSD(p.vol24h)}</td>
+    <td class="num" data-label="Vol/dia">${fUSD(volDia(p))}<span class="volsrc" title="${volFonte(p)==='7d'?'Média diária dos últimos 7 dias (DefiLlama)':'Volume das últimas 24h — a fonte não informa a média de 7 dias'}">${volFonte(p)}</span></td>
     <td class="num" data-label="Δ TVL"><span class="trend ${ta.cls}" title="Variação do TVL desde a atualização anterior">${tr==null?'<span class="muted2">—</span>':`${ta.arrow} ${fPctSigned(tr)}`}</span></td>
     <td data-label="Razão"><span class="ratio ${ratioClass(r)}">${fRatio(r)}</span></td>
-    <td class="efic" data-label="Efic %/dia">${e.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}%</td>
+    <td class="efic" data-label="Efic %/dia">${temTaxa(p) ? e.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%' : '<span class="muted2" title="A fonte não informou a taxa desta pool — complete em editar. Sem taxa, a eficiência é desconhecida, não zero.">taxa ?</span>'}</td>
     <td class="apr" data-label="APR">${fApr(p)}</td>
     <td class="plat" data-label="Atualizada"><span class="daterel ${dt.cls}" title="Última atualização: ${dt.full}">${dt.txt}</span></td>
     <td class="actcell">
@@ -1698,6 +1742,111 @@ function toggleFav(id){
   save(); render();
 }
 
+/* ============ aba Minhas pools (o que você tem no DeFi do ATLAS) ============
+   Lê DeFiStore — o mesmo que o módulo DeFi e o Dashboard leem. Para cada
+   pool aberta mostra o que ELA rendeu (APR realizado, pelas taxas que você
+   registrou) ao lado do que o MERCADO paga nela agora (a mesma pool no
+   Descobrir, casada por plataforma + rede + par). A diferença entre os dois
+   é o que responde "estou na pool certa?". Só leitura.
+
+   Montada com elementos do DOM (textContent), não com texto HTML: nomes de
+   pool, protocolo e carteira vêm do armazenamento e de backups, e assim
+   nenhum deles pode virar marcação. */
+let minhasPrecosPedidos = false;
+const FAIXA_ROTULO = {
+  ativa:       {txt:"Na faixa",               cls:"r-g"},
+  range:       {txt:"Fora da faixa",          cls:"r-r"},
+  analise:     {txt:"Faixa não cadastrada",   cls:"muted2"},
+  naoavaliada: {txt:"Sem preço para avaliar", cls:"muted2"}
+};
+
+/* h("div", {class:"x"}, "texto", filho, …) — elemento com texto seguro */
+function h(tag, attrs, ...filhos){
+  const e = document.createElement(tag);
+  Object.entries(attrs||{}).forEach(([k,v])=>{ if(v!=null) e.setAttribute(k, String(v)); });
+  filhos.flat().forEach(f=>{ if(f==null || f===false) return; e.append(f instanceof Node ? f : document.createTextNode(String(f))); });
+  return e;
+}
+
+function minhasPools(){
+  const S = window.DeFiStore;
+  if(!S || !S.all) return null;
+  const byWallet = (S.all() || {}).byWallet || {};
+  const out = [];
+  Object.keys(byWallet).forEach(wid=>{
+    ((byWallet[wid] || {}).pools || []).forEach(p=>{
+      if(p.status==="encerrada" || p.closedAt) return;
+      out.push({p, wid});
+    });
+  });
+  return out;
+}
+
+/* texto da comparação "seu APR × APR do mercado" */
+function leituraApr(aprMeu, aprMercado){
+  if(aprMeu==null || !aprMercado) return "";
+  const dif = aprMeu - aprMercado.v;
+  if(Math.abs(dif) < 2) return "Sua posição rende perto do que o mercado paga nesta pool.";
+  return dif < 0
+    ? `Sua posição rende ${fPct(Math.abs(dif))} ao ano a menos que o mercado nesta pool — faixa estreita demais, tempo fora da faixa ou taxa não registrada.`
+    : `Sua posição rende ${fPct(dif)} ao ano a mais que o mercado nesta pool — a faixa concentrada está trabalhando a seu favor.`;
+}
+
+function minhaPoolCard(p, wid){
+  const S = window.DeFiStore, W = window.AtlasWallets;
+  const par = `${p.base||"?"}/${p.quote||"?"}`;
+  const w = W && W.get ? W.get(wid) : null;
+  const r = S.poolSummary ? S.poolSummary(p) : null;
+  const st = S.statusDe ? S.statusDe(p) : null;
+  const fx = FAIXA_ROTULO[st && st.status] || {txt:"—", cls:"muted2"};
+  const mercado = state.pools.find(x=>candKey(x.platform, x.network, x.pool)===candKey(p.protocol, p.chain, par));
+  const aprMercado = mercado ? aprOf(mercado) : null;
+  const aprMeu = r && r.dias>0 ? r.aprReal : null;
+  const metrica = (rot, val, cls, dica) => h("div", {class:"rm"}, h("span", null, rot), h("b", {class:cls||null, title:dica||null}, val));
+  const leitura = leituraApr(aprMeu, aprMercado);
+
+  return h("div", {class:"radar-card mine-card"},
+    h("div", {class:"rc-top"},
+      h("div", {class:"rc-id"},
+        h("div", {class:"radar-name"}, par),
+        h("div", {class:"radar-meta"},
+          h("span", {class:"platbadge"}, h("span", {class:"pdot", style:`background:${PLAT_COLORS[p.protocol]||'#8a94a8'}`}), p.protocol||"—"),
+          ` · ${p.chain||"—"}${w ? ` · carteira ${w.name}` : ""}`)),
+      h("span", {class:`ratio ${fx.cls}`, style:"margin-left:auto; white-space:nowrap"}, fx.txt)),
+    h("div", {class:"rc-metrics"},
+      metrica("Valor", r ? fUSD(r.valorTotal) : "—"),
+      metrica("Resultado", r ? (r.resultado>=0?"+":"−")+fUSD(Math.abs(r.resultado)) : "—", r && r.resultado<0 ? "r-r" : "r-g"),
+      metrica("Seu APR", aprMeu!=null ? fPct(aprMeu) : "—", null, "Taxas registradas ÷ capital médio, anualizado"),
+      metrica("APR do mercado", aprMercado ? (aprMercado.est?"~":"")+fPct(aprMercado.v) : "—", null, aprMercado && aprMercado.est ? "Estimado: 365 × taxa × razão" : null),
+      metrica("Razão", mercado ? fRatio(ratio(mercado)) : "—", mercado ? `ratio ${ratioClass(ratio(mercado))}` : null),
+      metrica("Dados do mercado", mercado ? fRelDate(mercado.updatedAt).txt : "—")),
+    leitura ? h("div", {class:"simnote", style:"margin-top:8px"}, leitura) : null,
+    !mercado ? h("div", {class:"simnote", style:"margin-top:8px"},
+      `Esta pool não está no Descobrir, então não há o que comparar. Busque por ${p.base||"ela"} em "Buscar pools novas" e adicione.`) : null,
+    h("div", {class:"rc-foot"}, h("a", {class:"iconbtn", href:`../../defi/pool.html?id=${encodeURIComponent(p.id)}`}, "Abrir no DeFi")));
+}
+
+function renderMinhas(){
+  const el = document.getElementById("minhasList");
+  if(!el) return;
+  const S = window.DeFiStore;
+  const lista = minhasPools();
+  if(lista===null){ el.replaceChildren(h("div", {class:"radar-empty"}, "O módulo DeFi não carregou nesta página.")); return; }
+  if(!lista.length){
+    el.replaceChildren(h("div", {class:"radar-empty"},
+      "Nenhuma pool aberta no DeFi. Quando você abrir uma posição lá, ela aparece aqui com o que o mercado está pagando nela."));
+    return;
+  }
+  // a faixa precisa de preço: pede uma vez por visita e redesenha quando chega
+  if(!minhasPrecosPedidos && window.DeFiTokens && window.DeFiPerf && S.setPrecos){
+    minhasPrecosPedidos = true;
+    DeFiTokens.precosDetalhado(DeFiPerf.simbolos(lista.map(x=>x.p)))
+      .then(d=>{ S.setPrecos(d.valores, d.fonte); renderMinhas(); })
+      .catch(()=>{});
+  }
+  el.replaceChildren(h("div", {class:"radar-grid"}, lista.map(({p, wid})=>minhaPoolCard(p, wid))));
+}
+
 /* ============ aba Radar (evolução das favoritas) ============ */
 let radarOpenId = null;
 const radarSeries = { tvl:true, vol24h:true, ratio:true };
@@ -1722,7 +1871,7 @@ function fPctSigned(pct){ return pct==null ? '—' : (pct>=0?'+':'')+pct.toLocal
 /* snapshots ordenados no tempo, com a Razão (Vol24h/TVL) já calculada por registro */
 function radarSnaps(p){
   return (p.history||[]).slice().sort((a,b)=>a.ts-b.ts).map(s=>{
-    const tvl=+s.tvl||0, vol=+s.vol24h||0;
+    const tvl=+s.tvl||0, vol=(s.vol7d!=null && +s.vol7d>0) ? (+s.vol7d)/7 : (+s.vol24h||0);
     return { ts:s.ts, tvl, vol24h:vol, vol30d:(s.vol30d==null?null:+s.vol30d),
              apr:(s.apr==null?null:+s.apr), ratio:(tvl>0?vol/tvl:0) };
   });
@@ -2055,7 +2204,7 @@ function radarPoolCard(p){
     <div class="rc-spark">${radarSparkline(snaps)}</div>
     <div class="rc-metrics">
       <div class="rm"><span>TVL</span><b>${fUSD(p.tvl)}</b></div>
-      <div class="rm"><span>Vol 24h</span><b>${fUSD(p.vol24h)}</b></div>
+      <div class="rm"><span>Vol/dia (${volFonte(p)})</span><b>${fUSD(volDia(p))}</b></div>
       <div class="rm"><span>Razão</span><b class="ratio ${rc}">${fRatio(r)}</b></div>
       <div class="rm"><span>APR</span><b>${fApr(p)}</b></div>
       <div class="rm"><span>Taxa</span><b>${fFee(p.fee)}</b></div>
@@ -2085,7 +2234,7 @@ function radarRow(p){
       <div class="radar-spark">${radarSparkline(snaps)}</div>
       <div class="radar-metrics">
         <div class="rm"><span>TVL</span><b>${fUSD(p.tvl)}</b></div>
-        <div class="rm"><span>Vol 24h</span><b>${fUSD(p.vol24h)}</b></div>
+        <div class="rm"><span>Vol/dia (${volFonte(p)})</span><b>${fUSD(volDia(p))}</b></div>
         <div class="rm"><span>Razão</span><b class="ratio ${rc}">${fRatio(r)}</b></div>
         <div class="rm"><span>vs. última</span><b class="trend ${aTvl.cls}">${aTvl.arrow} ${dTvl==null?'—':fPctSigned(dTvl)}</b></div>
       </div>
@@ -2525,171 +2674,24 @@ function restoreSeed(){
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ================================================================
-   SCANNER IA — lê print de pool e monta uma prévia editável.
-   3 caminhos, nesta ordem de confiança: manual > IA (API) > OCR local.
-   Nada entra em state.pools sem passar pela tabela de revisão + clique
-   em "Adicionar" ou "Substituir grupo".
+   LEITOR DE PRINTS — opção avançada, só local.
+   Dois caminhos: OCR no navegador (Tesseract) e edição manual. Nada
+   entra em state.pools sem passar pela tabela de revisão.
+
+   A LEITURA POR IA SAIU (2026-09-22). Ela pedia chaves de API guardadas
+   no navegador — um risco num site publicado — e perdeu o motivo de
+   existir quando "Puxar pools" passou a trazer os números direto da
+   DefiLlama e da GeckoTerminal. As chaves que tenham ficado guardadas
+   de versões antigas são apagadas na abertura (ver boot).
    ================================================================ */
-const KEYS_STORAGE = "estudo_pools_liquidez_keys";      // cache das chaves importadas (localStorage)
-const KEYIDX_STORAGE = "estudo_pools_liquidez_keyidx";  // ponteiro do rodízio, persiste entre scans
-const MAXPOOLS_STORAGE = "estudo_pools_liquidez_maxpools";
-
-/* Provedores reconhecidos. Modelo padrão usado quando o keys.json não traz "model". */
-const DEFAULT_MODELS = {
-  anthropic:  "claude-sonnet-4-6",
-  openrouter: "anthropic/claude-sonnet-4",
-  openai:     "gpt-4o",
-  gemini:     "gemini-2.5-flash",
-  mistral:    "pixtral-12b-2409",
-  deepseek:   "deepseek-chat"
-};
-const KNOWN_PROVIDERS = Object.keys(DEFAULT_MODELS);
-const PROVIDER_LABEL = { anthropic:"Anthropic", openrouter:"OpenRouter", openai:"OpenAI", gemini:"Gemini", mistral:"Mistral", deepseek:"DeepSeek" };
-/* Endpoints estilo OpenAI (Bearer + choices[0].message.content). */
-const OPENAI_COMPAT = {
-  openrouter: "https://openrouter.ai/api/v1/chat/completions",
-  openai:     "https://api.openai.com/v1/chat/completions",
-  deepseek:   "https://api.deepseek.com/v1/chat/completions",
-  mistral:    "https://api.mistral.ai/v1/chat/completions"
-};
-
-/* ================================================================
-   ROTEADOR DE CHAVES
-   As chaves vêm do arquivo keys/keys.json (não são digitadas na aba).
-   Formato: { "keys": [ {provider, key, model?}, ... ] }
-   - Carrega via fetch('keys/keys.json') quando servido (localhost/Netlify)
-     e, no duplo-clique (file://, onde fetch é bloqueado), via botão
-     "Importar keys.json" — o resultado fica em cache no localStorage.
-   - Rodízio: cada scan começa na próxima chave (KEYIDX_STORAGE).
-   - Failover: se a chave da vez falhar (401/402/429/modelo), tenta a
-     próxima automaticamente, rodando o círculo inteiro uma vez.
-   ================================================================ */
-let scannerKeys = []; // [{provider, key, model}]
-
-/* Aceita tanto {keys:[...]} quanto um array direto [...]; ignora entradas
-   sem chave de verdade (placeholders "COLE_SUA..." do arquivo de exemplo). */
-function parseKeysPayload(obj){
-  const arr = Array.isArray(obj) ? obj : (obj && Array.isArray(obj.keys) ? obj.keys : null);
-  if(!arr) throw new Error('JSON precisa ter um array "keys" (ou ser um array direto de chaves).');
-  const out = [];
-  for(const e of arr){
-    if(!e || typeof e!=="object") continue;
-    const key = String(e.key||"").trim();
-    if(!key || /COLE_/i.test(key)) continue; // vaga vazia ou ainda com placeholder → ignora
-    let provider = String(e.provider||"").trim().toLowerCase();
-    if(!KNOWN_PROVIDERS.includes(provider)){
-      // provider ausente/desconhecido: deduz pelo prefixo da chave
-      provider = key.startsWith("sk-or-") ? "openrouter"
-               : key.startsWith("sk-ant-") ? "anthropic"
-               : key.startsWith("AIza")     ? "gemini"
-               : "openai"; // chute razoável p/ chaves "sk-..." genéricas
-    }
-    const model = String(e.model||"").trim() || DEFAULT_MODELS[provider];
-    out.push({provider, key, model});
-  }
-  return out;
+const CHAVES_ANTIGAS_IA = ["estudo_pools_liquidez_keys", "estudo_pools_liquidez_keyidx", "estudo_pools_liquidez_maxpools"];
+function apagarChavesAntigasIA(){
+  CHAVES_ANTIGAS_IA.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
 }
 
-function setScannerKeys(list, {cache=true}={}){
-  scannerKeys = list;
-  if(cache){
-    try{ localStorage.setItem(KEYS_STORAGE, JSON.stringify(list)); }catch(e){}
-  }
-  refreshKeyStatus();
-}
-
-/* Chamado no boot: tenta o arquivo servido; se não der, cai no cache. */
-async function loadScannerKeys(){
-  // 1) cache local primeiro (garante algo mesmo se o fetch falhar)
-  try{
-    const cached = JSON.parse(localStorage.getItem(KEYS_STORAGE)||"[]");
-    if(Array.isArray(cached) && cached.length) scannerKeys = cached;
-  }catch(e){}
-  // 2) tenta o arquivo servido (localhost/Netlify) — só sobrepõe o cache se
-  //    o arquivo REALMENTE tiver chaves. No Netlify o keys.json fica vazio
-  //    (placeholders), e um arquivo vazio NÃO pode apagar o que você importou.
-  try{
-    const resp = await fetch("keys/keys.json", {cache:"no-store"});
-    if(resp.ok){
-      const parsed = parseKeysPayload(await resp.json());
-      if(parsed.length){ setScannerKeys(parsed); return; }
-      // arquivo servido está vazio → mantém o cache importado
-      refreshKeyStatus();
-      return;
-    }
-  }catch(e){ /* file:// bloqueia fetch — segue com o cache */ }
-  refreshKeyStatus();
-}
-
-function onKeysFilePicked(ev){
-  const file = ev.target.files && ev.target.files[0];
-  ev.target.value = "";
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    try{
-      const parsed = parseKeysPayload(JSON.parse(reader.result));
-      if(!parsed.length){ alert("Nenhuma chave válida no arquivo. Confere se você trocou os placeholders 'COLE_SUA...' pelas chaves reais."); return; }
-      setScannerKeys(parsed);
-      alert(`✅ ${parsed.length} chave(s) importada(s) e salva(s) neste navegador.`);
-    }catch(e){
-      alert("Não consegui ler o JSON: "+e.message);
-    }
-  };
-  reader.readAsText(file);
-}
-
-function forgetKeys(){
-  try{ localStorage.removeItem(KEYS_STORAGE); }catch(e){}
-  scannerKeys = [];
-  refreshKeyStatus();
-}
-
-function getKeyIdx(){ const n = parseInt(localStorage.getItem(KEYIDX_STORAGE),10); return Number.isFinite(n)&&n>=0 ? n : 0; }
-function setKeyIdx(n){ try{ localStorage.setItem(KEYIDX_STORAGE, String(n)); }catch(e){} }
-
-/* Ordem de tentativa deste scan: começa no ponteiro do rodízio e dá a volta.
-   Já avança o ponteiro pro próximo scan (rodízio). Retorna [] se não há chaves. */
-function keysInRotationOrder(){
-  const n = scannerKeys.length;
-  if(!n) return [];
-  const start = getKeyIdx() % n;
-  setKeyIdx((start+1) % n); // próximo scan começa na seguinte
-  const order = [];
-  for(let i=0;i<n;i++) order.push(scannerKeys[(start+i)%n]);
-  return order;
-}
-
-/* Roteia uma chamada por todas as chaves (rodízio + failover), reaproveitando
-   callAI() e o auto-retry de crédito curto (402) por chave. Devolve o mesmo
-   formato de callAI no sucesso; no fracasso total, {ok:false, allFailed:true}. */
-async function callAIRouted({maxTokens, textOnly, base64, mediaType}){
-  const order = keysInRotationOrder();
-  if(!order.length) return {ok:false, allFailed:true, errorMessage:"Nenhuma chave carregada."};
-  const failures = [];
-  for(const k of order){
-    let r = await callAI({key:k.key, provider:k.provider, model:k.model, maxTokens, textOnly, base64, mediaType});
-    // crédito curto no OpenRouter: repete NA MESMA chave com o teto que ela informou
-    if(!r.ok && r.status===402){
-      const afford = parseInt((r.errorMessage||"").match(/afford\s+(\d+)/i)?.[1], 10);
-      if(afford && afford>200){
-        const retry = await callAI({key:k.key, provider:k.provider, model:k.model, maxTokens: afford-30, textOnly, base64, mediaType});
-        if(retry.ok) return retry;
-        r = retry;
-      }
-    }
-    if(r.ok) return r;
-    // erros que valem pular pra próxima chave
-    if([401,402,403,429,404].includes(r.status) || /model/i.test(r.errorMessage||"")){
-      failures.push(`${k.provider} …${k.key.slice(-6)}: ${r.status} ${(r.errorMessage||"").slice(0,80)}`);
-      continue;
-    }
-    // erro atípico (ex.: 500) — também tenta a próxima, mas registra
-    failures.push(`${k.provider} …${k.key.slice(-6)}: ${r.status} ${(r.errorMessage||"").slice(0,80)}`);
-  }
-  return {ok:false, allFailed:true, failures, errorMessage:"Todas as chaves falharam:\n- "+failures.join("\n- ")};
-}
-let scanItems = []; // {id, fileName, dataUrl, platform, network, layout, status, rows:[{sel,pool,platform,network,fee,tvl,vol24h,vol30d,apr,src}]}
+/* A prévia editável — compartilhada pela busca automática e pelo leitor
+   de prints. (Moravam no meio do bloco da IA; ficaram quando ele saiu.) */
+let scanItems = []; // {id, fileName, dataUrl, platform, network, layout, status, rows:[{sel,pool,platform,network,fee,tvl,vol24h,vol7d,vol30d,apr,src}]}
 let scanSeq = 1;
 
 /* Layouts conhecidos — decodificados a partir de prints reais.
@@ -2701,151 +2703,6 @@ const SCAN_LAYOUTS = {
   pancake:   {label:"PancakeSwap-lista (tier / APR% / Vol / TVL)",     nums:["tier","apr","vol24h","tvl"]},
   generic:   {label:"Genérico (só extrai números e nomes — revisa tudo na mão)", nums:[]}
 };
-
-/* Gemini: modelo que funcionou nesta sessão (evita relistar a cada chamada). */
-let geminiModelCache = null;
-/* Consulta os modelos disponíveis para ESTA chave e escolhe um Flash que suporte
-   generateContent (rápido/barato e com visão). Usado quando o modelo configurado
-   dá 404 (ex.: foi aposentado). Retorna o nome do modelo ou null. */
-async function pickGeminiModel(key){
-  try{
-    const resp = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {headers:{"x-goog-api-key":key}});
-    if(!resp.ok) return null;
-    const data = await resp.json();
-    const names = (data.models||[])
-      .filter(m=>(m.supportedGenerationMethods||[]).includes("generateContent"))
-      .map(m=>(m.name||"").replace(/^models\//,""))
-      .filter(n=>n && !/embedding|aqa|imagen|tts|image-generation|native-audio|live/i.test(n));
-    // preferência: Flash mais novo primeiro; evita "-lite"; cai pra qualquer um no fim
-    return names.find(n=>/gemini-3.*flash/i.test(n) && !/lite/i.test(n))
-        || names.find(n=>/gemini-3.*flash/i.test(n))
-        || names.find(n=>/2\.5-flash/i.test(n) && !/lite/i.test(n))
-        || names.find(n=>/flash/i.test(n) && !/lite/i.test(n))
-        || names.find(n=>/flash/i.test(n))
-        || names[0] || null;
-  }catch(e){ return null; }
-}
-
-/* Chama o provedor certo e NORMALIZA a resposta para {ok, status, text, stopReason}.
-   Cada família tem formato próprio:
-   - Anthropic: x-api-key + blocos "content" + stop_reason
-   - Gemini:    x-goog-api-key + contents/parts + inline_data + finishReason
-   - OpenAI-compatível (openai/openrouter/mistral/deepseek): Bearer + messages +
-                image_url + choices[0].message.content + finish_reason
-   stopReason volta em minúsculas ("max_tokens"/"length") p/ o recovery de JSON cortado. */
-async function callAI({key, provider, model, maxTokens, textOnly, base64, mediaType}){
-  let resp, raw;
-  const extractErr = async (resp)=>{
-    const errText = await resp.text();
-    let msg = errText;
-    try{ const j = JSON.parse(errText); msg = j.error?.message || j.error?.status || j.message || errText; }catch(e){}
-    return {ok:false, status:resp.status, errorMessage:msg};
-  };
-
-  if(provider==="gemini"){
-    const parts = base64
-      ? [{text:textOnly}, {inline_data:{mime_type:mediaType, data:base64}}]
-      : [{text:textOnly || "oi"}];
-    const payload = JSON.stringify({ contents:[{parts}], generationConfig:{maxOutputTokens:maxTokens} });
-    const hdr = {"Content-Type":"application/json","x-goog-api-key":key}; // chave no header, nunca na URL
-    const doCall = (m)=> fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`, {method:"POST", headers:hdr, body:payload});
-    // Google aposenta modelos de tempos em tempos → se já descobrimos um que funciona
-    // nesta sessão, usa ele direto; senão tenta o configurado.
-    let useModel = geminiModelCache || model;
-    resp = await doCall(useModel);
-    if(!resp.ok && resp.status===404){ // modelo inexistente/aposentado → descobre um válido e refaz
-      const good = await pickGeminiModel(key);
-      if(good && good!==useModel){ geminiModelCache = good; resp = await doCall(good); useModel = good; }
-    }
-    if(!resp.ok) return await extractErr(resp);
-    raw = await resp.json();
-    const cand = raw.candidates?.[0];
-    const text = (cand?.content?.parts || []).map(p=>p.text||"").join("\n");
-    return {ok:true, status:resp.status, text, stopReason:(cand?.finishReason||"").toLowerCase(), usedModel:useModel};
-  }
-
-  if(provider==="anthropic"){
-    const content = base64
-      ? [{type:"image", source:{type:"base64", media_type:mediaType, data:base64}}, {type:"text", text:textOnly}]
-      : (textOnly || "oi");
-    resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body: JSON.stringify({ model, max_tokens:maxTokens, messages:[{role:"user", content}] })
-    });
-    if(!resp.ok) return await extractErr(resp);
-    raw = await resp.json();
-    return {ok:true, status:resp.status, text: (raw.content||[]).map(b=>b.text||"").join("\n"), stopReason:(raw.stop_reason||"").toLowerCase()};
-  }
-
-  // OpenAI-compatível: openai, openrouter, mistral, deepseek
-  const endpoint = OPENAI_COMPAT[provider] || OPENAI_COMPAT.openrouter;
-  const userContent = base64
-    ? [{type:"text", text:textOnly}, {type:"image_url", image_url:{url:`data:${mediaType};base64,${base64}`}}]
-    : (textOnly || "oi");
-  resp = await fetch(endpoint, {
-    method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
-    body: JSON.stringify({ model, max_tokens:maxTokens, messages:[{role:"user", content:userContent}] })
-  });
-  if(!resp.ok) return await extractErr(resp);
-  raw = await resp.json();
-  return {ok:true, status:resp.status, text: raw.choices?.[0]?.message?.content || "", stopReason:(raw.choices?.[0]?.finish_reason||"").toLowerCase()};
-}
-
-/* Testa TODAS as chaves carregadas (uma chamada minúscula por chave) e
-   reporta quais valem. Não mexe no ponteiro de rodízio. */
-async function testAllKeys(){
-  if(!scannerKeys.length){ alert("Nenhuma chave carregada. Clique em \"Importar keys.json\" (ou sirva o arquivo por um servidor local)."); return; }
-  const btn = document.getElementById("testKeyBtn");
-  const original = btn.textContent;
-  btn.textContent = "Testando…"; btn.disabled = true;
-  const lines = [];
-  for(const k of scannerKeys){
-    const tag = `${k.provider} …${k.key.slice(-6)} (${k.model})`;
-    try{
-      const r = await callAI({key:k.key, provider:k.provider, model:k.model, maxTokens:10, textOnly:"oi"});
-      if(r.ok) lines.push(`✅ ${tag} — OK` + (r.usedModel && r.usedModel!==k.model ? ` (usando ${r.usedModel} — ${k.model} indisponível)` : ""));
-      else if(r.status===401) lines.push(`❌ ${tag} — inválida (401)`);
-      else if(r.status===402) lines.push(`⚠️ ${tag} — sem crédito (402)`);
-      else if(r.status===403) lines.push(`❌ ${tag} — sem permissão/crédito (403)`);
-      else if(r.status===429) lines.push(`⚠️ ${tag} — válida, mas no limite agora (429)`);
-      else if(r.status===404 || /model/i.test(r.errorMessage||"")) lines.push(`❌ ${tag} — modelo errado/indisponível (${r.status})`);
-      else lines.push(`❌ ${tag} — ${r.status} ${(r.errorMessage||"").slice(0,60)}`);
-    }catch(e){
-      lines.push(`❌ ${tag} — erro de rede: ${e.message.slice(0,60)}`);
-    }
-  }
-  btn.textContent = original; btn.disabled = false;
-  const okCount = lines.filter(l=>l.startsWith("✅")).length;
-  alert(`Teste das chaves (${okCount}/${scannerKeys.length} OK):\n\n`+lines.join("\n")
-    + (okCount===0 ? "\n\nSe estiver no duplo-clique (file://), alguns navegadores bloqueiam essas chamadas — tenta por um servidor local ou outro navegador." : ""));
-}
-
-function getMaxPools(){ const n = parseInt(localStorage.getItem(MAXPOOLS_STORAGE),10); return (n>0 && n<=150) ? n : 20; }
-function onMaxPoolsInput(){
-  const v = Math.max(5, Math.min(150, parseInt(document.getElementById("maxPoolsInput").value,10)||30));
-  localStorage.setItem(MAXPOOLS_STORAGE, v);
-}
-function refreshKeyStatus(){
-  const el = document.getElementById("keyStatus");
-  const badge = document.getElementById("keySummaryBadge");
-  const n = scannerKeys.length;
-  if(el){
-    if(n){
-      const counts = {};
-      scannerKeys.forEach(k=>{ counts[k.provider] = (counts[k.provider]||0)+1; });
-      const parts = KNOWN_PROVIDERS.filter(p=>counts[p]).map(p=>`${counts[p]} ${PROVIDER_LABEL[p]}`);
-      el.textContent = `🔑 ${n} chave(s) carregada(s) (${parts.join(" · ")}) — passo 2 (IA) disponível, com rodízio + troca automática.`;
-      el.className = "keystatus ok";
-    } else {
-      el.textContent = "Nenhuma chave carregada — passo 2 (IA) fica desligado, mas OCR e manual funcionam de boa. Coloque suas chaves em keys/keys.json e clique em \"Importar keys.json\".";
-      el.className = "keystatus";
-    }
-  }
-  // contador no título recolhido, pra saber o estado sem abrir
-  if(badge) badge.textContent = n ? `· ${n} ativa(s)` : "· nenhuma";
-}
 
 /* ---------- upload / dropzone ---------- */
 function onScanFiles(ev){ addScanFiles(ev.target.files); ev.target.value=""; }
@@ -2871,7 +2728,8 @@ function setupPaste(){
     }
     if(files.length){
       e.preventDefault();
-      switchTab("scan");
+      switchTab("dash");
+      const dp = document.getElementById("dxPrint"); if(dp) dp.open = true;
       addScanFiles(files);
     }
   });
@@ -2933,8 +2791,7 @@ function renderScanItems(){
               onchange="scanItems.find(x=>x.id===${it.id}).captureDate=this.value">
           </div>
           <div class="scanitem-actions">
-            ${it.origin==='api' ? "" : `<button onclick="runOcr(${it.id})">1. Ler com OCR (local)</button>
-            <button onclick="runIA(${it.id})">2. Ler com IA (API)</button>`}
+            ${it.origin==='api' ? "" : `<button onclick="runOcr(${it.id})">Ler com OCR (local)</button>`}
             <button onclick="addManualRow(${it.id})">+ linha manual</button>
             ${it.ocrText ? `<button class="ghost" onclick="toggleOcrText(${it.id})">ver texto lido</button>` : ""}
             <button class="danger" onclick="removeScanItem(${it.id})">${it.origin==='api'?'remover grupo':'remover print'}</button>
@@ -2985,7 +2842,7 @@ function parseCompactMoney(s){
 function scanTableHTML(it){
   return `<table class="scantable">
     <thead><tr>
-      <th></th><th>Fonte</th><th>No painel</th><th>Pool</th><th>Rede</th><th>Fee %</th><th>TVL $</th><th>Vol 24h $</th><th>Vol 30d $</th><th>APR %</th><th></th>
+      <th></th><th>Fonte</th><th>No painel</th><th>Pool</th><th>Rede</th><th>Fee %</th><th>TVL $</th><th>Vol 24h $</th><th title="Volume somado dos últimos 7 dias — é a média dele (÷ 7) que o ranking usa">Vol 7d $</th><th>Vol 30d $</th><th>APR %</th><th></th>
     </tr></thead>
     <tbody>
       ${it.rows.map((r,i)=>`<tr>
@@ -3004,6 +2861,9 @@ function scanTableHTML(it){
         <td><input type="text" inputmode="decimal" value="${fmtCompactBR(r.vol24h)}"
              oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].vol24h=parseCompactMoney(this.value)||0"
              onblur="this.value=fmtCompactBR(scanItems.find(x=>x.id===${it.id}).rows[${i}].vol24h)"></td>
+        <td><input type="text" inputmode="decimal" value="${fmtCompactBR(r.vol7d)}" placeholder="—"
+             oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].vol7d=this.value===''?null:(parseCompactMoney(this.value)||0)"
+             onblur="this.value=fmtCompactBR(scanItems.find(x=>x.id===${it.id}).rows[${i}].vol7d)"></td>
         <td><input type="text" inputmode="decimal" value="${fmtCompactBR(r.vol30d)}" placeholder="—"
              oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].vol30d=this.value===''?null:(parseCompactMoney(this.value)||0)"
              onblur="this.value=fmtCompactBR(scanItems.find(x=>x.id===${it.id}).rows[${i}].vol30d)"></td>
@@ -3216,64 +3076,6 @@ function expandSuffix(n, suf){
   return n;
 }
 function round2(n){ return Math.round(n*100)/100; }
-
-/* ---------- 2. IA via API (roteador: rodízio + troca automática entre as chaves) ---------- */
-async function runIA(itemId){
-  const it = scanItems.find(x=>x.id===itemId);
-  if(!scannerKeys.length){ alert("Nenhuma chave carregada. Coloque suas chaves em keys/keys.json e clique em \"Importar keys.json\" ali em cima."); return; }
-  const maxPools = getMaxPools();
-  it.status = "working"; renderScanItems();
-  try{
-    const base64 = it.dataUrl.split(",")[1];
-    const mediaType = it.dataUrl.match(/data:(image\/\w+);/)?.[1] || "image/png";
-    const prompt = `Extraia as linhas de pool de liquidez visíveis nesta imagem de um dashboard cripto (Raydium, Orca, Uniswap ou PancakeSwap).
-LIMITE: no máximo ${maxPools} linhas. Se a imagem tiver mais pools que isso, pegue só as ${maxPools} com maior TVL/liquidez — não invente pool que não está visível, e não tente listar mais que o limite.
-Para cada linha, devolva um objeto com: pool (ex "SOL/USDC"), network (a rede/chain — Solana, Base, Arbitrum, BNB Chain, Ethereum etc — SÓ se estiver escrito em texto em algum lugar da imagem; se a única pista for um ícone/logo pequeno que você não tem certeza de identificar, devolva null em vez de chutar), fee (número, % do fee tier, ex 0.25), tvl, vol24h, vol30d (null se não aparecer), apr (número em %, ou null se não aparecer).
-REGRA CRÍTICA para tvl / vol24h / vol30d: NÃO calcule o número cheio você mesma — é aí que se erra mil por milhão. Devolva o valor como TEXTO, copiado EXATAMENTE como aparece na tela, mantendo o sufixo de magnitude e tirando só o "$". O código expande depois. Convenção do sufixo: "mil" ou "K" = milhar (×1.000), "M" = milhão (×1.000.000), "B" = bilhão (×1.000.000.000). Use ponto como separador decimal e NÃO use separador de milhar. Exemplos: tela "$874.8K" -> "874.8K"; tela "$119.0M" -> "119.0M"; tela "$1.2B" -> "1.2B"; se a tela já mostra o número cheio "$958,139" -> "958139".
-Responda APENAS um array JSON válido, sem markdown, sem texto antes ou depois. Exemplo: [{"pool":"SOL/USDC","network":"Solana","fee":0.25,"tvl":"1.23M","vol24h":"234.5K","vol30d":null,"apr":45.6}]`;
-
-    // ~70 tokens por linha de JSON + folga fixa — cresce com o limite mas com teto,
-    // pra nunca estourar a resposta e nunca pedir um max_tokens absurdo/caro à toa.
-    const maxTokens = Math.min(8000, 600 + maxPools*70);
-
-    // Roteador: rodízio entre as chaves + troca automática se uma falhar.
-    // O auto-retry de crédito curto (402) roda por chave dentro do roteador.
-    let r = await callAIRouted({maxTokens, textOnly:prompt, base64, mediaType});
-
-    if(!r.ok){
-      const hint = "\n\nTodas as chaves do keys.json falharam. Verifique crédito/limite/validade de cada uma (botão \"Testar chaves\"), ou baixe o \"Máximo de pools por print\" (tenta 10-15) se for crédito curto.";
-      throw new Error(`${r.errorMessage||"Falha nas chamadas de IA."}${hint}`);
-    }
-    const clean = (r.text||"").replace(/```json|```/g,"").trim();
-    let parsed;
-    try{
-      parsed = JSON.parse(clean);
-    }catch(parseErr){
-      // resposta veio cortada (bateu no max_tokens no meio do array) — tenta
-      // recuperar salvando só os objetos completos em vez de jogar tudo fora
-      const lastComplete = clean.lastIndexOf("},");
-      if((r.stopReason==="max_tokens"||r.stopReason==="length") && lastComplete>0){
-        parsed = JSON.parse(clean.slice(0,lastComplete+1)+"]");
-      } else {
-        throw new Error("A resposta da IA não veio em JSON válido (provavelmente foi cortada). Baixa o 'Máximo de pools por print' ali em cima e tenta de novo.");
-      }
-    }
-    if(!Array.isArray(parsed)) throw new Error("resposta não era um array");
-    it.rows = parsed.map(row=>({
-      sel:true, src:"ia",
-      pool: row.pool || "", network: row.network || it.network,
-      fee: parseFloat(row.fee)||0, tvl: parseCompactMoney(row.tvl)||0,
-      vol24h: parseCompactMoney(row.vol24h)||0, vol30d: row.vol30d==null?null:(parseCompactMoney(row.vol30d)||0),
-      apr: row.apr==null?null:(parseFloat(row.apr)||0)
-    }));
-    it.status = it.rows.length ? "done" : "error";
-  }catch(e){
-    console.error(e);
-    it.status = "error";
-    alert("Deu erro na leitura por IA: " + e.message + "\n\nConfere a chave/modelo, ou usa o OCR local / preenchimento manual.");
-  }
-  renderScanItems();
-}
 
 /* Chave de identidade de uma pool, ignorando ordem dos tokens e separador
    (/ ou -): "WBNB/USDC" e "USDC-WBNB" viram a mesma chave. Assim, ao reler
@@ -3603,7 +3405,9 @@ async function runLlamaSearch(){
         fee:      parseLlamaFee(p.poolMeta),
         tvl:      Math.round(p.tvlUsd||0),
         vol24h:   p.volumeUsd1d!=null ? Math.round(p.volumeUsd1d) : 0,
-        apr:      p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null)
+        vol7d:    p.volumeUsd7d!=null ? Math.round(p.volumeUsd7d) : null,
+        // APR de 7 dias, coerente com o volume de 7 dias; o de 1 dia só na falta
+        apr:      p.apyBase7d!=null ? p.apyBase7d : (p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null))
       }));
     }
 
@@ -3645,7 +3449,7 @@ async function runLlamaSearch(){
         captureDate: today, status:"done",
         rows: groups[key].map(r=>({
           sel:true, pool:r.pool, network, fee:r.fee,
-          tvl:r.tvl, vol24h:r.vol24h, vol30d:null, apr:r.apr, src:"api", srcId:r.srcId||null
+          tvl:r.tvl, vol24h:r.vol24h, vol7d:r.vol7d??null, vol30d:null, apr:r.apr, src:"api", srcId:r.srcId||null
         }))
       });
     });
@@ -3671,7 +3475,7 @@ function commitScan(mode){
       if(r.sel && r.pool){
         selected.push({
           pool: r.pool, platform: it.platform, network: r.network || it.network,
-          fee: r.fee||0, tvl: r.tvl||0, vol24h: r.vol24h||0,
+          fee: r.fee||0, tvl: r.tvl||0, vol24h: r.vol24h||0, vol7d: r.vol7d??null,
           vol30d: r.vol30d??null, apr: r.apr??null,
           srcId: r.srcId||null,
           _ts: ts
@@ -3710,15 +3514,15 @@ function commitScan(mode){
       // se a taxa não foi lida dessa vez (0) mas já tínhamos uma taxa conhecida,
       // mantém a taxa antiga em vez de zerar por causa de falha de OCR
       existing.fee = (cand.fee>0 || !(existing.fee>0)) ? cand.fee : existing.fee;
-      existing.tvl=cand.tvl; existing.vol24h=cand.vol24h;
+      existing.tvl=cand.tvl; existing.vol24h=cand.vol24h; existing.vol7d=cand.vol7d;
       existing.vol30d=cand.vol30d; existing.apr=cand.apr; existing.updatedAt=ts;
       if(cand.srcId && !existing.srcId) existing.srcId = cand.srcId; // vincula: próximas atualizações casam pelo ID
       existing.history = existing.history || [];
-      existing.history.push({ts, tvl:cand.tvl, vol24h:cand.vol24h, vol30d:cand.vol30d, fee:existing.fee, apr:cand.apr});
+      existing.history.push({ts, tvl:cand.tvl, vol24h:cand.vol24h, vol7d:cand.vol7d, vol30d:cand.vol30d, fee:existing.fee, apr:cand.apr});
       updated++;
     } else {
       cand.id = Date.now()+Math.random(); cand.updatedAt = ts; cand.notes = "";
-      cand.history = [{ts, tvl:cand.tvl, vol24h:cand.vol24h, vol30d:cand.vol30d, fee:cand.fee, apr:cand.apr}];
+      cand.history = [{ts, tvl:cand.tvl, vol24h:cand.vol24h, vol7d:cand.vol7d, vol30d:cand.vol30d, fee:cand.fee, apr:cand.apr}];
       state.pools.push(cand);
       added++;
     }
@@ -3818,11 +3622,12 @@ function applyUpdateOnly(pools, picked, now, report){
     p.fee    = (cand.fee>0 || !(p.fee>0)) ? cand.fee : p.fee;
     p.tvl    = cand.tvl;
     p.vol24h = cand.vol24h;
+    p.vol7d  = cand.vol7d!=null ? cand.vol7d : null;
     p.apr    = cand.apr;
     p.updatedAt = now;
     p.history = p.history || [];
     // vol30d nenhuma fonte fornece — mantém o que já havia
-    p.history.push({ts:now, tvl:cand.tvl, vol24h:cand.vol24h, vol30d:p.vol30d, fee:p.fee, apr:cand.apr});
+    p.history.push({ts:now, tvl:cand.tvl, vol24h:cand.vol24h, vol7d:p.vol7d, vol30d:p.vol30d, fee:p.fee, apr:cand.apr});
     updated++;
   });
   return updated;
@@ -3857,7 +3662,9 @@ async function runAutoUpdate(){
         fee:      parseLlamaFee(p.poolMeta),
         tvl:      Math.round(p.tvlUsd||0),
         vol24h:   p.volumeUsd1d!=null ? Math.round(p.volumeUsd1d) : 0,
-        apr:      p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null)
+        vol7d:    p.volumeUsd7d!=null ? Math.round(p.volumeUsd7d) : null,
+        // APR de 7 dias, coerente com o volume de 7 dias; o de 1 dia só na falta
+        apr:      p.apyBase7d!=null ? p.apyBase7d : (p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null))
       });
     });
   }
@@ -3920,12 +3727,14 @@ async function runUpdateNow(){
 
 /* ============ abas ============ */
 function switchTab(t){
+  if(t==="scan") t = "dash";   // a antiga aba Scanner vive dentro de Descobrir
   document.getElementById("tab-dash").style.display  = (t==="dash") ? "" : "none";
-  document.getElementById("tab-scan").style.display  = (t==="scan") ? "" : "none";
+  document.getElementById("tab-mine").style.display  = (t==="mine") ? "" : "none";
   document.getElementById("tab-hist").style.display  = (t==="hist") ? "" : "none";
   document.getElementById("tab-learn").style.display = (t==="learn")? "" : "none";
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===t));
   if(t==="hist") renderRadar();
+  if(t==="mine") renderMinhas();
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
@@ -3942,9 +3751,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   document.getElementById("stamp").textContent = `${d}/${m}/${y}`;
   load(); render();
 
-  refreshKeyStatus();          // pinta status a partir do cache (se houver)
-  loadScannerKeys();           // tenta fetch do keys/keys.json e atualiza (assíncrono)
-  document.getElementById("maxPoolsInput").value = getMaxPools();
+  apagarChavesAntigasIA();     // chaves de API de versões antigas não ficam no navegador
   populateLlamaSelects();      // preenche os dropdowns de rede/DEX (listas fixas)
   { const b = document.getElementById("llamaBlock"); if(b) b.value = getBlocklist(); }
   checkBackupReminder();

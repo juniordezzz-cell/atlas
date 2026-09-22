@@ -132,6 +132,21 @@
        todas as posições intactas. Ver core/atlas-snapshots.js. */
     "atlas.snapshots.v1",
     /* ------------------------------------------------------------
+       SCANNER POOLS (Ferramentas/scanner-pools) — nomes antigos, fora
+       do padrão "atlas.*", e por isso fora do backup: um "Restaurar"
+       devolvia o ATLAS inteiro e o Scanner vazio. As pools, o histórico
+       do Radar e as preferências entram. As CHAVES DE IA (…_keys,
+       …_keyidx) NÃO entram, de propósito: backup não carrega chave de
+       API — e a leitura por IA saiu da ferramenta.
+       ------------------------------------------------------------ */
+    "estudo_pools_liquidez_v1",
+    "estudo_pools_liquidez_versao",
+    "estudo_pools_liquidez_radar",
+    "estudo_pools_liquidez_alertas_ok",
+    "estudo_pools_liquidez_backup",
+    "estudo_pools_liquidez_blocklist",
+    "estudo_pools_liquidez_autoupd",
+    /* ------------------------------------------------------------
        PREÇOS INFORMADOS À MÃO — isto é DADO DO USUÁRIO, não cache
 
        Quando nenhuma API reconhece um ativo, o preço passa a ser o que

@@ -141,6 +141,14 @@
     "atlas.rwa.state.v3":      "RWA",
     "atlas.snapshots.v1":      "Histórico de patrimônio (medições diárias)",
     "atlas.assets.cg_key.v1":  "Chave da API CoinGecko",
+    /* Scanner Pools (Ferramentas/scanner-pools) — nomes da ferramenta */
+    "estudo_pools_liquidez_v1":        "Scanner Pools · pools e histórico",
+    "estudo_pools_liquidez_versao":    "Scanner Pools · versão dos dados",
+    "estudo_pools_liquidez_radar":     "Scanner Pools · preferências do Radar",
+    "estudo_pools_liquidez_alertas_ok":"Scanner Pools · alertas vistos",
+    "estudo_pools_liquidez_backup":    "Scanner Pools · lembrete de backup",
+    "estudo_pools_liquidez_blocklist": "Scanner Pools · tokens bloqueados",
+    "estudo_pools_liquidez_autoupd":   "Scanner Pools · atualização automática",
     /* nomes aposentados — só aparecem em arquivos antigos */
     "atlas.state.v1":          "Trade (nome antigo)",
     "atlas_defi_state_v3":     "DeFi (nome antigo)",
