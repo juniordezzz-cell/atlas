@@ -706,14 +706,28 @@
   function alerts() {
     var out = [];
 
-    function add(level, module, texto, quando) {
+    /* `extra` leva { detalhe, href }. Ficam FORA do texto de propósito:
+       o texto é a identidade do alerta no estado de lido
+       (core/atlas-notifications.js), e um detalhe que muda com o preço
+       ("12% acima do teto" → "13%") faria o alerta reacender a cada
+       cotação. */
+    function add(level, module, texto, quando, extra) {
       if (!texto) return;
       out.push({
         level: PESO[level] != null ? level : "info",
         module: module,
         texto: String(texto),
-        quando: quando || "agora"
+        quando: quando || "agora",
+        detalhe: (extra && extra.detalhe) || null,
+        href: (extra && extra.href) || null
       });
+    }
+
+    function numFaixa(v) {
+      if (v == null || !isFinite(v)) return "—";
+      var abs = Math.abs(v);
+      var dec = abs >= 100 ? 2 : abs >= 1 ? 4 : 6;
+      return Number(v).toLocaleString("pt-BR", { maximumFractionDigits: dec, minimumFractionDigits: 0 });
     }
 
     /* ---- Hold: regras que o módulo já calculava e ninguém via ---- */
@@ -773,8 +787,24 @@
       S.activePools().forEach(function (p) {
         var st = S.statusDe(p);
         if (st && st.status === "range") {
+          /* "Fora da faixa" sozinho não diz se é para agir já: 1% fora
+             volta sozinho, 40% fora é pool parada. A distância sai do
+             teto ou do piso, na mesma denominação da faixa cadastrada. */
+          var low = Number(p.rangeLow), high = Number(p.rangeHigh), r = st.razao;
+          var detalhe = null;
+          if (r != null && isFinite(r) && low > 0 && high > low) {
+            var acima = r > high;
+            var dist = acima ? (r / high - 1) * 100 : (1 - r / low) * 100;
+            var unidade = p.rangeDenom === "quote_por_base"
+              ? p.quote + " por " + p.base : p.base + " por " + p.quote;
+            detalhe = "Preço " + dist.toFixed(1).replace(".", ",") + "% " +
+                      (acima ? "acima do teto" : "abaixo do piso") +
+                      ": agora " + numFaixa(r) + ", faixa " + numFaixa(low) + "–" +
+                      numFaixa(high) + " (" + unidade + "). Fora da faixa a pool não rende taxa.";
+          }
           add("crit", "defi", "Pool " + p.base + "/" + p.quote + " (" + p.protocol +
-                              ") está fora da faixa de preço.");
+                              ") está fora da faixa de preço.", null,
+              { detalhe: detalhe, href: p.id ? "defi/pool.html?id=" + encodeURIComponent(p.id) : "defi/pools.html" });
         }
       });
       return true;

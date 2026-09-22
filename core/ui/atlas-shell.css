@@ -312,6 +312,9 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   border-radius: var(--atlas-r-md);
   font-size: var(--atlas-fs-sm);
   line-height: 1.5;
+  /* respostas com lista (um alerta por linha) usam 
+ */
+  white-space: pre-line;
   animation: atlas-rise var(--atlas-dur) var(--atlas-ease-out);
 }
 .atlas-oraculo__msg--bot {
@@ -347,6 +350,24 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   transition: color var(--atlas-dur-fast) var(--atlas-ease),
               border-color var(--atlas-dur) var(--atlas-ease),
               background-color var(--atlas-dur) var(--atlas-ease);
+}
+/* Ação dentro de uma resposta ("Abrir pool"): é link, não pergunta,
+   então leva a cor de destaque para não se confundir com as sugestões. */
+.atlas-oraculo__chip--acao {
+  color: var(--atlas-accent-text, var(--atlas-accent));
+  border-color: var(--atlas-accent-line);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Sugestões dentro de uma resposta ("Não entendi — posso responder
+   sobre:"): os mesmos chips da base, logo abaixo do texto. */
+.atlas-oraculo__sugs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--atlas-sp-2);
+  margin-top: var(--atlas-sp-3);
 }
 .atlas-oraculo__chip:hover {
   color: var(--atlas-text-hi);

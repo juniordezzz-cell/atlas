@@ -29,8 +29,16 @@
   /* Pedidos de previsão → recusa educada (mesma regra do Oráculo original) */
   var PREVISAO = [
     "vai subir", "vai cair", "devo comprar", "devo vender", "qual token",
-    "melhor amanhã", "vai render mais", "previsão", "prever", "vai valorizar"
+    "melhor amanha", "vai render mais", "previsao", "prever", "vai valorizar",
+    "vai desvalorizar", "vai despencar", "vai explodir", "hora de comprar", "hora de vender"
   ];
+
+  /* A lista está SEM acento e a pergunta é normalizada igual: antes,
+     "previsao" (sem til, como se digita rápido) passava direto. */
+  function normalizar(s) {
+    s = String(s == null ? "" : s).toLowerCase();
+    return s.normalize ? s.normalize("NFD").replace(/[̀-ͯ]/g, "") : s;
+  }
 
   AtlasOraculo.registerBrain(function () {
     return {
@@ -41,7 +49,7 @@
       summary: function () { return WELCOME; },
 
       answer: function (q) {
-        q = (q || "").toLowerCase();
+        q = normalizar(q);
 
         if (PREVISAO.some(function (p) { return q.indexOf(p) > -1; })) {
           return "Não faço previsões de mercado. Posso analisar seus dados " +

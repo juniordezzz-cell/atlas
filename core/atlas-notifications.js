@@ -144,6 +144,9 @@
         module: a.module || null,
         texto: a.texto,
         quando: a.quando || "agora",
+        /* Fora da identidade (ver idDe): mudam sem que o alerta mude. */
+        detalhe: a.detalhe || null,
+        href: a.href || null,
         lido: !!lidos[id]
       };
     }).filter(Boolean);

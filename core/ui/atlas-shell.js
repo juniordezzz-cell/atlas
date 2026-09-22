@@ -96,7 +96,14 @@
       "Mensagem": "Message",
       "Como está o módulo?": "How is the module?",
       "Quais teses estão em aberto?": "Which theses are open?",
-      "O que preciso revisar?": "What do I need to review?"
+      "O que preciso revisar?": "What do I need to review?",
+      "Quanto eu tenho?": "How much do I have?",
+      "Quanto tenho em caixa?": "How much cash do I have?",
+      "Qual meu resultado?": "What's my result?",
+      "O que precisa da minha atenção?": "What needs my attention?",
+      "Como estão minhas carteiras?": "How are my wallets?",
+      "Qual meu fluxo de movimentos?": "What's my movement flow?",
+      "Por que não consigo abrir posição?": "Why can't I open a position?"
     });
   }
   function esc(s) {
@@ -328,6 +335,112 @@
     return [];
   }
 
+  /* " (+15,9%)", ou nada. pnlPct vem NULL quando não há base para
+     afirmar rentabilidade, e null.toFixed() derrubava a resposta
+     inteira: o Oráculo recebia a pergunta e ficava mudo. */
+  function pctEntre(p) {
+    if (p == null || !isFinite(p)) return "";
+    return " (" + (p >= 0 ? "+" : "") + p.toFixed(1).replace(".", L(",", ".")) + "%)";
+  }
+
+  /* Uma forma só de ler a pergunta: minúscula e sem acento. As regex
+     tinham "n.o consigo" e "sa.da" para aguentar o til — e qualquer
+     palavra nova esquecia disso. */
+  function normalizar(s) {
+    s = String(s == null ? "" : s).toLowerCase();
+    return s.normalize ? s.normalize("NFD").replace(/[̀-ͯ]/g, "") : s;
+  }
+
+  /* ------------------------------------------------------------
+     O MÍNIMO DE EDUCAÇÃO
+
+     O Oráculo é raciocínio, não conversa — e continua sendo. Mas
+     "bom dia" caía em "Ainda não sei responder isso", que é a frase
+     de quem não ouviu. A regra é curta e fixa: cumprimenta pelo
+     horário REAL (não repete o que ouviu), reconhece o agradecimento
+     com uma palavra e volta ao dado. Sem emoji, sem exclamação.
+     ------------------------------------------------------------ */
+  function saudacaoAgora() {
+    var h = new Date().getHours();
+    if (h >= 5 && h < 12) return L("Bom dia", "Good morning");
+    if (h >= 12 && h < 18) return L("Boa tarde", "Good afternoon");
+    return L("Boa noite", "Good evening");
+  }
+
+  function nomeUsuario() {
+    var n = "";
+    try { n = (window.AtlasSettings && AtlasSettings.profile) ? (AtlasSettings.profile().name || "") : ""; }
+    catch (e) { n = ""; }
+    n = String(n).trim();
+    /* O nome-padrão não é nome de ninguém: "Boa tarde, Gestor ATLAS"
+       soa pior do que não chamar. */
+    return (!n || n === "Gestor ATLAS") ? "" : n;
+  }
+
+  function saudacaoComNome() {
+    var n = nomeUsuario();
+    return saudacaoAgora() + (n ? ", " + n : "") + ".";
+  }
+
+  /* Uma linha com o que importa: patrimônio e alertas. É o que vem
+     depois de um cumprimento — o Oráculo responde "bom dia" com o
+     estado, não com conversa. */
+  function estadoCurto() {
+    var s = consolidado();
+    var partes = [];
+    if (s && s.total) partes.push(L("Patrimônio ", "Net worth ") + dinheiro(s.total));
+    var n = alertasAbertos().length;
+    partes.push(n ? L(n + (n === 1 ? " alerta ativo" : " alertas ativos"),
+                      n + (n === 1 ? " active alert" : " active alerts"))
+                  : L("sem alertas", "no alerts"));
+    var txt = partes.join(", ");
+    return txt.charAt(0).toUpperCase() + txt.slice(1) + ".";
+  }
+
+  var RX_SAUDACAO = /^(oi+|ola|opa|e ai|eai|salve|bom dia|boa tarde|boa noite|hello|hi|hey|good (morning|afternoon|evening))\b[\s,.!?;:-]*/;
+  var RX_AGRADECE = /\b(obrigad[oa]s?|brigad[oa]|valeu|vlw|agradec\w*|thanks|thank you|thx)\b[\s,.!]*/g;
+  var RX_DESPEDE  = /\b(tchau|ate mais|ate logo|ate depois|falou|flw|bye|goodbye)\b[\s,.!]*/g;
+  var RX_ENCHIMENTO = /\b(por favor|pfv|pf|please|ai|entao)\b/g;
+
+  /* Separa a parte social da pergunta. "boa tarde, quanto tenho?"
+     vira { saudou: true, resto: "quanto tenho?" } — o resto segue
+     para o raciocínio de sempre, e a saudação só enfeita a resposta. */
+  function cortesia(q) {
+    var n = normalizar(q).trim();
+    var r = { saudou: false, agradeceu: false, despediu: false, resto: n };
+    var m = n.match(RX_SAUDACAO);
+    if (m) { r.saudou = true; n = n.slice(m[0].length); }
+    if (RX_AGRADECE.test(n)) { r.agradeceu = true; }
+    RX_AGRADECE.lastIndex = 0;
+    n = n.replace(RX_AGRADECE, " ");
+    if (RX_DESPEDE.test(n)) { r.despediu = true; }
+    RX_DESPEDE.lastIndex = 0;
+    n = n.replace(RX_DESPEDE, " ");
+    /* Sobrou pergunta? "por favor" sozinho não é pergunta. */
+    var semEnchimento = n.replace(RX_ENCHIMENTO, " ").replace(/[\s,.!?;:-]+/g, " ").trim();
+    r.resto = semEnchimento.length >= 3 ? n.trim() : "";
+    return r;
+  }
+
+  var SUGESTOES_PADRAO = [
+    "Quanto eu tenho?", "Quanto tenho em caixa?", "Qual meu resultado?",
+    "O que precisa da minha atenção?", "Quais teses estão em aberto?",
+    "Como estão minhas carteiras?", "Qual meu fluxo de movimentos?"
+  ];
+
+  /* O passo natural depois de cada pergunta. As chaves são testadas na
+     pergunta normalizada (sem acento); os rótulos são perguntas que o
+     próprio cérebro sabe responder — sugestão que cai em "não entendi"
+     é pior do que sugestão nenhuma. */
+  var SEGUIMENTOS = [
+    { rx: /quanto eu tenho|patrim|net worth/, prox: ["Quanto tenho em caixa?", "Qual meu resultado?"] },
+    { rx: /caixa|dispon|cash/, prox: ["Como estão minhas carteiras?", "Qual meu fluxo de movimentos?"] },
+    { rx: /resultado|lucro|rentab/, prox: ["Quanto eu tenho?", "O que precisa da minha atenção?"] },
+    { rx: /tese/, prox: ["O que preciso revisar?"] },
+    { rx: /carteira/, prox: ["Quanto tenho em caixa?", "Qual meu fluxo de movimentos?"] },
+    { rx: /abrir posi|nao consigo/, prox: ["Quanto tenho em caixa?", "Como estão minhas carteiras?"] }
+  ];
+
   var baseBrain = {
     /* As sugestões mudam com o estado. Oferecer "o que precisa da minha
        atenção" quando não há alerta nenhum é fazer o usuário gastar um
@@ -383,8 +496,13 @@
       var s = consolidado();
       if (!s) return L("Não consigo somar os módulos a partir desta tela.",
                        "I can't consolidate the modules from this screen.");
-      var caixa = caixaGlobal();
-      var total = s.total + caixa;
+      /* snapshot().total JÁ É o patrimônio com caixa (ver
+         js/atlas-consolidation.js, "o caixa não entrava no patrimônio").
+         Somar caixaGlobal() por cima contava o caixa duas vezes — e
+         ainda pelo valor depositado, não a mercado como o Dashboard. */
+      var caixa = s.caixa || 0;
+      var total = s.total;
+      var alocado = (s.investido != null) ? s.investido : (total - caixa);
 
       if (!total) {
         return L("Patrimônio zerado — nada registrado ainda. O dinheiro entra no ATLAS " +
@@ -402,12 +520,12 @@
       }
       var sinal = s.pnl >= 0 ? "+" : "";
       return L("Patrimônio total: " + dinheiro(total) + " — " + dinheiro(caixa) +
-               " em caixa e " + dinheiro(s.total) + " alocado. Resultado acumulado " +
-               sinal + dinheiro(s.pnl) + " (" + sinal + s.pnlPct.toFixed(1) + "%). " +
+               " em caixa e " + dinheiro(alocado) + " alocado. Resultado acumulado " +
+               sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) + ". " +
                "Distribuição: " + partes.join(", ") + ".",
                "Total net worth: " + dinheiro(total) + " — " + dinheiro(caixa) +
-               " in cash and " + dinheiro(s.total) + " allocated. Accumulated result " +
-               sinal + dinheiro(s.pnl) + " (" + sinal + s.pnlPct.toFixed(1) + "%). " +
+               " in cash and " + dinheiro(alocado) + " allocated. Accumulated result " +
+               sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) + ". " +
                "Split: " + partes.join(", ") + ".");
     },
 
@@ -455,14 +573,29 @@
       }
       /* No máximo três: resposta de dez linhas é resposta que ninguém lê
          até o fim, e o sino guarda a lista inteira. */
-      var texto = todos.slice(0, 3).map(function (a) {
-        return "• " + (a.module ? String(a.module).toUpperCase() + ": " : "") + a.texto;
-      }).join(" ");
+      var tres = todos.slice(0, 3);
+      var texto = tres.map(function (a) {
+        return "• " + (a.module ? String(a.module).toUpperCase() + ": " : "") + a.texto +
+               (a.detalhe ? " " + a.detalhe : "");
+      }).join("\n");
       var resto = todos.length > 3
-        ? L(" (+" + (todos.length - 3) + " no sino)", " (+" + (todos.length - 3) + " in the bell)")
+        ? L("\n(+" + (todos.length - 3) + " no sino)", "\n(+" + (todos.length - 3) + " in the bell)")
         : "";
-      return L(todos.length + " ponto(s) de atenção. " + texto + resto,
-               todos.length + " item(s) need attention. " + texto + resto);
+      /* Alerta que aponta para uma posição vem com o caminho até ela:
+         dizer "a pool saiu da faixa" e deixar a pessoa procurar qual é
+         a pool na lista é metade do trabalho. */
+      var acoes = [];
+      tres.forEach(function (a) {
+        if (!a.href || acoes.length >= 3) return;
+        var rotulo = a.module === "defi" ? L("Abrir pool", "Open pool") : L("Abrir", "Open");
+        var nome = (String(a.texto).match(/^Pool (\S+)/) || [])[1];
+        acoes.push({ rotulo: rotulo + (nome && tres.length > 1 ? " " + nome : ""), href: a.href });
+      });
+      return {
+        texto: L((todos.length === 1 ? "1 ponto de atenção." : todos.length + " pontos de atenção.") + "\n" + texto + resto,
+                 todos.length + " item(s) need attention.\n" + texto + resto),
+        acoes: acoes
+      };
     },
 
     carteiras: function () {
@@ -506,7 +639,7 @@
     },
 
     answer: function (q) {
-      q = (q || "").toLowerCase();
+      q = normalizar(q);
 
       /* ------------------------------------------------------------
          O VOCABULÁRIO TENTA PRIMEIRO
@@ -539,9 +672,14 @@
 
       /* A ordem importa: "quanto tenho em teses abertas" é pergunta
          sobre teses, não sobre patrimônio. O padrão mais específico
-         vem primeiro. */
+         vem primeiro.
 
-      if (/tese|thesis|estud|aberto|open|pendent|pending|andamento|progress/.test(q)) {
+         Palavras soltas demais saíram das regex, porque capturavam o
+         assunto errado: "aberto" mandava "posições abertas" para
+         teses, "vale" pegava "vale a pena", "conta" pegava "me conta",
+         "real" pegava qualquer "na real". */
+
+      if (/tese|thesis|estud|pendent|pending|andamento|progress/.test(q)) {
         var p = baseBrain.pending();
         if (!p.length) return L("Nenhuma tese em aberto no " + LABEL + ". Fluxo em dia.",
                                 "No open theses in " + LABEL + ". All caught up.");
@@ -551,7 +689,9 @@
                  p.length + " open thesis(es): " + listStr + ".");
       }
 
-      if (/revis|review|atras|overdue|parad|stalled/.test(q)) {
+      /*  na frente: sem ele "revis" casava dentro de "pREVISao" e um
+         pedido de previsão recebia o relatório de teses atrasadas. */
+      if (/revis|review|atrasad|overdue|parad[ao]s? ha|stalled/.test(q)) {
         var old = baseBrain.pending().filter(function (x) {
           if (!x.createdAt) return false;
           return (Date.now() - new Date(x.createdAt).getTime()) > 72 * 3600 * 1000;
@@ -576,7 +716,7 @@
         return baseBrain.caixa();
       }
 
-      if (/quanto|patrim|total|net worth|saldo|worth|vale/.test(q)) return baseBrain.patrimonio();
+      if (/quanto|patrim|total|net worth|saldo|worth/.test(q)) return baseBrain.patrimonio();
 
       /* "por que não consigo abrir?" é a dúvida que a trava do caixa
          cria, e o Oráculo é onde a pessoa pergunta antes de procurar
@@ -591,7 +731,7 @@
                  "can't open one. You have " + dinheiro(c) + " available.");
       }
 
-      if (/carteira|wallet|conta/.test(q)) return baseBrain.carteiras();
+      if (/carteira|wallet|contas/.test(q)) return baseBrain.carteiras();
 
       if (/movimento|fluxo|flow|entrada|sa.da|aporte|retirada|extrato/.test(q)) return baseBrain.fluxo();
 
@@ -599,24 +739,24 @@
         var s = consolidado();
         if (!s || !s.total) return baseBrain.patrimonio();
         var sinal = s.pnl >= 0 ? "+" : "";
-        return L("Resultado acumulado: " + sinal + dinheiro(s.pnl) + " (" + sinal +
-                 s.pnlPct.toFixed(1) + "%) sobre o capital investido. " +
+        return L("Resultado acumulado: " + sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) +
+                 " sobre o capital investido. " +
                  "Renda passiva estimada: " + dinheiro(s.passiveIncome) + ".",
-                 "Accumulated result: " + sinal + dinheiro(s.pnl) + " (" + sinal +
-                 s.pnlPct.toFixed(1) + "%). Estimated passive income: " +
+                 "Accumulated result: " + sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) +
+                 ". Estimated passive income: " +
                  dinheiro(s.passiveIncome) + ".");
       }
 
       if (/modul|module|resum|summary|status|como est|how is/.test(q)) return baseBrain.summary();
 
-      if (/moeda|currency|dolar|dollar|dólar|real|câmbio|cambio|exchange/.test(q) && window.AtlasCurrency) {
+      if (/moeda|currency|dolar|dollar|reais|brl|cambio|exchange/.test(q) && window.AtlasCurrency) {
         return L("Exibindo em " + AtlasCurrency.code() + ". Os dados continuam " +
                  "armazenados em USD — a moeda é só a camada de leitura.",
                  "Showing in " + AtlasCurrency.code() + ". Data is still stored " +
                  "in USD — currency is only the display layer.");
       }
 
-      if (/backup|export|salvar|perder|guardar/.test(q)) {
+      if (/backup|export|salvar|perder (os |meus )?dados|perder tudo|guardar/.test(q)) {
         return L("Seus dados vivem no armazenamento deste navegador — trocar de máquina " +
                  "ou limpar os dados de navegação apaga tudo. Exporte em Configurações → " +
                  "Dados e Backup, ou pelo Ctrl+K.",
@@ -626,13 +766,14 @@
 
       /* Não saber é aceitável; deixar o usuário no escuro não é. A
          resposta padrão ENSINA o que dá para perguntar. */
-      return L("Ainda não sei responder isso. Sei falar de patrimônio, caixa disponível, " +
-               "resultado, teses, pendências, carteiras, movimentos e moeda — sempre a " +
-               "partir dos seus próprios dados, nunca de um chat genérico. " +
-               "Ctrl+K abre a paleta, se você quiser ir direto a uma tela.",
-               "I can't answer that yet. I can talk about net worth, result, theses, " +
-               "pending items, wallets, movements and currency — always from your own " +
-               "data. Ctrl+K opens the command palette.");
+      /* Devolve as perguntas como BOTÕES: uma lista de assuntos em
+         texto corrido obriga a pessoa a redigitar o que o Oráculo
+         acabou de dizer que sabe. */
+      return {
+        texto: L("Não entendi a pergunta. Posso responder sobre:",
+                 "I didn't understand the question. I can answer about:"),
+        sugestoes: SUGESTOES_PADRAO
+      };
     },
 
     /* ------------------------------------------------------------
@@ -724,20 +865,137 @@
     var log = wrap.querySelector(".atlas-oraculo__log");
     var input = wrap.querySelector(".atlas-oraculo__input");
 
-    function push(text, who) {
+    /* A resposta pode ser texto ou { texto, sugestoes } — o segundo
+       formato vira botões que perguntam de novo com um clique. */
+    function push(resp, who) {
+      var texto = (resp && typeof resp === "object") ? resp.texto : resp;
       var m = document.createElement("div");
       m.className = "atlas-oraculo__msg atlas-oraculo__msg--" + who;
-      m.textContent = text;
+      m.textContent = texto == null ? "" : String(texto);
+      if (resp && typeof resp === "object" && resp.sugestoes && resp.sugestoes.length) {
+        var box = document.createElement("div");
+        box.className = "atlas-oraculo__sugs";
+        resp.sugestoes.forEach(function (s) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "atlas-oraculo__chip";
+          b.textContent = t(s);
+          b.addEventListener("click", function () { ask(s); });
+          box.appendChild(b);
+        });
+        m.appendChild(box);
+      }
+      if (resp && typeof resp === "object" && resp.acoes && resp.acoes.length) {
+        var bar = document.createElement("div");
+        bar.className = "atlas-oraculo__sugs";
+        resp.acoes.forEach(function (a) {
+          var lk = document.createElement("a");
+          lk.className = "atlas-oraculo__chip atlas-oraculo__chip--acao";
+          lk.href = RAIZ + a.href;
+          lk.textContent = a.rotulo;
+          bar.appendChild(lk);
+        });
+        m.appendChild(bar);
+      }
       log.appendChild(m);
       log.scrollTop = log.scrollHeight;
     }
+
+    function responder(q) {
+      var c = cortesia(q);
+      var r = null;
+      if (c.resto) {
+        try { r = brain.answer(c.resto); } catch (e) { r = null; }
+        if (r == null || r === "") {
+          r = L("Não consegui calcular isso agora.", "I couldn't compute that right now.");
+        }
+      }
+      if (c.saudou) {
+        /* Cumprimento sozinho → cumprimento + estado. Cumprimento com
+           pergunta → cumprimento antes da resposta, nada além. */
+        var pre = saudacaoComNome() + " ";
+        if (!r) return pre + estadoCurto();
+        if (typeof r === "object") return { texto: pre + r.texto, sugestoes: r.sugestoes, acoes: r.acoes };
+        return pre + r;
+      }
+      if (c.despediu) {
+        setTimeout(function () { setOpen(false); }, 900);
+        return r || L("Até mais.", "See you.");
+      }
+      if (c.agradeceu && !r) return L("Disponha.", "You're welcome.");
+      /* "por favor" sozinho: não há pergunta, mas silêncio é pior. */
+      return r || { texto: L("Qual é a pergunta? Posso responder sobre:",
+                             "What's the question? I can answer about:"),
+                    sugestoes: SUGESTOES_PADRAO };
+    }
+
+    /* ------------------------------------------------------------
+       SUGESTÕES QUE ACOMPANHAM A CONVERSA
+
+       Os chips eram montados uma vez. Depois de ler o alerta, "O que
+       precisa da minha atenção?" continuava lá; depois de perguntar
+       o patrimônio, a sugestão seguinte era o próprio patrimônio. A
+       cada resposta eles se refazem: primeiro o passo natural depois
+       do que foi perguntado, depois o que o estado pede, e nunca o
+       que já foi perguntado nesta conversa.
+       ------------------------------------------------------------ */
+    var perguntadas = {};
+    var chipsBox = wrap.querySelector(".atlas-oraculo__chips");
+
+    function renderChips(ultima) {
+      var lista = [];
+      var u = normalizar(ultima || "");
+      SEGUIMENTOS.forEach(function (s) { if (u && s.rx.test(u)) lista = lista.concat(s.prox); });
+      var doEstado = [];
+      try { doEstado = resolveBrain().chips || []; } catch (e) { doEstado = []; }
+      lista = lista.concat(doEstado, SUGESTOES_PADRAO);
+      var vistos = {}, saida = [];
+      lista.forEach(function (c) {
+        var k = normalizar(c);
+        if (vistos[k] || perguntadas[k] || saida.length >= 4) return;
+        vistos[k] = 1;
+        saida.push(c);
+      });
+      while (chipsBox.firstChild) chipsBox.removeChild(chipsBox.firstChild);
+      saida.forEach(function (c) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "atlas-oraculo__chip";
+        b.setAttribute("data-q", c);
+        b.textContent = t(c);
+        b.addEventListener("click", function () { ask(c); });
+        chipsBox.appendChild(b);
+      });
+    }
+
     function ask(q) {
       if (!q) return;
       setOpen(true);
       push(q, "user");
-      setTimeout(function () { push(brain.answer(q), "bot"); }, 240);
+      perguntadas[normalizar(q)] = 1;
+      setTimeout(function () { push(responder(q), "bot"); renderChips(q); }, 240);
     }
-    function setOpen(v) { wrap.setAttribute("data-open", v ? "true" : "false"); }
+    /* ------------------------------------------------------------
+       ABRIR O ORÁCULO É LER O ALERTA
+
+       O selo amarelo contava alertas não lidos, mas só o sino marcava
+       como lido. Quem abria o Oráculo por causa do "1" lia, fechava e
+       continuava vendo o "1" — o selo pedia uma ação que já tinha sido
+       feita. Agora, ao abrir com alerta pendente, o Oráculo diz qual é
+       o alerta (senão o selo apontaria para algo que o painel não
+       mostra) e o marca como lido, o que apaga o selo e o sino juntos.
+       ------------------------------------------------------------ */
+    function setOpen(v) {
+      var abrindo = v && wrap.getAttribute("data-open") !== "true";
+      wrap.setAttribute("data-open", v ? "true" : "false");
+      if (!abrindo || !window.AtlasNotifications) return;
+      if (brain.alerts() > 0) {
+        push(baseBrain.atencao(), "bot");
+        try { AtlasNotifications.markAllRead(); } catch (e) {}
+        renderChips();
+      }
+      pintarPinOraculo();
+    }
 
     wrap.querySelector(".atlas-oraculo__orb").addEventListener("click", function (e) {
       e.stopPropagation();
@@ -757,16 +1015,43 @@
       if (e.key === "Escape") setOpen(false);
     });
 
-    push(brain.summary(), "bot");
-
-    var n = brain.alerts();
-    var pin = wrap.querySelector(".atlas-oraculo__pin");
-    if (n > 0) { pin.hidden = false; pin.textContent = n; }
+    /* A abertura cumprimenta uma vez, pelo horário, e vai ao estado.
+       No Dashboard o resumo vira a linha curta (patrimônio + alertas);
+       nos módulos continua o resumo de teses de cada um. */
+    var resumo = "";
+    try { resumo = brain.summary() || ""; } catch (e) { resumo = ""; }
+    push(saudacaoComNome() + " " + (MODULE === "atlas" && !/demonstra/i.test(resumo)
+      ? estadoCurto() : resumo), "bot");
 
     wrap._ask = ask;
     wrap._setOpen = setOpen;
+    wrap._alerts = brain.alerts;
+    pintarPinOraculo(wrap);
     return wrap;
   }
+
+  /* O selo era pintado uma vez, na montagem, e nunca mais: marcar como
+     lido pelo sino ou pelo próprio Oráculo não o apagava até recarregar
+     a página. Agora ele segue AtlasNotifications como o sino segue.
+     Procura o elemento a cada pintura porque registerBrain() refaz o
+     componente — um ouvinte preso ao elemento antigo pintaria um nó
+     que já saiu da página. */
+  function pintarPinOraculo(el) {
+    el = el || document.querySelector('[data-atlas-ui="oraculo"]');
+    if (!el || !el._alerts) return;
+    var pin = el.querySelector(".atlas-oraculo__pin");
+    if (!pin) return;
+    var n = 0;
+    try { n = el._alerts() || 0; } catch (e) { n = 0; }
+    pin.hidden = !(n > 0);
+    pin.textContent = n > 9 ? "9+" : (n > 0 ? String(n) : "");
+  }
+
+  if (window.AtlasNotifications && AtlasNotifications.onChange) {
+    AtlasNotifications.onChange(function () { pintarPinOraculo(); });
+  }
+  document.addEventListener("atlas:movement", function () { pintarPinOraculo(); });
+  document.addEventListener("atlas:theses", function () { pintarPinOraculo(); });
 
   /* ============================================================
      4. Montagem resistente
