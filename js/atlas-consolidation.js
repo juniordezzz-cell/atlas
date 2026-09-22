@@ -297,6 +297,72 @@
   function defiTotal()  { return totalGlobalDe("defi"); }
   function rwaTotal()   { return totalGlobalDe("rwa"); }
 
+  /* ============================================================
+     RESULTADO POR CARTEIRA — a mesma régua do patrimônio
+
+     O patrimônio de cada módulo soma TODAS as carteiras globais
+     (totalGlobalDe, pelos LEITORES). O resultado não: holdPnl lia
+     Store.get.portfolioPnL(), que sem argumento olha a carteira ATIVA
+     no Hold, e rwaPnl lia RWAStore.kpis(), que é a carteira ATUAL do
+     RWA. Com duas carteiras com posição no Hold, o "Lucro Total" era o
+     de uma só — e a rentabilidade dividia esse lucro pelo capital das
+     duas. É o mesmo defeito que o DeFi já teve (ver globalProfit).
+
+     Agora o resultado é lido POR CARTEIRA, pela regra de cada módulo,
+     e o total é a soma das carteiras globais. É também o que deixa o
+     Oráculo responder "quanto rendeu a M4P no Hold?" com um número que
+     fecha com o do Dashboard.
+
+       hold   Σ (valor − custo) das posições da carteira
+       rwa    Σ (atual − entrada) dos ativos da carteira
+       defi   Σ resultado das pools abertas (inclui taxa coletada)
+       trade  Σ pnlUSD das operações encerradas
+     ============================================================ */
+  var RESULTADO = {
+    hold: function (walletId) {
+      var r = LEITORES.hold(walletId);
+      return r ? n(r.valorAtual) - n(r.capital) : null;
+    },
+    rwa: function (walletId) {
+      var r = LEITORES.rwa(walletId);
+      return r ? n(r.valorAtual) - n(r.capital) : null;
+    },
+    defi: function (walletId) {
+      return safe(function () {
+        var S = global.DeFiStore;
+        if (!S || !S.all || !S.poolSummary) return null;
+        var wd = (S.all().byWallet || {})[walletId];
+        var t = 0;
+        ((wd && wd.pools) || []).forEach(function (p) {
+          var r = S.poolSummary(p);
+          if (r) t += n(r.resultado);
+        });
+        return t;
+      }, null);
+    },
+    trade: function (walletId) {
+      return safe(function () {
+        var A = trade(); if (!A || !A.app || !A.app.getState) return null;
+        var d = (A.app.getState().data || {})[walletId];
+        return (d && d.trades ? d.trades : []).reduce(function (a, t) {
+          return a + (t.status === "encerrado" ? n(t.pnlUSD) : 0);
+        }, 0);
+      }, null);
+    }
+  };
+
+  /* null = módulo não carregado nesta página (não é "zero") */
+  function resultadoDe(walletId, module) {
+    var f = RESULTADO[module];
+    if (!f) return null;
+    var v = f(walletId);
+    return (v == null || !isFinite(v)) ? null : v;
+  }
+
+  function resultadoGlobalDe(module) {
+    return globalIds().reduce(function (a, id) { return a + n(resultadoDe(id, module)); }, 0);
+  }
+
   /* ---------- P&L por módulo (best-effort) ---------- */
   /* Resultado do Trade = soma dos pnlUSD realizados. Era a diferença
      entre o primeiro e o último ponto de `equity` — dois zeros, para
@@ -314,7 +380,9 @@
       return p;
     }, 0);
   }
-  function holdPnl() { return safe(function () { var S = hold(); return (S && S.get && S.get.portfolioPnL) ? n(S.get.portfolioPnL()) : 0; }, 0); }
+  /* Hold e RWA liam a carteira ATIVA do módulo (portfolioPnL, kpis);
+     agora somam as globais, como o patrimônio. Ver RESULTADO acima. */
+  function holdPnl() { return resultadoGlobalDe("hold"); }
   /* O resultado do DeFi vinha de kpis().profit, que olha SÓ a carteira
      ATIVA no módulo. O patrimônio ao lado somava TODAS as globais: o
      card mostrava um total de quatro carteiras com o lucro de uma. Com
@@ -328,7 +396,7 @@
       return n(S.globalProfit ? S.globalProfit() : S.kpis().profit);
     }, 0);
   }
-  function rwaPnl()  { return safe(function () { return global.RWAStore ? n(global.RWAStore.kpis().pnlAbs) : 0; }, 0); }
+  function rwaPnl()  { return resultadoGlobalDe("rwa"); }
 
   function moduleList() {
     return [
@@ -919,6 +987,17 @@
     cotarDeFi: cotarDeFi,
     /* caixa a mercado — a fonte única que header, Dashboard e Carteiras leem */
     caixaMercadoDe: caixaMercadoDe,
+    /* por carteira × módulo, pela regra de cada módulo — a mesma soma
+       que forma o resultado do snapshot. null = módulo não carregado. */
+    resultadoDe: resultadoDe,
+    valorDe: function (walletId, module) {
+      var f = LEITORES[module]; if (!f) return null;
+      var r = f(walletId); return r ? n(r.valorAtual) : null;
+    },
+    capitalDe: function (walletId, module) {
+      var f = LEITORES[module]; if (!f) return null;
+      var r = f(walletId); return r ? n(r.capital) : null;
+    },
     caixaPorAtivo: caixaPorAtivo,
     atualizarCaixa: atualizarCaixa
   };

@@ -380,11 +380,151 @@
     caso(gd, "sem módulo (só período)", T.respostaDemoFiltrada({ metrica: "resultado", periodo: { rotulo: "no mês passado" } }).indexOf("Para eu dizer quanto rendeu:") > -1, true);
     grupos.push(gd);
 
+    grupos.push(testarCarteiras());
+    grupos.push(testarLucroMultiCarteira());
+
     var gp = { titulo: "Recusa de previsão", casos: [] };
     PREVISAO.forEach(function (c) {
       caso(gp, c[0], textoDe(T.responder(c[0])).indexOf("Não faço previsões") === 0, c[1]);
     });
     grupos.push(gp);
+  }
+
+  /* ------------------------------------------------------------
+     CARTEIRAS — um mundo sintético, sem gravar nada
+
+     As leituras (AtlasWallets.all/globals/get e as de valor, capital,
+     resultado e caixa da consolidação) são trocadas por um cenário fixo
+     durante o grupo e devolvidas no finally. O cenário:
+
+       M4p      global  caixa 187,64 · DeFi 133,70 (capital 115,21, resultado +18,41)
+       M1P      global  caixa 50     · Hold 1.000 (capital 900, +100) · Trade +20 realizado
+       M2R      LOCAL do DeFi · DeFi 500 (capital 520, −20)
+       Reserva / Reserva Longa  globais, só caixa (10 e 20) — nomes que se contêm
+     ------------------------------------------------------------ */
+  function testarCarteiras() {
+    var g = { titulo: "Carteiras", casos: [] };
+    var W = window.AtlasWallets, C = window.AtlasConsolidation, V = window.AtlasVocabulario;
+    if (!W || !C || !V) {
+      caso(g, "camadas de carteira carregadas", false, true);
+      return g;
+    }
+    var CART = [
+      { id: "t-m4p", name: "M4p", type: "global" },
+      { id: "t-m1p", name: "M1P", type: "global" },
+      { id: "t-m2r", name: "M2R", type: "isolada", module: "defi" },
+      { id: "t-res", name: "Reserva", type: "global" },
+      { id: "t-rel", name: "Reserva Longa", type: "global" }
+    ];
+    var NUM = {
+      "t-m4p": { caixa: 187.64, defi: [133.70, 115.21, 18.41] },
+      "t-m1p": { caixa: 50, hold: [1000, 900, 100], trade: [0, 0, 20] },
+      "t-m2r": { caixa: 0, defi: [500, 520, -20] },
+      "t-res": { caixa: 10 },
+      "t-rel": { caixa: 20 }
+    };
+    function linha(id, m) { return (NUM[id] && NUM[id][m]) || [0, 0, 0]; }
+
+    var orig = { all: W.all, globals: W.globals, get: W.get,
+                 valorDe: C.valorDe, capitalDe: C.capitalDe, resultadoDe: C.resultadoDe, caixa: C.caixaMercadoDe };
+    try {
+      W.all = function () { return CART.slice(); };
+      W.globals = function () { return CART.filter(function (w) { return w.type !== "isolada"; }); };
+      W.get = function (id) { return CART.filter(function (w) { return w.id === id; })[0] || null; };
+      C.valorDe = function (id, m) { return linha(id, m)[0]; };
+      C.capitalDe = function (id, m) { return linha(id, m)[1]; };
+      C.resultadoDe = function (id, m) { return linha(id, m)[2]; };
+      C.caixaMercadoDe = function (id) { return (NUM[id] && NUM[id].caixa) || 0; };
+
+      function nomes(q) { return V.interpretar(T.normalizar(q)).carteiras.map(function (c) { return c.nome; }).join(","); }
+      function resp(q) { return String(V.responder(T.normalizar(q)) || "").replace(/ /g, " "); }
+      function tem(q, trecho, nome) { var r = resp(q); caso(g, nome || (q + " → contém \"" + trecho + "\""), r.indexOf(trecho) > -1, true); }
+
+      /* reconhecer */
+      caso(g, "M4P em maiúscula casa com \"M4p\"", nomes("quanto tenho na M4P?"), "M4p");
+      caso(g, "duas carteiras na ordem do texto", nomes("compara a M1P com a M4P"), "M1P,M4p");
+      caso(g, "\"Reserva Longa\" não casa também \"Reserva\"", nomes("quanto tenho na reserva longa?"), "Reserva Longa");
+      caso(g, "as duas quando as duas são citadas", nomes("compara reserva e reserva longa"), "Reserva,Reserva Longa");
+      caso(g, "carteira sem assunto → patrimônio da carteira", V.interpretar("o que tem na m1p").metrica, "patrimonio");
+      caso(g, "rota: \"quanto tenho na M4P?\"", T.intencao("quanto tenho na M4P?"), "vocabulario");
+      caso(g, "rota: \"qual carteira rende mais?\"", T.intencao("qual carteira rende mais?"), "vocabulario");
+
+      /* ler cada uma */
+      tem("quanto tenho na M4P?", "Patrimônio na carteira M4p: US$ 321,34 — caixa US$ 187,64, DeFi US$ 133,70");
+      /* o formatador do ATLAS tira os centavos a partir de US$ 1.000 */
+      tem("o que tem na M1P?", "Patrimônio na carteira M1P: US$ 1.050 — caixa US$ 50,00, Hold US$ 1.000");
+      tem("quanto rendeu a M4P no DeFi?", "Resultado em DeFi na carteira M4p: +US$ 18,41 (+15,98% sobre US$ 115,21 investidos)");
+      tem("quanto rendi na M1P?", "+US$ 120,00 (+13,33% sobre US$ 900,00 investidos) — Hold +US$ 100,00, Trade +US$ 20,00");
+      tem("quanto tenho em caixa na M4P?", "Caixa disponível na carteira M4p: US$ 187,64");
+      tem("quanto tenho na M2R?", "carteira local do DeFi — não soma no patrimônio total", "carteira local é marcada como fora do total");
+
+      /* comparar */
+      var cmp = resp("compara a M4P com a M1P");
+      caso(g, "comparação: M1P primeiro (maior patrimônio)", cmp.indexOf("• M1P") < cmp.indexOf("• M4p") && cmp.indexOf("Maior: M1P.") > -1, true);
+      var rank = resp("qual carteira rende mais?");
+      caso(g, "rende mais é por % do capital: M4p (15,98%) antes de M1P (13,33%)",
+           rank.indexOf("• M4p") > -1 && rank.indexOf("• M4p") < rank.indexOf("• M1P") && rank.indexOf("Rende mais, em proporção ao capital: M4p.") > -1, true);
+      caso(g, "ranking inclui a local, marcada", rank.indexOf("• M2R (local): −US$ 20,00") > -1, true);
+      tem("compara as carteiras no DeFi", "Maior: M2R.", "comparação filtrada por módulo");
+
+      /* continuar */
+      var cv = T.conversa();
+      cv.perguntar("quanto rendeu a M4P?");
+      cv.perguntar("e a M1P?");
+      var e1 = cv.estado().Q || {};
+      caso(g, "\"quanto rendeu a M4P?\" → \"e a M1P?\" mantém resultado, troca a carteira",
+           (e1.metrica + "|" + (e1.carteira && e1.carteira.nome)), "resultado|M1P");
+      var cv2 = T.conversa();
+      cv2.perguntar("compara a M4P com a M1P");
+      cv2.perguntar("e no hold?");
+      var e2 = cv2.estado().Q || {};
+      caso(g, "comparação → \"e no hold?\" continua comparando, no Hold", (!!e2.comparar) + "|" + e2.modulo, "true|hold");
+
+      /* a lista de "como estão minhas carteiras?" */
+      var lst = String(T.responder("Como estão minhas carteiras?") || "").replace(/ /g, " ");
+      caso(g, "\"como estão minhas carteiras?\" lista o saldo de cada uma",
+           lst.indexOf("5 carteiras: 4 global(is)") > -1 && lst.indexOf("• M1P: US$ 1.050 — caixa US$ 50,00, Hold US$ 1.000") > -1 &&
+           lst.indexOf("• M2R (local): US$ 500,00") > -1, true);
+    } finally {
+      W.all = orig.all; W.globals = orig.globals; W.get = orig.get;
+      C.valorDe = orig.valorDe; C.capitalDe = orig.capitalDe; C.resultadoDe = orig.resultadoDe; C.caixaMercadoDe = orig.caixa;
+    }
+    return g;
+  }
+
+  /* ------------------------------------------------------------
+     LUCRO TOTAL COM DUAS CARTEIRAS — o erro das duas réguas
+
+     O resultado do Hold lia só a carteira ATIVA e o patrimônio somava
+     todas as globais. Cenário em memória (nada é salvo): um ativo a
+     US$ 110; Principal com 10 a US$ 100 (+100) e uma segunda carteira
+     com 5 a US$ 120 (−50). O resultado certo é +50 sobre 1.600.
+     ------------------------------------------------------------ */
+  function testarLucroMultiCarteira() {
+    var g = { titulo: "Consolidação · lucro com várias carteiras", casos: [] };
+    var W = window.AtlasWallets, C = window.AtlasConsolidation, S = window.Store && Store.state;
+    if (!W || !C || !S || !S.carteira || !S.ativos) {
+      caso(g, "Hold e consolidação carregados", false, true);
+      return g;
+    }
+    var gOrig = W.globals, nA = S.ativos.length, nC = S.carteira.length;
+    try {
+      S.ativos.push({ id: "t-x", ticker: "TX", preco_atual: 110 });
+      S.carteira.push({ ativo_id: "t-x", walletId: "principal", quantidade: 10, preco_medio: 100 });
+      S.carteira.push({ ativo_id: "t-x", walletId: "t-w2", quantidade: 5, preco_medio: 120 });
+      W.globals = function () {
+        return gOrig.call(W).filter(function (w) { return w.id === "principal"; })
+          .concat([{ id: "t-w2", name: "W2", type: "global" }]);
+      };
+      var s = C.snapshot();
+      caso(g, "resultado por carteira: Principal +100", C.resultadoDe("principal", "hold"), 100);
+      caso(g, "resultado por carteira: segunda −50", C.resultadoDe("t-w2", "hold"), -50);
+      caso(g, "Lucro Total soma as duas (+50), não só a ativa (+100)", s.pnl, 50);
+      caso(g, "rentabilidade 50 ÷ 1.600 = 3,125%", Math.round(s.pnlPct * 1000) / 1000, 3.125);
+    } finally {
+      S.ativos.length = nA; S.carteira.length = nC; W.globals = gOrig;
+    }
+    return g;
   }
 
   function el(tag, cls, txt) {

@@ -182,21 +182,43 @@
      ou duas letras) são ignorados — casariam com qualquer coisa.
      ============================================================ */
   function carteiraDe(q) {
+    return carteirasDe(q)[0] || null;
+  }
+
+  /* TODAS as carteiras citadas, na ordem em que aparecem no texto.
+     "compara a M4P com a M1P" tem duas, e a resposta é uma comparação.
+
+     Da mais longa para a mais curta, e o trecho casado é APAGADO antes
+     da próxima busca: com "Reserva" e "Reserva Longa", a pergunta pela
+     segunda não pode casar também com a primeira. */
+  function carteirasDe(q) {
     var W = global.AtlasWallets;
-    if (!W || !W.all) return null;
+    if (!W || !W.all) return [];
     var todas;
-    try { todas = W.all() || []; } catch (e) { return null; }
+    try { todas = W.all() || []; } catch (e) { return []; }
 
     var cands = todas.map(function (w) { return { w: w, n: limpar(w.name) }; })
                      .filter(function (c) { return c.n.length > 2; })
                      .sort(function (a, b) { return b.n.length - a.n.length; });
 
-    for (var i = 0; i < cands.length; i++) {
-      var alvo = cands[i].n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      if (new RegExp("(^|\\W)" + alvo + "($|\\W)").test(q)) return cands[i].w;
-    }
-    return null;
+    var resto = " " + q + " ", achadas = [];
+    cands.forEach(function (c) {
+      var alvo = c.n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      var rx = new RegExp("(^|\\W)" + alvo + "($|\\W)");
+      var m = resto.match(rx);
+      if (!m) return;
+      achadas.push({ w: c.w, pos: m.index });
+      resto = resto.slice(0, m.index) + " " + new Array(m[0].length).join("#") + resto.slice(m.index + m[0].length);
+    });
+    return achadas.sort(function (a, b) { return a.pos - b.pos; }).map(function (x) { return x.w; });
   }
+
+  function refCarteira(w) {
+    return { id: w.id, nome: w.name, tipo: w.type === "isolada" ? "isolada" : "global", modulo: w.module || null };
+  }
+
+  /* "qual carteira tem mais?", "compara as carteiras", "por carteira" */
+  var RX_COMPARAR = /compar|versus|\bvs\b|diferenca entre|qual (a |das )?carteira|quais (das )?carteiras|ranking|por carteira|cada carteira|todas as carteiras/;
 
   /* ============================================================
      INTERPRETAÇÃO
@@ -219,16 +241,27 @@
       }
     }
 
-    var carteira = carteiraDe(q);
+    var carteiras = carteirasDe(q).map(refCarteira);
+    var comparar = carteiras.length > 1 || RX_COMPARAR.test(q);
+
+    /* Carteira citada sem assunto — "o que tem na M4P?", "e a M1P?" —
+       é pergunta pelo que há nela. `metricaPadrao` marca que o assunto
+       foi SUPOSTO: numa continuação ("quanto rendeu a M4P?" → "e a
+       M1P?") o assunto da pergunta anterior tem de prevalecer. */
+    var metricaPadrao = false;
+    if (!metrica && (carteiras.length || comparar)) { metrica = "patrimonio"; metricaPadrao = true; }
 
     return {
       metrica: metrica,
+      metricaPadrao: metricaPadrao,
       modulo: modulo,
       periodo: periodoDe(q),
-      carteira: carteira ? { id: carteira.id, nome: carteira.name } : null,
+      carteira: carteiras[0] || null,
+      carteiras: carteiras,
+      comparar: comparar,
       /* quantas dimensões foram reconhecidas — a tela usa para decidir
          se entendeu o suficiente para responder */
-      dimensoes: (metrica ? 1 : 0) + (modulo ? 1 : 0) + (carteira ? 1 : 0)
+      dimensoes: (metrica && !metricaPadrao ? 1 : 0) + (modulo ? 1 : 0) + (carteiras.length ? 1 : 0)
     };
   }
 
@@ -263,6 +296,82 @@
     return p.length ? " " + p.join(" ") : "";
   }
 
+  /* ------------------------------------------------------------
+     AS MESMAS FONTES DO DASHBOARD
+
+     Caixa a MERCADO (caixaMercadoDe), não AtlasCaixa.saldo(), que é o
+     custo do depósito: com SOL parado, o Oráculo dizia um número e o
+     seletor de carteira, ao lado, outro. Resultado pela regra de cada
+     módulo (AtlasConsolidation.resultadoDe), a mesma soma que forma o
+     "Lucro Total". Sem a consolidação na página, cai no que existe.
+     ------------------------------------------------------------ */
+  var MODS = ["hold", "trade", "defi", "rwa"];
+
+  function C() { return global.AtlasConsolidation || null; }
+
+  function caixaDe(id) {
+    var c = C();
+    if (c && c.caixaMercadoDe) return num(c.caixaMercadoDe(id));
+    return global.AtlasCaixa ? num(global.AtlasCaixa.saldo(id)) : 0;
+  }
+
+  function valorDe(id, m) {
+    var c = C();
+    if (c && c.valorDe) { var v = c.valorDe(id, m); if (v != null) return num(v); }
+    var W = global.AtlasWallets;
+    return (W && W.balanceOf) ? num(W.balanceOf(id, m)) : 0;
+  }
+
+  function capitalDe(id, m) {
+    var c = C();
+    if (c && c.capitalDe) { var v = c.capitalDe(id, m); if (v != null) return num(v); }
+    var W = global.AtlasWallets;
+    return (W && W.capitalOf) ? num(W.capitalOf(id, m)) : 0;
+  }
+
+  /* null quando nenhum módulo pedido está carregado nesta página */
+  function resultadoAbertoDe(id, modulo) {
+    var c = C();
+    if (!c || !c.resultadoDe) return null;
+    var soma = 0, algum = false;
+    MODS.forEach(function (m) {
+      if (modulo && m !== modulo) return;
+      var v = c.resultadoDe(id, m);
+      if (v != null) { algum = true; soma += v; }
+    });
+    return algum ? soma : null;
+  }
+
+  function sinalDe(v) { return (v >= 0 ? "+" : "−") + dinheiro(Math.abs(v)); }
+
+  function notaLocal(c) {
+    if (!c || c.tipo !== "isolada") return "";
+    return " (carteira local" + (c.modulo ? " do " + (NOME_MODULO[c.modulo] || c.modulo) : "") +
+           " — não soma no patrimônio total)";
+  }
+
+  /* Uma carteira em números, filtrada por módulo quando pedido. Base de
+     patrimônio, caixa, resultado e da comparação — uma leitura só. */
+  function numerosDa(id, modulo) {
+    var porModulo = {}, posic = 0, capital = 0;
+    MODS.forEach(function (m) {
+      if (modulo && m !== modulo) return;
+      var v = valorDe(id, m);
+      capital += capitalDe(id, m);
+      if (!v) return;
+      porModulo[m] = v;
+      posic += v;
+    });
+    var caixa = modulo ? 0 : caixaDe(id);
+    return { caixa: caixa, posic: posic, total: caixa + posic, porModulo: porModulo,
+             capital: capital, resultado: resultadoAbertoDe(id, modulo) };
+  }
+
+  function listaDe(Q) {
+    if (Q.carteiras && Q.carteiras.length) return Q.carteiras;
+    return Q.carteira ? [Q.carteira] : [];
+  }
+
   var RESOLVE = {
 
     caixa: function (Q) {
@@ -270,7 +379,7 @@
       var ids = carteirasDa(Q.carteira);
       var total = 0, det = [];
       ids.forEach(function (id) {
-        var s = global.AtlasCaixa.saldo(id);
+        var s = caixaDe(id);
         total += s;
         var w = global.AtlasWallets && global.AtlasWallets.get ? global.AtlasWallets.get(id) : null;
         if (s !== 0 && w) det.push(w.name + " " + dinheiro(s));
@@ -283,7 +392,8 @@
         : "";
       return "Caixa disponível" + (Q.carteira ? " na carteira " + Q.carteira.nome : "") +
              ": " + dinheiro(total) +
-             (!Q.carteira && det.length > 1 ? " — " + det.join(", ") : "") + nota + ".";
+             (!Q.carteira && det.length > 1 ? " — " + det.join(", ") : "") + nota +
+             notaLocal(Q.carteira) + ".";
     },
 
     patrimonio: function (Q) {
@@ -293,20 +403,18 @@
       var caixa = 0, posic = 0, porModulo = {};
 
       ids.forEach(function (id) {
-        if (global.AtlasCaixa) caixa += global.AtlasCaixa.saldo(id);
-        ["hold", "trade", "defi", "rwa"].forEach(function (m) {
-          if (Q.modulo && m !== Q.modulo) return;
-          var v = num(W.balanceOf(id, m));
-          if (!v) return;
-          posic += v;
-          porModulo[m] = (porModulo[m] || 0) + v;
+        /* Filtrado por módulo, o caixa não entra: ele não é do módulo. */
+        var nd = numerosDa(id, Q.modulo);
+        caixa += nd.caixa;
+        posic += nd.posic;
+        Object.keys(nd.porModulo).forEach(function (m) {
+          porModulo[m] = (porModulo[m] || 0) + nd.porModulo[m];
         });
       });
 
-      /* Filtrado por módulo, o caixa não entra: ele não é do módulo. */
-      var total = Q.modulo ? posic : caixa + posic;
+      var total = caixa + posic;
       if (!total) {
-        return "Nada registrado" + onde(Q.carteira, Q.modulo) + " ainda.";
+        return "Nada registrado" + onde(Q.carteira, Q.modulo) + " ainda." + notaLocal(Q.carteira);
       }
 
       var partes = Object.keys(porModulo).map(function (m) {
@@ -315,7 +423,87 @@
       if (!Q.modulo && caixa) partes.unshift("caixa " + dinheiro(caixa));
 
       return "Patrimônio" + onde(Q.carteira, Q.modulo) + ": " + dinheiro(total) +
-             (partes.length > 1 ? " — " + partes.join(", ") : "") + ".";
+             (partes.length > 1 ? " — " + partes.join(", ") : "") + "." + notaLocal(Q.carteira);
+    },
+
+    /* ------------------------------------------------------------
+       COMPARAR CARTEIRAS
+
+       "compara a M4P com a M1P", "qual carteira tem mais?", "qual
+       carteira rende mais no DeFi?". Sem carteira citada, entram
+       TODAS — as locais também, marcadas, porque a pergunta é sobre
+       elas, não sobre o patrimônio total.
+
+       Rendimento é comparado em PORCENTAGEM do capital: US$ 50 sobre
+       US$ 100 rende mais que US$ 80 sobre US$ 10.000, e ordenar pelo
+       valor em dólar premiaria a carteira maior, não a melhor.
+       ------------------------------------------------------------ */
+    comparar: function (Q) {
+      var W = global.AtlasWallets;
+      if (!W || !W.all) return null;
+      var alvo = listaDe(Q);
+      if (alvo.length < 2) {
+        try { alvo = (W.all() || []).map(refCarteira); } catch (e) { return null; }
+      }
+      if (!alvo.length) return "Nenhuma carteira cadastrada.";
+
+      var porResultado = Q.metrica === "resultado";
+      var linhas = alvo.map(function (c) {
+        var nd = numerosDa(c.id, Q.modulo);
+        var valor = Q.metrica === "caixa" ? nd.caixa
+                  : Q.metrica === "posicoes" ? nd.posic
+                  : porResultado ? nd.resultado
+                  : nd.total;
+        var pct = (porResultado && nd.capital > 0 && nd.resultado != null)
+          ? (nd.resultado / nd.capital) * 100 : null;
+        return { c: c, valor: valor, pct: pct, nd: nd };
+      });
+
+      if (porResultado && linhas.every(function (l) { return l.valor == null; })) return null;
+
+      /* Em resultado, quem tem capital (e portanto porcentagem) vem
+         antes, ordenado pela porcentagem; carteira só com caixa não tem
+         rendimento a comparar e vai para o fim. Misturar as duas réguas
+         num comparador só deixaria a ordem dependente da ordem de
+         entrada. */
+      linhas.sort(function (a, b) {
+        if (porResultado) {
+          var ta = a.pct != null ? 0 : 1, tb = b.pct != null ? 0 : 1;
+          if (ta !== tb) return ta - tb;
+          if (ta === 0) return b.pct - a.pct;
+        }
+        return num(b.valor) - num(a.valor);
+      });
+
+      var rotulo = { caixa: "Caixa", posicoes: "Alocado", resultado: "Resultado" }[Q.metrica] || "Patrimônio";
+      var cab = rotulo + " por carteira" + (Q.modulo ? " em " + (NOME_MODULO[Q.modulo] || Q.modulo) : "") + ":";
+      var corpo = linhas.map(function (l) {
+        var txt = "• " + l.c.nome + (l.c.tipo === "isolada" ? " (local)" : "") + ": ";
+        if (porResultado) {
+          txt += l.valor == null ? "—" : sinalDe(l.valor) +
+                 (l.pct != null ? " (" + (l.pct >= 0 ? "+" : "") + l.pct.toFixed(2).replace(".", ",") + "% sobre " + dinheiro(l.nd.capital) + ")" : "");
+        } else {
+          txt += dinheiro(num(l.valor));
+          var mods = Object.keys(l.nd.porModulo);
+          if (!Q.modulo && Q.metrica !== "caixa" && (mods.length || l.nd.caixa)) {
+            var p = mods.map(function (m) { return (NOME_MODULO[m] || m) + " " + dinheiro(l.nd.porModulo[m]); });
+            if (l.nd.caixa && Q.metrica !== "posicoes") p.unshift("caixa " + dinheiro(l.nd.caixa));
+            if (p.length > 1) txt += " — " + p.join(", ");
+          }
+        }
+        return txt;
+      });
+
+      var topo = linhas[0];
+      var fecho = "";
+      if (linhas.length > 1 && topo && num(topo.valor) !== num(linhas[1].valor)) {
+        fecho = porResultado
+          ? (topo.pct != null ? "Rende mais, em proporção ao capital: " + topo.c.nome + "." : "Maior resultado: " + topo.c.nome + ".")
+          : "Maior: " + topo.c.nome + ".";
+      }
+      var locais = linhas.some(function (l) { return l.c.tipo === "isolada"; })
+        ? "Carteiras locais não somam no patrimônio total." : "";
+      return [cab].concat(corpo, [fecho, locais].filter(Boolean)).join("\n");
     },
 
     posicoes: function (Q) {
@@ -333,6 +521,41 @@
        assim mesmo seria inventar.
        ------------------------------------------------------------ */
     resultado: function (Q) {
+      /* ------------------------------------------------------------
+         SEM PERÍODO: o resultado inteiro, pela regra de cada módulo
+
+         Esta métrica contava só "resultado realizado" (movimento de
+         encerramento). "Quanto rendeu a M4P no DeFi?", com a pool
+         aberta e rendendo, respondia "nenhum resultado" — e o Lucro
+         Total do Dashboard, ao lado, mostrava o lucro dela. Agora sem
+         período vale a mesma soma do Dashboard (AtlasConsolidation.
+         resultadoDe). COM período continua o realizado: resultado de
+         posição aberta não tem data em que "aconteceu".
+         ------------------------------------------------------------ */
+      if (!Q.periodo) {
+        var idsR = carteirasDa(Q.carteira);
+        var soma = 0, algum = false, cap = 0, porMod = {};
+        idsR.forEach(function (id) {
+          MODS.forEach(function (m) {
+            if (Q.modulo && m !== Q.modulo) return;
+            var c = C(); var v = (c && c.resultadoDe) ? c.resultadoDe(id, m) : null;
+            if (v == null) return;
+            algum = true; soma += v;
+            if (v) porMod[m] = (porMod[m] || 0) + v;
+          });
+          cap += numerosDa(id, Q.modulo).capital;
+        });
+        if (algum) {
+          var partesR = Object.keys(porMod).map(function (m) { return (NOME_MODULO[m] || m) + " " + sinalDe(porMod[m]); });
+          var pctR = cap > 0 ? " (" + (soma >= 0 ? "+" : "") + ((soma / cap) * 100).toFixed(2).replace(".", ",") + "% sobre " + dinheiro(cap) + " investidos)" : "";
+          if (!soma && !partesR.length) {
+            return "Nenhum resultado" + onde(Q.carteira, Q.modulo) + " ainda." + notaLocal(Q.carteira);
+          }
+          return "Resultado" + onde(Q.carteira, Q.modulo) + ": " + sinalDe(soma) + pctR +
+                 (!Q.modulo && partesR.length > 1 ? " — " + partesR.join(", ") : "") + "." + notaLocal(Q.carteira);
+        }
+      }
+
       var M = global.AtlasMovements;
       if (!M || !M.list) return null;
       var ids = carteirasDa(Q.carteira);
@@ -350,7 +573,8 @@
       }
       return "Resultado realizado" + onde(Q.carteira, Q.modulo) + quando + ": " +
              (total >= 0 ? "+" : "") + dinheiro(total) + " em " + n +
-             (n === 1 ? " posição encerrada." : " posições encerradas.");
+             (n === 1 ? " posição encerrada." : " posições encerradas.") +
+             (Q.periodo ? " Posição ainda aberta não entra: o resultado dela não tem data em que aconteceu." : "");
     },
 
     movimentos: function (Q) {
@@ -439,6 +663,16 @@
      módulo — sem colar textos, que duplicaria o período antigo. */
   function responderQ(Q) {
     if (!Q || !Q.metrica || !RESOLVE[Q.metrica]) return null;
+
+    /* Duas carteiras citadas, ou "qual carteira…": comparação. Com
+       período não: a comparação é da fotografia de agora, e resultado
+       por período é outro número (só o realizado). */
+    if (Q.comparar && !Q.periodo &&
+        /^(patrimonio|caixa|posicoes|resultado)$/.test(Q.metrica)) {
+      var cmp = null;
+      try { cmp = RESOLVE.comparar(Q); } catch (e) { cmp = null; }
+      if (cmp) return cmp;
+    }
 
     /* Período pedido numa métrica que é fotografia de agora: dizer
        isso é mais útil que devolver o valor atual como se fosse o

@@ -693,7 +693,7 @@
     if (window.AtlasVocabulario) {
       try {
         var Q = AtlasVocabulario.interpretar(q);
-        var especifica = Q.carteira || Q.modulo || Q.periodo || Q.metrica === "taxas";
+        var especifica = Q.carteira || Q.modulo || Q.periodo || Q.comparar || Q.metrica === "taxas";
         if (especifica && AtlasVocabulario.responder(q)) return "vocabulario";
       } catch (e) { /* segue para a tabela */ }
     }
@@ -755,7 +755,12 @@
       var F = lead ? n.slice(lead[0].length) : n;
       var Qf = V ? V.interpretar(F) : null;
       var trazAlgo = !!(Qf && (Qf.metrica || temFiltro(Qf)));
-      var soFiltro = !!(Qf && !Qf.metrica && temFiltro(Qf) && !intencao(F));
+      /* "na M1P?" sozinho: o vocabulário supõe patrimônio para carteira
+         sem assunto (metricaPadrao), mas numa conversa o assunto é o da
+         pergunta anterior */
+      var rotaF = intencao(F);
+      var soFiltro = !!(Qf && (!Qf.metrica || Qf.metricaPadrao) && temFiltro(Qf) &&
+                        (!rotaF || rotaF === "vocabulario"));
 
       if (ctx && ((lead && trazAlgo) || soFiltro || (lead && ctx.rota === "explicar"))) {
         /* "por que 15,98%?" → "e o patrimônio?" explica o patrimônio */
@@ -766,10 +771,14 @@
         }
         if (V && V.responderQ && ctx.Q && Qf) {
           var Qm = {
-            metrica:  Qf.metrica  || ctx.Q.metrica,
+            metrica:  (Qf.metrica && !Qf.metricaPadrao) ? Qf.metrica : (ctx.Q.metrica || Qf.metrica),
             modulo:   Qf.modulo   || ctx.Q.modulo,
             periodo:  Qf.periodo  || ctx.Q.periodo,
-            carteira: Qf.carteira || ctx.Q.carteira
+            carteira: Qf.carteira || ctx.Q.carteira,
+            carteiras: (Qf.carteiras && Qf.carteiras.length) ? Qf.carteiras : (ctx.Q.carteiras || []),
+            /* "compara a M4P e a M1P" → "e no DeFi?" continua comparando;
+               citar UMA carteira nova encerra a comparação */
+            comparar: Qf.comparar || (!Qf.carteira && !!ctx.Q.comparar)
           };
           if (Qm.metrica && temFiltro(Qm)) {
             if (demoNaTela()) { ctx = { rota: "vocabulario", Q: Qm }; return respostaDemoFiltrada(Qm); }
@@ -1223,9 +1232,18 @@
       var globais = todas.filter(function (w) { return w.type !== "isolada"; });
       var locais = todas.length - globais.length;
       var ativa = (W.activeGlobal ? W.activeGlobal() : null);
-      return L(todas.length + " carteira(s): " + globais.length + " global(is), que somam no " +
-               "patrimônio total, e " + locais + " isolada(s), que ficam dentro do módulo. " +
-               (ativa ? "Ativa agora: " + ativa.name + "." : ""),
+      /* A contagem sozinha não responde "como estão minhas carteiras?":
+         entra o saldo de cada uma, pela mesma comparação do vocabulário. */
+      var lista = null;
+      try {
+        lista = (window.AtlasVocabulario && AtlasVocabulario.RESOLVE && AtlasVocabulario.RESOLVE.comparar)
+          ? AtlasVocabulario.RESOLVE.comparar({ metrica: "patrimonio", carteiras: [] }) : null;
+      } catch (e) { lista = null; }
+      return L(todas.length + (todas.length === 1 ? " carteira" : " carteiras") + ": " +
+               globais.length + " global(is), que somam no patrimônio total, e " + locais +
+               " local(is), que ficam dentro do módulo." +
+               (ativa ? " Ativa agora: " + ativa.name + "." : "") +
+               (lista ? NL + lista : ""),
                todas.length + " wallet(s): " + globais.length + " global, " + locais + " isolated. " +
                (ativa ? "Active: " + ativa.name + "." : ""));
     },
