@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-module="atlas">
+<!-- data-atlas-sem-visita: esta página não grava a fotografia de visita
+     do Oráculo (core/ui/atlas-shell.js) — rodar testes não é visitar. -->
+<html lang="pt-BR" data-module="atlas" data-atlas-sem-visita>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -194,6 +196,13 @@
       ["por que a pool saiu da faixa?", null],
       ["qual meu resultado?", "resultado"]
     ]],
+    ["O que mudou", [
+      ["o que mudou?", "mudancas"],
+      ["o que mudou desde ontem?", "mudancas"],
+      ["alguma novidade?", "mudancas"],
+      ["what changed since my last visit?", "mudancas"],
+      ["quanto rendi ontem?", "vocabulario"]
+    ]],
     /* O cruzamento de dimensões (core/atlas-vocabulario.js) só assume
        com filtro de verdade; a pergunta seca é da tabela. */
     ["Vocabulário x tabela", [
@@ -320,6 +329,38 @@
     caso(gk, "atenção → \"no mês passado?\" avisa que o filtro não se aplica",
          textoDe(cv.perguntar("no mês passado?")).indexOf("não se aplica") > -1, true);
     grupos.push(gk);
+
+    /* A comparação é pura: fotografias sintéticas, sem tocar em dado */
+    var gm = { titulo: "O que mudou · comparação", casos: [] };
+    var H = 3600 * 1000, agoraTs = Date.now();
+    var base = { ts: agoraTs - 26 * H, total: 302.93, pnl: 10, caixa: 180,
+                 alertas: ["defi:crit:a"], movs: ["cx:1", "cx:2"] };
+    var agora = { ts: agoraTs, total: 321.34, pnl: 18.41, caixa: 187.64,
+                  alertas: ["defi:crit:a", "defi:crit:b"], movs: ["cx:1", "cx:2", "cx:3"] };
+    var alertasAgora = [{ id: "defi:crit:a", texto: "Pool A fora da faixa." },
+                        { id: "defi:crit:b", texto: "Pool B fora da faixa." }];
+    var movsAgora = [{ id: "cx:1", tipo: "entrada", valorUSD: 100 }, { id: "cx:2", tipo: "saida", valorUSD: 5 },
+                     { id: "cx:3", tipo: "entrada", valorUSD: 8.41 }];
+    /* O formatador de moeda põe espaço NÃO SEPARÁVEL depois de "US$";
+       os casos são escritos com espaço comum. */
+    function sp(s) { return String(s || "").replace(/ /g, " "); }
+    var d = T.descreverMudancas(base, agora, alertasAgora, movsAgora);
+    var dt = sp(d ? d.texto : "");
+    caso(gm, "detecta mudança", !!(d && d.mudou), true);
+    caso(gm, "patrimônio com a diferença e o antes → depois",
+         dt.indexOf("+US$ 18,41 (US$ 302,93 → US$ 321,34)") > -1, true);
+    caso(gm, "resultado +US$ 8,41", dt.indexOf("Resultado +US$ 8,41") > -1, true);
+    caso(gm, "só o movimento de id novo conta", dt.indexOf("1 movimento novo: entradas US$ 8,41") > -1, true);
+    caso(gm, "só o alerta novo aparece", dt.indexOf("Pool B") > -1 && dt.indexOf("Pool A") === -1, true);
+    caso(gm, "visita de 26h atrás é \"ontem\"", /\((ontem|há 2 dias)/.test(dt), true);
+    var semAl = T.descreverMudancas(base, agora, alertasAgora, movsAgora, { semAlertas: true });
+    caso(gm, "semAlertas omite o alerta (o painel já vai mostrá-lo)", semAl.texto.indexOf("Pool B") === -1, true);
+    var igual = T.descreverMudancas(agora, agora, alertasAgora, movsAgora);
+    caso(gm, "nada mudou → diz isso", !!(igual && !igual.mudou && igual.texto.indexOf("Nada mudou") === 0), true);
+    caso(gm, "sem visita anterior → null", T.descreverMudancas(null, agora, [], []), null);
+    var queda = T.descreverMudancas(agora, { ts: agoraTs, total: 300, pnl: 18.41, caixa: 0, alertas: agora.alertas, movs: agora.movs }, alertasAgora, movsAgora);
+    caso(gm, "queda com sinal de menos", sp(queda.texto).indexOf("Patrimônio −US$ 21,34") > -1, true);
+    grupos.push(gm);
 
     var gp = { titulo: "Recusa de previsão", casos: [] };
     PREVISAO.forEach(function (c) {

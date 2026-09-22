@@ -548,6 +548,9 @@
      "pREVISao".
      ------------------------------------------------------------ */
   var ROTAS = [
+    /* "o que mudou desde ontem?" — antes de tudo: contém "ontem", que
+       o vocabulário leria como período de outra métrica */
+    { id: "mudancas",   rx: /o que mudou|mudou desde|mudou algo|mudanca|novidade|desde a (minha |sua )?ultima|desde ontem|what changed|since (my )?last/ },
     /* revisão antes de teses: "tem tese atrasada?" é sobre o prazo,
        não a lista de teses */
     { id: "revisao",    rx: /\brevis|\breview|\batrasad|overdue|\bparad[ao]s? ha|stalled/ },
@@ -633,6 +636,7 @@
   function intencao(q) {
     q = normalizar(q);
 
+    if (ROTAS[0].rx.test(q)) return ROTAS[0].id;      /* mudanças */
     if (assuntoExplicar(q)) return "explicar";
 
     /* O VOCABULÁRIO TENTA PRIMEIRO. core/atlas-vocabulario.js decompõe
@@ -754,6 +758,155 @@
       estado: function () { return ctx; },
       reset: function () { ctx = null; }
     };
+  }
+
+  /* ------------------------------------------------------------
+     O QUE MUDOU DESDE A ÚLTIMA VISITA
+
+     O Oráculo abria sempre com a mesma fotografia de agora. Quem volta
+     depois de dois dias quer saber o que ANDOU: quanto o patrimônio
+     mudou, se entrou movimento, se nasceu alerta.
+
+     Guarda-se uma fotografia pequena por visita — total, resultado,
+     caixa, e os ids de alertas e movimentos — em atlas.oraculo.visita.v1.
+     Não é uma segunda fonte de valor (o valor continua vindo da
+     consolidação): é só o ponto de comparação, como o estado de "lido"
+     das notificações.
+
+     VISITA é um intervalo de 4h sem abrir o ATLAS. Dentro da mesma
+     visita, trocar de tela não conta como visita nova — senão "desde a
+     última visita" viraria "desde dois minutos atrás". A fotografia
+     `ultimo` se atualiza a cada tela e ao sair; quando uma visita nova
+     começa, ela vira a `base` da comparação.
+
+     Movimento novo é contado por id, não por data: a data do movimento
+     é a que a pessoa digitou e pode ser retroativa.
+     ------------------------------------------------------------ */
+  var KEY_VISITA = "atlas.oraculo.visita.v1";
+  var VISITA_NOVA = 4 * 3600 * 1000;
+  var LIMITE_IDS = 2000;
+  var visita = null;           /* { base, ultimo } desta página */
+
+  function fotografia() {
+    if (!window.AtlasConsolidation || !AtlasConsolidation.snapshot) return null;
+    var s;
+    try { s = AtlasConsolidation.snapshot(); } catch (e) { return null; }
+    if (!s) return null;
+    var movs = [];
+    try {
+      movs = (window.AtlasMovements && AtlasMovements.list) ? (AtlasMovements.list({}) || []) : [];
+    } catch (e) { movs = []; }
+    return {
+      ts: Date.now(),
+      total: s.total || 0, pnl: s.pnl || 0, caixa: s.caixa || 0,
+      alertas: alertasAbertos().map(function (a) { return a.id; }).slice(0, LIMITE_IDS),
+      movs: movs.map(function (m) { return m.id; }).filter(Boolean).slice(-LIMITE_IDS)
+    };
+  }
+
+  function lerVisita() {
+    try { var o = JSON.parse(localStorage.getItem(KEY_VISITA) || "null"); return (o && o.ultimo) ? o : null; }
+    catch (e) { return null; }
+  }
+  function gravarVisita(o) {
+    try { localStorage.setItem(KEY_VISITA, JSON.stringify(o)); } catch (e) {}
+  }
+
+  function iniciarVisita() {
+    var agora = fotografia();
+    if (!agora) return;
+    var rec = lerVisita();
+    if (!rec) rec = { base: null, ultimo: agora };
+    else if (agora.ts - (rec.ultimo.ts || 0) > VISITA_NOVA) rec = { base: rec.ultimo, ultimo: agora };
+    else rec.ultimo = agora;
+    gravarVisita(rec);
+    visita = rec;
+  }
+
+  /* O último estado da visita é o de quando a pessoa SAI — posição
+     aberta nesta tela entra na comparação da próxima visita. */
+  function atualizarUltimo() {
+    var agora = fotografia();
+    if (!agora) return;
+    var rec = lerVisita() || { base: null };
+    rec.ultimo = agora;
+    gravarVisita(rec);
+    if (visita) visita.ultimo = agora;
+  }
+
+  function quandoFoi(ts, agora) {
+    agora = agora || Date.now();
+    var min = Math.round((agora - ts) / 60000);
+    if (min < 60) return L("há " + Math.max(1, min) + " min", Math.max(1, min) + " min ago");
+    var d = new Date(ts), h = new Date(agora);
+    var hora = d.getHours() + "h";
+    var ontem = new Date(h); ontem.setDate(h.getDate() - 1);
+    if (d.toDateString() === h.toDateString()) return L("hoje, " + hora, "today, " + hora);
+    if (d.toDateString() === ontem.toDateString()) return L("ontem, " + hora, "yesterday, " + hora);
+    var dias = Math.round((agora - ts) / 86400000);
+    if (dias < 7) return L("há " + dias + " dias", dias + " days ago");
+    return d.toLocaleDateString(L("pt-BR", "en-US"), { day: "2-digit", month: "2-digit" });
+  }
+
+  /* Pura: base × agora → linhas. `alertasAgora` e `movsAgora` são as
+     listas completas de hoje (com texto e valor), para dizer QUAIS são
+     os novos. Devolve null quando não há o que comparar. */
+  function descreverMudancas(base, agora, alertasAgora, movsAgora, opts) {
+    opts = opts || {};
+    if (!base || !agora) return null;
+    var ex = dinheiroExato, linhas = [];
+    function sinal(v) { return (v > 0 ? "+" : v < 0 ? "−" : "") + ex(Math.abs(v)); }
+
+    var dT = agora.total - base.total;
+    if (Math.abs(dT) >= 0.01) {
+      linhas.push(L("• Patrimônio ", "• Net worth ") + sinal(dT) +
+                  " (" + ex(base.total) + " → " + ex(agora.total) + ").");
+    }
+    var dP = agora.pnl - base.pnl;
+    if (Math.abs(dP) >= 0.01) linhas.push(L("• Resultado ", "• Result ") + sinal(dP) + ".");
+
+    var vistos = {};
+    (base.movs || []).forEach(function (id) { vistos[id] = 1; });
+    var novos = (movsAgora || []).filter(function (m) { return m && m.id && !vistos[m.id]; });
+    if (novos.length) {
+      var ent = 0, sai = 0;
+      novos.forEach(function (m) { if (m.tipo === "entrada") ent += m.valorUSD || 0; else sai += m.valorUSD || 0; });
+      linhas.push(L("• " + novos.length + (novos.length === 1 ? " movimento novo" : " movimentos novos") +
+                    ": entradas " + ex(ent) + ", saídas " + ex(sai) + ".",
+                    "• " + novos.length + " new movement(s): in " + ex(ent) + ", out " + ex(sai) + "."));
+    }
+
+    if (!opts.semAlertas) {
+      var antes = {};
+      (base.alertas || []).forEach(function (id) { antes[id] = 1; });
+      var alNovos = (alertasAgora || []).filter(function (a) { return a && a.id && !antes[a.id]; });
+      alNovos.slice(0, 2).forEach(function (a) {
+        linhas.push(L("• Alerta novo: ", "• New alert: ") + a.texto);
+      });
+      if (alNovos.length > 2) linhas.push(L("• +" + (alNovos.length - 2) + " alertas novos no sino.",
+                                            "• +" + (alNovos.length - 2) + " new alerts in the bell."));
+    }
+
+    var cab = L("Desde a sua última visita (" + quandoFoi(base.ts, agora.ts) + ")",
+                "Since your last visit (" + quandoFoi(base.ts, agora.ts) + ")");
+    if (!linhas.length) return { mudou: false, texto: L("Nada mudou ", "Nothing changed ") + cab.charAt(0).toLowerCase() + cab.slice(1) + "." };
+    return { mudou: true, texto: cab + ":" + NL + linhas.join(NL) };
+  }
+
+  function mudancasAgora(opts) {
+    if (demoNaTela()) {
+      return L("Na demonstração não há visita anterior para comparar — os números são de exemplo.",
+               "The demo has no previous visit to compare.");
+    }
+    if (!visita || !visita.base) {
+      return L("Ainda não há uma visita anterior registrada para comparar. A comparação começa na próxima vez que você abrir o ATLAS.",
+               "There is no previous visit recorded yet.");
+    }
+    var agora = fotografia();
+    var movs = [];
+    try { movs = (window.AtlasMovements && AtlasMovements.list) ? (AtlasMovements.list({}) || []) : []; } catch (e) { movs = []; }
+    var d = descreverMudancas(visita.base, agora, alertasAbertos(), movs, opts);
+    return d ? d.texto : null;
   }
 
   var baseBrain = {
@@ -1072,6 +1225,11 @@
         try { return AtlasVocabulario.responder(q); } catch (e) { /* cai na tabela */ }
       }
 
+      if (rota === "mudancas") {
+        return mudancasAgora() || L("Não consigo comparar a partir desta tela.",
+                                    "I can't compare from this screen.");
+      }
+
       if (rota === "explicar") {
         var exp = baseBrain.explicar(assuntoExplicar(q));
         if (exp) return exp;
@@ -1370,9 +1528,27 @@
        o alerta (senão o selo apontaria para algo que o painel não
        mostra) e o marca como lido, o que apaga o selo e o sino juntos.
        ------------------------------------------------------------ */
+    /* Na primeira abertura do Dashboard, o que andou desde a visita
+       anterior — antes do alerta, e sem repetir o alerta que vem logo
+       a seguir. Só quando mudou algo: "nada mudou" a cada abertura é
+       ruído; quem quiser pergunta. Abrir o painel, e não montá-lo, é o
+       momento certo: até lá as cotações do caixa e do DeFi chegaram, e
+       a comparação não acusa diferença de preço que ainda não carregou. */
+    var contouMudancas = false;
+    function mudancasNaAbertura(temAlerta) {
+      if (contouMudancas || MODULE !== "atlas" || !/dashboard\.html$/.test(location.pathname)) return;
+      contouMudancas = true;
+      if (demoNaTela() || !visita || !visita.base) return;
+      var movs = [];
+      try { movs = (window.AtlasMovements && AtlasMovements.list) ? (AtlasMovements.list({}) || []) : []; } catch (e) {}
+      var d = descreverMudancas(visita.base, fotografia(), alertasAbertos(), movs, { semAlertas: temAlerta });
+      if (d && d.mudou) push(d.texto, "bot");
+    }
+
     function setOpen(v) {
       var abrindo = v && wrap.getAttribute("data-open") !== "true";
       wrap.setAttribute("data-open", v ? "true" : "false");
+      if (abrindo) { try { mudancasNaAbertura(brain.alerts() > 0); } catch (e) {} }
       if (!abrindo || !window.AtlasNotifications) return;
       if (brain.alerts() > 0) {
         push(baseBrain.atencao(), "bot");
@@ -1986,6 +2162,7 @@
       intencao: intencao,
       cortesia: cortesia,
       saudacaoAgora: saudacaoAgora,
+      descreverMudancas: descreverMudancas,
       /* Uma conversa nova, isolada da do painel: a bateria encadeia
          perguntas sem herdar o que a pessoa perguntou antes. */
       conversa: function () {
@@ -2002,9 +2179,23 @@
     }
   };
 
+  /* Visita: começa quando a página termina de carregar (os módulos
+     carregam com defer, e a consolidação precisa deles) e fecha a
+     fotografia ao sair. visibilitychange cobre o celular, onde
+     pagehide nem sempre dispara ao trocar de app. */
+  function ligarVisita() {
+    /* página de testes: só lê, não conta como visita */
+    if (document.documentElement.hasAttribute("data-atlas-sem-visita")) return;
+    try { iniciarVisita(); } catch (e) {}
+    window.addEventListener("pagehide", function () { try { atualizarUltimo(); } catch (e) {} });
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") { try { atualizarUltimo(); } catch (e) {} }
+    });
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () { mount(); watch(); watchPin(); });
+    document.addEventListener("DOMContentLoaded", function () { mount(); watch(); watchPin(); ligarVisita(); });
   } else {
-    mount(); watch(); watchPin();
+    mount(); watch(); watchPin(); ligarVisita();
   }
 })();

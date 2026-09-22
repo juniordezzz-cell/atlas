@@ -107,6 +107,9 @@
     "atlas.demo.v1",
     "atlas.onboarding.v1",
     "atlas.notifications.v1",
+    /* fotografia da última visita, para o Oráculo dizer o que mudou
+       (core/ui/atlas-shell.js) — derivada, como as notificações */
+    "atlas.oraculo.visita.v1",
     /* A sessão é do DISPOSITIVO, não do usuário: restaurar um backup
        noutra máquina não deve arrastar "quem estava logado" junto. Fica
        registrada aqui para o backup CONHECER a chave — e é descartável,
