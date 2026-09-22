@@ -92,18 +92,45 @@
   box-shadow: var(--atlas-sh-3, 0 18px 40px rgba(0, 0, 0, 0.35));
 }
 
-/* Selo do ícone — sotaque de marca do módulo */
+/* ------------------------------------------------------------
+   O ÍCONE EM VOLUME
+
+   Era um traço de 24px num quadrado de 50px — o mesmo peso de um
+   ícone de menu, num card que é a porta de entrada de um app inteiro.
+   Agora é um ladrilho de 72px com relevo (luz de cima, sombra por
+   dentro embaixo, sombra projetada) e, dentro, uma ilustração em
+   volume desenhada em SVG (pages/ferramentas.html): moedas e cédula
+   no Finanças, gota e lupa no Scanner.
+
+   Sem brilho colorido em volta: o visual sereno do ATLAS proíbe glow,
+   e o volume vem de luz e sombra, não de halo.
+   ------------------------------------------------------------ */
 .tool-card__icon {
-  width: 50px;
-  height: 50px;
+  width: 72px;
+  height: 72px;
   display: grid;
   place-items: center;
-  border-radius: var(--raio-sm, 10px);
-  background: var(--atlas-accent-soft, rgba(0, 191, 255, 0.14));
-  border: 1px solid var(--atlas-accent-line, rgba(0, 191, 255, 0.28));
+  border-radius: 20px;
   color: var(--atlas-accent-text, #00BFFF);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.015) 60%),
+    var(--atlas-bg-raise, #0E1526);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -10px 18px rgba(0, 0, 0, 0.28),
+    0 12px 24px -10px rgba(0, 0, 0, 0.65);
+  transition: transform 0.2s ease;
 }
-.tool-card__icon svg { width: 24px; height: 24px; }
+.tool-card__icon svg { width: 54px; height: 54px; overflow: visible; }
+/* um toque da cor da ferramenta no fundo do ladrilho */
+.tool-card__icon--fin  { background-color: color-mix(in srgb, #F59E0B 7%, var(--atlas-bg-raise, #0E1526)); }
+.tool-card__icon--scan { background-color: color-mix(in srgb, #22D3EE 7%, var(--atlas-bg-raise, #0E1526)); }
+.tool-card:hover .tool-card__icon { transform: translateY(-3px) rotate(-2deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-card:hover .tool-card__icon { transform: none; }
+}
 
 /* Selo de preço/estado, canto superior direito */
 .tool-card__badge {
@@ -187,11 +214,15 @@
   border-color: var(--card-borda, rgba(0, 191, 255, 0.10));
   box-shadow: none;
 }
+/* sem volume: o que ainda não existe não ganha peso */
 .tool-card--soon .tool-card__icon {
   background: transparent;
-  border-color: var(--atlas-border, rgba(140, 170, 225, 0.13));
+  border: 1px dashed var(--atlas-border, rgba(140, 170, 225, 0.13));
+  box-shadow: none;
   color: var(--atlas-text-faint, #7A86A6);
 }
+.tool-card--soon .tool-card__icon svg { width: 28px; height: 28px; }
+.tool-card--soon:hover .tool-card__icon { transform: none; }
 .tool-card--soon .tool-card__title,
 .tool-card--soon .tool-card__cta {
   color: var(--atlas-text-faint, #7A86A6);

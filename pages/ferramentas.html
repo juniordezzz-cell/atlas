@@ -101,11 +101,40 @@
              link sai da casca do ATLAS e entra no index.html da tool. -->
         <a class="tool-card" href="../Ferramentas/entradas-saidas/financas/index.html">
           <span class="tool-card__badge tool-card__badge--free">Grátis</span>
-          <span class="tool-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2v20"/>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          <!-- Ícone em volume: cédula ao fundo e pilha de moedas. Os ids
+               dos gradientes levam o prefixo "fin-": ids de SVG são
+               globais na página e colidiriam com os do outro ícone. -->
+          <span class="tool-card__icon tool-card__icon--fin" aria-hidden="true">
+            <svg viewBox="0 0 56 56">
+              <defs>
+                <linearGradient id="fin-nota" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#6EE7B7"/><stop offset="1" stop-color="#059669"/>
+                </linearGradient>
+                <linearGradient id="fin-lado" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#B45309"/><stop offset=".45" stop-color="#F59E0B"/><stop offset="1" stop-color="#92400E"/>
+                </linearGradient>
+                <radialGradient id="fin-face" cx=".35" cy=".3" r=".9">
+                  <stop offset="0" stop-color="#FEF3C7"/><stop offset=".55" stop-color="#FCD34D"/><stop offset="1" stop-color="#D97706"/>
+                </radialGradient>
+              </defs>
+              <ellipse cx="28" cy="50" rx="18" ry="2.6" fill="#000" opacity=".28"/>
+              <!-- cédula inclinada, atrás -->
+              <path d="M8 21 L33 11 L44 24 L19 34 Z" fill="url(#fin-nota)"/>
+              <path d="M8 21 L33 11 L33.6 12.4 L9 22.3 Z" fill="#fff" opacity=".35"/>
+              <ellipse cx="26" cy="22.5" rx="4.2" ry="2.6" transform="rotate(-22 26 22.5)" fill="none" stroke="#ECFDF5" stroke-width="1.4" opacity=".75"/>
+              <!-- moeda de baixo -->
+              <path d="M13 41 v5 a15 5.5 0 0 0 30 0 v-5 Z" fill="url(#fin-lado)"/>
+              <ellipse cx="28" cy="41" rx="15" ry="5.5" fill="url(#fin-face)"/>
+              <!-- moeda do meio -->
+              <path d="M14 34.5 v5 a15 5.5 0 0 0 30 0 v-5 Z" fill="url(#fin-lado)"/>
+              <ellipse cx="29" cy="34.5" rx="15" ry="5.5" fill="url(#fin-face)"/>
+              <!-- moeda de cima, com o cifrão gravado -->
+              <path d="M12 28 v5 a15 5.5 0 0 0 30 0 v-5 Z" fill="url(#fin-lado)"/>
+              <ellipse cx="27" cy="28" rx="15" ry="5.5" fill="url(#fin-face)"/>
+              <ellipse cx="27" cy="28" rx="10.5" ry="3.7" fill="none" stroke="#B45309" stroke-width="1" opacity=".45"/>
+              <text x="27" y="28" transform="translate(27 28) scale(1 .5) translate(-27 -28)" text-anchor="middle"
+                    dominant-baseline="central" font-family="Inter, system-ui, sans-serif" font-weight="800"
+                    font-size="13" fill="#92400E" opacity=".75">$</text>
             </svg>
           </span>
           <h3 class="tool-card__title">Finanças</h3>
@@ -131,10 +160,32 @@
              é ignorado pelo git — ver Ferramentas/scanner-pools/.gitignore). -->
         <a class="tool-card" href="../Ferramentas/scanner-pools/index.html">
           <span class="tool-card__badge tool-card__badge--free">Grátis</span>
-          <span class="tool-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          <!-- Ícone em volume: gota de liquidez com a onda por dentro e a
+               lupa do scanner na frente. Prefixo "scan-" nos ids. -->
+          <span class="tool-card__icon tool-card__icon--scan" aria-hidden="true">
+            <svg viewBox="0 0 56 56">
+              <defs>
+                <radialGradient id="scan-gota" cx=".35" cy=".35" r=".85">
+                  <stop offset="0" stop-color="#A5F3FC"/><stop offset=".5" stop-color="#22D3EE"/><stop offset="1" stop-color="#1D4ED8"/>
+                </radialGradient>
+                <linearGradient id="scan-aro" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#E9D5FF"/><stop offset=".5" stop-color="#A78BFA"/><stop offset="1" stop-color="#5B21B6"/>
+                </linearGradient>
+                <linearGradient id="scan-cabo" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#6D28D9"/><stop offset="1" stop-color="#2E1065"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="27" cy="50" rx="17" ry="2.6" fill="#000" opacity=".28"/>
+              <!-- a gota -->
+              <path d="M24 6 C24 6 9 22.5 9 32 a15 15 0 0 0 30 0 C39 22.5 24 6 24 6 Z" fill="url(#scan-gota)"/>
+              <path d="M11.5 34 q6.25 -4.5 12.5 0 t12.5 0" fill="none" stroke="#ECFEFF" stroke-width="1.8" stroke-linecap="round" opacity=".6"/>
+              <path d="M11.5 39.5 q6.25 -4 12.5 0 t12.5 0" fill="none" stroke="#ECFEFF" stroke-width="1.4" stroke-linecap="round" opacity=".35"/>
+              <path d="M16.5 28 q1.2 -6.5 6.5 -12.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".6"/>
+              <!-- a lupa -->
+              <path d="M44.2 44.2 L50 50" stroke="url(#scan-cabo)" stroke-width="5.5" stroke-linecap="round"/>
+              <circle cx="38" cy="38" r="8.5" fill="#fff" fill-opacity=".2"/>
+              <circle cx="38" cy="38" r="8.5" fill="none" stroke="url(#scan-aro)" stroke-width="3.6"/>
+              <path d="M33.6 35.6 a5 5 0 0 1 4.4 -2.8" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".8"/>
             </svg>
           </span>
           <h3 class="tool-card__title">Scanner Pools</h3>
