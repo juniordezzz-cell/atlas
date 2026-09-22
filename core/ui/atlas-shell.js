@@ -1747,18 +1747,15 @@
 
 
   /* ============================================================
-     3b. ALTERNADOR DE TEMA NA BARRA SUPERIOR
+     3b. A BARRA SUPERIOR DE CADA MÓDULO
      ------------------------------------------------------------
-     O tema claro existia desde sempre, mas só se chegava a ele
-     por Configurações → Aparência. Um tema que custa três cliques
-     é um tema que ninguém experimenta — e, por consequência, um
-     tema que ninguém reporta quando quebra.
+     Onde o shell encaixa o sino e a dica do Ctrl+K: o agrupamento à
+     direita da barra de cada módulo e, se não achar, a própria barra.
+     Página sem barra simplesmente não recebe nada — nada quebra.
 
-     O botão entra pelo shell, e não por cada módulo, pela mesma
-     razão do "Voltar ao Atlas": um lugar só, um comportamento só.
-     Ele procura o agrupamento à direita da barra de cada módulo e,
-     se não achar, a própria barra. Página sem barra simplesmente
-     não recebe o botão — nada quebra.
+     O alternador de tema que morava aqui SAIU (decisão do dono,
+     2026-09-22): o tema claro fica em Configurações → Aparência, e
+     pela paleta (Ctrl+K). A barra guarda o que se usa todo dia.
      ============================================================ */
 
   var TOPBAR_SELECTORS = [
@@ -1772,22 +1769,6 @@
       if (el) return el;
     }
     return null;
-  }
-
-  function icone(nome) {
-    if (window.AtlasIcons) return AtlasIcons.get(nome, { size: 18 });
-    return "";
-  }
-
-  function pintarBotaoTema(btn) {
-    var claro = document.documentElement.getAttribute("data-theme") === "light";
-    /* Mostra o DESTINO, não o estado atual: no claro exibe a lua, que é
-       para onde o clique leva. É a convenção que o usuário já conhece de
-       outros produtos, e evita a dúvida "isto indica ou executa?". */
-    btn.innerHTML = icone(claro ? "moon" : "sun");
-    btn.setAttribute("aria-label", claro ? t("Ativar tema escuro") : t("Ativar tema claro"));
-    btn.setAttribute("title", btn.getAttribute("aria-label"));
-    btn.setAttribute("aria-pressed", claro ? "true" : "false");
   }
 
 
@@ -1886,10 +1867,7 @@
     var nativo = document.querySelector('.icon-btn[title="Notificações"], .icon-btn[aria-label="Notificações"]');
     if (nativo && nativo.parentNode) nativo.parentNode.removeChild(nativo);
 
-    /* Antes do alternador de tema, se ele já estiver montado: alerta é
-       conteúdo, tema é preferência — conteúdo vem primeiro. */
-    var tema = barra.querySelector('[data-atlas-ui="theme"]');
-    if (tema) barra.insertBefore(raiz, tema); else barra.appendChild(raiz);
+    barra.appendChild(raiz);
 
     pintarSino(raiz);
 
@@ -1959,39 +1937,12 @@
     if (sino) barra.insertBefore(btn, sino); else barra.appendChild(btn);
   }
 
-  function mountThemeToggle() {
-    if (!window.AtlasSettings) return;              // sem estado, sem botão
-    if (document.querySelector('[data-atlas-ui="theme"]')) return;
-    var barra = findTopbar();
-    if (!barra) return;
-
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "atlas-theme-toggle";
-    btn.setAttribute("data-atlas-ui", "theme");
-    pintarBotaoTema(btn);
-    btn.addEventListener("click", function () {
-      AtlasSettings.toggleTheme();
-      pintarBotaoTema(btn);
-    });
-    barra.appendChild(btn);
-
-    /* Quem trocar o tema por outro caminho (Configurações, outra aba)
-       tem de ver o ícone acompanhar. AtlasSettings avisa. */
-    if (AtlasSettings.on) {
-      AtlasSettings.on(function (changed) {
-        if (!changed || changed.indexOf("theme") >= 0) pintarBotaoTema(btn);
-      });
-    }
-  }
-
   function mount() {
     if (!document.body) return;
 
     mountSkipLink();
     mountPaletteHint();
     mountBell();
-    mountThemeToggle();
 
     // A faixa escura no topo foi REMOVIDA (item 6). No lugar dela, cada
     // módulo recebe um "Voltar ao Atlas" no rodapé da própria sidebar.
