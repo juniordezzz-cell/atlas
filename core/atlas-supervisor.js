@@ -596,7 +596,12 @@
       if (a.modulo) partes.push("(" + a.modulo + (a.carteira ? " · " + a.carteira : "") + ")");
       else if (a.carteira) partes.push("(" + a.carteira + ")");
       if (a.diferenca != null && isFinite(a.diferenca)) {
-        partes.push("— diferença de " + Math.abs(Math.round(a.diferenca * 100) / 100));
+        /* em dinheiro, no formato da tela: "0.05" solto não dizia
+           nem a unidade — as diferenças daqui são todas em US$ */
+        var dif = Math.abs(Math.round(a.diferenca * 100) / 100);
+        partes.push("— diferença de " + (global.AtlasCurrency && global.AtlasCurrency.format
+          ? global.AtlasCurrency.format(dif, { decimals: 2 })
+          : "US$ " + dif.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })));
       }
       return {
         level: a.nivel === "erro" ? "crit" : "warn",

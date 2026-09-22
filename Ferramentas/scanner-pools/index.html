@@ -3328,26 +3328,77 @@ async function geckoCollect(projects, chainLabel, minTvl, tokenF, pages){
       for(const dex of src.dexes){
         const attrs = await geckoFetchDex(src.net, dex, pages);
         attrs.forEach(a=>{
-          const tvl = Math.round(Number(a.reserve_in_usd)||0);
-          if(tvl < minTvl) return;
-          // A Gecko cola o tier de taxa no nome (ex.: "USDT / WBNB 0.01%").
-          // Tira a taxa do nome e joga no campo fee — senão ela "cai" no nome da pool.
-          let raw = String(a.name||"").trim();
-          let fee = 0;
-          const fm = raw.match(/([\d.]+)\s*%\s*$/);
-          if(fm){ fee = Number(fm[1])||0; raw = raw.slice(0, fm.index).trim(); }
-          const pool = raw.replace(/\s*\/\s*/g,"/").trim();
-          if(!pool) return;
-          if(tokenF && !pool.toUpperCase().includes(tokenF)) return;
-          const vol = (a.volume_usd && a.volume_usd.h24!=null) ? Math.round(Number(a.volume_usd.h24)||0) : 0;
-          picked.push({ pool, platform:proj, network:src.label, fee, tvl, vol24h:vol, apr:null,
-            srcId: a.address ? `gecko:${src.net}:${String(a.address).toLowerCase()}` : null,
-            createdAt: a.pool_created_at ? Date.parse(a.pool_created_at) : null });
+          const c = geckoCand(a, proj, src.label, src.net);
+          if(!c || c.tvl < minTvl) return;
+          if(tokenF && !c.pool.toUpperCase().includes(tokenF)) return;
+          picked.push(c);
         });
       }
     }
   }
   return picked;
+}
+
+/* Uma pool da GeckoTerminal (attributes) vira candidata no formato do app.
+   A Gecko cola o tier de taxa no nome (ex.: "USDT / WBNB 0.01%"): a taxa sai
+   do nome e vai para o campo fee — senão ela "cai" no nome da pool. */
+function geckoCand(a, platform, label, net){
+  let raw = String(a && a.name || "").trim();
+  let fee = 0;
+  const fm = raw.match(/([\d.]+)\s*%\s*$/);
+  if(fm){ fee = Number(fm[1])||0; raw = raw.slice(0, fm.index).trim(); }
+  const pool = raw.replace(/\s*\/\s*/g,"/").trim();
+  if(!pool) return null;
+  const vol = (a.volume_usd && a.volume_usd.h24!=null) ? Math.round(Number(a.volume_usd.h24)||0) : 0;
+  return { pool, platform, network:label, fee, tvl:Math.round(Number(a.reserve_in_usd)||0), vol24h:vol, apr:null,
+    srcId: a.address ? `gecko:${net}:${String(a.address).toLowerCase()}` : null,
+    createdAt: a.pool_created_at ? Date.parse(a.pool_created_at) : null };
+}
+
+/* ------------------------------------------------------------
+   ALÉM DAS 60 DE MAIOR VOLUME
+
+   A coleta por DEX traz as 3 primeiras páginas (60 pools, por volume). Pool
+   menor que isso nunca era atualizada — 25 das suas 93, medido em 22/09.
+   Dois caminhos resolvem:
+     • pool JÁ VINCULADA (srcId gecko:rede:endereço): consulta direta pelo
+       endereço, 30 por chamada — fica atualizável para sempre;
+     • pool ainda sem vínculo: pesquisa pelo token dela na rede, e o
+       resultado passa pela mesma regra conservadora de casamento.
+   ------------------------------------------------------------ */
+async function geckoPorEndereco(net, alvos){
+  const out = [];
+  for(let i=0; i<alvos.length; i+=30){
+    const lote = alvos.slice(i, i+30);
+    const res = await geckoGet(`https://api.geckoterminal.com/api/v2/networks/${net}/pools/multi/${lote.map(x=>x.addr).join(",")}`);
+    if(!res || !res.ok) continue;
+    const j = await res.json().catch(()=>null);
+    ((j && j.data) || []).forEach(d=>{
+      const a = d.attributes || {};
+      const alvo = lote.find(x=>x.addr===String(a.address||"").toLowerCase());
+      if(!alvo) return;
+      const c = geckoCand(a, alvo.plat, alvo.label, net);
+      if(c) out.push(c);
+    });
+  }
+  return out;
+}
+
+async function geckoPesquisa(net, termo, platform, label, dexes){
+  const res = await geckoGet(`https://api.geckoterminal.com/api/v2/search/pools?query=${encodeURIComponent(termo)}&network=${encodeURIComponent(net)}`);
+  if(!res || !res.ok) return [];
+  const j = await res.json().catch(()=>null);
+  return ((j && j.data) || []).filter(d=>{
+    const dex = d.relationships && d.relationships.dex && d.relationships.dex.data && d.relationships.dex.data.id;
+    return !dexes || dexes.includes(dex);   // só as DEXes daquela plataforma
+  }).map(d=>geckoCand(d.attributes||{}, platform, label, net)).filter(Boolean);
+}
+
+/* o token que identifica a pool na pesquisa: o que não é stable nem major */
+function termoDePesquisa(pool){
+  const t = String(pool).split(/[\/\-]/).map(x=>x.trim()).filter(Boolean);
+  const raro = t.find(x=>!STABLE_TOKENS.has(x.toUpperCase()) && !MAJOR_TOKENS.has(x.toUpperCase()));
+  return raro || t[0] || "";
 }
 
 /* ---- filtro anti-lixo (vale pra "Puxar pools") ---- */
@@ -3586,12 +3637,62 @@ function candKey(platform, network, pool){
   return String(platform||"").trim().toLowerCase()+"|"+String(network||"").trim().toLowerCase()+"|"+tokensOf(pool);
 }
 
+/* Chave com os "wrapped" trocados pelo token nativo: WETH/USDC e ETH/USDC
+   caem na mesma. Só é usada quando o nome exato não resolve (ver
+   applyUpdateOnly) — as duas podem ser pools diferentes (v3 × v4). */
+const ALIAS_TOKEN = { WETH:"ETH", WBNB:"BNB", WSOL:"SOL" };
+function aliasKey(platform, network, pool){
+  const t = String(pool).toUpperCase().replace(/\s+/g,"").split(/[\/\-]/).filter(Boolean)
+    .map(x=>ALIAS_TOKEN[x]||x).sort().join("|");
+  return String(platform||"").trim().toLowerCase()+"|"+String(network||"").trim().toLowerCase()+"|"+t;
+}
+
+/* Escolhe, entre candidatas de mesmo par, a que é ESTA pool — ou nenhuma.
+   1. Taxa: igual (tolerância de 0,0005 p.p.) ou, se nenhuma for igual, a
+      única próxima (até 10% de diferença relativa — taxa dinâmica da v4,
+      0,2925% × 0,3%).
+   2. Fonte sem taxa (Orca na DefiLlama, parte da GeckoTerminal): as
+      candidatas sem taxa entram no desempate.
+   3. Desempate pelo TVL, só se for claro: a mais próxima dentro de ±50% do
+      TVL que a pool tinha, e a segunda pelo menos 1,5× mais longe. Duas
+      pools de mesmo par e taxa com US$ 7,2 M e US$ 5,7 M se separam assim.
+   Devolve {cand} ou {ambigua:true} ou {} (não bate). */
+function escolherCandidato(p, list){
+  let m = [];
+  if(p.fee>0){
+    m = list.filter(c=>c.fee>0 && Math.abs(c.fee-p.fee)<0.0005);
+    if(!m.length){
+      const perto = list.filter(c=>c.fee>0 && Math.abs(c.fee-p.fee)/p.fee <= 0.10);
+      if(perto.length===1) m = perto;
+    }
+    if(!m.length) m = list.filter(c=>!(c.fee>0));   // fonte sem taxa
+  } else {
+    m = list.slice();
+  }
+  if(m.length===1){
+    // fonte sem taxa + uma só candidata: exige TVL coerente, senão é outra pool
+    if(!(m[0].fee>0) && p.fee>0 && !(tvlPerto(p, m[0]) <= 0.5)) return {};
+    return {cand:m[0]};
+  }
+  if(!m.length) return {};
+  const ord = m.map(c=>({c, d:tvlPerto(p, c)})).sort((a,b)=>a.d-b.d);
+  if(ord[0].d <= 0.5 && ord[1].d >= ord[0].d*1.5 + 0.02) return {cand:ord[0].c};
+  return {ambigua:true};
+}
+/* distância relativa entre o TVL guardado e o da candidata (0 = igual) */
+function tvlPerto(p, c){
+  const a = Number(p.tvl)||0, b = Number(c.tvl)||0;
+  if(!(a>0) || !(b>0)) return Infinity;
+  return Math.abs(a-b)/Math.max(a,b);
+}
+
 /* Função PURA: atualiza em `pools` só o que casa com algum candidato de `picked`.
    Não adiciona nada. Uma atualização por pool (pega o melhor candidato). Devolve quantas mudou. */
 function applyUpdateOnly(pools, picked, now, report){
   report = report || {notFound:0, ambiguous:[], feeMismatch:[]};
   const byId = new Map();
   const byKey = new Map();
+  const byAlias = new Map();
   const ownedIds = new Set(pools.map(p=>p.srcId).filter(Boolean));
   picked.forEach(c=>{
     if(c.srcId) byId.set(c.srcId, c);
@@ -3600,7 +3701,11 @@ function applyUpdateOnly(pools, picked, now, report){
     const k = candKey(c.platform, c.network, c.pool);
     if(!byKey.has(k)) byKey.set(k, []);
     byKey.get(k).push(c);
+    const ka = aliasKey(c.platform, c.network, c.pool);
+    if(!byAlias.has(ka)) byAlias.set(ka, []);
+    byAlias.get(ka).push(c);
   });
+  const usados = new Set();
   let updated = 0;
   pools.forEach(p=>{
     let cand = null;
@@ -3608,25 +3713,31 @@ function applyUpdateOnly(pools, picked, now, report){
       // pool vinculada: só aceita o próprio ID (se a fonte não trouxe, fica sem atualizar)
       cand = byId.get(p.srcId) || null;
     } else {
-      const list = byKey.get(candKey(p.platform, p.network, p.pool));
-      if(!list || !list.length){ report.notFound++; return; }
-      // Regra: só atualiza quando é inequívoco. Nunca "pega a de maior TVL" —
-      // isso já gravou dados de uma pool v4 (ETH nativo, 0,35%) em cima de 3 pools v3 diferentes.
-      let matches;
-      if(p.fee>0){
-        matches = list.filter(c=>c.fee>0 && Math.abs(c.fee-p.fee)<0.0005);
-        // fonte sem taxa (0) e só uma candidata: aceita
-        if(!matches.length && list.length===1 && !(list[0].fee>0)) matches = list;
-      } else {
-        matches = list.length===1 ? list : [];
+      /* Regra: só atualiza quando é inequívoco. Nunca "pega a de maior TVL" —
+         isso já gravou dados de uma pool v4 (ETH nativo, 0,35%) em cima de 3
+         pools v3 diferentes. Tenta primeiro o NOME EXATO; só se ele não
+         resolver, as equivalências ETH=WETH, BNB=WBNB, SOL=WSOL (a pool v3 se
+         chama WETH/USDC na fonte e "ETH/USDC" no painel; na Robinhood e na
+         BNB Chain a GeckoTerminal usa WETH/WBNB). */
+      const livres = l => (l||[]).filter(c=>!usados.has(c));
+      const tentativas = [livres(byKey.get(candKey(p.platform, p.network, p.pool))),
+                          livres(byAlias.get(aliasKey(p.platform, p.network, p.pool)))];
+      if(!tentativas[0].length && !tentativas[1].length){ report.notFound++; return; }
+      let achado = null, ambigua = false;
+      for(const list of tentativas){
+        if(!list.length) continue;
+        const r = escolherCandidato(p, list);
+        if(r.cand){ achado = r.cand; break; }
+        if(r.ambigua) ambigua = true;
       }
-      if(matches.length!==1){
-        if(matches.length>1) report.ambiguous.push(p); else report.feeMismatch.push(p);
+      if(!achado){
+        if(ambigua) report.ambiguous.push(p); else report.feeMismatch.push(p);
         return;
       }
-      cand = matches[0];
+      cand = achado;
       if(cand.srcId && !ownedIds.has(cand.srcId)){ p.srcId = cand.srcId; ownedIds.add(cand.srcId); }
     }
+    if(cand) usados.add(cand);   // uma candidata atualiza UMA pool só
     if(!cand){ report.notFound++; return; }
     // se a taxa nova vier em branco (0) mas já tínhamos uma, mantém a antiga
     p.fee    = (cand.fee>0 || !(p.fee>0)) ? cand.fee : p.fee;
@@ -3684,8 +3795,43 @@ async function runAutoUpdate(){
     picked = picked.concat(await geckoCollect([plat], net, 0, "", 3)); // 3 páginas p/ cobertura
   }
 
+  // vinculadas que ficaram fora das 60 de maior volume: direto pelo endereço
+  const trazidos = new Set(picked.map(c=>c.srcId).filter(Boolean));
+  const porRede = {};
+  state.pools.forEach(p=>{
+    const m = String(p.srcId||"").match(/^gecko:([^:]+):(.+)$/);
+    if(!m || trazidos.has(p.srcId)) return;
+    (porRede[m[1]] = porRede[m[1]] || []).push({addr:m[2], plat:p.platform, label:p.network});
+  });
+  for(const net of Object.keys(porRede)) picked = picked.concat(await geckoPorEndereco(net, porRede[net]));
+
+  const now = Date.now();
   const report = {notFound:0, ambiguous:[], feeMismatch:[]};
-  const updated = applyUpdateOnly(state.pools, picked, Date.now(), report);
+  let updated = applyUpdateOnly(state.pools, picked, now, report);
+
+  // o que sobrou sem vínculo nas plataformas da Gecko: pesquisa pelo token
+  const sobras = state.pools.filter(p=>p.updatedAt!==now && !p.srcId && GECKO_SOURCES[p.platform]);
+  if(sobras.length){
+    const donos = new Set(state.pools.map(p=>p.srcId).filter(Boolean));
+    const feitas = new Set();
+    let achados = [];
+    for(const p of sobras.slice(0, 40)){
+      const src = (GECKO_SOURCES[p.platform]||[]).find(s=>s.label===p.network);
+      const termo = termoDePesquisa(p.pool);
+      if(!src || !termo || feitas.has(src.net+"|"+termo)) continue;
+      feitas.add(src.net+"|"+termo);
+      achados = achados.concat(await geckoPesquisa(src.net, termo, p.platform, p.network, src.dexes));
+    }
+    // candidata que já é de outra pool não pode ser casada de novo
+    achados = achados.filter(c=>!c.srcId || !donos.has(c.srcId));
+    const r2 = {notFound:0, ambiguous:[], feeMismatch:[]};
+    const extra = applyUpdateOnly(sobras, achados, now, r2);
+    updated += extra;
+    // o relatório final descreve só o que continuou de fora
+    const pegas = new Set(sobras.filter(p=>p.updatedAt===now));
+    ["ambiguous","feeMismatch"].forEach(k=>{ report[k] = report[k].filter(p=>!pegas.has(p)); });
+  }
+
   if(updated){ save(); render(); }
   return {updated, total: state.pools.length, incomplete: geckoIncomplete, report};
 }

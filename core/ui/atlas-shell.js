@@ -1511,6 +1511,7 @@
 
     var conversa = criarConversa();
     var ultimoEstado = null;    /* a linha de estado que o painel já mostrou */
+    var abriuUmaVez = false;
 
     function responder(q) {
       var c = cortesia(q);
@@ -1623,6 +1624,22 @@
     function setOpen(v) {
       var abrindo = v && wrap.getAttribute("data-open") !== "true";
       wrap.setAttribute("data-open", v ? "true" : "false");
+      /* A abertura é escrita quando a página monta — antes de o supervisor
+         e as cotações terminarem. Ela dizia "sem alertas" e, logo abaixo,
+         "1 ponto de atenção". Na primeira abertura a linha é refeita com o
+         estado de AGORA. */
+      if (abrindo && !abriuUmaVez) {
+        abriuUmaVez = true;
+        if (MODULE === "atlas") {
+          try {
+            var est = estadoCurto();
+            if (est !== ultimoEstado && log.firstChild) {
+              ultimoEstado = est;
+              log.firstChild.textContent = saudacaoComNome() + " " + est;
+            }
+          } catch (e) {}
+        }
+      }
       if (abrindo) { try { mudancasNaAbertura(brain.alerts() > 0); } catch (e) {} }
       if (!abrindo || !window.AtlasNotifications) return;
       if (brain.alerts() > 0) {
