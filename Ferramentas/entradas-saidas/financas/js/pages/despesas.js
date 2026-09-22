@@ -68,9 +68,17 @@
     });
   }
 
+  /* Cards e gráficos: o período dos filtros, e só o que JÁ foi pago
+     ("Saídas do período"). Somavam state.expenses inteiro — o aluguel
+     dos doze meses gerado pelo Planejar, dezembro incluído. */
+  function realizadasDoFiltro(state) {
+    const hoje = FinanceUtils.todayKey();
+    return getFilteredExpenses(state).filter((item) => FinanceUtils.isRealized(item, hoje));
+  }
+
   function renderCards(state) {
     const TYPES = FinanceUtils.EXPENSE_TYPES;
-    const summary = FinanceUtils.summarizeExpenses(state.expenses);
+    const summary = FinanceUtils.summarizeExpenses(realizadasDoFiltro(state));
     FinanceUtils.setText("[data-despesas-total]", FinanceUtils.formatCurrency(summary.total));
     FinanceUtils.setText("[data-despesas-essenciais]", FinanceUtils.formatCurrency(summary.byType[TYPES.fixed] || 0));
     FinanceUtils.setText("[data-despesas-nao-essenciais]", FinanceUtils.formatCurrency(summary.byType[TYPES.variable] || 0));
@@ -87,22 +95,29 @@
       }
       return;
     }
-    FinanceUtils.renderRows(tbody, rows, (item) => `
-      <tr>
+    const hoje = FinanceUtils.todayKey();
+    FinanceUtils.renderRows(tbody, rows, (item) => {
+      const feito = FinanceUtils.isRealized(item, hoje);
+      return `
+      <tr${feito ? "" : ' class="fx-row-previsto"'}>
         <td>${FinanceUtils.formatDate(item.date)}</td>
         <td>${FinanceUtils.escapeHtml(item.category)}</td>
         <td>${FinanceUtils.escapeHtml(item.description)}</td>
-        <td><span class="fx-tag fx-tag--red">${FinanceUtils.escapeHtml(item.type)}</span></td>
+        <td><span class="fx-tag fx-tag--red">${FinanceUtils.escapeHtml(item.type)}</span>${feito ? "" : ' <span class="fx-tag fx-tag--neutral">Prevista</span>'}</td>
         <td class="fx-text-neg">${FinanceUtils.formatCurrency(item.value)}</td>
       </tr>
-    `);
+    `;
+    });
   }
 
   function renderCharts(state) {
     const TYPES = FinanceUtils.EXPENSE_TYPES;
-    const essentials = state.expenses.filter((item) => item.type === TYPES.fixed);
-    const nonEssentials = state.expenses.filter((item) => item.type === TYPES.variable);
-    const sorted = [...state.categories].sort((a, b) => b.value - a.value);
+    const base = realizadasDoFiltro(state);
+    const essentials = base.filter((item) => item.type === TYPES.fixed);
+    const nonEssentials = base.filter((item) => item.type === TYPES.variable);
+    const porCategoria = FinanceUtils.summarizeExpenses(base).byCategory;
+    const sorted = Object.entries(porCategoria).map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
     const redSoft = deriveToneFromToken("--vermelho", 70, FinanceCharts.colors.red);
 
     FinanceCharts.barChart("#essenciaisChart", {
@@ -264,7 +279,12 @@
     ["#despesaMonth", "#despesaCategory"].forEach((selector) => {
       const element = document.querySelector(selector);
       if (element) {
-        element.addEventListener("input", () => renderTables(FinanceUtils.getState()));
+        element.addEventListener("input", () => {
+          const s = FinanceUtils.getState();
+          renderCards(s);    // cards e gráficos seguem os filtros
+          renderTables(s);
+          renderCharts(s);
+        });
       }
     });
   }
@@ -273,6 +293,10 @@
     const state = FinanceUtils.refreshSummary(FinanceUtils.getState());
     FinanceUtils.saveState(state);
     FinanceUtils.fillMonthSelect("#despesaMonth", state);
+    /* abre no mês atual, quando ele tem lançamento */
+    const sel = document.querySelector("#despesaMonth");
+    const atual = FinanceUtils.currentMonthKey();
+    if (sel && [...sel.options].some((o) => o.value === atual)) sel.value = atual;
     renderCards(state);
     renderTables(state);
     renderCharts(state);

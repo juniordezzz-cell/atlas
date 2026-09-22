@@ -31,7 +31,12 @@
 // v7 = correção de segurança SEC-001: texto livre e datas escapados antes
 // do innerHTML (app-bridge.js, core/format.js, pages/*). Este SW serve do
 // cache primeiro — sem o bump, quem já instalou seguiria com o código antigo.
-const CACHE = "financas-v7";
+//
+// v8 = o resumo passou a ser do MÊS ATUAL e do REALIZADO (core/finance.js):
+// o Planejar gera o ano inteiro e os cards somavam tudo — R$ 12.000 de
+// "entradas" em setembro para um salário de R$ 1.000. Sem o bump, quem já
+// instalou continuaria vendo os números errados.
+const CACHE = "financas-v8";
 
 const ASSETS = [
   "index.html",

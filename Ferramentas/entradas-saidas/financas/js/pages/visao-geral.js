@@ -57,10 +57,25 @@
     renderMonthNotes(state);
   }
 
-  function monthTotals(state, key) {
+  /* Totais REALIZADOS de um mês até o dia `ateDia` (inclusive).
+     O mês atual só vai até hoje; compará-lo com o mês anterior INTEIRO
+     faria todo mês parecer pior até o último dia. A comparação é com o
+     mês anterior até o mesmo dia. */
+  function monthTotals(state, key, ateDia) {
+    const hoje = FinanceUtils.todayKey();
     const sumBy = (rows) =>
-      rows.filter((item) => FinanceUtils.getMonthKey(item.date) === key).reduce((acc, item) => acc + item.value, 0);
+      rows
+        .filter((item) => FinanceUtils.getMonthKey(item.date) === key &&
+                          FinanceUtils.isRealized(item, hoje) &&
+                          Number(String(item.date).slice(8, 10)) <= ateDia)
+        .reduce((acc, item) => acc + item.value, 0);
     return { in: sumBy(state.entries), out: sumBy(state.expenses) };
+  }
+
+  function mesAnterior(key) {
+    const [y, m] = key.split("-").map(Number);
+    const d = new Date(y, m - 2, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   }
 
   function deltaLabel(current, previous, invert) {
@@ -68,6 +83,9 @@
       return "Sem dados do mês anterior";
     }
     const pct = Math.round(((current - previous) / previous) * 100);
+    if (pct === 0) {
+      return "Igual ao mesmo dia do mês anterior";
+    }
     const arrow = pct >= 0 ? "↑" : "↓";
     const good = invert ? pct <= 0 : pct >= 0;
     const cls = good ? "fx-text-pos" : "fx-text-neg";
@@ -90,19 +108,25 @@
       return;
     }
 
-    const current = monthTotals(state, keys[0]);
-    const previous = keys[1] ? monthTotals(state, keys[1]) : null;
+    const atual = FinanceUtils.currentMonthKey();
+    const dia = Number(FinanceUtils.todayKey().slice(8, 10));
+    const current = monthTotals(state, atual, dia);
+    const anterior = mesAnterior(atual);
+    const previous = keys.includes(anterior) ? monthTotals(state, anterior, dia) : null;
 
-    setNote("[data-note-entradas]", deltaLabel(current.in, previous?.in, false));
-    setNote("[data-note-despesas]", deltaLabel(current.out, previous?.out, true));
+    setNote("[data-note-entradas]", deltaLabel(current.in, previous?.in, false).replace("vs mês anterior", "vs mesmo dia do mês anterior"));
+    setNote("[data-note-despesas]", deltaLabel(current.out, previous?.out, true).replace("vs mês anterior", "vs mesmo dia do mês anterior"));
 
-    const saldoCurrent = current.in - current.out;
-    const saldoPrevious = previous ? previous.in - previous.out : null;
+    /* O saldo diz também para onde o mês vai: o que ainda está previsto
+       (salário que cai dia 25, conta do dia 30) fica à parte do realizado
+       nos cards, mas é o que decide como o mês termina. */
+    const prev = state.summary.previsto;
+    const temPrevisto = prev && (prev.receitas || prev.despesas);
     setNote(
       "[data-note-saldo]",
-      saldoPrevious === null || saldoPrevious === 0
-        ? "Sem dados do mês anterior"
-        : deltaLabel(saldoCurrent, saldoPrevious, false)
+      temPrevisto
+        ? `Previsto no fim do mês: <strong>${FinanceUtils.formatCurrency(prev.saldoFimDoMes)}</strong>`
+        : "Nada previsto até o fim do mês"
     );
   }
 
@@ -138,10 +162,14 @@
       return;
     }
 
+    /* "Últimas" = as que JÁ aconteceram. Sem o filtro, o topo da lista
+       era o salário de dezembro gerado pelo Planejar. */
+    const hoje = FinanceUtils.todayKey();
     const rows = [
       ...state.entries.map((item) => ({ ...item, kind: "Entrada" })),
       ...state.expenses.map((item) => ({ ...item, kind: "Despesa" }))
     ]
+      .filter((item) => FinanceUtils.isRealized(item, hoje))
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 5);
 
@@ -173,13 +201,16 @@
       return;
     }
 
+    /* Só o realizado: meses que ainda não vieram não têm desempenho. */
+    const hoje = FinanceUtils.todayKey();
+    const feito = (item) => FinanceUtils.isRealized(item, hoje);
     const months = {};
-    state.entries.forEach((item) => {
+    state.entries.filter(feito).forEach((item) => {
       const key = FinanceUtils.getMonthKey(item.date);
       months[key] = months[key] || { in: 0, out: 0 };
       months[key].in += item.value;
     });
-    state.expenses.forEach((item) => {
+    state.expenses.filter(feito).forEach((item) => {
       const key = FinanceUtils.getMonthKey(item.date);
       months[key] = months[key] || { in: 0, out: 0 };
       months[key].out += item.value;

@@ -1717,6 +1717,11 @@ a { color: inherit; }
 }
 
 /* ---------- Tag neutra (ex.: "Receitas x despesas" na tabela de Relatórios) ---------- */
+/* Lançamento previsto (data depois de hoje): fica na tabela para você
+   ver o que vem, mas apagado — não entra nos cards (core/finance.js,
+   isRealized). */
+.fx-row-previsto td { opacity: 0.55; }
+
 .fx-tag--neutral {
   color: var(--texto-suave);
   background: color-mix(in srgb, var(--texto) 6%, transparent);

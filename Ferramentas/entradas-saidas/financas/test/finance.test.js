@@ -22,7 +22,9 @@ test("summarizeExpenses soma total, por tipo e por categoria", () => {
   assert.equal(r.byCategory["Mercado"], 300);
 });
 test("refreshSummary calcula receitas/despesas/saldo", () => {
-  const s = refreshSummary(state());
+  /* o resumo é do mês de "hoje" e do que já aconteceu (ver
+     mes-realizado.test.js) — os lançamentos daqui são de março */
+  const s = refreshSummary(state(), "2026-03-31");
   assert.equal(s.summary.receitas, 1500);
   assert.equal(s.summary.despesas, 700);
   assert.equal(s.summary.saldo, 800);

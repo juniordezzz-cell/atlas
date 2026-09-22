@@ -42,7 +42,10 @@ import {
   summarizeEntries,
   summarizeExpenses,
   refreshSummary,
-  monthOptions
+  monthOptions,
+  todayKey,
+  currentMonthKey,
+  isRealized
 } from "./core/finance.js";
 import {
   defaultPlanner,
@@ -204,6 +207,9 @@ window.FinanceUtils = {
   getMonthKey,
   monthLabel,
   monthOptions,
+  todayKey,
+  currentMonthKey,
+  isRealized,
   MONTH_NAMES,
   fillMonthSelect,
   summarizeEntries,
