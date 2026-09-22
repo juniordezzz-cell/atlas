@@ -1438,7 +1438,14 @@
     wrap.innerHTML =
       '<div class="atlas-oraculo__panel" role="dialog" aria-label="Oráculo">' +
         '<div class="atlas-oraculo__head">' +
-          '<span class="atlas-oraculo__badge"><i></i></span>' +
+          /* O mesmo avatar do botão flutuante: o painel se identifica
+             com o rosto que a pessoa clicou para abri-lo. A bolinha fica
+             só como reserva, se a imagem não carregar. */
+          '<span class="atlas-oraculo__badge">' +
+            '<img class="atlas-oraculo__badge-img" src="' + esc(ORACULO_AVATAR) + '" alt="" ' +
+                 'onerror="this.parentNode.classList.add(&quot;atlas-oraculo__badge--fallback&quot;);this.remove()">' +
+            '<i></i>' +
+          '</span>' +
           '<div><h3>' + esc(t("Oráculo")) + '</h3>' +
           '<p>' + esc(LABEL) + '</p></div>' +
           '<button class="atlas-oraculo__close" aria-label="' + esc(t("Fechar")) + '">' + ICON_CLOSE + '</button>' +
@@ -1503,6 +1510,7 @@
     }
 
     var conversa = criarConversa();
+    var ultimoEstado = null;    /* a linha de estado que o painel já mostrou */
 
     function responder(q) {
       var c = cortesia(q);
@@ -1517,7 +1525,14 @@
         /* Cumprimento sozinho → cumprimento + estado. Cumprimento com
            pergunta → cumprimento antes da resposta, nada além. */
         var pre = saudacaoComNome() + " ";
-        if (!r) return pre + estadoCurto();
+        /* O estado só volta se mudou: responder "boa tarde" logo após a
+           abertura repetia a abertura palavra por palavra. */
+        if (!r) {
+          var est = estadoCurto();
+          if (est === ultimoEstado) return pre.trim();
+          ultimoEstado = est;
+          return pre + est;
+        }
         if (typeof r === "object") return { texto: pre + r.texto, sugestoes: r.sugestoes, acoes: r.acoes };
         return pre + r;
       }
@@ -1637,7 +1652,8 @@
        nos módulos continua o resumo de teses de cada um. */
     var resumo = "";
     try { resumo = brain.summary() || ""; } catch (e) { resumo = ""; }
-    push(saudacaoComNome() + " " + (MODULE === "atlas" ? estadoCurto() : resumo), "bot");
+    if (MODULE === "atlas") ultimoEstado = estadoCurto();
+    push(saudacaoComNome() + " " + (MODULE === "atlas" ? ultimoEstado : resumo), "bot");
 
     wrap._ask = ask;
     wrap._responder = responder;

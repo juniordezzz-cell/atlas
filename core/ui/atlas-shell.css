@@ -228,12 +228,14 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   height: min(560px, calc(100vh - 160px));
   display: flex;
   flex-direction: column;
-  background: var(--atlas-surface-hi);
+  /* SÓLIDO. Era --atlas-surface-hi, 70% opaco no tema escuro: o texto
+     do Dashboard atrás aparecia por baixo das respostas e competia com
+     elas ("Alertas Inteligentes" lido junto com o chip). Um painel de
+     leitura não pode ser vidro. */
+  background: var(--atlas-bg-raise);
   border: 1px solid var(--atlas-border-hi);
   border-radius: var(--atlas-r-xl);
   box-shadow: var(--atlas-sh-3), var(--atlas-glow);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
   overflow: hidden;
   opacity: 0;
   visibility: hidden;
@@ -270,14 +272,28 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   color: var(--atlas-text-mut);
 }
 .atlas-oraculo__badge {
-  width: 30px; height: 30px;
+  width: 34px; height: 34px;
   border-radius: 50%;
   display: grid; place-items: center;
-  background: var(--atlas-grad-soft);
-  border: 1px solid var(--atlas-accent-line);
   flex: none;
 }
-.atlas-oraculo__badge i {
+/* O avatar do botão flutuante, em miniatura, com o mesmo brilho azul e
+   vermelho — sem a flutuação, que num cabeçalho só distrairia. */
+.atlas-oraculo__badge-img {
+  width: 34px; height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.55))
+          drop-shadow(0 0 4px rgba(239, 68, 68, 0.35));
+}
+.atlas-oraculo__badge i { display: none; }
+/* reserva: a imagem não carregou → volta a bolinha de antes */
+.atlas-oraculo__badge--fallback {
+  width: 30px; height: 30px;
+  background: var(--atlas-grad-soft);
+  border: 1px solid var(--atlas-accent-line);
+}
+.atlas-oraculo__badge--fallback i {
+  display: block;
   width: 8px; height: 8px;
   border-radius: 50%;
   background: var(--atlas-accent-2);
