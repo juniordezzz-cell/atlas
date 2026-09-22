@@ -978,6 +978,21 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   line-height: 1.45;
   color: var(--atlas-text-hi);
 }
+.atlas-bell__det {
+  grid-column: 2;
+  font-size: var(--atlas-fs-label);
+  line-height: 1.45;
+  color: var(--atlas-text-mut);
+}
+/* Leva à posição do alerta. Fica à direita da linha de origem/horário
+   para não competir com o texto do alerta. */
+.atlas-bell__go {
+  margin-left: auto;
+  color: var(--atlas-accent-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.atlas-bell__go:hover { text-decoration: underline; }
 .atlas-bell__meta {
   grid-column: 2;
   display: flex; align-items: center; gap: 7px;

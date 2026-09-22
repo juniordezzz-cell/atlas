@@ -893,7 +893,14 @@
     if (!pools.length) return Promise.resolve(null);
 
     return global.DeFiTokens.precosDetalhado(global.DeFiPerf.simbolos(pools))
-      .then(function (d) { S.setPrecos(d.valores, d.fonte); return d; })
+      .then(function (d) {
+        S.setPrecos(d.valores, d.fonte);
+        /* Com preço, o alerta de faixa pode nascer AGORA — depois da
+           primeira pintura. Sem este aviso o sino e o selo do Oráculo
+           só o viam ao recarregar a página. */
+        try { global.document.dispatchEvent(new CustomEvent("atlas:alertas")); } catch (e) {}
+        return d;
+      })
       .catch(function () { return null; });
   }
 

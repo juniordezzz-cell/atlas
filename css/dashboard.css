@@ -281,6 +281,16 @@ body {
 .alert-ic svg { width: 16px; height: 16px; }
 .alert-txt { font-size: 12.5px; line-height: 1.45; color: var(--texto-suave); }
 .alert-when { font-size: 11px; color: var(--texto-fraco); margin-top: 3px; }
+/* O detalhe diz o quanto: "12% acima do teto". Sem ele, "fora da
+   faixa" não separa o que volta sozinho do que pede ação. */
+.alert-det { font-size: 11.5px; line-height: 1.45; color: var(--texto-fraco); margin-top: 2px; }
+.alert-go {
+  margin-left: 8px;
+  color: var(--atlas-accent-text);
+  text-decoration: none;
+  font-weight: 600;
+}
+.alert-go:hover { text-decoration: underline; }
 
 .card-btn { width: 100%; justify-content: center; margin-top: 14px; padding: 9px; }
 .card-btn:hover { color: var(--texto); border-color: var(--card-borda-forte); }

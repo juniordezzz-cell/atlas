@@ -205,6 +205,12 @@ const ICON_NIVEL = {
   info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>`
 };
 
+/* O href do alerta é relativo à RAIZ do ATLAS ("defi/pool.html?id=…");
+   esta tela mora em pages/, então precisa do caminho até lá. */
+function raizAtlas() {
+  return (window.AtlasShell && AtlasShell.raiz) ? AtlasShell.raiz() : '../';
+}
+
 function pintarAlertas() {
   const alertList = document.getElementById('alertList');
   if (D.alertas.length) {
@@ -213,7 +219,8 @@ function pintarAlertas() {
         <span class="alert-ic">${ICON_NIVEL[a.level] || ICON_NIVEL.warn}</span>
         <div>
           <div class="alert-txt">${escHTML(a.texto)}</div>
-          <div class="alert-when">${a.module ? `<span class="alert-mod">${escHTML(a.module)}</span>` : ''}${escHTML(a.quando)}</div>
+          ${a.detalhe ? `<div class="alert-det">${escHTML(a.detalhe)}</div>` : ''}
+          <div class="alert-when">${a.module ? `<span class="alert-mod">${escHTML(a.module)}</span>` : ''}${escHTML(a.quando)}${a.href ? `<a class="alert-go" href="${escHTML(raizAtlas() + a.href)}">${a.module === 'defi' ? 'Abrir pool' : 'Abrir'}</a>` : ''}</div>
         </div>
       </li>`).join('');
   } else {

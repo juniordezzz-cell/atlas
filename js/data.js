@@ -209,7 +209,9 @@ function buildAtlasDataReal() {
       texto: a.texto,
       quando: a.quando,
       level: a.level,
-      module: a.module
+      module: a.module,
+      detalhe: a.detalhe || null,
+      href: a.href || null
     }));
   } catch (e) { alertas = []; }
 

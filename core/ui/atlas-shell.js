@@ -1052,6 +1052,7 @@
   }
   document.addEventListener("atlas:movement", function () { pintarPinOraculo(); });
   document.addEventListener("atlas:theses", function () { pintarPinOraculo(); });
+  document.addEventListener("atlas:alertas", function () { pintarPinOraculo(); });
 
   /* ============================================================
      4. Montagem resistente
@@ -1195,9 +1196,12 @@
                  ' atlas-bell__item--' + esc(a.level) + '" role="listitem">' +
           '<span class="atlas-bell__dot" aria-hidden="true"></span>' +
           '<div class="atlas-bell__txt">' + esc(a.texto) + '</div>' +
+          (a.detalhe ? '<div class="atlas-bell__det">' + esc(a.detalhe) + '</div>' : "") +
           '<div class="atlas-bell__meta">' +
             (a.module ? '<span class="atlas-bell__mod">' + esc(a.module) + "</span>" : "") +
             "<span>" + esc(a.quando) + "</span>" +
+            (a.href ? '<a class="atlas-bell__go" href="' + esc(RAIZ + a.href) + '">' +
+                      esc(a.module === "defi" ? t("Abrir pool") : t("Abrir")) + "</a>" : "") +
           "</div>" +
         "</div>";
       }).join("") + "</div>" +
@@ -1274,6 +1278,7 @@
        depois de recarregar a página. */
     document.addEventListener("atlas:movement", function () { pintarSino(raiz); });
     document.addEventListener("atlas:theses", function () { pintarSino(raiz); });
+    document.addEventListener("atlas:alertas", function () { pintarSino(raiz); });
   }
 
   function fecharSinos() {
