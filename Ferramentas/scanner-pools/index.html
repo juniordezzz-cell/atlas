@@ -369,6 +369,13 @@
   .dx-painel[open]{padding-bottom:14px}
   .dx-painel .keybox{background:transparent; border:0; padding:0; margin-bottom:0}
   .volsrc{margin-left:5px; font-size:10px; color:var(--mut2); font-family:inherit}
+  .rev-item{padding:10px 0; border-top:1px solid var(--line)}
+  .rev-item:first-child{border-top:0}
+  .rev-pool{font-size:13px}
+  .rev-motivo{font-size:12px; color:var(--mut); margin:3px 0 7px}
+  .rev-acoes{display:flex; flex-wrap:wrap; gap:6px}
+  .rev-arq{color:var(--mut)}
+  .rev-arquivadas{display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:12px; color:var(--mut); padding-top:10px; border-top:1px solid var(--line)}
   .keybox .keystatus.ok{color:var(--green)}
 
   .dropzone{border:2px dashed var(--line); border-radius:14px; padding:28px; text-align:center; color:var(--mut); cursor:pointer; transition:.15s; margin-bottom:20px}
@@ -658,6 +665,10 @@
   <!-- DESCOBRIR = o ranking + a busca de pools novas + (avançado) o leitor
        de prints. Era a aba "Dashboard" e a aba "Scanner" separadas; a busca
        automática virou o caminho principal, e o print ficou como opção. -->
+  <details class="dx-painel" id="dxRevisao" hidden>
+    <summary><b id="revTitulo">Revisar pools</b><span>a atualização não teve certeza de qual pool da fonte é a sua</span></summary>
+    <div id="revLista"></div>
+  </details>
   <details class="dx-painel" id="dxBusca">
     <summary><b>Buscar pools novas</b><span>DefiLlama e GeckoTerminal · sem chave · nada entra sem você confirmar</span></summary>
     <div class="keybox" style="flex-direction:column; align-items:stretch; gap:12px">
@@ -1633,7 +1644,7 @@ function render(){
   buildPlatStats();
   buildHead();
 
-  let list = state.pools.slice();
+  let list = state.pools.filter(p=>!p.arquivada);   // arquivadas: só no painel de revisão
   // filtro plataforma
   if(state.platform!=="Todas") list = list.filter(p=>p.platform===state.platform);
   // filtro rede
@@ -3799,6 +3810,7 @@ function applyUpdateOnly(pools, picked, now, report){
   const usados = new Set();
   let updated = 0;
   pools.forEach(p=>{
+    if(p.arquivada) return;   // arquivada: fora da atualização até ser restaurada
     let cand = null;
     if(p.srcId){
       // pool vinculada: só aceita o próprio ID (se a fonte não trouxe, fica sem atualizar)
@@ -3904,11 +3916,11 @@ async function runAutoUpdate(){
   let updated = applyUpdateOnly(state.pools, picked, now, report);
 
   // o que sobrou sem vínculo nas plataformas da Gecko: pesquisa pelo token
-  const sobras = state.pools.filter(p=>p.updatedAt!==now && !p.srcId && GECKO_SOURCES[p.platform]);
+  const sobras = state.pools.filter(p=>p.updatedAt!==now && !p.srcId && !p.arquivada && GECKO_SOURCES[p.platform]);
+  let achados = [];
   if(sobras.length){
     const donos = new Set(state.pools.map(p=>p.srcId).filter(Boolean));
     const feitas = new Set();
-    let achados = [];
     for(const p of sobras.slice(0, 40)){
       const src = (GECKO_SOURCES[p.platform]||[]).find(s=>s.label===p.network);
       const termo = termoDePesquisa(p.pool);
@@ -3926,8 +3938,100 @@ async function runAutoUpdate(){
     ["ambiguous","feeMismatch"].forEach(k=>{ report[k] = report[k].filter(p=>!pegas.has(p)); });
   }
 
+  montarRevisao(picked.concat(achados), now);
   if(updated){ save(); render(); }
-  return {updated, total: state.pools.length, incomplete: geckoIncomplete, report};
+  return {updated, total: state.pools.filter(p=>!p.arquivada).length, incomplete: geckoIncomplete, report};
+}
+
+/* ------------------------------------------------------------
+   REVISÃO — as pools que a atualização não conseguiu casar
+
+   A regra de casamento é conservadora de propósito: quando não tem
+   certeza de qual pool da fonte é a sua, não grava nada. O que sobra
+   não pode ficar sem saída — aqui cada uma aparece com o MOTIVO e as
+   candidatas que a fonte tem para aquele par (taxa, TVL, volume). Você
+   escolhe "É esta" (vincula: daí em diante atualiza sozinha) ou
+   "Arquivar" (pool que acabou: sai do ranking e da atualização, sem
+   apagar nada — dá para restaurar).
+   ------------------------------------------------------------ */
+const REVISAO_STORAGE = "estudo_pools_liquidez_revisao";
+let revisao = [];
+function lerRevisao(){ try{ revisao = JSON.parse(localStorage.getItem(REVISAO_STORAGE)||"[]"); }catch(e){ revisao = []; } }
+function gravarRevisao(){ try{ localStorage.setItem(REVISAO_STORAGE, JSON.stringify(revisao)); }catch(e){} }
+
+function montarRevisao(candidatas, now){
+  const donos = new Set(state.pools.map(p=>p.srcId).filter(Boolean));
+  /* Rodada que a GeckoTerminal cortou (limite de chamadas) não prova que
+     uma pool de lá sumiu: essas ficam fora da revisão até a próxima. */
+  revisao = state.pools.filter(p=>!p.arquivada && p.updatedAt!==now && !(geckoIncomplete && GECKO_SOURCES[p.platform])).map(p=>{
+    const k = aliasKey(p.platform, p.network, p.pool);
+    const vistas = new Set();
+    const cands = candidatas.filter(c=>aliasKey(c.platform, c.network, c.pool)===k && (!c.srcId || !donos.has(c.srcId)))
+      .filter(c=>{ const id=c.srcId||JSON.stringify(c); if(vistas.has(id)) return false; vistas.add(id); return true; })
+      .sort((a,b)=>(b.tvl||0)-(a.tvl||0)).slice(0,6)
+      .map(c=>({pool:c.pool, fee:c.fee, tvl:c.tvl, vol24h:c.vol24h, vol7d:c.vol7d??null, apr:c.apr??null, aprReward:c.aprReward??null, srcId:c.srcId||null}));
+    const mesmaTaxa = cands.filter(c=>c.fee>0 && p.fee>0 && Math.abs(c.fee-p.fee)<0.0005).length;
+    const motivo = !cands.length ? "nao-encontrada" : mesmaTaxa>1 ? "ambigua" : "taxa-diferente";
+    return {id:p.id, motivo, cands};
+  });
+  gravarRevisao();
+  renderRevisao();
+}
+
+const MOTIVO_TXT = {
+  "nao-encontrada": "Não aparece na fonte — pode ter sido encerrada ou ficado sem liquidez.",
+  "taxa-diferente": "A fonte tem este par, mas não com a taxa que está no painel — talvez a taxa tenha sido registrada errada (comum em print).",
+  "ambigua":        "Mais de uma pool na fonte com o mesmo par e a mesma taxa, e o TVL não deixa claro qual é a sua."
+};
+
+function usarCandidata(poolId, i){
+  const item = revisao.find(r=>r.id===poolId); const p = state.pools.find(x=>x.id===poolId);
+  const c = item && item.cands[i];
+  if(!p || !c) return;
+  const now = Date.now();
+  if(c.srcId) p.srcId = c.srcId;
+  p.fee = c.fee>0 ? c.fee : p.fee;
+  p.tvl = c.tvl; p.vol24h = c.vol24h; p.vol7d = c.vol7d; p.apr = c.apr; p.aprReward = c.aprReward;
+  p.updatedAt = now;
+  p.history = p.history || [];
+  p.history.push({ts:now, tvl:c.tvl, vol24h:c.vol24h, vol7d:c.vol7d, vol30d:p.vol30d, fee:p.fee, apr:c.apr});
+  revisao = revisao.filter(r=>r.id!==poolId);
+  save(); gravarRevisao(); render(); renderRevisao();
+}
+function arquivarPool(poolId){
+  const p = state.pools.find(x=>x.id===poolId); if(!p) return;
+  p.arquivada = true;
+  revisao = revisao.filter(r=>r.id!==poolId);
+  save(); gravarRevisao(); render(); renderRevisao();
+}
+function restaurarPool(poolId){
+  const p = state.pools.find(x=>x.id===poolId); if(!p) return;
+  p.arquivada = false;
+  save(); render(); renderRevisao();
+}
+
+function renderRevisao(){
+  const box = document.getElementById("dxRevisao"), lista = document.getElementById("revLista"), tit = document.getElementById("revTitulo");
+  if(!box || !lista) return;
+  const pendentes = revisao.map(r=>({r, p:state.pools.find(x=>x.id===r.id)})).filter(x=>x.p && !x.p.arquivada);
+  const arquivadas = state.pools.filter(p=>p.arquivada);
+  box.hidden = !pendentes.length && !arquivadas.length;
+  if(tit) tit.textContent = pendentes.length
+    ? `Revisar ${pendentes.length} pool(s) que não atualizaram`
+    : `${arquivadas.length} pool(s) arquivada(s)`;
+  const itens = pendentes.map(({r, p})=>h("div", {class:"rev-item"},
+    h("div", {class:"rev-pool"},
+      h("b", null, p.pool), ` · ${p.platform} · ${p.network} · taxa ${fFee(p.fee)} · TVL guardado ${fUSD(p.tvl)} (${fRelDate(p.updatedAt).txt})`),
+    h("div", {class:"rev-motivo"}, MOTIVO_TXT[r.motivo] || ""),
+    h("div", {class:"rev-acoes"},
+      r.cands.map((c, i)=>h("button", {class:"iconbtn", title:`Vincular a esta pool da fonte — daí em diante ela atualiza sozinha${c.srcId ? "" : " (sem identificador: só esta vez)"}`,
+        onclick:`usarCandidata(${p.id}, ${i})`},
+        `É esta: ${c.pool} ${fFee(c.fee)} · TVL ${fUSD(c.tvl)}`)),
+      h("button", {class:"iconbtn rev-arq", title:"Tira do ranking e da atualização. Não apaga nada — dá para restaurar.", onclick:`arquivarPool(${p.id})`}, "Arquivar"))));
+  const arq = arquivadas.length ? h("div", {class:"rev-arquivadas"},
+    h("span", null, `Arquivadas (${arquivadas.length}): `),
+    arquivadas.map(p=>h("button", {class:"iconbtn", title:"Volta para o ranking e para a atualização", onclick:`restaurarPool(${p.id})`}, `restaurar ${p.pool} (${p.platform} · ${p.network})`))) : null;
+  lista.replaceChildren(...itens, ...(arq ? [arq] : []));
 }
 
 /* Checa se está ligado e se venceu 24h; se sim, roda. Chamado no load e de hora em hora. */
@@ -4002,6 +4106,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   load(); render();
 
   apagarChavesAntigasIA();     // chaves de API de versões antigas não ficam no navegador
+  lerRevisao(); renderRevisao();
   populateLlamaSelects();      // preenche os dropdowns de rede/DEX (listas fixas)
   { const b = document.getElementById("llamaBlock"); if(b) b.value = getBlocklist(); }
   checkBackupReminder();
