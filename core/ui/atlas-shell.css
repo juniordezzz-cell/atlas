@@ -162,23 +162,33 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   position: absolute;
   width: 58px; height: 58px;
   object-fit: contain;
-  filter: drop-shadow(0 0 14px rgba(59, 130, 246, 0.65))
-          drop-shadow(0 0 10px rgba(239, 68, 68, 0.45));
+  /* Brilho azul-profundo e vermelho-escuro, a mesma receita do avatar
+     do cabeçalho — a imagem em si fica intacta. */
+  filter: drop-shadow(0 0 10px rgba(29, 78, 216, 0.55))
+          drop-shadow(0 0 6px rgba(185, 28, 28, 0.45));
   animation: atlas-fab-float 4.5s ease-in-out infinite;
   pointer-events: none;
 }
 .atlas-oraculo__orb:hover .atlas-oraculo__avatar { transform: scale(1.1); }
 .atlas-oraculo__orb:active .atlas-oraculo__avatar { transform: scale(0.97); }
 
-/* Anel cônico girando (vermelho ↔ azul) — assinatura do Oráculo */
+/* Anel cônico girando (vermelho ↔ azul) — assinatura do Oráculo.
+
+   Era um VÉU, não um anel: o truque "gradiente transparente no
+   padding-box + cônico no border-box" só recorta o miolo quando a camada
+   de cima é OPACA. Transparente, o cônico pintava o disco inteiro por
+   cima da imagem, e o avatar aparecia lavado de lilás enquanto o do
+   cabeçalho (sem aura) mostrava as cores de verdade. A máscara recorta
+   o miolo de fato: sobra só o aro de 1,5px. */
 .atlas-oraculo__aura {
   position: absolute; inset: 0;
   border-radius: 50%;
-  border: 1.5px solid transparent;
-  background:
-    linear-gradient(#0000, #0000) padding-box,
-    conic-gradient(from 0deg,
-      rgba(239, 68, 68, 0.7), rgba(59, 130, 246, 0.7), rgba(239, 68, 68, 0.7)) border-box;
+  padding: 1.5px;
+  background: conic-gradient(from 0deg,
+    rgba(153, 27, 27, 0.9), rgba(30, 64, 175, 0.9), rgba(153, 27, 27, 0.9));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   animation: atlas-fab-spin 8s linear infinite;
   pointer-events: none;
 }
