@@ -918,6 +918,7 @@
         </table>
         <div class="callout warn"><div class="cotip">⚠️</div><div><b>A armadilha:</b> USDC/USDT (Uniswap Arbitrum) tem razão <b>4,52×</b> — gira $10 M sobre $2 M — mas taxa <b>0,0008%</b>. Rende <b>~0,00%/dia</b>. O giro é enorme, quase nada vira taxa.</div></div>
         <div class="callout bad"><div class="cotip">🚩</div><div><b>A outra armadilha:</b> taxa alta não é qualidade. 1% costuma marcar par volátil/memecoin, onde o <i>impermanent loss</i> come a taxa. Taxa alta é prêmio de risco, não garantia.</div></div>
+        <div class="callout"><div class="cotip">🗳️</div><div><b>DEXes ve(3,3) — Aerodrome, Velodrome, THENA, Pharaoh, Ramses.</b> Nelas o LP escolhe: <b>sem stake</b> fica com a taxa das trocas; <b>com stake</b> recebe emissões do token da DEX (AERO, VELO, THE, PHAR, RAM) e a taxa vai para quem vota. É um ou outro. Por isso, nessas DEXes o Scanner não usa Taxa × Razão: a Eficiência e o APR são o <b>maior</b> dos dois rendimentos que a fonte informa, e a coluna APR diz "em AERO" quando o ganho vem de emissão. Emissão é paga num token que oscila — se ele cai, o seu rendimento em dólar cai junto. Exemplo real (22/09/2026): Pharaoh WAVAX/USDC, taxa 0% para o LP e 378% ao ano em PHAR.</div></div>
         <div class="callout"><div class="cotip">❓</div><div><b>"taxa ?" na tabela</b> — a GeckoTerminal (PancakeSwap, Meteora) nem sempre informa a taxa da pool. Sem taxa, a Eficiência é <b>desconhecida</b>, não zero: a pool vai para o fim do ranking com "taxa ?" até você completar a taxa em <b>editar</b>. Antes, ela aparecia como 0% — como se fosse ruim, quando só faltava o dado.</div></div>
       </div>
     </div>
@@ -1430,7 +1431,7 @@ function normalizePool(p){
   const id = Number(o.id);
   o.id = (Number.isFinite(id) && id>0) ? id : null;
   ["fee","tvl","vol24h"].forEach(k=>{ const v=Number(o[k]); o[k] = Number.isFinite(v) ? v : 0; });
-  ["vol30d","vol7d","apr"].forEach(k=>{ if(o[k]==null || o[k]===""){ o[k]=null; return; } const v=Number(o[k]); o[k] = Number.isFinite(v) ? v : null; });
+  ["vol30d","vol7d","apr","aprReward"].forEach(k=>{ if(o[k]==null || o[k]===""){ o[k]=null; return; } const v=Number(o[k]); o[k] = Number.isFinite(v) ? v : null; });
   if(o.updatedAt!=null){ const t=Number(o.updatedAt); o.updatedAt = Number.isFinite(t) ? t : null; }
   ["pool","platform","network","notes","level","cat","srcId"].forEach(k=>{ if(o[k]!=null) o[k]=String(o[k]); });
   o.fav = !!o.fav;
@@ -1488,13 +1489,41 @@ function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function volDia(p){ return (p.vol7d!=null && p.vol7d>0) ? p.vol7d/7 : p.vol24h; }
 function volFonte(p){ return (p.vol7d!=null && p.vol7d>0) ? "7d" : "24h"; }
 function ratio(p){ return p.tvl>0 ? volDia(p)/p.tvl : 0; }
+/* ------------------------------------------------------------
+   DEXes ve(3,3): O LP NÃO FICA COM A TAXA
+
+   Aerodrome, Velodrome, THENA, Pharaoh e Ramses pagam quem deixa a posição
+   em STAKE com emissões do token da DEX (AERO, VELO…) e mandam a taxa das
+   trocas para quem vota. Sem stake, o LP fica com a taxa e perde a emissão.
+   É um OU outro. Taxa × giro, a Eficiência de sempre, prometia a taxa
+   inteira ao LP — medido na DefiLlama (22/09/2026): Pharaoh WAVAX/USDC com
+   taxa 0% para o LP e 378% em emissões.
+
+   Aqui o rendimento do LP é o MAIOR dos dois (apyBase7d da DefiLlama = sem
+   stake; apyReward = com stake), e a tela diz qual é. Emissão é paga no
+   token da DEX: se ele cai, o rendimento cai junto.
+   ------------------------------------------------------------ */
+const VE33 = { Aerodrome:"AERO", Velodrome:"VELO", THENA:"THE", Pharaoh:"PHAR", Ramses:"RAM" };
+function ehVe33(p){ return !!VE33[p.platform]; }
+function aprLP(p){
+  const taxa = (p.apr!=null && isFinite(p.apr)) ? Number(p.apr) : null;
+  const emi  = (p.aprReward!=null && isFinite(p.aprReward)) ? Number(p.aprReward) : null;
+  if(taxa==null && emi==null) return null;
+  if(emi!=null && (taxa==null || emi>=taxa)) return {v:emi, fonte:"emissoes"};
+  return {v:taxa, fonte:"taxas"};
+}
 /* Sem taxa conhecida (a GeckoTerminal nem sempre informa), a eficiência
    NÃO é zero — é desconhecida. Zero jogava PancakeSwap e Meteora para o
-   fim do ranking por falta de dado, não por serem piores. */
-function temTaxa(p){ return p.fee>0; }
-function efic(p){ return p.fee * ratio(p); } // % ao dia
+   fim do ranking por falta de dado, não por serem piores. Nas ve(3,3), o
+   que precisa ser conhecido é o rendimento do LP, não a taxa. */
+function temTaxa(p){ return ehVe33(p) ? aprLP(p)!=null : p.fee>0; }
+function efic(p){
+  if(ehVe33(p)){ const a = aprLP(p); return a ? a.v/365 : 0; }
+  return p.fee * ratio(p);
+} // % ao dia
 /* APR da fonte quando existe; senão estima pela fórmula do app: 365 × taxa × razão */
 function aprOf(p){
+  if(ehVe33(p)){ const a = aprLP(p); return a ? {v:a.v, est:false, emissoes:a.fonte==="emissoes"} : null; }
   if(p.apr!=null) return {v:Number(p.apr), est:false};
   if(p.fee>0 && p.tvl>0) return {v:365*efic(p), est:true};
   return null;
@@ -1502,6 +1531,7 @@ function aprOf(p){
 function fApr(p){
   const a = aprOf(p);
   if(!a) return "—";
+  if(a.emissoes) return `${fPct(a.v)}<span class="volsrc" title="Pago em ${VE33[p.platform]} a quem deixa a posição em stake (a taxa das trocas vai para os votantes). Se ${VE33[p.platform]} cair, o rendimento cai junto.">em ${VE33[p.platform]}</span>`;
   return a.est ? `<span class="apr-est" title="Estimado: 365 × taxa × (volume do dia ÷ TVL). A fonte não informa APR.">~${fPct(a.v)}</span>` : fPct(a.v);
 }
 function ratioClass(r){ return r>=3 ? "r-g" : (r>=1 ? "r-a" : "r-r"); } // verde a partir de 3x
@@ -1685,7 +1715,9 @@ function rowHTML(p, rank){
     <td class="num" data-label="Vol/dia">${fUSD(volDia(p))}<span class="volsrc" title="${volFonte(p)==='7d'?'Média diária dos últimos 7 dias (DefiLlama)':'Volume das últimas 24h — a fonte não informa a média de 7 dias'}">${volFonte(p)}</span></td>
     <td class="num" data-label="Δ TVL"><span class="trend ${ta.cls}" title="Variação do TVL desde a atualização anterior">${tr==null?'<span class="muted2">—</span>':`${ta.arrow} ${fPctSigned(tr)}`}</span></td>
     <td data-label="Razão"><span class="ratio ${ratioClass(r)}">${fRatio(r)}</span></td>
-    <td class="efic" data-label="Efic %/dia">${temTaxa(p) ? e.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%' : '<span class="muted2" title="A fonte não informou a taxa desta pool — complete em editar. Sem taxa, a eficiência é desconhecida, não zero.">taxa ?</span>'}</td>
+    <td class="efic" data-label="Efic %/dia">${temTaxa(p) ? e.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%'
+      : ehVe33(p) ? '<span class="muted2" title="DEX ve(3,3): o LP ganha emissões com stake ou a taxa sem stake — e a fonte desta pool (GeckoTerminal) não informa nenhum dos dois. Taxa × giro prometeria um rendimento que o LP não recebe.">sem dado</span>'
+      : '<span class="muted2" title="A fonte não informou a taxa desta pool — complete em editar. Sem taxa, a eficiência é desconhecida, não zero.">taxa ?</span>'}</td>
     <td class="apr" data-label="APR">${fApr(p)}</td>
     <td class="plat" data-label="Atualizada"><span class="daterel ${dt.cls}" title="Última atualização: ${dt.full}">${dt.txt}</span></td>
     <td class="actcell">
@@ -1968,6 +2000,7 @@ function getAlertOk(){
   return alertOkMem;
 }
 function snapApr(s, p){
+  if(ehVe33(p)) return p.aprReward!=null || s.apr!=null ? Math.max(Number(s.apr)||0, Number(p.aprReward)||0) : null;
   if(s.apr!=null) return s.apr;
   return (p.fee>0 && s.tvl>0) ? 365*p.fee*s.ratio : null;
 }
@@ -3524,7 +3557,9 @@ async function runLlamaSearch(){
         vol24h:   p.volumeUsd1d!=null ? Math.round(p.volumeUsd1d) : 0,
         vol7d:    p.volumeUsd7d!=null ? Math.round(p.volumeUsd7d) : null,
         // APR de 7 dias, coerente com o volume de 7 dias; o de 1 dia só na falta
-        apr:      p.apyBase7d!=null ? p.apyBase7d : (p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null))
+        apr:      p.apyBase7d!=null ? p.apyBase7d : (p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null)),
+        // emissões do token da DEX a quem faz stake (DEXes ve(3,3))
+        aprReward: p.apyReward!=null && p.apyReward>0 ? p.apyReward : null
       }));
     }
 
@@ -3566,7 +3601,7 @@ async function runLlamaSearch(){
         captureDate: today, status:"done",
         rows: groups[key].map(r=>({
           sel:true, pool:r.pool, network, fee:r.fee,
-          tvl:r.tvl, vol24h:r.vol24h, vol7d:r.vol7d??null, vol30d:null, apr:r.apr, src:"api", srcId:r.srcId||null
+          tvl:r.tvl, vol24h:r.vol24h, vol7d:r.vol7d??null, vol30d:null, apr:r.apr, aprReward:r.aprReward??null, src:"api", srcId:r.srcId||null
         }))
       });
     });
@@ -3593,7 +3628,7 @@ function commitScan(mode){
         selected.push({
           pool: r.pool, platform: it.platform, network: r.network || it.network,
           fee: r.fee||0, tvl: r.tvl||0, vol24h: r.vol24h||0, vol7d: r.vol7d??null,
-          vol30d: r.vol30d??null, apr: r.apr??null,
+          vol30d: r.vol30d??null, apr: r.apr??null, aprReward: r.aprReward??null,
           srcId: r.srcId||null,
           _ts: ts
         });
@@ -3631,7 +3666,7 @@ function commitScan(mode){
       // se a taxa não foi lida dessa vez (0) mas já tínhamos uma taxa conhecida,
       // mantém a taxa antiga em vez de zerar por causa de falha de OCR
       existing.fee = (cand.fee>0 || !(existing.fee>0)) ? cand.fee : existing.fee;
-      existing.tvl=cand.tvl; existing.vol24h=cand.vol24h; existing.vol7d=cand.vol7d;
+      existing.tvl=cand.tvl; existing.vol24h=cand.vol24h; existing.vol7d=cand.vol7d; existing.aprReward=cand.aprReward??null;
       existing.vol30d=cand.vol30d; existing.apr=cand.apr; existing.updatedAt=ts;
       if(cand.srcId && !existing.srcId) existing.srcId = cand.srcId; // vincula: próximas atualizações casam pelo ID
       existing.history = existing.history || [];
@@ -3801,6 +3836,7 @@ function applyUpdateOnly(pools, picked, now, report){
     p.vol24h = cand.vol24h;
     p.vol7d  = cand.vol7d!=null ? cand.vol7d : null;
     p.apr    = cand.apr;
+    p.aprReward = cand.aprReward!=null ? cand.aprReward : null;
     p.updatedAt = now;
     p.history = p.history || [];
     // vol30d nenhuma fonte fornece — mantém o que já havia
@@ -3841,7 +3877,9 @@ async function runAutoUpdate(){
         vol24h:   p.volumeUsd1d!=null ? Math.round(p.volumeUsd1d) : 0,
         vol7d:    p.volumeUsd7d!=null ? Math.round(p.volumeUsd7d) : null,
         // APR de 7 dias, coerente com o volume de 7 dias; o de 1 dia só na falta
-        apr:      p.apyBase7d!=null ? p.apyBase7d : (p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null))
+        apr:      p.apyBase7d!=null ? p.apyBase7d : (p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null)),
+        // emissões do token da DEX a quem faz stake (DEXes ve(3,3))
+        aprReward: p.apyReward!=null && p.apyReward>0 ? p.apyReward : null
       });
     });
   }
