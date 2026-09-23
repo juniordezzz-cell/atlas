@@ -555,7 +555,7 @@
       /* o que falta de caixa entra como depósito: ver _cobrirFalta */
       var depAuto = opts.cobrirFalta
         ? Store._cobrirFalta(widPool, Number(p.capital) || 0, p.id, p.openedAt || p.createdAt,
-            "Depósito automático para abrir a pool " + (p.base || "") + "/" + (p.quote || ""))
+            "Depósito automático para abrir a pool " + (p.base || "") + "/" + (p.quote || ""), p.chain)
         : null;
       if (depAuto === false) return null;
       /* recusa antes de criar: ver _temCaixa */
@@ -620,16 +620,19 @@
        A regra mora no livro de caixa — AtlasCaixa.cobrirFalta — porque
        vale igual para todos os módulos. Devolve o depósito, null se não
        precisou, ou false se o livro recusou. */
-    _cobrirFalta: function (walletId, valor, refId, data, obs) {
+    _cobrirFalta: function (walletId, valor, refId, data, obs, rede) {
       if (!global_.AtlasCaixa || !global_.AtlasCaixa.cobrirFalta) return null;
       return global_.AtlasCaixa.cobrirFalta(walletId, valor,
-        { module: "defi", refId: refId, data: data || _hoje(), obs: obs });
+        { module: "defi", refId: refId, data: data || _hoje(), obs: obs, rede: rede || null });
     },
 
+    /* A rede da posição viaja com o dinheiro: sem ela, o depósito
+       entrava numa rede e o aporte saía "sem rede", e o caixa por rede
+       mostrava um positivo e um negativo que não existem. */
     _caixaAporte: function (p, valor, obs) {
       if (!global_.AtlasCaixa || !(valor > 0)) return null;
       return global_.AtlasCaixa.registrar({
-        tipo: "aporte", valorUSD: valor,
+        tipo: "aporte", valorUSD: valor, rede: (p && p.chain) || null,
         walletId: p.walletId || _read().currentWalletId,
         module: "defi", refId: p.id, data: p.openedAt || p.createdAt,
         obs: obs || ""
@@ -638,7 +641,7 @@
     _caixaRetorno: function (p, valor, obs) {
       if (!global_.AtlasCaixa || !(valor > 0)) return null;
       return global_.AtlasCaixa.registrar({
-        tipo: "retorno", valorUSD: valor,
+        tipo: "retorno", valorUSD: valor, rede: (p && p.chain) || null,
         walletId: p.walletId || _read().currentWalletId,
         module: "defi", refId: p.id,
         obs: obs || ""
@@ -727,7 +730,7 @@
     _caixaTaxa: function (p, fee) {
       if (!global_.AtlasCaixa || !fee || !(Number(fee.amount) > 0)) return null;
       return global_.AtlasCaixa.registrar({
-        tipo: "retorno", valorUSD: Number(fee.amount),
+        tipo: "retorno", valorUSD: Number(fee.amount), rede: (p && p.chain) || null,
         walletId: p.walletId || _read().currentWalletId,
         module: "defi", refId: Store._refTaxa(p, fee.id),
         data: fee.collectedAt || fee.date,
@@ -1339,7 +1342,8 @@
       var token = String(data.token || "").toUpperCase();
       var depAuto = opts.cobrirFalta
         ? Store._cobrirFalta(wid, qtd * preco, idNovo, data.openedAt,
-            "Depósito automático para abrir " + (tipo === "staking" ? "staking" : "lending") + " de " + token)
+            "Depósito automático para abrir " + (tipo === "staking" ? "staking" : "lending") + " de " + token,
+            data.chain)
         : null;
       if (depAuto === false) return null;
       if (!Store._temCaixa(wid, qtd * preco)) {
@@ -1463,7 +1467,7 @@
     _caixaRendimento: function (it, r) {
       if (!global_.AtlasCaixa || !(Number(r.amount) > 0)) return null;
       return global_.AtlasCaixa.registrar({
-        tipo: "retorno", valorUSD: Number(r.amount),
+        tipo: "retorno", valorUSD: Number(r.amount), rede: (it && it.chain) || null,
         walletId: it.walletId || _read().currentWalletId,
         module: "defi", refId: "rw:" + it.id + ":" + r.id,
         data: r.collectedAt || r.date,

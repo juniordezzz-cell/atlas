@@ -406,6 +406,36 @@
         });
     },
 
+    /* ------------------------------------------------------------
+       MARCAR A REDE DE MOVIMENTOS QUE JÁ EXISTEM
+
+       A rede nasceu depois dos primeiros lançamentos, e um movimento
+       sem ela some do recorte por rede. Isto não é um "editar evento"
+       genérico — de propósito: valor, tipo, data e carteira continuam
+       imutáveis, porque são o que o livro garante. Só a etiqueta muda.
+
+       filtro: id do evento, ou { walletId, module, refId, tipo,
+       apenasSemRede } no formato de eventos(). Devolve quantos foram
+       marcados.
+       ------------------------------------------------------------ */
+    marcarRede: function (filtro, rede) {
+      var r = txt(rede) || null;
+      var alvo = typeof filtro === "string" ? { id: filtro } : (filtro || {});
+      var arr = ler(), n = 0;
+      arr.forEach(function (e) {
+        if (alvo.id && e.id !== alvo.id) return;
+        if (alvo.walletId && e.walletId !== alvo.walletId && e.contraWalletId !== alvo.walletId) return;
+        if (alvo.module && e.module !== alvo.module) return;
+        if (alvo.refId && e.refId !== alvo.refId) return;
+        if (alvo.tipo && e.tipo !== alvo.tipo) return;
+        if (alvo.apenasSemRede && e.rede) return;
+        if (e.rede === r) return;
+        e.rede = r; n++;
+      });
+      if (n) gravar(arr);
+      return n;
+    },
+
     /* Redes sugeridas nos formulários. Texto livre continua valendo. */
     REDES: ["Solana", "Ethereum", "Base", "Arbitrum", "BNB Chain", "Polygon",
             "Optimism", "Avalanche", "Sui", "HyperEVM"],
@@ -469,7 +499,7 @@
          para o aporte seguinte não ser recusado por fração */
       var dep = API.registrar({
         tipo: "deposito", valorUSD: v - conf.saldo, walletId: walletId,
-        module: opts.module || null, refId: opts.refId || null,
+        module: opts.module || null, refId: opts.refId || null, rede: opts.rede || null,
         data: opts.data, obs: opts.obs || "Depósito automático para abrir posição"
       });
       return dep || false;
