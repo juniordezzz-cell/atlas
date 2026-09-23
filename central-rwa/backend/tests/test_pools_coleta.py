@@ -75,3 +75,16 @@ def test_leitura_com_mais_de_30_dias_e_apagada():
     s.gravar([fin("a")], date(2026, 8, 1), AGORA)
     s.gravar([fin("a")], date(2026, 9, 23), AGORA)
     assert [l.dia for l in s.leituras_por_pool["a"]] == [date(2026, 9, 23)]
+
+
+# ---- Task 8: comando ----
+import json
+
+from central_rwa import __main__ as cli_main
+
+
+def test_comando_pools_dry_run(monkeypatch, capsys):
+    monkeypatch.setattr("central_rwa.pools.comando.ClienteFontes", lambda: FakeCliente())
+    cli_main.main(["pools", "--dry-run"])
+    resumo = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
+    assert resumo["pre_corte"] > 0 and resumo["dry_run"] is True
