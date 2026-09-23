@@ -108,6 +108,36 @@
     return !!(nome && global[nome]);
   }
 
+  /* ------------------------------------------------------------
+     RESULTADO QUE JÁ VOLTOU AO CAIXA, POR MÓDULO
+
+     O livro de caixa sabe aportes − retornos. Os retornos trazem
+     capital E resultado juntos: venda do Hold com lucro, trade
+     fechado, taxa coletada da pool. Comparar esse líquido com o
+     capital aplicado acusava "capital não bate" a cada lucro
+     realizado — um falso positivo por operação bem-sucedida.
+
+     A igualdade certa é:  capital = saiu do caixa + resultado que voltou.
+     Quem sabe o segundo termo é o módulo; aqui só perguntamos.
+     RWA ainda não registra resultado de venda (módulo em reforma).
+     ------------------------------------------------------------ */
+  var RESULTADO_NO_CAIXA = {
+    trade: function (wid) {
+      var A = global.ATLAS;
+      return A && A.app && A.app.resultadoRealizado ? n(A.app.resultadoRealizado(wid)) : 0;
+    },
+    hold: function (wid) {
+      var S = global.Store;
+      return S && S.get && S.get.realizado ? n(S.get.realizado(wid)) : 0;
+    },
+    defi: function (wid) {
+      var S = global.DeFiStore;
+      if (!S || !S.all || !S.walletResultadoNoCaixa) return 0;
+      return n(S.walletResultadoNoCaixa((S.all().byWallet || {})[wid]));
+    },
+    rwa: function () { return 0; }
+  };
+
   function carteirasGlobais() {
     var W = global.AtlasWallets;
     if (!W || !W.globals) return [{ id: "principal", name: "Principal" }];
@@ -150,7 +180,9 @@
         if (!respondeAoVivo(m)) return;        /* módulo ausente: não dá para comparar daqui */
         var capital = safe(function () { return n(W.capitalOf(w.id, m)); }, null);
         if (capital === null) return;
-        var saiuDoCaixa = n(porMod[m]);
+        /* líquido do caixa + o resultado que voltou por ele = capital */
+        var voltou = safe(function () { return RESULTADO_NO_CAIXA[m](w.id); }, 0);
+        var saiuDoCaixa = n(porMod[m]) + voltou;
 
         /* Tolerância maior que o EPS de centavo: o Trade reporta como
            capital o tamanho das operações ABERTAS, e o caixa registra

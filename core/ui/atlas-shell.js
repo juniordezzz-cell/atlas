@@ -1114,6 +1114,7 @@
 
       var ex = dinheiroExato;
       var temRealizado = Math.abs(s.pnlRealizado || 0) > 0.005;
+      var temCaixa = Math.abs(s.pnlCaixa || 0) > 0.005;
 
       if (assunto === "rentabilidade") {
         if (s.pnlPct == null) {
@@ -1127,28 +1128,39 @@
         }
         var linhas = [
           L("Rentabilidade = resultado ÷ capital investido.", "Return = result ÷ invested capital."),
-          L("Resultado: ", "Result: ") + ex(s.pnl) + (temRealizado
-            ? L(" (" + ex(s.pnlAberto) + " em posições abertas + " + ex(s.pnlRealizado) + " em operações encerradas)",
-                " (" + ex(s.pnlAberto) + " open + " + ex(s.pnlRealizado) + " closed)")
+          L("Resultado: ", "Result: ") + ex(s.pnl) + ((temRealizado || temCaixa)
+            ? L(" (" + ex(s.pnlAberto) + " em posições abertas" +
+                  (temRealizado ? " + " + ex(s.pnlRealizado) + " em operações encerradas" : "") +
+                  (temCaixa ? " + " + ex(s.pnlCaixa) + " de variação dos tokens em caixa" : "") + ")",
+                " (" + ex(s.pnlAberto) + " open" +
+                  (temRealizado ? " + " + ex(s.pnlRealizado) + " closed" : "") +
+                  (temCaixa ? " + " + ex(s.pnlCaixa) + " tokens in cash" : "") + ")")
             : "") + ".",
-          L("Capital investido: ", "Invested capital: ") + ex(s.base) + (temRealizado
-            ? L(" — o custo das posições abertas mais o capital das operações encerradas.",
-                " — cost of open positions plus capital of closed trades.")
-            : L(" — o que foi pago pelas posições abertas.", " — what was paid for open positions.")),
+          L("Capital investido: ", "Invested capital: ") + ex(s.base) +
+            L(" — o que foi pago pelas posições abertas" +
+                (temRealizado ? ", mais o capital das operações encerradas" : "") +
+                (temCaixa ? ", mais o custo dos tokens voláteis parados no caixa" : "") + ".",
+              " — cost of open positions" +
+                (temRealizado ? " plus capital of closed trades" : "") +
+                (temCaixa ? " plus cost of volatile tokens in cash" : "") + "."),
           ex(s.pnl) + " ÷ " + ex(s.base) + " = " + pctExato(s.pnlPct) + ".",
-          L("É acumulada desde a entrada em cada posição, não de um período. Caixa parado não entra na base.",
-            "Accumulated since each position was opened, not over a period. Idle cash is not in the base.")
+          L("É acumulada desde a entrada em cada posição, não de um período. Stablecoin parada não entra na base.",
+            "Accumulated since each position was opened, not over a period. Idle stablecoins are not in the base.")
         ];
         return linhas.join(NL);
       }
 
       if (assunto === "resultado") {
         return [
-          L("Resultado = posições abertas + operações encerradas.", "Result = open positions + closed trades."),
+          L("Resultado = posições abertas + operações encerradas + variação dos tokens parados no caixa.",
+            "Result = open positions + closed trades + price change of tokens held in cash."),
           L("Abertas: valor de mercado − custo, somando a taxa já coletada das pools, que saiu da posição para o caixa: ",
             "Open: market value − cost, plus pool fees already collected: ") + ex(s.pnlAberto) + ".",
-          L("Encerradas (Trade): ", "Closed (Trade): ") + ex(s.pnlRealizado || 0) + ".",
-          ex(s.pnlAberto) + " + " + ex(s.pnlRealizado || 0) + " = " + ex(s.pnl) + "."
+          L("Encerradas (trades fechados, vendas do Hold e posições encerradas do DeFi): ",
+            "Closed (trades, Hold sales and closed DeFi positions): ") + ex(s.pnlRealizado || 0) + ".",
+          L("Tokens em caixa (valor de hoje − valor de entrada): ", "Tokens in cash (today − entry): ") +
+            ex(s.pnlCaixa || 0) + ".",
+          ex(s.pnlAberto) + " + " + ex(s.pnlRealizado || 0) + " + " + ex(s.pnlCaixa || 0) + " = " + ex(s.pnl) + "."
         ].join(NL);
       }
 

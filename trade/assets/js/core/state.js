@@ -624,6 +624,31 @@
       app._caixa("retorno", tr, devolver,
         "Encerramento de " + tr.asset + " · resultado US$ " + tr.pnlUSD.toFixed(2));
 
+      /* ------------------------------------------------------------
+         PREJUÍZO MAIOR QUE O CAPITAL (alavancagem)
+
+         O retorno não pode ser negativo, então parava em zero — e o
+         que passava do capital sumia: trade de 250 fechado em −120%
+         registrava −300 de resultado e tirava só 250 do caixa. O
+         patrimônio ficava 50 acima de depositado + resultado.
+
+         O excedente sai do caixa da carteira. Se não houver caixa, ele
+         veio de fora para cobrir a perda: depósito automático, a mesma
+         regra de abrir posição sem caixa (AtlasCaixa.cobrirFalta).
+         ------------------------------------------------------------ */
+      var excedente = Math.round(-(capital + tr.pnlUSD) * 100) / 100;
+      if (excedente > 0 && global.AtlasCaixa) {
+        var wEx = tr.walletId || state.currentWallet;
+        if (global.AtlasCaixa.cobrirFalta) {
+          global.AtlasCaixa.cobrirFalta(wEx, excedente, {
+            module: "trade", refId: tr.id,
+            obs: "Depósito automático: prejuízo de " + tr.asset + " além do capital"
+          });
+        }
+        app._caixa("aporte", tr, excedente,
+          "Prejuízo além do capital em " + tr.asset);
+      }
+
       emit();
       return tr;
     },

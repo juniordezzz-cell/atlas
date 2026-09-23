@@ -86,6 +86,133 @@
     return d.getFullYear() + "-" + (mm.length < 2 ? "0" + mm : mm) + "-" + (dd.length < 2 ? "0" + dd : dd);
   }
 
+  /* ============================================================
+     QUANTO DE CADA ATIVO HÁ NO CAIXA — quantidade coerente com o US$
+
+     Os módulos lançam aporte e retorno em DÓLAR: sem ativo (cai em
+     "USDT") e sem quantidade. Somar só o US$ por ativo deixava a
+     quantidade para trás — depósito de 500 USDT com quantidade, pool
+     de 300 aberta com esse dinheiro, e o balde dizia 500 USDT valendo
+     200. Quem reavalia a mercado (quantidade × preço) contava 500: 300
+     de patrimônio que já tinha virado posição. Com ETH era pior: o ETH
+     usado na pool continuava no caixa, oscilando com o preço.
+
+     A regra, lançamento a lançamento, na ordem em que foram gravados
+     (é a ordem em que o saldo foi conferido para cada gasto):
+
+       · com quantidade informada  → usa a quantidade;
+       · stablecoin sem quantidade → 1 unidade por dólar;
+       · volátil sem quantidade    → pelo custo médio do balde, se houver
+                                     quantidade nele; senão fica só em US$;
+       · saída maior que o balde   → o que falta sai dos OUTROS ativos da
+                                     carteira: stablecoins primeiro (é de
+                                     onde sai dinheiro em dólar), depois o
+                                     resto em proporção ao custo.
+
+     O total em US$ não muda — continua sendo o saldo do livro.
+     ============================================================ */
+  var STABLES_BASE = { USDT: 1, USDC: 1, DAI: 1, BUSD: 1, FDUSD: 1, TUSD: 1, USDE: 1, PYUSD: 1, USDS: 1 };
+  function ehStable(sym) {
+    var P = global.AtlasPrecos;
+    if (P && P.isStable) { try { return !!P.isStable(sym); } catch (e) {} }
+    return !!STABLES_BASE[sym];
+  }
+
+  function baldesDoCaixa(walletId, porRede) {
+    var grupos = {};   // rede → { ativo → balde }
+
+    function balde(rede, symbol, nome, thumb) {
+      var r = porRede ? (rede || "") : "";
+      if (!grupos[r]) grupos[r] = {};
+      var key = ativo(symbol);
+      var b = grupos[r][key];
+      if (!b) b = grupos[r][key] = { ativo: key, nome: nome || key, thumb: thumb || "", usd: 0, qtd: 0 };
+      if (!b.nome && nome) b.nome = nome;
+      if (!b.thumb && thumb) b.thumb = thumb;
+      return b;
+    }
+
+    /* quantidade implícita de `usd` dólares deste balde */
+    function qtdDe(b, usd) {
+      if (ehStable(b.ativo)) return usd;
+      if (b.qtd > 1e-12 && b.usd > 1e-9) return usd * (b.qtd / b.usd);
+      return 0;
+    }
+
+    function tira(b, usd) {
+      var q = qtdDe(b, usd);
+      b.usd -= usd; b.qtd -= q;
+      if (Math.abs(b.usd) < 1e-9) b.usd = 0;
+      if (Math.abs(b.qtd) < 1e-12) b.qtd = 0;   /* poeira de ponto flutuante */
+    }
+
+    /* o balde ficou negativo: o que falta sai dos outros da mesma rede */
+    function cobrirDosOutros(r, b) {
+      var falta = -b.usd;
+      if (!(falta > 1e-9)) return;
+      var outros = Object.keys(grupos[r]).map(function (k) { return grupos[r][k]; })
+        .filter(function (x) { return x !== b && x.usd > 1e-9; });
+      var stables = outros.filter(function (x) { return ehStable(x.ativo); })
+        .sort(function (a, c) { return c.usd - a.usd; });
+      stables.forEach(function (x) {
+        if (!(falta > 1e-9)) return;
+        var usar = Math.min(falta, x.usd); tira(x, usar); falta -= usar;
+      });
+      var volateis = outros.filter(function (x) { return !ehStable(x.ativo) && x.usd > 1e-9; });
+      var soma = volateis.reduce(function (s, x) { return s + x.usd; }, 0);
+      if (falta > 1e-9 && soma > 1e-9) {
+        var usarTotal = Math.min(falta, soma);
+        volateis.forEach(function (x) { tira(x, usarTotal * (x.usd / soma)); });
+        falta -= usarTotal;
+      }
+      /* o que foi coberto some do balde negativo; o que não deu para
+         cobrir fica negativo — caixa negativo de verdade, que o
+         supervisor acusa */
+      b.usd = -falta; b.qtd = 0;
+    }
+
+    function mover(rede, symbol, usd, qtd, nome, thumb) {
+      if (!usd && !qtd) return;
+      var b = balde(rede, symbol, nome, thumb);
+      if (usd >= 0) {
+        b.qtd += (qtd != null) ? qtd : qtdDe(b, usd);
+        b.usd += usd;
+      } else if (qtd != null) {
+        b.usd += usd; b.qtd += qtd;   /* qtd já vem negativa */
+      } else {
+        tira(b, -usd);
+      }
+      if (b.usd < -1e-9) cobrirDosOutros(porRede ? (rede || "") : "", b);
+    }
+
+    ler().forEach(function (e) {
+      var t = TIPOS[e.tipo];
+      if (!t) return;
+      if (e.walletId === walletId) {
+        if (e.tipo === "swap") {
+          mover(e.rede, e.ativo, -e.valorUSD, e.qtdOrigem != null ? -e.qtdOrigem : null, e.ativoNome, e.ativoThumb);
+          mover(e.rede, e.ativoDestino || "USDT", +e.valorUSD, e.qtdDestino, e.ativoDestinoNome, e.ativoDestinoThumb);
+          return;
+        }
+        mover(e.rede, e.ativo, t.sinal * e.valorUSD, e.qtd != null ? t.sinal * e.qtd : null, e.ativoNome, e.ativoThumb);
+        return;
+      }
+      if (t.contra && e.contraWalletId === walletId) {
+        mover(e.rede, e.ativo, +e.valorUSD, e.qtd, e.ativoNome, e.ativoThumb);
+      }
+    });
+
+    function limpar(mapa) {
+      return Object.keys(mapa).map(function (k) {
+        var a = mapa[k];
+        return { ativo: a.ativo, nome: a.nome || a.ativo, thumb: a.thumb || "",
+                 usd: Math.round(a.usd * 1e6) / 1e6, qtd: Math.round(a.qtd * 1e8) / 1e8 };
+      }).filter(function (a) { return Math.abs(a.usd) > 1e-6 || Math.abs(a.qtd) > 1e-8; })
+        .sort(function (a, b) { return Math.abs(b.usd) - Math.abs(a.usd); });
+    }
+    return { grupos: grupos, limpar: limpar };
+  }
+
   /* ---- persistência ---- */
   var _mem = null;
 
@@ -299,56 +426,8 @@
 
     caixaPorAtivo: function (walletId) {
       if (!walletId) return [];
-
-      function add(mapa, symbol, usdDelta, qtdDelta, nome, thumb) {
-        var key = ativo(symbol);
-        if (!mapa[key]) mapa[key] = { ativo: key, nome: nome || key, thumb: thumb || "", usd: 0, qtd: 0 };
-        if (!mapa[key].nome && nome) mapa[key].nome = nome;
-        if (!mapa[key].thumb && thumb) mapa[key].thumb = thumb;
-        if (isFinite(usdDelta)) mapa[key].usd += Number(usdDelta) || 0;
-        if (qtdDelta != null && isFinite(qtdDelta)) mapa[key].qtd += Number(qtdDelta) || 0;
-      }
-
-      var mapa = {};
-      ler().forEach(function (e) {
-        var t = TIPOS[e.tipo];
-        if (!t) return;
-
-        if (e.walletId === walletId) {
-          if (e.tipo === "swap") {
-            add(mapa, e.ativo, -e.valorUSD, e.qtdOrigem != null ? -e.qtdOrigem : null, e.ativoNome, e.ativoThumb);
-            add(mapa, e.ativoDestino || "USDT", +e.valorUSD, e.qtdDestino, e.ativoDestinoNome, e.ativoDestinoThumb);
-            return;
-          }
-          add(
-            mapa,
-            e.ativo,
-            t.sinal * e.valorUSD,
-            e.qtd != null ? t.sinal * e.qtd : null,
-            e.ativoNome,
-            e.ativoThumb
-          );
-          return;
-        }
-
-        if (t.contra && e.contraWalletId === walletId) {
-          add(mapa, e.ativo, +e.valorUSD, e.qtd, e.ativoNome, e.ativoThumb);
-        }
-      });
-
-      return Object.keys(mapa).map(function (k) {
-        return {
-          ativo: mapa[k].ativo,
-          nome: mapa[k].nome || mapa[k].ativo,
-          thumb: mapa[k].thumb || "",
-          usd: Math.round(mapa[k].usd * 1e6) / 1e6,
-          qtd: Math.round(mapa[k].qtd * 1e8) / 1e8
-        };
-      }).filter(function (r) {
-        return Math.abs(r.usd) > 1e-6 || Math.abs(r.qtd) > 1e-8;
-      }).sort(function (a, b) {
-        return Math.abs(b.usd) - Math.abs(a.usd);
-      });
+      var b = baldesDoCaixa(walletId, false);   /* ver a regra lá em cima */
+      return b.limpar(b.grupos[""] || {});
     },
 
     /* ------------------------------------------------------------
@@ -364,39 +443,9 @@
        ------------------------------------------------------------ */
     caixaPorRede: function (walletId) {
       if (!walletId) return [];
-      var grupos = {};
-      function add(rede, symbol, usdDelta, qtdDelta, nome, thumb) {
-        var r = rede || "";
-        if (!grupos[r]) grupos[r] = {};
-        var mapa = grupos[r], key = ativo(symbol);
-        if (!mapa[key]) mapa[key] = { ativo: key, nome: nome || key, thumb: thumb || "", usd: 0, qtd: 0 };
-        if (!mapa[key].thumb && thumb) mapa[key].thumb = thumb;
-        mapa[key].usd += Number(usdDelta) || 0;
-        if (qtdDelta != null && isFinite(qtdDelta)) mapa[key].qtd += Number(qtdDelta) || 0;
-      }
-      ler().forEach(function (e) {
-        var t = TIPOS[e.tipo];
-        if (!t) return;
-        if (e.walletId === walletId) {
-          if (e.tipo === "swap") {
-            add(e.rede, e.ativo, -e.valorUSD, e.qtdOrigem != null ? -e.qtdOrigem : null, e.ativoNome, e.ativoThumb);
-            add(e.rede, e.ativoDestino || "USDT", +e.valorUSD, e.qtdDestino, e.ativoDestinoNome, e.ativoDestinoThumb);
-            return;
-          }
-          add(e.rede, e.ativo, t.sinal * e.valorUSD, e.qtd != null ? t.sinal * e.qtd : null, e.ativoNome, e.ativoThumb);
-          return;
-        }
-        if (t.contra && e.contraWalletId === walletId) {
-          add(e.rede, e.ativo, +e.valorUSD, e.qtd, e.ativoNome, e.ativoThumb);
-        }
-      });
+      var bal = baldesDoCaixa(walletId, true), grupos = bal.grupos;
       return Object.keys(grupos).map(function (r) {
-        var ativos = Object.keys(grupos[r]).map(function (k) {
-          var a = grupos[r][k];
-          return { ativo: a.ativo, nome: a.nome || a.ativo, thumb: a.thumb || "",
-                   usd: Math.round(a.usd * 1e6) / 1e6, qtd: Math.round(a.qtd * 1e8) / 1e8 };
-        }).filter(function (a) { return Math.abs(a.usd) > 1e-6 || Math.abs(a.qtd) > 1e-8; })
-          .sort(function (a, b) { return Math.abs(b.usd) - Math.abs(a.usd); });
+        var ativos = bal.limpar(grupos[r]);
         var usd = ativos.reduce(function (s, a) { return s + a.usd; }, 0);
         return { rede: r || null, usd: Math.round(usd * 1e6) / 1e6, ativos: ativos };
       }).filter(function (g) { return g.ativos.length; })

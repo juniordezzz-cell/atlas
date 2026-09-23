@@ -43,8 +43,10 @@
      resultado aberto    investido − custo        (não realizado)
      resultado realizado apurado em operações já encerradas
      base realizada      o capital que produziu o resultado realizado
-     resultado total     aberto + realizado
-     rentabilidade       resultado total ÷ (custo + base realizada)
+     resultado do caixa  caixa a mercado − caixa a custo (token parado)
+     resultado total     aberto + realizado + resultado do caixa
+     rentabilidade       resultado total ÷ (custo + base realizada
+                                            + custo do token volátil em caixa)
 
    A última linha é a que impede o erro nº 2: o denominador tem de
    conter a base de TUDO que está no numerador. Quem informa resultado
@@ -203,9 +205,28 @@
     var aberto = dados.resultadoAberto != null ? n(dados.resultadoAberto) : pos.resultado;
     var derivado = pos.resultado;
 
-    var resultadoTotal = aberto + realizado;
+    /* ------------------------------------------------------------
+       TOKEN PARADO NO CAIXA TAMBÉM DÁ RESULTADO
+
+       `caixa` chega a MERCADO (quantidade × cotação), e ETH parado na
+       carteira sobe e desce como qualquer posição. Sem este termo o
+       patrimônio andava com o preço e o resultado não, e a regra de
+       ouro nº 4 deixava de fechar por centavos que mudavam a cada
+       cotação — medido: "diferença de US$ 0,29" com US$ 5,78 de ETH
+       em caixa.
+
+       Só existe quando quem chama informa `caixaCusto`; sem ele o
+       caixa é tratado como estava (sem reavaliação, sem resultado).
+       `baseCaixa` é o custo da parte VOLÁTIL do caixa: é ela que
+       produz esse resultado, então é ela que entra na base —
+       stablecoin parada não dilui a rentabilidade.
+       ------------------------------------------------------------ */
+    var resultadoCaixa = dados.caixaCusto != null ? caixa - n(dados.caixaCusto) : 0;
+    var baseCaixa = dados.caixaCusto != null ? n(dados.baseCaixa) : 0;
+
+    var resultadoTotal = aberto + realizado + resultadoCaixa;
     /* A base tem de cobrir TUDO que está no numerador. */
-    var base = pos.custo + baseRealizada;
+    var base = pos.custo + baseRealizada + baseCaixa;
     var faltaBase = (realizado !== 0) && !ehBase(baseRealizada);
 
     return {
@@ -216,6 +237,7 @@
 
       resultadoAberto: aberto,
       resultadoRealizado: realizado,
+      resultadoCaixa: resultadoCaixa,
       resultadoTotal: resultadoTotal,
       /* Quanto o informado se afasta de `valor − custo`. Zero na maior
          parte dos casos; diferente de zero é sinal de que há resultado

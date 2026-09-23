@@ -85,7 +85,12 @@
     /* Medições diárias do valor da carteira, por carteira. Ver
        recordSnapshot(). Existe para o painel poder desenhar uma curva
        que ele MEDIU, em vez de uma que ele inventou. */
-    snapshots: {}
+    snapshots: {},
+    /* Uma linha por venda: custo baixado, apurado e o resultado entre
+       os dois. Sem isto o lucro de uma venda ia para o caixa e para
+       resultado nenhum — o "Lucro Total" ficava abaixo do que o
+       patrimônio mostrava. Ver executeSell e realizado(). */
+    vendas: []
   };
 
   function uid(prefix) {
@@ -165,6 +170,7 @@
     /* Carteira zerada, série zerada. Medição é sobre as posições — sem
        elas, não há o que a curva possa afirmar. */
     HOLD_STATE.snapshots = {};
+    HOLD_STATE.vendas = [];
     ensureWalletStamp();
     persist();
     syncTheses();
@@ -287,6 +293,20 @@
   function portfolioPnLPct() {
     var c = portfolioCost(); return c === 0 ? 0 : (portfolioPnL() / c) * 100;
   }
+  /* Resultado JÁ REALIZADO em vendas de uma carteira, e o custo que o
+     produziu (a base dele na rentabilidade). Andam juntos pelo mesmo
+     motivo do Trade: numerador sem o seu denominador é o erro nº 2. */
+  function vendasDe(walletId) {
+    var wid = walletId || activeWalletId();
+    return (HOLD_STATE.vendas || []).filter(function (v) { return (v.walletId || "principal") === wid; });
+  }
+  function realizado(walletId) {
+    return vendasDe(walletId).reduce(function (s, v) { return s + (Number(v.resultado) || 0); }, 0);
+  }
+  function capitalRealizado(walletId) {
+    return vendasDe(walletId).reduce(function (s, v) { return s + (Number(v.custo) || 0); }, 0);
+  }
+
   function positionWeight(p) {
     var tot = portfolioValue(); return tot === 0 ? 0 : (positionValue(p) / tot) * 100;
   }
@@ -966,6 +986,16 @@
       }
       if (!data.motivo) return { error: "Toda venda depende de invalidação ou realização da tese." };
 
+      /* O resultado da venda é apurado ANTES de a quantidade baixar,
+         sobre o preço médio da posição: é esse custo que sai dela. */
+      var custoVendido = qty * pos.preco_medio;
+      HOLD_STATE.vendas.unshift({
+        id: uid("v"), ativo_id: a.id, walletId: pos.walletId || widS,
+        quantidade: qty, preco: price, precoMedio: pos.preco_medio,
+        custo: custoVendido, apurado: qty * price, resultado: qty * price - custoVendido,
+        motivo: data.motivo, data: data.data || new Date().toISOString()
+      });
+
       pos.quantidade -= qty;
       if (pos.quantidade <= 0.00000001) {
         HOLD_STATE.carteira = HOLD_STATE.carteira.filter(function (p) { return p !== pos; });
@@ -1056,6 +1086,7 @@
       anyPositionOf: anyPositionOf, walletPositions: walletPositions,
       positionValue: positionValue, positionCost: positionCost, positionPnL: positionPnL,
       positionPnLPct: positionPnLPct, positionWeight: positionWeight,
+      realizado: realizado, capitalRealizado: capitalRealizado,
       portfolioValue: portfolioValue, portfolioCost: portfolioCost,
       portfolioPnL: portfolioPnL, portfolioPnLPct: portfolioPnLPct,
       globalTotal: globalTotal, statusDe: statusDe,

@@ -75,46 +75,13 @@
     }
     grid.style.display = "";
     grid.innerHTML = items.map(C.poolCard).join("");
-    if (state.escopo === "todas") marcarCarteiras(items);
     U.reveal("#poolsGrid .pos-card");
   }
 
-  /* No modo "todas", cada cartão ganha a etiqueta da carteira. Por DOM,
-     depois do desenho: o cartão continua sendo o mesmo C.poolCard da
-     tela de sempre. */
-  function marcarCarteiras(items) {
-    var cards = grid.querySelectorAll(".pos-card");
-    items.forEach(function (p, i) {
-      var card = cards[i];
-      if (!card) return;
-      var wid = carteiraDaPool[p.id];
-      card.setAttribute("data-wallet", wid || "");
-      var tags = card.querySelector(".pos-tags");
-      if (!tags) return;
-      var tag = document.createElement("span");
-      tag.className = "tag tag-carteira";
-      var dot = document.createElement("span");
-      dot.className = "dot";
-      dot.style.background = corCarteira(wid);
-      tag.appendChild(dot);
-      tag.appendChild(document.createTextNode(nomeCarteira(wid)));
-      tags.insertBefore(tag, tags.firstChild);
-    });
-  }
-
-  /* A página da pool abre a pool da carteira ATIVA. Clicar numa pool
-     de outra carteira troca a ativa antes de ir — senão a página não
-     acharia a posição. */
-  grid.addEventListener("click", function (e) {
-    if (state.escopo !== "todas") return;
-    var card = e.target.closest ? e.target.closest(".pos-card[data-wallet]") : null;
-    if (!card) return;
-    var wid = card.getAttribute("data-wallet");
-    if (!wid || wid === S.activeWalletId()) return;
-    e.preventDefault();
-    S.setWallet(wid);
-    location.href = card.getAttribute("href");
-  });
+  /* A etiqueta da carteira vem do próprio cartão (C.tagCarteira) e a
+     página da posição acha a pool de qualquer carteira no modo "todas"
+     (DeFiStore._vista) — por isso o clique não precisa trocar a
+     carteira ativa. */
 
   /* ------------------------------------------------------------
      PLACAR DAS CARTEIRAS

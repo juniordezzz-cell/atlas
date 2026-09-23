@@ -80,6 +80,7 @@
   var IC = {
     chevron: function () { return svg(15, '<path d="m6 9 6 6 6-6"/>', "awsel__chev"); },
     check:   function () { return svg(15, '<path d="M20 6 9 17l-5-5"/>'); },
+    camadas: function () { return svg(15, '<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>'); },
     plus:    function () { return svg(14, '<path d="M12 5v14M5 12h14"/>'); },
     pencil:  function () { return svg(13, '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'); },
     trash:   function () { return svg(13, '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>'); }
@@ -171,11 +172,35 @@
   /* ============================================================
      MARKUP — o único que existe
      ============================================================ */
+  /* ------------------------------------------------------------
+     "TODAS AS CARTEIRAS" — opcional, só para quem passa `opts.todas`
+
+       todas: {
+         ativo:      fn -> bool    o modo somado está ligado?
+         saldo:      fn -> número  soma mostrada na pílula e na linha
+         selecionar: fn            liga o modo
+       }
+
+     Só um módulo que sabe SOMAR as próprias carteiras pode oferecer
+     isto (hoje, o DeFi). Os outros não passam a opção e o seletor fica
+     exatamente como era. Escolher uma carteira específica continua
+     sendo o onSelect do módulo — que é quem desliga o modo.
+     ------------------------------------------------------------ */
+  function todasAtivo(opts) {
+    if (!opts.todas || typeof opts.todas.ativo !== "function") return false;
+    try { return !!opts.todas.ativo(); } catch (e) { erro(e); return false; }
+  }
+  function todasSaldo(opts) {
+    if (!opts.todas || typeof opts.todas.saldo !== "function") return 0;
+    try { return Number(opts.todas.saldo()) || 0; } catch (e) { erro(e); return 0; }
+  }
+
   function html(opts, active, list) {
     var podeExcluir = W.globals().length > 1;
+    var modoTodas = todasAtivo(opts);
 
     var linhas = porSaldo(opts, list).map(function (w) {
-      var on = w.id === active.id;
+      var on = !modoTodas && w.id === active.id;
       /* a última carteira global não pode ser excluída: o ATLAS
          precisa de pelo menos uma para consolidar patrimônio */
       var travada = w.type === "global" && !podeExcluir;
@@ -207,7 +232,16 @@
 
     /* Criar local só é oferecido quando a tela tem um módulo dono —
        uma carteira local precisa saber a quem pertence. */
-    var criar =
+    var todas = opts.todas
+      ? '<button type="button" class="awsel__add awsel__todas' + (modoTodas ? " awsel__todas--on" : "") +
+          '" data-wtodas aria-current="' + modoTodas + '">' +
+          '<span class="awsel__swatch awsel__swatch--add">' + IC.camadas() + '</span>' +
+          '<span class="awsel__add-txt">Todas as carteiras' +
+            '<span class="awsel__todas-sub">' + money(opts, todasSaldo(opts)) + '</span></span>' +
+        '</button>'
+      : "";
+
+    var criar = todas +
       '<button type="button" class="awsel__add" data-wadd="global">' +
         '<span class="awsel__swatch awsel__swatch--add">' + IC.plus() + '</span>' +
         '<span class="awsel__add-txt">Nova carteira global</span>' +
@@ -234,16 +268,18 @@
        ------------------------------------------------------------ */
     var st = null;
     if (typeof opts.status === "function") { try { st = opts.status() || null; } catch (e) { erro(e); } }
-    var tipo = active.type === "isolada" ? "Local" : "Global";
-    var rotulo = t("Carteira") + " " + active.name + " (" + tipo + "), " + saldo(opts, active.id) +
+    var tipo = modoTodas ? "Todas" : (active.type === "isolada" ? "Local" : "Global");
+    var nomePilula = modoTodas ? "Todas as carteiras" : active.name;
+    var saldoPilula = modoTodas ? money(opts, todasSaldo(opts)) : saldo(opts, active.id);
+    var rotulo = t("Carteira") + " " + nomePilula + " (" + tipo + "), " + saldoPilula +
                  (st && st.dica ? ". " + String(st.dica).replace(/\.\s*$/, "") : "") + ". " + t("Trocar carteira");
 
     return '' +
       '<button type="button" class="awsel__btn" data-wbtn aria-haspopup="menu" ' +
               'aria-label="' + esc(rotulo) + '" title="' + esc(st && st.dica ? st.dica : tipo) + '">' +
-        '<span class="awsel__dot awsel__dot--' + esc(st && st.nivel ? st.nivel : (active.type === "isolada" ? "local" : "global")) + '" aria-hidden="true"></span>' +
-        '<span class="awsel__name">' + esc(active.name) + '</span>' +
-        '<span class="awsel__val">' + saldo(opts, active.id) + '</span>' +
+        '<span class="awsel__dot awsel__dot--' + esc(modoTodas ? "todas" : (st && st.nivel ? st.nivel : (active.type === "isolada" ? "local" : "global"))) + '" aria-hidden="true"></span>' +
+        '<span class="awsel__name">' + esc(nomePilula) + '</span>' +
+        '<span class="awsel__val">' + saldoPilula + '</span>' +
         (st && st.rotulo ? '<span class="awsel__idade">' + esc(st.rotulo) + '</span>' : "") +
         IC.chevron() +
       '</button>' +
@@ -378,6 +414,12 @@
         abrirExcluir(e.opts, n.getAttribute("data-wdel"));
         return;
       }
+      if ((n = alvo("[data-wtodas]"))) {
+        ev.preventDefault(); ev.stopPropagation();
+        close(root);
+        selecionarTodas(e.opts);
+        return;
+      }
       if ((n = alvo("[data-wopt]"))) {
         ev.preventDefault(); ev.stopPropagation();
         close(root);
@@ -473,6 +515,13 @@
     if (!w) return;
     if (typeof opts.onSelect === "function") opts.onSelect(id, w);
     else W.setActiveFor(opts.module, id);
+    repintarTudo();
+    if (opts.reload && global.location && global.location.reload) global.location.reload();
+  }
+
+  function selecionarTodas(opts) {
+    if (!opts.todas || typeof opts.todas.selecionar !== "function") return;
+    try { opts.todas.selecionar(); } catch (e) { erro(e); return; }
     repintarTudo();
     if (opts.reload && global.location && global.location.reload) global.location.reload();
   }

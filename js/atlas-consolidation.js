@@ -73,15 +73,31 @@
     var CX = global.AtlasCaixa;
     if (!CX) return 0;
     if (!CX.caixaPorAtivo) return n(CX.saldo ? CX.saldo(walletId) : 0);
-    var soma = 0;
+    return caixaReavaliado(walletId).mercado;   /* sem preço, vale o custo */
+  }
+
+  /* A mesma leitura de caixaMercadoDe, com as três somas que a
+     contabilidade precisa para o token parado virar RESULTADO:
+       mercado     o que o caixa vale hoje
+       custo       o que foi registrado ao entrar (valor em US$)
+       baseVolatil custo só dos ativos REAVALIADOS que não são stable —
+                   é o capital exposto ao preço, a base desse resultado
+     Sem isto o patrimônio andava com o ETH do caixa e o resultado não,
+     e o supervisor acusava "não fecha com o extrato" a cada cotação. */
+  function caixaReavaliado(walletId) {
+    var CX = global.AtlasCaixa, out = { mercado: 0, custo: 0, baseVolatil: 0 };
+    if (!CX || !CX.caixaPorAtivo) return out;
+    var P = global.AtlasPrecos;
     (CX.caixaPorAtivo(walletId) || []).forEach(function (a) {
       var sym = String(a.ativo || "").toUpperCase();
       var preco = _precoCaixa[sym];
-      var qtd = Number(a.qtd) || 0;
-      if (typeof preco === "number" && isFinite(preco) && preco > 0 && qtd) soma += qtd * preco;
-      else soma += Number(a.usd) || 0;   /* fallback: custo */
+      var qtd = Number(a.qtd) || 0, usd = Number(a.usd) || 0;
+      var reavaliado = typeof preco === "number" && isFinite(preco) && preco > 0 && qtd;
+      out.custo += usd;
+      out.mercado += reavaliado ? qtd * preco : usd;
+      if (reavaliado && !(P && P.isStable && P.isStable(sym))) out.baseVolatil += usd;
     });
-    return soma;
+    return out;
   }
 
   /* Caixa quebrado por ATIVO, a mercado, somando as carteiras globais.
@@ -315,13 +331,14 @@
 
        hold   Σ (valor − custo) das posições da carteira
        rwa    Σ (atual − entrada) dos ativos da carteira
-       defi   Σ resultado das pools abertas (inclui taxa coletada)
+       defi   Σ resultado das pools abertas e encerradas (inclui taxa coletada)
        trade  Σ pnlUSD das operações encerradas
      ============================================================ */
   var RESULTADO = {
+    /* aberto (valor − custo) + o que já foi realizado em vendas */
     hold: function (walletId) {
       var r = LEITORES.hold(walletId);
-      return r ? n(r.valorAtual) - n(r.capital) : null;
+      return r ? n(r.valorAtual) - n(r.capital) + holdRealizadoDe(walletId) : null;
     },
     rwa: function (walletId) {
       var r = LEITORES.rwa(walletId);
@@ -330,14 +347,9 @@
     defi: function (walletId) {
       return safe(function () {
         var S = global.DeFiStore;
-        if (!S || !S.all || !S.poolSummary) return null;
-        var wd = (S.all().byWallet || {})[walletId];
-        var t = 0;
-        ((wd && wd.pools) || []).forEach(function (p) {
-          var r = S.poolSummary(p);
-          if (r) t += n(r.resultado);
-        });
-        return t;
+        if (!S || !S.all || !S.walletProfit) return null;
+        /* abertas + encerradas (+ staking/lending): a régua é do módulo */
+        return n(S.walletProfit((S.all().byWallet || {})[walletId]));
       }, null);
     },
     trade: function (walletId) {
@@ -350,6 +362,27 @@
       }, null);
     }
   };
+
+  /* Venda do Hold: o apurado volta ao caixa e o custo sai da posição —
+     a diferença é resultado REALIZADO, que o módulo guarda por venda. */
+  function holdRealizadoDe(walletId) {
+    return safe(function () {
+      var S = hold(); return S && S.get && S.get.realizado ? n(S.get.realizado(walletId)) : 0;
+    }, 0);
+  }
+  function holdCapitalRealizadoDe(walletId) {
+    return safe(function () {
+      var S = hold(); return S && S.get && S.get.capitalRealizado ? n(S.get.capitalRealizado(walletId)) : 0;
+    }, 0);
+  }
+
+  function defiRealizadoDe(walletId) {
+    return safe(function () {
+      var S = global.DeFiStore;
+      if (!S || !S.all || !S.walletRealizado) return { resultado: 0, capital: 0 };
+      return S.walletRealizado((S.all().byWallet || {})[walletId]);
+    }, { resultado: 0, capital: 0 });
+  }
 
   /* null = módulo não carregado nesta página (não é "zero") */
   function resultadoDe(walletId, module) {
@@ -777,10 +810,18 @@
 
     /* Caixa das carteiras globais. É dinheiro do usuário parado, e
        patrimônio é o que se tem, não só o que está aplicado. */
-    var caixa = safe(function () {
-      if (!global.AtlasCaixa) return 0;
-      return globalIds().reduce(function (a, id) { return a + caixaMercadoDe(id); }, 0);
-    }, 0);
+    var cx = safe(function () {
+      var t = { mercado: 0, custo: 0, baseVolatil: 0 };
+      if (!global.AtlasCaixa) return t;
+      globalIds().forEach(function (id) {
+        var r = global.AtlasCaixa.caixaPorAtivo
+          ? caixaReavaliado(id)
+          : { mercado: caixaMercadoDe(id), custo: caixaMercadoDe(id), baseVolatil: 0 };
+        t.mercado += r.mercado; t.custo += r.custo; t.baseVolatil += r.baseVolatil;
+      });
+      return t;
+    }, { mercado: 0, custo: 0, baseVolatil: 0 });
+    var caixa = cx.mercado;
 
     /* Base do resultado realizado — hoje só o Trade tem resultado
        fechado dentro do consolidado. Módulo que passe a ter precisa
@@ -790,7 +831,16 @@
       var A = trade(); if (!A || !A.app || !A.app.capitalRealizado) return 0;
       return globalIds().reduce(function (a, id) { return a + n(A.app.capitalRealizado(id)); }, 0);
     }, 0);
+    /* vendas do Hold: o resultado e o custo vendido que o produziu */
     var realizado = tradePnl();
+    globalIds().forEach(function (id) {
+      realizado += holdRealizadoDe(id);
+      baseRealizada += holdCapitalRealizadoDe(id);
+      /* pools e staking/lending encerrados do DeFi */
+      var dr = defiRealizadoDe(id);
+      realizado += dr.resultado;
+      baseRealizada += dr.capital;
+    });
 
     /* `pnl` é a SOMA DO QUE OS MÓDULOS RELATAM, e ela não é
        `valor − custo`: o resultado do DeFi inclui taxa já coletada,
@@ -801,11 +851,17 @@
        rentabilidade. */
     var contas = C ? C.patrimonio({
       caixa: caixa,
+      /* token parado no caixa: a variação de preço é resultado, e o
+         custo da parte volátil é a base dele (decisão do dono do
+         produto, 23/09/2026) */
+      caixaCusto: cx.custo,
+      baseCaixa: cx.baseVolatil,
       posicoes: [{ valor: total, custo: cost }],
       resultadoAberto: pnl - realizado,   /* Hold + DeFi + RWA */
       realizado: realizado,
       baseRealizada: baseRealizada
     }) : null;
+    var resultadoCaixa = contas ? contas.resultadoCaixa : 0;
 
     return {
       capital: cost,
@@ -815,7 +871,10 @@
       total: contas ? contas.patrimonio : total,
       investido: total,
       caixa: caixa,
-      pnl: pnl,
+      /* resultado TOTAL: posições + encerradas + token parado no caixa.
+         É o mesmo número que entra na rentabilidade e que fecha
+         caixa + investido = depositado − sacado + resultado. */
+      pnl: contas ? contas.resultadoTotal : pnl,
       /* null = não há base para afirmar rentabilidade. A tela escreve
          "—". Antes isto era 0, que se lê como "ficou de lado". */
       pnlPct: contas ? contas.rentabilidade : (cost > 0 ? (pnl / cost) * 100 : null),
@@ -826,6 +885,8 @@
          rentabilidade = resultado ÷ base; base = custo + baseRealizada. */
       pnlRealizado: realizado,
       pnlAberto: pnl - realizado,
+      pnlCaixa: resultadoCaixa,
+      caixaCusto: cx.custo,
       base: contas ? contas.base : cost,
       passiveIncome: passiveIncome(),
       protocols: protocolsCount(),

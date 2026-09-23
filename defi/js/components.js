@@ -131,8 +131,20 @@
           return window.AtlasWallets.forModule("defi").map(function (w) { return totaisDe(w.id); })
                  .filter(Boolean);
         },
-        onSelect: function (id) { S.setWallet(id); },
-        afterChange: function (w, acao) { if (acao === "create") S.setWallet(w.id); }
+        /* escolher uma carteira específica sai do modo "todas" */
+        onSelect: function (id) { if (S.setModoTodas) S.setModoTodas(false); S.setWallet(id); },
+        afterChange: function (w, acao) { if (acao === "create") { if (S.setModoTodas) S.setModoTodas(false); S.setWallet(w.id); } },
+        /* O DeFi sabe somar as próprias carteiras (DeFiStore._vista),
+           então oferece "Todas as carteiras" no seletor central. */
+        todas: S.modoTodas ? {
+          ativo: S.modoTodas,
+          saldo: function () {
+            return window.AtlasWallets.forModule("defi").reduce(function (a, w) {
+              var t = totaisDe(w.id); return a + (t ? Number(t.valorAtual) || 0 : 0);
+            }, 0);
+          },
+          selecionar: function () { S.setModoTodas(true); }
+        } : null
       });
     },
 
@@ -217,6 +229,7 @@
             U.statusDot(status, "pool") +
           '</div>' +
           '<div class="pos-tags">' +
+            C.tagCarteira(p) +
             '<span class="tag tag-chain"><span class="dot" style="background:' + U.esc(DeFiStore.colorOf("chain", p.chain)) + '"></span>' + U.esc(p.chain) + '</span>' +
             '<span class="tag tag-proto">' + U.esc(p.protocol) + '</span>' +
             '<span class="tag tag-cat">' + U.esc(p.category) + '</span>' +
@@ -229,6 +242,18 @@
           '</div>' +
           rangeHtml +
         '</a>';
+    },
+
+    /* Etiqueta da carteira dona da posição — só no modo "todas as
+       carteiras", quando o cartão pode ser de qualquer uma. */
+    tagCarteira: function (p) {
+      var S = window.DeFiStore;
+      if (!S || !S.modoTodas || !S.modoTodas() || !p) return "";
+      var wid = S.carteiraDe(p.id);
+      var w = wid && window.AtlasWallets ? AtlasWallets.get(wid) : null;
+      if (!w) return "";
+      return '<span class="tag tag-carteira"><span class="dot" style="background:' +
+        U.esc(w.color || "#5B9BFF") + '"></span>' + U.esc(w.name) + '</span>';
     },
 
     /* ---------- Estado vazio ---------- */

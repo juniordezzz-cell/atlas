@@ -1164,8 +1164,26 @@
         return;
       }
 
-      S.addEvent(p.id, { type: tipo, amountUSD: v, date: d, note: U.qs("#evNote").value.trim() });
-      U.toast(TIPO_EVENTO[tipo].label + " registrado.", "ok");
+      /* Aporte é dinheiro novo entrando na posição: o que faltar de
+         caixa entra antes como depósito automático, a mesma regra da
+         abertura (AtlasCaixa.cobrirFalta). Reinvestimento não: ele usa
+         taxa que já está no caixa, e sem ela não há o que reinvestir. */
+      var depAuto = null;
+      if (tipo === "aporte") {
+        depAuto = S._cobrirFalta(p.walletId, v, p.id, d || U.hoje(),
+          "Depósito automático para aporte na pool " + p.base + "/" + p.quote, p.chain);
+        if (depAuto === false) { U.toast("O caixa da carteira não pôde ser registrado.", "warn"); return; }
+      }
+      var ev = S.addEvent(p.id, { type: tipo, amountUSD: v, date: d, note: U.qs("#evNote").value.trim() });
+      if (!ev) {
+        if (depAuto && window.AtlasCaixa) AtlasCaixa.remover(depAuto.id);
+        U.toast(tipo === "reinvest"
+          ? "O caixa da carteira não tem mais essa taxa — ela já foi usada em outro lugar."
+          : "Não foi possível registrar: confira o valor e o caixa da carteira.", "warn");
+        return;
+      }
+      U.toast(TIPO_EVENTO[tipo].label + " registrado." +
+        (depAuto ? " Depósito automático de " + U.money(depAuto.valorUSD) + " no caixa." : ""), "ok");
       rerender();
     });
 

@@ -210,6 +210,66 @@
     return s.byWallet[wid];
   }
 
+  /* ------------------------------------------------------------
+     MODO "TODAS AS CARTEIRAS" — uma visão somada, só de LEITURA
+
+     Escolhido no seletor de carteira (ou nas abas da tela de Pools —
+     a mesma chave). Com ele ligado, as leituras do módulo (pools,
+     KPIs, distribuição, série, staking, lending) passam a ver as
+     posições de TODAS as carteiras do DeFi juntas, e as sete telas
+     funcionam sem mudar uma linha: todas leem daqui.
+
+     A visão é montada na hora com as MESMAS referências de objeto de
+     cada carteira. Editar uma posição (Object.assign, taxa, preço)
+     altera o objeto verdadeiro. O que REESTRUTURA listas — encerrar,
+     reabrir, excluir — não pode operar na lista somada (seria uma
+     cópia descartada); essas funções localizam o balde real da
+     posição com _baldeCom(). Criar sempre usa a carteira escolhida no
+     formulário (_walletById).
+     ------------------------------------------------------------ */
+  var KEY_TODAS = "atlas.defi.poolsEscopo.v1";
+  function modoTodas() {
+    try { return localStorage.getItem(KEY_TODAS) === "todas"; } catch (e) { return false; }
+  }
+  function idsDoModulo(s) {
+    var ids = (W && W.forModule) ? W.forModule("defi").map(function (w) { return w.id; })
+                                 : Object.keys(s.byWallet || {});
+    return ids.filter(function (id) { return s.byWallet && s.byWallet[id]; });
+  }
+  function _vista(s) {
+    s = s || _mem;
+    if (!modoTodas()) return _wallet(s);
+    var v = { pools: [], closed: [], staking: [], lending: [], snapshots: [] };
+    idsDoModulo(s).forEach(function (id) {
+      var b = s.byWallet[id];
+      ["pools", "closed", "staking", "lending"].forEach(function (k) {
+        (b[k] || []).forEach(function (x) { v[k].push(x); });
+      });
+    });
+    return v;
+  }
+  /* o balde verdadeiro que contém a posição `id` na lista `lista` */
+  function _baldeCom(s, lista, id) {
+    var ids = Object.keys(s.byWallet || {});
+    for (var i = 0; i < ids.length; i++) {
+      var b = s.byWallet[ids[i]];
+      if ((b[lista] || []).some(function (x) { return x.id === id; })) return b;
+    }
+    return _wallet(s);
+  }
+  /* carteira dona de uma posição (para etiquetar cartões no modo todas) */
+  function _carteiraDe(s, id) {
+    var ids = Object.keys(s.byWallet || {});
+    for (var i = 0; i < ids.length; i++) {
+      var b = s.byWallet[ids[i]];
+      var achou = ["pools", "closed", "staking", "lending"].some(function (k) {
+        return (b[k] || []).some(function (x) { return x.id === id; });
+      });
+      if (achou) return ids[i];
+    }
+    return null;
+  }
+
   /* migra o formato antigo (v2: pools/closed/staking/lending na raiz)
      para a carteira principal do novo formato (v3: byWallet) */
   function _migrateOld() {
@@ -355,6 +415,11 @@
       return (W && W.get ? W.get(id) : null) || { id: "principal", name: "Principal", type: "global", color: "#5B9BFF" };
     },
     activeWalletId: currentWalletId,
+    modoTodas: modoTodas,
+    setModoTodas: function (on) {
+      try { localStorage.setItem(KEY_TODAS, on ? "todas" : "carteira"); } catch (e) {}
+    },
+    carteiraDe: function (id) { return _carteiraDe(_read(), id); },
     setWallet: function (id) {
       if (!W) return;
       var w = W.get(id); if (!w) return;
@@ -445,14 +510,86 @@
       var s = _read();
       var globalIds = (W && W.globals) ? W.globals().map(function (w) { return w.id; }) : ["principal"];
       var total = 0;
-      globalIds.forEach(function (id) {
-        var wd = s.byWallet[id]; if (!wd) return;
-        (wd.pools || []).forEach(function (p) {
-          var r = Store.poolSummary(p);
-          if (r) total += r.resultado;
+      globalIds.forEach(function (id) { total += Store.walletProfit(s.byWallet[id]); });
+      return total;
+    },
+
+    /* ------------------------------------------------------------
+       RESULTADO DE UMA CARTEIRA — abertas E encerradas
+
+       Somava só wd.pools. Encerrar uma pool devolve ao caixa o valor
+       dela com o resultado embutido, e tira a pool da lista: o
+       dinheiro ficava no caixa e o resultado sumia do "Lucro Total".
+       Medido: pool de 100 que fechou em 110 + 5 de taxa deixava o
+       patrimônio 15 acima de depositado + resultado.
+
+       A encerrada vale a fotografia tirada no encerramento
+       (closeSummary) — é o resultado exato que voltou ao caixa.
+       ------------------------------------------------------------ */
+    /* A parte REALIZADA de walletProfit (pools e rendimentos já
+       encerrados) e o capital que a produziu. O consolidado precisa
+       das duas juntas: resultado encerrado sem a base dele distorce a
+       rentabilidade — o erro nº 2 de core/atlas-contabilidade.js. */
+    walletRealizado: function (wd) {
+      var out = { resultado: 0, capital: 0 };
+      if (!wd) return out;
+      (wd.closed || []).forEach(function (p) {
+        var r = p.closeSummary || Store.poolSummary(p); if (!r) return;
+        out.resultado += Number(r.resultado) || 0;
+        out.capital += Number(r.aportadoLiquido) || 0;
+      });
+      Store.RENDIMENTOS.forEach(function (tipo) {
+        (wd[tipo] || []).forEach(function (it) {
+          if (it.status !== "encerrada") return;
+          var r = it.closeSummary || Store.rendimentoSummary(tipo, it); if (!r) return;
+          out.resultado += Number(r.resultado) || 0;
+          out.capital += Number(r.capital) || 0;
         });
       });
-      return total;
+      return out;
+    },
+
+    /* Quanto do resultado JÁ VOLTOU ao caixa: taxa e rendimento
+       coletados (menos o que foi reinvestido de volta na pool) e o
+       resultado inteiro das posições encerradas. É o que separa
+       "capital aplicado" de "saiu do caixa − voltou ao caixa" — sem
+       isto o supervisor lia cada coleta de taxa como capital sumido. */
+    walletResultadoNoCaixa: function (wd) {
+      if (!wd) return 0;
+      var t = Store.walletRealizado(wd).resultado;
+      (wd.pools || []).forEach(function (p) {
+        var r = Store.poolSummary(p); if (r) t += r.taxasColetadas - r.reinvestido;
+      });
+      Store.RENDIMENTOS.forEach(function (tipo) {
+        (wd[tipo] || []).forEach(function (it) {
+          if (it.status === "encerrada") return;
+          var r = Store.rendimentoSummary(tipo, it); if (r) t += r.rendimentoColetado;
+        });
+      });
+      return t;
+    },
+
+    walletProfit: function (wd) {
+      if (!wd) return 0;
+      var t = 0;
+      (wd.pools || []).forEach(function (p) {
+        var r = Store.poolSummary(p); if (r) t += r.resultado;
+      });
+      (wd.closed || []).forEach(function (p) {
+        var r = p.closeSummary || Store.poolSummary(p); if (r) t += Number(r.resultado) || 0;
+      });
+      /* Staking e lending ficavam de fora do resultado inteiro — o
+         rendimento coletado entrava no caixa e o pendente no valor,
+         sem nada do lado do lucro. Aberta: resumo de hoje; encerrada:
+         a fotografia do encerramento, que é o que voltou ao caixa. */
+      Store.RENDIMENTOS.forEach(function (tipo) {
+        (wd[tipo] || []).forEach(function (it) {
+          var r = (it.status === "encerrada" && it.closeSummary)
+            ? it.closeSummary : Store.rendimentoSummary(tipo, it);
+          if (r) t += Number(r.resultado) || 0;
+        });
+      });
+      return t;
     },
 
     /* ============================================================
@@ -569,14 +706,14 @@
     },
 
     /* pools */
-    pools: function () { return _wallet(_read()).pools.slice(); },
+    pools: function () { return _vista(_read()).pools.slice(); },
     activePools: function () {
-      return _wallet(_read()).pools.filter(function (p) {
+      return _vista(_read()).pools.filter(function (p) {
         return p.status !== "encerrada" && !p.closedAt;
       });
     },
     pool: function (id) {
-      return _wallet(_read()).pools.filter(function (p) { return p.id === id; })[0] || null;
+      return _vista(_read()).pools.filter(function (p) { return p.id === id; })[0] || null;
     },
     addPool: function (p, opts) {
       opts = opts || {};
@@ -694,6 +831,38 @@
         obs: obs || ""
       });
     },
+    /* Estorna o retorno que o encerramento lançou. Pools encerradas
+       antes de o id ser guardado caem no rastro: o retorno "Encerramento"
+       desta pool com o valor final dela, o mais recente. */
+    _estornaEncerramento: function (a) {
+      var CX = global_.AtlasCaixa;
+      if (!CX || !a) return false;
+      if (a.retornoId) return CX.remover(a.retornoId);
+      var alvo = CX.eventos({ module: "defi", refId: a.id, tipo: "retorno" }).filter(function (e) {
+        return /^Encerramento/.test(e.obs || "") &&
+               Math.abs((Number(e.valorUSD) || 0) - (Number(a.finalValue) || 0)) < 0.005;
+      })[0];   // eventos() já vem do mais recente para o mais antigo
+      return alvo ? CX.remover(alvo.id) : false;
+    },
+
+    /* Estorna o lançamento de caixa de um evento de capital. Eventos
+       gravados antes de o id ser guardado caem no rastro: mesmo tipo
+       de lançamento, mesmo valor, desta pool, que não seja a abertura
+       nem o encerramento — o mais recente. */
+    _estornaEvento: function (p, ev) {
+      var CX = global_.AtlasCaixa;
+      if (!CX || !ev) return false;
+      if (ev.caixaId) return CX.remover(ev.caixaId);
+      var tipoCx = ev.type === "retirada" ? "retorno"
+                 : (ev.type === "aporte" || ev.type === "reinvest") ? "aporte" : null;
+      if (!tipoCx) return false;   // taxa_saida não moveu caixa
+      var alvo = CX.eventos({ module: "defi", refId: p.id, tipo: tipoCx }).filter(function (e) {
+        return Math.abs((Number(e.valorUSD) || 0) - (Number(ev.amountUSD) || 0)) < 0.005 &&
+               !/^(Abertura|Encerramento)/.test(e.obs || "");
+      })[0];
+      return alvo ? CX.remover(alvo.id) : false;
+    },
+
     updatePool: function (id, patch) {
       var p = this.pool(id); if (!p) return null;
       Object.assign(p, patch);
@@ -983,6 +1152,12 @@
             valor > r.taxasDisponiveis + 1e-9) return null;
         if (tipo === "retirada" && valor > r.valorTotal + 1e-9) return null;
       }
+      /* Aporte e reinvestimento TIRAM do caixa. Sem esta trava o evento
+         entrava na pool e o débito era recusado pelo livro — posição
+         crescendo sem dinheiro por trás (medido: aporte de 1.000.000
+         numa carteira com 1.000 era aceito). Mesma regra de addPool. */
+      if ((tipo === "aporte" || tipo === "reinvest") &&
+          !Store._temCaixa(p.walletId || _read().currentWalletId, valor)) return null;
 
       /* Materializa a abertura derivada antes de acrescentar o
          primeiro evento real. Sem isso a abertura sumiria da lista no
@@ -1028,9 +1203,13 @@
          outra posição, que registra o próprio débito. Creditar aqui
          seria contar a mesma taxa duas vezes.
          ------------------------------------------------------------ */
-      if (tipo === "aporte") Store._caixaAporte(p, valor, ev.note || "Aporte na pool");
-      else if (tipo === "retirada") Store._caixaRetorno(p, valor, ev.note || "Retirada de principal");
-      else if (tipo === "reinvest") Store._caixaAporte(p, valor, "Reinvestimento de taxa");
+      var lanc = null;
+      if (tipo === "aporte") lanc = Store._caixaAporte(p, valor, ev.note || "Aporte na pool");
+      else if (tipo === "retirada") lanc = Store._caixaRetorno(p, valor, ev.note || "Retirada de principal");
+      else if (tipo === "reinvest") lanc = Store._caixaAporte(p, valor, "Reinvestimento de taxa");
+      /* o lançamento de caixa fica amarrado ao evento: apagar o evento
+         estorna exatamente ele (ver removeEvent) */
+      if (lanc && lanc.id) ev.caixaId = lanc.id;
 
       /* O capital REGISTRADO da pool acompanha a base investida. É o
          número que o card da lista mostra como "Capital", e ele tem de
@@ -1048,6 +1227,14 @@
       var p = this.pool(id); if (!p || !p.events) return null;
       var alvo = p.events.filter(function (e) { return e.id === evId; })[0];
       if (!alvo || alvo.type === "abertura") return null;   // abertura não se apaga
+      /* ------------------------------------------------------------
+         APAGAR O EVENTO APAGA O DINHEIRO QUE ELE MOVEU
+
+         Só o evento saía da pool; o aporte (ou a retirada) continuava
+         no caixa. Apagar um aporte de 50 deixava o caixa 50 abaixo
+         para sempre, sem posição nenhuma que explicasse a saída.
+         ------------------------------------------------------------ */
+      Store._estornaEvento(p, alvo);
       p.events = p.events.filter(function (e) { return e.id !== evId; });
       p.capital = Math.round(Store.capitalFlows(p).baseInvestida * 1e6) / 1e6;
       p.updatedAt = _hoje();
@@ -1264,7 +1451,7 @@
        que foi encerrada.
        ------------------------------------------------------------ */
     closePool: function (id, reason) {
-      var s = _read(), wd = _wallet(s), p = this.pool(id); if (!p) return null;
+      var s = _read(), wd = _baldeCom(s, "pools", id), p = this.pool(id); if (!p) return null;
 
       var resumo = this.poolSummary(id);   // calcula ANTES de tirar da lista ativa
       var hoje = _hoje();
@@ -1313,30 +1500,45 @@
          coletada, e somá-la agora seria contar duas vezes. Só a que
          ainda estava dentro da posição no momento do encerramento.
          ------------------------------------------------------------ */
-      Store._caixaRetorno(arquivo, arquivo.finalValue,
+      var ret = Store._caixaRetorno(arquivo, arquivo.finalValue,
         "Encerramento da pool " + arquivo.base + "/" + arquivo.quote +
         (resumo ? " · resultado " + resumo.resultado.toFixed(2) : ""));
+      /* O id do lançamento fica na pool arquivada: reabrir precisa
+         estornar EXATAMENTE este retorno — o refId é o mesmo do aporte
+         de abertura, e apagar por refId levaria o aporte junto. */
+      if (ret && ret.id) { arquivo.retornoId = ret.id; _persist(); }
 
       return true;
     },
 
     /* reabre uma pool encerrada por engano, com o histórico intacto */
     reopenPool: function (id) {
-      var s = _read(), wd = _wallet(s);
+      var s = _read(), wd = _baldeCom(s, "closed", id);
       var a = wd.closed.filter(function (x) { return x.id === id; })[0];
       if (!a) return null;
       wd.closed = wd.closed.filter(function (x) { return x.id !== id; });
       var p = JSON.parse(JSON.stringify(a));
+      /* ------------------------------------------------------------
+         REABRIR DESFAZ O ENCERRAMENTO — inclusive no caixa
+
+         O encerramento devolveu o valor da pool ao caixa. Reabrir
+         trazia a pool de volta e deixava esse retorno no extrato: o
+         mesmo dinheiro contava como caixa E como posição, e o
+         patrimônio crescia sozinho pelo valor inteiro da pool.
+         ------------------------------------------------------------ */
+      Store._estornaEncerramento(a);
       p.status = "aberta";   // ciclo de vida; o selo da faixa é calculado
       p.closedAt = null;
       p.updatedAt = _hoje();
       delete p.closeSummary;
+      delete p.retornoId;
+      delete p.finalValue;
       wd.pools.unshift(p);
       _persist(); return p;
     },
 
     /* histórico */
-    closed: function () { return _wallet(_read()).closed.slice(); },
+    closed: function () { return _vista(_read()).closed.slice(); },
 
     /* ============================================================
        STAKING E LENDING — as duas abas que somavam sem existir
@@ -1363,8 +1565,10 @@
     RENDIMENTOS: ["staking", "lending"],
 
     _rendOk: function (tipo) { return Store.RENDIMENTOS.indexOf(tipo) !== -1; },
+    /* Leitura: no modo todas, a lista somada (cópia). Quem precisa
+       alterar a lista em si usa _baldeCom() — ver removeRendimento. */
     _rendLista: function (tipo, s) {
-      var wd = _wallet(s || _read());
+      var wd = _vista(s || _read());
       if (!wd[tipo]) wd[tipo] = [];
       return wd[tipo];
     },
@@ -1557,10 +1761,18 @@
     },
 
     removeRendimento: function (tipo, id) {
-      var s = _read(), lista = Store._rendLista(tipo, s);
+      var s = _read(), lista = _baldeCom(s, tipo, id)[tipo] || [];
       var it = Store.rendimento(tipo, id);
       if (!it) return false;
-      if (global_.AtlasCaixa) global_.AtlasCaixa.removerPorRef("defi", it.id);
+      if (global_.AtlasCaixa) {
+        global_.AtlasCaixa.removerPorRef("defi", it.id);
+        /* Os rendimentos coletados têm refId próprio ("rw:<id>:<r>") e
+           ficavam no caixa depois da exclusão: dinheiro de uma posição
+           que "nunca existiu". Saem junto. */
+        (it.rewards || []).forEach(function (r) {
+          global_.AtlasCaixa.removerPorRef("defi", "rw:" + it.id + ":" + r.id);
+        });
+      }
       var i = lista.map(function (x) { return x.id; }).indexOf(id);
       if (i > -1) lista.splice(i, 1);
       _persist();
@@ -1569,7 +1781,7 @@
 
     /* ---------- KPIs agregados ---------- */
     kpis: function () {
-      var root = _read(), s = _wallet(root);
+      var root = _read(), s = _vista(root);
       var poolsVal = s.pools.reduce(function (a, p) { return a + Store.poolValue(p); }, 0);
       var stakeVal = Store._somaRend(s.staking, Store.rendValue);
       var lendVal = Store._somaRend(s.lending, Store.rendValue);
@@ -1623,7 +1835,7 @@
 
     /* ---------- Distribuições ---------- */
     distribution: function (by) {
-      var s = _wallet(_read()), map = {};
+      var s = _vista(_read()), map = {};
       function add(key, val) { if (!key) return; map[key] = (map[key] || 0) + val; }
       s.pools.forEach(function (p) {
         var v = Store.poolValue(p);
@@ -1726,19 +1938,28 @@
     /* Chave do módulo no livro compartilhado. Uma função para não
        repetir a string "defi" em quatro lugares. */
     _serieOpts: function (campo) {
-      return { modules: ["defi"], wallets: [_read().currentWalletId], campo: campo || "v" };
+      var s = _read();
+      return { modules: ["defi"], wallets: modoTodas() ? idsDoModulo(s) : [s.currentWalletId], campo: campo || "v" };
     },
 
     /* Registra (ou atualiza) a medição de hoje. Idempotente: abrir a
        tela dez vezes no mesmo dia não cria dez pontos. */
     recordSnapshot: function () {
       if (!window.AtlasSnapshots) return [];
-      var s = _read(), wd = _wallet(s);
-      var valor = Store.walletValue(wd);
-      var lucro = (wd.pools || []).reduce(function (a, p) {
-        var r = Store.poolSummary(p); return a + (r ? r.resultado : 0);
-      }, 0);
-      return window.AtlasSnapshots.registrar("defi", s.currentWalletId, { v: valor, p: lucro });
+      var s = _read();
+      /* no modo todas a série soma as carteiras, então cada uma precisa
+         da medição de hoje — não só a ativa */
+      var ids = modoTodas() ? idsDoModulo(s) : [s.currentWalletId];
+      var out = [];
+      ids.forEach(function (id) {
+        var wd = _walletById(s, id);
+        var valor = Store.walletValue(wd);
+        var lucro = (wd.pools || []).reduce(function (a, p) {
+          var r = Store.poolSummary(p); return a + (r ? r.resultado : 0);
+        }, 0);
+        out = window.AtlasSnapshots.registrar("defi", id, { v: valor, p: lucro });
+      });
+      return out;
     },
 
     /* Série diária contínua nos últimos `dias`, preenchendo os dias
@@ -1785,7 +2006,7 @@
        valores são de terça" em vez de deixar o número velho passar por
        novo quando a API falha. */
     ultimaCotacao: function () {
-      var wd = _wallet(_read());
+      var wd = _vista(_read());
       var maior = null;
       (wd.pools || []).forEach(function (p) {
         if (p.precoEm && (!maior || p.precoEm > maior)) maior = p.precoEm;

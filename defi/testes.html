@@ -1088,6 +1088,33 @@
       eq("500 investidos + 100 de lucro = 1100 (depósito 1000)", CX3.saldo(wH), 1100);
       is("sem posição e com venda no histórico, o ativo é 'vendido'", H.get.statusDe(sol), "sold");
 
+      /* -- o LUCRO da venda não pode sumir do resultado --
+         Vender 5 SOL de preço médio 100 a 120 devolve 600 ao caixa e
+         baixa 500 de custo. Os 100 de diferença estavam no caixa e em
+         resultado nenhum: o "Lucro Total" ficava 100 abaixo do que o
+         patrimônio mostrava, e o supervisor acusava "não fecha". */
+      ok("o Hold sabe quanto realizou", !!(H.get.realizado), H.get.realizado ? "sim" : "função ausente");
+      if (H.get.realizado) {
+        eq("lucro realizado na carteira (8 a 100 = 0; 5 a 120 = +100)", H.get.realizado(wH), 100);
+        eq("e a base que o produziu (800 + 500 de custo vendido)", H.get.capitalRealizado(wH), 1300);
+        var extH = CX3.patrimonioExterno();
+        ok("caixa + posições = depositado + aberto + realizado",
+           Math.abs((CX3.saldo(wH) + H.get.portfolioValue()) -
+                    (extH + H.get.portfolioPnL() + H.get.realizado(wH))) < 0.005,
+           (CX3.saldo(wH) + H.get.portfolioValue()) + " vs " + (extH + H.get.portfolioPnL() + H.get.realizado(wH)));
+      }
+      /* item 9: a venda com lucro não pode acender "capital não bate" */
+      if (window.AtlasSupervisor && window.AtlasWallets && AtlasWallets.registerLive) {
+        AtlasWallets.registerLive("hold", function (id) {
+          var ps = H.get.walletPositions(id);
+          var v = ps.reduce(function (s, p) { return s + H.get.positionValue(p); }, 0);
+          var c = ps.reduce(function (s, p) { return s + H.get.positionCost(p); }, 0);
+          return { id: id, module: "hold", valorAtual: v, saldo: v, capital: c, assets: [] };
+        });
+        var achH = AtlasSupervisor._verificacoes.capitalContraCaixa().filter(function (a) { return a.modulo === "hold"; });
+        eq("venda com lucro não gera alerta falso de capital no Hold", achH.length, 0);
+      }
+
       /* -- preço manual: a regra do ATLAS também no Hold -- */
       var pm = H.actions.precoManual(sol.id, 250);
       ok("o Hold sabe receber preço na mão", !!(pm && pm.asset), pm && pm.error ? pm.error : "ok");
@@ -1461,6 +1488,34 @@
            "injetei um lucro no store sem o evento de caixa. A função " +
            "pegou o dado inconsistente antes de eu concluir errado.");
 
+      /* ------------------------------------------------------------
+         ERRO 3 — token parado no caixa varia de preço, e ninguém
+         contava isso como resultado
+
+         O patrimônio lia o caixa A MERCADO (quantidade × cotação) e o
+         resultado não tinha termo nenhum para essa variação. Medido
+         nos dados reais em 23/09/2026: caixa a custo 191,19, a mercado
+         190,90 — e o supervisor acusava "o patrimônio não fecha com o
+         extrato — diferença de US$ 0,29", um valor diferente a cada
+         cotação do ETH.
+         ------------------------------------------------------------ */
+      var tokCaixa = K.patrimonio({
+        caixa: 110, caixaCusto: 100, baseCaixa: 50,     /* 50 em ETH que subiu 10; 50 em USDC */
+        posicoes: [{ valor: 220, custo: 200 }]
+      });
+      eq("a variação do token em caixa é resultado", tokCaixa.resultadoCaixa, 10);
+      eq("e entra no resultado total", tokCaixa.resultadoTotal, 30);
+      eq("a base inclui o custo do token volátil (não a stablecoin)", tokCaixa.base, 250);
+      eq("rentabilidade sobre a base completa", tokCaixa.rentabilidade, (30 / 250) * 100);
+      ok("e o patrimônio fecha com o extrato",
+         K.conferir.dinheiroFecha({ caixa: tokCaixa.caixa, investido: tokCaixa.investido,
+           depositado: 300, sacado: 0, resultadoTotal: tokCaixa.resultadoTotal }).ok,
+         (tokCaixa.caixa + tokCaixa.investido) + " vs " + (300 + tokCaixa.resultadoTotal));
+
+      var semCusto = K.patrimonio({ caixa: 110, posicoes: [{ valor: 220, custo: 200 }] });
+      eq("sem caixaCusto, nada muda (quem não reavalia não inventa resultado)",
+         semCusto.resultadoTotal, 20);
+
       ok("soma das partes bate com o todo",
          K.conferir.somaBate([10.005, 20.005, 30], 60.01).ok, "dentro da tolerância");
       ok("fatias de distribuição fecham em 100",
@@ -1661,6 +1716,159 @@
       nota("O preço MANUAL não entra nesta cadeia: ele é \"o preço de " +
            "hoje, informado por você\", sem data associada. Carimbar " +
            "uma data passada nele seria inventar procedência.");
+    }
+
+    /* ============================================================
+       27 · O DINHEIRO DO DEFI FECHA COM O EXTRATO EM TODA OPERAÇÃO
+
+       caixa + posições = depositado − sacado + resultado
+
+       Cada caso faz UMA operação real do store e cobra a igualdade.
+       Foi esta conta, rodando sozinha no sino, que acusou os furos:
+       ela não sabe de qual tela veio o erro, só que o dinheiro não
+       fecha.
+       ============================================================ */
+    grupo("27 · DeFi: toda operação fecha com o extrato");
+    if (!window.AtlasCaixa) {
+      nota("livro de caixa ausente — casos pulados.");
+    } else {
+      var CX7 = window.AtlasCaixa;
+      try { localStorage.removeItem("atlas.caixa.v1"); } catch (e) {}
+      CX7._reload(); S.reset();
+      var w27 = (window.AtlasWallets && AtlasWallets.activeGlobalId) ? AtlasWallets.activeGlobalId() : "principal";
+      CX7.registrar({ tipo: "deposito", valorUSD: 1000, walletId: w27 });
+
+      /* caixa de todas as carteiras + valor do DeFi, contra depositado + resultado */
+      var fecha27 = function (rotulo) {
+        var saldos = CX7.saldos(), caixa = 0;
+        Object.keys(saldos).forEach(function (k) { caixa += saldos[k]; });
+        var esq = caixa + S.globalTotal();
+        var dir = CX7.patrimonioExterno() + S.globalProfit();
+        ok(rotulo, Math.abs(esq - dir) < 0.005,
+           "caixa+posições " + fmt(esq) + " vs depositado+resultado " + fmt(dir));
+      };
+
+      /* -- item 3: pool encerrada -- */
+      var p27 = S.addPool(base({ base: "SOL", quote: "USDC", protocol: "Orca",
+        capital: 100, currentValue: 100, openedAt: diasAtras(10) }));
+      S.addFee(p27.id, { amount: 5, status: "coletada", date: diasAtras(2) });
+      S.updatePool(p27.id, { currentValue: 110 });
+      fecha27("pool aberta com taxa coletada fecha");
+      S.closePool(p27.id, "teste");
+      fecha27("depois de ENCERRAR a pool, ainda fecha (o resultado dela não some)");
+      eq("resultado encerrado continua contando (+10 ativo + 5 taxa)", S.globalProfit(), 15);
+
+      /* -- item 4: reabrir estorna o dinheiro do encerramento -- */
+      var caixaAntesReabrir = CX7.saldo(w27);
+      S.reopenPool(p27.id);
+      fecha27("REABRIR não conta a pool duas vezes (caixa e posição)");
+      eq("o valor devolvido no encerramento sai do caixa (1015 − 110)", CX7.saldo(w27), caixaAntesReabrir - 110);
+      eq("e o aporte original continua no extrato",
+         CX7.eventos({ refId: p27.id, tipo: "aporte" }).length, 1);
+      S.closePool(p27.id, "teste de novo");
+      fecha27("encerrar de novo depois de reabrir também fecha");
+
+      /* -- item 5: staking e lending também dão resultado --
+         Sem preço de mercado (o token de teste não tem cotação), o
+         ativo vale a entrada; o resultado vem do rendimento. */
+      var st27 = S.addRendimento("staking", { token: "TSTK", protocol: "Teste", chain: "Solana",
+        amount: 10, precoEntrada: 10, walletId: w27 });
+      S.addRendimentoReward("staking", st27.id, { amount: 3, status: "coletada" });
+      S.addRendimentoReward("staking", st27.id, { amount: 2, status: "pendente" });
+      fecha27("staking aberto com rendimento coletado e pendente fecha");
+      eq("o rendimento entra no resultado da carteira (15 da pool + 5)", S.globalProfit(), 20);
+      S.closeRendimento("staking", st27.id, "teste");
+      fecha27("staking ENCERRADO continua fechando");
+      eq("e o resultado encerrado não some", S.globalProfit(), 20);
+      var real27 = S.walletRealizado(S.all().byWallet[w27]);
+      eq("o realizado do DeFi (pool 15 + staking 5)", real27.resultado, 20);
+      eq("vem com a base que o produziu (100 da pool + 100 do staking)", real27.capital, 200);
+
+      /* -- item 6: eventos de capital da pool mexem no caixa, nos dois sentidos -- */
+      var p6 = S.addPool(base({ base: "ETH", quote: "USDC", protocol: "Aerodrome",
+        capital: 100, currentValue: 100, openedAt: diasAtras(5) }));
+      var evAp = S.addEvent(p6.id, { type: "aporte", amountUSD: 50 });
+      S.updatePool(p6.id, { currentValue: 150 });
+      fecha27("aporte na pool fecha");
+      S.removeEvent(p6.id, evAp.id);
+      S.updatePool(p6.id, { currentValue: 100 });
+      fecha27("APAGAR o aporte devolve o dinheiro ao caixa");
+      var evRet = S.addEvent(p6.id, { type: "retirada", amountUSD: 30 });
+      S.updatePool(p6.id, { currentValue: 70 });
+      fecha27("retirada fecha");
+      S.removeEvent(p6.id, evRet.id);
+      S.updatePool(p6.id, { currentValue: 100 });
+      fecha27("APAGAR a retirada tira o dinheiro do caixa de volta");
+      eq("e o aporte de abertura continua no extrato",
+         CX7.eventos({ refId: p6.id, tipo: "aporte" }).length, 1);
+
+      /* aporte maior que o caixa: antes o evento entrava e o débito era recusado */
+      var semCaixa6 = S.addEvent(p6.id, { type: "aporte", amountUSD: 1e6 });
+      is("aporte sem caixa é recusado pelo store", semCaixa6, null);
+      fecha27("e nada entra pela metade");
+
+      /* -- item 7: EXCLUIR (não encerrar) um lending apaga todo o dinheiro dele --
+         Excluir é "isto nunca existiu": sai o aporte e têm de sair
+         também os rendimentos que ele creditou no caixa. */
+      var caixaAntes7 = CX7.saldo(w27);
+      var ln7 = S.addRendimento("lending", { token: "TLND", protocol: "Teste", chain: "Base",
+        amount: 20, precoEntrada: 5, walletId: w27 });
+      S.addRendimentoReward("lending", ln7.id, { amount: 4, status: "coletada" });
+      S.removeRendimento("lending", ln7.id);
+      eq("o caixa volta exatamente ao que era antes do lending", CX7.saldo(w27), caixaAntes7);
+      fecha27("excluir o lending não deixa rendimento órfão no caixa");
+
+      /* -- item 9: taxa coletada e posição encerrada não são "capital a menos" -- */
+      if (window.AtlasSupervisor && window.AtlasWallets && AtlasWallets.registerLive) {
+        AtlasWallets.registerLive("defi", function (id) {
+          var wd = S.all().byWallet[id];
+          return { id: id, module: "defi", valorAtual: S.walletValue(wd), saldo: S.walletValue(wd),
+                   capital: S.walletCapital(wd), assets: [] };
+        });
+        S.addFee(p6.id, { amount: 7, status: "coletada" });
+        var achD = AtlasSupervisor._verificacoes.capitalContraCaixa().filter(function (a) { return a.modulo === "defi"; });
+        eq("taxa coletada, pool e staking encerrados: nenhum alerta falso de capital", achD.length, 0);
+        if (achD.length) nota("achado: módulo diz " + fmt(achD[0].moduloDiz) + ", caixa diz " + fmt(achD[0].caixaDiz));
+      }
+
+      /* -- item 10: a quantidade de cada ativo em caixa bate com o dinheiro --
+         Os módulos lançam aporte/retorno em US$, sem ativo nem
+         quantidade (cai em "USDT"). A quantidade dos baldes ficava
+         para trás, e o caixa a mercado (qtd × preço) contava dinheiro
+         que já tinha virado posição. */
+      var bal = function (wid, sym) {
+        return CX7.caixaPorAtivo(wid).filter(function (a) { return a.ativo === sym; })[0] || { usd: 0, qtd: 0 };
+      };
+      var somaUsd = function (wid) {
+        return CX7.caixaPorAtivo(wid).reduce(function (s, a) { return s + a.usd; }, 0);
+      };
+      /* A: stable com quantidade, aporte do módulo sem quantidade */
+      CX7.registrar({ tipo: "deposito", valorUSD: 500, qtd: 500, ativo: "USDT", walletId: "t10a" });
+      CX7.registrar({ tipo: "aporte", valorUSD: 300, walletId: "t10a", module: "defi", refId: "x" });
+      eq("A · USDT: o aporte leva a quantidade junto (500 − 300)", bal("t10a", "USDT").qtd, 200);
+      /* B: só ETH em caixa, a pool consome o ETH */
+      CX7.registrar({ tipo: "deposito", valorUSD: 300, qtd: 0.1, ativo: "ETH", walletId: "t10b" });
+      CX7.registrar({ tipo: "aporte", valorUSD: 300, walletId: "t10b", module: "defi", refId: "x" });
+      eq("B · o ETH que virou posição sai do caixa (quantidade)", bal("t10b", "ETH").qtd, 0, 1e-9);
+      eq("B · e não sobra USDT negativo", bal("t10b", "USDT").usd, 0);
+      /* C: stable é consumida antes do volátil */
+      CX7.registrar({ tipo: "deposito", valorUSD: 100, qtd: 100, ativo: "USDC", walletId: "t10c" });
+      CX7.registrar({ tipo: "deposito", valorUSD: 300, qtd: 0.1, ativo: "ETH", walletId: "t10c" });
+      CX7.registrar({ tipo: "aporte", valorUSD: 150, walletId: "t10c", module: "hold", refId: "x" });
+      eq("C · a stablecoin sai primeiro", bal("t10c", "USDC").usd, 0);
+      eq("C · o resto sai do ETH, pelo custo (300 − 50)", bal("t10c", "ETH").usd, 250);
+      eq("C · e a quantidade de ETH acompanha (0,1 × 250/300)", bal("t10c", "ETH").qtd, 0.1 * 250 / 300, 1e-8);   /* a API devolve 8 casas */
+      /* D: retorno do módulo em USD vira stable com quantidade */
+      CX7.registrar({ tipo: "retorno", valorUSD: 110, walletId: "t10a", module: "defi", refId: "x" });
+      eq("D · retorno sem quantidade soma na stable 1:1 (200 + 110)", bal("t10a", "USDT").qtd, 310);
+      /* E: conservação — o total em US$ continua sendo o saldo */
+      ["t10a", "t10b", "t10c"].forEach(function (wid) {
+        eq("E · soma dos ativos = saldo do livro (" + wid + ")", somaUsd(wid), CX7.saldo(wid));
+      });
+      /* F: o mesmo recorte por rede */
+      var redeB = CX7.caixaPorRede("t10b");
+      eq("F · por rede também não sobra ETH que virou posição",
+         redeB.reduce(function (s, g) { return s + g.ativos.reduce(function (t, a) { return t + (a.ativo === "ETH" ? a.qtd : 0); }, 0); }, 0), 0, 1e-9);
     }
   }
 
