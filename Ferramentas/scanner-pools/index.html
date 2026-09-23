@@ -653,7 +653,7 @@
       <div style="display:flex; align-items:flex-start; gap:10px">
         <div>
           <b style="font-size:13.5px">Puxar pools automaticamente</b>
-          <div class="keystatus" style="margin-top:2px">Busca os dados reais das pools — TVL, volume (média de 7 dias quando a fonte informa), taxa e APR — <b>sem chave e sem print</b>, e monta uma prévia editável logo abaixo. Uniswap/Raydium/Orca vêm da <b>DefiLlama</b> (com APR pronto); PancakeSwap (BNB, Base, Arbitrum, Robinhood) e Meteora vêm da <b>GeckoTerminal</b> (sem taxa/APR — complete à mão se quiser). O vol30d nenhuma fonte fornece; deixe em branco.</div>
+          <div class="keystatus" style="margin-top:2px">Busca os dados reais das pools — TVL, volume (média de 7 dias quando a fonte informa), taxa e APR — <b>sem chave e sem print</b>, e monta uma prévia editável logo abaixo. Uniswap, Raydium, Orca, Aerodrome, Camelot, Kamino, SushiSwap, Curve, QuickSwap, LFJ, Pharaoh, Cetus, HyperSwap, Project X e Ramses vêm da <b>DefiLlama</b> (com APR pronto); PancakeSwap, Meteora, Velodrome e THENA vêm da <b>GeckoTerminal</b> (sem APR; a taxa vem no nome quando a fonte informa). Redes: Solana, Base, Arbitrum, BNB Chain, Ethereum, Optimism, Polygon, Avalanche, Sui, HyperEVM e Robinhood. O vol30d nenhuma fonte fornece; deixe em branco.</div>
         </div>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
@@ -1348,7 +1348,10 @@ const VKEY = "estudo_pools_liquidez_versao";
    as pools novas do seed são ADICIONADAS às suas — nada do que já existe é apagado
    ou sobrescrito (favoritas, níveis, histórico e notas ficam intactos). */
 const DATA_VERSION = "2026-08-13";
-const PLAT_COLORS = {Raydium:"var(--ray)", PancakeSwap:"var(--pancake)", Uniswap:"var(--uni)", Orca:"var(--orca)", Meteora:"#9b7bff", Outra:"#8a94a8"};
+const PLAT_COLORS = {Raydium:"var(--ray)", PancakeSwap:"var(--pancake)", Uniswap:"var(--uni)", Orca:"var(--orca)", Meteora:"#9b7bff",
+  Aerodrome:"#3b82f6", Velodrome:"#ef4444", Camelot:"#f59e0b", THENA:"#a855f7", Kamino:"#22d3ee", SushiSwap:"#ec4899",
+  Curve:"#eab308", QuickSwap:"#418aca", LFJ:"#f97316", Pharaoh:"#d4a017", Cetus:"#10b981", HyperSwap:"#34d399",
+  "Project X":"#94a3b8", Ramses:"#f43f5e", Outra:"#8a94a8"};
 
 let state = {
   pools: [],
@@ -3198,21 +3201,35 @@ function findSimilarPool(cand){
    aplicá-los na tabela. Nenhuma chave de IA é usada aqui. */
 let llamaCache = null; // array cru de pools da última busca (cacheado na memória)
 
-/* Foco só nas redes e DEXes que você usa — mantém o filtro limpo e o "todas"
-   restrito a essas. label = como aparece no seu app; chain = como a DefiLlama
-   nomeia (BNB é "BSC", Robinhood é "Robinhood Chain"). */
+/* Redes e DEXes que o Scanner busca. label = como aparece no app (o mesmo
+   nome do módulo DeFi, para "Minhas pools" casar); chain = como a DefiLlama
+   nomeia — BNB é "BSC", Optimism é "OP Mainnet", HyperEVM é "Hyperliquid L1",
+   Robinhood é "Robinhood Chain". Conferido na API em 22/09/2026.
+
+   Set/2026: entraram Ethereum, Optimism, Polygon, Avalanche, Sui e HyperEVM,
+   e as DEXes do catálogo do DeFi que a DefiLlama cobre com volume. */
 const LLAMA_CHAINS = [
   {label:"Solana",    chain:"Solana"},
   {label:"Base",      chain:"Base"},
   {label:"Arbitrum",  chain:"Arbitrum"},
   {label:"BNB Chain", chain:"BSC"},
+  {label:"Ethereum",  chain:"Ethereum"},
+  {label:"Optimism",  chain:"OP Mainnet"},
+  {label:"Polygon",   chain:"Polygon"},
+  {label:"Avalanche", chain:"Avalanche"},
+  {label:"Sui",       chain:"Sui"},
+  {label:"HyperEVM",  chain:"Hyperliquid L1"},
   {label:"Robinhood", chain:"Robinhood Chain"}
 ];
-const MY_DEXES = ["Uniswap","Raydium","Orca","PancakeSwap","Meteora"]; // opções do dropdown
+const MY_DEXES = ["Uniswap","Raydium","Orca","PancakeSwap","Meteora",
+                  "Aerodrome","Velodrome","Camelot","THENA","Kamino","SushiSwap","Curve",
+                  "QuickSwap","LFJ","Pharaoh","Cetus","HyperSwap","Project X","Ramses"]; // opções do dropdown
 const LLAMA_CHAIN_LABEL     = Object.fromEntries(LLAMA_CHAINS.map(c=>[c.chain, c.label]));
 const LLAMA_ALLOWED_CHAINS   = new Set(LLAMA_CHAINS.map(c=>c.chain));
 // DEXes que a DefiLlama cobre bem (com volume + APR de taxa pronto)
-const LLAMA_ALLOWED_PROJECTS = new Set(["Uniswap","Raydium","Orca"]);
+const LLAMA_ALLOWED_PROJECTS = new Set(["Uniswap","Raydium","Orca",
+  "Aerodrome","Camelot","Kamino","SushiSwap","Curve","QuickSwap","LFJ","Pharaoh",
+  "Cetus","HyperSwap","Project X","Ramses"]);
 /* DEXes que a DefiLlama NÃO cobre com volume — puxadas da GeckoTerminal.
    net = slug da rede na Gecko; dexes = slugs do DEX naquela rede; label = rede no app. */
 const GECKO_SOURCES = {
@@ -3225,7 +3242,11 @@ const GECKO_SOURCES = {
   // Uniswap na Robinhood Chain não existe na DefiLlama (lá não há Uniswap nem volume);
   // a GeckoTerminal cobre com volume real. Uniswap em outras redes continua vindo da DefiLlama.
   "Uniswap":     [ {label:"Robinhood", net:"robinhood", dexes:["uniswap-v3-robinhood","uniswap-v2-robinhood","uniswap-v4-robinhood"]} ],
-  "Meteora":     [ {label:"Solana",    net:"solana", dexes:["meteora","meteora-damm-v2"]} ]
+  "Meteora":     [ {label:"Solana",    net:"solana", dexes:["meteora","meteora-damm-v2"]} ],
+  /* Velodrome e THENA não aparecem com volume na DefiLlama (conferido em
+     22/09/2026); a GeckoTerminal cobre. Slugs lidos de /networks/{rede}/dexes. */
+  "Velodrome":   [ {label:"Optimism",  net:"optimism", dexes:["velodrome-finance-slipstream","velodrome-slipstream-v2-optimism","velodrome-finance-v2"]} ],
+  "THENA":       [ {label:"BNB Chain", net:"bsc",      dexes:["thena-fusion","thena-v3","thena"]} ]
 };
 const GECKO_PROJECTS = new Set(Object.keys(GECKO_SOURCES));
 
@@ -3238,16 +3259,40 @@ function prettyProject(slug){
     "raydium-clmm":"Raydium","raydium-amm":"Raydium","raydium":"Raydium",
     "orca-dex":"Orca","orca":"Orca","orca-whirlpool":"Orca","orca-whirlpools":"Orca",
     "pancakeswap-amm-v3":"PancakeSwap","pancakeswap-amm":"PancakeSwap","pancakeswap-amm-v2":"PancakeSwap","pancakeswap":"PancakeSwap",
-    "meteora-dlmm":"Meteora","meteora-amm":"Meteora","meteora":"Meteora","meteora-dammv2":"Meteora"
+    "meteora-dlmm":"Meteora","meteora-amm":"Meteora","meteora":"Meteora","meteora-dammv2":"Meteora",
+    "aerodrome-slipstream":"Aerodrome","aerodrome-v1":"Aerodrome","aerodrome":"Aerodrome",
+    "velodrome-v2":"Velodrome","velodrome-v3":"Velodrome","velodrome-slipstream":"Velodrome",
+    "camelot-v2":"Camelot","camelot-v3":"Camelot",
+    "thena-v1":"THENA","thena-fusion":"THENA","thena":"THENA",
+    "kamino-liquidity":"Kamino",
+    "sushiswap":"SushiSwap","sushiswap-v3":"SushiSwap",
+    "curve-dex":"Curve",
+    "quickswap-dex":"QuickSwap","quickswap-v3":"QuickSwap",
+    "joe-v2.2":"LFJ","joe-v2.1":"LFJ","joe-v2":"LFJ","joe-dex":"LFJ",
+    "pharaoh-v3":"Pharaoh","pharaoh-exchange":"Pharaoh",
+    "cetus-clmm":"Cetus","cetus-amm":"Cetus",
+    "hyperswap-v3":"HyperSwap","hyperswap-v2":"HyperSwap",
+    "project-x":"Project X",
+    "ramses-cl-v2":"Ramses","ramses-v2":"Ramses"
   };
   if(map[s]) return map[s];
   return s.split("-").map(w=> w ? w.charAt(0).toUpperCase()+w.slice(1) : w).join(" ").trim() || "—";
 }
 
-/* poolMeta costuma vir "0.3%", "0.05%"... pega o primeiro número seguido de %. */
-function parseLlamaFee(pm){
+/* poolMeta costuma vir "0.3%", "0.05%"... pega o primeiro número seguido de %.
+   Sem taxa no poolMeta, AMMs v2 clássicos têm taxa FIXA conhecida — Uniswap v2
+   e SushiSwap v2 cobram 0,3% em toda pool. As outras (Curve, Camelot, LFJ,
+   QuickSwap, Kamino) variam por pool e ficam "taxa ?", nunca chutadas. */
+const TAXA_FIXA_V2 = { "uniswap-v2":0.3, "sushiswap":0.3 };
+/* A DefiLlama escreve a taxa da Cetus em PONTOS-BASE com "%" no fim: "25%"
+   é 25 bp = 0,25% (USDC/SUI, a pool padrão de 0,25%; "1%" é o 0,01% dos
+   pares de staking). Lida como porcentagem, dava taxa de 25% e APR de
+   milhares por cento. Conferido em 22/09/2026. */
+const TAXA_EM_BP = { "cetus-clmm":1, "cetus-amm":1 };
+function parseLlamaFee(pm, projeto){
   const m = String(pm==null?"":pm).match(/([\d.]+)\s*%/);
-  return m ? Number(m[1]) : 0;
+  if(m) return TAXA_EM_BP[String(projeto||"").toLowerCase()] ? Number(m[1])/100 : Number(m[1]);
+  return TAXA_FIXA_V2[String(projeto||"").toLowerCase()] || 0;
 }
 
 function fillLlamaSelect(sel, values, allLabel){
@@ -3463,7 +3508,7 @@ async function runLlamaSearch(){
         pool:     String(p.symbol||"").replace(/-/g,"/"),
         platform: prettyProject(p.project),
         network:  LLAMA_CHAIN_LABEL[p.chain] || p.chain || "—",
-        fee:      parseLlamaFee(p.poolMeta),
+        fee:      parseLlamaFee(p.poolMeta, p.project),
         tvl:      Math.round(p.tvlUsd||0),
         vol24h:   p.volumeUsd1d!=null ? Math.round(p.volumeUsd1d) : 0,
         vol7d:    p.volumeUsd7d!=null ? Math.round(p.volumeUsd7d) : null,
@@ -3780,7 +3825,7 @@ async function runAutoUpdate(){
         srcId:    "llama:"+p.pool,
         pool:     String(p.symbol||"").replace(/-/g,"/"),
         platform, network: LLAMA_CHAIN_LABEL[p.chain] || p.chain || "—",
-        fee:      parseLlamaFee(p.poolMeta),
+        fee:      parseLlamaFee(p.poolMeta, p.project),
         tvl:      Math.round(p.tvlUsd||0),
         vol24h:   p.volumeUsd1d!=null ? Math.round(p.volumeUsd1d) : 0,
         vol7d:    p.volumeUsd7d!=null ? Math.round(p.volumeUsd7d) : null,
