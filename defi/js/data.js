@@ -255,6 +255,53 @@
   }
 
   /* ------------------------------------------------------------
+     OUTRA ABA GRAVOU — A CÓPIA DESTA FICOU VELHA
+
+     O estado é lido UMA vez e mantido em _mem. Uma aba aberta antes de
+     outra registrar uma pool continuava mostrando o estado anterior —
+     e, pior, na primeira gravação (abrir uma pool, o painel atualizar
+     um preço) escrevia o estado velho INTEIRO por cima, apagando a
+     pool registrada na outra aba. Foi o que aconteceu com uma pool da
+     PancakeSwap: o caixa (que já escutava as outras abas) mostrava o
+     dinheiro, e a pool não aparecia.
+
+     Descartar _mem aqui garante que a próxima leitura e a próxima
+     gravação partam do que está no disco. A tela desta aba não se
+     redesenha sozinha, então o aviso oferece recarregar.
+     ------------------------------------------------------------ */
+  var _avisoExterno = false;
+  function avisarMudancaExterna() {
+    if (_avisoExterno || !global_.document || !document.body) return;
+    _avisoExterno = true;
+    var bar = document.createElement("div");
+    bar.setAttribute("role", "status");
+    bar.style.cssText = "position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9999;" +
+      "display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;background:#0C1626;" +
+      "border:1px solid rgba(0,240,255,.28);box-shadow:0 18px 50px rgba(0,0,0,.5);color:#E6F1FF;" +
+      "font-family:'Inter',system-ui,sans-serif;font-size:13.5px;max-width:92vw";
+    var txt = document.createElement("span");
+    txt.textContent = "As posições do DeFi mudaram em outra aba.";
+    var btn = document.createElement("button");
+    btn.type = "button"; btn.textContent = "Recarregar";
+    btn.style.cssText = "cursor:pointer;font:600 12.5px 'Inter',system-ui,sans-serif;color:#04121e;" +
+      "background:linear-gradient(135deg,#00BFFF,#00F0FF);border:none;border-radius:8px;padding:7px 12px";
+    btn.addEventListener("click", function () { location.reload(); });
+    var x = document.createElement("button");
+    x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Fechar");
+    x.style.cssText = "cursor:pointer;background:none;border:none;color:rgba(230,241,255,.55);font-size:18px;line-height:1;padding:0 2px";
+    x.addEventListener("click", function () { if (bar.parentNode) bar.parentNode.removeChild(bar); _avisoExterno = false; });
+    bar.appendChild(txt); bar.appendChild(btn); bar.appendChild(x);
+    document.body.appendChild(bar);
+  }
+  try {
+    global_.addEventListener("storage", function (ev) {
+      if (!ev || ev.key !== KEY) return;
+      _mem = null;
+      avisarMudancaExterna();
+    });
+  } catch (e) {}
+
+  /* ------------------------------------------------------------
      COTAÇÃO CONHECIDA NESTA PÁGINA
 
      { SIMBOLO: precoUSD }. Não é persistido de propósito: preço
