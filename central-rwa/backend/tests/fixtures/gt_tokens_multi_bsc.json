@@ -1,0 +1,66 @@
+{
+ "data": [
+  {
+   "id": "bsc_0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+   "type": "token",
+   "attributes": {
+    "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "name": "Wrapped BNB",
+    "symbol": "WBNB",
+    "decimals": 18,
+    "image_url": "https://coin-images.coingecko.com/coins/images/12591/large/binance-coin-logo.png?1696512401",
+    "coingecko_coin_id": "wbnb",
+    "total_supply": "1569708837446796309663357.0",
+    "normalized_total_supply": "1569708.8374468",
+    "price_usd": "767.59",
+    "fdv_usd": "1204815859.8994",
+    "total_reserve_in_usd": "671926312.427838540034441366604089303612580956804996235985317264349253539711389962501406842165215912",
+    "volume_usd": {
+     "h24": "635713055.327038"
+    },
+    "market_cap_usd": "1204624612.19741"
+   },
+   "relationships": {
+    "top_pools": {
+     "data": [
+      {
+       "id": "bsc_0x172fcd41e0913e95784454622d1c3724f546f849",
+       "type": "pool"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "bsc_0xe747e54783ba3f77a8e5251a3cba19ebe9c0e197",
+   "type": "token",
+   "attributes": {
+    "address": "0xe747e54783ba3f77a8e5251a3cba19ebe9c0e197",
+    "name": "TAKE",
+    "symbol": "TAKE",
+    "decimals": 18,
+    "image_url": "https://coin-images.coingecko.com/coins/images/68577/large/overtake.png?1756118725",
+    "coingecko_coin_id": "overtake",
+    "total_supply": "143458296020624420000000000.0",
+    "normalized_total_supply": "143458296.020624",
+    "price_usd": "0.09502570092",
+    "fdv_usd": "13632225.1274626",
+    "total_reserve_in_usd": "200860.50281999036830305979257221507797137453165362522",
+    "volume_usd": {
+     "h24": "67176405.2431498"
+    },
+    "market_cap_usd": "33479402.1150617"
+   },
+   "relationships": {
+    "top_pools": {
+     "data": [
+      {
+       "id": "bsc_0x46bb9a29bfa5397b30a96a316875496ec2556dd2",
+       "type": "pool"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

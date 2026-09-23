@@ -1,0 +1,55 @@
+{
+ "data": {
+  "id": "bsc_0xe747e54783ba3f77a8e5251a3cba19ebe9c0e197",
+  "type": "token",
+  "attributes": {
+   "address": "0xe747e54783ba3f77a8e5251a3cba19ebe9c0e197",
+   "name": "TAKE",
+   "symbol": "TAKE",
+   "decimals": 18,
+   "image_url": "https://coin-images.coingecko.com/coins/images/68577/large/overtake.png?1756118725",
+   "image": {
+    "thumb": "https://coin-images.coingecko.com/coins/images/68577/thumb/overtake.png?1756118725",
+    "small": "https://coin-images.coingecko.com/coins/images/68577/small/overtake.png?1756118725",
+    "large": "https://coin-images.coingecko.com/coins/images/68577/large/overtake.png?1756118725"
+   },
+   "banner_image_url": null,
+   "coingecko_coin_id": "overtake",
+   "websites": [
+    "https://overtake.world"
+   ],
+   "discord_url": null,
+   "farcaster_url": null,
+   "zora_url": null,
+   "telegram_handle": "overtake_world",
+   "twitter_handle": "overtake_world",
+   "description": "Game asset trading is massive but broken. It is dominated by fragmented platforms, high fees, and unsafe peer to peer deals.\n\nPlayers who create value should own it. Ownership must be verifiable, transferable, and secure.\n\nOVERTAKE introduces a smart contract based marketplace built for trustless trading, real ownership, and scalable player economies.",
+   "gt_score": 83.28358208955223,
+   "gt_score_details": {
+    "pool": 82.667,
+    "transaction": 100,
+    "creation": 100,
+    "info": 100,
+    "holders": 70
+   },
+   "gt_verified": true,
+   "categories": [],
+   "gt_category_ids": [],
+   "holders": {
+    "count": 21153,
+    "distribution_percentage": {
+     "top_10": "94.6849",
+     "11_30": "2.5734",
+     "31_50": "1.2235",
+     "rest": "1.5182"
+    },
+    "last_updated": "2026-09-23T21:44:32Z"
+   },
+   "mint_authority": null,
+   "freeze_authority": null,
+   "is_honeypot": false,
+   "developer_address": null,
+   "developer_holding_percentage": null
+  }
+ }
+}

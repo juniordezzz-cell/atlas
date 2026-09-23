@@ -1,0 +1,55 @@
+{
+ "data": {
+  "id": "bsc_0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+  "type": "token",
+  "attributes": {
+   "address": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+   "name": "Wrapped BNB",
+   "symbol": "WBNB",
+   "decimals": 18,
+   "image_url": "https://coin-images.coingecko.com/coins/images/12591/large/binance-coin-logo.png?1696512401",
+   "image": {
+    "thumb": "https://coin-images.coingecko.com/coins/images/12591/thumb/binance-coin-logo.png?1696512401",
+    "small": "https://coin-images.coingecko.com/coins/images/12591/small/binance-coin-logo.png?1696512401",
+    "large": "https://coin-images.coingecko.com/coins/images/12591/large/binance-coin-logo.png?1696512401"
+   },
+   "banner_image_url": null,
+   "coingecko_coin_id": "wbnb",
+   "websites": [
+    "https://www.binance.org"
+   ],
+   "discord_url": null,
+   "farcaster_url": null,
+   "zora_url": null,
+   "telegram_handle": null,
+   "twitter_handle": null,
+   "description": "Wrapped BNB a wrapped version of the BNB native tokens on the BEP-20 standard on the Binance Smart Chain and other EVM-compatible chains. Not to be confused with BNB Native Token on the BSC Chain.",
+   "gt_score": 88.05970149253731,
+   "gt_score_details": {
+    "pool": 93.333,
+    "transaction": 100,
+    "creation": 100,
+    "info": 100,
+    "holders": 70
+   },
+   "gt_verified": true,
+   "categories": [],
+   "gt_category_ids": [],
+   "holders": {
+    "count": 6660905,
+    "distribution_percentage": {
+     "top_10": "47.4187",
+     "11_30": "8.7901",
+     "31_50": "4.203",
+     "rest": "39.5882"
+    },
+    "last_updated": "2026-09-23T22:12:51Z"
+   },
+   "mint_authority": null,
+   "freeze_authority": null,
+   "is_honeypot": false,
+   "developer_address": null,
+   "developer_holding_percentage": null
+  }
+ }
+}
