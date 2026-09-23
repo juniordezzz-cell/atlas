@@ -73,7 +73,17 @@
 
     // topbar — sem o botão de menu do ATLAS: o app é autônomo e o título
     // faz o papel de marca ("Finanças").
+    /* "Voltar ao Atlas": só quando o app está servido DENTRO do ATLAS
+       (…/Ferramentas/…). No APK não existem as páginas do ATLAS, e o link
+       daria em página inexistente. Leva à bancada de Ferramentas, que é
+       de onde o app foi aberto. */
+    const dentroDoAtlas = /\/Ferramentas\//i.test(location.pathname);
+    const voltar = dentroDoAtlas
+      ? `<a class="fx-back-atlas" href="../../../pages/ferramentas.html" aria-label="Voltar ao Atlas" title="Voltar ao Atlas">
+           <span aria-hidden="true">‹</span><span class="fx-back-atlas__txt">Voltar ao Atlas</span></a>`
+      : "";
     const topbar = `<header class="fx-topbar">
+        ${voltar}
         <div class="fx-title"><h1>${opts.title || "Finanças"}</h1><p>${opts.subtitle || ""}</p></div>
         <div class="fx-topbar-actions">
           <a class="fx-settings${active === "configuracoes" ? " is-active" : ""}" href="configuracoes.html" aria-label="Configurações">⚙</a>

@@ -144,7 +144,33 @@ a { color: inherit; }
   cursor: pointer;
 }
 
-.fx-title { min-width: 0; }
+.fx-title { min-width: 0; flex: 1; }
+
+/* "Voltar ao Atlas" (js/ui/shell.js) — só aparece com o app servido dentro
+   do ATLAS. Discreto, do tamanho dos botões da barra; no celular vira só a
+   seta, para não empurrar o título. */
+.fx-back-atlas {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--card-borda);
+  color: var(--texto-suave);
+  font-size: .82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color var(--atlas-dur) var(--atlas-ease), color var(--atlas-dur) var(--atlas-ease);
+}
+.fx-back-atlas span:first-child { font-size: 1.1rem; line-height: 1; }
+.fx-back-atlas:hover { border-color: var(--card-borda-forte); color: var(--texto); }
+@media (max-width: 640px) {
+  .fx-back-atlas { width: 36px; padding: 0; justify-content: center; }
+  .fx-back-atlas__txt { display: none; }
+}
 
 .fx-title h1 {
   margin: 0;

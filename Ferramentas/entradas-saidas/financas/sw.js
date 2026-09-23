@@ -36,7 +36,9 @@
 // o Planejar gera o ano inteiro e os cards somavam tudo — R$ 12.000 de
 // "entradas" em setembro para um salário de R$ 1.000. Sem o bump, quem já
 // instalou continuaria vendo os números errados.
-const CACHE = "financas-v8";
+//
+// v9 = botão "Voltar ao Atlas" na barra (js/ui/shell.js + css/financas.css).
+const CACHE = "financas-v9";
 
 const ASSETS = [
   "index.html",

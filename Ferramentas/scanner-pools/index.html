@@ -192,6 +192,10 @@
   .brand{display:flex; align-items:center; gap:9px; font-size:17px; font-weight:800; letter-spacing:.3px; flex:none}
   .brand-dot{width:11px; height:11px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px rgba(91,140,255,.18), 0 0 14px rgba(91,140,255,.55)}
   .addbtn{padding:9px 14px}
+  .back-atlas{flex:none; display:inline-flex; align-items:center; gap:5px; height:32px; padding:0 11px 0 9px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel); color:var(--mut); font-size:12.5px; font-weight:600; text-decoration:none; margin-right:-12px}
+  .back-atlas span:first-child{font-size:17px; line-height:1}
+  .back-atlas:hover{color:var(--txt); border-color:rgba(160,185,230,.25)}
   @media(max-width:640px){
     .topbar{gap:10px; overflow-x:auto; scrollbar-width:none}
     .topbar::-webkit-scrollbar{display:none}
@@ -199,8 +203,13 @@
   }
   /* celular: o nome sai e fica o ponto — senão a 4ª aba (Guia) ficava fora
      da tela, numa rolagem sem barra que ninguém percebe */
+  /* até 640px: a seta de voltar substitui o nome, senão a 4ª aba sai da tela */
+  @media(max-width:640px){
+    .back-atlas{width:32px; padding:0; justify-content:center; margin-right:0}
+    .back-atlas__txt{display:none}
+    .brand{display:none}
+  }
   @media(max-width:480px){
-    .brand{font-size:0; gap:0}
     .topbar{gap:6px}
     .topbar .tab{padding:14px 8px}
   }
@@ -633,6 +642,8 @@
 <div class="wrap">
 
   <header class="topbar">
+    <!-- Voltar ao Atlas: leva à bancada de Ferramentas, de onde o Scanner é aberto -->
+    <a class="back-atlas" href="../../pages/ferramentas.html" aria-label="Voltar ao Atlas" title="Voltar ao Atlas"><span aria-hidden="true">‹</span><span class="back-atlas__txt">Atlas</span></a>
     <div class="brand"><span class="brand-dot"></span>Scanner Pools</div>
     <nav class="tabs">
       <button class="tab on" data-tab="dash" onclick="switchTab('dash')">Descobrir</button>
