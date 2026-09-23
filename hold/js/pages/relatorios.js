@@ -74,14 +74,8 @@
     row(dl, "Comprado / apurado em vendas (Hold)",
         U.money(mov.aporte, 0) + " / " + U.money(mov.retorno, 0));
     row(dl, "Posições ativas", String(c.posicoes));
-    /* Antes: "ativas / revisão / total" com c.teses_revisao, que NUNCA
-       existiu em Store.get.counts() — o relatório imprimia literalmente
-       "3 / undefined / 5". "Em revisão" também não é mais um estado do
-       sistema: os status oficiais da entidade compartilhada de Teses são
-       planejada, andamento, concluída e arquivada. A linha passa a
-       mostrar os três números que existem de fato. */
-    row(dl, "Teses (planejadas / em andamento / total)",
-        c.teses_planejadas + " / " + c.teses_andamento + " / " + c.teses);
+    row(dl, "Resultado realizado em vendas",
+        U.money(S.get.realizado ? S.get.realizado() : 0, 0));
     row(dl, "Watchlist", String(c.watchlist));
     var summaryCard = U.card({ eyebrow: "Resumo executivo", title: "Panorama do portfólio", body: [dl] });
     view.appendChild(summaryCard);
@@ -89,15 +83,11 @@
     // posições detalhadas
     var posCols = [
       { head: "Ativo", render: function (p) { return U.assetCell(S.get.asset(p.ativo_id)); } },
-      { head: "Tese", render: function (p) { var t = S.get.thesisOfAsset(p.ativo_id); return t ? U.badge(t.status) : U.el("span", { class: "badge plain", text: "—" }); } },
-      S.get.config("mostrar_conviccao")
-        ? { head: "Convicção", render: function (p) { var a = S.get.asset(p.ativo_id); return U.convictionMini(a.conviccao); } }
-        : null,
       { head: "Valor", right: true, render: function (p) { return U.el("span", { class: "num", text: U.money(S.get.positionValue(p), 0) }); } },
       { head: "PnL", right: true, render: function (p) { var v = S.get.positionPnL(p); return U.el("span", { class: "num " + U.signClass(v), text: U.money(v, 0) }); } },
       { head: "Peso", right: true, render: function (p) { return U.el("span", { class: "num", text: S.get.positionWeight(p).toFixed(0) + "%" }); } }
-    ].filter(Boolean);
-    var posCard = U.card({ eyebrow: "Detalhamento", title: "Posições e fundamentos", tight: true,
+    ];
+    var posCard = U.card({ eyebrow: "Detalhamento", title: "Posições", tight: true,
       body: [S.get.walletPositions().length
         ? U.table(posCols, S.get.walletPositions().slice().sort(function (x, y) {
             return S.get.positionValue(y) - S.get.positionValue(x);
@@ -108,51 +98,25 @@
     posCard.classList.add("mt-16");
     view.appendChild(posCard);
 
-    /* ------------------------------------------------------------
-       "TESES QUE EXIGEM AÇÃO" ACUSAVA TODAS ELAS
-
-       O filtro era `t.status !== "active"`, e "active" deixou de ser um
-       status quando as Teses viraram entidade compartilhada — os
-       status são planejada, andamento, concluida e arquivada. Como
-       nenhuma tese é "active", TODAS caíam na lista de pendências, cada
-       uma rotulada "Tese em revisão", inclusive as em andamento e as
-       concluídas. Um relatório para revisão periódica abrindo com
-       "estas exigem ação: todas" não é rigor, é ruído — e ruído nesse
-       lugar ensina a ignorar a seção inteira.
-
-       Exigir ação é o que os alertas do módulo já definem: tese
-       PLANEJADA (parada na fila) e tese ARQUIVADA com posição viva.
-       Em andamento é o estado saudável; concluída já foi para o
-       Academy.
-       ------------------------------------------------------------ */
-    var attention = S.state.teses.filter(function (t) {
-      if (t.status === "planejada") return true;
-      if (t.status === "arquivada") {
-        var a = S.get.asset(t.ativo_id);
-        return !!(a && S.get.statusDe(a) === "invested");
-      }
-      return false;
-    });
+    /* Pontos de atenção = os alertas do módulo, a mesma regra que o
+       Painel mostra (Store.get.alerts). Um relatório que inventasse o
+       próprio critério passaria a discordar do Painel. */
+    var alertas = S.get.alerts();
     var attBody;
-    if (attention.length) {
+    if (alertas.length) {
       var tl = U.el("div", { class: "timeline" });
-      attention.forEach(function (t) {
-        var a = S.get.asset(t.ativo_id);
-        var arq = t.status === "arquivada";
-        var item = U.el("div", { class: "tl-item " + (arq ? "sell" : "thesis") });
-        item.innerHTML = '<div class="tl-dot">' + U.icon(arq ? "alert" : "refresh") + '</div>';
+      alertas.forEach(function (al) {
+        var item = U.el("div", { class: "tl-item " + (al.level === "crit" ? "sell" : "") });
+        item.innerHTML = '<div class="tl-dot">' + U.icon("alert") + '</div>';
         var head = U.el("div", { class: "tl-head" });
-        head.appendChild(U.el("span", { class: "tl-title",
-          text: (a ? a.ticker : t.titulo || "—") + " · " +
-                (arq ? "Tese arquivada com posição aberta" : "Tese planejada, análise não iniciada") }));
-        head.appendChild(U.badge(t.status));
+        head.appendChild(U.el("span", { class: "tl-title", text: al.title }));
         item.appendChild(head);
-        item.appendChild(U.el("div", { class: "tl-body", text: t.criterios_invalidacao || t.narrativa || "—" }));
+        item.appendChild(U.el("div", { class: "tl-body", text: al.sub }));
         tl.appendChild(item);
       });
       attBody = tl;
-    } else attBody = U.empty("shield", "Sem pendências", "Nenhuma tese parada na fila nem posição sustentada por tese arquivada.");
-    var attCard = U.card({ eyebrow: "Pontos de atenção", title: "Teses que exigem ação", body: [attBody] });
+    } else attBody = U.empty("shield", "Sem pendências", "Nenhuma posição acima do limite de concentração.");
+    var attCard = U.card({ eyebrow: "Monitoramento", title: "Pontos de atenção", body: [attBody] });
     attCard.classList.add("mt-16");
     view.appendChild(attCard);
 
@@ -172,15 +136,12 @@
   function exportCSV() {
     if (!window.AtlasExport) return;
     var X = AtlasExport;
-    var linhas = [["Ativo", "Ticker", "Tese", "Convicção", "Quantidade",
+    var linhas = [["Ativo", "Ticker", "Quantidade",
                    "Valor (USD)", "Custo (USD)", "PnL (USD)", "Peso (%)"]];
     S.get.walletPositions().forEach(function (p) {
       var a = S.get.asset(p.ativo_id) || {};
-      var t = S.get.thesisOfAsset(p.ativo_id);
       linhas.push([
         a.nome || "", a.ticker || "",
-        t ? t.status : "",
-        a.conviccao != null ? a.conviccao : "",
         X.numero(p.quantidade),
         X.numero(S.get.positionValue(p)),
         X.numero(S.get.positionCost(p)),

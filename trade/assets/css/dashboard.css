@@ -12,7 +12,7 @@
 /* Grelha principal: gráfico grande + coluna de KPIs */
 .dash__top { display: grid; grid-template-columns: 1.7fr 1fr; gap: var(--sp-5); align-items: stretch; }
 .dash__kpis { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-5); }
-.dash__row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5); align-items: start; }
+.dash__row { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-5); align-items: start; }
 
 @media (max-width: 1080px) {
   .dash__top { grid-template-columns: 1fr; }

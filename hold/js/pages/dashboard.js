@@ -58,8 +58,7 @@
     var c = S.get.counts();
     var val = S.get.portfolioValue(), pnl = S.get.portfolioPnL(), pnlPct = S.get.portfolioPnLPct();
     var serie = serieMedida(90), medidos = diasMedidos(serie);
-    var invested = S.state.ativos.filter(function (a) { return S.get.statusDe(a) === "invested"; });
-    var avgConv = invested.length ? invested.reduce(function (s, a) { return s + a.conviccao; }, 0) / invested.length : 0;
+    var realizado = S.get.realizado ? S.get.realizado() : 0;
 
     var carteira = S.wallets.active();
     var caixa = (window.AtlasCaixa && carteira) ? AtlasCaixa.saldo(carteira.id) : null;
@@ -72,11 +71,10 @@
       U.el("div", { class: "row" }, [
         U.el("div", { class: "grow" }, [
           U.el("h1", { text: "Painel" }),
-          U.el("p", { text: "Visão consolidada da carteira, teses e decisões de longo prazo." })
-        ]),
-        U.button("Nova tese", { variant: "secondary", icon: "doc", onClick: function () { F.newThesis(); } })
+          U.el("p", { text: "Visão consolidada da carteira e das decisões de longo prazo." })
+        ])
         /* "Registrar operação" saiu daqui: ele abria a compra do
-           PRIMEIRO ativo com tese da lista — `inv[0]` —, e não do ativo
+           PRIMEIRO ativo da lista — `inv[0]` —, e não do ativo
            que a pessoa queria operar. Num painel, um botão que escolhe
            sozinho em qual ativo você vai colocar dinheiro é pior que
            nenhum. A compra continua onde ela tem contexto: na página do
@@ -87,7 +85,7 @@
     /* ------------------------------------------------------------
        AÇÕES RÁPIDAS
 
-       O painel tinha DOIS botões: "Nova tese" e "Ver histórico". Todo
+       O painel tinha só dois botões de atalho. Todo
        o resto — cadastrar ativo, comprar, atualizar preço, depositar —
        exigia navegar até outra tela para só então achar o botão. Um
        painel é onde se decide; se decidir custa três telas, ele vira
@@ -137,7 +135,10 @@
     kpis.appendChild(U.kpi({ icon: "coins", label: "Caixa disponível",
       value: caixa == null ? "—" : U.money(caixa, 0),
       sub: carteira ? "em " + carteira.name : "sem carteira" }));
-    kpis.appendChild(U.kpi({ icon: "target", label: "Convicção média", value: avgConv.toFixed(1) + " / 10", sub: c.teses_ativas + " teses ativas" }));
+    /* O lucro das vendas já feitas: sai da posição e fica no caixa,
+       então nenhum dos três números acima o mostra. */
+    kpis.appendChild(U.kpi({ icon: "target", label: "Resultado realizado", value: U.money(realizado, 0),
+      sub: "em vendas nesta carteira" }));
     view.appendChild(kpis);
 
     /* performance + allocation */
@@ -206,8 +207,8 @@
 
        Cada alerta já sabia de qual ativo fala (`a.asset`) e a
        informação era jogada fora: a linha era um <div> morto. "SOL
-       está investido sem tese vinculada" e nenhum caminho para
-       resolver — a pessoa lia, ia para Ativos, procurava SOL na lista
+       representa 62% da carteira" e nenhum caminho para resolver — a
+       pessoa lia, ia para Ativos, procurava SOL na lista
        e só então agia. Alerta que não leva à ação é decoração de
        gravidade.
        ------------------------------------------------------------ */
@@ -234,7 +235,7 @@
         alertBody.appendChild(row);
       });
     } else {
-      alertBody.appendChild(U.empty("shield", "Tudo em ordem", "Nenhum alerta de tese ou concentração no momento."));
+      alertBody.appendChild(U.empty("shield", "Tudo em ordem", "Nenhuma posição acima do limite de concentração."));
     }
     var alertCard = U.card({ eyebrow: "Monitoramento", title: "Alertas",
       action: al.length ? U.el("span", { class: "badge " + (al.some(function (x) { return x.level === "crit"; }) ? "invalid" : "review") },
@@ -310,9 +311,9 @@
 
   function historyItem(h) {
     var a = S.get.asset(h.ativo_id);
-    var kind = h.subtipo === "buy" ? "buy" : h.subtipo === "sell" ? "sell" : h.subtipo === "thesis" ? "thesis" : h.subtipo === "study" ? "study" : "";
+    var kind = h.subtipo === "buy" ? "buy" : h.subtipo === "sell" ? "sell" : "";
     var item = U.el("div", { class: "tl-item " + kind });
-    item.innerHTML = '<div class="tl-dot">' + U.icon(h.subtipo === "buy" ? "arrowUp" : h.subtipo === "sell" ? "arrowDown" : h.subtipo === "thesis" ? "doc" : "check") + '</div>';
+    item.innerHTML = '<div class="tl-dot">' + U.icon(h.subtipo === "buy" ? "arrowUp" : h.subtipo === "sell" ? "arrowDown" : "check") + '</div>';
     var head = U.el("div", { class: "tl-head" });
     head.appendChild(U.el("span", { class: "tl-title", text: (a ? a.ticker + " · " : "") + labelAction(h.tipo_acao) }));
     head.appendChild(U.el("span", { class: "tl-time", text: U.dateTime(h.data) }));
@@ -322,8 +323,7 @@
   }
   function labelAction(t) {
     return {
-      TRADE_EXECUTED: "Operação executada", THESIS_CREATED: "Tese criada", THESIS_UPDATED: "Tese revisada",
-      ASSET_CREATED: "Ativo adicionado", STUDY_CREATED: "Estudo criado", STUDY_CONVERTED: "Estudo convertido",
+      TRADE_EXECUTED: "Operação executada", ASSET_CREATED: "Ativo adicionado",
       POSITION_UPDATED: "Posição atualizada"
     }[t] || t;
   }

@@ -82,10 +82,9 @@
 <script src="js/performance.js"></script>
 <script src="js/data.js"></script>
 <script src="js/utils.js"></script>
-<!-- Hold: a entidade de Teses e o store do módulo. Sem colisão de nome —
+<!-- Hold: o store do módulo. Sem colisão de nome —
      o DeFi publica DeFiStore, o Hold publica Store. Ver grupo 22. -->
 <script src="../core/atlas-contabilidade.js"></script>
-<script src="../core/entities/theses.js"></script>
 <script src="../hold/js/state.js"></script>
 <script>
 /* ============================================================
@@ -119,12 +118,11 @@
      agora registra aporte e retorno no livro de caixa, então rodar a
      bateria sem restaurar essa chave mexeria no dinheiro real do
      usuário. */
-  /* As três do Hold entram por causa do grupo 22, que cria ativos,
-     compra, vende e grava tese — tudo em cima das mesmas chaves reais
-     do usuário. */
+  /* As do Hold entram por causa do grupo 22, que cria ativos, compra
+     e vende — tudo em cima das mesmas chaves reais do usuário. */
   var CHAVES = ["atlas.defi.state.v3", "atlas.defi.wallet.v1", "atlas.defi.poolDraft.v1",
                 "atlas.precos.manual.v1", "atlas.caixa.v1",
-                "atlas.hold.state.v2", "atlas.hold.wallet.v1", "atlas.theses.v1",
+                "atlas.hold.state.v2", "atlas.hold.wallet.v1",
                 "atlas.snapshots.v1"];
   var grupos = [], atual = null, passou = 0, falhou = 0;
 
@@ -1006,8 +1004,7 @@
     /* ============================================================
        A auditoria do Hold encontrou defeitos que a tela nunca
        denunciaria: um ativo "investido" sem possuir nada, uma venda a
-       preço zero levando o capital embora, um relatório acusando
-       todas as teses de exigirem ação. Todos passam despercebidos
+       preço zero levando o capital embora. Todos passam despercebidos
        porque o resultado na tela continua plausível — é a mesma
        assinatura que motivou esta bateria a existir.
        ============================================================ */
@@ -1018,7 +1015,6 @@
       var H = window.Store, CX3 = window.AtlasCaixa;
       try {
         localStorage.removeItem("atlas.hold.state.v2");
-        localStorage.removeItem("atlas.theses.v1");
         localStorage.removeItem("atlas.caixa.v1");
         /* O livro de medições também — e a falta dele aqui era um
            defeito DESTE arquivo, não do produto. O caso "carteira
@@ -1071,10 +1067,10 @@
       eq("(estado restaurado: caixa 500 + venda 800 − 800 de volta)", CX3.saldo(wH), 1300);
       CX3.registrar({ tipo: "saque", valorUSD: 800, walletId: wH });
 
-      /* -- a tese não bloqueia, mas é cobrada -- */
-      ok("comprar sem tese é permitido", !!compra.position, "permitido");
-      ok("e o alerta cobra a tese", H.get.alerts().some(function (a) { return a.title === "Posição sem tese"; }),
-         H.get.alerts().map(function (a) { return a.title; }).join(", "));
+      /* -- o ATLAS não tem mais teses: nada cobra uma -- */
+      ok("nenhum alerta do Hold fala em tese",
+         !H.get.alerts().some(function (a) { return /tese/i.test(a.title + " " + a.sub); }),
+         H.get.alerts().map(function (a) { return a.title; }).join(", ") || "sem alertas");
 
       /* -- venda a preço zero: o defeito que fazia o capital evaporar -- */
       var vZero = H.actions.executeSell({ ativo_id: sol.id, quantidade: 5, preco: 0, motivo: "realizacao" });
@@ -1184,11 +1180,8 @@
       /* ------------------------------------------------------------
          PREFERÊNCIAS QUE NÃO PREFERIAM NADA
 
-         Configurações → Hold oferecia "Alertar teses invalidadas",
-         "Alertar teses em revisão" e "Mostrar convicção nas listas".
-         NENHUMA era lida por uma linha do módulo: ligar ou desligar não
-         mudava nada. E as duas primeiras nomeavam status que sumiram
-         quando as Teses viraram entidade compartilhada.
+         Configurações → Hold oferecia interruptores que NENHUMA linha
+         do módulo lia: ligar ou desligar não mudava nada.
 
          Um controle que não controla é pior que um ausente — a pessoa
          desliga o alerta, continua vendo o alerta e conclui que o
@@ -1214,35 +1207,41 @@
       H.state.config.limite_concentracao = 40;
       ok("voltando a 40, 98% é concentração", H.get.concentrada(98) === true, "sim");
 
-      ok("o alerta de posição sem tese existe",
-         H.get.alerts().some(function (a) { return a.title === "Posição sem tese"; }), "existe");
-      H.state.config.alerta_sem_tese = false;
-      ok("e obedece à preferência",
-         !H.get.alerts().some(function (a) { return a.title === "Posição sem tese"; }), "silenciou");
-      H.state.config.alerta_sem_tese = true;
-
       /* ------------------------------------------------------------
-         AS DUAS AÇÕES DE TESE QUE FUGIAM DO STORE
+         O CONCEITO DE TESE SAIU DO ATLAS
 
-         A tela chamava AtlasTheses.setStatus/reopen direto, então
-         "Iniciar" e "Reativar" não escreviam no histórico do módulo —
-         numa tela que se apresenta como "registro imutável de decisões:
-         toda ação do sistema deixa rastro aqui".
+         Nenhuma ação, nenhum seletor e nenhuma exigência de "motivo da
+         tese" na venda. E o que ficou gravado de antes sai na primeira
+         leitura: convicção no ativo, marca de "sem tese" na posição e
+         as linhas "Tese criada/revisada" do histórico.
          ------------------------------------------------------------ */
-      var tB = H.actions.createThesis({ ativo_id: solB.id, narrativa: "fila", status: "planejada", conviccao: 4 });
-      var histAntes = H.state.historico.length;
-      H.actions.startThesis(tB.id);
-      is("iniciar leva a tese ao andamento", H.get.thesis(tB.id).status, "andamento");
-      ok("e deixa rastro no histórico", H.state.historico.length > histAntes,
-         H.state.historico.length - histAntes + " linha(s)");
+      ["createThesis", "updateThesis", "startThesis", "reopenThesis", "concludeThesis", "archiveThesis"].forEach(function (k) {
+        is("Store.actions." + k + " não existe mais", typeof H.actions[k], "undefined");
+      });
+      ["thesis", "thesisOfAsset"].forEach(function (k) {
+        is("Store.get." + k + " não existe mais", typeof H.get[k], "undefined");
+      });
+      var vendaSemMotivo = H.actions.executeSell({ ativo_id: solB.id, quantidade: 1, preco: 110 });
+      ok("vender não exige mais motivo de tese", !!(vendaSemMotivo && vendaSemMotivo.position),
+         vendaSemMotivo && vendaSemMotivo.error ? vendaSemMotivo.error : "vendeu");
 
-      H.actions.archiveThesis(tB.id, "teste");
-      var histAntes2 = H.state.historico.length;
-      var reab = H.actions.reopenThesis(tB.id);
-      is("reativar volta ao andamento", reab.status, "andamento");
-      eq("subindo a versão", reab.version, 2);
-      ok("e também deixa rastro", H.state.historico.length > histAntes2,
-         H.state.historico.length - histAntes2 + " linha(s)");
+      var legado = JSON.parse(localStorage.getItem("atlas.hold.state.v2"));
+      legado.ativos[0].conviccao = 8; legado.ativos[0].tese_id = "th_x";
+      legado.carteira[0].semTese = true;
+      legado.historico.unshift({ id: "h_leg", tipo_acao: "THESIS_CREATED", subtipo: "thesis", ativo_id: legado.ativos[0].id, tese_id: "th_x" });
+      legado.config.alerta_sem_tese = true; legado.config.mostrar_conviccao = true;
+      localStorage.setItem("atlas.hold.state.v2", JSON.stringify(legado));
+      H.init();
+      ok("convicção e tese vinculada somem do ativo",
+         !H.state.ativos.some(function (a) { return "conviccao" in a || "tese_id" in a; }), "limpo");
+      ok("a marca de posição sem tese some",
+         !H.state.carteira.some(function (p) { return "semTese" in p; }), "limpo");
+      ok("e a linha \"Tese criada\" sai do histórico",
+         !H.state.historico.some(function (h) { return h.tipo_acao === "THESIS_CREATED"; }), "limpo");
+      ok("as preferências de tese saem da configuração",
+         !("alerta_sem_tese" in H.state.config) && !("mostrar_conviccao" in H.state.config), "limpo");
+      ok("e a limpeza foi gravada, não só feita em memória",
+         !/conviccao|THESIS_CREATED|semTese/.test(localStorage.getItem("atlas.hold.state.v2")), "gravada");
 
       /* ------------------------------------------------------------
          CÓDIGO MORTO QUE NÃO PODE VOLTAR
@@ -1867,6 +1866,30 @@
       });
       /* F: o mesmo recorte por rede */
       var redeB = CX7.caixaPorRede("t10b");
+      /* -- a conferência GLOBAL só vale onde os quatro módulos respondem --
+         Dentro de um módulo só o store dele é carregado. Somar o caixa
+         inteiro contra as posições de UM módulo acusava "não fecha" com
+         a diferença exata das posições dos outros — medido: US$ 960 de
+         Hold aparecendo como erro dentro do DeFi. */
+      if (window.AtlasSupervisor) {
+        var consAntes = window.AtlasConsolidation;
+        window.AtlasConsolidation = { snapshot: function () { return { caixa: 0, investido: 0, pnl: 0 }; } };
+        var gParcial = AtlasSupervisor._verificacoes.patrimonioGlobal();
+        eq("com módulo faltando na página, o patrimônio global não é afirmado", gParcial.length, 0);
+        /* e com os quatro respondendo, a mesma conta continua acusando */
+        var stubs = { ATLAS: window.ATLAS, RWAStore: window.RWAStore };
+        window.ATLAS = window.ATLAS || {}; window.RWAStore = window.RWAStore || {};
+        ["trade", "rwa", "hold", "defi"].forEach(function (m) {
+          if (!window.AtlasWalletLedger || !AtlasWalletLedger.hasLive(m)) {
+            AtlasWallets.registerLive(m, function (id) { return { id: id, module: m, valorAtual: 0, saldo: 0, capital: 0, assets: [] }; });
+          }
+        });
+        var gTodos = AtlasSupervisor._verificacoes.patrimonioGlobal();
+        eq("com os quatro módulos presentes, a divergência é acusada", gTodos.length, 1);
+        window.ATLAS = stubs.ATLAS; window.RWAStore = stubs.RWAStore;
+        window.AtlasConsolidation = consAntes;
+      }
+
       eq("F · por rede também não sobra ETH que virou posição",
          redeB.reduce(function (s, g) { return s + g.ativos.reduce(function (t, a) { return t + (a.ativo === "ETH" ? a.qtd : 0); }, 0); }, 0), 0, 1e-9);
     }

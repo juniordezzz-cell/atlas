@@ -113,9 +113,7 @@
       return U.toast("Não dá para excluir",
         a.ticker + " tem posição aberta. Venda primeiro — o apurado volta ao caixa da carteira.", "warning");
     }
-    var t = S.get.thesisOfAsset(a.id);
     var perdas = [{ icon: "layers", texto: "O ativo " + a.ticker + " (" + a.nome + ") sai da lista" }];
-    if (t) perdas.push({ icon: "doc", texto: "A tese vinculada é arquivada, com o motivo registrado" });
     if (a.precoFonte === "manual") perdas.push({ icon: "coins", texto: "O preço que você informou à mão é esquecido" });
 
     U.confirmar({
@@ -128,7 +126,7 @@
       onConfirm: function () {
         var r = S.actions.deleteAsset(a.id);
         if (r && r.error) return U.toast("Não foi possível", r.error, "warning");
-        U.toast("Ativo excluído", a.ticker + (r.teseArquivada ? " removido e tese arquivada." : " removido."), "success");
+        U.toast("Ativo excluído", a.ticker + " removido.", "success");
         if (location.hash.indexOf("id=" + a.id) >= 0) location.hash = "#/ativos";
         else window.Router.rerender();
       }
@@ -138,7 +136,6 @@
   function acoesDoAtivo(a, opts) {
     opts = opts || {};
     var pos = S.get.positionOf(a.id);
-    var t = S.get.thesisOfAsset(a.id);
     return [
       U.actionBtn("arrowUp", "Comprar " + a.ticker, function () { F.trade(a.id, "buy"); }, { primary: true }),
       U.actionBtn("arrowDown", "Vender " + a.ticker, pos ? function () { F.trade(a.id, "sell"); } : null,
@@ -146,8 +143,6 @@
       U.menuBtn(function () {
         return [
           { icon: "edit", label: "Editar ativo", onClick: function () { F.editAsset(a.id); } },
-          t ? { icon: "doc", label: "Revisar tese", onClick: function () { F.editThesis(t.id); } }
-            : { icon: "doc", label: "Criar tese", onClick: function () { F.newThesis(a.id); } },
           opts.semAbrir ? null : { icon: "eye", label: "Abrir ativo", onClick: function () { location.hash = "#/ativos?id=" + a.id; } },
           { sep: true },
           { icon: "trash", label: "Excluir ativo", danger: true,
@@ -168,10 +163,6 @@
     var carteira = S.wallets.active();
     var caixa = (window.AtlasCaixa && carteira) ? AtlasCaixa.saldo(carteira.id) : null;
 
-    var semTese = S.state.ativos.filter(function (a) {
-      return S.get.statusDe(a) === "invested" && !S.get.thesisOfAsset(a.id);
-    }).length;
-
     var strip = U.el("div", { class: "grid g-4" });
     strip.appendChild(U.kpi({ icon: "wallet", label: "Valor investido", value: U.compact(val),
       sub: c.posicoes + (c.posicoes === 1 ? " posição" : " posições") }));
@@ -182,9 +173,9 @@
     strip.appendChild(U.kpi({ icon: "coins", label: "Caixa disponível",
       value: caixa == null ? "—" : U.money(caixa, 0),
       sub: carteira ? "em " + carteira.name : "sem carteira" }));
-    strip.appendChild(U.kpi({ icon: semTese ? "alert" : "shield", label: "Posições sem tese",
-      value: String(semTese),
-      sub: semTese ? "documente para silenciar o alerta" : "toda posição tem fundamento" }));
+    strip.appendChild(U.kpi({ icon: "eye", label: "Na watchlist",
+      value: String(c.watchlist),
+      sub: c.watchlist === 1 ? "ativo cadastrado sem posição" : "ativos cadastrados sem posição" }));
     return strip;
   }
 
@@ -281,14 +272,6 @@
               U.el("span", { class: "small " + U.signClass(v), text: U.pct(S.get.positionPnLPct(p), 1) })
             ]);
           } },
-        /* Coluna opcional: Configurações → Hold → "Mostrar convicção
-           nas listas". A preferência existia e nenhuma tela a lia. */
-        S.get.config("mostrar_conviccao")
-          ? { key: "Convicção", head: "Convicção", sort: function (a) { return +a.conviccao || 0; },
-              render: function (a) { return U.convictionMini(a.conviccao); } }
-          : null,
-        { key: "Tese", head: "Tese", sort: function (a) { return S.get.thesisOfAsset(a.id) ? 1 : 0; },
-          render: function (a) { return S.get.thesisOfAsset(a.id) ? U.badge("andamento", "Documentada") : U.el("span", { class: "badge plain", text: "Pendente" }); } },
         { key: "Status", head: "Status", sort: function (a) { return S.get.statusDe(a); },
           render: function (a) { return U.badge(S.get.statusDe(a)); } },
         { key: "acoes", head: "", actions: true,
@@ -345,7 +328,7 @@
   }
 
   function detailView(id) {
-    var a = S.get.asset(id), t = S.get.thesisOfAsset(id), pos = S.get.positionOf(id);
+    var a = S.get.asset(id), pos = S.get.positionOf(id);
     var view = U.el("div");
 
     var carteira = S.wallets.active();
@@ -359,7 +342,6 @@
            botão "Atualizar preços" mandava a pessoa exatamente para
            cá quando nenhuma fonte reconhecia o ticker. */
         U.button("Editar", { variant: "ghost", icon: "edit", onClick: function () { F.editAsset(id); } }),
-        t ? U.button("Revisar tese", { variant: "secondary", icon: "edit", onClick: function () { F.editThesis(t.id); } }) : U.button("Criar tese", { variant: "secondary", icon: "doc", onClick: function () { F.newThesis(id); } }),
         pos ? U.button("Vender", { variant: "secondary", icon: "arrowDown", onClick: function () { F.trade(id, "sell"); } }) : null,
         U.button("Comprar", { variant: "primary", icon: "arrowUp", onClick: function () { F.trade(id, "buy"); } }),
         /* Excluir mora no menu, não ao lado de "Comprar". Ação que não
@@ -389,8 +371,6 @@
     hrow.appendChild(left);
     var selos = U.el("div", { class: "row-flex" });
     selos.appendChild(U.badge(S.get.statusDe(a)));
-    if (t) selos.appendChild(U.badge(t.status));
-    else selos.appendChild(U.el("span", { class: "badge plain", text: "Sem tese" }));
     hrow.appendChild(selos);
     header.appendChild(hrow);
 
@@ -402,8 +382,7 @@
     stats.appendChild(miniStatNode("Preço atual", precoNode));
     stats.appendChild(miniStat("Market cap", U.compact(a.market_cap)));
     stats.appendChild(miniStat("Categoria", a.categoria || "—"));
-    var convWrap = U.el("div"); convWrap.appendChild(U.conviction(a.conviccao));
-    stats.appendChild(miniStatNode("Convicção", convWrap));
+    stats.appendChild(miniStat("Setor", a.setor || "—"));
     header.appendChild(stats);
     view.appendChild(header);
 
@@ -411,7 +390,7 @@
        O CARTÃO DA POSIÇÃO, E O CARTÃO DE QUANDO NÃO HÁ POSIÇÃO
 
        Antes, sem posição, simplesmente não havia nada aqui — a tela
-       pulava do cabeçalho para a tese. E é justamente o momento em que
+       pulava do cabeçalho para o histórico. E é justamente o momento em que
        a pessoa está decidindo comprar: o número que ela precisa (o
        caixa) não estava em lugar nenhum.
        ------------------------------------------------------------ */
@@ -464,17 +443,6 @@
       view.appendChild(spCard);
     }
 
-    // thesis card
-    var thesisCard = U.card({ eyebrow: "Fundamento", title: "Tese de investimento",
-      action: t ? U.badge(t.status) : null,
-      /* O texto dizia "Documente a tese para habilitar a operação" —
-         a compra deixou de depender dela (quem barra é o caixa). O
-         convite continua; a falsa condição sai. */
-      body: [t ? thesisContent(t) : U.empty("doc", "Sem tese", "Este ativo não tem tese documentada. A compra não fica travada por isso, mas o alerta vai cobrar até ela existir.",
-        U.button("Criar tese", { variant: "primary", icon: "plus", onClick: function () { F.newThesis(id); } }))] });
-    thesisCard.classList.add("mt-16");
-    view.appendChild(thesisCard);
-
     // history for this asset
     var hs = S.state.historico.filter(function (h) { return h.ativo_id === id; });
     var tl = U.el("div", { class: "timeline" });
@@ -487,41 +455,6 @@
     return { title: a.nome, crumb: "Ativos · " + a.ticker, node: view };
   }
 
-  function thesisContent(t) {
-    var wrap = U.el("div");
-    wrap.appendChild(U.el("p", { style: "line-height:1.65", text: t.narrativa }));
-
-    wrap.appendChild(U.el("div", { class: "eyebrow mt-24", text: "Cenários", style: "margin-bottom:10px" }));
-    var sc = U.el("div", { class: "scenarios" });
-    [["bull", "Bull"], ["base", "Base"], ["bear", "Bear"]].forEach(function (o) {
-      sc.appendChild(U.el("div", { class: "scenario " + o[0] }, [
-        U.el("h4", { text: o[1] }), U.el("p", { text: t.cenarios[o[0]] || "—" })
-      ]));
-    });
-    wrap.appendChild(sc);
-
-    var two = U.el("div", { class: "grid g-2 mt-24" });
-    two.appendChild(chipBlock("Riscos", t.riscos, "risk"));
-    two.appendChild(chipBlock("Catalisadores", t.catalisadores, "cat"));
-    wrap.appendChild(two);
-
-    wrap.appendChild(U.el("div", { class: "eyebrow mt-24", text: "Critérios de invalidação", style: "margin-bottom:6px" }));
-    wrap.appendChild(U.el("p", { class: "dim", text: t.criterios_invalidacao || "—" }));
-
-    var conv = U.el("div", { class: "row-flex mt-24" });
-    conv.appendChild(U.el("span", { class: "eyebrow", text: "Convicção" }));
-    conv.appendChild(U.conviction(t.conviccao));
-    wrap.appendChild(conv);
-    return wrap;
-  }
-  function chipBlock(title, items, cls) {
-    var b = U.el("div");
-    b.appendChild(U.el("div", { class: "eyebrow", text: title, style: "margin-bottom:8px" }));
-    var chips = U.el("div", { class: "chips" });
-    (items && items.length ? items : ["—"]).forEach(function (i) { chips.appendChild(U.el("span", { class: "chip " + cls, text: i })); });
-    b.appendChild(chips);
-    return b;
-  }
   function miniStat(label, value) { return miniStatNode(label, U.el("span", { class: "num", text: value })); }
   function miniStatNode(label, node) {
     var d = U.el("div", { class: "stack" });

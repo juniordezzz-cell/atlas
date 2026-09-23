@@ -635,7 +635,7 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
 /* ---- Alertas: nível e origem ----
    Os alertas passaram a vir dos quatro módulos, com gravidade. Um
    triângulo amarelo igual para tudo achatava a diferença entre
-   "concentração de 41%" e "posição investida sem tese". */
+   "concentração de 41%" e "pool fora da faixa". */
 .alert-item.nivel-crit .alert-ic { background: rgba(255,84,112,0.12); color: var(--vermelho); }
 .alert-item.nivel-warn .alert-ic { background: var(--atlas-gold-soft);  color: var(--dourado); }
 .alert-item.nivel-info .alert-ic { background: rgba(0,191,255,0.10);  color: var(--atlas-accent-text); }

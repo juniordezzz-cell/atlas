@@ -29,14 +29,14 @@
   .sub{color:var(--mut); font-size:12.5px; margin:4px 0 0}
 
   /* explicação */
-  .thesis{
+  .logica{
     background:linear-gradient(180deg,#101725,#0d1320);
     border:1px solid var(--line); border-left:3px solid var(--accent);
     border-radius:12px; padding:14px 18px; margin:16px 0 20px; font-size:13px; color:#c3ccdb;
   }
-  .thesis b{color:var(--txt)}
-  .thesis code{background:#0a0f1a; border:1px solid var(--line); padding:2px 7px; border-radius:6px; color:#9fd0ff; font-size:12.5px}
-  .thesis .rule{color:var(--green); font-weight:600}
+  .logica b{color:var(--txt)}
+  .logica code{background:#0a0f1a; border:1px solid var(--line); padding:2px 7px; border-radius:6px; color:#9fd0ff; font-size:12.5px}
+  .logica .rule{color:var(--green); font-weight:600}
 
   /* stats por plataforma */
   .platstats{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px}
@@ -185,7 +185,7 @@
   details.logic summary::after{content:"▸"; font-size:11px}
   details.logic[open] summary::after{content:"▾"}
   details.logic summary:hover{color:var(--txt)}
-  details.logic .thesis{margin:8px 0 0}
+  details.logic .logica{margin:8px 0 0}
 
   /* barra do topo: marca + abas, fixa ao rolar */
   .topbar{position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:28px; background:rgba(10,14,23,.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--line); margin:-22px -18px 20px; padding:0 18px}
@@ -613,10 +613,10 @@
   select,input[type=text],input[type=number],textarea,.scantable input,.scantable select{border-color:rgba(160,185,230,.2)}
 
   /* contêineres: preenchidos, sem contorno, cantos mais redondos */
-  .thesis,.learn-hero,.scan-hero,.toc,.keybox,.scanitem,.histcard,.vscard,.fstep,.formula,
+  .logica,.learn-hero,.scan-hero,.toc,.keybox,.scanitem,.histcard,.vscard,.fstep,.formula,
   .hero-kpis div,.scan-step,.liveprev,.card,.alertbox,.radar-empty{
     border-color:transparent; border-radius:18px; box-shadow:none}
-  .thesis{border-left:0; background:var(--panel)}
+  .logica{border-left:0; background:var(--panel)}
   .learn-hero,.scan-hero{background:var(--panel)}
   .radar-empty{border-style:solid}
 
@@ -774,7 +774,7 @@
   </div>
     <details class="logic">
     <summary>ℹ️ Como ler o ranking</summary>
-    <div class="thesis">
+    <div class="logica">
     <b>A lógica:</b> o rendimento de fees é <code>APR = 365 × Fee × (Vol&nbsp;do&nbsp;dia / TVL)</code>, com o volume do dia pela <b>média de 7 dias</b> quando a fonte informa (etiqueta 7d) ou pelas últimas 24h (etiqueta 24h). Pool sem taxa informada aparece como <b>taxa ?</b> e vai para o fim.
     O ranking é pela <b>Eficiência</b> (<code>Fee × Razão</code>), o <b>rendimento diário real</b> que já embute a taxa.
     <span class="rule">Semáforo da Razão: ≥ 3×</span> verde · 1–3× amarelo · &lt;1× vermelho.

@@ -2,27 +2,17 @@
    ATLAS — Oráculo
    ------------------------------------------------------------
    Assistente onipresente. O conhecimento vem dos dados do próprio
-   ATLAS (teses, trades, alertas da carteira ativa) — não é um
+   ATLAS (trades, decisões, alertas da carteira ativa) — não é um
    chatbot genérico. Nesta Fundação o "cérebro" é baseado em regras
    sobre os dados; nos próximos Sprints ganha linguagem natural.
    ============================================================ */
 (function (ATLAS) {
   "use strict";
 
-  var LIMIT_STUDY_H = 72;   // limite oficial de tese aberta
   var REVIEW_TRADE_H = 24;  // trade "antigo" a revisar
 
   // ---- Cérebro: consultas respondidas a partir do estado -----
   var brain = {
-    stalledStudies: function () {
-      var lim = ATLAS.app.pref("studyLimitH") || 72;
-      return ATLAS.app.studies().filter(function (s) {
-        return s.state === "andamento" && ATLAS.app.studyOpenHours(s) > lim;
-      });
-    },
-    pendingStudies: function () {
-      return ATLAS.app.studies().filter(function (s) { return s.state !== "concluido"; });
-    },
     reviewTrades: function () {
       return ATLAS.app.tradesToReview(ATLAS.app.pref("tradeReviewH") || 24);
     },
@@ -31,32 +21,19 @@
       q = (q || "").toLowerCase();
       var u = ATLAS.util, app = ATLAS.app, w = app.currentWallet();
 
-      if (/parad|72|atras|venc|tempo demais/.test(q)) {
-        var st = brain.stalledStudies();
-        var lim = ATLAS.app.pref("studyLimitH") || 72;
-        if (!st.length) return "Nenhuma tese passou do limite de " + lim + "h na carteira " + w.name + ". Fluxo em dia.";
-        return "Atenção: " + st.length + " tese(s) além das " + lim + "h — " +
-          st.map(function (s) { return s.asset + " (" + u.dur(app.studyOpenHours(s)) + ")"; }).join(", ") +
-          ". Recomendo concluir ou arquivar antes de abrir novos.";
-      }
-      if (/pendent|abert|fila|futur|planejad/.test(q) && /estud|tese/.test(q)) {
-        var ps = brain.pendingStudies();
-        if (!ps.length) return "Sem teses pendentes na carteira " + w.name + ".";
-        return ps.length + " tese(s) em aberto: " +
-          ps.map(function (s) { return s.asset + " — " + s.title; }).join("; ") + ".";
-      }
-      if (/trade|opera|revis|encerr/.test(q)) {
+      if (/trade|opera|revis|encerr|parad|atras|tempo demais/.test(q)) {
         var tr = brain.reviewTrades();
         if (!tr.length) return "Nenhum trade aberto exige revisão agora.";
         return tr.length + " trade(s) para reavaliar: " +
           tr.map(function (t) { return t.asset + " " + t.side + " (" + u.dur(app.tradeAgeHours(t)) + ", " + u.pct(t.pnl) + ")"; }).join(", ") + ".";
       }
       if (/\brd\b|decis|registr/.test(q)) {
-        var aw = ATLAS.app.studiesAwaitingRd();
-        if (!aw.length) return "Nenhuma tese concluída aguardando Registro de Decisão. Fluxo em dia.";
-        return aw.length + " tese(s) concluída(s) sem RD: " +
-          aw.map(function (s) { return s.asset + " — " + s.title; }).join("; ") +
-          ". Toda entrada deve passar por um Registro de Decisão.";
+        var rds = app.rds();
+        var semTrade = rds.filter(function (r) { return r.decision === "entrar" && r.status !== "convertido"; });
+        if (!rds.length) return "Nenhum Registro de Decisão na carteira " + w.name + " ainda.";
+        return rds.length + " registro(s) de decisão na carteira " + w.name +
+          (semTrade.length ? "; " + semTrade.length + " com decisão de entrar ainda sem trade: " +
+            semTrade.map(function (r) { return r.asset; }).join(", ") + "." : "; todos os de entrada já viraram trade.");
       }
       if (/desempenh|winrate|m[eé]tric|analytic|result|profit|lucro no per/.test(q)) {
         if (!ATLAS.metrics) return brain.summaryText();
@@ -77,14 +54,13 @@
         return brain.summaryText();
       }
       // fallback com orientação
-      return "Posso responder sobre esta carteira: teses pendentes, teses paradas, " +
-        "trades a revisar e o resumo da banca. Toque numa sugestão abaixo.";
+      return "Posso responder sobre esta carteira: registros de decisão, trades a revisar, " +
+        "desempenho e o resumo da banca. Toque numa sugestão abaixo.";
     },
 
     summaryText: function () {
       var u = ATLAS.util, app = ATLAS.app;
-      var chg = app.changePct(), st = brain.stalledStudies().length, tr = brain.reviewTrades().length;
-      var aw = app.studiesAwaitingRd ? app.studiesAwaitingRd().length : 0;
+      var chg = app.changePct(), tr = brain.reviewTrades().length;
       var pr = app.tradesAwaitingReview ? app.tradesAwaitingReview().length : 0;
       var parts = [];
       /* "no período" descrevia uma variação medida ao longo do tempo,
@@ -92,18 +68,15 @@
          sobre o depositado — o texto tinha de acompanhar, senão o
          número certo continua contando a história errada. */
       parts.push("Banca em " + u.money(app.balance()) + " (" + u.pct(chg) + " do depositado, realizado).");
-      if (st) parts.push(st + " tese(s) parada(s) além do limite.");
-      if (aw) parts.push(aw + " tese(s) aguardando Registro de Decisão.");
       if (tr) parts.push(tr + " trade(s) aguardando revisão.");
       if (pr) parts.push(pr + " trade(s) aguardando pós-análise.");
-      if (!st && !tr && !aw && !pr) parts.push("Nenhuma pendência crítica — processo em dia.");
+      if (!tr && !pr) parts.push("Nenhuma pendência crítica — processo em dia.");
       return parts.join(" ");
     }
   };
 
   var CHIPS = [
-    { q: "Quais teses estão paradas há tempo demais?", label: "Teses paradas" },
-    { q: "Quais teses aguardam Registro de Decisão?",  label: "RD pendente" },
+    { q: "Como estão meus registros de decisão?",      label: "Decisões" },
     { q: "Como está meu desempenho?",                    label: "Desempenho" },
     { q: "Quais trades preciso revisar?",                label: "Revisar trades" }
   ];
@@ -181,7 +154,7 @@
 
     /** Atualiza o selo de avisos conforme a carteira ativa */
     refresh: function () {
-      var count = brain.stalledStudies().length + brain.reviewTrades().length;
+      var count = brain.reviewTrades().length;
       var pin = oraculo.root.querySelector(".oraculo__pin");
       if (count > 0) { pin.hidden = false; pin.textContent = count; }
       else { pin.hidden = true; }

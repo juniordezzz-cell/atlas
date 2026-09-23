@@ -72,8 +72,8 @@
         "Restore all preferences to their defaults?",
       "Tema, idioma, formato de data e demais preferências voltam ao padrão de fábrica. Seus dados não são apagados.":
         "Theme, language, date format and other preferences return to factory defaults. Your data is not erased.",
-      "Registre ativos, trades, posições ou estudos na Academy — o backup exporta o que existir.":
-        "Record assets, trades, positions or Academy studies — the backup exports whatever exists.",
+      "Registre ativos, trades ou posições — o backup exporta o que existir.":
+        "Record assets, trades or positions — the backup exports whatever exists.",
       "Restaurar este backup?": "Restore this backup?",
       "Não foi possível importar": "Could not import",
       "Backup": "Backup"
@@ -262,7 +262,7 @@
       btnPwa.addEventListener("click", function () {
         confirmar({
           title: t("Limpar os arquivos guardados para uso offline?"),
-          message: t("O ATLAS voltará a precisar de internet até você abrir cada tela de novo. Nenhum dado seu é apagado — carteiras, estudos da Academy e movimentos ficam onde estão."),
+          message: t("O ATLAS voltará a precisar de internet até você abrir cada tela de novo. Nenhum dado seu é apagado — carteiras, posições e movimentos ficam onde estão."),
           confirmLabel: t("Limpar")
         }).then(function (ok) {
           if (!ok) return;
@@ -306,7 +306,7 @@
           avisar({
             eyebrow: t("Backup"),
             title: t("Nenhum dado salvo ainda"),
-            message: t("Registre ativos, trades, posições ou estudos na Academy — o backup exporta o que existir.")
+            message: t("Registre ativos, trades ou posições — o backup exporta o que existir.")
           });
           return;
         }

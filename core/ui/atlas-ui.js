@@ -11,7 +11,7 @@
    distintos, uns no canto inferior direito, outro no centro. O Trade
    não tinha toast nenhum: usava window.alert.
 
-   E as ações destrutivas — excluir ativo, excluir tese, excluir
+   E as ações destrutivas — excluir ativo, excluir trade, excluir
    registro de decisão, restaurar backup — passavam por window.confirm().
    Nada derruba mais rápido a percepção de software premium do que a
    caixa cinza do navegador. A validação de formulário era pior ainda:
@@ -43,8 +43,8 @@
 
    Uso:
      AtlasUI.confirm({
-       title: "Excluir esta tese?",
-       message: "O histórico e as versões vão junto. Não dá para desfazer.",
+       title: "Excluir este registro?",
+       message: "O histórico vai junto. Não dá para desfazer.",
        confirmLabel: "Excluir", danger: true
      }).then(function (ok) { if (ok) excluir(); });
 

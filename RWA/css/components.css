@@ -148,7 +148,7 @@
 .tl:last-child { padding-bottom: 0; }
 .tl::before { content: ""; position: absolute; left: -24px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
 .tl.entrada::before { border-color: var(--pos); } .tl.saida::before { border-color: var(--neg); }
-.tl.tese::before { border-color: var(--accent-2); } .tl.revisao::before { border-color: var(--warn); }
+.tl.revisao::before { border-color: var(--warn); }
 .tl.manutencao::before { border-color: var(--text-3); }
 .tl .tl-top { display: flex; align-items: center; gap: 9px; margin-bottom: 4px; flex-wrap: wrap; }
 .tl .tl-date { font-family: var(--mono); font-size: 11px; color: var(--text-3); }
@@ -156,7 +156,6 @@
 .tl-type { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 2px 7px; border-radius: var(--r-xs); }
 .tl-type.entrada { color: var(--pos); background: var(--pos-soft); }
 .tl-type.saida { color: var(--neg); background: var(--neg-soft); }
-.tl-type.tese { color: var(--accent-2-text); background: var(--accent2-soft); }
 .tl-type.revisao { color: var(--warn); background: var(--warn-soft); }
 .tl-type.manutencao { color: var(--text-2); background: var(--atlas-inner); }
 

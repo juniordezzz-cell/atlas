@@ -150,7 +150,7 @@
       alertas: [
         { texto: "Concentração elevada — BTC representa 42% do Hold.", quando: "hoje", level: "warn", module: "hold" },
         { texto: "Pool JUP/SOL fora da faixa de preço há 2 dias.",      quando: "há 2 dias", level: "crit", module: "defi" },
-        { texto: "Tese de ETH sem revisão há 30 dias.",                 quando: "há 5 dias", level: "info", module: "hold" }
+        { texto: "Trade de SOL aberto há 3 dias sem revisão.",           quando: "há 5 dias", level: "info", module: "trade" }
       ],
       oraculo: { mensagem: "Modo demonstração · números ilustrativos." }
     };

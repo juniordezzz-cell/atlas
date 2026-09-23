@@ -92,7 +92,6 @@
 <script src="../trade/assets/js/core/store.js"></script>
 <script src="../trade/assets/js/core/seed.js"></script>
 <script src="../trade/assets/js/core/state.js"></script>
-<script src="../core/entities/theses.js"></script>
 <script src="../js/atlas-movements.js"></script>
 <script src="../core/atlas-demo.js"></script>
 <script src="../js/atlas-consolidation.js"></script>
@@ -144,16 +143,14 @@
       ["tive prejuízo?", "resultado"],
       ["qual minha renda passiva?", "resultado"]
     ]],
-    ["Teses e revisão", [
-      ["Quais teses estão em aberto?", "teses"],
-      ["quanto tenho em teses?", "teses"],
-      ["o que está pendente?", "teses"],
-      ["O que preciso revisar?", "revisao"],
-      ["tem tese atrasada?", "revisao"],
-      ["alguma tese parada há dias?", "revisao"]
-    ]],
     ["Atenção", [
       ["O que precisa da minha atenção?", "atencao"],
+      /* "pendente" e "revisar" eram rotas de tese; sem teses no ATLAS,
+         são perguntas sobre o que pede atenção */
+      ["o que está pendente?", "atencao"],
+      ["O que preciso revisar?", "atencao"],
+      /* "previsão" contém "revis" — não pode cair em atenção */
+      ["qual a previsão do btc?", null],
       ["tem algum alerta?", "atencao"],
       ["qual o risco?", "atencao"],
       ["what needs my attention?", "atencao"]

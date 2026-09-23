@@ -64,9 +64,7 @@
            carregado — se AtlasStorage faltar, o essencial ainda entra */
         "atlas.settings.v1",
         "atlas.wallets.v2",
-        "atlas.theses.v1",
         "atlas.movements.v1",
-        "atlas.future_studies.v1",
         "atlas.hold.state.v2",
         "atlas.trade.state.v1",
         "atlas.defi.state.v3",
@@ -119,7 +117,6 @@
     /* convenção atual */
     "atlas.settings.v1":       "Configurações",
     "atlas.wallets.v2":        "Carteiras",
-    "atlas.theses.v1":         "Teses",
     /* O livro de caixa é a chave mais importante do backup: todo saldo
        de carteira é derivado dele, e não há como reconstruí-lo a partir
        de mais nada. Ver wallets/walletCaixa.js. */
@@ -128,7 +125,6 @@
     /* aposentada: atlas-movements virou uma vista sobre o caixa e não
        grava mais nada. Só aparece em arquivos antigos. */
     "atlas.movements.v1":      "Movimentações (nome antigo)",
-    "atlas.future_studies.v1": "Estudos",
     "atlas.intro.seen.v1":     "Apresentação já vista",
     "atlas.demo.v1":           "Demonstração",
     "atlas.hold.state.v2":     "Hold",

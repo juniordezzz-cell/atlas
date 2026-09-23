@@ -17,29 +17,19 @@ sem instalar nada e sem servidor). Para uma versão de arquivo único, use
 - **Design system** completo em azul + glassmorphism (tokens centralizados).
 - **Shell** com barra superior, navegação lateral e área de conteúdo.
 - **Seletor de carteiras** — trocar a carteira atualiza todo o sistema.
-- **Dashboard** dinâmico: patrimônio + gráfico da banca, KPIs, estudos
-  pendentes, trades abertos e alertas.
+- **Dashboard** dinâmico: banca, KPIs, trades abertos e alertas.
 - **Oráculo**: orbe sempre presente + painel que responde a partir dos dados da
-  carteira ativa (estudos parados >72h, trades a revisar, resumo).
+  carteira ativa (registros de decisão, trades a revisar, resumo).
 
-**Estudos (Sprint 2)**
-- Lista com filtros por estado (futuro · em andamento · concluído) e contadores.
-- Criar, editar e excluir estudos; fila de pesquisas nos "futuros".
-- **Histórico de evolução da tese**: cada nova visão entra numa linha do tempo
-  com data/hora, preservando como o pensamento mudou.
-- **Regra das 72h** ativa: estudo em andamento além do limite é sinalizado na
-  lista, no detalhe e pelo Oráculo.
-- Fluxo de estado: iniciar → concluir → reabrir. Botão de RD preparado para o
-  Sprint 3.
-- CRUD real persistido pela camada de dados (base que RD e Trades reutilizam).
+**Estudos (Sprint 2 — removido)**
+- O módulo teve uma tela de estudos (teses) com regra das 72h. O conceito
+  saiu do ATLAS em 23/09/2026; o RD é agora o ponto de partida de uma
+  operação.
 
 **Registro de Decisão (Sprint 3)**
 - Lista de RDs com filtros e medidor de confiança (1–5).
-- Cada RD **nasce de um estudo concluído**: o botão "Criar RD" no detalhe do
-  estudo já abre o registro com ativo e estudo de origem preenchidos.
 - Documenta a decisão racional: por que entrar / não entrar, justificativa
   técnica, gestão de risco (stop, tamanho, R:R), alavancagem e observações.
-- Dashboard e Oráculo sinalizam estudos concluídos ainda sem RD.
 - Botão "Executar trade" preparado para o Sprint 4.
 
 **Trades (Sprint 4)**

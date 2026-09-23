@@ -2,7 +2,7 @@
    ATLAS — Seed (estado inicial LIMPO)
    ------------------------------------------------------------
    Sem dados de demonstração. O sistema nasce zerado:
-   apenas a carteira "Principal", sem estudos, RDs ou trades.
+   apenas a carteira "Principal", sem RDs ou trades.
    Bump de version força reset de localStorage antigo.
    ============================================================ */
 (function (ATLAS) {
@@ -13,8 +13,8 @@
       /* `equity: [0, 0]` saiu: array escrito na criação e lido por
          ninguém. Ver o comentário em core/state.js → emptyWalletData. */
       kpis: { winrate: 0, trades: 0, avgHold: "—", profitFactor: 0 },
-      studies: [], rds: [], trades: [], alerts: [],
-      archive: { studies: [], trades: [] }
+      rds: [], trades: [], alerts: [],
+      archive: { trades: [] }
     };
   }
 

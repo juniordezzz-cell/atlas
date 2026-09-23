@@ -87,7 +87,6 @@
     { id: "resultado",  ordem: 3, termos: ["resultado", "lucr", "prejuizo", "pnl", "rendi", "rendeu", "renderam", "rende ", "rentab", "ganho", "ganhei", "perdi", "perda", "performance"] },
     { id: "movimentos", ordem: 4, termos: ["movimento", "movimentacao", "movimentacoes", "extrato", "fluxo", "entrada", "entradas", "saida", "saidas", "deposito", "depositos", "saque", "saques", "transferencia", "aporte"] },
     { id: "posicoes",   ordem: 5, termos: ["posicao", "posicoes", "aberta", "abertas", "alocado", "investido", "aplicado"] },
-    { id: "teses",      ordem: 6, termos: ["tese", "teses", "estudo", "estudos"] },
     { id: "patrimonio", ordem: 7, termos: ["patrimonio", "quanto tenho", "quanto eu tenho", "total", "vale", "worth", "saldo"] }
   ];
 
@@ -667,8 +666,8 @@
 
      Devolve null quando não reconheceu métrica ou quando a métrica
      não tem como responder nesta tela — e null faz o Oráculo cair no
-     comportamento anterior, que continua valendo para teses, alertas,
-     moeda e backup.
+     comportamento anterior, que continua valendo para alertas, moeda
+     e backup.
      ------------------------------------------------------------ */
   function responder(pergunta) {
     return responderQ(interpretar(pergunta));

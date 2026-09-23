@@ -104,7 +104,7 @@ Trade, RWA e Academy são SPA de hash (`#/rota`), trocam de tela sem recarregar.
 
 Tornar o módulo reativo exige extrair a renderização de **sete** arquivos de
 entrada (`dashboard.js`, `pools.js`, `pool.js`, `staking.js`, `lending.js`,
-`analytics.js`, `history.js`, `teses.js`) para funções re-executáveis, mais um
+`analytics.js`, `history.js`) para funções re-executáveis, mais um
 roteador e a unificação dos sete `<head>`. É refatoração de módulo inteiro, com
 risco espalhado por toda a superfície que o usuário mais usa.
 

@@ -217,6 +217,18 @@
     var CX = global.AtlasCaixa, K = C();
     if (!CX || !K || !global.AtlasConsolidation) return out;
 
+    /* ------------------------------------------------------------
+       SÓ ONDE OS QUATRO MÓDULOS RESPONDEM
+
+       O caixa é de TODAS as carteiras; as posições, só dos módulos
+       carregados nesta página. Dentro do DeFi não há store do Hold, e
+       a conta acusava "não fecha" com a diferença exata das posições
+       que a página não enxerga — medido: US$ 960 de Hold virando erro
+       dentro do DeFi. A igualdade continua sendo cobrada no Dashboard,
+       em Carteiras, Relatórios e Configurações, que carregam os quatro.
+       ------------------------------------------------------------ */
+    if (!MODULOS.every(respondeAoVivo)) return out;
+
     var s = snap || safe(function () { return global.AtlasConsolidation.snapshot(30); }, null);
     if (!s) return out;
 

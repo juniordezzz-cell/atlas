@@ -13,9 +13,6 @@ window.HOLD_SEED = {
   config: {
     nome_gestor: "Gestor HOLD",
     moeda: "USD",
-    tema: "dark",
-    alerta_invalidacao: true,
-    alerta_revisao: true,
-    mostrar_conviccao: true
+    tema: "dark"
   }
 };

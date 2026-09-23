@@ -7,12 +7,6 @@
   "use strict";
   var U = window.UI, S = window.Store;
 
-  function assetOptions(filter) {
-    return S.state.ativos
-      .filter(filter || function () { return true; })
-      .map(function (a) { return { value: a.id, label: a.ticker + " · " + a.nome }; });
-  }
-
   function afterChange() { if (window.Router) window.Router.rerender(); }
 
   /* ---------- Novo ativo ---------- */
@@ -37,8 +31,7 @@
        Escolher "Investido" cadastrava um ativo marcado como possuído
        sem nenhuma compra: sem posição, sem um dólar saindo do caixa. A
        partir daí o filtro "Investidos" listava o que não se tem, o
-       funil das Métricas contava investimento inexistente e o alerta
-       "Posição sem tese" cobrava uma posição fantasma.
+       funil das Métricas contava investimento inexistente.
 
        Status virou consequência (Store.get.statusDe): tem posição, é
        investido. Todo ativo nasce em watchlist, que é o que ele é —
@@ -195,101 +188,6 @@
       footer: [U.button("Cancelar", { variant: "ghost", onClick: U.closeModal }), U.el("div", { class: "spacer" }), save] });
   }
 
-  /* ---------- Nova tese ---------- */
-  function newThesis(presetAssetId) {
-    /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
-    if (window.AtlasDemo && AtlasDemo.bloquear(function () { newThesis(presetAssetId); })) return;
-    var candidates = assetOptions(function (a) { return !S.get.thesisOfAsset(a.id); });
-    if (!candidates.length) return U.toast("Sem ativos disponíveis", "Todos os ativos já possuem tese. Adicione um ativo primeiro.", "warning");
-
-    var ativo = U.select(candidates, presetAssetId || candidates[0].value);
-    var narrativa = U.textarea({ placeholder: "Narrativa principal da tese — por que este ativo, por que agora, por quanto tempo." });
-    var bull = U.textarea({ placeholder: "Cenário otimista", style: "min-height:64px" });
-    var base = U.textarea({ placeholder: "Cenário base", style: "min-height:64px" });
-    var bear = U.textarea({ placeholder: "Cenário pessimista", style: "min-height:64px" });
-    var riscos = U.textarea({ placeholder: "Um por linha ou separados por vírgula", style: "min-height:64px" });
-    var catalisadores = U.textarea({ placeholder: "Um por linha ou separados por vírgula", style: "min-height:64px" });
-    var inval = U.textarea({ placeholder: "O que precisa acontecer para a tese ser considerada errada.", style: "min-height:64px" });
-    var conv = U.input({ type: "range", min: "0", max: "10", value: "6", class: "input", style: "padding:0" });
-    var convOut = U.el("span", { class: "num", text: "6", style: "min-width:20px;display:inline-block" });
-    conv.addEventListener("input", function () { convOut.textContent = conv.value; });
-    var statusSel = U.select([
-      { value: "planejada", label: "Planejada (fila de pesquisa)" },
-      { value: "andamento", label: "Em andamento" }
-    ], "andamento");
-
-    var body = U.el("div", {}, [
-      U.field("Ativo", ativo, { required: true }),
-      U.field("Narrativa principal", narrativa, { required: true }),
-      U.el("div", { class: "eyebrow", text: "Cenários", style: "margin:4px 0 8px" }),
-      U.el("div", { class: "form-row-3" }, [U.field("Bull", bull), U.field("Base", base), U.field("Bear", bear)]),
-      U.el("div", { class: "form-row" }, [U.field("Riscos", riscos), U.field("Catalisadores", catalisadores)]),
-      U.field("Critérios de invalidação", inval, { required: true }),
-      U.el("div", { class: "form-row" }, [
-        U.field("Status inicial", statusSel),
-        U.field(U.el("span", {}, ["Convicção — ", convOut, " / 10"]), conv)
-      ])
-    ]);
-
-    var save = U.button("Criar tese", { variant: "primary", icon: "check", onClick: function () {
-      if (!narrativa.value.trim() || !inval.value.trim())
-        return U.toast("Campos obrigatórios", "Narrativa e critérios de invalidação são necessários.", "warning");
-      S.actions.createThesis({
-        ativo_id: ativo.value, narrativa: narrativa.value.trim(),
-        bull: bull.value.trim(), base: base.value.trim(), bear: bear.value.trim(),
-        riscos: riscos.value, catalisadores: catalisadores.value,
-        criterios_invalidacao: inval.value.trim(), conviccao: conv.value, status: statusSel.value
-      });
-      U.closeModal(); U.toast("Tese criada", "Convicção " + conv.value + "/10 registrada.", "success"); afterChange();
-    }});
-
-    U.modal({ wide: true, eyebrow: "Documentar decisão", title: "Nova tese de investimento", body: body,
-      footer: [U.button("Cancelar", { variant: "ghost", onClick: U.closeModal }), U.el("div", { class: "spacer" }), save] });
-  }
-
-  /* ---------- Editar / revisar tese ---------- */
-  function editThesis(thesisId) {
-    var t = S.get.thesis(thesisId); if (!t) return;
-    var a = S.get.asset(t.ativo_id);
-    var narrativa = U.textarea({ style: "min-height:96px" }); narrativa.value = t.narrativa;
-    var bull = U.textarea({ style: "min-height:64px" }); bull.value = t.cenarios.bull;
-    var base = U.textarea({ style: "min-height:64px" }); base.value = t.cenarios.base;
-    var bear = U.textarea({ style: "min-height:64px" }); bear.value = t.cenarios.bear;
-    var riscos = U.textarea({ style: "min-height:64px" }); riscos.value = t.riscos.join("\n");
-    var catalisadores = U.textarea({ style: "min-height:64px" }); catalisadores.value = t.catalisadores.join("\n");
-    var inval = U.textarea({ style: "min-height:64px" }); inval.value = t.criterios_invalidacao;
-    var status = U.select([
-      { value: "planejada", label: "Planejada" },
-      { value: "andamento", label: "Em andamento" },
-      { value: "arquivada", label: "Arquivada" }
-    ], t.status === "concluida" ? "andamento" : t.status);
-    var conv = U.input({ type: "range", min: "0", max: "10", value: t.conviccao, style: "padding:0" });
-    var convOut = U.el("span", { class: "num", text: t.conviccao, style: "min-width:20px;display:inline-block" });
-    conv.addEventListener("input", function () { convOut.textContent = conv.value; });
-    var motivo = U.input({ placeholder: "Motivo da revisão (registrado no histórico)" });
-
-    var body = U.el("div", {}, [
-      U.field("Narrativa principal", narrativa),
-      U.el("div", { class: "form-row-3" }, [U.field("Bull", bull), U.field("Base", base), U.field("Bear", bear)]),
-      U.el("div", { class: "form-row" }, [U.field("Riscos", riscos), U.field("Catalisadores", catalisadores)]),
-      U.field("Critérios de invalidação", inval),
-      U.el("div", { class: "form-row" }, [U.field("Status", status), U.field(U.el("span", {}, ["Convicção — ", convOut, " / 10"]), conv)]),
-      U.field("Motivo da revisão", motivo, { hint: "Toda tese pode ser revisada — a mudança gera histórico." })
-    ]);
-
-    var save = U.button("Salvar revisão", { variant: "primary", icon: "check", onClick: function () {
-      S.actions.updateThesis(thesisId, {
-        narrativa: narrativa.value.trim(), bull: bull.value.trim(), base: base.value.trim(), bear: bear.value.trim(),
-        riscos: riscos.value, catalisadores: catalisadores.value, criterios_invalidacao: inval.value.trim(),
-        conviccao: conv.value, status: status.value, motivo: motivo.value.trim() || "Tese revisada."
-      });
-      U.closeModal(); U.toast("Tese atualizada", (a ? a.ticker : "Tese") + " revisada.", "success"); afterChange();
-    }});
-
-    U.modal({ wide: true, eyebrow: "Revisar tese · " + (a ? a.ticker : ""), title: "Editar tese", body: body,
-      footer: [U.button("Cancelar", { variant: "ghost", onClick: U.closeModal }), U.el("div", { class: "spacer" }), save] });
-  }
-
   /* ---------- Trade (compra/venda) ---------- */
   function trade(assetId, side) {
     /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
@@ -302,10 +200,6 @@
       return { value: w.id, label: w.name };
     }), (carteiraAtiva && carteiraAtiva.id) || (carteiras[0] && carteiras[0].id));
 
-    /* A falta de tese NÃO impede mais abrir a compra — ver executeBuy
-       em hold/js/state.js. Ela vira aviso dentro do formulário, junto
-       do caixa disponível, que é o que de fato decide. */
-    var semTese = !isSell && !S.get.thesisOfAsset(assetId);
     if (isSell && !S.get.positionOf(assetId, walletSel.value)) {
       return U.toast("Sem posição", "Não há posição de " + a.ticker + " para vender nesta carteira.", "warning");
     }
@@ -318,14 +212,6 @@
     var qtdI = U.input({ type: "number", step: "any", placeholder: "0.00" });
     var precoI = U.input({ type: "number", step: "any", value: a.preco_atual });
     var just = U.textarea({ placeholder: "Justificativa (registrada no histórico)", style: "min-height:64px" });
-    var motivo = U.select([
-      { value: "realizacao", label: "Realização da tese (alvo atingido)" },
-      { value: "invalidacao", label: "Invalidação da tese" }
-    ], "realizacao");
-
-    var motivoField = U.field("Motivo da venda", motivo, { hint: "Toda venda depende de invalidação ou realização da tese." });
-    motivoField.classList.toggle("hidden", !isSell);
-
     var posInfo = U.el("div", { class: "small dim" });
 
     /* ------------------------------------------------------------
@@ -337,23 +223,16 @@
        operação tem de estar visível antes dela.
        ------------------------------------------------------------ */
     var infoCaixa = U.el("div", { class: "small dim", style: "margin-bottom:10px" });
-    var avisoTese = semTese
-      ? U.el("div", { class: "small dim", style: "margin-bottom:10px",
-          text: "Sem tese registrada para " + a.ticker + ". A compra é registrada assim " +
-                "mesmo, e o alerta vai cobrar a tese até ela existir." })
-      : null;
 
     var body = U.el("div", {}, [
       U.el("div", { class: "between", style: "margin-bottom:16px" }, [U.assetCellSafe(a), seg]),
       U.field("Carteira da posição", walletSel, { required: true, hint: "Compra e venda desta posição caem nesta carteira." }),
       infoCaixa,
-      avisoTese,
       posInfo,
       U.el("div", { class: "form-row" }, [
         U.field("Quantidade", qtdI, { required: true }),
         U.field("Preço (USD)", precoI, { required: true })
       ]),
-      motivoField,
       U.field("Justificativa", just)
     ]);
 
@@ -391,7 +270,6 @@
       currentSide = sd;
       buyBtn.classList.toggle("on", sd === "buy");
       sellBtn.classList.toggle("on", sd === "sell");
-      motivoField.classList.toggle("hidden", sd !== "sell");
       confirmBtn.className = "btn " + (sd === "sell" ? "danger" : "primary");
       confirmBtn.lastChild.textContent = sd === "sell" ? "Registrar venda" : "Registrar compra";
       atualizarResumoCarteira();
@@ -414,7 +292,7 @@
           justificativa: just.value.trim(), walletId: walletSel.value
         };
         var res;
-        if (currentSide === "sell") { payload.motivo = motivo.value; res = S.actions.executeSell(payload); }
+        if (currentSide === "sell") res = S.actions.executeSell(payload);
         else { payload.cobrirFalta = true; res = S.actions.executeBuy(payload); }
         if (res && res.error) return U.toast("Não foi possível", res.error, "warning");
         U.closeModal();
@@ -436,7 +314,6 @@
 
   window.Forms = {
     newAsset: newAsset, editAsset: editAsset,
-    newThesis: newThesis, editThesis: editThesis,
     trade: trade
   };
 })();

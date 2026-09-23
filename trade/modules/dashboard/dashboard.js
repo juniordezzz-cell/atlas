@@ -6,15 +6,6 @@
 
   var mountRef = null;
 
-  function stateLabel(s) {
-    return { andamento: "Em andamento", futuro: "Futuro", concluido: "Concluído" }[s] || s;
-  }
-  function stateBadge(s) {
-    if (s === "concluido") return "badge--profit";
-    if (s === "futuro") return "badge--azure";
-    return "badge--warn";
-  }
-
   function oraculoSummaryCard() {
     var t = ATLAS.oraculo.summaryText();
     return '<div class="card nsum reveal" style="animation-delay:.02s">' +
@@ -102,26 +93,6 @@
       '</div>';
   }
 
-  function studiesCard() {
-    var u = ATLAS.util, app = ATLAS.app, list = app.studies();
-    var body = list.length ? list.map(function (s) {
-      var open = app.studyOpenHours(s);
-      var over = s.state === "andamento" && open > (app.pref("studyLimitH") || 72);
-      return '<div class="list__item" data-study="' + s.id + '" style="cursor:pointer">' +
-        '<span class="list__icon" style="color:var(--azure)">' + u.icon("flask", 17) + '</span>' +
-        '<div class="list__body"><b>' + u.escape(s.asset) + ' · ' + u.escape(s.title) + '</b>' +
-        '<span>' + u.escape(s.thesis || "") + '</span></div>' +
-        '<div class="list__meta"><span class="badge ' + stateBadge(s.state) + '">' + stateLabel(s.state) + '</span>' +
-        (s.state === "andamento" ? '<span class="mono ' + (over ? 'down' : '') + '" style="font-size:.7rem;color:var(--text-faint)">' + u.dur(open) + '</span>' : '') +
-        '</div></div>';
-    }).join("") : '<div class="list__item"><span style="color:var(--text-mut)">Sem teses abertas.</span></div>';
-
-    return '<div class="card reveal" style="animation-delay:.26s"><div class="card__head">' +
-      '<span class="card__title">Teses pendentes</span>' +
-      '<button class="btn btn--ghost" data-go="academy">Ver no Academy</button></div>' +
-      '<div class="list">' + body + '</div></div>';
-  }
-
   function tradesCard() {
     var u = ATLAS.util, app = ATLAS.app;
     var list = app.trades().filter(function (t) { return t.status === "aberto"; });
@@ -143,16 +114,9 @@
 
   function deriveAlerts() {
     var app = ATLAS.app, u = ATLAS.util, out = [];
-    app.studies().forEach(function (s) {
-      if (s.state === "andamento" && app.studyOpenHours(s) > (app.pref("studyLimitH") || 72))
-        out.push({ level: "warn", text: "Tese de " + s.asset + " aberta há " + u.dur(app.studyOpenHours(s)) + " (limite 72h).", ref: "Academy", go: "academy" });
-    });
     app.tradesToReview(app.pref("tradeReviewH") || 24).forEach(function (t) {
       out.push({ level: "warn", text: "Trade de " + t.asset + " aberto há " + u.dur(app.tradeAgeHours(t)) + " sem revisão.", ref: "Trades", go: "trades" });
     });
-    var awaiting = app.studiesAwaitingRd();
-    if (awaiting.length)
-      out.push({ level: "azure", text: awaiting.length + " tese(s) concluída(s) aguardando Registro de Decisão.", ref: "RD", go: "rd" });
     var pendRev = app.tradesAwaitingReview();
     if (pendRev.length)
       out.push({ level: "azure", text: pendRev.length + " trade(s) encerrado(s) aguardando pós-análise.", ref: "Analytics", go: "analytics" });
@@ -185,26 +149,17 @@
         '</div>' +
         oraculoSummaryCard() +
         '<div class="dash__top">' + bancaCard() + kpisBlock() + '</div>' +
-        '<div class="dash__row">' + studiesCard() + tradesCard() + alertsCard() + '</div>' +
+        '<div class="dash__row">' + tradesCard() + alertsCard() + '</div>' +
       '</div>';
 
     // Ações
     mount.querySelectorAll("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () {
-        if (b.dataset.go === "academy") {
-          location.href = "../academy/index.html#/andamento";
-          return;
-        }
         ATLAS.router.go(b.dataset.go);
       });
     });
     mount.querySelectorAll("[data-oraculo]").forEach(function (b) {
       b.addEventListener("click", function () { ATLAS.oraculo.setOpen(true); });
-    });
-    mount.querySelectorAll("[data-study]").forEach(function (row) {
-      row.addEventListener("click", function () {
-        location.href = "../academy/index.html#/detail/" + row.dataset.study;
-      });
     });
     mount.querySelectorAll("[data-trade]").forEach(function (row) {
       row.addEventListener("click", function () {

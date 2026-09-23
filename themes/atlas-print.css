@@ -196,7 +196,7 @@
      4. SUPERFÍCIES
      ================================================================ */
   .card, .panel, .kpi, .set-card, .fin-card, .pos-card,
-  .rep-card, .rep-kpi, .est__card, .thesis-card, .wcard {
+  .rep-card, .rep-kpi, .est__card, .wcard {
     background: #FFFFFF !important;
     border: 1px solid #C8CEDA !important;
     box-shadow: none !important;

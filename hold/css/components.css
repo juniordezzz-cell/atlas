@@ -1,7 +1,7 @@
 /* ============================================================
    HOLD SYSTEM · components.css
    cards · tables · buttons · forms · badges · modals ·
-   timeline · conviction · charts
+   timeline · charts
    ============================================================ */
 
 /* ---------------- card ---------------- */
@@ -274,22 +274,6 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .search .ico { position: absolute; left: 11px; width: 16px; height: 16px; color: var(--text-dim); pointer-events: none; }
 .search input { padding-left: 34px; min-width: 220px; }
 
-/* ---------------- conviction meter ---------------- */
-.conviction { display: flex; align-items: center; gap: 10px; }
-.conviction .segs { display: flex; gap: 3px; }
-.conviction .seg { width: 8px; height: 16px; border-radius: 2px; background: var(--surface-alt); }
-.conviction .seg.on { background: var(--primary); }
-.conviction.high .seg.on { background: var(--success); }
-.conviction.mid  .seg.on { background: var(--warning); }
-.conviction.low  .seg.on { background: var(--danger); }
-.conviction .val { font-family: var(--mono); font-size: 13px; font-weight: 600; }
-.conviction .val small { color: var(--text-dim); font-weight: 400; }
-
-.conviction-mini { display: inline-flex; align-items: center; gap: 6px; }
-.conviction-mini .bar { width: 46px; height: 5px; border-radius: 3px; background: var(--surface-alt); overflow: hidden; }
-.conviction-mini .bar > i { display: block; height: 100%; background: var(--primary); }
-.conviction-mini .n { font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
-
 /* ---------------- timeline ---------------- */
 .timeline { position: relative; padding-left: 26px; }
 .timeline::before { content: ""; position: absolute; left: 9px; top: 4px; bottom: 4px; width: 2px; background: var(--border); }
@@ -299,8 +283,6 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tl-dot .ico { width: 9px; height: 9px; color: var(--primary-text); stroke-width: 2.6; }
 .tl-item.buy   .tl-dot { border-color: var(--success); } .tl-item.buy .tl-dot .ico { color: var(--success); }
 .tl-item.sell  .tl-dot { border-color: var(--danger); }  .tl-item.sell .tl-dot .ico { color: var(--danger); }
-.tl-item.thesis .tl-dot { border-color: var(--secondary); } .tl-item.thesis .tl-dot .ico { color: var(--secondary); }
-.tl-item.study .tl-dot { border-color: var(--accent); } .tl-item.study .tl-dot .ico { color: var(--accent-text); }
 .tl-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .tl-title { font-weight: 550; font-size: 13.5px; }
 .tl-time { font-size: 11.5px; color: var(--text-dim); font-family: var(--mono); }
@@ -343,20 +325,6 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-in { from { opacity: 0; transform: translateY(10px) scale(0.99); } to { opacity: 1; transform: none; } }
 
-/* scenario grid (bull/base/bear) */
-.scenarios { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
-.scenario { border: 1px solid var(--border); border-radius: 9px; padding: 12px; background: var(--bg); }
-.scenario h4 { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
-.scenario.bull h4 { color: var(--success); }
-.scenario.base h4 { color: var(--primary-text); }
-.scenario.bear h4 { color: var(--danger); }
-.scenario p { font-size: 13px; color: var(--text-dim); }
-
-/* chips / lists inside thesis */
-.chips { display: flex; flex-wrap: wrap; gap: 7px; }
-.chip { font-size: 12px; padding: 4px 10px; border-radius: 7px; background: var(--surface-alt); border: 1px solid var(--border); color: var(--text-dim); }
-.chip.risk { border-color: rgba(239,68,68,0.24); color: #f2a5a5; }
-.chip.cat { border-color: rgba(34,197,94,0.24); color: #92e0ac; }
 
 .def-list { display: grid; gap: 12px; }
 .def-list .d-row { display: grid; grid-template-columns: 160px 1fr; gap: 14px; align-items: baseline; }
@@ -442,10 +410,6 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meter .m-track { flex: 1; height: 8px; border-radius: 6px; background: var(--surface-alt); overflow: hidden; }
 .meter .m-track > i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
-/* Trilho de uma posição SEM tese: tracejado, para a ausência ter
-   aparência de ausência em vez de barra zerada — que se confunde com
-   convicção baixa, que é outra coisa. */
-.meter .m-track.vazio { background: repeating-linear-gradient(90deg, var(--surface-alt) 0 6px, transparent 6px 10px); }
 .meter .m-val { width: 62px; text-align: right; font-family: var(--mono); font-size: 12.5px; }
 .meter .m-val.dim { color: var(--text-dim); font-family: var(--font); font-size: 11.5px; }
 .meter .m-row.clicavel {
@@ -531,7 +495,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   .icon-btn { width: 44px; height: 44px; }
 
   /* Linhas que são botão: ordenar coluna, abrir o ativo pela legenda do
-     donut, abrir o ativo pela barra de convicção. Todas passavam
+     donut, abrir o ativo pela barra de peso. Todas passavam
      raspando (29 a 39px) porque nasceram desenhadas para o ponteiro. */
   .tbl th .th-sort { min-height: 44px; }
   .ll-item { min-height: 44px; }

@@ -78,7 +78,7 @@
          E o DeFi é multipágina: sete telas, cada uma montando o próprio
          conteúdo no load, cada uma com seu script de entrada
          (dashboard.js, pools.js, staking.js, lending.js, analytics.js,
-         history.js, teses.js). Tornar isso reativo é extrair a
+         history.js). Tornar isso reativo é extrair a
          renderização de SETE arquivos para funções re-executáveis —
          refatoração de módulo, não ajuste de seletor.
 

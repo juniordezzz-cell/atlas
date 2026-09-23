@@ -165,7 +165,7 @@
      AVISOS E CONFIRMAÇÕES
      ------------------------------------------------------------
      O Trade era o único módulo SEM toast: todo aviso saía como
-     window.alert, e excluir trade, tese ou registro de decisão passava
+     window.alert, e excluir trade ou registro de decisão passava
      por window.confirm. Agora usa o kit compartilhado
      (core/ui/atlas-ui.js), o mesmo do resto do sistema.
 

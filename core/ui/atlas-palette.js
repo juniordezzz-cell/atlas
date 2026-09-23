@@ -5,7 +5,7 @@
    POR QUE ISTO EXISTE
    -------------------
    O ATLAS tem cinco módulos, oito destinos de menu e umas trinta rotas
-   internas. Chegar a "Teses do Trade" a partir do DeFi custa hoje três
+   internas. Chegar a "Registro de Decisão" a partir do DeFi custa três
    cliques e uma recarga de página. Quem usa o sistema todo dia não
    navega: ele SABE onde quer ir e só precisa de um caminho curto.
 
@@ -28,13 +28,9 @@
                     carteira. Cada uma checa se o serviço existe antes
                     de se oferecer: ação que não funciona não aparece.
 
-   E as TESES entram como conteúdo pesquisável, porque é a única
-   entidade compartilhada por todos os módulos e a que o usuário
-   procura pelo nome.
-
    POR QUE A BUSCA É POR SUBSEQUÊNCIA
    ----------------------------------
-   "cfg" acha "Configurações", "tst" acha "Teses do Trade". Quem usa
+   "cfg" acha "Configurações", "rdd" acha "Registro de Decisão". Quem usa
    paleta digita iniciais, não palavras inteiras — exigir prefixo exato
    faria o usuário voltar para o mouse, que é o oposto do objetivo.
 
@@ -72,8 +68,7 @@
   var IC = {
     ir:    '<path d="M5 12h14M13 6l6 6-6 6"/>',
     tela:  '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 20h8"/>',
-    acao:  '<path d="M13 2 4.5 12.5h6L11 22l8.5-10.5h-6z"/>',
-    tese:  '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>'
+    acao:  '<path d="M13 2 4.5 12.5h6L11 22l8.5-10.5h-6z"/>'
   };
 
   /* Qual dos oito destinos é a página atual. As três telas da raiz
@@ -214,27 +209,8 @@
     return out;
   }
 
-  /* Teses são a única entidade que atravessa os cinco módulos, e a
-     única que o usuário procura pelo NOME. Vinte é o teto: a paleta
-     serve para chegar rápido, não para listar o acervo. */
-  function teses() {
-    if (!window.AtlasTheses || !AtlasTheses.all) return [];
-    var b = base();
-    return (AtlasTheses.all() || []).slice(0, 20).map(function (x) {
-      var destino = "academy/index.html#/detail/" + encodeURIComponent(x.id || "");
-      return {
-        grupo: "Tese",
-        titulo: x.title || t("Sem título"),
-        nota: (AtlasTheses.moduleLabel ? AtlasTheses.moduleLabel(x.module) : x.module) + " · " +
-              (AtlasTheses.statusLabel ? AtlasTheses.statusLabel(x.status) : x.status),
-        icone: IC.tese,
-        rodar: function () { location.href = b + destino; }
-      };
-    });
-  }
-
   function catalogo() {
-    return destinos().concat(rotas(), acoes(), teses());
+    return destinos().concat(rotas(), acoes());
   }
 
   /* ---------- busca por subsequência ---------- */

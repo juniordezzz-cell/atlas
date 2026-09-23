@@ -21,8 +21,7 @@
    comportamento, uma só posição — funciona em SPA e em MPA.
 
    O Oráculo segue o mesmo caminho: um componente central com um
-   cérebro genérico (baseado na entidade compartilhada de Teses)
-   que cada módulo pode enriquecer:
+   cérebro genérico que cada módulo pode enriquecer:
 
      AtlasOraculo.registerBrain(function (ctx) {
        return { chips: [...], answer: function (q) { ... } };
@@ -95,7 +94,6 @@
       "Enviar": "Send",
       "Mensagem": "Message",
       "Como está o módulo?": "How is the module?",
-      "Quais teses estão em aberto?": "Which theses are open?",
       "O que preciso revisar?": "What do I need to review?",
       "Quanto eu tenho?": "How much do I have?",
       "Quanto tenho em caixa?": "How much cash do I have?",
@@ -248,36 +246,15 @@
   /* ============================================================
      2. CÉREBRO DO ORÁCULO
      ------------------------------------------------------------
-     Base genérica: a entidade compartilhada de Teses. Qualquer
-     módulo pode registrar um cérebro adicional.
+     Qualquer módulo pode registrar um cérebro adicional.
      ============================================================ */
 
   var extraBrains = [];
 
-  /* Dentro de um módulo, as teses DELE. No shell da raiz (Dashboard,
-     Relatórios, Configurações), TODAS — a raiz é a visão consolidada e
-     não tem teses próprias, então filtrar por module="atlas" devolvia
-     sempre lista vazia e o Oráculo respondia "nenhuma tese em aberto"
-     com quatro teses abertas no sistema. */
-  function theses() {
-    if (!window.AtlasTheses) return [];
-    try {
-      if (MODULE === "atlas" || MODULE === "academy") {
-        return (AtlasTheses.all ? AtlasTheses.all() : []) || [];
-      }
-      return (AtlasTheses.byModule ? AtlasTheses.byModule(MODULE) : []) || [];
-    } catch (e) { return []; }
-  }
-
-  function countBy(list, status) {
-    return list.filter(function (x) { return x && x.status === status; }).length;
-  }
-
   /* ============================================================
      O CÉREBRO DO ORÁCULO
      ------------------------------------------------------------
-     Ele nasceu sabendo uma coisa só: teses do módulo atual. Era
-     honesto e era pouco — perguntar "quanto eu tenho?" devolvia
+     Ele nasceu sabendo pouco — perguntar "quanto eu tenho?" devolvia
      "ainda não sei responder isso" numa tela que mostrava o número
      dois centímetros acima.
 
@@ -543,8 +520,8 @@
 
   var SUGESTOES_PADRAO = [
     "Quanto eu tenho?", "Quanto tenho em caixa?", "Qual meu resultado?",
-    "O que precisa da minha atenção?", "Quais teses estão em aberto?",
-    "Como estão minhas carteiras?", "Qual meu fluxo de movimentos?"
+    "O que precisa da minha atenção?", "Como estão minhas carteiras?",
+    "Qual meu fluxo de movimentos?"
   ];
 
   /* O passo natural depois de cada pergunta. As chaves são testadas na
@@ -562,7 +539,6 @@
     { rx: /mes passado/, prox: ["E neste mês?"] },
     { rx: /resultado|lucr|rentab/, prox: ["Como é calculada a rentabilidade?", "Quanto eu tenho?"] },
     { rx: /calcul|explic|por ?que (?!nao)/, prox: ["Como é calculado o resultado?", "Como é calculado o patrimônio?"] },
-    { rx: /tese/, prox: ["O que preciso revisar?"] },
     { rx: /carteira/, prox: ["Quanto tenho em caixa?", "Qual meu fluxo de movimentos?"] },
     { rx: /abrir posi|nao consigo/, prox: ["Quanto tenho em caixa?", "Como estão minhas carteiras?"] }
   ];
@@ -577,25 +553,19 @@
      perguntas contra o assunto esperado sem depender de número
      nenhum.
 
-     A ORDEM IMPORTA: o padrão mais específico vem primeiro. "quanto
-     tenho em teses" é teses, não patrimônio; "qual meu saldo" é
-     caixa, não patrimônio.
+     A ORDEM IMPORTA: o padrão mais específico vem primeiro. "qual meu
+     saldo" é caixa, não patrimônio.
 
      Palavras soltas demais saíram, porque capturavam o assunto
-     errado: "aberto" mandava "posições abertas" para teses, "vale"
-     pegava "vale a pena", "conta" pegava "me conta", "real" pegava
-     "na real". \b na frente de "revis" impede que case dentro de
-     "pREVISao".
+     errado: "vale" pegava "vale a pena", "conta" pegava "me conta",
+     "real" pegava "na real".
      ------------------------------------------------------------ */
   var ROTAS = [
     /* "o que mudou desde ontem?" — antes de tudo: contém "ontem", que
        o vocabulário leria como período de outra métrica */
     { id: "mudancas",   rx: /o que mudou|mudou desde|mudou algo|mudanca|novidade|desde a (minha |sua )?ultima|desde ontem|what changed|since (my )?last/ },
-    /* revisão antes de teses: "tem tese atrasada?" é sobre o prazo,
-       não a lista de teses */
-    { id: "revisao",    rx: /\brevis|\breview|\batrasad|overdue|\bparad[ao]s? ha|stalled/ },
-    { id: "teses",      rx: /tese|thesis|estud|pendent|pending|andamento|progress/ },
-    { id: "atencao",    rx: /aten|attention|alerta|alert|risco|risk|problema|urgent/ },
+    /* "o que preciso revisar?" é pergunta de atenção */
+    { id: "atencao",    rx: /aten|attention|alerta|alert|risco|risk|problema|urgent|\brevis|\breview|pendent|pending/ },
     /* caixa antes de patrimônio: "saldo" e "disponível" são caixa.
        "saldo" chegou a estar só na regex de patrimônio — o comentário
        dizia uma coisa e a tabela fazia outra. */
@@ -723,7 +693,7 @@
      com assunto próprio começa uma consulta nova.
 
      O que NÃO faz: adivinhar. Se o assunto anterior não aceita filtro
-     (alertas, teses sem métrica), diz isso em vez de responder outra
+     (alertas), diz isso em vez de responder outra
      coisa com o filtro pendurado.
      ------------------------------------------------------------ */
   var RX_CONTINUA = /^(e quanto a|e sobre|e|and|what about|how about)\s+/;
@@ -976,34 +946,23 @@
       if (window.AtlasCaixa) {
         c.push(caixaGlobal() ? "Quanto tenho em caixa?" : "Por que não consigo abrir posição?");
       }
-      c.push("Quais teses estão em aberto?");
       c.push("Como está o módulo?");
+      c.push("Como estão minhas carteiras?");
       return c.slice(0, 4);
     },
 
+    /* O estado do módulo em uma linha: quanto ele vale e se há alerta.
+       Fora de um dos quatro módulos, a linha do Dashboard. */
     summary: function () {
-      var list = theses();
-      if (!list.length) {
-        return L("Módulo " + LABEL + " sem teses registradas ainda. " +
-                 "Toda decisão do ATLAS deveria nascer de uma tese — comece por aí.",
-                 "Module " + LABEL + " has no theses yet. " +
-                 "Every ATLAS decision should start from a thesis — begin there.");
-      }
-      var andamento = countBy(list, "andamento");
-      var planejada = countBy(list, "planejada");
-      var concluida = countBy(list, "concluida");
-      return L("Módulo " + LABEL + ": " + list.length + " tese(s) — " +
-               andamento + " em andamento, " + planejada + " planejada(s), " +
-               concluida + " concluída(s).",
-               "Module " + LABEL + ": " + list.length + " thesis(es) — " +
-               andamento + " in progress, " + planejada + " planned, " +
-               concluida + " completed.");
-    },
-
-    pending: function () {
-      return theses().filter(function (x) {
-        return x && x.status !== "concluida" && x.status !== "arquivada";
-      });
+      var s = consolidado();
+      var m = s && s.modules ? s.modules.filter(function (x) { return x.key === MODULE; })[0] : null;
+      if (!m || m.total == null) return estadoCurto();
+      var n = alertasAbertos().length;
+      var al = n ? L(n + (n === 1 ? " alerta ativo" : " alertas ativos"),
+                     n + (n === 1 ? " active alert" : " active alerts"))
+                 : L("sem alertas", "no alerts");
+      return L("Módulo " + LABEL + ": " + dinheiro(m.total) + " em posições, " + al + ".",
+               "Module " + LABEL + ": " + dinheiro(m.total) + " in positions, " + al + ".");
     },
 
     /* ---- o que ele passou a saber ---- */
@@ -1307,27 +1266,6 @@
         if (exp) return exp;
       }
 
-      if (rota === "teses") {
-        var p = baseBrain.pending();
-        if (!p.length) return L("Nenhuma tese em aberto no " + LABEL + ". Fluxo em dia.",
-                                "No open theses in " + LABEL + ". All caught up.");
-        var untitled = L("sem título", "untitled");
-        var listStr = p.map(function (x) { return (x.asset ? x.asset + " — " : "") + (x.title || untitled); }).join("; ");
-        return L(p.length + " tese(s) em aberto: " + listStr + ".",
-                 p.length + " open thesis(es): " + listStr + ".");
-      }
-
-      if (rota === "revisao") {
-        var old = baseBrain.pending().filter(function (x) {
-          if (!x.createdAt) return false;
-          return (Date.now() - new Date(x.createdAt).getTime()) > 72 * 3600 * 1000;
-        });
-        if (!old.length) return L("Nada além do prazo de 72h. Processo em dia.",
-                                  "Nothing past the 72h mark. Process is on track.");
-        return L(old.length + " tese(s) abertas há mais de 72h — vale concluir ou arquivar.",
-                 old.length + " thesis(es) open for over 72h — worth completing or archiving.");
-      }
-
       if (rota === "atencao") return baseBrain.atencao();
       if (rota === "caixa") return baseBrain.caixa();
       if (rota === "patrimonio") return baseBrain.patrimonio();
@@ -1392,11 +1330,8 @@
     /* ------------------------------------------------------------
        O SELO CONTA ALERTA, E SÓ ALERTA
 
-       Era `naoLidos || pending().length`: sem nenhum alerta, o número
-       no selo virava a quantidade de TESES ABERTAS. Duas grandezas
-       diferentes no mesmo lugar — o usuário via "3" e não tinha como
-       saber se eram três problemas ou três teses em andamento, que é
-       estado normal e saudável.
+       O número no selo é só de alertas não lidos — nenhuma outra
+       grandeza divide esse lugar.
        ------------------------------------------------------------ */
     alerts: function () {
       return alertasAbertos().filter(function (a) { return !a.lido; }).length;
@@ -1416,7 +1351,7 @@
     };
     extraBrains.forEach(function (factory) {
       var ext;
-      try { ext = factory({ module: MODULE, theses: theses }); }
+      try { ext = factory({ module: MODULE }); }
       catch (e) { return; }
       if (!ext) return;
       if (ext.chips) brain.chips = ext.chips.concat(brain.chips).slice(0, 4);
@@ -1678,7 +1613,7 @@
     });
     /* A abertura cumprimenta uma vez, pelo horário, e vai ao estado.
        No Dashboard o resumo vira a linha curta (patrimônio + alertas);
-       nos módulos continua o resumo de teses de cada um. */
+       nos módulos, quanto o módulo vale e os alertas. */
     var resumo = "";
     try { resumo = brain.summary() || ""; } catch (e) { resumo = ""; }
     if (MODULE === "atlas") ultimoEstado = estadoCurto();
@@ -1713,7 +1648,6 @@
     AtlasNotifications.onChange(function () { pintarPinOraculo(); });
   }
   document.addEventListener("atlas:movement", function () { pintarPinOraculo(); });
-  document.addEventListener("atlas:theses", function () { pintarPinOraculo(); });
   document.addEventListener("atlas:alertas", function () { pintarPinOraculo(); });
 
   /* Esc fecha o Oráculo. Um ouvinte só, aqui fora: dentro de
@@ -1862,7 +1796,7 @@
     } else {
       corpo = '<div class="atlas-bell__empty">' +
         "<strong>" + esc(t("Nenhum alerta")) + "</strong>" +
-        "<span>" + esc(t("Os alertas aparecem quando uma posição ou tese pedir atenção.")) + "</span>" +
+        "<span>" + esc(t("Os alertas aparecem quando uma posição pedir atenção.")) + "</span>" +
       "</div>";
     }
     pop.innerHTML = '<div class="atlas-bell__head">' + esc(t("Alertas")) + "</div>" + corpo;
@@ -1922,11 +1856,9 @@
     if (notificacoes()) {
       AtlasNotifications.onChange(function () { pintarSino(raiz); });
     }
-    /* Alertas mudam quando um movimento entra ou uma tese muda de
-       estado. Repintar nesses eventos evita um sino que só acerta
+    /* Alertas mudam quando um movimento entra ou um preço chega. Repintar nesses eventos evita um sino que só acerta
        depois de recarregar a página. */
     document.addEventListener("atlas:movement", function () { pintarSino(raiz); });
-    document.addEventListener("atlas:theses", function () { pintarSino(raiz); });
     document.addEventListener("atlas:alertas", function () { pintarSino(raiz); });
   }
 

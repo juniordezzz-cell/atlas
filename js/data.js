@@ -222,10 +222,9 @@ function buildAtlasDataReal() {
   /* Alertas inteligentes — QUATRO MÓDULOS
      -------------------------------------------------------------------
      Antes: só RWAStore.riskEngine(). O Hold já calculava os próprios
-     alertas (posição sem tese, tese arquivada com posição aberta,
-     concentração acima de 40%) e nunca chegavam à tela principal.
-     Agora a consolidação junta Hold + RWA + DeFi + teses paradas de
-     qualquer módulo, com o crítico no topo. */
+     alertas (concentração acima de 40%) e nunca chegavam à tela principal.
+     Agora a consolidação junta Hold + RWA + DeFi + a supervisão das
+     contas, com o crítico no topo. */
   let alertas = [];
   try {
     alertas = (C && C.alerts ? C.alerts() : []).slice(0, 4).map(a => ({

@@ -396,7 +396,7 @@
         },
         {
           "date": "2026-06-02",
-          "text": "Taxas acumulando bem. Mantendo — tese intacta."
+          "text": "Taxas acumulando bem. Mantendo — motivo da entrada intacto."
         }
       ],
       "timeline": [
@@ -1042,7 +1042,7 @@
       "rangePos": 0.5,
       "openedAt": "2026-06-28",
       "closedAt": null,
-      "goal": "Em análise — avaliando abrir posição em JUP/SOL. Ainda montando a tese.",
+      "goal": "Em análise — avaliando abrir posição em JUP/SOL. Ainda montando a análise.",
       "notes": [
         {
           "date": "2026-06-28",
@@ -1053,7 +1053,7 @@
         {
           "date": "2026-06-28",
           "title": "Em análise",
-          "desc": "Tese em construção, sem aporte ainda.",
+          "desc": "Análise em construção, sem aporte ainda.",
           "type": "violet"
         }
       ],
@@ -1110,7 +1110,7 @@
       "status": "encerrada",
       "openedAt": "2026-02-10",
       "closedAt": "2026-05-05",
-      "reason": "Realização da tese — objetivo de rendimento atingido.",
+      "reason": "Objetivo de rendimento atingido.",
       "history": [
         {
           "date": "2026-04-14",
@@ -1465,7 +1465,7 @@
       "status": "encerrada",
       "openedAt": "2026-03-22",
       "closedAt": "2026-04-18",
-      "reason": "Invalidação da tese — rompimento de suporte, saída pra preservar capital.",
+      "reason": "Rompimento de suporte — saída pra preservar capital.",
       "history": [
         {
           "date": "2026-06-10",
@@ -1592,7 +1592,7 @@
       "status": "encerrada",
       "openedAt": "2026-01-15",
       "closedAt": "2026-06-01",
-      "reason": "Realização da tese — rotação de capital para nova oportunidade.",
+      "reason": "Rotação de capital para nova oportunidade.",
       "history": [
         {
           "date": "2026-02-20",

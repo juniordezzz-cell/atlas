@@ -1,7 +1,7 @@
 # HOLD · Sistema de Investimento (ATLAS)
 
-Sistema independente de gestão de investimentos de longo prazo baseada em tese,
-análise e decisão documentada. Frontend puro (HTML/CSS/JS), estado centralizado
+Sistema independente de gestão de investimentos de longo prazo: posições,
+preço médio, resultado aberto e realizado, e decisões documentadas. Frontend puro (HTML/CSS/JS), estado centralizado
 e persistência local — sem build, sem dependências, sem servidor.
 
 ## Como abrir
@@ -22,7 +22,7 @@ Hold/
 │   ├── state.js          Estado central + eventos + localStorage + actions
 │   ├── components.js      Construtores de UI + ícones + formatadores
 │   ├── charts.js          Gráficos SVG (linha, donut, sparkline)
-│   ├── forms.js           Fluxos de modal (novo ativo, editar ativo, tese, trade)
+│   ├── forms.js           Fluxos de modal (novo ativo, editar ativo, compra/venda)
 │   ├── router.js          Hash router + montagem do shell
 │   └── pages/             Uma página por tela (6 telas)
 ├── data/
@@ -31,30 +31,26 @@ Hold/
 ```
 
 ## Telas
-Painel · Ativos · Teses · Métricas · Histórico · Relatórios
+Painel · Ativos · Métricas · Histórico · Relatórios
 
-São seis, e são as que existem na navegação. Este README listava dez —
-incluindo Carteira, Watchlist, Estudos e Configurações, que não são
-rotas do módulo. Watchlist é um *filtro* dentro de Ativos, Carteira
-virou a central compartilhada (`/wallets` e `carteiras.html`), Estudos
-deixou de existir quando virou Tese planejada, e as preferências do
+Watchlist é um *filtro* dentro de Ativos, Carteira virou a central
+compartilhada (`/wallets` e `carteiras.html`), e as preferências do
 Hold moram em **Configurações → Hold**, na tela central.
+
+O ATLAS **não tem mais teses** (decisão de 23/09/2026). O que o módulo
+tinha gravado disso — convicção no ativo, tese vinculada, linhas "Tese
+criada/revisada" no histórico — é limpo na primeira leitura
+(`limparTeses()` em `js/state.js`).
 
 ## Arquitetura
 - **Estado único** em `window.Store.state` (`HOLD_STATE`). A UI **nunca** muta dados
   direto — tudo passa por `Store.actions.*`, que valida a regra, altera o estado,
   **registra histórico**, **emite um evento** e **espelha no localStorage**.
-- **Eventos:** `ASSET_CREATED`, `THESIS_CREATED`, `POSITION_UPDATED`,
-  `THESIS_UPDATED`, `TRADE_EXECUTED`. (`STUDY_CONVERTED` continua
-  declarado por compatibilidade com históricos antigos; nada o emite
-  desde que Estudos viraram Teses planejadas.)
+- **Eventos:** `ASSET_CREATED`, `POSITION_UPDATED`, `TRADE_EXECUTED`.
 - **Regras centrais aplicadas:**
-  - **O que bloqueia a compra é o CAIXA, não a tese.** A regra anterior
-    recusava comprar sem tese vinculada. Tese é *disciplina* — a ausência
-    é problema de processo, e o alerta "Posição sem tese" já cobra.
-    Caixa é *possibilidade*: sem dinheiro a compra não acontece. Bloquear
-    pela tese fazia o ATLAS recusar o registro de uma compra que ocorreu
-    no mundo real. A posição nasce marcada com `semTese` até ela existir.
+  - **O que bloqueia a compra é o CAIXA.** Sem dinheiro na carteira a
+    compra não acontece; pelo formulário, o que faltar entra como
+    depósito automático.
   - **Um ticker, um ativo.** `createAsset` recusa ticker repetido, sem
     diferenciar maiúsculas.
   - **O status do ativo é derivado, nunca digitado** (`Store.get.statusDe`):
@@ -65,6 +61,9 @@ Hold moram em **Configurações → Hold**, na tela central.
   - **Nenhuma operação faz dinheiro sumir.** Compra debita o caixa da
     carteira ativa; venda credita o apurado inteiro de volta. Venda exige
     preço positivo — a zero, a posição sairia da carteira sem nada voltar.
+  - **Venda realiza resultado.** Cada venda grava custo baixado (preço
+    médio × quantidade), apurado e a diferença em `vendas`;
+    `Store.get.realizado()` soma o resultado e `capitalRealizado()` a base.
   - **A curva de evolução é medida, não gerada** (`portfolioHistory`):
     uma leitura por dia, por carteira. Sem duas medições, a tela diz que
     não há histórico em vez de desenhar.
@@ -72,14 +71,9 @@ Hold moram em **Configurações → Hold**, na tela central.
     pelo ticker; o que nenhuma fonte reconhecer é informado à mão em
     **Editar**, e o valor manual vence a API até ser limpo.
   - Toda decisão gera histórico.
-  - Toda tese pode ser revisada.
-  - Toda venda depende de invalidação ou realização da tese (motivo obrigatório).
 
 ## Persistência
-Estado salvo em `localStorage` (`atlas.hold.state.v2`). As **teses** não moram
-aqui: a fonte da verdade é a entidade compartilhada `AtlasTheses`
-(`core/entities/theses.js`), com os status `planejada`, `andamento`,
-`concluida` e `arquivada`.
+Estado salvo em `localStorage` (`atlas.hold.state.v2`).
 
 **Backup é central**, não do módulo: Configurações → Dados e Backup cobre
 `atlas.hold.state.v2`, `atlas.hold.wallet.v1` e o livro de caixa, e
@@ -95,14 +89,8 @@ usam hash, então dá para abrir direto numa tela, ex.:
 `hold/index.html#/ativos?id=as_xxx`.
 
 ## Preferências (Configurações → Hold)
-- **Alertar posição sem tese** e **Alertar concentração elevada** ligam e
-  desligam os alertas que o módulo emite de fato.
+- **Alertar concentração elevada** liga e desliga o alerta que o módulo
+  emite de fato.
 - **Limite de concentração (%)** é o número que decide o alerta, a cor da
   barra de peso na lista e o selo na tela do ativo — um dono só. Estava
   escrito como `40` em três lugares.
-- **Mostrar convicção nas listas** esconde a coluna em Ativos e Relatórios.
-
-As três anteriores ("teses invalidadas", "teses em revisão" e a própria
-convicção) existiam na tela de Configurações e **não eram lidas por
-nenhuma linha do módulo** — e as duas primeiras nomeavam status que
-deixaram de existir.

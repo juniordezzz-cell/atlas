@@ -138,17 +138,7 @@
   var STATUS_BADGE = {
     invested:  { cls: "invested",  label: "Investido" },
     watchlist: { cls: "watchlist", label: "Watchlist" },
-    sold:      { cls: "sold",      label: "Vendido" },
-    active:    { cls: "active",    label: "Ativa" },
-    review:    { cls: "review",    label: "Em revisão" },
-    invalid:   { cls: "invalid",   label: "Invalidada" },
-    draft:     { cls: "draft",     label: "Rascunho" },
-    done:      { cls: "invested",  label: "Concluído" },
-    /* status oficiais de Tese (entidade compartilhada) */
-    planejada: { cls: "draft",     label: "Planejada" },
-    andamento: { cls: "active",    label: "Em andamento" },
-    concluida: { cls: "invested",  label: "Concluída" },
-    arquivada: { cls: "invalid",   label: "Arquivada" }
+    sold:      { cls: "sold",      label: "Vendido" }
   };
   function badge(status, textOverride) {
     var b = STATUS_BADGE[status] || { cls: "plain", label: status };
@@ -167,27 +157,6 @@
      confirmar() a usam por dentro.) */
 
 
-
-  /* ---------- Conviction meter ---------- */
-  function conviction(value, showVal) {
-    var v = Math.max(0, Math.min(10, Math.round(+value || 0)));
-    var tier = v >= 8 ? "high" : v >= 5 ? "mid" : "low";
-    var wrap = el("div", { class: "conviction " + tier });
-    var segs = el("div", { class: "segs" });
-    for (var i = 1; i <= 10; i++) segs.appendChild(el("span", { class: "seg" + (i <= v ? " on" : "") }));
-    wrap.appendChild(segs);
-    if (showVal !== false) wrap.appendChild(el("span", { class: "val", html: v + "<small>/10</small>" }));
-    return wrap;
-  }
-  function convictionMini(value) {
-    var v = Math.max(0, Math.min(10, +value || 0));
-    var wrap = el("span", { class: "conviction-mini" });
-    var bar = el("span", { class: "bar" });
-    bar.appendChild(el("i", { style: "width:" + (v * 10) + "%" }));
-    wrap.appendChild(bar);
-    wrap.appendChild(el("span", { class: "n", text: v }));
-    return wrap;
-  }
 
   /* ---------- Asset cell ---------- */
   function assetCell(a) {
@@ -209,7 +178,7 @@
      agora somaria os dois espaçamentos. As chamadas foram limpas.
 
      A classe .card.pad continua no CSS para cartões montados à mão
-     (sem .card-body), como os da tela de Teses. */
+     (sem .card-body). */
   function card(opts) {
     opts = opts || {};
     var c = el("div", { class: "card" + (opts.hoverable ? " hoverable" : "") });
@@ -574,7 +543,7 @@
     el: el, icon: icon, iconEl: iconEl,
     money: money, compact: compact, pct: pct, signClass: signClass, qty: qty,
     dateShort: dateShort, dateTime: dateTime,
-    badge: badge, conviction: conviction, convictionMini: convictionMini,
+    badge: badge,
     assetCell: assetCell, card: card, kpi: kpi, table: table, empty: empty, button: button,
     actionBtn: actionBtn, rowActions: rowActions, menu: menu, menuBtn: menuBtn,
     fecharMenu: fecharMenu, confirmar: confirmar,

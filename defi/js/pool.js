@@ -941,7 +941,7 @@
      ============================================================ */
   function diarioPanel() {
     return '<div class="panel panel-pad">' +
-      '<div class="panel-head"><div><div class="eyebrow">Tese & anotações</div><h3>Diário da estratégia</h3></div></div>' +
+      '<div class="panel-head"><div><div class="eyebrow">Anotações</div><h3>Diário da estratégia</h3></div></div>' +
       '<div class="diary-goal" style="margin-bottom:18px">' + esc(p.goal || "Sem objetivo definido ainda.") + '</div>' +
       '<div class="field"><textarea class="textarea" id="noteInput" placeholder="Adicionar anotação ao diário…"></textarea></div>' +
       '<div class="spread"><span class="hint faint">Suas anotações alimentarão o Oráculo futuramente.</span>' +

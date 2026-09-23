@@ -82,7 +82,7 @@ RWA/
 #/asset/:id        Análise completa do ativo (3 camadas + performance)
 #/macro            Ambiente macro (juros, inflação, DXY, liquidez, risk-on/off)
 #/risk             Risk Engine (heatmap de concentração + alertas)
-#/narrative        Narrative Engine (tese macro dominante + ciclos)
+#/narrative        Narrative Engine (narrativa macro dominante + ciclos)
 #/journal          Registro de decisões (timeline estilo AXIOM)
 ```
 
@@ -133,10 +133,6 @@ Nenhuma dessas mudanças toca na estrutura principal.
 
 ## Pendências conhecidas
 
-- **Teses.** O RWA é o único módulo que ainda não consome a entidade
-  compartilhada `AtlasTheses`. Por isso as decisões registradas aqui
-  (`Narrative` e `Journal`) não aparecem no Academy junto com as de Hold,
-  Trade e DeFi.
 - **Tokens sem ponte.** Os cinco tokens de regime de mercado (`--r-riskon`,
   `--r-riskoff`, `--r-liqexp`, `--r-liqcon`, `--r-trans`) não passam por
   `themes/atlas-theme.css` e mantêm o valor fixo daqui, logo não acompanham o

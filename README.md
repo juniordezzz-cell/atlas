@@ -2,7 +2,7 @@
 
 **Sistema operacional financeiro** para gestão de patrimônio em cripto e ativos
 reais. Reúne quatro frentes de investimento — **Hold · Trade · DeFi · RWA** —
-sob um mesmo shell, com carteiras, teses, relatórios e consolidação de
+sob um mesmo shell, com carteiras, caixa, relatórios e consolidação de
 patrimônio compartilhados.
 
 HTML, CSS e JavaScript puro. **Sem build, sem backend e sem CDN** — a única
@@ -75,7 +75,7 @@ atlas/
 ├── trade/                Módulo de operações                     (SPA)
 ├── defi/                 Módulo de pools, staking e lending      (MPA ¹)
 ├── RWA/                  Módulo de ativos do mundo real          (SPA)
-└── academy/              Central de conhecimento (teses)         (SPA)
+└── academy/              Central de mercado                      (SPA)
 ```
 
 > ¹ O DeFi é o único módulo multipágina, **por decisão** — não por atraso. O
@@ -103,7 +103,6 @@ atlas/
 | `core/atlas-pwa.js` | Registra o service worker (nunca em `file://`) | `AtlasPWA` |
 | `core/atlas-module-settings.js` | Configurações por módulo, numa tela só | `AtlasModuleSettings` |
 | `core/atlas-price.js` | Preço por símbolo, com cache e stablecoins | `AtlasPrice` |
-| `core/entities/theses.js` | Entidade compartilhada de Teses (versionada) | `AtlasTheses` |
 | `core/ui/atlas-shell.js` | Oráculo e "Voltar ao Atlas", iguais em todo lugar | `AtlasShell`, `AtlasOraculo` |
 | `core/ui/atlas-onboarding.js` | Os três passos da primeira sessão | `AtlasOnboarding` |
 | `core/ui/atlas-flash.js` | Pisca o valor que mudou (verde sobe, vermelho desce) | `AtlasFlash` |
@@ -283,21 +282,21 @@ e desenha só onde houve medição: dia sem leitura repete o último valor em
 degrau, e o período anterior à primeira medição fica em branco. A legenda
 informa quantos dias foram medidos de fato.
 
-## Teses
+## Todo dólar tem origem
 
-Toda decisão **deveria** nascer de uma **tese**, registrada dentro de um módulo.
-Ao concluir, ela vai automaticamente para o **Academy** e pode ser reaberta de
-lá, gerando uma nova versão sem perder o histórico. Hold, Trade e DeFi já
-consomem a entidade compartilhada; o RWA ainda não.
+O patrimônio só muda com depósito, saque ou resultado:
 
-Status oficiais: `planejada` · `andamento` · `concluida` · `arquivada`.
+    caixa + posições = depositado − sacado + resultado
 
-A tese **cobra, não tranca**. O Hold chegou a recusar compras sem tese
-vinculada, e a regra confundia duas naturezas: tese é disciplina, caixa é
-possibilidade. Recusar o registro de uma compra que aconteceu no mundo real
-deixa o sistema sem saber de um fato — pior que registrá-lo incompleto. O que
-bloqueia uma posição, em qualquer módulo, é não haver caixa na carteira. A
-ausência de tese vira alerta e fica visível até ser resolvida.
+O resultado soma posições abertas, vendas e encerramentos já realizados e a
+variação dos tokens parados no caixa. O supervisor (`core/atlas-supervisor.js`)
+confere a igualdade sozinho nas telas que carregam os quatro módulos e avisa
+no sino quando ela não fecha — com a diferença. O que bloqueia uma posição, em
+qualquer módulo, é não haver caixa na carteira; pelo formulário, a falta vira
+depósito automático.
+
+O ATLAS **não tem teses** (removidas em 23/09/2026). Se o conceito voltar, o
+nome será "estudos".
 
 ---
 

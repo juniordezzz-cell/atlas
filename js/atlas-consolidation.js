@@ -1028,35 +1028,9 @@
       return true;
     }, null);
 
-    /* ---- Todos os módulos: tese aberta há mais de 72h ----
-       Mesma régua que o Oráculo já usa (core/ui/atlas-shell.js). Uma
-       tese parada é decisão adiada, que é o problema que o ATLAS
-       existe para combater. */
-    safe(function () {
-      var T = global.AtlasTheses;
-      if (!T || !T.open) return null;
-      var LIM = 72 * 3600 * 1000;
-      var paradas = T.open().filter(function (t) {
-        return t.createdAt && (Date.now() - new Date(t.createdAt).getTime()) > LIM;
-      });
-      /* uma linha por módulo, não uma por tese: dez teses paradas no
-         Trade viravam dez alertas iguais e enterravam o resto */
-      var porModulo = {};
-      paradas.forEach(function (t) {
-        var m = t.module || "atlas";
-        porModulo[m] = (porModulo[m] || 0) + 1;
-      });
-      Object.keys(porModulo).forEach(function (m) {
-        var n = porModulo[m];
-        add("warn", m, n + (n === 1 ? " tese aberta" : " teses abertas") +
-                       " há mais de 72h — vale concluir ou arquivar.");
-      });
-      return true;
-    }, null);
-
     /* ---- Supervisão: incoerência entre fontes ----
-       Os alertas acima são do NEGÓCIO — uma tese parada, uma posição
-       concentrada. Estes são do SISTEMA: dois números que não podem
+       Os alertas acima são do NEGÓCIO — uma pool fora da faixa, uma
+       posição concentrada. Estes são do SISTEMA: dois números que não podem
        ser verdade ao mesmo tempo.
 
        Entram aqui porque o centro de alertas já lê desta função, e é

@@ -1,7 +1,7 @@
 /* ============================================================
    ATLAS — Módulo Registro de Decisão (Sprint 3)
    ------------------------------------------------------------
-   O elo entre a tese e a execução. Documenta racionalmente a
+   O elo entre a análise e a execução. Documenta racionalmente a
    decisão de ENTRAR ou NÃO ENTRAR: motivo, confiança, justificativa
    técnica, gestão de risco, alavancagem e observações.
    ============================================================ */
@@ -13,7 +13,6 @@
   var selectedId = null;
   var editId = null;
   var filter = "todos";    // todos | entrar | nao_entrar
-  var pending = null;      // pedido externo: { studyId }
 
   var DECISION = {
     entrar:     { label: "Entrar",     badge: "badge--profit" },
@@ -21,7 +20,6 @@
   };
 
   function show(v) { view = v; render(mountRef); }
-  function studyLabel(s) { return s ? (s.asset + " · " + s.title) : null; }
 
   function confidenceDots(n, interactive) {
     var out = "";
@@ -50,24 +48,16 @@
           t[1] + '<span class="est__tab-n">' + counts[t[0]] + '</span></button>';
       }).join("");
 
-    var awaiting = app.studiesAwaitingRd();
-    var banner = awaiting.length ?
-      '<div class="rd__banner">' + u.icon("alert", 16) +
-      '<span>' + awaiting.length + ' tese(s) concluída(s) aguardando decisão: <b>' +
-      awaiting.map(function (s) { return u.escape(s.asset); }).join(", ") + '</b></span>' +
-      '<button class="btn btn--accent" data-new>' + u.icon("plus", 15) + ' Registrar decisão</button></div>' : '';
-
     var cards = list.length ? list.map(function (r) {
-      var s = r.studyId ? app.getStudy(r.studyId) : null;
       return '<button class="est__card rd__card" data-open="' + r.id + '">' +
         '<div class="est__card-top">' +
           '<span class="est__ticker">' + u.escape(r.asset) + '</span>' +
           '<span class="badge ' + DECISION[r.decision].badge + '">' + DECISION[r.decision].label + '</span>' +
         '</div>' +
         '<div class="rd__card-conf">' + confidenceDots(r.confidence, false) + '<span class="rd__conf-lbl">confiança</span></div>' +
-        '<p class="est__card-thesis">' + u.escape(r.rationale || "Sem racional registrado.") + '</p>' +
+        '<p class="est__card-texto">' + u.escape(r.rationale || "Sem racional registrado.") + '</p>' +
         '<div class="est__card-foot">' +
-          '<span class="est__meta">' + u.icon(s ? "flask" : "dot", 13) + (s ? u.escape(studyLabel(s)) : "avulso") + '</span>' +
+          '<span class="est__meta">' + u.icon("dot", 13) + u.escape(u.ago(r.createdAt)) + '</span>' +
           (r.status === "convertido" ? '<span class="badge badge--azure badge--dot">Virou trade</span>' : '') +
         '</div>' +
       '</button>';
@@ -81,7 +71,6 @@
           '<div><span class="eyebrow">Decisão documentada</span><h1>Registro de Decisão</h1></div>' +
           '<button class="btn btn--accent" data-new>' + u.icon("plus", 16) + ' Novo RD</button>' +
         '</div>' +
-        banner +
         '<div class="est__filters reveal">' + tabs + '</div>' +
         '<div class="est__list reveal">' + cards + '</div>' +
       '</div>';
@@ -90,7 +79,7 @@
       b.addEventListener("click", function () {
         /* modo demonstração: limpar antes de cadastrar dado real */
         if (window.AtlasDemo && AtlasDemo.bloquear(function () { b.click(); })) return;
-        editId = null; pending = null; show("form");
+        editId = null; show("form");
       });
     });
     mount.querySelectorAll("[data-filter]").forEach(function (b) {
@@ -112,7 +101,6 @@
     var u = ATLAS.util, app = ATLAS.app;
     var r = app.getRd(selectedId);
     if (!r) { show("list"); return; }
-    var s = r.studyId ? app.getStudy(r.studyId) : null;
     var rationaleLabel = r.decision === "entrar" ? "Por que entrar" : "Por que não entrar";
 
     var riskBits = [];
@@ -128,8 +116,7 @@
           '<div class="est__detail-title">' +
             '<span class="est__ticker est__ticker--lg">' + u.escape(r.asset) + '</span>' +
             '<div><h1>Decisão: ' + DECISION[r.decision].label + '</h1>' +
-            '<span class="est__sub">Registrado ' + u.ago(r.createdAt) +
-              (s ? ' · a partir da tese de ' + u.escape(s.asset) : ' · avulso') + '</span></div>' +
+            '<span class="est__sub">Registrado ' + u.ago(r.createdAt) + '</span></div>' +
           '</div>' +
           '<div class="est__detail-badges">' +
             '<span class="badge ' + DECISION[r.decision].badge + '">' + DECISION[r.decision].label + '</span>' +
@@ -148,9 +135,6 @@
           '<div class="rd__side">' +
             (riskBits.length ? '<div class="card"><div class="card__head"><span class="card__title">Gestão de risco</span></div>' +
               '<div class="rd__risk">' + riskBits.join("") + '</div></div>' : '') +
-            (s ? '<button class="card rd__studylink" data-study="' + s.id + '">' +
-              '<span class="rd__field-lbl">Tese de origem</span>' +
-              '<b>' + u.escape(s.title) + '</b><span class="est__meta">' + u.icon("flask", 13) + u.escape(s.asset) + ' · ver tese →</span></button>' : '') +
           '</div>' +
         '</div>' +
 
@@ -171,10 +155,6 @@
         danger: true
       }, function () { app.removeRd(r.id); show("list"); });
     });
-    var sl = mount.querySelector("[data-study]");
-    if (sl) sl.addEventListener("click", function () {
-      location.href = "../academy/index.html#/detail/" + sl.dataset.study;
-    });
     var tb = mount.querySelector("[data-trade]");
     if (tb) tb.addEventListener("click", function () {
       var linked = app.trades().filter(function (t) { return t.rdId === r.id; })[0];
@@ -188,20 +168,12 @@
   function renderForm(mount) {
     var u = ATLAS.util, app = ATLAS.app;
     var r = editId ? app.getRd(editId) : null;
-    var prefillStudy = pending && pending.studyId ? pending.studyId : (r ? r.studyId : null);
-    var studies = app.studies();
-
     var stateObj = {
-      studyId: prefillStudy,
       decision: r ? r.decision : "entrar",
       confidence: r ? r.confidence : 3
     };
 
-    var studyOpts = '<option value="">Sem tese (avulso)</option>' + studies.map(function (s) {
-      return '<option value="' + s.id + '"' + (s.id === prefillStudy ? " selected" : "") + '>' + u.escape(studyLabel(s)) + '</option>';
-    }).join("");
-
-    var preAsset = r ? r.asset : (prefillStudy && app.getStudy(prefillStudy) ? app.getStudy(prefillStudy).asset : "");
+    var preAsset = r ? r.asset : "";
 
     mount.innerHTML =
       '<div class="estudos est__form reveal">' +
@@ -209,12 +181,8 @@
         '<div class="est__head"><div><span class="eyebrow">Decisão</span><h1>' + (r ? "Editar RD" : "Novo Registro de Decisão") + '</h1></div></div>' +
         '<div class="card est__form-card">' +
 
-          '<div class="field-row">' +
-            '<label class="field"><span>Tese de origem</span>' +
-              '<select class="input" data-f="studyId">' + studyOpts + '</select></label>' +
-            '<label class="field field--sm"><span>Ativo</span>' +
-              '<input class="input" data-f="asset" placeholder="BTC" value="' + u.escape(preAsset) + '" maxlength="12"></label>' +
-          '</div>' +
+          '<label class="field"><span>Ativo</span>' +
+            '<input class="input" data-f="asset" placeholder="BTC" value="' + u.escape(preAsset) + '" maxlength="12"></label>' +
 
           '<label class="field"><span>Decisão</span>' +
             '<div class="seg" data-f="decision">' +
@@ -248,8 +216,6 @@
         '</div>' +
       '</div>';
 
-    pending = null; // consumido
-
     // decisão (segmentado) + label do racional
     mount.querySelectorAll('[data-f="decision"] .seg__opt').forEach(function (o) {
       o.addEventListener("click", function () {
@@ -267,13 +233,6 @@
         });
       });
     });
-    // tese -> auto-preenche ativo
-    var sel = mount.querySelector('[data-f="studyId"]');
-    sel.addEventListener("change", function () {
-      var s = app.getStudy(sel.value);
-      if (s) mount.querySelector('[data-f="asset"]').value = s.asset;
-    });
-
     function val(f) { var e = mount.querySelector('[data-f="' + f + '"]'); return e ? e.value.trim() : ""; }
 
     // Autocomplete de ativos (CoinGecko)
@@ -291,7 +250,6 @@
       if (!asset) return ATLAS.util.invalido(mount.querySelector('[data-f="asset"]'), "Informe o ativo da operação.");
       if (!val("rationale")) return ATLAS.util.invalido(mount.querySelector('[data-f="rationale"]'), "Registre o racional da decisão.");
       var payload = {
-        studyId: val("studyId") || null,
         asset: asset,
         decision: stateObj.decision,
         confidence: stateObj.confidence,
@@ -310,7 +268,6 @@
   // ---------- dispatcher ----------
   function render(mount) {
     mountRef = mount;
-    if (pending && pending.studyId && view === "list") { editId = null; view = "form"; }
     if (view === "detail") return renderDetail(mount);
     if (view === "form") return renderForm(mount);
     return renderList(mount);
@@ -318,9 +275,9 @@
 
   ATLAS.router.register("rd", { label: "Registro de Decisão", icon: "rd", render: render });
 
-  // Pedido externo (ex.: "Criar RD" no detalhe de uma tese)
+  // Pedido externo: abrir o formulário ou um registro direto
   ATLAS.rd = {
-    request: function (opts) { pending = opts || {}; view = "form"; editId = null; },
+    request: function () { view = "form"; editId = null; },
     openDetail: function (id) { selectedId = id; view = "detail"; }
   };
 

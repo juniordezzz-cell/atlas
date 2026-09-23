@@ -111,7 +111,6 @@
     if (!t) { show("list"); return; }
     var up = t.pnl >= 0, age = app.tradeAgeHours(t), stale = t.status === "aberto" && age > REVIEW_H();
     var rd = t.rdId ? app.getRd(t.rdId) : null;
-    var s = t.studyId ? app.getStudy(t.studyId) : null;
 
     // Linha do tempo (eventos)
     var events = t.events.slice().sort(function (a, b) { return a.ts - b.ts; }).map(function (e) {
@@ -184,8 +183,7 @@
           '<div class="card"><div class="card__head"><span class="card__title">Acompanhamento</span></div>' +
             '<div class="timeline">' + events + '</div>' + partials + '</div>' +
           '<div class="rd__side">' + manage + review +
-            (rd ? '<button class="card rd__studylink" data-rd="' + rd.id + '"><span class="rd__field-lbl">Decisão de origem</span><b>RD: ' + (rd.decision === "entrar" ? "Entrar" : "Não entrar") + '</b><span class="est__meta">' + u.icon("rd", 13) + u.escape(rd.asset) + ' · ver RD →</span></button>' : "") +
-            (s ? '<button class="card rd__studylink" data-study="' + s.id + '"><span class="rd__field-lbl">Tese de origem</span><b>' + u.escape(s.title) + '</b><span class="est__meta">' + u.icon("flask", 13) + u.escape(s.asset) + ' · ver tese →</span></button>' : "") +
+            (rd ? '<button class="card rd__link" data-rd="' + rd.id + '"><span class="rd__field-lbl">Decisão de origem</span><b>RD: ' + (rd.decision === "entrar" ? "Entrar" : "Não entrar") + '</b><span class="est__meta">' + u.icon("rd", 13) + u.escape(rd.asset) + ' · ver RD →</span></button>' : "") +
           '</div>' +
         '</div>' +
 
@@ -203,8 +201,6 @@
     });
     var rdl = mount.querySelector("[data-rd]");
     if (rdl) rdl.addEventListener("click", function () { if (ATLAS.rd) { ATLAS.rd.openDetail(rdl.dataset.rd); } ATLAS.router.go("rd"); });
-    var sl = mount.querySelector("[data-study]");
-    if (sl) sl.addEventListener("click", function () { location.href = "../academy/index.html#/detail/" + sl.dataset.study; });
 
     if (t.status === "aberto") {
       var noteI = mount.querySelector("[data-note]");
@@ -285,7 +281,6 @@
     var u = ATLAS.util, app = ATLAS.app;
     var rdId = pending && pending.rdId ? pending.rdId : null;
     var rd = rdId ? app.getRd(rdId) : null;
-    var studies = app.studies();
     var pend = pendingRds();
     var wallets = app.wallets ? app.wallets() : [];
     if (!wallets.length) wallets = [{ id: "principal", name: "Principal" }];
@@ -293,7 +288,6 @@
 
     var pre = {
       asset: rd ? rd.asset : "",
-      studyId: rd ? rd.studyId : "",
       stop: rd ? (rd.risk.stop || "") : "",
       size: rd ? (rd.risk.size || "") : "",
       leverage: rd ? (rd.leverage || "") : "",
@@ -303,9 +297,6 @@
 
     var rdOpts = '<option value="">Sem RD (avulso)</option>' + pend.concat(rd && pend.indexOf(rd) < 0 ? [rd] : []).map(function (r) {
       return '<option value="' + r.id + '"' + (r.id === rdId ? " selected" : "") + '>' + u.escape(r.asset) + ' · Entrar (conf. ' + r.confidence + ')</option>';
-    }).join("");
-    var studyOpts = '<option value="">Sem tese</option>' + studies.map(function (s) {
-      return '<option value="' + s.id + '"' + (s.id === pre.studyId ? " selected" : "") + '>' + u.escape(s.asset + " · " + s.title) + '</option>';
     }).join("");
     var walletOpts = wallets.map(function (w) {
       var sel = current && current.id === w.id ? " selected" : "";
@@ -322,7 +313,6 @@
             '<label class="field field--sm"><span>Ativo</span><input class="input" data-f="asset" value="' + u.escape(pre.asset) + '" placeholder="BTC" maxlength="12"></label>' +
           '</div>' +
           '<label class="field"><span>Carteira da posição</span><select class="input" data-f="walletId">' + walletOpts + '</select></label>' +
-          '<label class="field"><span>Tese de origem</span><select class="input" data-f="studyId">' + studyOpts + '</select></label>' +
           '<label class="field"><span>Direção</span><div class="seg" data-f="side">' +
             '<button type="button" class="seg__opt" data-v="long" aria-current="true">Long</button>' +
             '<button type="button" class="seg__opt" data-v="short" aria-current="false">Short</button></div></label>' +
@@ -398,7 +388,6 @@
         if (r.risk.stop) mount.querySelector('[data-f="stop"]').value = r.risk.stop;
         if (r.risk.size) mount.querySelector('[data-f="size"]').value = r.risk.size;
         if (r.leverage) mount.querySelector('[data-f="leverage"]').value = r.leverage;
-        if (r.studyId) mount.querySelector('[data-f="studyId"]').value = r.studyId;
       }
     });
 
@@ -425,7 +414,7 @@
       if (window.AtlasWallets && !w) return ATLAS.util.invalido(mount.querySelector('[data-f="walletId"]'), "Carteira inválida.");
 
       var tr = app.openTrade({
-        asset: asset, side: sideState.side, rdId: val("rdId") || null, studyId: val("studyId") || null,
+        asset: asset, side: sideState.side, rdId: val("rdId") || null,
         entry: numOr("entry"), stop: numOr("stop"), target: numOr("target"),
         sizeUSD: capital, walletId: wid, cobrirFalta: true,
         size: val("size"), leverage: val("leverage"), note: val("note")

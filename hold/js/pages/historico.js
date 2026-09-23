@@ -39,8 +39,8 @@
     todos.forEach(function (h) { contagem[h.tipo_acao] = (contagem[h.tipo_acao] || 0) + 1; });
 
     var seg = U.el("div", { class: "segmented" });
-    [["all", "Tudo"], ["TRADE_EXECUTED", "Operações"], ["THESIS_CREATED", "Teses"],
-     ["THESIS_UPDATED", "Revisões"], ["POSITION_UPDATED", "Preços"]].forEach(function (o) {
+    [["all", "Tudo"], ["TRADE_EXECUTED", "Operações"], ["ASSET_CREATED", "Ativos"],
+     ["POSITION_UPDATED", "Preços"]].forEach(function (o) {
       var b = U.el("button", { class: filt === o[0] ? "on" : "" });
       b.appendChild(document.createTextNode(o[1]));
       b.appendChild(U.el("span", { class: "seg-count", text: String(contagem[o[0]] || 0) }));
@@ -83,7 +83,7 @@
                   U.button("Ver tudo", { variant: "secondary", icon: "history",
                     onClick: function () { filt = "all"; window.Router.rerender(); } }))
               : U.empty("history", "Sem histórico ainda",
-                  "Cadastrar um ativo, comprar, vender, escrever uma tese — tudo deixa rastro aqui, com a justificativa que você escreveu.")
+                  "Cadastrar um ativo, comprar, vender, marcar um preço — tudo deixa rastro aqui, com a justificativa que você escreveu.")
         ] }));
         return;
       }
@@ -167,9 +167,9 @@
 
   function fullItem(h) {
     var a = S.get.asset(h.ativo_id);
-    var kind = h.subtipo === "buy" ? "buy" : h.subtipo === "sell" ? "sell" : h.subtipo === "thesis" ? "thesis" : h.subtipo === "study" ? "study" : "";
+    var kind = h.subtipo === "buy" ? "buy" : h.subtipo === "sell" ? "sell" : "";
     var item = U.el("div", { class: "tl-item " + kind });
-    item.innerHTML = '<div class="tl-dot">' + U.icon(h.subtipo === "buy" ? "arrowUp" : h.subtipo === "sell" ? "arrowDown" : h.subtipo === "thesis" ? "doc" : "check") + '</div>';
+    item.innerHTML = '<div class="tl-dot">' + U.icon(h.subtipo === "buy" ? "arrowUp" : h.subtipo === "sell" ? "arrowDown" : "check") + '</div>';
     var head = U.el("div", { class: "tl-head" });
     head.appendChild(U.el("span", { class: "tl-title", text: window.Pages._labelAction(h.tipo_acao) }));
     /* O ativo vira atalho quando ainda existe. Exclusão não apaga o

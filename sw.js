@@ -85,14 +85,13 @@
    que lista as tools (a primeira é o Finanças). atlas-shell.js roda em
    TODA página — sem o bump, quem já abriu o ATLAS continuaria recebendo
    do cache a versão sem o novo item de menu, e o botão não apareceria. */
-/* v33 = o Academy deixou de ser a biblioteca de teses e virou a central
+/* v33 = o Academy virou a central
    de mercado (command center + página dedicada por ativo). O módulo foi
    reescrito (academy/index.html, academy/js/*, academy/css/academy.css) e
    ganhou uma camada de provedores nova (core/providers/*: coinpaprika,
    binance, coinlore, defillama, feargreed, id-map, e a cadeia de fallback
    no registry). Sem o bump, quem já abriu o ATLAS continuaria recebendo do
-   cache o Academy antigo. A entidade compartilhada AtlasTheses
-   (core/entities/theses.js) foi MANTIDA — Hold/Trade/RWA/DeFi gravam nela. */
+   cache o Academy antigo. */
 /* v34 = o dashboard do Academy virou o Global Command Center (3 colunas
    com globo central em Canvas, abas Mercado/DeFi/RWA/Analytics/Yields e
    metricas de TVL/RWA/yields via DefiLlama). Entrou academy/js/academy-globe.js
@@ -119,7 +118,10 @@
    primeira tela que lê o backend central-rwa/ no Supabase. */
 /* v63 = abas Eventos e Agentes da Central RWA (Fases 3 e 4). */
 /* v64 = agentes por cesta, com página própria (#/agentes/:id). */
-var VERSAO = "atlas-v72";
+/* v73 = o ATLAS não tem mais teses (core/entities/theses.js saiu; Hold,
+   Trade, RWA e Oráculo sem o conceito) e as contas fecham com o extrato
+   (token em caixa no resultado, vendas do Hold, pools encerradas). */
+var VERSAO = "atlas-v73";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

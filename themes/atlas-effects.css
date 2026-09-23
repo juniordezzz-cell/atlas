@@ -238,8 +238,7 @@ textarea.is-invalid {
 .atlas-card,
 .fin-card,      /* defi  */
 .pos-card,      /* defi  */
-.est__card,     /* trade */
-.thesis-card {  /* academy */
+.est__card {    /* trade */
   transition:
     transform    var(--atlas-dur)  var(--atlas-ease),
     box-shadow   var(--atlas-dur)  var(--atlas-ease),
@@ -273,8 +272,7 @@ textarea.is-invalid {
 .atlas-card:hover,
 .fin-card:hover,
 .pos-card:hover,
-.est__card:hover,
-.thesis-card:hover {
+.est__card:hover {
   transform: translateY(-3px);
   border-color: var(--atlas-border-hi);
   box-shadow: var(--atlas-sh-3);

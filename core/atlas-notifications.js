@@ -15,7 +15,7 @@
         e em Configurações a lista chegava vazia mesmo havendo alerta.
 
      3. Não havia LIDO. A bolinha acendia enquanto o alerta existisse,
-        então um alerta permanente ("3 teses abertas há mais de 72h")
+        então um alerta permanente ("pool fora da faixa há dias")
         deixava a bolinha acesa para sempre. Uma bolinha que nunca apaga
         é uma bolinha que ninguém olha — e aí o alerta que importava
         passa despercebido no meio.
@@ -26,7 +26,7 @@
    quatro módulos e funciona em qualquer página. O estado de leitura é
    por ALERTA, não por sessão: cada um ganha uma identidade estável
    derivada do próprio conteúdo, e uma vez lido não volta a acender.
-   Se o texto mudar — de "3 teses abertas" para "5 teses abertas" — a
+   Se o texto mudar — de "SOL representa 41%" para "SOL representa 55%" — a
    identidade muda junto e ele acende de novo, que é o comportamento
    certo: é um alerta diferente.
 

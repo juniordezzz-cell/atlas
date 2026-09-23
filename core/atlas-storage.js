@@ -90,8 +90,6 @@
     /* sistema */
     "atlas.settings.v1",
     "atlas.wallets.v2",
-    "atlas.theses.v1",
-    "atlas.future_studies.v1",
     /* ------------------------------------------------------------
        O LIVRO DE CAIXA — a chave mais importante do backup
 

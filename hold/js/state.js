@@ -15,8 +15,8 @@
 
   /* ---- Ponte com a Central de Carteiras (AtlasWallets) ----
      As POSIÇÕES do Hold passam a pertencer a uma carteira (o dinheiro
-     é por carteira). Ativos e teses continuam do módulo inteiro (uma
-     tese é a mesma em qualquer carteira). A carteira ativa efetiva é
+     é por carteira). Ativos continuam do módulo inteiro. A carteira
+     ativa efetiva é
      a global ativa da central, ou uma Local escolhida dentro do Hold. */
   /* Local selecionada dentro do Hold: não propaga para a central, mas
      persiste. O Hold é SPA e re-renderiza sem recarregar, então uma
@@ -61,10 +61,7 @@
   /* ---- Event system (nomes travados na spec) ---- */
   var EVENTS = {
     ASSET_CREATED:    "ASSET_CREATED",
-    THESIS_CREATED:   "THESIS_CREATED",
     POSITION_UPDATED: "POSITION_UPDATED",
-    STUDY_CONVERTED:  "STUDY_CONVERTED",
-    THESIS_UPDATED:   "THESIS_UPDATED",
     TRADE_EXECUTED:   "TRADE_EXECUTED",
     STATE_CHANGED:    "STATE_CHANGED"   // interno p/ re-render
   };
@@ -76,12 +73,9 @@
     if (evt !== EVENTS.STATE_CHANGED) emit(EVENTS.STATE_CHANGED, { evt: evt, payload: payload });
   }
 
-  /* ---- State ----
-     `teses` é um ESPELHO somente-leitura da entidade compartilhada
-     AtlasTheses (module: "hold"). Estudos deixaram de existir —
-     viraram Teses com status "planejada" (migração automática). */
+  /* ---- State ---- */
   var HOLD_STATE = {
-    ativos: [], carteira: [], teses: [], historico: [], config: {},
+    ativos: [], carteira: [], historico: [], config: {},
     /* Medições diárias do valor da carteira, por carteira. Ver
        recordSnapshot(). Existe para o painel poder desenhar uma curva
        que ele MEDIU, em vez de uma que ele inventou. */
@@ -97,46 +91,12 @@
     return (prefix || "id") + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   }
 
-  /* ---- persistence ----
-     Teses NÃO são persistidas aqui — a fonte da verdade é a
-     entidade compartilhada AtlasTheses (core/entities/theses.js). */
+  /* ---- persistence ---- */
   function persist() {
     try {
-      var copy = {};
-      Object.keys(HOLD_STATE).forEach(function (k) { if (k !== "teses") copy[k] = HOLD_STATE[k]; });
-      localStorage.setItem(LS_KEY, JSON.stringify(copy));
+      localStorage.setItem(LS_KEY, JSON.stringify(HOLD_STATE));
     }
     catch (e) { console.warn("localStorage indisponível:", e); }
-  }
-
-  /* Espelha as teses do módulo Hold (entidade compartilhada) no
-     formato interno que as páginas já conhecem. Inclui concluídas
-     (necessárias p/ regra "nenhum ativo investido sem tese"); a
-     página de Teses filtra a exibição. */
-  function fromEntity(t) {
-    var d = t.data || {};
-    return {
-      id: t.id,
-      ativo_id: d.ativo_id || null,
-      narrativa: t.content || "",
-      cenarios: d.cenarios || { bull: "", base: "", bear: "" },
-      riscos: d.riscos || [],
-      catalisadores: d.catalisadores || [],
-      criterios_invalidacao: d.criterios_invalidacao || "",
-      conviccao: d.conviccao != null ? d.conviccao : 5,
-      status: t.status,             // planejada | andamento | concluida | arquivada
-      version: t.version || 1,
-      revisoes: Math.max(0, (t.version || 1) - 1),
-      updatedAt: t.updatedAt || null,
-      titulo: t.title || ""
-    };
-  }
-
-  function syncTheses() {
-    if (!window.AtlasTheses) { HOLD_STATE.teses = []; return; }
-    HOLD_STATE.teses = window.AtlasTheses
-      .byModule("hold", { includeConcluded: true })
-      .map(fromEntity);
   }
 
   function load() {
@@ -146,7 +106,6 @@
       try {
         var parsed = JSON.parse(raw);
         Object.keys(HOLD_STATE).forEach(function (k) {
-          if (k === "teses") return;
           /* Chave ausente no arquivo NÃO herda o que estava em memória:
              ela volta ao vazio. Sem isto, "Começar do zero" apagava as
              posições e deixava os snapshots de pé — o painel desenhava
@@ -154,9 +113,8 @@
              qualquer chave nova que o formato ganhe depois. */
           HOLD_STATE[k] = parsed[k] != null ? parsed[k] : (Array.isArray(HOLD_STATE[k]) ? [] : {});
         });
-        if (ensureWalletStamp()) persist();
-        syncTheses();
-        watchEntity();
+        var mudouCarteira = ensureWalletStamp();
+        if (limparTeses() || mudouCarteira) persist();
         watchWallets();
         return;
       } catch (e) { console.warn("Estado corrompido, recarregando semente."); }
@@ -173,9 +131,38 @@
     HOLD_STATE.vendas = [];
     ensureWalletStamp();
     persist();
-    syncTheses();
-    watchEntity();
     watchWallets();
+  }
+
+  /* ------------------------------------------------------------
+     O ATLAS NÃO TEM MAIS TESES
+
+     O módulo foi construído em volta delas: convicção no ativo, tese
+     vinculada na posição, linha "Tese criada/revisada" no histórico.
+     O conceito saiu do sistema (decisão do dono do produto,
+     23/09/2026), e o que ele deixou gravado sai junto na primeira
+     leitura — compras, vendas e preços ficam intactos.
+     ------------------------------------------------------------ */
+  var EVENTOS_DE_TESE = { THESIS_CREATED: 1, THESIS_UPDATED: 1, STUDY_CONVERTED: 1 };
+  function limparTeses() {
+    var mudou = false;
+    (HOLD_STATE.ativos || []).forEach(function (a) {
+      ["tese_id", "conviccao"].forEach(function (k) { if (k in a) { delete a[k]; mudou = true; } });
+    });
+    (HOLD_STATE.carteira || []).forEach(function (p) {
+      if ("semTese" in p) { delete p.semTese; mudou = true; }
+    });
+    var antes = (HOLD_STATE.historico || []).length;
+    HOLD_STATE.historico = (HOLD_STATE.historico || []).filter(function (h) {
+      return !EVENTOS_DE_TESE[h.tipo_acao] && h.subtipo !== "thesis" && h.subtipo !== "study";
+    });
+    HOLD_STATE.historico.forEach(function (h) {
+      if ("tese_id" in h) { delete h.tese_id; mudou = true; }
+    });
+    ["alerta_sem_tese", "mostrar_conviccao", "alerta_invalidacao", "alerta_revisao"].forEach(function (k) {
+      if (HOLD_STATE.config && k in HOLD_STATE.config) { delete HOLD_STATE.config[k]; mudou = true; }
+    });
+    return mudou || HOLD_STATE.historico.length !== antes;
   }
 
   var watchingWallets = false;
@@ -188,23 +175,13 @@
     });
   }
 
-  var watching = false;
-  function watchEntity() {
-    if (watching || !window.AtlasTheses) return;
-    watching = true;
-    window.AtlasTheses.onChange(function () {
-      syncTheses();
-      emit(EVENTS.STATE_CHANGED, { evt: "theses_sync" });
-    });
-  }
-
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
 
   /* ---- history helper (toda ação gera histórico) ---- */
-  function logHistory(tipo_acao, subtipo, ativo_id, tese_id, justificativa, impacto) {
+  function logHistory(tipo_acao, subtipo, ativo_id, justificativa, impacto) {
     HOLD_STATE.historico.unshift({
       id: uid("h"), tipo_acao: tipo_acao, subtipo: subtipo || null,
-      ativo_id: ativo_id || null, tese_id: tese_id || null,
+      ativo_id: ativo_id || null,
       justificativa: justificativa || "", impacto: impacto || "",
       data: new Date().toISOString()
     });
@@ -214,8 +191,6 @@
      SELECTORS (derivações — nunca alteram estado)
      ============================================================ */
   function asset(id) { return HOLD_STATE.ativos.find(function (a) { return a.id === id; }); }
-  function thesis(id) { return HOLD_STATE.teses.find(function (t) { return t.id === id; }); }
-  function thesisOfAsset(aid) { return HOLD_STATE.teses.find(function (t) { return t.ativo_id === aid; }); }
   function positionOf(aid, walletId) {
     var wid = walletId || activeWalletId();
     return HOLD_STATE.carteira.find(function (p) { return p.ativo_id === aid && (p.walletId || "principal") === wid; });
@@ -225,7 +200,7 @@
     var wid = walletId || activeWalletId();
     return HOLD_STATE.carteira.filter(function (p) { return (p.walletId || "principal") === wid; });
   }
-  /* posição de um ativo em QUALQUER carteira (p/ regra "investido sem tese") */
+  /* posição de um ativo em QUALQUER carteira */
   function anyPositionOf(aid) {
     return HOLD_STATE.carteira.find(function (p) { return p.ativo_id === aid; });
   }
@@ -240,10 +215,7 @@
      módulo mente em quatro lugares ao mesmo tempo:
 
        · Ativos → filtro "Investidos" lista um ativo que não se possui;
-       · Métricas → o funil de decisão conta "1 investido" contra
-         0 posições, e a convicção média passa a incluí-lo;
-       · Alertas → dispara "Posição sem tese" para uma posição que não
-         existe, gastando a atenção de quem lê num fantasma;
+       · Métricas → conta "1 investido" contra 0 posições;
        · o inverso também acontecia — vender tudo numa carteira e
          continuar com posição em OUTRA deixava o campo desencontrado.
 
@@ -444,16 +416,6 @@
       investidos: HOLD_STATE.ativos.filter(function (a) { return statusDe(a) === "invested"; }).length,
       watchlist: HOLD_STATE.ativos.filter(function (a) { return statusDe(a) === "watchlist"; }).length,
       vendidos: HOLD_STATE.ativos.filter(function (a) { return statusDe(a) === "sold"; }).length,
-      teses: HOLD_STATE.teses.filter(function (t) { return t.status !== "concluida"; }).length,
-      teses_planejadas: HOLD_STATE.teses.filter(function (t) { return t.status === "planejada"; }).length,
-      teses_andamento: HOLD_STATE.teses.filter(function (t) { return t.status === "andamento"; }).length,
-      teses_concluidas: HOLD_STATE.teses.filter(function (t) { return t.status === "concluida"; }).length,
-      teses_arquivadas: HOLD_STATE.teses.filter(function (t) { return t.status === "arquivada"; }).length,
-      // teses_ativas era usado pelo painel mas nunca existiu aqui → "undefined teses ativas".
-      // Ativa = planejada ou em andamento (fora concluídas e arquivadas).
-      teses_ativas: HOLD_STATE.teses.filter(function (t) {
-        return t.status === "planejada" || t.status === "andamento";
-      }).length,
       posicoes: walletPositions().length,
       historico: HOLD_STATE.historico.length
     };
@@ -462,18 +424,11 @@
   /* ============================================================
      PREFERÊNCIAS DO MÓDULO — que existiam e não valiam nada
 
-     Configurações → Hold oferecia três interruptores:
-     "Alertar teses invalidadas", "Alertar teses em revisão" e
-     "Mostrar convicção nas listas". NENHUM era lido por uma linha de
-     código do módulo. Ligar ou desligar não mudava nada na tela — e um
-     controle que não controla é pior que um ausente, porque a pessoa
-     desliga o alerta, continua vendo o alerta e conclui que o sistema
-     está quebrado.
-
-     Pior: os dois primeiros falavam de "invalidada" e "em revisão",
-     status que deixaram de existir quando as Teses viraram entidade
-     compartilhada. Eram interruptores para alertas que o módulo não
-     emite mais.
+     Configurações → Hold oferecia interruptores que NENHUMA linha de
+     código do módulo lia. Ligar ou desligar não mudava nada na tela —
+     e um controle que não controla é pior que um ausente, porque a
+     pessoa desliga o alerta, continua vendo o alerta e conclui que o
+     sistema está quebrado.
 
      Agora as preferências correspondem aos alertas que EXISTEM, e são
      lidas aqui. O limite de concentração também sai daqui: ele estava
@@ -481,10 +436,8 @@
      lista e o selo da tela do ativo) — três cópias da mesma regra.
      ============================================================ */
   var PADRAO_CONFIG = {
-    alerta_sem_tese: true,
     alerta_concentracao: true,
-    limite_concentracao: 40,
-    mostrar_conviccao: true
+    limite_concentracao: 40
   };
 
   function config(chave) {
@@ -503,27 +456,9 @@
      concentrada pergunta aqui. */
   function concentrada(pct) { return pct > config("limite_concentracao"); }
 
-  // Alertas derivados: teses em revisão / ativos investidos sem tese, etc.
+  /* Alertas derivados das posições: concentração acima do limite. */
   function alerts() {
     var out = [];
-    HOLD_STATE.teses.forEach(function (t) {
-      if (t.status === "planejada") {
-        var a = asset(t.ativo_id);
-        out.push({ level: "warn", title: "Tese planejada", sub: (a ? a.ticker : t.titulo || "—") + " aguarda início da análise.", asset: t.ativo_id });
-      }
-      if (t.status === "arquivada") {
-        var a2 = asset(t.ativo_id);
-        if (a2 && statusDe(a2) === "invested") {
-          out.push({ level: "crit", title: "Tese arquivada", sub: a2.ticker + " está investido com tese arquivada. Reavalie a posição.", asset: t.ativo_id });
-        }
-      }
-    });
-    HOLD_STATE.ativos.forEach(function (a) {
-      if (!config("alerta_sem_tese")) return;
-      if (statusDe(a) === "invested" && !thesisOfAsset(a.id)) {
-        out.push({ level: "crit", title: "Posição sem tese", sub: a.ticker + " está investido sem tese vinculada.", asset: a.id });
-      }
-    });
     walletPositions().forEach(function (p) {
       if (!config("alerta_concentracao")) return;
       var pct = positionWeight(p);
@@ -575,15 +510,13 @@
         nome: data.nome, ticker: tk,
         tipo: data.tipo || "Cripto",
         preco_atual: num(data.preco_atual), market_cap: num(data.market_cap),
-        setor: data.setor || "", categoria: data.categoria || "",
-        tese_id: null,
-        conviccao: clampInt(data.conviccao, 0, 10)
+        setor: data.setor || "", categoria: data.categoria || ""
       };
       /* `status` NÃO é gravado aqui — ver statusDe(). Todo ativo nasce
          em watchlist porque é isso que ele é: cadastrado e não
          comprado. Vira "investido" quando a compra acontece. */
       HOLD_STATE.ativos.push(a);
-      logHistory(EVENTS.ASSET_CREATED, "asset", a.id, null,
+      logHistory(EVENTS.ASSET_CREATED, "asset", a.id,
         "Ativo adicionado ao sistema.", a.ticker + " criado em " + statusLabel(statusDe(a)) + ".");
       emit(EVENTS.ASSET_CREATED, a); persist();
       return a;
@@ -618,8 +551,6 @@
          · apagar o histórico. As linhas viram registro de um ativo que
            não existe mais, e as telas já sabem exibir isso ("—"). Um
            livro de decisões que se reescreve não é livro de decisões.
-         · apagar a tese: ela vive na entidade compartilhada e pode ter
-           ido para o Academy. Fica arquivada, com o motivo.
        ============================================================ */
     deleteAsset: function (id) {
       var a = asset(id); if (!a) return { error: "Ativo inexistente." };
@@ -631,18 +562,13 @@
                         "Excluir aqui faria o dinheiro sumir sem venda e sem saque." };
       }
 
-      var t = thesisOfAsset(id);
-      if (t && window.AtlasTheses && t.status !== "concluida" && t.status !== "arquivada") {
-        window.AtlasTheses.archive(t.id, "Ativo " + a.ticker + " excluído do Hold.");
-        syncTheses();
-      }
       if (a.ticker && window.AtlasPrecos) window.AtlasPrecos.limparManual(a.ticker);
 
       HOLD_STATE.ativos = HOLD_STATE.ativos.filter(function (x) { return x.id !== id; });
-      logHistory(EVENTS.ASSET_CREATED, "asset", id, t ? t.id : null,
+      logHistory(EVENTS.ASSET_CREATED, "asset", id,
         "Ativo excluído do sistema.", a.ticker + " removido — não havia posição aberta.");
       emit(EVENTS.STATE_CHANGED, { evt: "asset_deleted", payload: a }); persist();
-      return { deleted: a, teseArquivada: !!(t && t.status !== "concluida" && t.status !== "arquivada") };
+      return { deleted: a };
     },
 
     /* updatePrice() vivia aqui e NUNCA foi chamada por tela nenhuma —
@@ -678,7 +604,7 @@
       a.preco_atual = v;
       a.precoFonte = "manual";
       a.precoEm = new Date().toISOString();
-      logHistory(EVENTS.POSITION_UPDATED, "price", id, a.tese_id,
+      logHistory(EVENTS.POSITION_UPDATED, "price", id,
         "Preço informado manualmente.", a.ticker + " marcado a " + fmtMoney(v) + " por você.");
       emit(EVENTS.POSITION_UPDATED, a); persist();
       return { asset: a };
@@ -726,168 +652,10 @@
         });
     },
 
-    /* -- Tese (delegado à entidade compartilhada AtlasTheses) -- */
-    createThesis: function (data) {
-      if (!window.AtlasTheses) return null;
-      var a = asset(data.ativo_id);
-      var conv = clampInt(data.conviccao, 0, 10);
-      var ent = window.AtlasTheses.create({
-        module: "hold",
-        asset: a ? a.ticker : "—",
-        title: "Tese " + (a ? a.ticker : ""),
-        content: data.narrativa || "",
-        status: data.status || "andamento",
-        data: {
-          ativo_id: data.ativo_id,
-          cenarios: { bull: data.bull || "", base: data.base || "", bear: data.bear || "" },
-          riscos: toList(data.riscos),
-          catalisadores: toList(data.catalisadores),
-          criterios_invalidacao: data.criterios_invalidacao || "",
-          conviccao: conv
-        }
-      });
-      if (a) { a.tese_id = ent.id; a.conviccao = conv; }
-      syncTheses();
-      logHistory(EVENTS.THESIS_CREATED, "thesis", data.ativo_id, ent.id,
-        "Tese documentada.", "Tese de " + (a ? a.ticker : "ativo") + " criada com convicção " + conv + ".");
-      emit(EVENTS.THESIS_CREATED, thesis(ent.id)); persist();
-      return thesis(ent.id);
-    },
-
-    updateThesis: function (id, data) {
-      if (!window.AtlasTheses) return null;
-      var t = thesis(id); if (!t) return;
-      var patchData = {};
-      if (data.bull != null || data.base != null || data.bear != null) {
-        patchData.cenarios = {
-          bull: data.bull != null ? data.bull : t.cenarios.bull,
-          base: data.base != null ? data.base : t.cenarios.base,
-          bear: data.bear != null ? data.bear : t.cenarios.bear
-        };
-      }
-      if (data.riscos != null) patchData.riscos = toList(data.riscos);
-      if (data.catalisadores != null) patchData.catalisadores = toList(data.catalisadores);
-      if (data.criterios_invalidacao != null) patchData.criterios_invalidacao = data.criterios_invalidacao;
-      if (data.conviccao != null) patchData.conviccao = clampInt(data.conviccao, 0, 10);
-
-      // narrativa nova = evolução da visão (entra no histórico da tese)
-      if (data.narrativa != null && data.narrativa !== t.narrativa) {
-        window.AtlasTheses.addUpdate(id, data.narrativa);
-      }
-      window.AtlasTheses.update(id, { data: patchData }, data.motivo || "Tese revisada.");
-      if (data.status != null && data.status !== t.status) {
-        window.AtlasTheses.setStatus(id, data.status);
-      }
-      syncTheses();
-      var t2 = thesis(id);
-      var a = t2 ? asset(t2.ativo_id) : null;
-      if (a && t2) a.conviccao = t2.conviccao;
-      logHistory(EVENTS.THESIS_UPDATED, "thesis", t2 ? t2.ativo_id : null, id,
-        data.motivo || "Tese revisada.", "Tese atualizada (convicção " + (t2 ? t2.conviccao : "—") + ", status " + (t2 ? t2.status : "—") + ").");
-      emit(EVENTS.THESIS_UPDATED, t2); persist();
-      return t2;
-    },
-
-    /* ============================================================
-       INICIAR E REATIVAR TESE — as duas ações que fugiam do store
-
-       A tela de Teses chamava `AtlasTheses.setStatus()` e
-       `AtlasTheses.reopen()` DIRETO, sem passar por aqui. O cabeçalho
-       deste arquivo diz que toda mutação passa por Store.actions
-       porque é aqui que o histórico é escrito — e essas duas não
-       escreviam. Consequência: "Iniciar" uma tese planejada e
-       "Reativar" uma arquivada não apareciam no Histórico, numa tela
-       que se apresenta como "registro imutável de decisões. Toda ação
-       do sistema deixa rastro aqui".
-
-       Começar a analisar um ativo e ressuscitar uma tese arquivada são
-       exatamente o tipo de decisão que se quer reler meses depois.
-       ============================================================ */
-    startThesis: function (id) {
-      if (!window.AtlasTheses) return null;
-      var t = thesis(id); if (!t) return null;
-      if (t.status !== "planejada") return t;
-      window.AtlasTheses.setStatus(id, "andamento");
-      syncTheses();
-      var a = asset(t.ativo_id);
-      logHistory(EVENTS.THESIS_UPDATED, "thesis", t.ativo_id, id,
-        "Análise iniciada.", "Tese de " + (a ? a.ticker : t.titulo || "ativo") +
-        " saiu da fila e entrou em andamento.");
-      emit(EVENTS.THESIS_UPDATED, thesis(id)); persist();
-      return thesis(id);
-    },
-
-    reopenThesis: function (id) {
-      if (!window.AtlasTheses) return null;
-      var t = thesis(id); if (!t) return null;
-      var antes = t.status;
-      window.AtlasTheses.reopen(id);
-      syncTheses();
-      var t2 = thesis(id); if (!t2) return null;
-      var a2 = asset(t2.ativo_id);
-      logHistory(EVENTS.THESIS_UPDATED, "thesis", t2.ativo_id, id,
-        antes === "arquivada" ? "Tese desarquivada." : "Tese reaberta.",
-        "Tese de " + (a2 ? a2.ticker : t2.titulo || "ativo") +
-        " voltou ao andamento (versão " + t2.version + ").");
-      emit(EVENTS.THESIS_UPDATED, t2); persist();
-      return t2;
-    },
-
-    /** Concluir tese: sai do módulo e vai automaticamente para o Academy. */
-    concludeThesis: function (id) {
-      if (!window.AtlasTheses) return null;
-      var t = thesis(id); if (!t) return;
-      window.AtlasTheses.conclude(id);
-      syncTheses();
-      var a = asset(t.ativo_id);
-      logHistory(EVENTS.THESIS_UPDATED, "thesis", t.ativo_id, id,
-        "Tese concluída.", "Tese de " + (a ? a.ticker : "ativo") + " concluída e enviada ao Academy.");
-      emit(EVENTS.THESIS_UPDATED, thesis(id)); persist();
-      return thesis(id);
-    },
-
-    /** Arquivar tese (substitui a antiga "invalidação"). */
-    archiveThesis: function (id, motivo) {
-      if (!window.AtlasTheses) return null;
-      var t = thesis(id); if (!t) return;
-      window.AtlasTheses.archive(id, motivo || "Critério de invalidação atingido.");
-      syncTheses();
-      var a = asset(t.ativo_id);
-      logHistory(EVENTS.THESIS_UPDATED, "thesis", t.ativo_id, id,
-        motivo || "Critério de invalidação atingido.", "Tese de " + (a ? a.ticker : "ativo") + " arquivada.");
-      emit(EVENTS.THESIS_UPDATED, thesis(id)); persist();
-    },
-
     /* -- Carteira / trades -- */
-    // Executa compra. Regra: exige tese vinculada ao ativo.
+    // Executa compra. O que decide se ela pode acontecer é o caixa.
     executeBuy: function (data) {
       var a = asset(data.ativo_id); if (!a) return { error: "Ativo inexistente." };
-
-      /* ------------------------------------------------------------
-         O QUE BLOQUEIA A COMPRA É O CAIXA, NÃO A TESE
-
-         A regra anterior recusava a compra sem tese vinculada. Ela
-         nasceu de um princípio do módulo — "toda decisão nasce de uma
-         tese" — mas confundia duas coisas de naturezas diferentes:
-
-           tese  é DISCIPLINA. Ausência dela é um problema de processo,
-                 e o ATLAS já sabe cobrar processo: o alerta de "posição
-                 sem tese" existe, o Oráculo responde sobre teses em
-                 aberto, e o histórico registra tudo.
-           caixa é POSSIBILIDADE. Sem dinheiro a compra não pode
-                 acontecer — não é uma escolha de método, é aritmética.
-
-         Bloquear pela tese fazia o sistema recusar uma compra que
-         REALMENTE ocorreu no mundo, e recusar registrar um fato é pior
-         que registrá-lo imperfeito: o dinheiro sai da corretora de
-         qualquer jeito, e o ATLAS fica sem saber.
-
-         A tese continua sendo cobrada — a posição nasce marcada, e o
-         alerta aparece até ela existir. O que ela deixou de fazer é
-         impedir o registro. Decisão do dono do produto, tomada na
-         auditoria do Hold.
-         ------------------------------------------------------------ */
-      var semTese = !thesisOfAsset(a.id);
 
       var qty = num(data.quantidade), price = num(data.preco);
       if (qty <= 0 || price <= 0) return { error: "Quantidade e preço devem ser positivos." };
@@ -937,11 +705,8 @@
       }
       /* `a.status = "invested"` saiu: existir posição JÁ é ser
          investido, e statusDe() lê isso direto. */
-      /* A posição carrega a marca até a tese existir. É o que permite
-         o alerta cobrar sem o sistema ter recusado o registro. */
-      pos.semTese = semTese;
-      logHistory(EVENTS.TRADE_EXECUTED, "buy", a.id, a.tese_id,
-        data.justificativa || "Execução dentro da faixa de acúmulo da tese.",
+      logHistory(EVENTS.TRADE_EXECUTED, "buy", a.id,
+        data.justificativa || "Compra registrada.",
         "Compra de " + qty + " " + a.ticker + " a " + fmtMoney(price) + ".");
       emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "buy" });
       emit(EVENTS.POSITION_UPDATED, pos); persist();
@@ -961,7 +726,7 @@
       return { position: pos, depositoAuto: depAuto ? depAuto.valorUSD : 0 };
     },
 
-    // Venda. Regra: exige invalidação OU realização declarada.
+    // Venda: o apurado volta ao caixa da carteira.
     executeSell: function (data) {
       var a = asset(data.ativo_id); if (!a) return { error: "Ativo inexistente." };
       var widS = data.walletId || activeWalletId();
@@ -984,7 +749,6 @@
         return { error: "Informe o preço de venda. A " + fmtMoney(0) +
                         " a posição sairia da carteira sem nada voltar ao caixa." };
       }
-      if (!data.motivo) return { error: "Toda venda depende de invalidação ou realização da tese." };
 
       /* O resultado da venda é apurado ANTES de a quantidade baixar,
          sobre o preço médio da posição: é esse custo que sai dela. */
@@ -993,7 +757,7 @@
         id: uid("v"), ativo_id: a.id, walletId: pos.walletId || widS,
         quantidade: qty, preco: price, precoMedio: pos.preco_medio,
         custo: custoVendido, apurado: qty * price, resultado: qty * price - custoVendido,
-        motivo: data.motivo, data: data.data || new Date().toISOString()
+        data: data.data || new Date().toISOString()
       });
 
       pos.quantidade -= qty;
@@ -1002,8 +766,8 @@
         /* O ativo vira "vendido" sozinho: sem posição em carteira
            nenhuma e com venda no histórico, statusDe() já responde. */
       }
-      logHistory(EVENTS.TRADE_EXECUTED, "sell", a.id, a.tese_id,
-        data.justificativa || (data.motivo === "invalidacao" ? "Tese invalidada." : "Realização de tese."),
+      logHistory(EVENTS.TRADE_EXECUTED, "sell", a.id,
+        data.justificativa || "Venda registrada.",
         "Venda de " + qty + " " + a.ticker + " a " + fmtMoney(price) + ".");
       emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "sell" });
       emit(EVENTS.POSITION_UPDATED, pos); persist();
@@ -1060,12 +824,6 @@
 
   /* ---- utils ---- */
   function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
-  function clampInt(v, lo, hi) { var n = Math.round(num(v)); return Math.max(lo, Math.min(hi, n)); }
-  function toList(v) {
-    if (Array.isArray(v)) return v.filter(Boolean);
-    if (!v) return [];
-    return String(v).split(/[\n,;]+/).map(function (s) { return s.trim(); }).filter(Boolean);
-  }
   function statusLabel(s) {
     return { invested: "investido", watchlist: "watchlist", sold: "vendido" }[s] || s;
   }
@@ -1082,7 +840,7 @@
     on: on, emit: emit, init: load, persist: persist, uid: uid,
     actions: actions,
     get: {
-      asset: asset, thesis: thesis, thesisOfAsset: thesisOfAsset, positionOf: positionOf,
+      asset: asset, positionOf: positionOf,
       anyPositionOf: anyPositionOf, walletPositions: walletPositions,
       positionValue: positionValue, positionCost: positionCost, positionPnL: positionPnL,
       positionPnLPct: positionPnLPct, positionWeight: positionWeight,

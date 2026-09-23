@@ -5,9 +5,6 @@
    que lê e grava pelo DataStore (store.js). Trocar o backend de
    dados no futuro não afeta nenhuma tela.
 
-   Sprint 2: CRUD de estudos (criar, editar tese, evoluir histórico,
-   mudar de estado, arquivar) — a base genérica que RD e Trades
-   vão reutilizar nos próximos Sprints.
    ============================================================ */
 (function (ATLAS) {
   "use strict";
@@ -73,16 +70,6 @@
     Object.keys(state.data).forEach(function (wid) {
       var wd = state.data[wid];
       if (!wd.rds) wd.rds = [];
-      (wd.studies || []).forEach(function (s) {
-        if (s.createdAt) return; // já hidratado
-        s.createdAt = now() - (s.hoursAgo || 0) * HOUR;
-        s.history = (s.history || []).map(function (h) {
-          return { ts: now() - (h.hoursAgo || 0) * HOUR, text: h.text };
-        }).sort(function (a, b) { return a.ts - b.ts; });
-        s.updatedAt = s.history.length ? s.history[s.history.length - 1].ts : s.createdAt;
-        if (!s.thesis && s.history.length) s.thesis = s.history[s.history.length - 1].text;
-        delete s.hoursAgo;
-      });
       (wd.rds || []).forEach(function (r) {
         if (r.createdAt) return;
         r.createdAt = now() - (r.hoursAgo || 0) * HOUR;
@@ -110,7 +97,7 @@
     persist();
   }
 
-  var DEFAULT_PREFS = { operatorName: "operador", studyLimitH: 72, tradeReviewH: 24 };
+  var DEFAULT_PREFS = { operatorName: "operador", tradeReviewH: 24 };
 
   function ensurePrefs() {
     if (!state.prefs) state.prefs = JSON.parse(JSON.stringify(DEFAULT_PREFS));
@@ -130,7 +117,7 @@
      o arquivo conclui que existe uma curva de capital guardada, e não
      existe. A série do Trade é medida em core/atlas-snapshots.js. */
   function emptyWalletData() {
-    return { kpis: { winrate: 0, trades: 0, avgHold: "—", profitFactor: 0 }, studies: [], rds: [], trades: [], alerts: [], archive: { studies: [], trades: [] } };
+    return { kpis: { winrate: 0, trades: 0, avgHold: "—", profitFactor: 0 }, rds: [], trades: [], alerts: [], archive: { trades: [] } };
   }
 
   var app = {
@@ -147,10 +134,6 @@
       /* reage a trocas de carteira feitas em qualquer módulo/aba */
       if (global.AtlasWallets && global.AtlasWallets.subscribe) {
         global.AtlasWallets.subscribe(function () { syncWithCentral(); emit(); });
-      }
-      /* reage a mudanças nas teses (ex.: reabertura feita no Academy) */
-      if (global.AtlasTheses && global.AtlasTheses.onChange) {
-        global.AtlasTheses.onChange(function () { emit(); });
       }
       return app;
     },
@@ -289,107 +272,6 @@
       };
     },
 
-    // ---- Teses (entidade compartilhada AtlasTheses) ------------
-    // O Trade não guarda mais estudos por carteira: as teses vivem
-    // em core/entities/theses.js (module: "trade"). Este shim
-    // mantém a API e o vocabulário antigos (futuro/andamento/
-    // concluido) para Dashboard, RD, Trades e Oráculo continuarem
-    // funcionando sem alteração.
-    _toOld: { planejada: "futuro", andamento: "andamento", concluida: "concluido", arquivada: "arquivada" },
-    _toNew: { futuro: "planejada", andamento: "andamento", concluido: "concluida", arquivada: "arquivada" },
-
-    _shimThesis: function (t) {
-      if (!t) return null;
-      return {
-        id: t.id,
-        asset: t.asset || "—",
-        title: t.title || "Sem título",
-        state: app._toOld[t.status] || t.status,   // vocabulário antigo
-        status: t.status,                           // vocabulário oficial
-        thesis: t.content || "",
-        history: t.history || [],
-        createdAt: t.createdAt,
-        updatedAt: t.updatedAt,
-        closedAt: t.concludedAt || null,
-        version: t.version || 1
-      };
-    },
-
-    /** Todas as teses do Trade (inclui concluídas p/ fluxo de RD; exclui arquivadas). */
-    studies: function () {
-      if (!global.AtlasTheses) return app.walletData().studies || [];
-      return global.AtlasTheses.byModule("trade", { includeConcluded: true })
-        .filter(function (t) { return t.status !== "arquivada"; })
-        .map(app._shimThesis);
-    },
-
-    getStudy: function (id) {
-      if (!global.AtlasTheses) {
-        return (app.walletData().studies || []).filter(function (s) { return s.id === id; })[0] || null;
-      }
-      var t = global.AtlasTheses.get(id);
-      return (t && t.module === "trade") ? app._shimThesis(t) : null;
-    },
-
-    /** Horas desde a abertura do estudo (base da regra das 72h) */
-    studyOpenHours: function (s) {
-      return Math.max(0, Math.round((now() - (s.createdAt || now())) / HOUR));
-    },
-
-    addStudy: function (data) {
-      if (!global.AtlasTheses) return null;
-      var t = global.AtlasTheses.create({
-        module: "trade",
-        asset: (data.asset || "").toUpperCase(),
-        title: data.title || "Sem título",
-        content: data.thesis || "",
-        status: app._toNew[data.state] || data.state || "planejada",
-        data: { walletId: state.currentWallet || null }
-      });
-      emit();
-      return app._shimThesis(t);
-    },
-
-    /** Registra uma nova visão: vira a tese atual e entra no histórico */
-    addStudyUpdate: function (id, text) {
-      if (!global.AtlasTheses || !text) return;
-      var t = global.AtlasTheses.addUpdate(id, text);
-      emit();
-      return app._shimThesis(t);
-    },
-
-    setStudyState: function (id, newState) {
-      if (!global.AtlasTheses) return;
-      var cur = global.AtlasTheses.get(id); if (!cur) return;
-      var target = app._toNew[newState] || newState;
-      var t;
-      if (target === "concluida") {
-        t = global.AtlasTheses.conclude(id);            // → Academy
-      } else if ((cur.status === "concluida" || cur.status === "arquivada") && target === "andamento") {
-        t = global.AtlasTheses.reopen(id);              // volta do Academy (nova versão)
-      } else {
-        t = global.AtlasTheses.setStatus(id, target);
-      }
-      emit();
-      return app._shimThesis(t);
-    },
-
-    updateStudyMeta: function (id, patch) {
-      if (!global.AtlasTheses) return;
-      var p = {};
-      if (patch.asset != null) p.asset = patch.asset.toUpperCase();
-      if (patch.title != null) p.title = patch.title;
-      var t = global.AtlasTheses.update(id, p, "Metadados da tese atualizados.");
-      emit();
-      return app._shimThesis(t);
-    },
-
-    removeStudy: function (id) {
-      if (!global.AtlasTheses) return;
-      global.AtlasTheses.remove(id);
-      emit();
-    },
-
     // ---- Registro de Decisão (CRUD) ---------------------------
     rds: function () { return app.walletData().rds || []; },
 
@@ -397,23 +279,10 @@
       return app.rds().filter(function (r) { return r.id === id; })[0] || null;
     },
 
-    /** RDs ligados a um estudo específico */
-    rdsForStudy: function (studyId) {
-      return app.rds().filter(function (r) { return r.studyId === studyId; });
-    },
-
-    /** Estudos concluídos que ainda não têm nenhum RD (pendência do fluxo) */
-    studiesAwaitingRd: function () {
-      var withRd = {};
-      app.rds().forEach(function (r) { if (r.studyId) withRd[r.studyId] = true; });
-      return app.studies().filter(function (s) { return s.state === "concluido" && !withRd[s.id]; });
-    },
-
     addRd: function (data) {
       var t = now();
       var r = {
         id: genId("rd"),
-        studyId: data.studyId || null,
         asset: (data.asset || "").toUpperCase(),
         decision: data.decision || "entrar",
         confidence: data.confidence || 3,
@@ -433,7 +302,7 @@
 
     updateRd: function (id, patch) {
       var r = app.getRd(id); if (!r) return;
-      ["asset", "decision", "confidence", "rationale", "technical", "leverage", "notes", "status", "studyId"].forEach(function (k) {
+      ["asset", "decision", "confidence", "rationale", "technical", "leverage", "notes", "status"].forEach(function (k) {
         if (patch[k] != null) r[k] = k === "asset" ? patch[k].toUpperCase() : patch[k];
       });
       if (patch.risk) r.risk = { stop: patch.risk.stop || "", size: patch.risk.size || "", rr: patch.risk.rr || "" };
@@ -463,8 +332,6 @@
       h = h || 24;
       return app.trades().filter(function (t) { return t.status === "aberto" && app.tradeAgeHours(t) > h; });
     },
-
-    tradesForStudy: function (studyId) { return app.trades().filter(function (t) { return t.studyId === studyId; }); },
 
     /* ============================================================
        PONTE COM O CAIXA DA CARTEIRA
@@ -520,7 +387,6 @@
         id: idNovo,
         asset: (data.asset || "").toUpperCase(),
         side: data.side || "long",
-        studyId: data.studyId || null,
         rdId: data.rdId || null,
         status: "aberto",
         entry: data.entry != null ? data.entry : null,
@@ -789,14 +655,12 @@
       persist(); hydrate(); ensurePrefs(); persist(); emit();
     },
 
-    /** Move trades antigos para o arquivo (continua salvo e restaurável).
-        Teses concluídas não são mais arquivadas aqui — ficam na
-        Biblioteca do Academy, sempre pesquisáveis. */
+    /** Move trades antigos para o arquivo (continua salvo e restaurável). */
     archiveOld: function (days) {
       var cutoff = now() - (days || 90) * 24 * HOUR, moved = 0;
       Object.keys(state.data).forEach(function (wid) {
         var wd = state.data[wid];
-        if (!wd.archive) wd.archive = { studies: [], trades: [] };
+        if (!wd.archive) wd.archive = { trades: [] };
         var keepT = [];
         (wd.trades || []).forEach(function (t) {
           if (t.status === "encerrado" && (t.closedAt || 0) < cutoff) { wd.archive.trades.push(t); moved++; }
@@ -811,7 +675,7 @@
       var n = 0;
       Object.keys(state.data).forEach(function (wid) {
         var a = state.data[wid].archive;
-        if (a) n += (a.studies ? a.studies.length : 0) + (a.trades ? a.trades.length : 0);
+        if (a) n += (a.trades ? a.trades.length : 0);
       });
       return n;
     },
@@ -821,8 +685,7 @@
         var wd = state.data[wid], a = wd.archive;
         if (!a) return;
         (a.trades || []).forEach(function (t) { wd.trades.push(t); restored++; });
-        /* estudos arquivados antigos já foram migrados para AtlasTheses */
-        wd.archive = { studies: [], trades: [] };
+        wd.archive = { trades: [] };
       });
       persist(); emit();
       return restored;

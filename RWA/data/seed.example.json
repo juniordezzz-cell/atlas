@@ -1396,8 +1396,8 @@
     {
       "date": "2026-06-28",
       "ticker": "tNVDA",
-      "type": "tese",
-      "text": "Entrada tática em tech tokenizada aproveitando o ciclo de expansão de IA. Tese: liderança de earnings + regime Risk-On. Peso limitado por ser watch."
+      "type": "entrada",
+      "text": "Entrada tática em tech tokenizada aproveitando o ciclo de expansão de IA. Motivo: liderança de earnings + regime Risk-On. Peso limitado por ser watch."
     },
     {
       "date": "2026-06-15",
@@ -1420,7 +1420,7 @@
     {
       "date": "2026-05-04",
       "ticker": "syrupUSDC",
-      "type": "tese",
+      "type": "entrada",
       "text": "Crédito privado on-chain para yield acima de treasuries. Monitorar liquidez e lock-up."
     },
     {

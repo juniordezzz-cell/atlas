@@ -51,29 +51,18 @@
         /* ------------------------------------------------------------
            ESTES INTERRUPTORES NÃO CONTROLAVAM NADA
 
-           Havia aqui "Alertar teses invalidadas" e "Alertar teses em
-           revisão". Nenhuma linha do Hold os lia — desligar não mudava
-           nada na tela. E os dois falavam de "invalidada" e "em
-           revisão", status que sumiram quando as Teses viraram entidade
-           compartilhada (agora: planejada, andamento, concluida,
-           arquivada). Eram controles para alertas que o módulo não
-           emite mais.
+           Havia aqui interruptores que nenhuma linha do Hold lia —
+           desligar não mudava nada na tela.
 
            Os de agora correspondem aos alertas que o Hold realmente
            emite, e são lidos em hold/js/state.js → alerts().
            ------------------------------------------------------------ */
-        { k: "alerta_sem_tese", type: "bool", def: true,
-          label: "Alertar posição sem estudo na Academy",
-          desc: "Avisa enquanto houver dinheiro alocado sem estudo registrado na Academy" },
         { k: "alerta_concentracao", type: "bool", def: true,
           label: "Alertar concentração elevada",
           desc: "Avisa quando uma única posição passa do limite abaixo" },
         { k: "limite_concentracao", type: "number", def: 40, min: 1, max: 100,
           label: "Limite de concentração (%)",
-          desc: "Acima disso a posição é destacada na lista e no painel" },
-        { k: "mostrar_conviccao", type: "bool", def: true,
-          label: "Mostrar convicção nas listas",
-          desc: "Exibe a nota de convicção junto de cada ativo" }
+          desc: "Acima disso a posição é destacada na lista e no painel" }
       ]
     },
     {
@@ -87,9 +76,6 @@
           label: "Nome do operador",
           desc: "Como o sistema se dirige a você",
           placeholder: "operador" },
-        { k: "studyLimitH", type: "number", def: 72, min: 1,
-          label: "Limite do estudo na Academy (horas)",
-          desc: "Prazo para transformar um estudo da Academy em decisão" },
         { k: "tradeReviewH", type: "number", def: 24, min: 1,
           label: "Revisar trade após (horas)",
           desc: "Quando o sistema cobra a análise pós-trade" }
@@ -176,7 +162,7 @@
     Object.keys(data).forEach(function (wid) {
       var a = data[wid] && data[wid].archive;
       if (!a) return;
-      n += (a.studies ? a.studies.length : 0) + (a.trades ? a.trades.length : 0);
+      n += (a.trades ? a.trades.length : 0);
     });
     return n;
   }
@@ -193,7 +179,7 @@
       if (!a) return;
       if (!Array.isArray(wd.trades)) wd.trades = [];
       (a.trades || []).forEach(function (t) { wd.trades.push(t); restored++; });
-      wd.archive = { studies: [], trades: [] };
+      wd.archive = { trades: [] };
     });
 
     if (restored) {

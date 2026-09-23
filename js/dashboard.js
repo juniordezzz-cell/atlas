@@ -69,7 +69,7 @@ function pintarCabecalho() {
 /* ---- Roteiro de início (só no primeiro acesso) ---- */
 const PASSOS = [
   { href: 'hold/index.html',    modulo: 'Hold',  titulo: 'Registre o que você carrega',
-    texto: 'Ativos de longo prazo, com a tese que justifica cada posição.' },
+    texto: 'Ativos de longo prazo, com preço médio e resultado de cada posição.' },
   { href: 'trade/index.html',   modulo: 'Trade', titulo: 'Documente suas operações',
     texto: 'Estudo, registro de decisão e trade — o ciclo completo.' },
   { href: 'defi/index.html',    modulo: 'DeFi',  titulo: 'Acompanhe suas posições',
@@ -197,8 +197,8 @@ function pintarPools() {
 /* ---- Alertas ----
    Vêm dos quatro módulos (AtlasConsolidation.alerts) e trazem nível e
    origem. O ícone acompanha a gravidade: um triângulo igual para tudo
-   achata a diferença entre "concentração de 41%" e "posição investida
-   sem tese". */
+   achata a diferença entre "concentração de 41%" e "pool fora da
+   faixa". */
 const ICON_NIVEL = {
   crit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>`,
   warn: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>`,
@@ -228,7 +228,7 @@ function pintarAlertas() {
     alertList.innerHTML = `
       <li class="alert-empty">
         <strong>Nada pedindo atenção</strong>
-        <span>Posições sem tese, teses paradas e pools fora da faixa aparecem aqui.</span>
+        <span>Concentração alta, pools fora da faixa e divergências nas contas aparecem aqui.</span>
       </li>`;
   }
 }
