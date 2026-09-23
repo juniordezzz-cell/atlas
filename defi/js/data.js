@@ -788,6 +788,20 @@
       return out;
     },
 
+    /* Mesma ideia para staking e lending: o Dashboard da raiz soma
+       TODAS as carteiras globais, e não só a ativa. */
+    rendimentosDeTodasCarteiras: function (tipo) {
+      if (!Store._rendOk(tipo)) return [];
+      var s = _read(), out = [];
+      Object.keys(s.byWallet || {}).forEach(function (wid) {
+        (s.byWallet[wid][tipo] || []).forEach(function (it) {
+          if (it.status === "encerrada") return;
+          out.push({ walletId: wid, item: it });
+        });
+      });
+      return out;
+    },
+
     /* marca uma taxa pendente como recebida.
        Aceita o OBJETO da pool além do id: é assim que a tela de
        Carteiras coleta taxa de uma pool que está noutra carteira. */

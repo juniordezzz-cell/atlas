@@ -561,33 +561,114 @@
       });
       return true;
     }, null);
+    /* ------------------------------------------------------------
+       O DeFi entrava SÓ com a carteira ativa
+
+       `DeFiStore.distribution("chain")` lê a carteira ativa — é o certo
+       DENTRO do módulo, e o errado aqui: o Dashboard soma todas as
+       globais. Com uma pool na Solana e outra na BNB Chain em carteiras
+       diferentes, o gráfico dizia "100% Solana" e mudava sozinho ao
+       trocar de carteira no seletor.
+
+       E o caixa parado não entrava de forma nenhuma. Agora que o
+       movimento guarda a rede (wallets/walletCaixa.js), o dinheiro em
+       Base, Arbitrum ou BNB Chain aparece junto — é exposição a rede
+       igual à de uma posição.
+       ------------------------------------------------------------ */
     safe(function () {
-      if (!global.DeFiStore || !global.DeFiStore.distribution) return null;
-      (global.DeFiStore.distribution("chain") || []).forEach(function (d) { add(String(d.label).split("/")[0].trim(), d.value); });
+      var S = global.DeFiStore;
+      if (!S || !S.poolsDeTodasCarteiras) return null;
+      S.poolsDeTodasCarteiras().forEach(function (x) {
+        add(String(x.pool.chain || "Outros").split("/")[0].trim(), S.poolValue(x.pool));
+      });
+      if (S.rendimentosDeTodasCarteiras && S.rendValue) {
+        ["staking", "lending"].forEach(function (t) {
+          S.rendimentosDeTodasCarteiras(t).forEach(function (x) {
+            add(String(x.item.chain || "Outros").split("/")[0].trim(), S.rendValue(x.item));
+          });
+        });
+      }
       return true;
     }, null);
-    return Object.keys(map).map(function (k) { return { label: k, value: Math.round(map[k]) }; })
+    safe(function () {
+      var CX = global.AtlasCaixa;
+      if (!CX || !CX.caixaPorRede) return null;
+      globalIds().forEach(function (id) {
+        CX.caixaPorRede(id).forEach(function (g) {
+          if (g.usd <= 0.005) return;
+          add(g.rede || "Sem rede informada", g.usd);
+        });
+      });
+      return true;
+    }, null);
+    return Object.keys(map).map(function (k) { return { label: k, value: Math.round(map[k] * 100) / 100 }; })
+      .filter(function (x) { return x.value > 0.005; })
       .sort(function (a, b) { return b.value - a.value; });
   }
 
-  /* ---------- Renda passiva estimada (APR/APY do DeFi) ---------- */
+  /* ---------- Renda passiva estimada (APR/APY declarado) ----------
+     Lia `s.value` das posições de staking — campo que deixou de
+     existir quando o valor virou derivado (quantidade × preço). O
+     resultado era ZERO para sempre, num KPI que dizia "estimada
+     (mês)". E ignorava as pools, que são a maior parte do rendimento.
+
+     Agora: valor da posição × APR/APY DECLARADO ÷ 12, em todas as
+     carteiras globais. É estimativa declarada, não medição — posição
+     sem APR informado contribui nada, e uma carteira inteira sem APR
+     devolve null, para a tela poder esconder o KPI em vez de afirmar
+     "US$ 0,00 por mês". */
   function passiveIncome() {
     return safe(function () {
-      if (!global.DeFiStore) return 0;
-      var y = 0;
-      (global.DeFiStore.staking() || []).forEach(function (s) { y += n(s.value) * n(s.apr) / 100; });
-      (global.DeFiStore.lending() || []).forEach(function (l) { y += n(l.value) * n(l.apy) / 100; });
-      return y / 12; /* mensal */
+      var S = global.DeFiStore;
+      if (!S || !S.poolsDeTodasCarteiras) return null;
+      var y = 0, tem = false;
+      S.poolsDeTodasCarteiras().forEach(function (x) {
+        var apr = n(x.pool.apr);
+        if (apr > 0) { y += S.poolValue(x.pool) * apr / 100; tem = true; }
+      });
+      if (S.rendimentosDeTodasCarteiras && S.rendValue) {
+        ["staking", "lending"].forEach(function (t) {
+          S.rendimentosDeTodasCarteiras(t).forEach(function (x) {
+            var taxa = n(x.item.apr) || n(x.item.apy);
+            if (taxa > 0) { y += S.rendValue(x.item) * taxa / 100; tem = true; }
+          });
+        });
+      }
+      return tem ? y / 12 : null;    /* mensal */
+    }, null);
+  }
+
+  /* Protocolos EM USO — as plataformas onde há posição aberta, em
+     qualquer carteira. Contava só staking e lending da carteira ativa,
+     então um portfólio inteiro de pools mostrava zero. */
+  function protocolsCount() {
+    return safe(function () {
+      var S = global.DeFiStore;
+      if (!S || !S.poolsDeTodasCarteiras) return 0;
+      var set = {};
+      S.poolsDeTodasCarteiras().forEach(function (x) { if (x.pool.protocol) set[x.pool.protocol] = 1; });
+      if (S.rendimentosDeTodasCarteiras) {
+        ["staking", "lending"].forEach(function (t) {
+          S.rendimentosDeTodasCarteiras(t).forEach(function (x) { if (x.item.protocol) set[x.item.protocol] = 1; });
+        });
+      }
+      return Object.keys(set).length;
     }, 0);
   }
 
-  function protocolsCount() {
+  /* Data do movimento mais antigo — é "desde quando" a rentabilidade
+     acumulada acumula. Sem isso o KPI dizia "Acumulada" e a pergunta
+     "em quantos dias?" não tinha resposta na tela. */
+  function desdeQuando() {
     return safe(function () {
-      if (!global.DeFiStore) return 0;
-      var set = {};
-      (global.DeFiStore.staking() || []).concat(global.DeFiStore.lending() || []).forEach(function (x) { if (x.protocol) set[x.protocol] = 1; });
-      return Object.keys(set).length;
-    }, 0);
+      var CX = global.AtlasCaixa;
+      if (!CX || !CX.eventos) return null;
+      var min = null;
+      CX.eventos().forEach(function (e) {
+        if (e.data && (min === null || e.data < min)) min = e.data;
+      });
+      return min;
+    }, null);
   }
 
   /* ---------- SNAPSHOT ---------- */
@@ -748,6 +829,7 @@
       base: contas ? contas.base : cost,
       passiveIncome: passiveIncome(),
       protocols: protocolsCount(),
+      desde: desdeQuando(),
       byModule: byModule,
       evolution: evo,
       /* Quantos pontos da série vieram de MEDIÇÃO. Sem isto a tela não

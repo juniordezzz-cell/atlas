@@ -93,13 +93,24 @@ function buildAtlasDataReal() {
      O snapshot não os recorta por período: trocar 7/30/90 dias no
      gráfico não muda o número. Os rótulos diziam "(30d)" e "Período",
      e o Oráculo, ao explicar a conta, teria de desmentir a tela. */
+  /* "Acumulada" respondia "quanto", nunca "desde quando" — e a janela
+     de 7/30/90 dias do gráfico ao lado sugeria um período que este
+     número não tem. Agora ele diz a data do primeiro movimento. */
+  const desde = snap.desde ? dataBR(snap.desde) : null;
+
   const kpis = [
     { rotulo: "Patrimônio Total", valor: usd(snap.total), variacao: pct(snap.pnlPct), periodo: "(acumulado)", tipo: tipo(snap.pnl) },
     { rotulo: "Lucro Total",      valor: usd(snap.pnl),   variacao: pct(snap.pnlPct), periodo: "(acumulado)", tipo: tipo(snap.pnl) },
-    { rotulo: "Rentabilidade",    valor: pct(snap.pnlPct), variacao: "Acumulada",     periodo: "", tipo: tipo(snap.pnl), destaque: true },
-    { rotulo: "Renda Passiva",    valor: usd(snap.passiveIncome), variacao: "estimada", periodo: "(mês)", tipo: "pos" },
+    { rotulo: "Rentabilidade",    valor: pct(snap.pnlPct), variacao: "Acumulada",
+      periodo: desde ? "(desde " + desde + ")" : "", tipo: tipo(snap.pnl), destaque: true },
+    /* Renda passiva só aparece quando ALGUMA posição declara APR/APY.
+       Sem isso o cartão afirmava "US$ 0,00 por mês", que é uma resposta
+       errada para uma pergunta que o ATLAS não tinha como responder. */
+    ...(snap.passiveIncome == null ? [] : [
+      { rotulo: "Renda Passiva", valor: usd(snap.passiveIncome), variacao: "estimada pelo APR", periodo: "(mês)", tipo: "pos" }
+    ]),
     { rotulo: "Carteiras",        valor: String(snap.wallets.total), variacao: snap.wallets.globals + " globais", periodo: "", tipo: "neutro" },
-    { rotulo: "Protocolos",       valor: String(snap.protocols || 0), variacao: "Conectados", periodo: "", tipo: "neutro" }
+    { rotulo: "Protocolos",       valor: String(snap.protocols || 0), variacao: "em uso", periodo: "", tipo: "neutro" }
   ];
 
   /* Distribuição por Categoria = CAIXA + MÓDULOS. Sem o caixa, um

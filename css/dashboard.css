@@ -347,15 +347,26 @@ body {
 
 .tb-menu__list { display: flex; flex-direction: column; gap: 2px; }
 
+/* Os itens que são <button> (o seletor de período, por exemplo) vinham
+   com o cinza-claro padrão do navegador por baixo de uma letra clara:
+   fundo branco com texto quase invisível. A regra só dizia a cor do
+   texto e presumia fundo transparente — o que vale para <a>, não para
+   <button>. Aqui ficam os resets que faltavam. */
 .tb-menu__item {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 9px 10px;
+  border: 0;
+  background: transparent;
   border-radius: var(--raio-sm);
+  font-family: inherit;
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--texto-suave);
+  text-align: left;
+  cursor: pointer;
+  color: var(--texto);
   transition: background .14s ease, color .14s ease;
 }
 .tb-menu__item svg { width: 18px; height: 18px; flex-shrink: 0; }
