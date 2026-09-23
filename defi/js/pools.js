@@ -9,10 +9,41 @@
   C.mountNav("pools");
 
   var grid = U.qs("#poolsGrid");
-  var state = { q: "", chain: "", protocol: "", status: "" };
+  var state = { q: "", chain: "", protocol: "", status: "", escopo: lerEscopo() };
+
+  /* ------------------------------------------------------------
+     ESCOPO: ESTA CARTEIRA × TODAS AS CARTEIRAS
+
+     "Esta carteira" é a tela de sempre — nada muda nela. "Todas"
+     junta as pools abertas de todas as carteiras (mesmo cartão, com a
+     carteira indicada) e um placar que compara as carteiras entre si.
+     A escolha fica lembrada neste navegador.
+     ------------------------------------------------------------ */
+  var KEY_ESCOPO = "atlas.defi.poolsEscopo.v1";
+  function lerEscopo() {
+    try { return localStorage.getItem("atlas.defi.poolsEscopo.v1") === "todas" ? "todas" : "carteira"; }
+    catch (e) { return "carteira"; }
+  }
+  var carteiraDaPool = {};
+  function listaBase() {
+    if (state.escopo !== "todas" || !S.poolsDeTodasCarteiras) return S.pools();
+    carteiraDaPool = {};
+    return S.poolsDeTodasCarteiras().map(function (x) {
+      carteiraDaPool[x.pool.id] = x.walletId;
+      return x.pool;
+    });
+  }
+  function nomeCarteira(id) {
+    var w = window.AtlasWallets && AtlasWallets.get ? AtlasWallets.get(id) : null;
+    return w ? w.name : id;
+  }
+  function corCarteira(id) {
+    var w = window.AtlasWallets && AtlasWallets.get ? AtlasWallets.get(id) : null;
+    return (w && w.color) || "#5B9BFF";
+  }
 
   function render() {
-    var items = S.pools();
+    var items = listaBase();
     items = Sr.match(items, state.q, ["base", "quote", "protocol", "chain", "category"]);
     items = F.apply(items, { chain: state.chain, protocol: state.protocol });
     /* O filtro de status compara com o status CALCULADO. Passar
@@ -27,6 +58,7 @@
     }
 
     var filtering = state.q || state.chain || state.protocol || state.status;
+    pintarPlacar(items);
     if (!items.length) {
       grid.style.display = "block";
       grid.innerHTML = C.empty({
@@ -43,12 +75,161 @@
     }
     grid.style.display = "";
     grid.innerHTML = items.map(C.poolCard).join("");
+    if (state.escopo === "todas") marcarCarteiras(items);
     U.reveal("#poolsGrid .pos-card");
   }
 
+  /* No modo "todas", cada cartão ganha a etiqueta da carteira. Por DOM,
+     depois do desenho: o cartão continua sendo o mesmo C.poolCard da
+     tela de sempre. */
+  function marcarCarteiras(items) {
+    var cards = grid.querySelectorAll(".pos-card");
+    items.forEach(function (p, i) {
+      var card = cards[i];
+      if (!card) return;
+      var wid = carteiraDaPool[p.id];
+      card.setAttribute("data-wallet", wid || "");
+      var tags = card.querySelector(".pos-tags");
+      if (!tags) return;
+      var tag = document.createElement("span");
+      tag.className = "tag tag-carteira";
+      var dot = document.createElement("span");
+      dot.className = "dot";
+      dot.style.background = corCarteira(wid);
+      tag.appendChild(dot);
+      tag.appendChild(document.createTextNode(nomeCarteira(wid)));
+      tags.insertBefore(tag, tags.firstChild);
+    });
+  }
+
+  /* A página da pool abre a pool da carteira ATIVA. Clicar numa pool
+     de outra carteira troca a ativa antes de ir — senão a página não
+     acharia a posição. */
+  grid.addEventListener("click", function (e) {
+    if (state.escopo !== "todas") return;
+    var card = e.target.closest ? e.target.closest(".pos-card[data-wallet]") : null;
+    if (!card) return;
+    var wid = card.getAttribute("data-wallet");
+    if (!wid || wid === S.activeWalletId()) return;
+    e.preventDefault();
+    S.setWallet(wid);
+    location.href = card.getAttribute("href");
+  });
+
+  /* ------------------------------------------------------------
+     PLACAR DAS CARTEIRAS
+
+     Uma linha por carteira com pool aberta: quantas pools, capital,
+     valor hoje (posição + taxa pendente), resultado e rentabilidade.
+     Ordenado pela rentabilidade — é a pergunta "qual carteira está
+     ganhando de qual". Respeita os filtros da tela: filtrar por rede
+     compara as carteiras só naquela rede.
+     ------------------------------------------------------------ */
+  function pintarPlacar(items) {
+    var host = U.qs("#placarCarteiras");
+    if (!host) return;
+    while (host.firstChild) host.removeChild(host.firstChild);
+    if (state.escopo !== "todas" || !items.length) { host.hidden = true; return; }
+    host.hidden = false;
+
+    var por = {};
+    items.forEach(function (p) {
+      var wid = carteiraDaPool[p.id] || "?";
+      var r = S.poolSummary(p) || {};
+      if (!por[wid]) por[wid] = { wid: wid, n: 0, capital: 0, valor: 0, resultado: 0 };
+      por[wid].n++;
+      por[wid].capital += Number(r.aportado) || 0;
+      por[wid].valor += Number(r.valorTotal) || 0;
+      por[wid].resultado += Number(r.resultado) || 0;
+    });
+    var linhas = Object.keys(por).map(function (k) {
+      var x = por[k];
+      x.pct = x.capital > 0 ? (x.resultado / x.capital) * 100 : 0;
+      return x;
+    }).sort(function (a, b) { return b.pct - a.pct; });
+    var tot = linhas.reduce(function (a, x) {
+      a.n += x.n; a.capital += x.capital; a.valor += x.valor; a.resultado += x.resultado; return a;
+    }, { n: 0, capital: 0, valor: 0, resultado: 0 });
+    tot.pct = tot.capital > 0 ? (tot.resultado / tot.capital) * 100 : 0;
+
+    function el(tag, cls, txt) {
+      var e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (txt != null) e.textContent = txt;
+      return e;
+    }
+    function celula(linha, txt, cls) { linha.appendChild(el("span", cls || null, txt)); }
+    function classe(v) { return "delta " + (v > 0 ? "up" : (v < 0 ? "down" : "flat")); }
+
+    var head = el("div", "placar__cab");
+    head.appendChild(el("div", "eyebrow", "Comparativo"));
+    head.appendChild(el("h3", null, "Placar das carteiras"));
+    host.appendChild(head);
+
+    var tabela = el("div", "placar__tabela");
+    var th = el("div", "placar__linha placar__linha--head");
+    ["Carteira", "Pools", "Capital", "Valor hoje", "Resultado", "Rentab."].forEach(function (t) { celula(th, t); });
+    tabela.appendChild(th);
+
+    linhas.forEach(function (x, i) {
+      var l = el("div", "placar__linha");
+      var nome = el("span", "placar__nome");
+      nome.appendChild(el("b", "placar__pos", (i + 1) + "º"));
+      var dot = el("span", "dot");
+      dot.style.background = corCarteira(x.wid);
+      nome.appendChild(dot);
+      nome.appendChild(document.createTextNode(nomeCarteira(x.wid)));
+      l.appendChild(nome);
+      celula(l, String(x.n));
+      celula(l, U.money(x.capital));
+      celula(l, U.money(x.valor));
+      celula(l, U.money(x.resultado), classe(x.resultado));
+      celula(l, U.pct(x.pct, true), classe(x.resultado));
+      tabela.appendChild(l);
+    });
+
+    var lt = el("div", "placar__linha placar__linha--total");
+    celula(lt, "Total");
+    celula(lt, String(tot.n));
+    celula(lt, U.money(tot.capital));
+    celula(lt, U.money(tot.valor));
+    celula(lt, U.money(tot.resultado), classe(tot.resultado));
+    celula(lt, U.pct(tot.pct, true), classe(tot.resultado));
+    tabela.appendChild(lt);
+    host.appendChild(tabela);
+  }
+
+  function popularFiltros() {
+    var base = listaBase();
+    F.populate(U.qs("#fChain"), base, "chain", "Blockchain");
+    F.populate(U.qs("#fProto"), base, "protocol", "Protocolo");
+  }
+
+  function aplicarEscopo(escopo) {
+    state.escopo = escopo === "todas" ? "todas" : "carteira";
+    try { localStorage.setItem(KEY_ESCOPO, state.escopo); } catch (e) {}
+    U.qsa("#escopoPools button").forEach(function (b) {
+      var on = b.getAttribute("data-escopo") === state.escopo;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    popularFiltros();
+    render();
+  }
+  U.qsa("#escopoPools button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      aplicarEscopo(b.getAttribute("data-escopo"));
+      cotar();
+    });
+  });
+  U.qsa("#escopoPools button").forEach(function (b) {
+    var on = b.getAttribute("data-escopo") === state.escopo;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-selected", on ? "true" : "false");
+  });
+
   // popular filtros
-  F.populate(U.qs("#fChain"), S.pools(), "chain", "Blockchain");
-  F.populate(U.qs("#fProto"), S.pools(), "protocol", "Protocolo");
+  popularFiltros();
 
   Sr.bind(U.qs("#search"), function (v) { state.q = v; rerun(); });
   U.qs("#fChain").addEventListener("change", function (e) { state.chain = e.target.value; rerun(); });
@@ -75,7 +256,11 @@
      ============================================================ */
   function cotar() {
     if (!window.DeFiTokens || !window.DeFiPerf) return;
-    var abertas = S.activePools();
+    /* no modo "todas", as pools das outras carteiras também precisam de
+       preço para o selo de faixa; só lê cotação, não grava nada */
+    var abertas = (state.escopo === "todas" && S.poolsDeTodasCarteiras)
+      ? S.poolsDeTodasCarteiras().map(function (x) { return x.pool; })
+      : S.activePools();
     if (!abertas.length) return;
 
     DeFiTokens.precosDetalhado(DeFiPerf.simbolos(abertas)).then(function (d) {

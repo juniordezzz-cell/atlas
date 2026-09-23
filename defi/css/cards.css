@@ -157,3 +157,36 @@
 .tab.active { color: var(--text-hi); border-bottom-color: var(--blue-500); }
 .tab-panel { display: none; animation: fade var(--med) var(--ease); }
 .tab-panel.active { display: block; }
+
+/* ---------- Pools de todas as carteiras ----------
+   Etiqueta da carteira no cartão e o placar que compara as carteiras.
+   Mesmo tom das tags e das tabelas do módulo: borda fina, sem brilho. */
+.tag-carteira { font-weight: 600; color: var(--text-hi); }
+.placar { margin: 0 0 18px; }
+.placar[hidden] { display: none; }
+.placar__cab { margin-bottom: 10px; }
+.placar__cab h3 { font-size: 16px; margin-top: 2px; }
+.placar__tabela {
+  border: 1px solid var(--glass-border); border-radius: var(--r-md); overflow: hidden;
+}
+.placar__linha {
+  display: grid; grid-template-columns: 1.6fr .6fr 1fr 1fr 1fr .8fr; gap: 10px;
+  align-items: center; padding: 10px 14px; font-size: 13.5px;
+  border-bottom: 1px solid var(--glass-border);
+  font-variant-numeric: tabular-nums;
+}
+.placar__linha:last-child { border-bottom: 0; }
+.placar__linha > span:not(:first-child) { text-align: right; }
+.placar__linha--head {
+  font-size: 11.5px; color: var(--text-mut); background: rgba(120,150,220,.05);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.placar__linha--total { font-weight: 650; background: rgba(120,150,220,.04); }
+.placar__nome { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-hi); min-width: 0; }
+.placar__pos { font-size: 11.5px; color: var(--text-mut); font-weight: 600; min-width: 20px; }
+.placar__nome .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+@media (max-width: 640px) {
+  .placar__linha { grid-template-columns: 1.4fr .9fr .9fr; }
+  .placar__linha > span:nth-child(2), .placar__linha > span:nth-child(3),
+  .placar__linha > span:nth-child(4) { display: none; }
+}
