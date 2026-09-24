@@ -96,3 +96,29 @@ def test_token_info_404_devolve_none():
     respx.get("https://api.geckoterminal.com/api/v2/networks/bsc/tokens/0xabc/info").mock(return_value=httpx.Response(404))
     cli = fontes.ClienteFontes(sleep=lambda s: None, relogio=lambda: 0.0)
     assert cli.token_info("bsc", "0xabc") is None
+
+
+# ---- verificação real 24/09: a GeckoTerminal responde "yes"/"no"/"unknown" em texto;
+#      bool("no") barrava RAY, WIF, BOME... por "mint ativo" ----
+def _info(**attrs):
+    return {"data": {"attributes": {"address": "x", "symbol": "T", **attrs}}}
+
+
+def test_autoridade_em_texto_no_nao_e_ativa():
+    t = fontes.parse_token_info(_info(mint_authority="no", freeze_authority="no", is_honeypot="no"), "Solana", AGORA)
+    assert t.mint_ativo is False and t.freeze_ativo is False and t.honeypot is False
+
+
+def test_autoridade_em_texto_yes_e_ativa():
+    t = fontes.parse_token_info(_info(mint_authority="yes", freeze_authority="Yes", is_honeypot="yes"), "Solana", AGORA)
+    assert t.mint_ativo is True and t.freeze_ativo is True and t.honeypot is True
+
+
+def test_honeypot_desconhecido_fica_sem_resposta():
+    t = fontes.parse_token_info(_info(is_honeypot="unknown", mint_authority=None), "Solana", AGORA)
+    assert t.honeypot is None and t.mint_ativo is False
+
+
+def test_endereco_de_autoridade_conta_como_ativa():
+    t = fontes.parse_token_info(_info(mint_authority="9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"), "Solana", AGORA)
+    assert t.mint_ativo is True

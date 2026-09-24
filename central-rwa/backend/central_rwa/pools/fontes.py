@@ -116,6 +116,23 @@ def parse_gecko_pools(payload: dict, dex: str, rede: str) -> list[Candidata]:
     return out
 
 
+def _sim_nao(v) -> bool | None:
+    """A GeckoTerminal responde em texto ("yes"/"no"/"unknown") ou, em redes
+    antigas, com booleano/nulo. Um endereço no lugar de "yes" também é sim."""
+    if v is None or v is False:
+        return False if v is False else None
+    if v is True:
+        return True
+    t = str(v).strip().lower()
+    if t in ("yes", "true"):
+        return True
+    if t in ("no", "false", ""):
+        return False
+    if t == "unknown":
+        return None
+    return True
+
+
 def parse_token_info(payload: dict, rede: str, agora: datetime) -> TokenInfo:
     a = (payload.get("data") or {}).get("attributes") or {}
     holders = a.get("holders") or {}
@@ -123,9 +140,9 @@ def parse_token_info(payload: dict, rede: str, agora: datetime) -> TokenInfo:
         rede=rede,
         endereco=str(a.get("address") or ""),
         simbolo=str(a.get("symbol") or ""),
-        honeypot=a.get("is_honeypot") if isinstance(a.get("is_honeypot"), bool) else None,
-        mint_ativo=bool(a.get("mint_authority")),
-        freeze_ativo=bool(a.get("freeze_authority")),
+        honeypot=_sim_nao(a.get("is_honeypot")),
+        mint_ativo=bool(_sim_nao(a.get("mint_authority"))),
+        freeze_ativo=bool(_sim_nao(a.get("freeze_authority"))),
         dev_pct=_num(a.get("developer_holding_percentage")),
         holders=int(holders["count"]) if isinstance(holders, dict) and holders.get("count") is not None else None,
         coingecko_id=a.get("coingecko_coin_id") or None,
