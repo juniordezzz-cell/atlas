@@ -144,6 +144,9 @@
     "estudo_pools_liquidez_backup",
     "estudo_pools_liquidez_blocklist",
     "estudo_pools_liquidez_autoupd",
+    "estudo_pools_liquidez_marcas",       // ★, nível e notas das pools do servidor
+    "estudo_pools_liquidez_tokens",       // sua lista: tokens aprovados e bloqueados
+    "estudo_pools_liquidez_migrado_v1",
     /* ------------------------------------------------------------
        PREÇOS INFORMADOS À MÃO — isto é DADO DO USUÁRIO, não cache
 

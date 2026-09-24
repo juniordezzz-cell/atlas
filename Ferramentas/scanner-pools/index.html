@@ -40,6 +40,26 @@
 
   /* stats por plataforma */
   .platstats{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px}
+  /* pools do servidor: status da coleta, trilhos Sólidas/Caça, nota, sinais, lista de tokens */
+  .srv-status{font-size:12.5px; color:var(--mut); margin:0 0 12px}
+  .srv-status.aviso{color:#f5b942}
+  .srv-status.ruim{color:#f0556a}
+  .trilhos{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px}
+  .trilho{background:var(--panel); border:1px solid var(--line); color:var(--txt); border-radius:999px; padding:7px 14px; font-weight:600; cursor:pointer}
+  .trilho.on{border-color:#4f8cff; background:rgba(79,140,255,.14)}
+  .trilho .tn{color:var(--mut); font-weight:500; margin-left:4px}
+  .trilho-dica{font-size:12px; color:var(--mut); flex:1; min-width:220px}
+  .toklista{display:flex; gap:6px; flex-wrap:wrap; align-items:center; font-size:12px; margin-bottom:10px}
+  .toklista:empty{display:none}
+  .tokchip{border-radius:999px; padding:3px 9px; font-size:11.5px; cursor:pointer; background:transparent}
+  .tokchip.ap{border:1px solid #2ec78566; color:#2ec785}
+  .tokchip.bl{border:1px solid #f0556a66; color:#f0556a}
+  .nota{display:inline-block; min-width:30px; text-align:center; font-weight:700; border-radius:7px; padding:2px 6px}
+  .nota.r-g{background:rgba(46,199,133,.14); color:#2ec785}
+  .nota.r-y{background:rgba(245,185,66,.14); color:#f5b942}
+  .nota.r-r{background:rgba(240,85,106,.14); color:#f0556a}
+  .sinais{font-size:11px; color:var(--mut); margin-top:3px; font-weight:400}
+  .manualpill{font-size:10.5px; color:var(--mut); border:1px solid var(--line); border-radius:6px; padding:1px 6px; margin-left:6px}
   .pchip{
     display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--line);
     border-radius:10px; padding:8px 12px; font-size:12px; cursor:pointer; transition:.15s;
@@ -662,73 +682,15 @@
   <input type="file" id="importfile" accept="application/json" style="display:none" onchange="importJSON(event)">
 
   <section id="tab-dash">
-  <!-- DESCOBRIR = o ranking + a busca de pools novas + (avançado) o leitor
-       de prints. Era a aba "Dashboard" e a aba "Scanner" separadas; a busca
-       automática virou o caminho principal, e o print ficou como opção. -->
-  <details class="dx-painel" id="dxRevisao" hidden>
-    <summary><b id="revTitulo">Revisar pools</b><span>a atualização não teve certeza de qual pool da fonte é a sua</span></summary>
-    <div id="revLista"></div>
-  </details>
-  <details class="dx-painel" id="dxBusca">
-    <summary><b>Buscar pools novas</b><span>DefiLlama e GeckoTerminal · sem chave · nada entra sem você confirmar</span></summary>
-    <div class="keybox" style="flex-direction:column; align-items:stretch; gap:12px">
-      <div style="display:flex; align-items:flex-start; gap:10px">
-        <div>
-          <b style="font-size:13.5px">Puxar pools automaticamente</b>
-          <div class="keystatus" style="margin-top:2px">Busca os dados reais das pools — TVL, volume (média de 7 dias quando a fonte informa), taxa e APR — <b>sem chave e sem print</b>, e monta uma prévia editável logo abaixo. Uniswap, Raydium, Orca, Aerodrome, Camelot, Kamino, SushiSwap, Curve, QuickSwap, LFJ, Pharaoh, Cetus, HyperSwap, Project X e Ramses vêm da <b>DefiLlama</b> (com APR pronto); PancakeSwap, Meteora, Velodrome e THENA vêm da <b>GeckoTerminal</b> (sem APR; a taxa vem no nome quando a fonte informa). Redes: Solana, Base, Arbitrum, BNB Chain, Ethereum, Optimism, Polygon, Avalanche, Sui, HyperEVM e Robinhood. O vol30d nenhuma fonte fornece; deixe em branco.</div>
-        </div>
-      </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">Rede
-          <select id="llamaChain" style="min-width:150px"><option value="">Minhas redes (todas)</option></select></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">DEX / plataforma
-          <select id="llamaProject" style="min-width:170px"><option value="">Minhas DEXes (todas)</option></select></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">TVL mínimo (US$)
-          <input id="llamaMinTvl" type="number" min="0" step="100000" value="1000000" style="width:130px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">Trazer top
-          <input id="llamaLimit" type="number" min="1" max="200" step="5" value="30" style="width:80px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)">Filtrar token
-          <input id="llamaToken" placeholder="ex: ETH" style="width:110px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)" title="Corta pool parada — volume 24h abaixo disso não entra.">Vol 24h mín. (US$)
-          <input id="llamaMinVol" type="number" min="0" step="10000" value="50000" style="width:110px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)" title="Memecoin costuma ser pool recém-criada. Vale pra pools da GeckoTerminal (PancakeSwap, Meteora, Uniswap Robinhood) — a DefiLlama não informa a data de criação.">Idade mín. (dias)
-          <input id="llamaMinAge" type="number" min="0" step="1" value="7" style="width:80px"></label>
-        <label style="display:flex; flex-direction:column; gap:3px; font-size:11.5px; color:var(--mut)" title="Tokens que nunca devem entrar, separados por vírgula. Fica salvo.">Bloquear tokens
-          <input id="llamaBlock" placeholder="ex: PEPE, DOGE" style="width:150px" onchange="saveBlocklist(this.value)"></label>
-        <label style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--mut); padding-bottom:7px" title="Deixa passar só pools que registram volume de troca — tira staking, lending e RWA, que têm TVL alto mas não geram taxa por giro (não servem pro estudo Vol/TVL).">
-          <input id="llamaDexOnly" type="checkbox" checked style="width:auto"> Só pools com volume (DEX de troca)</label>
-        <button class="primary" id="llamaSearchBtn" onclick="runLlamaSearch()">Puxar pools</button>
-      </div>
-      <span class="keystatus" id="llamaStatus">Clique em <b>"Puxar pools"</b> — na primeira vez baixa a lista completa (uns segundos), depois é só filtrar na hora. As redes e DEXes preenchem sozinhas após a primeira busca.</span>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid rgba(255,255,255,.07); padding-top:10px">
-        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--mut); cursor:pointer" title="Ao abrir o app (se já passou de 24h) ele atualiza sozinho os números — TVL, volume 24h e APR — SÓ das pools que você já tem. Nunca adiciona pool nova.">
-          <input id="autoUpdChk" type="checkbox" style="width:auto" onchange="onAutoUpdToggle()"> 🔄 Atualizar minhas pools sozinho a cada 24h</label>
-        <button id="updNowBtn" onclick="runUpdateNow()" title="Busca agora os números novos (TVL, vol 24h, APR) de TODAS as pools que já estão no painel. Nunca adiciona pool nova.">🔄 Atualizar minhas pools agora</button>
-        <span class="keystatus" id="autoUpdStatus" style="margin:0"></span>
-      </div>
-    </div>
-
-  </details>
-
-    <div id="scanItems"></div>
-
-    <div class="scan-footbar" id="scanFootbar" style="display:none">
-      <button class="primary" onclick="commitScan('update')" title="Atualiza os números SÓ das pools que já estão no painel. Linhas NOVA são ignoradas — nada entra.">🔄 Só atualizar as que já tenho</button>
-      <button onclick="commitScan('add')" title="Adiciona SÓ as linhas NOVA marcadas. Pools que já existem não são tocadas.">➕ Adicionar as novas marcadas</button>
-      <button class="ghost" onclick="commitScan('replace')">↻ Apagar grupo(s) (Plataforma+Rede) e recriar com as marcadas</button>
-      <span class="cnt" id="scanCnt"></span>
-    </div>
-
-
-  <details class="dx-painel" id="dxPrint">
-    <summary><b>Ler print</b><span>avançado · OCR no seu navegador ou preenchimento manual</span></summary>
-    <p class="keystatus" style="margin:4px 0 12px">Para pool que a busca não encontra. O OCR lê o texto do print aqui mesmo, sem internet e sem chave, e monta a mesma prévia editável. Se ele errar, corrija na tabela ou use "+ linha manual".</p>
-    <div class="dropzone" id="dropzone" onclick="document.getElementById('scanFileInput').click()">
-      <b>Clica pra escolher os prints</b>, arrasta e solta, ou simplesmente <b>Ctrl+V</b> (cola direto de qualquer lugar da página, tipo no chat do Claude)
-      <input type="file" id="scanFileInput" accept="image/*" multiple style="display:none" onchange="onScanFiles(event)">
-    </div>
-
-  </details>
+  <!-- DESCOBRIR = o ranking das pools que o coletor do servidor acompanha
+       (DefiLlama + GeckoTerminal, a cada 4 h) mais as suas pools manuais. -->
+  <div class="srv-status" id="srvStatus">Carregando pools do servidor…</div>
+  <div class="trilhos">
+    <button class="trilho on" data-trilho="solida" onclick="setTrilho('solida')">Sólidas <span class="tn" id="nSolidas"></span></button>
+    <button class="trilho" data-trilho="caca" onclick="setTrilho('caca')">Caça <span class="tn" id="nCaca"></span></button>
+    <span class="trilho-dica" id="trilhoDica">Os dois tokens com histórico: stables, majors, RWA ou token com 30+ dias, market cap ≥ US$ 10 mi, 1.000+ holders e listado no CoinGecko.</span>
+  </div>
+  <div class="toklista" id="tokLista"></div>
 
   <div class="platstats" id="platstats"></div>
 
@@ -776,7 +738,7 @@
     <summary>ℹ️ Como ler o ranking</summary>
     <div class="logica">
     <b>A lógica:</b> o rendimento de fees é <code>APR = 365 × Fee × (Vol&nbsp;do&nbsp;dia / TVL)</code>, com o volume do dia pela <b>média de 7 dias</b> quando a fonte informa (etiqueta 7d) ou pelas últimas 24h (etiqueta 24h). Pool sem taxa informada aparece como <b>taxa ?</b> e vai para o fim.
-    O ranking é pela <b>Eficiência</b> (<code>Fee × Razão</code>), o <b>rendimento diário real</b> que já embute a taxa.
+    O ranking é pela <b>Nota</b> (0 a 100): <b>rendimento</b> 40% — a <b>Eficiência</b> (<code>Fee × Razão</code>), o rendimento diário real que já embute a taxa —, <b>consistência</b> 30% (a razão estável na semana), <b>profundidade</b> 20% (TVL) e <b>tendência</b> 10% (TVL em 7 dias). Clique no cabeçalho de outra coluna para ordenar por ela. O Guia (tópico 0) explica a conta e os trilhos Sólidas e Caça.
     <span class="rule">Semáforo da Razão: ≥ 3×</span> verde · 1–3× amarelo · &lt;1× vermelho.
     A coluna <b>Categoria</b> é o filtro que taxa e razão não dão: <span style="color:#a97bff;font-weight:600">RWA</span>, <span style="color:#2ec785;font-weight:600">Blue-chip</span> e <span style="color:#3aa0ff;font-weight:600">Stable</span> valem o risco; <span style="color:#f5943b;font-weight:600">Memecoin</span> paga fee gordo mas o IL morde; <span style="color:#7d8aa0;font-weight:600">❓</span> = token ainda não classificado (confirme antes de entrar).
     ⚠️ Filtro <b>TVL mín $100 mil</b> ligado pra cortar degen.
@@ -814,17 +776,18 @@
       <h2>Como escolher uma pool de liquidez</h2>
       <p>Não é sobre onde tem mais dinheiro preso (TVL). É sobre <b>quanto capital gira</b>, <b>quanto disso vira taxa no seu bolso</b> e <b>se o ativo vale o risco</b>. Três perguntas, nesta ordem — e mais um monte de detalhe que separa quem lucra de quem só coleciona APR bonito.</p>
       <div class="hero-kpis">
-        <div><b>15</b><span>tópicos</span></div>
-        <div><b>~20</b><span>pools reais</span></div>
-        <div><b>4</b><span>DEXs</span></div>
-        <div><b>USD</b><span>moeda base</span></div>
+        <div><b>16</b><span>tópicos</span></div>
+        <div><b>11</b><span>redes</span></div>
+        <div><b>20</b><span>DEXs</span></div>
+        <div><b>4 h</b><span>entre coletas</span></div>
       </div>
     </div>
 
     <!-- ÍNDICE -->
     <div class="toc">
       <div class="toc-title">Índice</div>
-      <ol>
+      <ol start="0">
+        <li><a href="#sec0">Como o Scanner escolhe as pools</a></li>
         <li><a href="#sec1">A fórmula-mestra</a></li>
         <li><a href="#sec2">TVL — o dinheiro preso</a></li>
         <li><a href="#sec3">A Razão (Vol/TVL)</a></li>
@@ -841,6 +804,27 @@
         <li><a href="#sec14">Checklist prático</a></li>
         <li><a href="#sec15">Glossário</a></li>
       </ol>
+    </div>
+
+    <!-- 0 -->
+    <div class="lsec" id="sec0">
+      <div class="lnum">0</div>
+      <div class="lbody">
+        <h3>Como o Scanner escolhe as pools</h3>
+        <p>Você não cadastra pool: um coletor no servidor procura sozinho, <b>a cada 4 horas</b>, em 11 redes (Solana, Base, Arbitrum, BNB Chain, Ethereum, Optimism, Polygon, Avalanche, Sui, HyperEVM e Robinhood) e 20 DEXs. Uniswap, Raydium, Orca, Aerodrome, Curve e as outras vêm da <b>DefiLlama</b>; PancakeSwap, Meteora, Velodrome e THENA vêm da <b>GeckoTerminal</b>. Toda pool que passa no filtro é <b>acompanhada automaticamente</b>: uma leitura por dia, guardada por 30 dias — a seta de TVL e a consistência da nota saem daí, sem você marcar nada.</p>
+        <table class="ltable">
+          <thead><tr><th>Etapa</th><th>Regra</th><th>Por quê</th></tr></thead>
+          <tbody>
+            <tr><td class="tk">Pré-corte</td><td>TVL ≥ US$ 100 mil e volume ≥ US$ 50 mil por dia</td><td>Pool rasa ou parada não paga taxa que valha o risco</td></tr>
+            <tr><td class="tk">Segurança</td><td>Some sem exceção: honeypot, mint ou freeze ativos, desenvolvedor com mais de 20%, pool sem taxa e sem APR, APR acima de 10.000%, volume/TVL acima de 50× por 3 dias seguidos</td><td>Golpe, token que o criador pode imprimir ou congelar, ou volume fabricado</td></tr>
+            <tr><td class="tk">Sólidas</td><td>Os dois tokens com histórico: stable, major (BTC, ETH, SOL, BNB e embrulhados), RWA — ou token com 30+ dias, market cap ≥ US$ 10 mi, 1.000+ holders e listado no CoinGecko</td><td>É a lista padrão: dá para deixar dinheiro</td></tr>
+            <tr><td class="tk">Caça</td><td>Pelo menos um token novo ou pequeno. Sem informação de segurança também cai aqui — nunca em Sólidas</td><td>Para entrar e sair rápido; os sinais embaixo do par (idade, market cap, 24h, compradores × vendedores) ajudam a decidir</td></tr>
+            <tr><td class="tk">Sua lista</td><td><b>aprovar</b> um token manda as pools dele para Sólidas; <b>bloquear</b> some com elas das duas listas</td><td>Vale acima da classificação automática — mas não libera o que a segurança barrou</td></tr>
+          </tbody>
+        </table>
+        <p><b>A nota (0 a 100)</b> ordena as duas listas: <b>rendimento</b> 40% (a eficiência %/dia comparada com as outras pools), <b>consistência</b> 30% (a razão volume/TVL estável nos últimos 7 dias — pool que só teve um dia bom perde nota), <b>profundidade</b> 20% (TVL: de US$ 100 mil a US$ 100 mi) e <b>tendência</b> 10% (TVL subindo ou caindo na semana). Passe o mouse na nota para ver as quatro partes.</p>
+        <p class="muted">Pool que não aparece em 3 coletas seguidas sai da lista. Pool que nenhuma fonte cobre você registra no <b>+ Pool</b> — ela fica marcada como <i>manual</i> e é atualizada por você.</p>
+      </div>
     </div>
 
     <!-- 1 -->
@@ -1179,13 +1163,11 @@
 
   <footer>
     <div class="foot-actions">
-      <span class="foot-stamp">Dados de <b id="stamp"></b></span>
+      <span class="foot-stamp">Coleta de <b id="stamp">—</b></span>
       <button class="linkbtn" onclick="exportJSON()">Exportar</button>
       <button class="linkbtn" onclick="document.getElementById('importfile').click()">Importar</button>
-      <button class="linkbtn" onclick="mergeDuplicates()" title="Junta pools duplicadas (mesmo ativo + rede + taxa) num único registro, com o histórico de todas mesclado">Mesclar duplicatas</button>
-      <button class="linkbtn risky" onclick="restoreSeed()" title="Apaga seus dados e volta pro conjunto original">Restaurar seed</button>
     </div>
-    <div class="foot-note">Scanner Pools · dados em USD · roda offline (file://) · salvo no navegador (localStorage). Faça <b>Exportar</b> pra ter backup dos seus dados.</div>
+    <div class="foot-note">Scanner Pools · dados em USD · pools coletadas pelo servidor a cada 4 h · suas ★, níveis, notas, lista de tokens e pools manuais ficam no navegador — faça <b>Exportar</b> para ter backup.</div>
   </footer>
 </div>
 
@@ -1233,7 +1215,6 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
 <!-- As camadas do ATLAS que a aba "Minhas pools" lê: as carteiras e o
      módulo DeFi (pools abertas, resumo e faixa). As mesmas que o Dashboard
      carrega — aqui só se LÊ; abrir e ajustar posição continua no DeFi. -->
@@ -1254,116 +1235,10 @@
 <script src="../../defi/js/tokens.js"></script>
 <script src="../../defi/js/performance.js"></script>
 <script src="../../defi/js/data.js"></script>
+<!-- pools do coletor (visões scanner_* no Supabase) -->
+<script src="../../core/atlas-supabase-config.js"></script>
+<script src="servidor.js"></script>
 <script>
-/* ============ SEED (extraído das 6 imagens enviadas) ============ */
-/* fee em % · tvl/vol em USD · vol30d só onde a plataforma mostrava (Uniswap) */
-const SEED = [
-  // ---- IMG-RAY · Raydium · Solana ----
-  {pool:"SOL-PUMP", platform:"Raydium", network:"Solana", fee:0.1, tvl:622122, vol24h:5625325, vol30d:null, apr:330.04},
-  {pool:"SOL-USDC", platform:"Raydium", network:"Solana", fee:0.25, tvl:10514769, vol24h:4488841, vol30d:null, apr:39.52},
-  {pool:"CRCLx-USDC", platform:"Raydium", network:"Solana", fee:0.25, tvl:2501636, vol24h:2363472, vol30d:null, apr:86.21},
-  {pool:"NVDAx-USDC", platform:"Raydium", network:"Solana", fee:0.1, tvl:2503352, vol24h:840859, vol30d:null, apr:12.26},
-  {pool:"TSLAx-USDC", platform:"Raydium", network:"Solana", fee:0.1, tvl:1929492, vol24h:675934, vol30d:null, apr:12.79},
-  {pool:"SKHY-USDC", platform:"Raydium", network:"Solana", fee:0.25, tvl:934574, vol24h:663050, vol30d:null, apr:64.74},
-  {pool:"SNDK-USDC", platform:"Raydium", network:"Solana", fee:0.1, tvl:488808, vol24h:590345, vol30d:null, apr:44.1},
-  {pool:"SPCX-USDC", platform:"Raydium", network:"Solana", fee:0.25, tvl:398238, vol24h:314767, vol30d:null, apr:72.22},
-  {pool:"SPCXx-USDC", platform:"Raydium", network:"Solana", fee:0.8, tvl:903003, vol24h:284123, vol30d:null, apr:91.88},
-  {pool:"QQQx-USDC", platform:"Raydium", network:"Solana", fee:0.1, tvl:2672782, vol24h:273969, vol30d:null, apr:3.74},
-  {pool:"SPYx-USDC", platform:"Raydium", network:"Solana", fee:0.1, tvl:2745960, vol24h:270269, vol30d:null, apr:3.59},
-
-  // ---- IMG-ORCA · Orca · Solana (APR = Yield/TVL diário × 365) ----
-  {pool:"SOL/USDC", platform:"Orca", network:"Solana", fee:0.04, tvl:26392130, vol24h:55534853, vol30d:null, apr:30.66},
-  {pool:"XST/USDC", platform:"Orca", network:"Solana", fee:1, tvl:46981, vol24h:746464, vol30d:null, apr:5799.48},
-  {pool:"ZEC/USDC", platform:"Orca", network:"Solana", fee:0.16, tvl:3425547, vol24h:2615437, vol30d:null, apr:44.53},
-  {pool:"PUMP/SOL", platform:"Orca", network:"Solana", fee:0.16, tvl:1083833, vol24h:2504726, vol30d:null, apr:135.05},
-  {pool:"cbBTC/USDC", platform:"Orca", network:"Solana", fee:0.04, tvl:6296994, vol24h:9434651, vol30d:null, apr:21.9},
-  {pool:"cbBTC/SOL", platform:"Orca", network:"Solana", fee:0.16, tvl:4635222, vol24h:1397527, vol30d:null, apr:17.52},
-  {pool:"HYPE/SOL", platform:"Orca", network:"Solana", fee:0.3, tvl:1293094, vol24h:598654, vol30d:null, apr:50.74},
-  {pool:"JTO/JitoSOL", platform:"Orca", network:"Solana", fee:0.3, tvl:1383006, vol24h:539616, vol30d:null, apr:42.71},
-  {pool:"PUMP/USDC", platform:"Orca", network:"Solana", fee:0.16, tvl:459586, vol24h:842720, vol30d:null, apr:106.94},
-  {pool:"whETH/SOL", platform:"Orca", network:"Solana", fee:0.05, tvl:3640591, vol24h:2911061, vol30d:null, apr:14.6},
-  {pool:"xSOL/SOL", platform:"Orca", network:"Solana", fee:0.3, tvl:117462, vol24h:405344, vol30d:null, apr:377.77},
-
-  // ---- IMG-UNI-RH · Uniswap · Robinhood ----
-  {pool:"PIPEDOG/ETH", platform:"Uniswap", network:"Robinhood", fee:1, tvl:10000000, vol24h:5800000, vol30d:141800000, apr:176.54},
-  {pool:"ETH/USDG", platform:"Uniswap", network:"Robinhood", fee:0.01, tvl:9300000, vol24h:109300000, vol30d:3100000000, apr:32.04},
-  {pool:"DOGO/ETH", platform:"Uniswap", network:"Robinhood", fee:0, tvl:7500000, vol24h:8000000, vol30d:33000000, apr:0},
-  {pool:"STONKBROKER/ETH", platform:"Uniswap", network:"Robinhood", fee:1, tvl:6200000, vol24h:3000000, vol30d:70200000, apr:177.26},
-  {pool:"CASHCAT/ETH", platform:"Uniswap", network:"Robinhood", fee:1, tvl:4600000, vol24h:1400000, vol30d:295900000, apr:95.97},
-  {pool:"VIRTUAL/ETH", platform:"Uniswap", network:"Robinhood", fee:0.3, tvl:2800000, vol24h:818800, vol30d:101800000, apr:32.51},
-  {pool:"CASHCAT/ETH", platform:"Uniswap", network:"Robinhood", fee:0.2925, tvl:2500000, vol24h:2700000, vol30d:44100000, apr:113.74},
-  {pool:"SYRUPUSDG/USDG", platform:"Uniswap", network:"Robinhood", fee:0.05, tvl:2200000, vol24h:0, vol30d:1100000, apr:0},
-  {pool:"ETH/USDG", platform:"Uniswap", network:"Robinhood", fee:0.05, tvl:2100000, vol24h:2900000, vol30d:194800000, apr:18.98},
-  {pool:"SPCX/USDG", platform:"Uniswap", network:"Robinhood", fee:1, tvl:1900000, vol24h:494800, vol30d:13200000, apr:95.4},
-  {pool:"ETH/USDG", platform:"Uniswap", network:"Robinhood", fee:0.046, tvl:1800000, vol24h:6500000, vol30d:110000000, apr:59.77},
-  {pool:"NVDA/USDG", platform:"Uniswap", network:"Robinhood", fee:0.3, tvl:1500000, vol24h:1300000, vol30d:31200000, apr:93.55},
-  {pool:"PONS/ETH", platform:"Uniswap", network:"Robinhood", fee:1, tvl:1400000, vol24h:1100000, vol30d:135300000, apr:251.18},
-  {pool:"CASHCAT/ETH", platform:"Uniswap", network:"Robinhood", fee:0.3, tvl:1300000, vol24h:6600000, vol30d:158600000, apr:466.56},
-
-  // ---- IMG-UNI-BASE · Uniswap · Base ----
-  {pool:"ETH/USDC", platform:"Uniswap", network:"Base", fee:0.3, tvl:116800000, vol24h:31000000, vol30d:1300000000, apr:24.23},
-  {pool:"cbBTC/ETH", platform:"Uniswap", network:"Base", fee:0.3, tvl:10800000, vol24h:400300, vol30d:44700000, apr:3.4},
-  {pool:"ETH/USDC", platform:"Uniswap", network:"Base", fee:0.05, tvl:10400000, vol24h:6500000, vol30d:298700000, apr:8.49},
-  {pool:"cbBTC/USDC", platform:"Uniswap", network:"Base", fee:0.05, tvl:8800000, vol24h:5200000, vol30d:173100000, apr:8.19},
-  {pool:"cbBTC/ETH", platform:"Uniswap", network:"Base", fee:0.05, tvl:5900000, vol24h:9500000, vol30d:260800000, apr:22.11},
-  {pool:"cbBTC/USDC", platform:"Uniswap", network:"Base", fee:0.05, tvl:4600000, vol24h:2500000, vol30d:101600000, apr:9.99},
-  {pool:"POD/ETH", platform:"Uniswap", network:"Base", fee:1, tvl:4400000, vol24h:116400, vol30d:6100000, apr:9.63},
-  {pool:"cbBTC/USDC", platform:"Uniswap", network:"Base", fee:0.3, tvl:4000000, vol24h:311600, vol30d:8800000, apr:7.18},
-  {pool:"ETH/USDC", platform:"Uniswap", network:"Base", fee:0.3, tvl:3500000, vol24h:372100, vol30d:18500000, apr:11.54},
-  {pool:"MPP/USDC", platform:"Uniswap", network:"Base", fee:0.3, tvl:3200000, vol24h:20000, vol30d:483200, apr:0.57},
-  {pool:"BALD/ETH", platform:"Uniswap", network:"Base", fee:1, tvl:3000000, vol24h:0, vol30d:4100, apr:0},
-  {pool:"DESPXA/USDC", platform:"Uniswap", network:"Base", fee:0.05, tvl:3000000, vol24h:457200, vol30d:18400000, apr:2.08},
-  {pool:"cbBTC/ETH", platform:"Uniswap", network:"Base", fee:0.05, tvl:2400000, vol24h:1300000, vol30d:84100000, apr:9.55},
-  {pool:"BORED/ETH", platform:"Uniswap", network:"Base", fee:1, tvl:2400000, vol24h:0, vol30d:331, apr:0},
-
-  // ---- IMG-UNI-ARB · Uniswap · Arbitrum ----
-  {pool:"ETH/USDC", platform:"Uniswap", network:"Arbitrum", fee:0.05, tvl:36400000, vol24h:25200000, vol30d:819800000, apr:9.49},
-  {pool:"WBTC/ETH", platform:"Uniswap", network:"Arbitrum", fee:0.05, tvl:34000000, vol24h:2900000, vol30d:428900000, apr:1.17},
-  {pool:"WBTC/USDT", platform:"Uniswap", network:"Arbitrum", fee:0.05, tvl:8200000, vol24h:3500000, vol30d:98000000, apr:5.9},
-  {pool:"WBTC/USDC", platform:"Uniswap", network:"Arbitrum", fee:0.05, tvl:7700000, vol24h:2700000, vol30d:119600000, apr:4.76},
-  {pool:"ETH/USDT", platform:"Uniswap", network:"Arbitrum", fee:0.05, tvl:6500000, vol24h:2400000, vol30d:86400000, apr:5.13},
-  {pool:"ETH/USDC", platform:"Uniswap", network:"Arbitrum", fee:0.3, tvl:6400000, vol24h:0, vol30d:555700, apr:0},
-  {pool:"ETH/USDC", platform:"Uniswap", network:"Arbitrum", fee:0.05, tvl:4000000, vol24h:1100000, vol30d:42300000, apr:5.11},
-  {pool:"WBTC/USDC", platform:"Uniswap", network:"Arbitrum", fee:0.05, tvl:3900000, vol24h:740200, vol30d:25100000, apr:3.51},
-  {pool:"GMX/ETH", platform:"Uniswap", network:"Arbitrum", fee:1, tvl:2100000, vol24h:0, vol30d:18300, apr:0.02},
-  {pool:"USDC/USDT", platform:"Uniswap", network:"Arbitrum", fee:0.0008, tvl:1900000, vol24h:8800000, vol30d:221400000, apr:1.35},
-  {pool:"HEGIC/ETH", platform:"Uniswap", network:"Arbitrum", fee:0.05, tvl:1700000, vol24h:0, vol30d:78, apr:0},
-  {pool:"RYZE/USDC", platform:"Uniswap", network:"Arbitrum", fee:0.3, tvl:1600000, vol24h:0, vol30d:56400, apr:0.01},
-  {pool:"ETH/USDC", platform:"Uniswap", network:"Arbitrum", fee:0.3, tvl:1600000, vol24h:276700, vol30d:11400000, apr:18.57},
-  {pool:"USDC/USDT", platform:"Uniswap", network:"Arbitrum", fee:0.01, tvl:1400000, vol24h:8600, vol30d:10100000, apr:0.02},
-
-  // ---- IMG-CAKE · PancakeSwap · BNB Chain ----
-  {pool:"USDT/WBNB", platform:"PancakeSwap", network:"BNB Chain", fee:0.01, tvl:82374560, vol24h:18561154, vol30d:null, apr:14},
-  {pool:"quq/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.01, tvl:198000000, vol24h:1281009.8, vol30d:null, apr:392.8},
-  {pool:"BTCB/WBNB", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:5241599.7, vol24h:13966044, vol30d:null, apr:8.36},
-  {pool:"USDT/BTCB", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:7300071.2, vol24h:13650367, vol30d:null, apr:7.83},
-  {pool:"ETH/WBNB", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:5185215.6, vol24h:11532174, vol30d:null, apr:6.5},
-  {pool:"USDT/USDC", platform:"PancakeSwap", network:"BNB Chain", fee:0.01, tvl:2649609.8, vol24h:30432028, vol30d:null, apr:0.23},
-  {pool:"quq/USDC", platform:"PancakeSwap", network:"BNB Chain", fee:0.01, tvl:1793614.2, vol24h:5948.38, vol30d:null, apr:737.35},
-  {pool:"USDT/SPCXB", platform:"PancakeSwap", network:"BNB Chain", fee:0.25, tvl:5136167.5, vol24h:3894336.9, vol30d:null, apr:82.24},
-  {pool:"XAUt/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.25, tvl:1751219.5, vol24h:1581353.1, vol30d:null, apr:68.7},
-  {pool:"USDT/SPYB", platform:"PancakeSwap", network:"BNB Chain", fee:0.01, tvl:5032696.1, vol24h:304261.35, vol30d:null, apr:43.61},
-  {pool:"USDC/WBNB", platform:"PancakeSwap", network:"BNB Chain", fee:0.01, tvl:13775212, vol24h:2283129.9, vol30d:null, apr:15.37},
-  {pool:"USDT/WBNB", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:2315983, vol24h:4615309.1, vol30d:null, apr:11.32},
-  {pool:"ETH/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:2201607.7, vol24h:4101885.2, vol30d:null, apr:10.15},
-  {pool:"QQQB/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.01, tvl:4127580.3, vol24h:1084094.3, vol30d:null, apr:9.67},
-  {pool:"USDT/BTCB", platform:"PancakeSwap", network:"BNB Chain", fee:0.01, tvl:4589406.5, vol24h:1544702.4, vol30d:null, apr:7.75},
-  {pool:"B2/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:6.195, tvl:31600000, vol24h:0, vol30d:117800000, apr:0},
-  {pool:"SPYB/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.255, tvl:6800000, vol24h:13300000, vol30d:110300000, apr:180.9},
-  {pool:"BTCB/BNB", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:6500000, vol24h:2200000, vol30d:115000000, apr:4.59},
-  {pool:"WETH/BNB", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:5100000, vol24h:2100000, vol30d:85800000, apr:5.76},
-  {pool:"BNB/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:3400000, vol24h:6200000, vol30d:173900000, apr:24.9},
-  {pool:"CTM/BNB", platform:"PancakeSwap", network:"BNB Chain", fee:0, tvl:2100000, vol24h:9500000, vol30d:279200000, apr:0},
-  {pool:"BNB/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:1700000, vol24h:255200, vol30d:7000000, apr:2.73},
-  {pool:"B2/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:1.1124, tvl:1600000, vol24h:0, vol30d:33000000, apr:0},
-  {pool:"BTCB/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.05, tvl:1600000, vol24h:1900000, vol30d:75500000, apr:16.56},
-  {pool:"BUILDOUT/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.3, tvl:895900, vol24h:67500, vol30d:3600000, apr:8.24},
-  {pool:"PHOTON/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.3, tvl:835000, vol24h:249800, vol30d:5900000, apr:32.75},
-  {pool:"NEOCLOUD/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:0.3, tvl:768100, vol24h:293900, vol30d:5900000, apr:41.9},
-  {pool:"BinanceLife/USDT", platform:"PancakeSwap", network:"BNB Chain", fee:4, tvl:758400, vol24h:0, vol30d:1.19, apr:0},
-  {pool:"TEM/BNB", platform:"PancakeSwap", network:"BNB Chain", fee:0.3, tvl:734100, vol24h:204.96, vol30d:4200000, apr:0.03}
-];
-
 /* ============ estado + persistência ============ */
 const KEY  = "estudo_pools_liquidez_v1";
 const VKEY = "estudo_pools_liquidez_versao";
@@ -1378,7 +1253,8 @@ const PLAT_COLORS = {Raydium:"var(--ray)", PancakeSwap:"var(--pancake)", Uniswap
 
 let state = {
   pools: [],
-  sortKey: "efic",
+  sortKey: "nota",
+  trilho: "solida",
   sortDir: "desc",
   platform: "Todas",
   page: 1,
@@ -1395,6 +1271,7 @@ const COLS = [
   {key:"vol24h",  label:"Vol/dia",    cls:""},
   {key:"trend",   label:"Δ TVL",      cls:""},
   {key:"ratio",   label:"Razão",      cls:""},
+  {key:"nota",    label:"Nota",       cls:""},
   {key:"efic",    label:"Efic %/dia", cls:""},
   {key:"apr",     label:"APR",        cls:""},
   {key:"updatedAt",label:"Atualizada", cls:"plat"},
@@ -1404,20 +1281,13 @@ const COLS = [
 function load(){
   try{
     const raw = localStorage.getItem(KEY);
-    const savedV = localStorage.getItem(VKEY) || "";
-    if(!raw){
-      // primeira vez: começa com o seed
-      state.pools = clone(SEED);
-      save();
-    } else {
-      state.pools = JSON.parse(raw);
-      // seed mais novo que o salvo → só acrescenta o que falta (nunca substitui)
-      if(savedV < DATA_VERSION){ mergeSeedIntoPools(); save(); }
-    }
+    // As pools do servidor chegam depois (carregarServidor); aqui ficam só
+    // as suas: manuais e as antigas, que a transição casa com o servidor.
+    state.pools = raw ? JSON.parse(raw) : [];
   }catch(e){
-    // dado corrompido ou storage bloqueado: mostra o seed só nesta sessão, sem gravar por cima
+    // dado corrompido ou storage bloqueado: segue só com o servidor, sem gravar por cima
     console.error("load falhou:", e);
-    state.pools = clone(SEED);
+    state.pools = [];
   }
   // SEC-002: o id vai para dentro de onclick="…(${p.id})" e os números
   // passam por fFee/fUSD, que devolvem string crua quando recebem string.
@@ -1463,27 +1333,147 @@ function assignPoolIds(pools){
   pools.forEach(p=>{ if(p.id==null || seen.has(p.id)) p.id = next++; seen.add(p.id); });
   return pools;
 }
-/* Acrescenta as pools do seed que ainda não existem. Pool já existente fica como está. */
-function mergeSeedIntoPools(){
-  let nextId = state.pools.reduce((m,p)=>Math.max(m, Number(p.id)||0), 0) + 1;
-  let added = 0;
-  // aqui a taxa precisa bater também: o seed tem o mesmo par em tiers diferentes (0,05% e 0,3%)
-  const k = p => candKey(p.platform, p.network, p.pool) + "|" + (Math.round((Number(p.fee)||0)*10000));
-  const have = new Set(state.pools.map(k));
-  clone(SEED).forEach(sp=>{
-    if(have.has(k(sp))) return;
-    have.add(k(sp));
-    sp.id = nextId++;
-    state.pools.push(sp);
-    added++;
-  });
-  return added;
-}
 function save(){
   try{
-    localStorage.setItem(KEY, JSON.stringify(state.pools));
+    localStorage.setItem(KEY, JSON.stringify(state.pools.filter(p=>!p.servidor)));
     localStorage.setItem(VKEY, DATA_VERSION);
+    const S = window.ScannerServidor;
+    if(S){
+      // marca de pool que sumiu do servidor por um tempo fica guardada; só a que você desfez sai
+      const m = S.lerMarcas(), novas = S.extrairMarcas(state.pools);
+      state.pools.forEach(p=>{ if(p.servidor){ if(novas[p.sid]) m[p.sid] = novas[p.sid]; else delete m[p.sid]; } });
+      S.gravarMarcas(m);
+    }
   }catch(e){ alert("Não deu pra salvar no localStorage."); }
+}
+
+/* ============ pools do servidor ============
+   O coletor (central-rwa/backend/central_rwa/pools) publica as pools nas
+   visões scanner_*; ScannerServidor (servidor.js) lê e junta com o que é
+   seu. Na primeira vez, as pools gravadas antes são casadas com as do
+   servidor — nada é apagado: a casada passa a ser acompanhada pelo
+   servidor e a que não casa vira manual. */
+let srv = { carregado:false, doCache:false, em:null, status:[], erro:null, migracao:null };
+let tokensLista = { aprovados:[], bloqueados:[] };
+function trilhoDe(p){ return window.ScannerServidor ? ScannerServidor.trilhoEfetivo(p, tokensLista) : "solida"; }
+
+async function carregarServidor(){
+  const S = window.ScannerServidor;
+  if(!S){ srv.erro = "a camada do servidor não carregou"; renderStatus(); return; }
+  tokensLista = S.lerTokens();
+  try{
+    const d = await S.carregar();
+    let marcas = S.lerMarcas();
+    const doServidor = d.pools.map(r=>S.paraPool(r, marcas[r.id]));
+    const locais = state.pools.filter(p=>!p.servidor);
+    if(!S.jaMigrou()){
+      const m = S.migrar(locais.filter(l=>!l.migrada && !l.arquivada), doServidor, marcas);
+      m.casadas.forEach(c=>{ c.local.migrada = c.servidor.sid; });
+      marcas = m.marcas;
+      S.gravarMarcas(marcas);
+      doServidor.forEach(p=>{ const mk = marcas[p.sid]; if(mk){ p.fav = !!mk.fav; if(mk.level) p.level = mk.level; p.notes = mk.notes || ""; } });
+      S.marcarMigrado({ em:Date.now(), casadas:m.casadas.length, manuais:m.manuais.length });
+      srv.migracao = { casadas:m.casadas.length, manuais:m.manuais.length };
+    }
+    // o histórico que as suas pools antigas já tinham continua no painel de evolução
+    const antigo = {};
+    locais.forEach(l=>{ if(l.migrada) antigo[l.migrada] = l.history || []; });
+    doServidor.forEach(p=>{
+      p.historyLocal = antigo[p.sid] || [];
+      p.history = p.historyLocal.concat([{ ts:p.updatedAt||Date.now(), tvl:p.tvl, vol24h:p.vol24h, vol7d:p.vol7d, vol30d:null, fee:p.fee, apr:p.apr }]);
+    });
+    state.pools = doServidor.concat(locais);
+    Object.assign(srv, { carregado:true, doCache:!!d.doCache, em:d.em, status:d.status||[], erro:d.erro||null });
+    save();
+  }catch(e){
+    srv.erro = String(e && e.message || e);
+  }
+  state.page = 1;
+  render(); renderStatus(); renderListaTokens(); updateRadarBadge();
+}
+
+function idadeTxt(ms){
+  if(!ms) return "—";
+  const min = Math.round((Date.now()-ms)/60000);
+  if(min < 60) return `há ${Math.max(1,min)} min`;
+  const h = Math.round(min/60);
+  return h < 48 ? `há ${h} h` : `há ${Math.round(h/24)} dias`;
+}
+function renderStatus(){
+  const el = document.getElementById("srvStatus"); if(!el) return;
+  const doSrv = state.pools.filter(p=>p.servidor);
+  const vis = state.pools.filter(p=>!p.migrada && !p.arquivada);
+  const nS = vis.filter(p=>trilhoDe(p)==="solida").length;
+  const nC = vis.filter(p=>trilhoDe(p)==="caca").length;
+  const a = document.getElementById("nSolidas"), b = document.getElementById("nCaca");
+  if(a) a.textContent = nS;
+  if(b) b.textContent = nC;
+  if(!srv.carregado){
+    el.className = "srv-status" + (srv.erro ? " ruim" : "");
+    el.textContent = srv.erro
+      ? `Não consegui ler as pools do servidor (${srv.erro}). Mostrando só as suas pools manuais.`
+      : "Carregando pools do servidor…";
+    return;
+  }
+  const coleta = srv.status.reduce((m,x)=>Math.max(m, Date.parse(x.em)||0), 0);
+  const falhas = srv.status.filter(x=>x.estado && x.estado!=="ok").length;
+  const partes = [`Coleta do servidor ${idadeTxt(coleta)}`, `${doSrv.length} pools acompanhadas`];
+  if(falhas) partes.push(`${falhas} fonte(s) com falha na última coleta`);
+  let txt = partes.join(" · ");
+  if(srv.doCache) txt = `Sem conexão com o servidor agora — mostrando a última leitura, ${idadeTxt(srv.em)}. ` + txt;
+  if(srv.migracao) txt += ` · ${srv.migracao.casadas} das suas pools passaram a ser acompanhadas pelo servidor; ${srv.migracao.manuais} ficaram como manuais.`;
+  el.className = "srv-status" + (srv.doCache || falhas ? " aviso" : "");
+  el.textContent = txt;
+  const st = document.getElementById("stamp");
+  if(st && coleta) st.textContent = new Date(coleta).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+}
+function setTrilho(t){
+  state.trilho = t; state.page = 1;
+  document.querySelectorAll(".trilho").forEach(b=>b.classList.toggle("on", b.dataset.trilho===t));
+  const d = document.getElementById("trilhoDica");
+  if(d) d.textContent = t==="caca"
+    ? "Token novo ou pequeno: sem 30 dias, market cap abaixo de US$ 10 mi, poucos holders ou fora do CoinGecko. Entra e sai rápido — os sinais embaixo do par ajudam a decidir."
+    : "Os dois tokens com histórico: stables, majors, RWA ou token com 30+ dias, market cap ≥ US$ 10 mi, 1.000+ holders e listado no CoinGecko.";
+  render();
+}
+
+/* ---- sua lista de tokens (camada 3): vale acima da classificação do servidor ---- */
+const TOKEN_OK = /^[A-Z0-9._+-]{1,20}$/;
+function marcarToken(t, lista){
+  if(!TOKEN_OK.test(t) || !window.ScannerServidor) return;
+  const outra = lista==="aprovados" ? "bloqueados" : "aprovados";
+  tokensLista[outra] = tokensLista[outra].filter(x=>x!==t);
+  if(tokensLista[lista].indexOf(t)===-1) tokensLista[lista].push(t);
+  ScannerServidor.gravarTokens(tokensLista);
+  render(); renderStatus(); renderListaTokens();
+}
+function desmarcarToken(t){
+  tokensLista.aprovados = tokensLista.aprovados.filter(x=>x!==t);
+  tokensLista.bloqueados = tokensLista.bloqueados.filter(x=>x!==t);
+  if(window.ScannerServidor) ScannerServidor.gravarTokens(tokensLista);
+  render(); renderStatus(); renderListaTokens();
+}
+/* Montada com elementos (textContent): o símbolo vem do servidor e da sua lista. */
+function renderListaTokens(){
+  const el = document.getElementById("tokLista"); if(!el) return;
+  el.replaceChildren();
+  const ap = tokensLista.aprovados.filter(t=>TOKEN_OK.test(t)), bl = tokensLista.bloqueados.filter(t=>TOKEN_OK.test(t));
+  if(!ap.length && !bl.length) return;
+  el.append(h("span", {class:"muted2"}, "Sua lista de tokens: "));
+  const chip = (t, cls, rot) => {
+    const b = h("button", {class:"tokchip "+cls, type:"button", title: rot+" — clique para tirar da sua lista"}, t+" ✕");
+    b.addEventListener("click", ()=>desmarcarToken(t));
+    return b;
+  };
+  ap.forEach(t=>el.append(chip(t, "ap", "Aprovado: conta como sólido")));
+  bl.forEach(t=>el.append(chip(t, "bl", "Bloqueado: pools escondidas")));
+}
+function tokenBtns(p){
+  if(!p.servidor || !window.ScannerServidor) return "";
+  return ScannerServidor.tokenAlvo(p.pool).filter(t=>TOKEN_OK.test(t)).map(t=>
+    (p.trilho==="caca" ? `<button class="iconbtn" onclick="marcarToken('${esc(t)}','aprovados')" title="${esc(t)} passa a contar como token sólido">aprovar ${esc(t)}</button>` : "")
+    + `<button class="iconbtn" onclick="marcarToken('${esc(t)}','bloqueados')" title="Esconde todas as pools com ${esc(t)}">bloquear ${esc(t)}</button>`
+  ).join("");
 }
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
@@ -1620,6 +1610,7 @@ function fDate(ts){
 
 /* variação % do TVL entre as duas últimas atualizações (null se só há 1 registro) */
 function trendOf(p){
+  if(p.servidor) return p.varTvl7d==null ? null : p.varTvl7d*100;   // 7 dias, calculado no servidor
   const h = (p.history||[]).slice().sort((a,b)=>a.ts-b.ts);
   if(h.length<2) return null;
   const prev = +h[h.length-2].tvl||0, cur = +h[h.length-1].tvl||0;
@@ -1644,7 +1635,8 @@ function render(){
   buildPlatStats();
   buildHead();
 
-  let list = state.pools.filter(p=>!p.arquivada);   // arquivadas: só no painel de revisão
+  // migrada = pool antiga que agora vem do servidor; arquivada = marcada na versão anterior
+  let list = state.pools.filter(p=>!p.arquivada && !p.migrada && trilhoDe(p)===state.trilho);
   // filtro plataforma
   if(state.platform!=="Todas") list = list.filter(p=>p.platform===state.platform);
   // filtro rede
@@ -1667,6 +1659,7 @@ function render(){
   list.sort((a,b)=>{
     let va,vb;
     if(k==="ratio"){ va=ratio(a); vb=ratio(b); }
+    else if(k==="nota"){ va=a.servidor?a.nota:-1; vb=b.servidor?b.nota:-1; }
     else if(k==="efic"){
       // sem taxa conhecida: fim da lista nas duas direções (não é "0%", é "não sei")
       if(temTaxa(a)!==temTaxa(b)) return temTaxa(a) ? -1 : 1;
@@ -1695,7 +1688,7 @@ function render(){
   // corpo
   const body = document.getElementById("body");
   if(pageItems.length===0){
-    body.innerHTML = `<tr><td colspan="13" class="empty">Nenhuma pool com esses filtros.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="14" class="empty">${srv.carregado || srv.erro ? "Nenhuma pool com esses filtros." : "Carregando pools do servidor…"}</td></tr>`;
   } else {
     body.innerHTML = pageItems.map((p,i)=>rowHTML(p, start+i+1)).join("");
   }
@@ -1715,7 +1708,7 @@ function rowHTML(p, rank){
   const tr = trendOf(p), ta = trendArrow(tr);
   return `<tr>
     <td class="favcell"><button class="favbtn ${p.fav?'on':''}" onclick="toggleFav(${p.id})" title="${p.fav?'Remover dos favoritos':'Marcar como favorita'}">${p.fav?'★':'☆'}</button></td>
-    <td class="pool"><span class="rank num">${rank}.</span> <span class="poolname">${esc(p.pool)}</span><span class="feepill">${fFee(p.fee)}</span></td>
+    <td class="pool"><span class="rank num">${rank}.</span> <span class="poolname">${esc(p.pool)}</span><span class="feepill">${fFee(p.fee)}</span>${p.servidor ? "" : '<span class="manualpill" title="Pool registrada por você no + Pool — o servidor não acompanha">manual</span>'}${sinaisHTML(p)}</td>
     <td class="plat" data-label="Plataforma">
       <span class="platbadge"><span class="pdot" style="background:${PLAT_COLORS[p.platform]||'#8a94a8'}"></span>${esc(p.platform)}</span>
       <span class="net">${esc(p.network)}</span>
@@ -1724,8 +1717,9 @@ function rowHTML(p, rank){
     <td class="num m-hide" data-label="Fee">${fFee(p.fee)}</td>
     <td class="num" data-label="TVL">${fUSD(p.tvl)}${low?`<span class="warn" title="TVL baixo (<$100k): razão pode enganar">⚠</span>`:''}</td>
     <td class="num" data-label="Vol/dia">${fUSD(volDia(p))}<span class="volsrc" title="${volFonte(p)==='7d'?'Média diária dos últimos 7 dias (DefiLlama)':'Volume das últimas 24h — a fonte não informa a média de 7 dias'}">${volFonte(p)}</span></td>
-    <td class="num" data-label="Δ TVL"><span class="trend ${ta.cls}" title="Variação do TVL desde a atualização anterior">${tr==null?'<span class="muted2">—</span>':`${ta.arrow} ${fPctSigned(tr)}`}</span></td>
+    <td class="num" data-label="Δ TVL"><span class="trend ${ta.cls}" title="${p.servidor ? 'Variação do TVL em 7 dias' : 'Variação do TVL desde a atualização anterior'}">${tr==null?'<span class="muted2">—</span>':`${ta.arrow} ${fPctSigned(tr)}`}</span></td>
     <td data-label="Razão"><span class="ratio ${ratioClass(r)}">${fRatio(r)}</span></td>
+    <td class="num" data-label="Nota">${notaHTML(p)}</td>
     <td class="efic" data-label="Efic %/dia">${temTaxa(p) ? e.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%'
       : ehVe33(p) ? '<span class="muted2" title="DEX ve(3,3): o LP ganha emissões com stake ou a taxa sem stake — e a fonte desta pool (GeckoTerminal) não informa nenhum dos dois. Taxa × giro prometeria um rendimento que o LP não recebe.">sem dado</span>'
       : '<span class="muted2" title="A fonte não informou a taxa desta pool — complete em editar. Sem taxa, a eficiência é desconhecida, não zero.">taxa ?</span>'}</td>
@@ -1733,11 +1727,30 @@ function rowHTML(p, rank){
     <td class="plat" data-label="Atualizada"><span class="daterel ${dt.cls}" title="Última atualização: ${dt.full}">${dt.txt}</span></td>
     <td class="actcell">
       <span class="rowact">
-        <button class="iconbtn" onclick="openForm(${idx})">editar</button>
+        ${p.servidor ? "" : `<button class="iconbtn" onclick="openForm(${idx})">editar</button>`}
         <button class="iconbtn" onclick="goToHistory(${p.id})">histórico</button>
+        ${tokenBtns(p)}
       </span>
     </td>
   </tr>`;
+}
+
+/* Nota 0–100 do servidor: a dica mostra de onde ela veio (o Guia explica a conta). */
+function notaHTML(p){
+  if(!p.servidor) return '<span class="muted2" title="Pool manual: o servidor não dá nota">—</span>';
+  const c = p.componentes || {}, pc = v => Math.round((Number(v)||0)*100);
+  const cls = p.nota>=70 ? "r-g" : p.nota>=45 ? "r-y" : "r-r";
+  return `<span class="nota ${cls}" title="Rendimento ${pc(c.rendimento)} · Consistência ${pc(c.consistencia)} · Profundidade ${pc(c.profundidade)} · Tendência ${pc(c.tendencia)} (de 0 a 100)">${Math.round(p.nota)}</span>`;
+}
+/* Trilho Caça: os sinais para entrar e sair rápido. */
+function sinaisHTML(p){
+  if(!p.servidor || trilhoDe(p)!=="caca") return "";
+  const s = p.sinais || {}, it = [];
+  if(p.criadaEm) it.push(`pool de ${Math.max(0,Math.floor((Date.now()-p.criadaEm)/86400000))} dias`);
+  if(s.mcap) it.push(`mcap ${fUSD(s.mcap)}`);
+  if(s.variacao_24h!=null) it.push(`24h ${s.variacao_24h>0?"+":""}${Number(s.variacao_24h).toLocaleString("pt-BR",{maximumFractionDigits:1})}%`);
+  if(s.compradores_24h || s.vendedores_24h) it.push(`${s.compradores_24h||0} compram × ${s.vendedores_24h||0} vendem`);
+  return it.length ? `<div class="sinais">${esc(it.join(" · "))}</div>` : "";
 }
 
 function buildHead(){
@@ -2448,6 +2461,16 @@ function radarAxisUSD(n){
 function radarAxisRatio(n){ return n.toLocaleString('pt-BR',{maximumFractionDigits:1})+'×'; }
 
 function initRadarChart(poolId){
+  // pool do servidor: as leituras diárias são buscadas só quando ela é aberta
+  const p0 = state.pools.find(x=>x.id===poolId);
+  if(p0 && p0.servidor && !p0._histPedido && window.ScannerServidor){
+    p0._histPedido = true;
+    ScannerServidor.historico(p0.sid).then(h=>{
+      if(!h.length) return;
+      p0.history = (p0.historyLocal||[]).concat(h).sort((a,b)=>a.ts-b.ts);
+      if(radarOpenId===poolId) renderRadar();
+    }).catch(()=>{});
+  }
   const p = state.pools.find(p=>p.id===poolId);
   if(!p) return;
   const snaps = radarSnaps(p);
@@ -2678,7 +2701,11 @@ function deleteCurrent(){
 
 /* ============ export / import / reset ============ */
 function exportJSON(){
-  const blob=new Blob([JSON.stringify(state.pools,null,2)],{type:"application/json"});
+  // o que é seu: pools manuais (e antigas), marcas das pools do servidor e a lista de tokens
+  const S = window.ScannerServidor;
+  const dado = { versao:2, locais: state.pools.filter(p=>!p.servidor),
+                 marcas: S ? S.lerMarcas() : {}, tokens: S ? S.lerTokens() : {aprovados:[], bloqueados:[]} };
+  const blob=new Blob([JSON.stringify(dado,null,2)],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
   a.download=`pools-liquidez_${new Date().toISOString().slice(0,10)}.json`;
@@ -2720,172 +2747,41 @@ function importJSON(ev){
   const rd=new FileReader();
   rd.onload=()=>{
     try{
-      const data=JSON.parse(rd.result);
-      if(!Array.isArray(data)) throw 0;
-      if(confirm(`Importar ${data.length} pool(s)? Isso SUBSTITUI os dados atuais.`)){
+      const bruto=JSON.parse(rd.result);
+      // aceita o formato antigo (lista de pools) e o novo ({versao:2, locais, marcas, tokens})
+      const data = Array.isArray(bruto) ? bruto : (bruto && Array.isArray(bruto.locais) ? bruto.locais : null);
+      if(!data) throw 0;
+      if(confirm(`Importar ${data.length} pool(s) suas${Array.isArray(bruto)?"":" e as suas marcas"}? Isso SUBSTITUI os dados atuais.`)){
+        const S = window.ScannerServidor;
+        if(S && !Array.isArray(bruto)){
+          const m = {};
+          Object.keys(bruto.marcas||{}).forEach(k=>{ const v=bruto.marcas[k]||{}; m[String(k)] = {fav:!!v.fav, level: v.level?String(v.level):null, notes:String(v.notes||"")}; });
+          S.gravarMarcas(m);
+          const t = bruto.tokens||{};
+          tokensLista = { aprovados:(t.aprovados||[]).map(String), bloqueados:(t.bloqueados||[]).map(String) };
+          S.gravarTokens(tokensLista);
+        }
         // SEC-002: nada do arquivo entra sem normalizar (ids repetidos renumerados)
         state.pools=assignPoolIds(data.map(normalizePool));
-        state.page=1; save(); render();
+        if(S) localStorage.removeItem(S.MIGRADO_KEY);   // casa de novo com o servidor
+        state.page=1; save(); carregarServidor();
       }
     }catch(e){ alert("Arquivo JSON inválido."); }
     ev.target.value="";
   };
   rd.readAsText(file);
 }
-function restoreSeed(){
-  if(confirm(`Restaurar as ${SEED.length} pools originais? Isso APAGA suas pools, favoritas, níveis, histórico e anotações.\n\nDica: faça Exportar antes, pra ter backup.`)){
-    state.pools=clone(SEED).map((p,i)=>({id:i+1,...p}));
-    state.page=1; save(); render();
-  }
-}
-
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-/* ================================================================
-   LEITOR DE PRINTS — opção avançada, só local.
-   Dois caminhos: OCR no navegador (Tesseract) e edição manual. Nada
-   entra em state.pools sem passar pela tabela de revisão.
-
-   A LEITURA POR IA SAIU (2026-09-22). Ela pedia chaves de API guardadas
-   no navegador — um risco num site publicado — e perdeu o motivo de
-   existir quando "Puxar pools" passou a trazer os números direto da
-   DefiLlama e da GeckoTerminal. As chaves que tenham ficado guardadas
-   de versões antigas são apagadas na abertura (ver boot).
-   ================================================================ */
+/* A leitura por IA saiu em 22/09/2026 (pedia chaves de API guardadas no
+   navegador); as chaves de versões antigas são apagadas na abertura. */
 const CHAVES_ANTIGAS_IA = ["estudo_pools_liquidez_keys", "estudo_pools_liquidez_keyidx", "estudo_pools_liquidez_maxpools"];
 function apagarChavesAntigasIA(){
   CHAVES_ANTIGAS_IA.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
 }
 
-/* A prévia editável — compartilhada pela busca automática e pelo leitor
-   de prints. (Moravam no meio do bloco da IA; ficaram quando ele saiu.) */
-let scanItems = []; // {id, fileName, dataUrl, platform, network, layout, status, rows:[{sel,pool,platform,network,fee,tvl,vol24h,vol7d,vol30d,apr,src}]}
-let scanSeq = 1;
-
-/* Layouts conhecidos — decodificados a partir de prints reais.
-   Cada layout define a ORDEM em que os números aparecem numa linha da tabela. */
-const SCAN_LAYOUTS = {
-  raydium:   {label:"Raydium (Liquidity / Vol24h / Fees24h / APR24h)", nums:["tier","tvl","vol24h","fees","apr"]},
-  orca:      {label:"Orca (tier / Yield%dia / Vol24h / TVL / Fees)",   nums:["tier","yield","vol24h","tvl","fees"]},
-  uniswapish:{label:"Uniswap-style (tier / TVL / Vol24h / Vol30d / Razão / APR)", nums:["tier","tvl","vol24h","vol30d","ratio","apr"]},
-  pancake:   {label:"PancakeSwap-lista (tier / APR% / Vol / TVL)",     nums:["tier","apr","vol24h","tvl"]},
-  generic:   {label:"Genérico (só extrai números e nomes — revisa tudo na mão)", nums:[]}
-};
-
-/* ---------- upload / dropzone ---------- */
-function onScanFiles(ev){ addScanFiles(ev.target.files); ev.target.value=""; }
-function setupDropzone(){
-  const dz = document.getElementById("dropzone");
-  ["dragover","dragenter"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault(); dz.classList.add("drag");}));
-  ["dragleave","drop"].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault(); dz.classList.remove("drag");}));
-  dz.addEventListener("drop", e=>{ if(e.dataTransfer.files.length) addScanFiles(e.dataTransfer.files); });
-}
-/* Ctrl+V em qualquer lugar da página: se tiver imagem copiada (print, ou
-   Win+Shift+S / Cmd+Shift+4), manda direto pro scanner — não precisa nem
-   estar na aba certa nem arrastar arquivo. Igual ao chat do Claude. */
-function setupPaste(){
-  document.addEventListener("paste", e=>{
-    const items = e.clipboardData?.items;
-    if(!items) return;
-    const files = [];
-    for(const item of items){
-      if(item.type && item.type.startsWith("image/")){
-        const file = item.getAsFile();
-        if(file) files.push(file);
-      }
-    }
-    if(files.length){
-      e.preventDefault();
-      switchTab("dash");
-      const dp = document.getElementById("dxPrint"); if(dp) dp.open = true;
-      addScanFiles(files);
-    }
-  });
-}
-function addScanFiles(files){
-  Array.from(files).forEach(file=>{
-    if(!file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      const firstPlat = state.pools[0]?.platform || "Raydium";
-      const firstNet  = state.pools[0]?.network  || "Solana";
-      scanItems.push({
-        id: scanSeq++, fileName: file.name, dataUrl: reader.result,
-        platform: firstPlat, network: firstNet, layout: "uniswapish",
-        captureDate: new Date().toISOString().slice(0,10),
-        status: "pending", rows: []
-      });
-      renderScanItems();
-    };
-    reader.readAsDataURL(file);
-  });
-}
-function removeScanItem(id){
-  scanItems = scanItems.filter(it=>it.id!==id);
-  renderScanItems();
-}
-
-/* ---------- render da lista de prints ---------- */
-function renderScanItems(){
-  const wrap = document.getElementById("scanItems");
-  if(scanItems.length===0){ wrap.innerHTML=""; document.getElementById("scanFootbar").style.display="none"; return; }
-  const plats = uniqueValsOr("platform", ["Raydium","Orca","Uniswap","PancakeSwap","Meteora","Outra"]);
-  const nets  = uniqueValsOr("network",  ["Solana","BNB Chain","Base","Arbitrum","Robinhood","Ethereum","Outra"]);
-  // garante que a plataforma/rede já definidas nos itens (inclusive os puxados
-  // da API) apareçam como opção selecionável nos dropdowns
-  scanItems.forEach(it=>{
-    if(it.platform && !plats.includes(it.platform)) plats.push(it.platform);
-    if(it.network  && !nets.includes(it.network))  nets.push(it.network);
-  });
-  wrap.innerHTML = scanItems.map(it=>`
-    <div class="scanitem" id="scanitem-${it.id}">
-      <div class="scanitem-top">
-        ${it.origin==='api'
-          ? `<div class="scanitem-thumb" style="display:flex; align-items:center; justify-content:center; font-size:30px; background:#0a0f1a">🌐</div>`
-          : `<img class="scanitem-thumb" src="${it.dataUrl}">`}
-        <div class="scanitem-meta">
-          <div class="scanitem-name">${esc(it.fileName)} <span class="scanstatus ${it.status}" id="scanstatus-${it.id}">${scanStatusLabel(it.status)}</span></div>
-          <div class="scanitem-row">
-            <select onchange="scanItems.find(x=>x.id===${it.id}).platform=this.value">
-              ${plats.map(p=>`<option value="${esc(p)}" ${p===it.platform?'selected':''}>${esc(p)}</option>`).join("")}
-            </select>
-            <select onchange="scanItems.find(x=>x.id===${it.id}).network=this.value">
-              ${nets.map(n=>`<option value="${esc(n)}" ${n===it.network?'selected':''}>${esc(n)}</option>`).join("")}
-            </select>
-            <select onchange="scanItems.find(x=>x.id===${it.id}).layout=this.value">
-              ${Object.entries(SCAN_LAYOUTS).map(([k,v])=>`<option value="${k}" ${k===it.layout?'selected':''}>${esc(v.label)}</option>`).join("")}
-            </select>
-            <input type="date" value="${it.captureDate}" title="Data desse print — é essa data que fica carimbada nas pools ao aplicar, não a hora que você rodou o scanner"
-              onchange="scanItems.find(x=>x.id===${it.id}).captureDate=this.value">
-          </div>
-          <div class="scanitem-actions">
-            ${it.origin==='api' ? "" : `<button onclick="runOcr(${it.id})">Ler com OCR (local)</button>`}
-            <button onclick="addManualRow(${it.id})">+ linha manual</button>
-            ${it.ocrText ? `<button class="ghost" onclick="toggleOcrText(${it.id})">ver texto lido</button>` : ""}
-            <button class="danger" onclick="removeScanItem(${it.id})">${it.origin==='api'?'remover grupo':'remover print'}</button>
-          </div>
-        </div>
-      </div>
-      <pre id="ocrtext-${it.id}" style="display:none; white-space:pre-wrap; background:#0a0f1a; border:1px solid var(--line); border-radius:8px; padding:10px; font-size:11px; color:var(--mut); margin-top:10px; max-height:220px; overflow:auto">${it.ocrText?esc(it.ocrText):""}</pre>
-      ${it.rows.length ? scanTableHTML(it) : ""}
-    </div>
-  `).join("");
-  document.getElementById("scanFootbar").style.display = scanItems.some(it=>it.rows.length) ? "flex" : "none";
-  updateScanCnt();
-}
-function scanStatusLabel(s){
-  return {pending:"aguardando", working:"lendo…", done:"lido", error:"erro na leitura"}[s] || s;
-}
-function uniqueValsOr(key, fallback){
-  const vals = Array.from(new Set(state.pools.map(p=>p[key])));
-  return vals.length ? vals : fallback;
-}
-
-function fmtMoneyBR(n){ if(n===null||n===undefined||n==="") return ""; return Number(n).toLocaleString("pt-BR",{maximumFractionDigits:2}); }
-function fmtPctBR(n){ if(n===null||n===undefined||n==="") return ""; return Number(n).toLocaleString("pt-BR",{maximumFractionDigits:2}); }
-/* Notação compacta igual à da plataforma de origem: "119,0 M" em vez de
-   "119.000.000". Só é exibição — o valor guardado continua sendo o número
-   cheio, pra não perder precisão nos cálculos do dashboard. */
+/* Utilitários que sobraram do leitor de prints e da busca manual (os dois
+   saíram em 23/09/2026: as pools vêm do coletor no servidor). */
 function fmtCompactBR(n){
   if(n===null||n===undefined||n==="") return "";
   n = Number(n);
@@ -2896,7 +2792,7 @@ function fmtCompactBR(n){
   if(abs>=1e3) return (n/1e3).toLocaleString("pt-BR",opt)+" mil";
   return n.toLocaleString("pt-BR",{maximumFractionDigits:2});
 }
-/* Entende de volta tanto "119,0 M" quanto o número cheio colado direto. */
+
 function parseCompactMoney(s){
   if(s===null||s===undefined||s==="") return null;
   s = String(s).trim();
@@ -2907,203 +2803,17 @@ function parseCompactMoney(s){
   }
   return parseNum(s); // fallback: aceita número cheio, com ou sem separador de milhar
 }
-function scanTableHTML(it){
-  return `<table class="scantable">
-    <thead><tr>
-      <th></th><th>Fonte</th><th>No painel</th><th>Pool</th><th>Rede</th><th>Fee %</th><th>TVL $</th><th>Vol 24h $</th><th title="Volume somado dos últimos 7 dias — é a média dele (÷ 7) que o ranking usa">Vol 7d $</th><th>Vol 30d $</th><th>APR %</th><th></th>
-    </tr></thead>
-    <tbody>
-      ${it.rows.map((r,i)=>`<tr>
-        <td><input type="checkbox" ${r.sel?'checked':''} onchange="scanItems.find(x=>x.id===${it.id}).rows[${i}].sel=this.checked; updateScanCnt()"></td>
-        <td><span class="srctag ${r.src}">${r.src==='ia'?'IA':r.src==='ocr'?'OCR':r.src==='api'?'API':'manual'}</span></td>
-        <td>${scanExistTag(it, r)}</td>
-        <td><input value="${esc(r.pool)}" oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].pool=this.value"></td>
-        <td><input value="${esc(r.network||it.network)}" placeholder="ex: Base" title="A IA/OCR não enxerga ícones — se ela não souber identificar a rede pelo ícone, corrige aqui na mão."
-             oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].network=this.value"></td>
-        <td><input class="narrow" type="text" inputmode="decimal" value="${fmtPctBR(r.fee)}"
-             oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].fee=parseNum(this.value)||0"
-             onblur="this.value=fmtPctBR(scanItems.find(x=>x.id===${it.id}).rows[${i}].fee)"></td>
-        <td><input type="text" inputmode="decimal" value="${fmtCompactBR(r.tvl)}"
-             oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].tvl=parseCompactMoney(this.value)||0"
-             onblur="this.value=fmtCompactBR(scanItems.find(x=>x.id===${it.id}).rows[${i}].tvl)"></td>
-        <td><input type="text" inputmode="decimal" value="${fmtCompactBR(r.vol24h)}"
-             oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].vol24h=parseCompactMoney(this.value)||0"
-             onblur="this.value=fmtCompactBR(scanItems.find(x=>x.id===${it.id}).rows[${i}].vol24h)"></td>
-        <td><input type="text" inputmode="decimal" value="${fmtCompactBR(r.vol7d)}" placeholder="—"
-             oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].vol7d=this.value===''?null:(parseCompactMoney(this.value)||0)"
-             onblur="this.value=fmtCompactBR(scanItems.find(x=>x.id===${it.id}).rows[${i}].vol7d)"></td>
-        <td><input type="text" inputmode="decimal" value="${fmtCompactBR(r.vol30d)}" placeholder="—"
-             oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].vol30d=this.value===''?null:(parseCompactMoney(this.value)||0)"
-             onblur="this.value=fmtCompactBR(scanItems.find(x=>x.id===${it.id}).rows[${i}].vol30d)"></td>
-        <td><input class="narrow" type="text" inputmode="decimal" value="${fmtPctBR(r.apr)}" placeholder="—"
-             oninput="scanItems.find(x=>x.id===${it.id}).rows[${i}].apr=this.value===''?null:(parseNum(this.value)||0)"
-             onblur="this.value=fmtPctBR(scanItems.find(x=>x.id===${it.id}).rows[${i}].apr)"></td>
-        <td><button class="rmbtn" onclick="scanItems.find(x=>x.id===${it.id}).rows.splice(${i},1); renderScanItems()">✕</button></td>
-      </tr>`).join("")}
-    </tbody>
-  </table>`;
-}
-function scanExistTag(it, r){
-  if(!r.pool) return "";
-  const cand = {platform:it.platform, network:r.network||it.network, pool:r.pool, fee:r.fee, srcId:r.srcId};
-  if(findExistingPool(cand))
-    return `<span class="exist-tag upd" title="Já está no painel — o botão 'Só atualizar' renova os números dela">ATUALIZA</span>`;
-  const sim = findSimilarPool(cand);
-  return `<span class="exist-tag new" title="Não está no painel — só entra com 'Adicionar as novas marcadas'">NOVA</span>`
-    + (sim ? `<div class="exist-sim" title="Nome parecido com uma pool do painel. Podem ser pools DIFERENTES (ex.: ETH nativo × WETH). Não atualizo sozinho — confira antes de adicionar.">≈ ${esc(sim.pool)} no painel</div>` : "");
-}
-function toggleOcrText(itemId){
-  const el = document.getElementById("ocrtext-"+itemId);
-  if(el) el.style.display = (el.style.display==="none") ? "block" : "none";
-}
-function addManualRow(itemId){
-  const it = scanItems.find(x=>x.id===itemId);
-  it.rows.push({sel:true, pool:"", network: it.network, fee:0, tvl:0, vol24h:0, vol30d:null, apr:null, src:"manual"});
-  it.status = "done";
-  renderScanItems();
-}
-function updateScanCnt(){
-  const n = scanItems.reduce((s,it)=>s+it.rows.filter(r=>r.sel).length,0);
-  const el = document.getElementById("scanCnt");
-  if(el) el.textContent = `${n} linha(s) marcada(s)`;
+
+function expandSuffix(n, suf){
+  if(!suf) return n;
+  suf = suf.toLowerCase();
+  if(suf==="b") return n*1e9;
+  if(suf==="m"||suf==="mi") return n*1e6;
+  if(suf==="mil") return n*1e3;
+  if(suf==="k") return n*1e3;
+  return n;
 }
 
-/* ---------- 1. OCR local (Tesseract.js) ---------- */
-async function runOcr(itemId){
-  const it = scanItems.find(x=>x.id===itemId);
-  if(!window.Tesseract){ alert("OCR não carregou (sem internet pra buscar a lib?). Usa a IA ou preenche manual."); return; }
-  it.status = "working"; renderScanItems();
-  try{
-    const { data } = await Tesseract.recognize(it.dataUrl, "eng+por");
-    const guess = detectSource(data.text);
-    if(guess.platform) it.platform = guess.platform;
-    if(guess.network)  it.network  = guess.network;
-    if(guess.layout)   it.layout   = guess.layout;
-    it.ocrText = data.text;
-    it.rows = parseByLayout(data.text, it.layout).map(r=>({...r, sel:true, src:"ocr", network: it.network}));
-    it.status = it.rows.length ? "done" : "error";
-  }catch(e){
-    console.error(e); it.status = "error";
-  }
-  renderScanItems();
-}
-
-/* Detector de origem: lê o texto do OCR e tenta reconhecer sozinho de qual
-   plataforma/rede é o print, e qual layout de colunas usar — com base nos
-   padrões reais que você já mandou (Raydium, Orca, Uniswap, PancakeSwap).
-   Quanto mais exemplos você mandar, mais eu consigo refinar essas pistas. */
-function detectSource(text){
-  const t = (text||"").toLowerCase();
-  let platform=null, network=null, layout=null;
-
-  if(/raydium/.test(t)) platform="Raydium";
-  else if(/\borca\b/.test(t)) platform="Orca";
-  else if(/pancakeswap|pancake/.test(t)) platform="PancakeSwap";
-  else if(/uniswap/.test(t)) platform="Uniswap";
-
-  if(/solana/.test(t)) network="Solana";
-  else if(/bnb\s?chain|wbnb/.test(t)) network="BNB Chain";
-  else if(/arbitrum/.test(t)) network="Arbitrum";
-  else if(/\bbase\b/.test(t)) network="Base";
-  else if(/robinhood/.test(t)) network="Robinhood";
-
-  if(/liquidity/.test(t) && /apr\s?24h/.test(t)) layout="raydium";
-  else if(/yield\s?\/?\s?tvl/.test(t)) layout="orca";
-  else if(/\bus\$/.test(t)) layout="uniswapish";
-  else if(platform==="Raydium") layout="raydium";
-  else if(platform==="Orca") layout="orca";
-  else if(platform==="PancakeSwap") layout="pancake";
-  else if(platform==="Uniswap") layout="uniswapish";
-
-  return {platform, network, layout};
-}
-
-/* Parser por linha: extrai todos os $ e % de cada linha do OCR e encaixa
-   na ordem que o layout escolhido define. É um "motor treinado" nas
-   colunas reais dos prints — não é IA, é regex sobre o texto lido. */
-function parseByLayout(text, layoutKey){
-  const layout = SCAN_LAYOUTS[layoutKey];
-  const out = [];
-  // acha todos os "nomes de pool" (TOKEN/TOKEN ou TOKEN-TOKEN) no texto inteiro
-  // e trata tudo entre um nome e o próximo como os números daquela linha —
-  // não depende de nome+números caírem exatamente na mesma linha do OCR.
-  const reToken = /[A-Za-zÀ-ú0-9]{2,14}[\/\-][A-Za-zÀ-ú0-9]{2,14}/g;
-  const poolMatches = [...text.matchAll(reToken)];
-  if(!poolMatches.length) return out;
-
-  const pctFields   = layout.nums.length ? layout.nums.filter(f=>f==="tier"||f==="apr"||f==="yield") : [];
-  const moneyFields = layout.nums.length ? layout.nums.filter(f=>f==="tvl"||f==="vol24h"||f==="vol30d"||f==="fees") : [];
-
-  for(let i=0;i<poolMatches.length;i++){
-    const poolName = poolMatches[i][0];
-    const chunkStart = poolMatches[i].index + poolName.length;
-    const chunkEnd = (i+1<poolMatches.length) ? poolMatches[i+1].index : text.length;
-    const chunk = text.slice(chunkStart, chunkEnd);
-
-    const {pcts, moneys} = extractLineTokens(chunk);
-
-    if(!layout.nums.length){
-      // genérico: só joga tudo que achou, revisão manual decide o que é o quê
-      out.push({pool:poolName, fee: pcts[0]??0, tvl: moneys[0]??0, vol24h: moneys[1]??0, vol30d: moneys[2]??null, apr: pcts[pcts.length-1]??null});
-      continue;
-    }
-
-    // Se esse trecho tem números demais pra 1 linha só, é sinal de que uma pool
-    // no meio não teve o nome reconhecido pelo OCR (ex: ícone colado no ticker)
-    // e os números dela ficaram "sem dono", grudados aqui. Em vez de perder ou
-    // misturar tudo na pool anterior, divide em sub-grupos — a 1ª parte fica com
-    // o nome encontrado, o resto vira linha "(?)" pra você só digitar o nome certo.
-    const groups = moneyFields.length ? Math.max(1, Math.ceil(moneys.length / moneyFields.length)) : 1;
-
-    for(let g=0; g<groups; g++){
-      const moneysG = moneys.slice(g*moneyFields.length, (g+1)*moneyFields.length);
-      const pStart = Math.round(g*pcts.length/groups), pEnd = Math.round((g+1)*pcts.length/groups);
-      const pctsG = pcts.slice(pStart, pEnd);
-
-      // % alinhado pela DIREITA dentro do grupo: o badge de fee tier é pequeno
-      // e o OCR falha nele com frequência — quando falta uma %, é quase sempre
-      // o tier que sumiu, nunca o APR (número grande/em destaque).
-      const pctVals = {};
-      const offset = Math.max(0, pctFields.length - pctsG.length);
-      pctFields.forEach((f,idx)=>{ if(idx>=offset) pctVals[f+"#"+idx] = pctsG[idx-offset]; });
-
-      let mi=0, pctIdx=0;
-      const row = {pool: g===0 ? poolName : `${poolName} (?)`, fee:0, tvl:0, vol24h:0, vol30d:null, apr:null};
-      for(const field of layout.nums){
-        if(field==="tier"){ const v=pctVals["tier#"+pctIdx]; if(v!=null) row.fee=v; pctIdx++; }
-        else if(field==="apr" || field==="yield"){
-          const v=pctVals[field+"#"+pctIdx]; pctIdx++;
-          if(v!=null) row.apr = (field==="yield") ? round2(v*365) : v;
-        }
-        else if(field==="tvl"){ row.tvl = moneysG[mi++] ?? row.tvl; }
-        else if(field==="vol24h"){ row.vol24h = moneysG[mi++] ?? row.vol24h; }
-        else if(field==="fees"){ mi++; } // valor em $ das taxas — não guardamos, só pula a coluna
-        else if(field==="vol30d"){ row.vol30d = moneysG[mi++] ?? row.vol30d; }
-        else if(field==="ratio"){ /* só informativo, não vira campo */ }
-      }
-      if(row.tvl>0 || row.vol24h>0) out.push(row);
-    }
-  }
-  return out;
-}
-/* Extrai, na ordem em que aparecem na linha, os % / ratios(x×) / valores em $.
-   Cada tipo é removido da string antes do próximo, pra "0,1%" nunca virar
-   dinheiro por engano. Aceita $622,122 (prefixo) e "31,6 M US$" (sufixo BR). */
-function extractLineTokens(line){
-  let s = line;
-  const ratios = [], pcts = [], moneys = [];
-
-  s = s.replace(/([\d]+[.,]?\d*)\s?[x×]\b/gi, (m,g1)=>{ ratios.push(parsePctNum(g1)); return " "; });
-  s = s.replace(/([\d]+[.,]?\d*)\s?%/g, (m,g1)=>{ pcts.push(parsePctNum(g1)); return " "; });
-  // sufixo BR "US$" primeiro — senão o "$" dele é roubado pelo regex de prefixo abaixo e desalinha tudo
-  s = s.replace(/([\d]+(?:[.,]\d+)*)\s?(M|Mi|mil|K|B)?\s?US\$/gi, (m,num,suf)=>{ moneys.push(expandSuffix(parseNum(num), suf)); return " "; });
-  s = s.replace(/\$\s?([\d]+(?:[.,]\d+)*)\s?(M|Mi|mil|K|B)?\b/gi, (m,num,suf)=>{ moneys.push(expandSuffix(parseNum(num), suf)); return " "; });
-
-  return {pcts, ratios, moneys};
-}
-/* % e razão (x×): nesse domínio um único separador é SEMPRE decimal
-   (fee tier "0,255%", "6,195%"...) — nunca milhar. Só usa a lógica de
-   milhar quando os DOIS separadores aparecem juntos (ex: 5.027,96%). */
 function parsePctNum(s){
   if(!s) return 0;
   s = s.trim();
@@ -3115,8 +2825,7 @@ function parsePctNum(s){
   const n = parseFloat(s);
   return isNaN(n) ? 0 : n;
 }
-/* $ (dinheiro): aqui um único separador costuma SER milhar ($622,122),
-   exceto quando a parte inteira é "0" (ex $0,85 — quase zero). */
+
 function parseNum(s){
   if(!s) return 0;
   s = s.trim();
@@ -3134,949 +2843,13 @@ function parseNum(s){
   const n = parseFloat(s);
   return isNaN(n) ? 0 : n;
 }
-function expandSuffix(n, suf){
-  if(!suf) return n;
-  suf = suf.toLowerCase();
-  if(suf==="b") return n*1e9;
-  if(suf==="m"||suf==="mi") return n*1e6;
-  if(suf==="mil") return n*1e3;
-  if(suf==="k") return n*1e3;
-  return n;
-}
-function round2(n){ return Math.round(n*100)/100; }
 
-/* Chave de identidade de uma pool, ignorando ordem dos tokens e separador
-   (/ ou -): "WBNB/USDC" e "USDC-WBNB" viram a mesma chave. Assim, ao reler
-   um print, ele reconhece que é a mesma pool e atualiza em vez de duplicar. */
 function tokensOf(pool){
   return String(pool).toUpperCase().replace(/\s+/g,"").split(/[\/\-]/).filter(Boolean).sort().join("|");
 }
-/* Acha a pool existente que corresponde a um "candidato" recém-lido, pra
-   decidir se é atualização ou pool nova de verdade. Regras:
-   - mesmos ativos (ordem/separador não importam) + mesma plataforma + mesma
-     rede (sem diferenciar maiúsculas/espaço) é o mínimo pra considerar.
-   - se só existe UMA pool com esse par ali, é ela — não importa se a taxa
-     não foi lida dessa vez (fee=0 geralmente é falha de OCR, não pool real
-     de 0%), então não cria duplicata por causa disso.
-   - se existe MAIS de uma (fee tiers genuinamente diferentes, tipo 0,05% e
-     0,3%), só casa quando a taxa lida bate com uma delas — taxa diferente é
-     pool diferente mesmo. Se a taxa não foi lida nesse caso ambíguo, não
-     arrisca chute: cria uma pool nova em vez de atualizar a errada.
-*/
-/* Limpeza: junta pools que já ficaram duplicadas no histórico (mesmo ativo +
-   rede + taxa, gravadas em datas diferentes) num único registro só, com o
-   histórico de todas mesclado em ordem cronológica — não perde nenhum dado,
-   só para de mostrar a mesma pool em várias linhas. */
-function mergeDuplicates(){
-  const groups = {};
-  state.pools.forEach(p=>{
-    const feePart = p.fee>0 ? Math.round(p.fee*10000)/10000 : "0";
-    const k = `${String(p.platform||"").trim().toLowerCase()}§${String(p.network||"").trim().toLowerCase()}§${tokensOf(p.pool)}§${feePart}`;
-    (groups[k] = groups[k]||[]).push(p);
-  });
-  let mergedCount=0;
-  const survivors=[];
-  Object.values(groups).forEach(arr=>{
-    if(arr.length===1){ survivors.push(arr[0]); return; }
-    arr.sort((a,b)=>(a.updatedAt||0)-(b.updatedAt||0));
-    const base = arr[arr.length-1]; // mais recente vira a linha que sobrevive
-    let hist=[];
-    arr.forEach(p=>{ hist = hist.concat(p.history||[{ts:p.updatedAt,tvl:p.tvl,vol24h:p.vol24h,vol30d:p.vol30d,fee:p.fee,apr:p.apr}]); });
-    hist.sort((a,b)=>a.ts-b.ts);
-    base.history = hist;
-    base.notes = Array.from(new Set(arr.map(p=>p.notes).filter(Boolean))).join(" | ");
-    base.fav = arr.some(p=>p.fav);
-    if(!base.level){ const withLvl = arr.find(p=>p.level); if(withLvl) base.level = withLvl.level; }
-    if(!base.srcId){ const withId = arr.find(p=>p.srcId); if(withId) base.srcId = withId.srcId; }
-    survivors.push(base);
-    mergedCount += arr.length-1;
-  });
-  if(mergedCount===0){ alert("Nenhuma duplicata encontrada — tá tudo limpo 🎉"); return; }
-  if(!confirm(`Encontrei ${mergedCount} pool(s) duplicada(s) (mesmo ativo + rede + taxa, só a data diferente).\n\nVou juntar o histórico de cada grupo numa linha só, mantendo os dados mais recentes. Confirma?`)) return;
-  state.pools = survivors;
-  save(); render();
-  alert(`Pronto — ${mergedCount} duplicata(s) mesclada(s). O histórico de cada uma foi preservado e combinado.`);
-}
 
-function findExistingPool(cand){
-  // 1º: ID da fonte (pool da DefiLlama / endereço na GeckoTerminal) — casamento exato
-  if(cand.srcId){
-    const byId = state.pools.find(p=>p.srcId===cand.srcId);
-    if(byId) return byId;
-  }
-  // 2º: nome exato (ativos + plataforma + rede). WETH≠ETH e WBNB≠BNB de propósito:
-  // são tokens/pools diferentes (ex.: Uniswap v4 com ETH nativo × v3 com WETH).
-  // Pool que já tem OUTRO ID de fonte é outra pool — não casa pelo nome.
-  const plat = String(cand.platform||"").trim().toLowerCase();
-  const net  = String(cand.network||"").trim().toLowerCase();
-  const tok  = tokensOf(cand.pool);
-  const candidates = state.pools.filter(p=>
-    String(p.platform||"").trim().toLowerCase()===plat &&
-    String(p.network||"").trim().toLowerCase()===net &&
-    tokensOf(p.pool)===tok &&
-    !(cand.srcId && p.srcId && p.srcId!==cand.srcId)
-  );
-  if(candidates.length===0) return null;
-  const feeEq = (a,b)=> Math.abs((a||0)-(b||0))<0.0005;
-  // taxa lida dos dois lados e diferente = pool diferente (ex.: 0,3% × 0,35%). Taxa 0/ausente
-  // costuma ser falha de leitura do print, então aí aceita a única candidata.
-  if(candidates.length===1){
-    const c = candidates[0];
-    return (!(cand.fee>0) || !(c.fee>0) || feeEq(c.fee, cand.fee)) ? c : null;
-  }
-  if(cand.fee>0){
-    const exact = candidates.filter(p=>feeEq(p.fee, cand.fee));
-    if(exact.length===1) return exact[0];
-  }
-  return null;
-}
-
-/* Só pra AVISO na prévia: acha pool do painel com nome "parecido" (WETH×ETH, WBNB×BNB, WSOL×SOL).
-   Nunca é usado pra atualizar — podem ser tokens diferentes; quem decide é você. */
-const WRAPPED_HINT = {WETH:"ETH", WBNB:"BNB", WSOL:"SOL"};
-function hintTokensOf(pool){
-  return String(pool).toUpperCase().replace(/\s+/g,"").split(/[\/\-]/).filter(Boolean)
-    .map(t=>WRAPPED_HINT[t]||t).sort().join("|");
-}
-function findSimilarPool(cand){
-  const plat = String(cand.platform||"").trim().toLowerCase();
-  const net  = String(cand.network||"").trim().toLowerCase();
-  const tok  = hintTokensOf(cand.pool);
-  return state.pools.find(p=>
-    String(p.platform||"").trim().toLowerCase()===plat &&
-    String(p.network||"").trim().toLowerCase()===net &&
-    tokensOf(p.pool)!==tokensOf(cand.pool) && hintTokensOf(p.pool)===tok) || null;
-}
-
-/* ---------- commit: aplica as linhas marcadas em state.pools (upsert) ---------- */
-/* ---------- Puxar pools automaticamente (DefiLlama · yields.llama.fi) ----------
-   Fonte pública, sem chave. Uma chamada traz milhares de pools com TVL, taxa
-   (poolMeta), volume 24h e APR de taxa (apyBase). Filtramos no navegador e
-   montamos os mesmos "scanItems" editáveis do scanner — o commitScan já sabe
-   aplicá-los na tabela. Nenhuma chave de IA é usada aqui. */
-let llamaCache = null; // array cru de pools da última busca (cacheado na memória)
-
-/* Redes e DEXes que o Scanner busca. label = como aparece no app (o mesmo
-   nome do módulo DeFi, para "Minhas pools" casar); chain = como a DefiLlama
-   nomeia — BNB é "BSC", Optimism é "OP Mainnet", HyperEVM é "Hyperliquid L1",
-   Robinhood é "Robinhood Chain". Conferido na API em 22/09/2026.
-
-   Set/2026: entraram Ethereum, Optimism, Polygon, Avalanche, Sui e HyperEVM,
-   e as DEXes do catálogo do DeFi que a DefiLlama cobre com volume. */
-const LLAMA_CHAINS = [
-  {label:"Solana",    chain:"Solana"},
-  {label:"Base",      chain:"Base"},
-  {label:"Arbitrum",  chain:"Arbitrum"},
-  {label:"BNB Chain", chain:"BSC"},
-  {label:"Ethereum",  chain:"Ethereum"},
-  {label:"Optimism",  chain:"OP Mainnet"},
-  {label:"Polygon",   chain:"Polygon"},
-  {label:"Avalanche", chain:"Avalanche"},
-  {label:"Sui",       chain:"Sui"},
-  {label:"HyperEVM",  chain:"Hyperliquid L1"},
-  {label:"Robinhood", chain:"Robinhood Chain"}
-];
-const MY_DEXES = ["Uniswap","Raydium","Orca","PancakeSwap","Meteora",
-                  "Aerodrome","Velodrome","Camelot","THENA","Kamino","SushiSwap","Curve",
-                  "QuickSwap","LFJ","Pharaoh","Cetus","HyperSwap","Project X","Ramses"]; // opções do dropdown
-const LLAMA_CHAIN_LABEL     = Object.fromEntries(LLAMA_CHAINS.map(c=>[c.chain, c.label]));
-const LLAMA_ALLOWED_CHAINS   = new Set(LLAMA_CHAINS.map(c=>c.chain));
-// DEXes que a DefiLlama cobre bem (com volume + APR de taxa pronto)
-const LLAMA_ALLOWED_PROJECTS = new Set(["Uniswap","Raydium","Orca",
-  "Aerodrome","Camelot","Kamino","SushiSwap","Curve","QuickSwap","LFJ","Pharaoh",
-  "Cetus","HyperSwap","Project X","Ramses"]);
-/* DEXes que a DefiLlama NÃO cobre com volume — puxadas da GeckoTerminal.
-   net = slug da rede na Gecko; dexes = slugs do DEX naquela rede; label = rede no app. */
-const GECKO_SOURCES = {
-  "PancakeSwap": [
-    {label:"BNB Chain", net:"bsc",       dexes:["pancakeswap-v3-bsc","pancakeswap_v2"]},
-    {label:"Base",      net:"base",      dexes:["pancakeswap-v3-base","pancakeswap-v2-base","pancakeswap-infinity-clmm-base"]},
-    {label:"Arbitrum",  net:"arbitrum",  dexes:["pancakeswap-v3-arbitrum","pancakeswap-v2-arbitrum","pancakeswap-stableswap-arbitrum"]},
-    {label:"Robinhood", net:"robinhood", dexes:["pancakeswap-v3-robinhood","pancakeswap-v2-robinhood"]}
-  ],
-  // Uniswap na Robinhood Chain não existe na DefiLlama (lá não há Uniswap nem volume);
-  // a GeckoTerminal cobre com volume real. Uniswap em outras redes continua vindo da DefiLlama.
-  "Uniswap":     [ {label:"Robinhood", net:"robinhood", dexes:["uniswap-v3-robinhood","uniswap-v2-robinhood","uniswap-v4-robinhood"]} ],
-  "Meteora":     [ {label:"Solana",    net:"solana", dexes:["meteora","meteora-damm-v2"]} ],
-  /* Velodrome e THENA não aparecem com volume na DefiLlama (conferido em
-     22/09/2026); a GeckoTerminal cobre. Slugs lidos de /networks/{rede}/dexes. */
-  "Velodrome":   [ {label:"Optimism",  net:"optimism", dexes:["velodrome-finance-slipstream","velodrome-slipstream-v2-optimism","velodrome-finance-v2"]} ],
-  "THENA":       [ {label:"BNB Chain", net:"bsc",      dexes:["thena-fusion","thena-v3","thena"]} ]
-};
-const GECKO_PROJECTS = new Set(Object.keys(GECKO_SOURCES));
-
-/* uniswap-v3, raydium-amm, orca-dex... viram nomes limpos. Vários slugs de uma
-   mesma DEX caem no mesmo rótulo (Uniswap pega v2/v3/v4), pra o filtro ser simples. */
-function prettyProject(slug){
-  const s = String(slug||"").toLowerCase();
-  const map = {
-    "uniswap-v4":"Uniswap","uniswap-v3":"Uniswap","uniswap-v2":"Uniswap","uniswap":"Uniswap",
-    "raydium-clmm":"Raydium","raydium-amm":"Raydium","raydium":"Raydium",
-    "orca-dex":"Orca","orca":"Orca","orca-whirlpool":"Orca","orca-whirlpools":"Orca",
-    "pancakeswap-amm-v3":"PancakeSwap","pancakeswap-amm":"PancakeSwap","pancakeswap-amm-v2":"PancakeSwap","pancakeswap":"PancakeSwap",
-    "meteora-dlmm":"Meteora","meteora-amm":"Meteora","meteora":"Meteora","meteora-dammv2":"Meteora",
-    "aerodrome-slipstream":"Aerodrome","aerodrome-v1":"Aerodrome","aerodrome":"Aerodrome",
-    "velodrome-v2":"Velodrome","velodrome-v3":"Velodrome","velodrome-slipstream":"Velodrome",
-    "camelot-v2":"Camelot","camelot-v3":"Camelot",
-    "thena-v1":"THENA","thena-fusion":"THENA","thena":"THENA",
-    "kamino-liquidity":"Kamino",
-    "sushiswap":"SushiSwap","sushiswap-v3":"SushiSwap",
-    "curve-dex":"Curve",
-    "quickswap-dex":"QuickSwap","quickswap-v3":"QuickSwap",
-    "joe-v2.2":"LFJ","joe-v2.1":"LFJ","joe-v2":"LFJ","joe-dex":"LFJ",
-    "pharaoh-v3":"Pharaoh","pharaoh-exchange":"Pharaoh",
-    "cetus-clmm":"Cetus","cetus-amm":"Cetus",
-    "hyperswap-v3":"HyperSwap","hyperswap-v2":"HyperSwap",
-    "project-x":"Project X",
-    "ramses-cl-v2":"Ramses","ramses-v2":"Ramses"
-  };
-  if(map[s]) return map[s];
-  return s.split("-").map(w=> w ? w.charAt(0).toUpperCase()+w.slice(1) : w).join(" ").trim() || "—";
-}
-
-/* poolMeta costuma vir "0.3%", "0.05%"... pega o primeiro número seguido de %.
-   Sem taxa no poolMeta, AMMs v2 clássicos têm taxa FIXA conhecida — Uniswap v2
-   e SushiSwap v2 cobram 0,3% em toda pool. As outras (Curve, Camelot, LFJ,
-   QuickSwap, Kamino) variam por pool e ficam "taxa ?", nunca chutadas. */
-const TAXA_FIXA_V2 = { "uniswap-v2":0.3, "sushiswap":0.3 };
-/* A DefiLlama escreve a taxa da Cetus em PONTOS-BASE com "%" no fim: "25%"
-   é 25 bp = 0,25% (USDC/SUI, a pool padrão de 0,25%; "1%" é o 0,01% dos
-   pares de staking). Lida como porcentagem, dava taxa de 25% e APR de
-   milhares por cento. Conferido em 22/09/2026. */
-const TAXA_EM_BP = { "cetus-clmm":1, "cetus-amm":1 };
-function parseLlamaFee(pm, projeto){
-  const m = String(pm==null?"":pm).match(/([\d.]+)\s*%/);
-  if(m) return TAXA_EM_BP[String(projeto||"").toLowerCase()] ? Number(m[1])/100 : Number(m[1]);
-  return TAXA_FIXA_V2[String(projeto||"").toLowerCase()] || 0;
-}
-
-function fillLlamaSelect(sel, values, allLabel){
-  if(!sel) return;
-  const prev = sel.value;
-  sel.replaceChildren();
-  const o0 = document.createElement("option"); o0.value=""; o0.textContent=allLabel; sel.appendChild(o0);
-  values.forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o); });
-  sel.value = prev; // preserva a escolha entre buscas
-}
-
-function populateLlamaSelects(){
-  // listas fixas (as suas redes/DEXes) — não dependem do fetch; rodam já no load
-  const cSel = document.getElementById("llamaChain");
-  fillLlamaSelect(cSel, LLAMA_CHAINS.map(c=>c.chain), "Minhas redes (todas)");
-  // o rótulo mostrado é o do app; o value continua sendo a chain da DefiLlama
-  if(cSel) Array.from(cSel.options).forEach(o=>{ if(o.value && LLAMA_CHAIN_LABEL[o.value]) o.textContent = LLAMA_CHAIN_LABEL[o.value]; });
-  fillLlamaSelect(document.getElementById("llamaProject"), MY_DEXES.slice(), "Minhas DEXes (todas)");
-}
-
-async function ensureLlamaData(){
-  if(llamaCache) return llamaCache;
-  const res = await fetch("https://yields.llama.fi/pools", {headers:{accept:"application/json"}});
-  if(!res.ok) throw new Error("HTTP "+res.status);
-  const j = await res.json();
-  if(j.status!=="success" || !Array.isArray(j.data)) throw new Error("resposta inesperada da API");
-  llamaCache = j.data;
-  return llamaCache;
-}
-
-/* ---- GeckoTerminal: pools por rede+DEX (traz volume e TVL por pool) ----
-   Free tier, sem chave. 20 pools por página, ordenadas por volume. */
-/* Free tier da GeckoTerminal: ~30 chamadas/min. Espaça as chamadas (1 a cada ~2,2s) e,
-   se mesmo assim bloquear (429), espera mais e tenta de novo. Se desistir, marca geckoIncomplete
-   pra quem chamou avisar que a atualização ficou parcial — em vez de voltar vazio calado. */
-const GECKO_GAP_MS = 2200;
-let geckoLastCall = 0;
-let geckoIncomplete = false;
-async function geckoGet(url){
-  for(let tries=0; tries<5; tries++){
-    const wait = geckoLastCall + GECKO_GAP_MS - Date.now();
-    if(wait>0) await new Promise(r=>setTimeout(r, wait));
-    geckoLastCall = Date.now();
-    let res = null;
-    // o 429 da Gecko às vezes chega sem cabeçalho CORS e o navegador reporta "Failed to fetch":
-    // trata erro de rede igual a limite — espera e tenta de novo
-    try{ res = await fetch(url, {headers:{accept:"application/json"}}); }
-    catch(e){ res = null; }
-    if(res && res.status!==429) return res;
-    await new Promise(r=>setTimeout(r, 15000*(tries+1))); // 15s, 30s, 45s…
-  }
-  geckoIncomplete = true;
-  return null;
-}
-async function geckoFetchDex(net, dex, pages){
-  const out = [];
-  for(let pg=1; pg<=pages; pg++){
-    const res = await geckoGet(`https://api.geckoterminal.com/api/v2/networks/${net}/dexes/${dex}/pools?page=${pg}`);
-    if(!res || !res.ok) break; // 404 = acabou a paginação ou o slug do dex não existe
-    const j = await res.json().catch(()=>null);
-    const data = j && j.data;
-    if(!Array.isArray(data) || !data.length) break;
-    data.forEach(x=> out.push(x.attributes||{}));
-    if(data.length < 20) break; // última página
-  }
-  return out;
-}
-
-/* Coleta as pools da Gecko pros DEXes pedidos, respeitando a rede escolhida.
-   A Gecko não expõe a taxa nem APR no endpoint de pools: fee=0 e apr=null
-   (você completa na prévia; o TVL e o Vol 24h — o que importa pra razão — vêm). */
-async function geckoCollect(projects, chainLabel, minTvl, tokenF, pages){
-  const picked = [];
-  for(const proj of projects){
-    const sources = GECKO_SOURCES[proj] || [];
-    for(const src of sources){
-      if(chainLabel && chainLabel !== src.label) continue; // rede específica não bate essa fonte
-      for(const dex of src.dexes){
-        const attrs = await geckoFetchDex(src.net, dex, pages);
-        attrs.forEach(a=>{
-          const c = geckoCand(a, proj, src.label, src.net);
-          if(!c || c.tvl < minTvl) return;
-          if(tokenF && !c.pool.toUpperCase().includes(tokenF)) return;
-          picked.push(c);
-        });
-      }
-    }
-  }
-  return picked;
-}
-
-/* Uma pool da GeckoTerminal (attributes) vira candidata no formato do app.
-   A Gecko cola o tier de taxa no nome (ex.: "USDT / WBNB 0.01%"): a taxa sai
-   do nome e vai para o campo fee — senão ela "cai" no nome da pool. */
-function geckoCand(a, platform, label, net){
-  let raw = String(a && a.name || "").trim();
-  let fee = 0;
-  const fm = raw.match(/([\d.]+)\s*%\s*$/);
-  if(fm){ fee = Number(fm[1])||0; raw = raw.slice(0, fm.index).trim(); }
-  const pool = raw.replace(/\s*\/\s*/g,"/").trim();
-  if(!pool) return null;
-  const vol = (a.volume_usd && a.volume_usd.h24!=null) ? Math.round(Number(a.volume_usd.h24)||0) : 0;
-  return { pool, platform, network:label, fee, tvl:Math.round(Number(a.reserve_in_usd)||0), vol24h:vol, apr:null,
-    srcId: a.address ? `gecko:${net}:${String(a.address).toLowerCase()}` : null,
-    createdAt: a.pool_created_at ? Date.parse(a.pool_created_at) : null };
-}
-
-/* ------------------------------------------------------------
-   ALÉM DAS 60 DE MAIOR VOLUME
-
-   A coleta por DEX traz as 3 primeiras páginas (60 pools, por volume). Pool
-   menor que isso nunca era atualizada — 25 das suas 93, medido em 22/09.
-   Dois caminhos resolvem:
-     • pool JÁ VINCULADA (srcId gecko:rede:endereço): consulta direta pelo
-       endereço, 30 por chamada — fica atualizável para sempre;
-     • pool ainda sem vínculo: pesquisa pelo token dela na rede, e o
-       resultado passa pela mesma regra conservadora de casamento.
-   ------------------------------------------------------------ */
-async function geckoPorEndereco(net, alvos){
-  const out = [];
-  for(let i=0; i<alvos.length; i+=30){
-    const lote = alvos.slice(i, i+30);
-    const res = await geckoGet(`https://api.geckoterminal.com/api/v2/networks/${net}/pools/multi/${lote.map(x=>x.addr).join(",")}`);
-    if(!res || !res.ok) continue;
-    const j = await res.json().catch(()=>null);
-    ((j && j.data) || []).forEach(d=>{
-      const a = d.attributes || {};
-      const alvo = lote.find(x=>x.addr===String(a.address||"").toLowerCase());
-      if(!alvo) return;
-      const c = geckoCand(a, alvo.plat, alvo.label, net);
-      if(c) out.push(c);
-    });
-  }
-  return out;
-}
-
-async function geckoPesquisa(net, termo, platform, label, dexes){
-  const res = await geckoGet(`https://api.geckoterminal.com/api/v2/search/pools?query=${encodeURIComponent(termo)}&network=${encodeURIComponent(net)}`);
-  if(!res || !res.ok) return [];
-  const j = await res.json().catch(()=>null);
-  return ((j && j.data) || []).filter(d=>{
-    const dex = d.relationships && d.relationships.dex && d.relationships.dex.data && d.relationships.dex.data.id;
-    return !dexes || dexes.includes(dex);   // só as DEXes daquela plataforma
-  }).map(d=>geckoCand(d.attributes||{}, platform, label, net)).filter(Boolean);
-}
-
-/* o token que identifica a pool na pesquisa: o que não é stable nem major */
-function termoDePesquisa(pool){
-  const t = String(pool).split(/[\/\-]/).map(x=>x.trim()).filter(Boolean);
-  const raro = t.find(x=>!STABLE_TOKENS.has(x.toUpperCase()) && !MAJOR_TOKENS.has(x.toUpperCase()));
-  return raro || t[0] || "";
-}
-
-/* ---- filtro anti-lixo (vale pra "Puxar pools") ---- */
-const BLOCKLIST_STORAGE = "estudo_pools_liquidez_blocklist";
-function getBlocklist(){
-  try{ return String(localStorage.getItem(BLOCKLIST_STORAGE)||""); }catch(e){ return ""; }
-}
-function saveBlocklist(v){
-  try{ localStorage.setItem(BLOCKLIST_STORAGE, String(v||"")); }catch(e){}
-}
-function applyJunkFilter(list){
-  const minVol = Number((document.getElementById("llamaMinVol")||{}).value) || 0;
-  const minAgeDays = Number((document.getElementById("llamaMinAge")||{}).value) || 0;
-  const blockRaw = (document.getElementById("llamaBlock")||{}).value || "";
-  const block = new Set(blockRaw.split(/[,;\s]+/).map(t=>t.trim().toUpperCase()).filter(Boolean));
-  const now = Date.now();
-  const cut = {vol:0, age:0, block:0};
-  const kept = list.filter(c=>{
-    if(block.size && String(c.pool).toUpperCase().split(/[\/\-]/).some(t=>block.has(t.trim()))){ cut.block++; return false; }
-    if((c.vol24h||0) < minVol){ cut.vol++; return false; }
-    if(minAgeDays>0 && c.createdAt && (now-c.createdAt) < minAgeDays*86400000){ cut.age++; return false; }
-    return true;
-  });
-  const why = [cut.vol&&`${cut.vol} por volume`, cut.age&&`${cut.age} por idade`, cut.block&&`${cut.block} bloqueada(s)`].filter(Boolean).join(", ");
-  return {kept, removed: list.length-kept.length, why};
-}
-
-/* Orquestrador híbrido: roteia cada DEX pra melhor fonte, unifica e monta a prévia. */
-async function runLlamaSearch(){
-  const btn = document.getElementById("llamaSearchBtn");
-  const status = document.getElementById("llamaStatus");
-  if(btn) btn.disabled = true;
-  try{
-    const chainValue = document.getElementById("llamaChain").value;      // chain da DefiLlama ("" = minhas redes)
-    const chainLabel = chainValue ? (LLAMA_CHAIN_LABEL[chainValue] || chainValue) : ""; // rótulo no app
-    const proj    = document.getElementById("llamaProject").value;       // "" = minhas DEXes
-    const minTvl  = Number(document.getElementById("llamaMinTvl").value) || 0;
-    const limit   = Math.max(1, Number(document.getElementById("llamaLimit").value) || 30);
-    const tokenF  = (document.getElementById("llamaToken").value || "").trim().toUpperCase();
-    const dexOnly = document.getElementById("llamaDexOnly").checked;
-    const pages   = Math.min(3, Math.max(1, Math.ceil(limit/20))); // páginas Gecko por DEX
-
-    // decide quais fontes rodar conforme a DEX escolhida
-    const wantLlama  = !proj || LLAMA_ALLOWED_PROJECTS.has(proj);
-    const geckoProjs = proj ? (GECKO_PROJECTS.has(proj) ? [proj] : []) : Array.from(GECKO_PROJECTS);
-
-    let picked = [];
-
-    // ---- DefiLlama · Uniswap / Raydium / Orca (com APR de taxa pronto) ----
-    if(wantLlama){
-      if(status) status.textContent = llamaCache ? "Filtrando DefiLlama…" : "Baixando a lista da DefiLlama… (uns segundos)";
-      const data = await ensureLlamaData();
-      let rows = data.filter(p => (p.tvlUsd||0) >= minTvl);
-      if(dexOnly) rows = rows.filter(p => p.volumeUsd1d != null && p.volumeUsd1d > 0);
-      rows = chainValue ? rows.filter(p => p.chain === chainValue)
-                        : rows.filter(p => LLAMA_ALLOWED_CHAINS.has(p.chain));
-      rows = proj ? rows.filter(p => prettyProject(p.project) === proj)
-                  : rows.filter(p => LLAMA_ALLOWED_PROJECTS.has(prettyProject(p.project)));
-      if(tokenF) rows = rows.filter(p => String(p.symbol||"").toUpperCase().includes(tokenF));
-      rows.forEach(p=> picked.push({
-        srcId:    "llama:"+p.pool,
-        pool:     String(p.symbol||"").replace(/-/g,"/"),
-        platform: prettyProject(p.project),
-        network:  LLAMA_CHAIN_LABEL[p.chain] || p.chain || "—",
-        fee:      parseLlamaFee(p.poolMeta, p.project),
-        tvl:      Math.round(p.tvlUsd||0),
-        vol24h:   p.volumeUsd1d!=null ? Math.round(p.volumeUsd1d) : 0,
-        vol7d:    p.volumeUsd7d!=null ? Math.round(p.volumeUsd7d) : null,
-        // APR de 7 dias, coerente com o volume de 7 dias; o de 1 dia só na falta
-        apr:      p.apyBase7d!=null ? p.apyBase7d : (p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null)),
-        // emissões do token da DEX a quem faz stake (DEXes ve(3,3))
-        aprReward: p.apyReward!=null && p.apyReward>0 ? p.apyReward : null
-      }));
-    }
-
-    // ---- GeckoTerminal · PancakeSwap / Meteora ----
-    if(geckoProjs.length){
-      if(status) status.textContent = `Buscando ${geckoProjs.join(" + ")} na GeckoTerminal…`;
-      picked = picked.concat(await geckoCollect(geckoProjs, chainLabel, minTvl, tokenF, pages));
-    }
-
-    // filtro anti-lixo: volume mínimo, idade mínima (quando a fonte informa) e tokens bloqueados
-    const junk = applyJunkFilter(picked);
-    picked = junk.kept;
-
-    // unifica as duas fontes: top N por TVL
-    picked.sort((a,b) => (b.tvl||0) - (a.tvl||0));
-    picked = picked.slice(0, limit);
-
-    if(!picked.length){
-      if(status) status.textContent = "Nada encontrado com esses filtros. Baixa o TVL mínimo, troca a rede ou tira algum filtro.";
-      return;
-    }
-
-    // agrupa por Plataforma+Rede (o commitScan usa it.platform e a rede da linha)
-    const groups = {};
-    picked.forEach(r=>{
-      const key = r.platform + "§" + r.network;
-      (groups[key] = groups[key] || []).push(r);
-    });
-
-    // troca só os itens vindos da API — prints e itens manuais ficam intactos
-    scanItems = scanItems.filter(it => it.origin !== "api");
-    const today = new Date().toISOString().slice(0,10);
-    Object.keys(groups).forEach(key=>{
-      const [platform, network] = key.split("§");
-      scanItems.push({
-        id: scanSeq++, origin:"api",
-        fileName: `${platform} · ${network}`,
-        platform, network, layout:"uniswapish",
-        captureDate: today, status:"done",
-        rows: groups[key].map(r=>({
-          sel:true, pool:r.pool, network, fee:r.fee,
-          tvl:r.tvl, vol24h:r.vol24h, vol7d:r.vol7d??null, vol30d:null, apr:r.apr, aprReward:r.aprReward??null, src:"api", srcId:r.srcId||null
-        }))
-      });
-    });
-
-    renderScanItems();
-    if(status) status.textContent = `Trouxe ${picked.length} pool(s) em ${Object.keys(groups).length} grupo(s)`
-      + (junk.removed ? ` · ${junk.removed} barrada(s) pelo filtro anti-lixo (${junk.why})` : "")
-      + `. Revise abaixo: "Só atualizar" renova as que já tem; "Adicionar as novas" traz as NOVA marcadas.`;
-    document.getElementById("scanItems").scrollIntoView({behavior:"smooth", block:"start"});
-  }catch(e){
-    console.error(e);
-    if(status) status.textContent = "Falhou ao buscar: " + (e.message||e) + ". Tenta de novo — pode ser internet ou limite momentâneo da API.";
-  }finally{
-    if(btn) btn.disabled = false;
-  }
-}
-
-function commitScan(mode){
-  const selected = [];
-  scanItems.forEach(it=>{
-    const ts = it.captureDate ? new Date(it.captureDate+"T12:00:00").getTime() : Date.now();
-    it.rows.forEach(r=>{
-      if(r.sel && r.pool){
-        selected.push({
-          pool: r.pool, platform: it.platform, network: r.network || it.network,
-          fee: r.fee||0, tvl: r.tvl||0, vol24h: r.vol24h||0, vol7d: r.vol7d??null,
-          vol30d: r.vol30d??null, apr: r.apr??null, aprReward: r.aprReward??null,
-          srcId: r.srcId||null,
-          _ts: ts
-        });
-      }
-    });
-  });
-  if(selected.length===0){ alert("Nenhuma linha marcada."); return; }
-
-  if(mode==="replace"){
-    const groups = Array.from(new Set(selected.map(p=>p.platform+"§"+p.network)));
-    const groupLabels = groups.map(g=>g.replace("§"," / ")).join(", ");
-    if(!confirm(`Isso vai APAGAR todas as pools existentes de: ${groupLabels}\ne colocar as ${selected.length} linha(s) marcada(s) no lugar. Confirma?`)) return;
-    groups.forEach(g=>{
-      const [plat,net] = g.split("§");
-      state.pools = state.pools.filter(p=>!(p.platform===plat && p.network===net));
-    });
-  } else if(mode==="update"){
-    const n = selected.filter(c=>findExistingPool(c)).length;
-    if(n===0){ alert("Nenhuma das linhas marcadas já existe no painel — nada pra atualizar.\n\nSe quiser trazer pools novas, use \"Adicionar as novas marcadas\"."); return; }
-    if(!confirm(`Atualizar ${n} pool(s) que já estão no painel?\n${selected.length-n} linha(s) NOVA serão ignoradas — nada novo entra.`)) return;
-  } else {
-    const n = selected.filter(c=>!findExistingPool(c)).length;
-    if(n===0){ alert("Todas as linhas marcadas já existem no painel — nada novo pra adicionar.\n\nPra renovar os números delas, use \"Só atualizar as que já tenho\"."); return; }
-    if(!confirm(`Adicionar ${n} pool(s) NOVA ao painel?\nAs que já existem não são tocadas.`)) return;
-  }
-
-  let added=0, updated=0, skipped=0;
-  selected.forEach(cand=>{
-    const existing = findExistingPool(cand);
-    const ts = cand._ts; delete cand._ts;
-    if(!cand.srcId) delete cand.srcId;
-    if(mode==="update" && !existing){ skipped++; return; }
-    if(mode==="add" && existing){ skipped++; return; }
-    if(existing){
-      // se a taxa não foi lida dessa vez (0) mas já tínhamos uma taxa conhecida,
-      // mantém a taxa antiga em vez de zerar por causa de falha de OCR
-      existing.fee = (cand.fee>0 || !(existing.fee>0)) ? cand.fee : existing.fee;
-      existing.tvl=cand.tvl; existing.vol24h=cand.vol24h; existing.vol7d=cand.vol7d; existing.aprReward=cand.aprReward??null;
-      existing.vol30d=cand.vol30d; existing.apr=cand.apr; existing.updatedAt=ts;
-      if(cand.srcId && !existing.srcId) existing.srcId = cand.srcId; // vincula: próximas atualizações casam pelo ID
-      existing.history = existing.history || [];
-      existing.history.push({ts, tvl:cand.tvl, vol24h:cand.vol24h, vol7d:cand.vol7d, vol30d:cand.vol30d, fee:existing.fee, apr:cand.apr});
-      updated++;
-    } else {
-      cand.id = Date.now()+Math.random(); cand.updatedAt = ts; cand.notes = "";
-      cand.history = [{ts, tvl:cand.tvl, vol24h:cand.vol24h, vol7d:cand.vol7d, vol30d:cand.vol30d, fee:cand.fee, apr:cand.apr}];
-      state.pools.push(cand);
-      added++;
-    }
-  });
-  save();
-  scanItems = [];
-  renderScanItems();
-  switchTab("dash");
-  render();
-  alert(`Pronto — ${added} pool(s) nova(s) adicionada(s), ${updated} pool(s) já existente(s) atualizada(s)`
-    + (skipped ? `, ${skipped} linha(s) ignorada(s).` : "."));
-}
-
-/* ============ Atualização automática a cada 24h (só atualiza pools existentes) ============
-   Arquivo local só roda com o app aberto: ao abrir, se passou de 24h desde a última vez,
-   atualiza sozinho os NÚMEROS (TVL, vol 24h, APR) das pools que você já tem.
-   NUNCA adiciona pool nova — evita encher a lista de pool ruim. */
-const AUTOUPD_STORAGE  = "estudo_pools_liquidez_autoupd";
-const AUTOUPD_EVERY_MS = 24*60*60*1000;
-
-function getAutoCfg(){
-  try{ const c = JSON.parse(localStorage.getItem(AUTOUPD_STORAGE)||"{}");
-       return {enabled:!!c.enabled, lastRun:Number(c.lastRun)||0}; }
-  catch(e){ return {enabled:false, lastRun:0}; }
-}
-function setAutoCfg(c){
-  try{ localStorage.setItem(AUTOUPD_STORAGE, JSON.stringify({enabled:!!c.enabled, lastRun:Number(c.lastRun)||0})); }catch(e){}
-}
-function fmtStamp(ts){
-  if(!ts) return "";
-  const d = new Date(ts), p = n=>String(n).padStart(2,"0");
-  return `${p(d.getDate())}/${p(d.getMonth()+1)} ${p(d.getHours())}:${p(d.getMinutes())}`;
-}
-function renderAutoUpdStatus(msg){
-  const el = document.getElementById("autoUpdStatus"); if(!el) return;
-  if(msg!=null){ el.textContent = msg; return; }
-  const cfg = getAutoCfg();
-  if(!cfg.enabled){ el.textContent = "Desligado — quando ligar, atualizo os números das suas pools 1×/dia."; return; }
-  el.textContent = cfg.lastRun ? `Ligado · última atualização: ${fmtStamp(cfg.lastRun)}`
-                               : "Ligado · vai atualizar na próxima abertura (ou em até 24h).";
-}
-function onAutoUpdToggle(){
-  const chk = document.getElementById("autoUpdChk");
-  const cfg = getAutoCfg(); cfg.enabled = !!(chk && chk.checked); setAutoCfg(cfg);
-  renderAutoUpdStatus();
-  if(cfg.enabled) maybeAutoUpdate(); // ligou agora → já checa se venceu 24h
-}
-
-/* chave de casamento igual à do findExistingPool: plataforma | rede | conjunto de ativos */
 function candKey(platform, network, pool){
   return String(platform||"").trim().toLowerCase()+"|"+String(network||"").trim().toLowerCase()+"|"+tokensOf(pool);
-}
-
-/* Chave com os "wrapped" trocados pelo token nativo: WETH/USDC e ETH/USDC
-   caem na mesma. Só é usada quando o nome exato não resolve (ver
-   applyUpdateOnly) — as duas podem ser pools diferentes (v3 × v4). */
-const ALIAS_TOKEN = { WETH:"ETH", WBNB:"BNB", WSOL:"SOL" };
-function aliasKey(platform, network, pool){
-  const t = String(pool).toUpperCase().replace(/\s+/g,"").split(/[\/\-]/).filter(Boolean)
-    .map(x=>ALIAS_TOKEN[x]||x).sort().join("|");
-  return String(platform||"").trim().toLowerCase()+"|"+String(network||"").trim().toLowerCase()+"|"+t;
-}
-
-/* Escolhe, entre candidatas de mesmo par, a que é ESTA pool — ou nenhuma.
-   1. Taxa: igual (tolerância de 0,0005 p.p.) ou, se nenhuma for igual, a
-      única próxima (até 10% de diferença relativa — taxa dinâmica da v4,
-      0,2925% × 0,3%).
-   2. Fonte sem taxa (Orca na DefiLlama, parte da GeckoTerminal): as
-      candidatas sem taxa entram no desempate.
-   3. Desempate pelo TVL, só se for claro: a mais próxima dentro de ±50% do
-      TVL que a pool tinha, e a segunda pelo menos 1,5× mais longe. Duas
-      pools de mesmo par e taxa com US$ 7,2 M e US$ 5,7 M se separam assim.
-   Devolve {cand} ou {ambigua:true} ou {} (não bate). */
-function escolherCandidato(p, list){
-  let m = [];
-  if(p.fee>0){
-    m = list.filter(c=>c.fee>0 && Math.abs(c.fee-p.fee)<0.0005);
-    if(!m.length){
-      const perto = list.filter(c=>c.fee>0 && Math.abs(c.fee-p.fee)/p.fee <= 0.10);
-      if(perto.length===1) m = perto;
-    }
-    if(!m.length) m = list.filter(c=>!(c.fee>0));   // fonte sem taxa
-  } else {
-    m = list.slice();
-  }
-  if(m.length===1){
-    // fonte sem taxa + uma só candidata: exige TVL coerente, senão é outra pool
-    if(!(m[0].fee>0) && p.fee>0 && !(tvlPerto(p, m[0]) <= 0.5)) return {};
-    return {cand:m[0]};
-  }
-  if(!m.length) return {};
-  const ord = m.map(c=>({c, d:tvlPerto(p, c)})).sort((a,b)=>a.d-b.d);
-  if(ord[0].d <= 0.5 && ord[1].d >= ord[0].d*1.5 + 0.02) return {cand:ord[0].c};
-  return {ambigua:true};
-}
-/* distância relativa entre o TVL guardado e o da candidata (0 = igual) */
-function tvlPerto(p, c){
-  const a = Number(p.tvl)||0, b = Number(c.tvl)||0;
-  if(!(a>0) || !(b>0)) return Infinity;
-  return Math.abs(a-b)/Math.max(a,b);
-}
-
-/* Função PURA: atualiza em `pools` só o que casa com algum candidato de `picked`.
-   Não adiciona nada. Uma atualização por pool (pega o melhor candidato). Devolve quantas mudou. */
-function applyUpdateOnly(pools, picked, now, report){
-  report = report || {notFound:0, ambiguous:[], feeMismatch:[]};
-  const byId = new Map();
-  const byKey = new Map();
-  const byAlias = new Map();
-  const ownedIds = new Set(pools.map(p=>p.srcId).filter(Boolean));
-  picked.forEach(c=>{
-    if(c.srcId) byId.set(c.srcId, c);
-    // candidato cujo ID já pertence a uma pool não entra no casamento por nome
-    if(c.srcId && ownedIds.has(c.srcId)) return;
-    const k = candKey(c.platform, c.network, c.pool);
-    if(!byKey.has(k)) byKey.set(k, []);
-    byKey.get(k).push(c);
-    const ka = aliasKey(c.platform, c.network, c.pool);
-    if(!byAlias.has(ka)) byAlias.set(ka, []);
-    byAlias.get(ka).push(c);
-  });
-  const usados = new Set();
-  let updated = 0;
-  pools.forEach(p=>{
-    if(p.arquivada) return;   // arquivada: fora da atualização até ser restaurada
-    let cand = null;
-    if(p.srcId){
-      // pool vinculada: só aceita o próprio ID (se a fonte não trouxe, fica sem atualizar)
-      cand = byId.get(p.srcId) || null;
-    } else {
-      /* Regra: só atualiza quando é inequívoco. Nunca "pega a de maior TVL" —
-         isso já gravou dados de uma pool v4 (ETH nativo, 0,35%) em cima de 3
-         pools v3 diferentes. Tenta primeiro o NOME EXATO; só se ele não
-         resolver, as equivalências ETH=WETH, BNB=WBNB, SOL=WSOL (a pool v3 se
-         chama WETH/USDC na fonte e "ETH/USDC" no painel; na Robinhood e na
-         BNB Chain a GeckoTerminal usa WETH/WBNB). */
-      const livres = l => (l||[]).filter(c=>!usados.has(c));
-      const tentativas = [livres(byKey.get(candKey(p.platform, p.network, p.pool))),
-                          livres(byAlias.get(aliasKey(p.platform, p.network, p.pool)))];
-      if(!tentativas[0].length && !tentativas[1].length){ report.notFound++; return; }
-      let achado = null, ambigua = false;
-      for(const list of tentativas){
-        if(!list.length) continue;
-        const r = escolherCandidato(p, list);
-        if(r.cand){ achado = r.cand; break; }
-        if(r.ambigua) ambigua = true;
-      }
-      if(!achado){
-        if(ambigua) report.ambiguous.push(p); else report.feeMismatch.push(p);
-        return;
-      }
-      cand = achado;
-      if(cand.srcId && !ownedIds.has(cand.srcId)){ p.srcId = cand.srcId; ownedIds.add(cand.srcId); }
-    }
-    if(cand) usados.add(cand);   // uma candidata atualiza UMA pool só
-    if(!cand){ report.notFound++; return; }
-    // se a taxa nova vier em branco (0) mas já tínhamos uma, mantém a antiga
-    p.fee    = (cand.fee>0 || !(p.fee>0)) ? cand.fee : p.fee;
-    p.tvl    = cand.tvl;
-    p.vol24h = cand.vol24h;
-    p.vol7d  = cand.vol7d!=null ? cand.vol7d : null;
-    p.apr    = cand.apr;
-    p.aprReward = cand.aprReward!=null ? cand.aprReward : null;
-    p.updatedAt = now;
-    p.history = p.history || [];
-    // vol30d nenhuma fonte fornece — mantém o que já havia
-    p.history.push({ts:now, tvl:cand.tvl, vol24h:cand.vol24h, vol7d:p.vol7d, vol30d:p.vol30d, fee:p.fee, apr:cand.apr});
-    updated++;
-  });
-  return updated;
-}
-
-/* Coleta os números novos SÓ das fontes que cobrem as suas pools e aplica update-only. */
-async function runAutoUpdate(){
-  if(!state.pools.length) return {updated:0};
-
-  geckoIncomplete = false;
-  // DefiLlama cobre Uniswap/Raydium/Orca (uma chamada traz tudo, qualquer TVL)
-  const wantLlama = state.pools.some(p => LLAMA_ALLOWED_PROJECTS.has(String(p.platform||"")));
-  // pares plataforma§rede das suas pools que vêm da GeckoTerminal
-  const geckoPairs = new Set();
-  state.pools.forEach(p=>{
-    const plat = String(p.platform||"");
-    if(GECKO_SOURCES[plat]) geckoPairs.add(plat + "§" + String(p.network||""));
-  });
-
-  let picked = [];
-
-  if(wantLlama){
-    const data = await ensureLlamaData();
-    data.forEach(p=>{
-      const platform = prettyProject(p.project);
-      if(!LLAMA_ALLOWED_PROJECTS.has(platform)) return;
-      if(!LLAMA_ALLOWED_CHAINS.has(p.chain)) return;
-      picked.push({
-        srcId:    "llama:"+p.pool,
-        pool:     String(p.symbol||"").replace(/-/g,"/"),
-        platform, network: LLAMA_CHAIN_LABEL[p.chain] || p.chain || "—",
-        fee:      parseLlamaFee(p.poolMeta, p.project),
-        tvl:      Math.round(p.tvlUsd||0),
-        vol24h:   p.volumeUsd1d!=null ? Math.round(p.volumeUsd1d) : 0,
-        vol7d:    p.volumeUsd7d!=null ? Math.round(p.volumeUsd7d) : null,
-        // APR de 7 dias, coerente com o volume de 7 dias; o de 1 dia só na falta
-        apr:      p.apyBase7d!=null ? p.apyBase7d : (p.apyBase!=null ? p.apyBase : (p.apy!=null ? p.apy : null)),
-        // emissões do token da DEX a quem faz stake (DEXes ve(3,3))
-        aprReward: p.apyReward!=null && p.apyReward>0 ? p.apyReward : null
-      });
-    });
-  }
-
-  for(const pair of geckoPairs){
-    const [plat, net] = pair.split("§");
-    picked = picked.concat(await geckoCollect([plat], net, 0, "", 3)); // 3 páginas p/ cobertura
-  }
-
-  // vinculadas que ficaram fora das 60 de maior volume: direto pelo endereço
-  const trazidos = new Set(picked.map(c=>c.srcId).filter(Boolean));
-  const porRede = {};
-  state.pools.forEach(p=>{
-    const m = String(p.srcId||"").match(/^gecko:([^:]+):(.+)$/);
-    if(!m || trazidos.has(p.srcId)) return;
-    (porRede[m[1]] = porRede[m[1]] || []).push({addr:m[2], plat:p.platform, label:p.network});
-  });
-  for(const net of Object.keys(porRede)) picked = picked.concat(await geckoPorEndereco(net, porRede[net]));
-
-  const now = Date.now();
-  const report = {notFound:0, ambiguous:[], feeMismatch:[]};
-  let updated = applyUpdateOnly(state.pools, picked, now, report);
-
-  // o que sobrou sem vínculo nas plataformas da Gecko: pesquisa pelo token
-  const sobras = state.pools.filter(p=>p.updatedAt!==now && !p.srcId && !p.arquivada && GECKO_SOURCES[p.platform]);
-  let achados = [];
-  if(sobras.length){
-    const donos = new Set(state.pools.map(p=>p.srcId).filter(Boolean));
-    const feitas = new Set();
-    for(const p of sobras.slice(0, 40)){
-      const src = (GECKO_SOURCES[p.platform]||[]).find(s=>s.label===p.network);
-      const termo = termoDePesquisa(p.pool);
-      if(!src || !termo || feitas.has(src.net+"|"+termo)) continue;
-      feitas.add(src.net+"|"+termo);
-      achados = achados.concat(await geckoPesquisa(src.net, termo, p.platform, p.network, src.dexes));
-    }
-    // candidata que já é de outra pool não pode ser casada de novo
-    achados = achados.filter(c=>!c.srcId || !donos.has(c.srcId));
-    const r2 = {notFound:0, ambiguous:[], feeMismatch:[]};
-    const extra = applyUpdateOnly(sobras, achados, now, r2);
-    updated += extra;
-    // o relatório final descreve só o que continuou de fora
-    const pegas = new Set(sobras.filter(p=>p.updatedAt===now));
-    ["ambiguous","feeMismatch"].forEach(k=>{ report[k] = report[k].filter(p=>!pegas.has(p)); });
-  }
-
-  montarRevisao(picked.concat(achados), now);
-  if(updated){ save(); render(); }
-  return {updated, total: state.pools.filter(p=>!p.arquivada).length, incomplete: geckoIncomplete, report};
-}
-
-/* ------------------------------------------------------------
-   REVISÃO — as pools que a atualização não conseguiu casar
-
-   A regra de casamento é conservadora de propósito: quando não tem
-   certeza de qual pool da fonte é a sua, não grava nada. O que sobra
-   não pode ficar sem saída — aqui cada uma aparece com o MOTIVO e as
-   candidatas que a fonte tem para aquele par (taxa, TVL, volume). Você
-   escolhe "É esta" (vincula: daí em diante atualiza sozinha) ou
-   "Arquivar" (pool que acabou: sai do ranking e da atualização, sem
-   apagar nada — dá para restaurar).
-   ------------------------------------------------------------ */
-const REVISAO_STORAGE = "estudo_pools_liquidez_revisao";
-let revisao = [];
-function lerRevisao(){ try{ revisao = JSON.parse(localStorage.getItem(REVISAO_STORAGE)||"[]"); }catch(e){ revisao = []; } }
-function gravarRevisao(){ try{ localStorage.setItem(REVISAO_STORAGE, JSON.stringify(revisao)); }catch(e){} }
-
-function montarRevisao(candidatas, now){
-  const donos = new Set(state.pools.map(p=>p.srcId).filter(Boolean));
-  /* Rodada que a GeckoTerminal cortou (limite de chamadas) não prova que
-     uma pool de lá sumiu: essas ficam fora da revisão até a próxima. */
-  revisao = state.pools.filter(p=>!p.arquivada && p.updatedAt!==now && !(geckoIncomplete && GECKO_SOURCES[p.platform])).map(p=>{
-    const k = aliasKey(p.platform, p.network, p.pool);
-    const vistas = new Set();
-    const cands = candidatas.filter(c=>aliasKey(c.platform, c.network, c.pool)===k && (!c.srcId || !donos.has(c.srcId)))
-      .filter(c=>{ const id=c.srcId||JSON.stringify(c); if(vistas.has(id)) return false; vistas.add(id); return true; })
-      .sort((a,b)=>(b.tvl||0)-(a.tvl||0)).slice(0,6)
-      .map(c=>({pool:c.pool, fee:c.fee, tvl:c.tvl, vol24h:c.vol24h, vol7d:c.vol7d??null, apr:c.apr??null, aprReward:c.aprReward??null, srcId:c.srcId||null}));
-    const mesmaTaxa = cands.filter(c=>c.fee>0 && p.fee>0 && Math.abs(c.fee-p.fee)<0.0005).length;
-    const motivo = !cands.length ? "nao-encontrada" : mesmaTaxa>1 ? "ambigua" : "taxa-diferente";
-    return {id:p.id, motivo, cands};
-  });
-  gravarRevisao();
-  renderRevisao();
-}
-
-const MOTIVO_TXT = {
-  "nao-encontrada": "Não aparece na fonte — pode ter sido encerrada ou ficado sem liquidez.",
-  "taxa-diferente": "A fonte tem este par, mas não com a taxa que está no painel — talvez a taxa tenha sido registrada errada (comum em print).",
-  "ambigua":        "Mais de uma pool na fonte com o mesmo par e a mesma taxa, e o TVL não deixa claro qual é a sua."
-};
-
-function usarCandidata(poolId, i){
-  const item = revisao.find(r=>r.id===poolId); const p = state.pools.find(x=>x.id===poolId);
-  const c = item && item.cands[i];
-  if(!p || !c) return;
-  const now = Date.now();
-  if(c.srcId) p.srcId = c.srcId;
-  p.fee = c.fee>0 ? c.fee : p.fee;
-  p.tvl = c.tvl; p.vol24h = c.vol24h; p.vol7d = c.vol7d; p.apr = c.apr; p.aprReward = c.aprReward;
-  p.updatedAt = now;
-  p.history = p.history || [];
-  p.history.push({ts:now, tvl:c.tvl, vol24h:c.vol24h, vol7d:c.vol7d, vol30d:p.vol30d, fee:p.fee, apr:c.apr});
-  revisao = revisao.filter(r=>r.id!==poolId);
-  save(); gravarRevisao(); render(); renderRevisao();
-}
-function arquivarPool(poolId){
-  const p = state.pools.find(x=>x.id===poolId); if(!p) return;
-  p.arquivada = true;
-  revisao = revisao.filter(r=>r.id!==poolId);
-  save(); gravarRevisao(); render(); renderRevisao();
-}
-function restaurarPool(poolId){
-  const p = state.pools.find(x=>x.id===poolId); if(!p) return;
-  p.arquivada = false;
-  save(); render(); renderRevisao();
-}
-
-function renderRevisao(){
-  const box = document.getElementById("dxRevisao"), lista = document.getElementById("revLista"), tit = document.getElementById("revTitulo");
-  if(!box || !lista) return;
-  const pendentes = revisao.map(r=>({r, p:state.pools.find(x=>x.id===r.id)})).filter(x=>x.p && !x.p.arquivada);
-  const arquivadas = state.pools.filter(p=>p.arquivada);
-  box.hidden = !pendentes.length && !arquivadas.length;
-  if(tit) tit.textContent = pendentes.length
-    ? `Revisar ${pendentes.length} pool(s) que não atualizaram`
-    : `${arquivadas.length} pool(s) arquivada(s)`;
-  const itens = pendentes.map(({r, p})=>h("div", {class:"rev-item"},
-    h("div", {class:"rev-pool"},
-      h("b", null, p.pool), ` · ${p.platform} · ${p.network} · taxa ${fFee(p.fee)} · TVL guardado ${fUSD(p.tvl)} (${fRelDate(p.updatedAt).txt})`),
-    h("div", {class:"rev-motivo"}, MOTIVO_TXT[r.motivo] || ""),
-    h("div", {class:"rev-acoes"},
-      r.cands.map((c, i)=>h("button", {class:"iconbtn", title:`Vincular a esta pool da fonte — daí em diante ela atualiza sozinha${c.srcId ? "" : " (sem identificador: só esta vez)"}`,
-        onclick:`usarCandidata(${p.id}, ${i})`},
-        `É esta: ${c.pool} ${fFee(c.fee)} · TVL ${fUSD(c.tvl)}`)),
-      h("button", {class:"iconbtn rev-arq", title:"Tira do ranking e da atualização. Não apaga nada — dá para restaurar.", onclick:`arquivarPool(${p.id})`}, "Arquivar"))));
-  const arq = arquivadas.length ? h("div", {class:"rev-arquivadas"},
-    h("span", null, `Arquivadas (${arquivadas.length}): `),
-    arquivadas.map(p=>h("button", {class:"iconbtn", title:"Volta para o ranking e para a atualização", onclick:`restaurarPool(${p.id})`}, `restaurar ${p.pool} (${p.platform} · ${p.network})`))) : null;
-  lista.replaceChildren(...itens, ...(arq ? [arq] : []));
-}
-
-/* Checa se está ligado e se venceu 24h; se sim, roda. Chamado no load e de hora em hora. */
-let _autoUpdRunning = false;
-async function maybeAutoUpdate(){
-  const cfg = getAutoCfg();
-  if(!cfg.enabled || _autoUpdRunning) return;
-  if(Date.now() - cfg.lastRun < AUTOUPD_EVERY_MS) return;
-  if(!state.pools.length) return;
-  _autoUpdRunning = true;
-  renderAutoUpdStatus("Atualizando suas pools…");
-  try{
-    const {updated, incomplete} = await runAutoUpdate();
-    if(incomplete) throw new Error("GeckoTerminal limitou as chamadas");
-    const c2 = getAutoCfg(); c2.lastRun = Date.now(); setAutoCfg(c2); // só marca em caso de sucesso
-    renderAutoUpdStatus(`Atualizado agora — ${updated} pool(s) · ${fmtStamp(c2.lastRun)}`);
-  }catch(e){
-    console.error("auto-update falhou:", e);
-    renderAutoUpdStatus("Não deu pra atualizar agora (rede ou limite da API). Tento de novo depois.");
-    // não grava lastRun → tenta no próximo ciclo
-  }finally{ _autoUpdRunning = false; }
-}
-
-/* botão manual: mesma rotina update-only do automático, sem esperar as 24h */
-async function runUpdateNow(){
-  if(_autoUpdRunning) return;
-  if(!state.pools.length){ alert("Nenhuma pool no painel pra atualizar."); return; }
-  const btn = document.getElementById("updNowBtn");
-  if(btn) btn.disabled = true;
-  _autoUpdRunning = true;
-  renderAutoUpdStatus("Atualizando suas pools… (pode levar um tempinho por causa do limite da GeckoTerminal)");
-  try{
-    const r = await runAutoUpdate();
-    const c2 = getAutoCfg(); c2.lastRun = Date.now(); setAutoCfg(c2);
-    const skip = r.total - r.updated;
-    renderAutoUpdStatus(`Atualizado agora — ${r.updated} de ${r.total} pool(s) · ${fmtStamp(c2.lastRun)} · nenhuma pool nova adicionada`
-      + (skip ? ` · ${skip} sem atualizar (não achadas na fonte com o mesmo nome e taxa${r.report.ambiguous.length?`, ${r.report.ambiguous.length} ambígua(s)`:''})` : "")
-      + (r.incomplete ? " · ⚠️ a GeckoTerminal limitou as chamadas — rode de novo em 1 minuto pra completar" : ""));
-  }catch(e){
-    console.error("atualização manual falhou:", e);
-    renderAutoUpdStatus("Não deu pra atualizar agora (rede ou limite da API). Tenta de novo em 1 minuto.");
-  }finally{
-    _autoUpdRunning = false;
-    if(btn) btn.disabled = false;
-  }
 }
 
 /* ============ abas ============ */
@@ -4101,25 +2874,13 @@ window.addEventListener("DOMContentLoaded",()=>{
   iVol30=document.getElementById("iVol30"); iApr=document.getElementById("iApr");
   iDate=document.getElementById("iDate");
   document.getElementById("modal").addEventListener("click",e=>{ if(e.target.id==="modal") closeForm(); });
-  const [y,m,d]=DATA_VERSION.split("-");
-  document.getElementById("stamp").textContent = `${d}/${m}/${y}`;
   load(); render();
 
   apagarChavesAntigasIA();     // chaves de API de versões antigas não ficam no navegador
-  lerRevisao(); renderRevisao();
-  populateLlamaSelects();      // preenche os dropdowns de rede/DEX (listas fixas)
-  { const b = document.getElementById("llamaBlock"); if(b) b.value = getBlocklist(); }
   checkBackupReminder();
   updateRadarBadge();
-  setupDropzone();
-  setupPaste();
-
-  // Atualização automática 24h (só atualiza pools existentes)
-  const _auto = getAutoCfg();
-  const _chk = document.getElementById("autoUpdChk"); if(_chk) _chk.checked = _auto.enabled;
-  renderAutoUpdStatus();
-  maybeAutoUpdate();                          // ao abrir: dispara se ligado e venceu 24h
-  setInterval(maybeAutoUpdate, 60*60*1000);   // e checa de hora em hora enquanto o app fica aberto
+  renderStatus();
+  carregarServidor();          // pools do coletor; até chegar, a tabela mostra "carregando"
 });
 </script>
 </body>
