@@ -61,3 +61,18 @@ def test_ciclo_completo(dsn):
         assert s._query("select falhas_seguidas, ativa from scanner.pools where id='gecko:bsc:0x1'")[0] == (1, True)
     finally:
         s.close()
+
+
+def test_visao_traz_variacao_de_tvl_em_7_dias(dsn):
+    s = PostgresPoolStore(dsn)
+    try:
+        f = fin("gecko:bsc:0x7")
+        f.cand.tvl = 1_000_000
+        s.gravar([f], date(2026, 9, 10), AGORA)
+        f.cand.tvl = 1_300_000
+        s.gravar([f], date(2026, 9, 17), AGORA)
+        var = s._query("select var_tvl_7d, leituras from public.scanner_pools where id='gecko:bsc:0x7'")[0]
+        assert round(var[0], 4) == 0.3 and var[1] == 2
+    finally:
+        s.close()
+
