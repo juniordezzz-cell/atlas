@@ -121,7 +121,9 @@
 /* v73 = o ATLAS não tem mais teses (core/entities/theses.js saiu; Hold,
    Trade, RWA e Oráculo sem o conceito) e as contas fecham com o extrato
    (token em caixa no resultado, vendas do Hold, pools encerradas). */
-var VERSAO = "atlas-v73";
+/* v74 = Scanner Pools lê as pools do coletor (Ferramentas/scanner-pools/
+   servidor.js + visões scanner_* no Supabase); painéis de manutenção saíram. */
+var VERSAO = "atlas-v74";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

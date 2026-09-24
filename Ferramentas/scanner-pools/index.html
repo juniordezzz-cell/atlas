@@ -1636,7 +1636,7 @@ function render(){
   buildHead();
 
   // migrada = pool antiga que agora vem do servidor; arquivada = marcada na versão anterior
-  let list = state.pools.filter(p=>!p.arquivada && !p.migrada && trilhoDe(p)===state.trilho);
+  let list = poolsDoTrilho();
   // filtro plataforma
   if(state.platform!=="Todas") list = list.filter(p=>p.platform===state.platform);
   // filtro rede
@@ -1771,17 +1771,25 @@ function sortBy(k){
 function buildNetworkFilter(){
   const sel = document.getElementById("fNetwork");
   const cur = sel.value || "Todas";
-  const pool = state.platform==="Todas" ? state.pools : state.pools.filter(p=>p.platform===state.platform);
+  const vis = poolsDoTrilho();
+  const pool = state.platform==="Todas" ? vis : vis.filter(p=>p.platform===state.platform);
   const nets = ["Todas", ...Array.from(new Set(pool.map(p=>p.network))).sort()];
   const valid = nets.includes(cur) ? cur : "Todas";
   sel.innerHTML = nets.map(n=>`<option value="${esc(n)}"${n===valid?' selected':''}>${n==="Todas"?"Todas as redes":esc(n)}</option>`).join("");
 }
 
+/* O que aparece no trilho aberto (Sólidas ou Caça): base dos contadores e dos filtros. */
+function poolsDoTrilho(){ return state.pools.filter(p=>!p.arquivada && !p.migrada && trilhoDe(p)===state.trilho); }
+
 function buildPlatStats(){
   const el = document.getElementById("platstats");
-  const plats = ["Todas", ...Array.from(new Set(state.pools.map(p=>p.platform)))];
+  const vis = poolsDoTrilho(), conta = {};
+  vis.forEach(p=>{ conta[p.platform] = (conta[p.platform]||0) + 1; });
+  // plataforma escolhida continua visível mesmo sem pools neste trilho
+  if(state.platform!=="Todas" && !conta[state.platform]) conta[state.platform] = 0;
+  const plats = ["Todas", ...Object.keys(conta).sort((a,b)=>conta[b]-conta[a])];
   el.innerHTML = plats.map(pl=>{
-    const n = pl==="Todas" ? state.pools.length : state.pools.filter(p=>p.platform===pl).length;
+    const n = pl==="Todas" ? vis.length : conta[pl];
     const color = pl==="Todas" ? "var(--accent)" : (PLAT_COLORS[pl]||"#8a94a8");
     return `<div class="pchip ${state.platform===pl?'on':''}" data-pl="${esc(pl)}" onclick="setPlatform(this.dataset.pl)">
       <span class="pdot" style="background:${esc(color)}"></span>${pl==="Todas"?"Todas":esc(pl)}<span class="cnt">${n}</span>
