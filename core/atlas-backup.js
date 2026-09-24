@@ -145,6 +145,9 @@
     "estudo_pools_liquidez_backup":    "Scanner Pools · lembrete de backup",
     "estudo_pools_liquidez_blocklist": "Scanner Pools · tokens bloqueados",
     "estudo_pools_liquidez_autoupd":   "Scanner Pools · atualização automática",
+    "estudo_pools_liquidez_marcas":    "Scanner Pools · ★, níveis e notas",
+    "estudo_pools_liquidez_tokens":    "Scanner Pools · sua lista de tokens",
+    "estudo_pools_liquidez_migrado_v1":"Scanner Pools · transição para o servidor",
     /* nomes aposentados — só aparecem em arquivos antigos */
     "atlas.state.v1":          "Trade (nome antigo)",
     "atlas_defi_state_v3":     "DeFi (nome antigo)",

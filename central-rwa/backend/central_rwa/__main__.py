@@ -2,6 +2,7 @@
 
 Jobs: tier_a | daily | backfill | catalog | report | probe | migrate
 Fora dos jobs: `lab` (testa cesta e regras sem banco) — veja `lab --help`.
+Scanner Pools: `pools [--dry-run]` (coleta pools de liquidez).
 """
 
 from __future__ import annotations
@@ -23,6 +24,12 @@ def main(argv: list[str] | None = None) -> None:
         from .engine.lab import rodar
 
         rodar(argv[1:])
+        return
+    if argv and argv[0] == "pools":  # Scanner Pools: coletor próprio, fora do roteador RWA
+        load_env_file(Path(__file__).resolve().parents[1] / ".env")
+        from .pools.comando import rodar as rodar_pools
+
+        rodar_pools(argv[1:])
         return
 
     from .jobs import JOBS

@@ -1,0 +1,45 @@
+name: Scanner Pools · coleta (4h)
+
+# Coleta pools de liquidez (DefiLlama + GeckoTerminal), classifica em
+# Sólida/Caça, dá nota e grava no Supabase. O site lê pelas visões scanner_*.
+on:
+  schedule:
+    - cron: "15 */4 * * *"   # a cada 4 h, aos 15 min (não colide com a camada A da Central RWA)
+  workflow_dispatch:
+
+# Mesmo grupo dos jobs da Central RWA: nunca gravam no banco ao mesmo tempo.
+concurrency:
+  group: central-rwa-db
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  pools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55   # coleta ~27 min no pior caso (GeckoTerminal a 6 pedidos/min); folga para 429 e lentidão
+    defaults:
+      run:
+        working-directory: central-rwa/backend
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: central-rwa/backend/pyproject.toml
+      - run: pip install -e .
+      - name: Migrations (idempotentes)
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then exit 0; fi
+          python -m central_rwa migrate
+      - name: Coletar pools
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::warning::SUPABASE_DB_URL não configurada — coleta pulada (configure o segredo para ativar)."
+            exit 0
+          fi
+          python -m central_rwa pools
