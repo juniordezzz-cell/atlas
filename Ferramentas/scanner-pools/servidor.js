@@ -63,6 +63,12 @@
     return fora.length ? fora : [];
   }
 
+  /* WSOL é o SOL nativo, embrulhado sozinho pelas DEXs de Solana: na tela é
+     SOL (o coletor já grava assim; isto cobre as linhas antigas). */
+  function nomePar(par) {
+    return String(par || "").split(/([\/\-])/).map(function (t) { return t.trim().toUpperCase() === "WSOL" ? "SOL" : t; }).join("");
+  }
+
   /* Linha de scanner_pools → objeto de pool do Scanner. */
   function paraPool(row, marca) {
     marca = marca || {};
@@ -70,7 +76,7 @@
       id: idNumerico(row.id),
       sid: row.id,
       servidor: true,
-      pool: row.par,
+      pool: nomePar(row.par),
       platform: row.dex,
       network: row.rede,
       fee: Number(row.fee) || 0,
@@ -213,7 +219,7 @@
 
   g.ScannerServidor = {
     CACHE_KEY: CACHE_KEY, MARCAS_KEY: MARCAS_KEY, TOKENS_KEY: TOKENS_KEY, MIGRADO_KEY: MIGRADO_KEY,
-    idNumerico: idNumerico, normPar: normPar, tokenAlvo: tokenAlvo,
+    idNumerico: idNumerico, normPar: normPar, nomePar: nomePar, tokenAlvo: tokenAlvo,
     paraPool: paraPool, extrairMarcas: extrairMarcas, trilhoEfetivo: trilhoEfetivo,
     casarLocais: casarLocais, migrar: migrar,
     carregar: carregar, historico: historico,

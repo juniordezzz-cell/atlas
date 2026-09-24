@@ -39,7 +39,6 @@
   .logica .rule{color:var(--green); font-weight:600}
 
   /* stats por plataforma */
-  .platstats{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px}
   /* pools do servidor: status da coleta, trilhos Sólidas/Caça, nota, sinais, lista de tokens */
   .srv-status{font-size:12.5px; color:var(--mut); margin:0 0 12px}
   .srv-status.aviso{color:#f5b942}
@@ -60,14 +59,7 @@
   .nota.r-r{background:rgba(240,85,106,.14); color:#f0556a}
   .sinais{font-size:11px; color:var(--mut); margin-top:3px; font-weight:400}
   .manualpill{font-size:10.5px; color:var(--mut); border:1px solid var(--line); border-radius:6px; padding:1px 6px; margin-left:6px}
-  .pchip{
-    display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--line);
-    border-radius:10px; padding:8px 12px; font-size:12px; cursor:pointer; transition:.15s;
-  }
-  .pchip:hover{border-color:var(--accentdim); background:#141c2c}
-  .pchip.on{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset}
   .pdot{width:9px; height:9px; border-radius:50%}
-  .pchip .cnt{color:var(--mut); margin-left:2px}
 
   /* controles */
   .controls{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
@@ -341,7 +333,7 @@
   /* tabelas didáticas */
   .ltable{width:100%; border-collapse:collapse; margin:6px 0 14px; font-size:13px}
   .ltable thead th{background:#0d1320; color:var(--mut); text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px; padding:9px 11px; border-bottom:1px solid var(--line)}
-  .ltable td{padding:9px 11px; border-bottom:1px solid #161e2b; color:#c3ccdb; vertical-align:top}
+  .ltable td{padding:9px 11px; border-bottom:1px solid #161e2b; color:#c3ccdb; vertical-align:top; white-space:normal; text-align:left}
   .ltable tbody tr:last-child td{border-bottom:none}
   .ltable tbody tr:nth-child(even){background:#0e1521}
   .ltable td.tk{font-weight:600; color:var(--txt); white-space:nowrap}
@@ -646,9 +638,7 @@
   tbody tr:hover{background:rgba(148,170,215,.04)}
 
   /* chips e botões pequenos sem contorno */
-  .pchip,.feepill,.iconbtn,.cmpbtn,.radar-sechead span{border-color:transparent}
-  .pchip{background:var(--panel)}
-  .pchip.on{box-shadow:none; background:rgba(91,140,255,.16)}
+  .feepill,.iconbtn,.cmpbtn,.radar-sechead span{border-color:transparent}
 
   /* linhas com barra de nível/categoria: some só o contorno cinza */
   .vline,.catrow,.radar-row{border-top-color:transparent; border-right-color:transparent; border-bottom-color:transparent}
@@ -660,6 +650,31 @@
 
   /* sem halo */
   .brand-dot{box-shadow:none}
+
+  /* ===================================================================
+     DESCOBRIR LIMPO — cabeçalho enxuto: Sólidas|Caça como controle
+     segmentado, status discreto ao lado, filtros numa linha só (rede e
+     plataforma em menu, não em 19 chips), paginação embaixo.
+     =================================================================== */
+  .dash-head{display:flex; align-items:center; justify-content:space-between; gap:12px 20px; flex-wrap:wrap; margin:4px 0 8px}
+  .trilhos{display:inline-flex; gap:2px; padding:3px; margin:0; border-radius:12px; background:var(--panel2)}
+  .trilho{background:transparent; border:0; color:var(--mut); border-radius:9px; padding:8px 18px; font-size:13.5px; font-weight:600}
+  .trilho:hover{background:transparent; color:var(--txt)}
+  .trilho.on{background:rgba(91,140,255,.18); color:var(--txt); border:0}
+  .trilho .tn{color:var(--mut2); font-weight:500; margin-left:6px; font-size:12px}
+  .trilho.on .tn{color:#9fbaff}
+  .dash-head .srv-status{margin:0; font-size:12px; color:var(--mut2)}
+  .trilho-dica{font-size:12.5px; color:var(--mut); margin:0 0 16px; max-width:760px; min-width:0; flex:none}
+  .controls{gap:8px; margin-bottom:10px}
+  .controls select,.controls input[type=text]{padding:8px 11px; font-size:13px}
+  .controls input[type=text].search{flex:1 1 220px; max-width:320px; min-width:180px}
+  .pager select{padding:6px 10px; font-size:12.5px}
+
+  /* menus: a lista que abre é desenhada pelo sistema — sem isto ela vinha
+     branca com letra clara (o fundo do campo é translúcido) */
+  select{color-scheme:dark}
+  select option,select optgroup{background:#111827; color:#e6ecf5}
+  select option:checked{background:#26324d; color:#fff}
 </style>
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
@@ -684,19 +699,22 @@
   <section id="tab-dash">
   <!-- DESCOBRIR = o ranking das pools que o coletor do servidor acompanha
        (DefiLlama + GeckoTerminal, a cada 4 h) mais as suas pools manuais. -->
-  <div class="srv-status" id="srvStatus">Carregando pools do servidor…</div>
-  <div class="trilhos">
-    <button class="trilho on" data-trilho="solida" onclick="setTrilho('solida')">Sólidas <span class="tn" id="nSolidas"></span></button>
-    <button class="trilho" data-trilho="caca" onclick="setTrilho('caca')">Caça <span class="tn" id="nCaca"></span></button>
-    <span class="trilho-dica" id="trilhoDica">Os dois tokens com histórico: stables, majors, RWA ou token com 30+ dias, market cap ≥ US$ 10 mi, 1.000+ holders e listado no CoinGecko.</span>
+  <div class="dash-head">
+    <div class="trilhos" role="tablist" aria-label="Lista">
+      <button class="trilho on" data-trilho="solida" onclick="setTrilho('solida')">Sólidas <span class="tn" id="nSolidas"></span></button>
+      <button class="trilho" data-trilho="caca" onclick="setTrilho('caca')">Caça <span class="tn" id="nCaca"></span></button>
+    </div>
+    <div class="srv-status" id="srvStatus">Carregando pools do servidor…</div>
   </div>
+  <p class="trilho-dica" id="trilhoDica">Os dois tokens com histórico: stables, majors, RWA ou token com 30+ dias, market cap ≥ US$ 10 mi, 1.000+ holders e listado no CoinGecko.</p>
   <div class="toklista" id="tokLista"></div>
 
-  <div class="platstats" id="platstats"></div>
-
+  <!-- filtros numa linha só: rede e plataforma viraram menus (eram 19 chips) -->
   <div class="controls">
-    <select id="fNetwork" onchange="render()"></select>
-    <select id="fCat" onchange="state.page=1; render()">
+    <input type="text" class="search" id="fSearch" placeholder="Buscar par… (ex: SOL, cbBTC)" oninput="state.page=1; render()">
+    <select id="fNetwork" onchange="state.page=1; render()" aria-label="Rede"></select>
+    <select id="fPlat" onchange="setPlatform(this.value)" aria-label="Plataforma"></select>
+    <select id="fCat" onchange="state.page=1; render()" aria-label="Categoria">
       <option value="Todas">Toda categoria</option>
       <option value="Stable">Stable</option>
       <option value="Blue-chip">Blue-chip</option>
@@ -712,15 +730,9 @@
       <option value="500000">TVL mín: $500 mil</option>
       <option value="1000000">TVL mín: $1 mi</option>
     </select>
-    <input type="text" class="search" id="fSearch" placeholder="Buscar pool… (ex: SOL, cbBTC)" oninput="render()">
-    <label class="chk"><input type="checkbox" id="fRule2" onchange="render()"> Só Razão ≥ 2×</label>
+    <label class="chk"><input type="checkbox" id="fRule2" onchange="state.page=1; render()"> Razão ≥ 2×</label>
     <div class="spacer"></div>
-    <button class="primary addbtn" onclick="openForm()" title="Adicionar uma pool na mão">+ Pool</button>
-    <select id="perPage" onchange="state.page=1; render()">
-      <option value="10">10 por página</option>
-      <option value="20" selected>20 por página</option>
-      <option value="50">50 por página</option>
-    </select>
+    <button class="ghost addbtn" onclick="openForm()" title="Registrar uma pool que o servidor não acompanha">+ Pool manual</button>
   </div>
 
   <div class="tablewrap">
@@ -733,12 +745,17 @@
   <div class="pager">
     <div class="info" id="pinfo"></div>
     <div class="pgbtns" id="pbtns"></div>
+    <select id="perPage" onchange="state.page=1; render()" aria-label="Pools por página">
+      <option value="10">10 por página</option>
+      <option value="20" selected>20 por página</option>
+      <option value="50">50 por página</option>
+    </select>
   </div>
     <details class="logic">
     <summary>ℹ️ Como ler o ranking</summary>
     <div class="logica">
-    <b>A lógica:</b> o rendimento de fees é <code>APR = 365 × Fee × (Vol&nbsp;do&nbsp;dia / TVL)</code>, com o volume do dia pela <b>média de 7 dias</b> quando a fonte informa (etiqueta 7d) ou pelas últimas 24h (etiqueta 24h). Pool sem taxa informada aparece como <b>taxa ?</b> e vai para o fim.
-    O ranking é pela <b>Nota</b> (0 a 100): <b>rendimento</b> 40% — a <b>Eficiência</b> (<code>Fee × Razão</code>), o rendimento diário real que já embute a taxa —, <b>consistência</b> 30% (a razão estável na semana), <b>profundidade</b> 20% (TVL) e <b>tendência</b> 10% (TVL em 7 dias). Clique no cabeçalho de outra coluna para ordenar por ela. O Guia (tópico 0) explica a conta e os trilhos Sólidas e Caça.
+    <b>A lógica:</b> o rendimento de fees é <code>APR = 365 × Fee × (Vol&nbsp;do&nbsp;dia / TVL)</code>, com o <b>volume das últimas 24h</b> — o volume do dia tem que passar o TVL. Pool sem taxa informada aparece como <b>taxa ?</b> e vai para o fim.
+    O ranking é pela <b>Nota</b> (0 a 100), que segue o funil do método: <b>rendimento</b> 40% (a Eficiência, <code>Fee × Razão</code>), <b>giro</b> 30% (a Razão), <b>consistência</b> 15%, <b>profundidade</b> 10% (TVL) e <b>tendência</b> 5%. Clique no cabeçalho de outra coluna para ordenar por ela. O Guia explica os trilhos (tópico 0) e a nota (tópico 16).
     <span class="rule">Semáforo da Razão: ≥ 3×</span> verde · 1–3× amarelo · &lt;1× vermelho.
     A coluna <b>Categoria</b> é o filtro que taxa e razão não dão: <span style="color:#a97bff;font-weight:600">RWA</span>, <span style="color:#2ec785;font-weight:600">Blue-chip</span> e <span style="color:#3aa0ff;font-weight:600">Stable</span> valem o risco; <span style="color:#f5943b;font-weight:600">Memecoin</span> paga fee gordo mas o IL morde; <span style="color:#7d8aa0;font-weight:600">❓</span> = token ainda não classificado (confirme antes de entrar).
     ⚠️ Filtro <b>TVL mín $100 mil</b> ligado pra cortar degen.
@@ -803,6 +820,7 @@
         <li><a href="#sec13">Caso real: por que SNDK</a></li>
         <li><a href="#sec14">Checklist prático</a></li>
         <li><a href="#sec15">Glossário</a></li>
+        <li><a href="#sec16">A nota de 0 a 100</a></li>
       </ol>
     </div>
 
@@ -822,7 +840,7 @@
             <tr><td class="tk">Sua lista</td><td><b>aprovar</b> um token manda as pools dele para Sólidas; <b>bloquear</b> some com elas das duas listas</td><td>Vale acima da classificação automática — mas não libera o que a segurança barrou</td></tr>
           </tbody>
         </table>
-        <p><b>A nota (0 a 100)</b> ordena as duas listas: <b>rendimento</b> 40% (a eficiência %/dia comparada com as outras pools), <b>consistência</b> 30% (a razão volume/TVL estável nos últimos 7 dias — pool que só teve um dia bom perde nota), <b>profundidade</b> 20% (TVL: de US$ 100 mil a US$ 100 mi) e <b>tendência</b> 10% (TVL subindo ou caindo na semana). Passe o mouse na nota para ver as quatro partes.</p>
+        <p><b>A nota (0 a 100)</b> ordena as duas listas seguindo o funil do método — rendimento, giro, consistência, TVL e tendência. A conta inteira está no <a href="#sec16">tópico 16</a>; na tabela, passe o mouse na nota para ver as cinco partes.</p>
         <p class="muted">Pool que não aparece em 3 coletas seguidas sai da lista. Pool que nenhuma fonte cobre você registra no <b>+ Pool</b> — ela fica marcada como <i>manual</i> e é atualizada por você.</p>
       </div>
     </div>
@@ -872,7 +890,7 @@
       <div class="lbody">
         <h3>A Razão — o giro do capital</h3>
         <p>Razão = <b>Volume do dia ÷ TVL</b>. Quanto dinheiro passa por cada dólar preso. É o coração do método.</p>
-        <p>O "volume do dia" é a <b>média diária dos últimos 7 dias</b> sempre que a fonte informa (na tabela aparece a etiqueta <b>7d</b>); quando não informa, entra o volume das últimas 24h (etiqueta <b>24h</b>). O porquê está na seção 9.</p>
+        <p>O "volume do dia" é o volume das <b>últimas 24 horas</b> — o mesmo número que a DEX mostra. A regra é simples: <b>o volume do dia tem que ser maior que o TVL</b> (razão acima de 1×). Pico de um dia só não engana porque a nota olha a consistência da semana (seção 9 e tópico 16).</p>
         <div class="vs">
           <div class="vscard good"><div class="vstag">Pool A · gira muito</div><div class="vsrow"><span>TVL</span><b>$1 M</b></div><div class="vsrow"><span>Volume 24h</span><b>$3 M</b></div><div class="vsbig r-g">Razão 3×</div><div class="vsnote">Cada dólar trabalha 3× por dia</div></div>
           <div class="vsvs">vs</div>
@@ -1005,13 +1023,13 @@
       <div class="lbody">
         <h3>Volume do dia: 24h, 7 dias e 30 dias</h3>
         <p>O volume de 24h é o dado mais fresco, mas pode ser um <b>pico isolado</b> — uma listagem, uma notícia, um bot. Uma razão calculada num dia de pico põe no topo do ranking uma pool que amanhã volta ao normal.</p>
-        <p>Por isso o Scanner calcula a Razão, a Eficiência e o APR estimado com a <b>média diária dos últimos 7 dias</b> quando a fonte informa (DefiLlama: Uniswap, Raydium, Orca). Na GeckoTerminal, em print e no que você digita, só existe o de 24h — e a tabela avisa com a etiqueta <b>24h</b>.</p>
+        <p>O Scanner mostra e calcula a Razão, a Eficiência e o APR estimado com o <b>volume das últimas 24h</b> — é o volume do dia, o número que você confere na DEX. O pico não fica escondido numa média: ele é tratado na <b>nota</b>, que dá 15% para a <b>consistência</b> (a razão das leituras diárias dos últimos 7 dias). Pool que só teve um dia bom perde nota. Só quando a fonte não traz o de 24h entra a média de 7 dias, e a tabela avisa com a etiqueta <b>média 7d</b>.</p>
         <div class="vs">
           <div class="vscard bad"><div class="vstag">Pelo volume de 24h</div><div class="vsrow"><span>WETH/USDC · Uniswap · Base</span><b></b></div><div class="vsbig r-a">APR 57%</div><div class="vsnote">um dia forte</div></div>
           <div class="vsvs">vs</div>
           <div class="vscard good"><div class="vstag">Pela média de 7 dias</div><div class="vsrow"><span>a mesma pool, a mesma semana</span><b></b></div><div class="vsbig r-g">APR 17%</div><div class="vsnote">o que ela paga de verdade</div></div>
         </div>
-        <p class="simnote">Medido na DefiLlama em 22/09/2026. O número de um dia era mais que o triplo do da semana.</p>
+        <p class="simnote">Medido na DefiLlama em 22/09/2026. O número de um dia era mais que o triplo do da semana — é esse tipo de pool que a consistência da nota segura.</p>
         <table class="ltable">
           <thead><tr><th>Sinal</th><th>Interpretação</th></tr></thead>
           <tbody>
@@ -1133,8 +1151,9 @@
           <tbody>
             <tr><td class="tk">TVL</td><td>Total Value Locked. Capital total depositado na pool.</td></tr>
             <tr><td class="tk">Fee tier</td><td>Taxa cobrada por swap (0,01% a 1%). Fonte do rendimento do LP.</td></tr>
-            <tr><td class="tk">Razão (Vol/TVL)</td><td>Volume do dia (média de 7 dias, ou 24h quando a fonte não informa) ÷ TVL. Quantas vezes o capital gira por dia.</td></tr>
-            <tr><td class="tk">Eficiência</td><td>Fee × Razão. Rendimento real de taxas por dia. Métrica de ranking.</td></tr>
+            <tr><td class="tk">Razão (Vol/TVL)</td><td>Volume do dia (últimas 24h) ÷ TVL. Quantas vezes o capital gira por dia. Tem que passar de 1×.</td></tr>
+            <tr><td class="tk">Eficiência</td><td>Fee × Razão. Rendimento real de taxas por dia. A maior parte da nota.</td></tr>
+            <tr><td class="tk">Nota</td><td>0 a 100: rendimento 40%, giro 30%, consistência 15%, TVL 10%, tendência 5%. Ordena as listas (tópico 16).</td></tr>
             <tr><td class="tk">APR</td><td>Annual Percentage Rate. Retorno anual sem juros compostos.</td></tr>
             <tr><td class="tk">APY</td><td>Annual Percentage Yield. Retorno anual com juros compostos.</td></tr>
             <tr><td class="tk">IL</td><td>Impermanent Loss. Perda por variação de preço do par vs. segurar.</td></tr>
@@ -1148,6 +1167,39 @@
             <tr><td class="tk">Slippage</td><td>Derrapagem entre preço esperado e executado, pior com pouca liquidez.</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- 16 -->
+    <div class="lsec" id="sec16">
+      <div class="lnum">16</div>
+      <div class="lbody">
+        <h3>A nota de 0 a 100</h3>
+        <p>A nota é o funil de decisão (tópico 12) virado número. Ela não compara uma pool com as outras: cada parte tem uma <b>régua fixa</b>, então a mesma pool tem a mesma nota não importa o que mais entrou na coleta. O coletor calcula a cada 4 horas; a tela só mostra.</p>
+        <table class="ltable">
+          <thead><tr><th>Parte</th><th>Peso</th><th>O que mede</th><th>Régua (0 a 100)</th></tr></thead>
+          <tbody>
+            <tr><td class="tk">Rendimento</td><td>40%</td><td>A Eficiência: quanto a pool paga por dia em % do capital (<code>Fee × Razão</code>; nas ve(3,3), o maior entre taxa e emissão; em taxa dinâmica, o APR da fonte ÷ 365)</td><td>0,01%/dia = 0 · 0,1%/dia = 50 · 1%/dia ou mais = 100</td></tr>
+            <tr><td class="tk">Giro</td><td>30%</td><td>A Razão: volume das últimas 24h ÷ TVL. O volume do dia tem que passar o TVL</td><td>abaixo de 1× = até 30 · 1× = 30 · 3× = 70 · 10× ou mais = 100</td></tr>
+            <tr><td class="tk">Consistência</td><td>15%</td><td>Se a razão se repete nas leituras diárias dos últimos 7 dias (1 − variação)</td><td>razão igual todo dia = 100 · muito oscilante = 0 · menos de 3 leituras = 50</td></tr>
+            <tr><td class="tk">Profundidade</td><td>10%</td><td>O TVL: liquidez real para entrar e sair</td><td>US$ 100 mil = 0 · US$ 1 mi = 33 · US$ 10 mi = 67 · US$ 100 mi = 100</td></tr>
+            <tr><td class="tk">Tendência</td><td>5%</td><td>O TVL subindo ou caindo na semana</td><td>−30% = 0 · estável = 50 · +30% = 100</td></tr>
+          </tbody>
+        </table>
+        <div class="formula" style="font-size:14px;font-weight:600;padding:16px"><code style="white-space:normal">Nota = 0,40 × Rendimento + 0,30 × Giro + 0,15 × Consistência + 0,10 × Profundidade + 0,05 × Tendência</code></div>
+        <p><b>Por que esses pesos:</b> o método diz que <i>a Razão abre a porta e a Eficiência escolhe entre as boas</i>. Por isso o rendimento pesa mais que o giro — razão alta com taxa ínfima não paga. Categoria e red flags não entram na conta porque já cortam antes: token perigoso nem aparece, e token novo vai para a lista Caça.</p>
+        <table class="ltable">
+          <thead><tr><th>Pool (exemplo)</th><th>Razão</th><th>Eficiência</th><th>TVL</th><th>Nota</th></tr></thead>
+          <tbody>
+            <tr><td class="tk g">SNDK-USDC · taxa 0,1%</td><td>5,6×</td><td>0,56%/dia</td><td>$321 mil</td><td><b>71</b></td></tr>
+            <tr><td class="tk">ETH/USDG · taxa 0,05%</td><td>3×</td><td>0,15%/dia</td><td>$1 mi</td><td><b>58</b></td></tr>
+            <tr><td class="tk a">USDT/USDC · taxa dinâmica, APR 4,9%</td><td>67×</td><td>0,01%/dia</td><td>$181 mil</td><td><b>43</b></td></tr>
+            <tr><td class="tk a">USDC/USDT · taxa 0,0008%</td><td>4,5×</td><td>~0%/dia</td><td>$2 mi</td><td><b>37</b></td></tr>
+            <tr><td class="tk r">SOL-USDC · taxa 0,05%</td><td>0,22×</td><td>0,01%/dia</td><td>$9,9 mi</td><td><b>19</b></td></tr>
+          </tbody>
+        </table>
+        <p class="simnote">Contas com consistência e tendência neutras (50), como numa pool recém-descoberta. Com uma semana de leituras, a nota sobe ou desce conforme a razão se sustenta.</p>
+        <div class="callout"><div class="cotip">🎯</div><div><b>Cores da nota:</b> <span style="color:#2ec785;font-weight:600">70 ou mais</span> passa no funil · <span style="color:#f5b942;font-weight:600">45 a 69</span> vale olhar · <span style="color:#f0556a;font-weight:600">abaixo de 45</span> falta rendimento ou giro. A nota ordena; quem decide é você — confira categoria e red flags antes de entrar.</div></div>
       </div>
     </div>
 
@@ -1417,11 +1469,11 @@ function renderStatus(){
   }
   const coleta = srv.status.reduce((m,x)=>Math.max(m, Date.parse(x.em)||0), 0);
   const falhas = srv.status.filter(x=>x.estado && x.estado!=="ok").length;
-  const partes = [`Coleta do servidor ${idadeTxt(coleta)}`, `${doSrv.length} pools acompanhadas`];
+  const partes = [`Atualizado ${idadeTxt(coleta)}`, `${doSrv.length.toLocaleString("pt-BR")} pools acompanhadas`];
   if(falhas) partes.push(`${falhas} fonte(s) com falha na última coleta`);
   let txt = partes.join(" · ");
   if(srv.doCache) txt = `Sem conexão com o servidor agora — mostrando a última leitura, ${idadeTxt(srv.em)}. ` + txt;
-  if(srv.migracao) txt += ` · ${srv.migracao.casadas} das suas pools passaram a ser acompanhadas pelo servidor; ${srv.migracao.manuais} ficaram como manuais.`;
+  if(srv.migracao && (srv.migracao.casadas || srv.migracao.manuais)) txt += ` · ${srv.migracao.casadas} das suas pools passaram para o servidor; ${srv.migracao.manuais} ficaram manuais.`;
   el.className = "srv-status" + (srv.doCache || falhas ? " aviso" : "");
   el.textContent = txt;
   const st = document.getElementById("stamp");
@@ -1479,16 +1531,18 @@ function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
 /* ============ cálculos ============ */
 /* ------------------------------------------------------------
-   VOLUME DO DIA = MÉDIA DE 7 DIAS, QUANDO A FONTE INFORMA
+   VOLUME DO DIA = ÚLTIMAS 24 HORAS
 
-   A Razão usava o volume das últimas 24h: um dia de pico punha uma
-   pool no topo do ranking. Medido na DefiLlama (set/2026): WETH/USDC
-   na Base com APR de 57% pelo dia e 17% pela média da semana. Agora o
-   volume diário é vol7d ÷ 7 quando existe (DefiLlama); sem ele (Gecko,
-   print, digitado), fica o de 24h — e a tela diz qual dos dois é.
+   A Razão do método é volume DO DIA ÷ TVL: o volume tem que passar o
+   TVL. Por um tempo o Scanner usou a média de 7 dias da DefiLlama para
+   fugir de pico — mas isso trocava o número que o dono lê na DEX por
+   outro, e a tabela misturava as duas réguas (etiquetas 7d e 24h). O
+   pico agora é tratado na Nota (consistência: a razão dos últimos 7
+   dias), não escondido no volume. Só quando a fonte não traz o de 24h
+   entra a média de 7 dias, e a tela avisa.
    ------------------------------------------------------------ */
-function volDia(p){ return (p.vol7d!=null && p.vol7d>0) ? p.vol7d/7 : p.vol24h; }
-function volFonte(p){ return (p.vol7d!=null && p.vol7d>0) ? "7d" : "24h"; }
+function volDia(p){ return p.vol24h>0 ? p.vol24h : (p.vol7d!=null && p.vol7d>0) ? p.vol7d/7 : 0; }
+function volFonte(p){ return (!(p.vol24h>0) && p.vol7d!=null && p.vol7d>0) ? "7d" : "24h"; }
 function ratio(p){ return p.tvl>0 ? volDia(p)/p.tvl : 0; }
 /* ------------------------------------------------------------
    DEXes ve(3,3): O LP NÃO FICA COM A TAXA
@@ -1632,7 +1686,7 @@ function fRelDate(ts){
 /* ============ render ============ */
 function render(){
   buildNetworkFilter();
-  buildPlatStats();
+  buildPlatFilter();
   buildHead();
 
   // migrada = pool antiga que agora vem do servidor; arquivada = marcada na versão anterior
@@ -1716,7 +1770,7 @@ function rowHTML(p, rank){
     <td class="plat" data-label="Categoria"><span class="catbadge" style="color:${CAT_COLORS[getCat(p)]};border-color:${CAT_COLORS[getCat(p)]}44">${esc(getCat(p))}</span></td>
     <td class="num m-hide" data-label="Fee">${fFee(p.fee)}</td>
     <td class="num" data-label="TVL">${fUSD(p.tvl)}${low?`<span class="warn" title="TVL baixo (<$100k): razão pode enganar">⚠</span>`:''}</td>
-    <td class="num" data-label="Vol/dia">${fUSD(volDia(p))}<span class="volsrc" title="${volFonte(p)==='7d'?'Média diária dos últimos 7 dias (DefiLlama)':'Volume das últimas 24h — a fonte não informa a média de 7 dias'}">${volFonte(p)}</span></td>
+    <td class="num" data-label="Vol/dia">${fUSD(volDia(p))}${volFonte(p)==='7d'?'<span class="volsrc" title="A fonte não informou o volume das últimas 24h: vale a média diária dos últimos 7 dias">média 7d</span>':''}</td>
     <td class="num" data-label="Δ TVL"><span class="trend ${ta.cls}" title="${p.servidor ? 'Variação do TVL em 7 dias' : 'Variação do TVL desde a atualização anterior'}">${tr==null?'<span class="muted2">—</span>':`${ta.arrow} ${fPctSigned(tr)}`}</span></td>
     <td data-label="Razão"><span class="ratio ${ratioClass(r)}">${fRatio(r)}</span></td>
     <td class="num" data-label="Nota">${notaHTML(p)}</td>
@@ -1735,12 +1789,14 @@ function rowHTML(p, rank){
   </tr>`;
 }
 
-/* Nota 0–100 do servidor: a dica mostra de onde ela veio (o Guia explica a conta). */
+/* Nota 0–100 do servidor: a dica mostra de onde ela veio (o Guia, tópico 16, explica a conta). */
+const NOTA_PARTES = [["rendimento","Rendimento",40],["giro","Giro (razão)",30],["consistencia","Consistência",15],["profundidade","Profundidade",10],["tendencia","Tendência",5]];
 function notaHTML(p){
   if(!p.servidor) return '<span class="muted2" title="Pool manual: o servidor não dá nota">—</span>';
   const c = p.componentes || {}, pc = v => Math.round((Number(v)||0)*100);
   const cls = p.nota>=70 ? "r-g" : p.nota>=45 ? "r-y" : "r-r";
-  return `<span class="nota ${cls}" title="Rendimento ${pc(c.rendimento)} · Consistência ${pc(c.consistencia)} · Profundidade ${pc(c.profundidade)} · Tendência ${pc(c.tendencia)} (de 0 a 100)">${Math.round(p.nota)}</span>`;
+  const dica = NOTA_PARTES.filter(([k])=>c[k]!=null).map(([k,rot,peso])=>`${rot} ${pc(c[k])} (peso ${peso}%)`).join(" · ");
+  return `<span class="nota ${cls}" title="${dica} — cada parte de 0 a 100">${Math.round(p.nota)}</span>`;
 }
 /* Trilho Caça: os sinais para entrar e sair rápido. */
 function sinaisHTML(p){
@@ -1781,22 +1837,22 @@ function buildNetworkFilter(){
 /* O que aparece no trilho aberto (Sólidas ou Caça): base dos contadores e dos filtros. */
 function poolsDoTrilho(){ return state.pools.filter(p=>!p.arquivada && !p.migrada && trilhoDe(p)===state.trilho); }
 
-function buildPlatStats(){
-  const el = document.getElementById("platstats");
-  const vis = poolsDoTrilho(), conta = {};
+/* Menu de plataforma com a contagem real do trilho (e da rede escolhida).
+   Eram 19 chips em duas linhas no topo da página. */
+function buildPlatFilter(){
+  const sel = document.getElementById("fPlat");
+  const net = document.getElementById("fNetwork").value || "Todas";
+  const vis = poolsDoTrilho().filter(p=>net==="Todas" || p.network===net), conta = {};
   vis.forEach(p=>{ conta[p.platform] = (conta[p.platform]||0) + 1; });
-  // plataforma escolhida continua visível mesmo sem pools neste trilho
+  // plataforma escolhida continua no menu mesmo sem pools neste trilho
   if(state.platform!=="Todas" && !conta[state.platform]) conta[state.platform] = 0;
-  const plats = ["Todas", ...Object.keys(conta).sort((a,b)=>conta[b]-conta[a])];
-  el.innerHTML = plats.map(pl=>{
+  const plats = ["Todas", ...Object.keys(conta).sort((a,b)=>conta[b]-conta[a] || a.localeCompare(b))];
+  sel.innerHTML = plats.map(pl=>{
     const n = pl==="Todas" ? vis.length : conta[pl];
-    const color = pl==="Todas" ? "var(--accent)" : (PLAT_COLORS[pl]||"#8a94a8");
-    return `<div class="pchip ${state.platform===pl?'on':''}" data-pl="${esc(pl)}" onclick="setPlatform(this.dataset.pl)">
-      <span class="pdot" style="background:${esc(color)}"></span>${pl==="Todas"?"Todas":esc(pl)}<span class="cnt">${n}</span>
-    </div>`;
+    return `<option value="${esc(pl)}"${state.platform===pl?' selected':''}>${pl==="Todas"?"Todas as plataformas":esc(pl)} (${n})</option>`;
   }).join("");
 }
-function setPlatform(pl){ state.platform=pl; state.page=1; document.getElementById("fNetwork").value="Todas"; render(); }
+function setPlatform(pl){ state.platform=pl; state.page=1; render(); }
 
 function buildPager(pages){
   const el = document.getElementById("pbtns");
@@ -1955,8 +2011,9 @@ function fPctSigned(pct){ return pct==null ? '—' : (pct>=0?'+':'')+pct.toLocal
 /* snapshots ordenados no tempo, com a Razão (Vol24h/TVL) já calculada por registro */
 function radarSnaps(p){
   return (p.history||[]).slice().sort((a,b)=>a.ts-b.ts).map(s=>{
-    const tvl=+s.tvl||0, vol=(s.vol7d!=null && +s.vol7d>0) ? (+s.vol7d)/7 : (+s.vol24h||0);
-    return { ts:s.ts, tvl, vol24h:vol, base:(s.vol7d!=null && +s.vol7d>0) ? "7d" : "24h",
+    const tvl=+s.tvl||0, v24=+s.vol24h||0, med=(s.vol7d!=null && +s.vol7d>0) ? (+s.vol7d)/7 : 0;
+    const vol = v24>0 ? v24 : med;   // mesma régua da tabela: volume do dia (volDia)
+    return { ts:s.ts, tvl, vol24h:vol, base:(v24>0 || !med) ? "24h" : "7d",
              vol30d:(s.vol30d==null?null:+s.vol30d),
              apr:(s.apr==null?null:+s.apr), ratio:(tvl>0?vol/tvl:0) };
   });

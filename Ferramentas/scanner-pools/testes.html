@@ -47,6 +47,7 @@
     caso("linha do servidor vira pool do Scanner", p.pool === "UNI/WBNB" && p.platform === "PancakeSwap" && p.network === "BNB Chain" && p.servidor === true);
     caso("marcas voltam para a pool", p.fav === true && p.level === "segura" && p.notes === "boa");
     caso("variação de 7 dias e nota chegam", p.varTvl7d === 0.12 && p.nota === 72.5);
+    caso("WSOL aparece como SOL (e WETH continua WETH)", S.nomePar("WSOL/USDC") === "SOL/USDC" && S.nomePar("JUP-WSOL") === "JUP-SOL" && S.nomePar("WETH/USDC") === "WETH/USDC");
 
     /* marcas */
     var m = S.extrairMarcas([p, S.paraPool(Object.assign({}, ROW, { id: "x" }), {}), { id: 3, pool: "A/B", fav: true }]);

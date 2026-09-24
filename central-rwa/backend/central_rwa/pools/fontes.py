@@ -32,6 +32,11 @@ def _data(v) -> datetime | None:
         return None
 
 
+def _simbolo(s: str) -> str:
+    """WSOL é o SOL nativo embrulhado automaticamente pelas DEXs de Solana: a tela mostra SOL."""
+    return "SOL" if s.strip().upper() == "WSOL" else s
+
+
 def normalizar_par(par: str) -> str:
     partes = [p.strip().upper() for p in re.split(r"[/\-]", par or "") if p.strip()]
     return "/".join(_EMBRULHADOS.get(p, p) for p in partes)
@@ -57,7 +62,7 @@ def parse_llama(rows: list[dict]) -> list[Candidata]:
             fonte="defillama",
             rede=rede,
             dex=dex,
-            par="/".join(simbolos[:2]),
+            par="/".join(_simbolo(x) for x in simbolos[:2]),
             token_a=TokenRef(ends[0] if len(ends) > 0 else None, simbolos[0]),
             token_b=TokenRef(ends[1] if len(ends) > 1 else None, simbolos[1]),
             fee=config.parse_llama_fee(p.get("poolMeta"), p.get("project", "")),
@@ -96,7 +101,7 @@ def parse_gecko_pools(payload: dict, dex: str, rede: str) -> list[Candidata]:
             fonte="geckoterminal",
             rede=rede,
             dex=dex,
-            par="/".join(simbolos[:2]),
+            par="/".join(_simbolo(x) for x in simbolos[:2]),
             token_a=TokenRef(_endereco_de(rel.get("base_token")), simbolos[0]),
             token_b=TokenRef(_endereco_de(rel.get("quote_token")), simbolos[1]),
             fee=fee,

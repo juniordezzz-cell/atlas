@@ -123,7 +123,9 @@
    (token em caixa no resultado, vendas do Hold, pools encerradas). */
 /* v74 = Scanner Pools lê as pools do coletor (Ferramentas/scanner-pools/
    servidor.js + visões scanner_* no Supabase); painéis de manutenção saíram. */
-var VERSAO = "atlas-v74";
+/* v75 = Scanner Pools: Descobrir enxuto (rede/plataforma em menu), menus
+   escuros, volume do dia = 24h, nota pelo funil do método (Guia 16). */
+var VERSAO = "atlas-v75";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
