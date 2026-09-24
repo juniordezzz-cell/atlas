@@ -25,7 +25,7 @@ def test_nota_ordena_e_fica_entre_0_e_100():
     rasa = c("rasa", fee=0.3, tvl=150_000, vol=60_000)
     notas = calcular_notas([boa, rasa], {})
     assert 0 <= notas["rasa"][0] < notas["boa"][0] <= 100
-    assert set(notas["boa"][1]) == {"rendimento", "giro", "consistencia", "profundidade", "tendencia"}
+    assert set(notas["boa"][1]) == {"taxa", "giro", "rendimento", "consistencia", "profundidade", "tendencia"}
 
 
 def test_consistencia_premia_razao_estavel_e_sem_historico_vale_meio():
@@ -61,3 +61,19 @@ def test_nota_nao_depende_das_outras_pools():
     so = calcular_notas([a], {})["a"][0]
     junto = calcular_notas([a, c("b", fee=1, tvl=1e6, vol=1e7)], {})["a"][0]
     assert so == junto
+
+
+def test_taxa_ponto_bom_entre_025_e_08_e_degen_perde():
+    n = calcular_notas([c(k, fee=f) for k, f in
+                        [("t0001", 0.001), ("t001", 0.01), ("t005", 0.05), ("t03", 0.3), ("t08", 0.8), ("t1", 1), ("t0", 0)]], {})
+    t = {k: v[1]["taxa"] for k, v in n.items()}
+    assert t["t0001"] == 0 < t["t001"] < t["t005"] == 0.5 < t["t03"] == t["t08"] == 1.0
+    assert t["t1"] == 0.4 and t["t0"] == 0.3
+
+
+def test_taxa_boa_ganha_de_razao_maior_com_taxa_infima():
+    # o exemplo do dono: 0,001% com razão 18× perde para 0,25% com razão 10×
+    infima = c("infima", fee=0.001, tvl=1e6, vol=18e6)
+    boa = c("boa", fee=0.25, tvl=1e6, vol=10e6)
+    n = calcular_notas([infima, boa], {})
+    assert n["boa"][0] > n["infima"][0] + 30

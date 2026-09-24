@@ -1,9 +1,11 @@
-"""Nota 0–100 pelo funil do dono (Guia, tópico "O funil de decisão"):
+"""Nota 0–100 pelos critérios do dono (Guia, tópico 16):
 
-  rendimento   40%  a Eficiência %/dia — a taxa que compensa
+  taxa         30%  o fee tier da pool: 0,25%–0,8% é o ponto bom; 0,001% não paga
+                    e 1% ou mais costuma ser pool ruim (degen)
   giro         30%  a Razão volume do dia ÷ TVL — o volume tem que passar o TVL
-  consistência 15%  a razão estável nos últimos 7 dias — não é pico
-  profundidade 10%  TVL real
+  rendimento   20%  a Eficiência %/dia (taxa × razão): junta as duas
+  consistência 10%  a razão estável nos últimos 7 dias — não é pico
+  profundidade  5%  TVL real
   tendência     5%  TVL subindo ou caindo na semana
 
 A régua é absoluta (não percentil): a mesma pool tem a mesma nota não
@@ -18,7 +20,8 @@ from statistics import mean, pstdev
 from .modelos import Candidata, Leitura
 
 VE33 = {"Aerodrome", "Velodrome", "THENA", "Pharaoh", "Ramses"}
-PESOS = {"rendimento": 0.40, "giro": 0.30, "consistencia": 0.15, "profundidade": 0.10, "tendencia": 0.05}
+PESOS = {"taxa": 0.30, "giro": 0.30, "rendimento": 0.20, "consistencia": 0.10, "profundidade": 0.05, "tendencia": 0.05}
+TAXA_DESCONHECIDA = 0.3   # fee 0 = a fonte não informou (ou taxa dinâmica): não é "taxa boa"
 
 
 def razao(c: Candidata) -> float:
@@ -35,6 +38,24 @@ def eficiencia(c: Candidata) -> float:
     if c.fee <= 0 and c.apr:  # taxa dinâmica (Uniswap v4) chega como 0: vale o APR da fonte
         return c.apr / 365
     return taxa
+
+
+def _taxa(fee: float) -> float:
+    """Fee tier em %. Régua em escala log até o ponto bom, depois cai no degen."""
+    if fee <= 0:
+        return TAXA_DESCONHECIDA
+    if fee <= 0.001:
+        return 0.0
+    lg = math.log10(fee)
+    if fee < 0.05:
+        return 0.5 * (lg + 3) / (math.log10(0.05) + 3)                 # 0,001% -> 0 · 0,05% -> 0,5
+    if fee < 0.25:
+        return 0.5 + 0.5 * (lg - math.log10(0.05)) / math.log10(5)     # 0,05% -> 0,5 · 0,25% -> 1
+    if fee <= 0.8:
+        return 1.0                                                     # 0,25% a 0,8%: o ponto bom
+    if fee <= 1:
+        return 1.0 - 0.6 * (fee - 0.8) / 0.2                           # 1% -> 0,4
+    return max(0.2, 0.4 - 0.2 * (fee - 1))                             # 2% ou mais -> 0,2
 
 
 def _rendimento(efic: float) -> float:
@@ -84,6 +105,7 @@ def calcular_notas(cands: list[Candidata], leituras_por_pool: dict[str, list[Lei
     for c in cands:
         ls = leituras_por_pool.get(c.id, [])
         comp = {
+            "taxa": round(_taxa(c.fee), 4),
             "rendimento": round(_rendimento(eficiencia(c)), 4),
             "giro": round(_giro(razao(c)), 4),
             "consistencia": round(_consistencia(ls), 4),

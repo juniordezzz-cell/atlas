@@ -755,7 +755,7 @@
     <summary>ℹ️ Como ler o ranking</summary>
     <div class="logica">
     <b>A lógica:</b> o rendimento de fees é <code>APR = 365 × Fee × (Vol&nbsp;do&nbsp;dia / TVL)</code>, com o <b>volume das últimas 24h</b> — o volume do dia tem que passar o TVL. Pool sem taxa informada aparece como <b>taxa ?</b> e vai para o fim.
-    O ranking é pela <b>Nota</b> (0 a 100), que segue o funil do método: <b>rendimento</b> 40% (a Eficiência, <code>Fee × Razão</code>), <b>giro</b> 30% (a Razão), <b>consistência</b> 15%, <b>profundidade</b> 10% (TVL) e <b>tendência</b> 5%. Clique no cabeçalho de outra coluna para ordenar por ela. O Guia explica os trilhos (tópico 0) e a nota (tópico 16).
+    O ranking é pela <b>Nota</b> (0 a 100): <b>taxa</b> 30% (o fee tier — 0,25% a 0,8% é o ponto bom), <b>giro</b> 30% (a Razão), <b>rendimento</b> 20% (<code>Fee × Razão</code>), <b>consistência</b> 10%, <b>profundidade</b> 5% (TVL) e <b>tendência</b> 5%. Clique no cabeçalho de outra coluna para ordenar por ela. O Guia explica os trilhos (tópico 0) e a nota (tópico 16).
     <span class="rule">Semáforo da Razão: ≥ 3×</span> verde · 1–3× amarelo · &lt;1× vermelho.
     A coluna <b>Categoria</b> é o filtro que taxa e razão não dão: <span style="color:#a97bff;font-weight:600">RWA</span>, <span style="color:#2ec785;font-weight:600">Blue-chip</span> e <span style="color:#3aa0ff;font-weight:600">Stable</span> valem o risco; <span style="color:#f5943b;font-weight:600">Memecoin</span> paga fee gordo mas o IL morde; <span style="color:#7d8aa0;font-weight:600">❓</span> = token ainda não classificado (confirme antes de entrar).
     ⚠️ Filtro <b>TVL mín $100 mil</b> ligado pra cortar degen.
@@ -840,7 +840,7 @@
             <tr><td class="tk">Sua lista</td><td><b>aprovar</b> um token manda as pools dele para Sólidas; <b>bloquear</b> some com elas das duas listas</td><td>Vale acima da classificação automática — mas não libera o que a segurança barrou</td></tr>
           </tbody>
         </table>
-        <p><b>A nota (0 a 100)</b> ordena as duas listas seguindo o funil do método — rendimento, giro, consistência, TVL e tendência. A conta inteira está no <a href="#sec16">tópico 16</a>; na tabela, passe o mouse na nota para ver as cinco partes.</p>
+        <p><b>A nota (0 a 100)</b> ordena as duas listas pela taxa, pelo giro e pelo que os dois rendem juntos — mais consistência, TVL e tendência. A conta inteira está no <a href="#sec16">tópico 16</a>; na tabela, passe o mouse na nota para ver as seis partes.</p>
         <p class="muted">Pool que não aparece em 3 coletas seguidas sai da lista. Pool que nenhuma fonte cobre você registra no <b>+ Pool</b> — ela fica marcada como <i>manual</i> e é atualizada por você.</p>
       </div>
     </div>
@@ -1153,7 +1153,7 @@
             <tr><td class="tk">Fee tier</td><td>Taxa cobrada por swap (0,01% a 1%). Fonte do rendimento do LP.</td></tr>
             <tr><td class="tk">Razão (Vol/TVL)</td><td>Volume do dia (últimas 24h) ÷ TVL. Quantas vezes o capital gira por dia. Tem que passar de 1×.</td></tr>
             <tr><td class="tk">Eficiência</td><td>Fee × Razão. Rendimento real de taxas por dia. A maior parte da nota.</td></tr>
-            <tr><td class="tk">Nota</td><td>0 a 100: rendimento 40%, giro 30%, consistência 15%, TVL 10%, tendência 5%. Ordena as listas (tópico 16).</td></tr>
+            <tr><td class="tk">Nota</td><td>0 a 100: taxa 30%, giro 30%, rendimento 20%, consistência 10%, TVL 5%, tendência 5%. Ordena as listas (tópico 16).</td></tr>
             <tr><td class="tk">APR</td><td>Annual Percentage Rate. Retorno anual sem juros compostos.</td></tr>
             <tr><td class="tk">APY</td><td>Annual Percentage Yield. Retorno anual com juros compostos.</td></tr>
             <tr><td class="tk">IL</td><td>Impermanent Loss. Perda por variação de preço do par vs. segurar.</td></tr>
@@ -1175,31 +1175,34 @@
       <div class="lnum">16</div>
       <div class="lbody">
         <h3>A nota de 0 a 100</h3>
-        <p>A nota é o funil de decisão (tópico 12) virado número. Ela não compara uma pool com as outras: cada parte tem uma <b>régua fixa</b>, então a mesma pool tem a mesma nota não importa o que mais entrou na coleta. O coletor calcula a cada 4 horas; a tela só mostra.</p>
+        <p>A nota olha as duas coisas que o método manda olhar primeiro: <b>quanto a pool cobra por troca</b> (a taxa, o número ao lado do par) e <b>quanto ela gira</b> (a razão). Nenhuma das duas sozinha decide — por isso cada uma vale 30%, e mais 20% vão para o que as duas rendem juntas. Cada parte tem uma <b>régua fixa</b>: a mesma pool tem a mesma nota, não importa o que mais entrou na coleta. O coletor calcula a cada 4 horas; a tela só mostra.</p>
         <table class="ltable">
           <thead><tr><th>Parte</th><th>Peso</th><th>O que mede</th><th>Régua (0 a 100)</th></tr></thead>
           <tbody>
-            <tr><td class="tk">Rendimento</td><td>40%</td><td>A Eficiência: quanto a pool paga por dia em % do capital (<code>Fee × Razão</code>; nas ve(3,3), o maior entre taxa e emissão; em taxa dinâmica, o APR da fonte ÷ 365)</td><td>0,01%/dia = 0 · 0,1%/dia = 50 · 1%/dia ou mais = 100</td></tr>
+            <tr><td class="tk">Taxa</td><td>30%</td><td>O fee tier da pool — o que ela cobra em cada troca. Não é o APR</td><td>0,001% = 0 · 0,01% = 29 · 0,05% = 50 · 0,1% = 72 · <b>0,25% a 0,8% = 100</b> · 1% = 40 · 2% ou mais = 20 · sem taxa informada = 30</td></tr>
             <tr><td class="tk">Giro</td><td>30%</td><td>A Razão: volume das últimas 24h ÷ TVL. O volume do dia tem que passar o TVL</td><td>abaixo de 1× = até 30 · 1× = 30 · 3× = 70 · 10× ou mais = 100</td></tr>
-            <tr><td class="tk">Consistência</td><td>15%</td><td>Se a razão se repete nas leituras diárias dos últimos 7 dias (1 − variação)</td><td>razão igual todo dia = 100 · muito oscilante = 0 · menos de 3 leituras = 50</td></tr>
-            <tr><td class="tk">Profundidade</td><td>10%</td><td>O TVL: liquidez real para entrar e sair</td><td>US$ 100 mil = 0 · US$ 1 mi = 33 · US$ 10 mi = 67 · US$ 100 mi = 100</td></tr>
+            <tr><td class="tk">Rendimento</td><td>20%</td><td>A Eficiência: taxa × razão, o que a pool paga por dia em % do capital (nas ve(3,3), o maior entre taxa e emissão)</td><td>0,01%/dia = 0 · 0,1%/dia = 50 · 1%/dia ou mais = 100</td></tr>
+            <tr><td class="tk">Consistência</td><td>10%</td><td>Se a razão se repete nas leituras diárias dos últimos 7 dias</td><td>razão igual todo dia = 100 · muito oscilante = 0 · menos de 3 leituras = 50</td></tr>
+            <tr><td class="tk">Profundidade</td><td>5%</td><td>O TVL: liquidez real para entrar e sair</td><td>US$ 100 mil = 0 · US$ 1 mi = 33 · US$ 10 mi = 67 · US$ 100 mi = 100</td></tr>
             <tr><td class="tk">Tendência</td><td>5%</td><td>O TVL subindo ou caindo na semana</td><td>−30% = 0 · estável = 50 · +30% = 100</td></tr>
           </tbody>
         </table>
-        <div class="formula" style="font-size:14px;font-weight:600;padding:16px"><code style="white-space:normal">Nota = 0,40 × Rendimento + 0,30 × Giro + 0,15 × Consistência + 0,10 × Profundidade + 0,05 × Tendência</code></div>
-        <p><b>Por que esses pesos:</b> o método diz que <i>a Razão abre a porta e a Eficiência escolhe entre as boas</i>. Por isso o rendimento pesa mais que o giro — razão alta com taxa ínfima não paga. Categoria e red flags não entram na conta porque já cortam antes: token perigoso nem aparece, e token novo vai para a lista Caça.</p>
+        <div class="formula" style="font-size:14px;font-weight:600;padding:16px"><code style="white-space:normal">Nota = 0,30 × Taxa + 0,30 × Giro + 0,20 × Rendimento + 0,10 × Consistência + 0,05 × Profundidade + 0,05 × Tendência</code></div>
+        <p><b>Por que a taxa tem um ponto bom:</b> taxa ínfima (0,001%, 0,01%) quase não vira dinheiro, por mais que a pool gire — é o caso de USDT/USDC e ETH/USDG. Taxa entre <b>0,25% e 0,8%</b> é onde estão as pools que pagam de verdade sem ser cassino. <b>1% ou mais</b> costuma ser pool de token arriscado: o fee é gordo porque o risco é gordo — por isso a nota da taxa cai de novo.</p>
         <table class="ltable">
-          <thead><tr><th>Pool (exemplo)</th><th>Razão</th><th>Eficiência</th><th>TVL</th><th>Nota</th></tr></thead>
+          <thead><tr><th>Pool (exemplo)</th><th>Taxa</th><th>Razão</th><th>TVL</th><th>Nota</th></tr></thead>
           <tbody>
-            <tr><td class="tk g">SNDK-USDC · taxa 0,1%</td><td>5,6×</td><td>0,56%/dia</td><td>$321 mil</td><td><b>71</b></td></tr>
-            <tr><td class="tk">ETH/USDG · taxa 0,05%</td><td>3×</td><td>0,15%/dia</td><td>$1 mi</td><td><b>58</b></td></tr>
-            <tr><td class="tk a">USDT/USDC · taxa dinâmica, APR 4,9%</td><td>67×</td><td>0,01%/dia</td><td>$181 mil</td><td><b>43</b></td></tr>
-            <tr><td class="tk a">USDC/USDT · taxa 0,0008%</td><td>4,5×</td><td>~0%/dia</td><td>$2 mi</td><td><b>37</b></td></tr>
-            <tr><td class="tk r">SOL-USDC · taxa 0,05%</td><td>0,22×</td><td>0,01%/dia</td><td>$9,9 mi</td><td><b>19</b></td></tr>
+            <tr><td class="tk g">Pool com taxa boa e giro alto</td><td>0,25%</td><td>10×</td><td>$1 mi</td><td><b>89</b></td></tr>
+            <tr><td class="tk g">SPCX/SOL · Raydium</td><td>0,8%</td><td>3×</td><td>$500 mil</td><td><b>80</b></td></tr>
+            <tr><td class="tk g">SNDK-USDC</td><td>0,1%</td><td>5,6×</td><td>$321 mil</td><td><b>72</b></td></tr>
+            <tr><td class="tk a">Memecoin a 1%</td><td>1%</td><td>3×</td><td>$300 mil</td><td><b>61</b></td></tr>
+            <tr><td class="tk a">ETH/USDG</td><td>0,01%</td><td>18×</td><td>$374 mil</td><td><b>60</b></td></tr>
+            <tr><td class="tk r">USDT/USDC</td><td>0,001%</td><td>18×</td><td>$1 mi</td><td><b>42</b></td></tr>
+            <tr><td class="tk r">SOL-USDC (capital parado)</td><td>0,05%</td><td>0,22×</td><td>$9,9 mi</td><td><b>28</b></td></tr>
           </tbody>
         </table>
-        <p class="simnote">Contas com consistência e tendência neutras (50), como numa pool recém-descoberta. Com uma semana de leituras, a nota sobe ou desce conforme a razão se sustenta.</p>
-        <div class="callout"><div class="cotip">🎯</div><div><b>Cores da nota:</b> <span style="color:#2ec785;font-weight:600">70 ou mais</span> passa no funil · <span style="color:#f5b942;font-weight:600">45 a 69</span> vale olhar · <span style="color:#f0556a;font-weight:600">abaixo de 45</span> falta rendimento ou giro. A nota ordena; quem decide é você — confira categoria e red flags antes de entrar.</div></div>
+        <p class="simnote">Contas com consistência e tendência neutras (50), como numa pool recém-descoberta. Repare: a USDT/USDC gira quase o dobro da pool de 0,25% e fica com menos da metade da nota — a taxa não paga.</p>
+        <div class="callout"><div class="cotip">🎯</div><div><b>Cores da nota:</b> <span style="color:#2ec785;font-weight:600">70 ou mais</span> taxa boa e giro bom · <span style="color:#f5b942;font-weight:600">45 a 69</span> vale olhar · <span style="color:#f0556a;font-weight:600">abaixo de 45</span> taxa ínfima ou capital parado. A nota ordena; quem decide é você — confira categoria e red flags antes de entrar.</div></div>
       </div>
     </div>
 
@@ -1790,7 +1793,7 @@ function rowHTML(p, rank){
 }
 
 /* Nota 0–100 do servidor: a dica mostra de onde ela veio (o Guia, tópico 16, explica a conta). */
-const NOTA_PARTES = [["rendimento","Rendimento",40],["giro","Giro (razão)",30],["consistencia","Consistência",15],["profundidade","Profundidade",10],["tendencia","Tendência",5]];
+const NOTA_PARTES = [["taxa","Taxa",30],["giro","Giro (razão)",30],["rendimento","Rendimento",20],["consistencia","Consistência",10],["profundidade","Profundidade",5],["tendencia","Tendência",5]];
 function notaHTML(p){
   if(!p.servidor) return '<span class="muted2" title="Pool manual: o servidor não dá nota">—</span>';
   const c = p.componentes || {}, pc = v => Math.round((Number(v)||0)*100);
