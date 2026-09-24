@@ -53,6 +53,9 @@ function buildAtlasDataReal() {
 
   const C = window.AtlasConsolidation;
   const snap = C ? C.snapshot(30) : null;
+  /* recorte do seletor do topo: null = todas as carteiras */
+  const escopoId = C && C.escopo ? C.escopo() : null;
+  const escopo = escopoId && window.AtlasWallets ? AtlasWallets.get(escopoId) : null;
 
   /* Quem está usando o sistema. Antes "Jeferson Junior" e "JJ" estavam
      CRAVADOS aqui e no HTML de três páginas — o campo "Nome do gestor"
@@ -89,7 +92,7 @@ function buildAtlasDataReal() {
   /* KPIs reais
 
      pnl e pnlPct são ACUMULADOS — resultado desde a entrada em cada
-     posição, sobre o capital investido (core/atlas-contabilidade.js).
+     posição, sobre o capital próprio — depositado − sacado (core/atlas-contabilidade.js).
      O snapshot não os recorta por período: trocar 7/30/90 dias no
      gráfico não muda o número. Os rótulos diziam "(30d)" e "Período",
      e o Oráculo, ao explicar a conta, teria de desmentir a tela. */
@@ -109,53 +112,42 @@ function buildAtlasDataReal() {
     ...(snap.passiveIncome == null ? [] : [
       { rotulo: "Renda Passiva", valor: usd(snap.passiveIncome), variacao: "estimada pelo APR", periodo: "(mês)", tipo: "pos" }
     ]),
-    { rotulo: "Carteiras",        valor: String(snap.wallets.total), variacao: snap.wallets.globals + " globais", periodo: "", tipo: "neutro" },
+    /* com uma carteira escolhida, o cartão diz QUAL — "11 carteiras"
+       ao lado de números de uma só confundiria a leitura */
+    (escopo
+      ? { rotulo: "Carteira", valor: "1", variacao: escopo.name, periodo: "", tipo: "neutro" }
+      : { rotulo: "Carteiras", valor: String(snap.wallets.total), variacao: snap.wallets.globals + " globais", periodo: "", tipo: "neutro" }),
     { rotulo: "Protocolos",       valor: String(snap.protocols || 0), variacao: "em uso", periodo: "", tipo: "neutro" }
   ];
 
-  /* Distribuição por Categoria = CAIXA + MÓDULOS. Sem o caixa, um
-     portfólio só de dinheiro parado aparecia vazio aqui — que é
-     justamente o caso de quem só depositou e ainda não alocou nada. */
-  const CAIXA_COR = "#5eead4";
-  const cats = [];
-  if (snap.caixa > 0.005) cats.push({ label: "Caixa disponível", value: snap.caixa, color: CAIXA_COR });
-  snap.byModule.forEach(m => cats.push(m));
-  const catTotal = cats.reduce((a, m) => a + m.value, 0) || 1;
-
-  /* Nível 2: dentro do Caixa, a quebra por ativo (USDC/JUP/SOL/RAY). */
-  let caixaSub = null;
-  const ativosCaixa = (C.caixaPorAtivo ? C.caixaPorAtivo() : []) || [];
-  if (ativosCaixa.length > 1 && snap.caixa > 0.005) {
-    caixaSub = {
-      "Caixa disponível": ativosCaixa.map(a => ({
-        nome: a.ativo,
-        pct: +((a.valor / snap.caixa) * 100).toFixed(1)
-      }))
+  /* Top 5 + "Outras", em percentual — a régua dos dois donuts. */
+  function distribuicao(lista, paleta, corFixa) {
+    if (!lista.length) return { labels: [], valores: [], cores: [] };
+    const top = lista.slice(0, 5);
+    const resto = lista.slice(5).reduce((a, x) => a + x.value, 0);
+    if (resto > 0) top.push({ label: "Outras", value: resto });
+    const tot = top.reduce((a, x) => a + x.value, 0) || 1;
+    let i = 0;
+    return {
+      labels: top.map(x => x.label),
+      valores: top.map(x => +((x.value / tot) * 100).toFixed(1)),
+      cores: top.map(x => (corFixa && corFixa[x.label]) || paleta[i++ % paleta.length])
     };
   }
 
-  const categoria = {
-    labels: cats.map(m => m.label),
-    valores: cats.map(m => +((m.value / catTotal) * 100).toFixed(1)),
-    cores: cats.map(m => m.color),
-    sub: caixaSub
-  };
+  /* Distribuição por Plataforma — ONDE o dinheiro está (Orca,
+     PancakeSwap, Uniswap...), da maior para a menor. Substituiu a "por
+     categoria" em 24/09/2026. O caixa parado entra como "Carteira /
+     Caixa", sempre na mesma cor, e o resto da cauda vira "Outras". */
+  const CAIXA_COR = "#5eead4";
+  const platCores = ["#8B5CF6", "#4F8CFF", "#F59E0B", "#22D3EE", "#22C55E", "#4A6480"];
+  const plat = (C.plataforma ? C.plataforma() : []) || [];
+  const categoria = distribuicao(plat, platCores,
+    { [C.CAIXA_ROTULO || "Carteira / Caixa"]: CAIXA_COR, "Outras": "#4A6480" });
 
   /* Distribuição por Blockchain (best-effort) */
   const bcCores = ["#22D3EE", "#4F8CFF", "#8B5CF6", "#F59E0B", "#22C55E", "#4A6480"];
-  let bc = (C.blockchain ? C.blockchain() : []) || [];
-  let bcData = { labels: [], valores: [], cores: [] };
-  if (bc.length) {
-    const top = bc.slice(0, 5);
-    const resto = bc.slice(5).reduce((a, x) => a + x.value, 0);
-    if (resto > 0) top.push({ label: "Outras", value: resto });
-    const tot = top.reduce((a, x) => a + x.value, 0) || 1;
-    bcData = {
-      labels: top.map(x => x.label),
-      valores: top.map(x => +((x.value / tot) * 100).toFixed(1)),
-      cores: top.map((x, i) => bcCores[i % bcCores.length])
-    };
-  }
+  const bcData = distribuicao((C.blockchain ? C.blockchain() : []) || [], bcCores, { "Outras": "#4A6480" });
 
   /* Últimas movimentações — LIVRO-RAZÃO CENTRAL (todos os módulos)
      -------------------------------------------------------------------
@@ -172,7 +164,7 @@ function buildAtlasDataReal() {
 
   let movimentacoes = [];
   try {
-    movimentacoes = (window.AtlasMovements ? window.AtlasMovements.list() : [])
+    movimentacoes = (window.AtlasMovements ? window.AtlasMovements.list(escopoId ? { walletId: escopoId } : undefined) : [])
       .slice(-4).reverse()                       // list() vem em ordem crescente
       .map(m => ({
         titulo: m.label || TIPO_LABEL[m.tipo] || "Movimento",
@@ -199,7 +191,16 @@ function buildAtlasDataReal() {
   let pools = [];
   try {
     const S = window.DeFiStore;
-    const liq = S ? S.activePools().map(p => {
+    /* As pools do RECORTE do seletor: a carteira escolhida, ou todas as
+       globais em "Todas as carteiras". activePools() era a carteira
+       ativa dentro do DeFi — em "Todas" o card mostrava uma só. */
+    const ids = {};
+    (escopoId ? [escopoId] : (window.AtlasWallets ? AtlasWallets.globals().map(w => w.id) : []))
+      .forEach(id => { ids[id] = 1; });
+    const doEscopo = (lista) => (S && S.poolsDeTodasCarteiras && Object.keys(ids).length)
+      ? lista.filter(x => ids[x.walletId]) : null;
+    const poolsEsc = S ? doEscopo(S.poolsDeTodasCarteiras()) : null;
+    const liq = S ? (poolsEsc ? poolsEsc.map(x => x.pool) : S.activePools()).map(p => {
       const r = S.poolSummary(p);
       return {
         par: p.base + "/" + p.quote,
@@ -208,11 +209,15 @@ function buildAtlasDataReal() {
         lucro: usdC(r ? r.resultado : 0)
       };
     }) : [];
-    const st = (S ? S.staking() : []).map(s => ({
+    const rend = (t, lista) => {
+      const e = S && S.rendimentosDeTodasCarteiras ? doEscopo(S.rendimentosDeTodasCarteiras(t)) : null;
+      return e ? e.map(x => x.item) : lista;
+    };
+    const st = rend("staking", S ? S.staking() : []).map(s => ({
       par: s.token, dex: s.protocol, apr: n(s.apr).toFixed(2).replace(".", ",") + "%",
       lucro: usdC(n(s.value) * n(s.apr) / 100 / 12)
     }));
-    const ln = (S ? S.lending() : []).map(l => ({
+    const ln = rend("lending", S ? S.lending() : []).map(l => ({
       par: l.token, dex: l.protocol, apr: n(l.apy).toFixed(2).replace(".", ",") + "%",
       lucro: usdC(n(l.earned))
     }));
@@ -272,6 +277,10 @@ function buildAtlasData() {
   const real = buildAtlasDataReal();
   const D = window.AtlasDemo;
   if (!D) return real;
+  /* Carteira escolhida no seletor: mostra o real dela, mesmo vazia. A
+     demonstração é sobre o ATLAS inteiro estar vazio, e isso só se
+     decide olhando todas as carteiras. */
+  if (window.AtlasConsolidation && AtlasConsolidation.escopo && AtlasConsolidation.escopo()) return real;
   const vazio = !real.categoria.labels.length && !real.movimentacoes.length && !real.pools.length;
   if (!vazio) { D.encerrar(); return real; }
   if (D.estado() === "limpo") return real;

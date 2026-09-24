@@ -35,9 +35,39 @@
     return S;
   }
 
-  function globalIds() {
+  function todasGlobais() {
     var W = global.AtlasWallets;
     return W && W.globals ? W.globals().map(function (w) { return w.id; }) : ["principal"];
+  }
+
+  /* ============================================================
+     ESCOPO — "Todas as carteiras" ou UMA carteira
+
+     O Dashboard somava sempre todas as globais. Desde 24/09/2026 o
+     seletor do topo filtra: "Todas as carteiras" (padrão, a cada
+     abertura) ou uma carteira só. O escopo vive só em memória, na
+     página que o pede; as outras telas nunca o ligam e continuam
+     somando tudo.
+
+     globalIds() é a régua de TODA conta desta camada (patrimônio,
+     resultado, caixa, série, distribuições), então recortá-la aqui
+     recorta todas de uma vez. O que precisa das globais inteiras de
+     qualquer jeito (medição diária, cotação) usa todasGlobais().
+     ============================================================ */
+  var _escopo = null;
+
+  function globalIds() {
+    if (_escopo) return [_escopo];
+    return todasGlobais();
+  }
+  /* para listas que já vêm com walletId (pools, staking, lending) */
+  function noEscopo(walletId) {
+    return !_escopo || walletId === _escopo;
+  }
+  function setEscopo(walletId) {
+    var W = global.AtlasWallets;
+    _escopo = (walletId && W && W.get && W.get(walletId)) ? walletId : null;
+    return _escopo;
   }
 
   /* ============================================================
@@ -281,7 +311,7 @@
        ------------------------------------------------------------ */
     safe(function () {
       if (!global.AtlasSnapshots) return null;
-      var globais = globalIds();
+      var globais = todasGlobais();
       globais.forEach(function (id) {
         Object.keys(LEITORES).forEach(function (m) {
           var r = LEITORES[m](id);
@@ -426,6 +456,8 @@
     return safe(function () {
       var S = global.DeFiStore;
       if (!S) return 0;
+      /* com uma carteira escolhida, o resultado é o dela */
+      if (_escopo) return resultadoGlobalDe("defi");
       return n(S.globalProfit ? S.globalProfit() : S.kpis().profit);
     }, 0);
   }
@@ -587,7 +619,7 @@
     function add(k, v) { if (!k) return; map[k] = (map[k] || 0) + n(v); }
     safe(function () {
       if (!global.RWAStore) return null;
-      global.RWAStore.assets().forEach(function (a) {
+      ativosRWA().forEach(function (a) {
         var chain = null;
         (a.token || []).forEach(function (t) { if (t && /blockchain/i.test(t.k || "")) chain = t.v; });
         add((chain || "Outros").split("/")[0].trim(), a.current);
@@ -612,11 +644,13 @@
       var S = global.DeFiStore;
       if (!S || !S.poolsDeTodasCarteiras) return null;
       S.poolsDeTodasCarteiras().forEach(function (x) {
+        if (!noEscopo(x.walletId)) return;
         add(String(x.pool.chain || "Outros").split("/")[0].trim(), S.poolValue(x.pool));
       });
       if (S.rendimentosDeTodasCarteiras && S.rendValue) {
         ["staking", "lending"].forEach(function (t) {
           S.rendimentosDeTodasCarteiras(t).forEach(function (x) {
+            if (!noEscopo(x.walletId)) return;
             add(String(x.item.chain || "Outros").split("/")[0].trim(), S.rendValue(x.item));
           });
         });
@@ -634,6 +668,96 @@
       });
       return true;
     }, null);
+    /* Hold e Trade não registram rede. Ficavam FORA do gráfico: com
+       US$ 1.000 no Hold e US$ 100 numa pool da Solana, a Solana saía
+       com 100% — o percentual de um pedaço apresentado como o todo.
+       Entram como "Sem rede informada", o mesmo rótulo do caixa sem
+       rede, e o gráfico volta a somar o patrimônio. */
+    add("Sem rede informada", totalGlobalDe("hold"));
+    add("Sem rede informada", totalGlobalDe("trade"));
+    return Object.keys(map).map(function (k) { return { label: k, value: Math.round(map[k] * 100) / 100 }; })
+      .filter(function (x) { return x.value > 0.005; })
+      .sort(function (a, b) { return b.value - a.value; });
+  }
+
+  /* Ativos do RWA no escopo. `assets()` é a carteira ATUAL do módulo;
+     com uma carteira escolhida no Dashboard, vale a lista dela. */
+  function ativosRWA() {
+    var R = global.RWAStore;
+    if (!R) return [];
+    if (_escopo && R.byWallet) {
+      var wd = R.byWallet()[_escopo];
+      return (wd && wd.assets) || [];
+    }
+    return R.assets ? R.assets() : [];
+  }
+
+  /* ============================================================
+     DISTRIBUIÇÃO POR PLATAFORMA — onde o dinheiro está
+
+     Substitui a "por categoria" (Caixa × DeFi × tokens do caixa). A
+     pergunta agora é ONDE: Orca, PancakeSwap, Uniswap...
+
+       · DeFi   → o protocolo de cada pool / staking / lending
+       · RWA    → o "Emissor" do ativo; sem ele, "RWA"
+       · Hold e Trade não registram plataforma: entram como "Hold" e
+         "Trade" (decisão de 24/09/2026). Quando os formulários
+         ganharem o campo, basta ler aqui.
+       · Caixa  → "Carteira / Caixa": o dinheiro parado nas carteiras.
+
+     Mesmas carteiras do patrimônio (globalIds), então a soma fecha
+     com o total da tela.
+     ============================================================ */
+  var CAIXA_ROTULO = "Carteira / Caixa";
+
+  function plataforma() {
+    var map = {};
+    function add(k, v) {
+      v = n(v); if (!k || v <= 0) return;
+      k = String(k).trim();
+      map[k] = (map[k] || 0) + v;
+    }
+    var ids = {};
+    globalIds().forEach(function (id) { ids[id] = 1; });
+
+    safe(function () {
+      var S = global.DeFiStore;
+      if (!S || !S.poolsDeTodasCarteiras) return null;
+      S.poolsDeTodasCarteiras().forEach(function (x) {
+        if (!ids[x.walletId]) return;
+        add(x.pool.protocol || "DeFi", S.poolValue(x.pool));
+      });
+      if (S.rendimentosDeTodasCarteiras && S.rendValue) {
+        ["staking", "lending"].forEach(function (t) {
+          S.rendimentosDeTodasCarteiras(t).forEach(function (x) {
+            if (!ids[x.walletId]) return;
+            add(x.item.protocol || "DeFi", S.rendValue(x.item));
+          });
+        });
+      }
+      return true;
+    }, null);
+
+    safe(function () {
+      var R = global.RWAStore;
+      if (!R || !R.byWallet) return null;
+      var bw = R.byWallet();
+      Object.keys(ids).forEach(function (id) {
+        ((bw[id] && bw[id].assets) || []).forEach(function (a) {
+          var em = null;
+          (a.token || []).forEach(function (t) { if (t && /emissor|plataforma/i.test(t.k || "")) em = t.v; });
+          add(em || "RWA", a.current);
+        });
+      });
+      return true;
+    }, null);
+
+    add("Hold", totalGlobalDe("hold"));
+    add("Trade", totalGlobalDe("trade"));
+    add(CAIXA_ROTULO, safe(function () {
+      return globalIds().reduce(function (a, id) { return a + caixaMercadoDe(id); }, 0);
+    }, 0));
+
     return Object.keys(map).map(function (k) { return { label: k, value: Math.round(map[k] * 100) / 100 }; })
       .filter(function (x) { return x.value > 0.005; })
       .sort(function (a, b) { return b.value - a.value; });
@@ -656,12 +780,14 @@
       if (!S || !S.poolsDeTodasCarteiras) return null;
       var y = 0, tem = false;
       S.poolsDeTodasCarteiras().forEach(function (x) {
+        if (!noEscopo(x.walletId)) return;
         var apr = n(x.pool.apr);
         if (apr > 0) { y += S.poolValue(x.pool) * apr / 100; tem = true; }
       });
       if (S.rendimentosDeTodasCarteiras && S.rendValue) {
         ["staking", "lending"].forEach(function (t) {
           S.rendimentosDeTodasCarteiras(t).forEach(function (x) {
+            if (!noEscopo(x.walletId)) return;
             var taxa = n(x.item.apr) || n(x.item.apy);
             if (taxa > 0) { y += S.rendValue(x.item) * taxa / 100; tem = true; }
           });
@@ -679,10 +805,10 @@
       var S = global.DeFiStore;
       if (!S || !S.poolsDeTodasCarteiras) return 0;
       var set = {};
-      S.poolsDeTodasCarteiras().forEach(function (x) { if (x.pool.protocol) set[x.pool.protocol] = 1; });
+      S.poolsDeTodasCarteiras().forEach(function (x) { if (noEscopo(x.walletId) && x.pool.protocol) set[x.pool.protocol] = 1; });
       if (S.rendimentosDeTodasCarteiras) {
         ["staking", "lending"].forEach(function (t) {
-          S.rendimentosDeTodasCarteiras(t).forEach(function (x) { if (x.item.protocol) set[x.item.protocol] = 1; });
+          S.rendimentosDeTodasCarteiras(t).forEach(function (x) { if (noEscopo(x.walletId) && x.item.protocol) set[x.item.protocol] = 1; });
         });
       }
       return Object.keys(set).length;
@@ -697,7 +823,7 @@
       var CX = global.AtlasCaixa;
       if (!CX || !CX.eventos) return null;
       var min = null;
-      CX.eventos().forEach(function (e) {
+      CX.eventos(_escopo ? { walletId: _escopo } : undefined).forEach(function (e) {
         if (e.data && (min === null || e.data < min)) min = e.data;
       });
       return min;
@@ -746,7 +872,7 @@
       .filter(function (x) { return x.value > 0; });
 
     var W = global.AtlasWallets;
-    var wallets = W ? { total: safe(function () { return W.all().length; }, 0), globals: globalIds().length } : { total: 0, globals: 0 };
+    var wallets = W ? { total: safe(function () { return W.all().length; }, 0), globals: todasGlobais().length } : { total: 0, globals: 0 };
 
     /* ------------------------------------------------------------
        ARREDONDAMENTO É TRABALHO DA TELA, NÃO DA CAMADA DE DADOS
@@ -1002,7 +1128,13 @@
     safe(function () {
       var S = global.DeFiStore;
       if (!S || !S.activePools || !S.statusDe) return null;
-      S.activePools().forEach(function (p) {
+      /* com uma carteira escolhida, as pools dela — não as da carteira
+         ativa dentro do DeFi */
+      var lista = (_escopo && S.poolsDeTodasCarteiras)
+        ? S.poolsDeTodasCarteiras().filter(function (x) { return x.walletId === _escopo; })
+            .map(function (x) { return x.pool; })
+        : S.activePools();
+      lista.forEach(function (p) {
         var st = S.statusDe(p);
         if (st && st.status === "range") {
           /* "Fora da faixa" sozinho não diz se é para agir já: 1% fora
@@ -1040,9 +1172,17 @@
 
        Silêncio quando está tudo certo: o supervisor devolve lista
        vazia, e nada aparece no sino. */
+    /* A supervisão confere o SISTEMA inteiro contra o extrato inteiro:
+       roda sem o recorte do seletor. Com uma carteira escolhida, o
+       patrimônio dela contra o extrato de todas acusava uma diferença
+       que não existe. */
     safe(function () {
       if (!global.AtlasSupervisor || !global.AtlasSupervisor.alertas) return null;
-      global.AtlasSupervisor.alertas().forEach(function (a) {
+      var antes = _escopo;
+      _escopo = null;
+      var lista;
+      try { lista = global.AtlasSupervisor.alertas(); } finally { _escopo = antes; }
+      lista.forEach(function (a) {
         add(a.level, a.module, a.texto, a.quando);
       });
       return true;
@@ -1075,7 +1215,7 @@
     var pools = safe(function () {
       var out = [];
       var byWallet = (S.all() || {}).byWallet || {};
-      globalIds().forEach(function (id) {
+      todasGlobais().forEach(function (id) {
         ((byWallet[id] || {}).pools || []).forEach(function (p) {
           if (p.status !== "encerrada" && !p.closedAt) out.push(p);
         });
@@ -1100,6 +1240,11 @@
     snapshot: snapshot,
     moduleList: moduleList,
     blockchain: blockchain,
+    plataforma: plataforma,
+    CAIXA_ROTULO: CAIXA_ROTULO,
+    /* recorte do Dashboard: null = todas as carteiras */
+    setEscopo: setEscopo,
+    escopo: function () { return _escopo; },
     alerts: alerts,
     cotarDeFi: cotarDeFi,
     /* caixa a mercado — a fonte única que header, Dashboard e Carteiras leem */

@@ -21,8 +21,11 @@
       C.finCard({ label: "Patrimônio Total", value: U.money(k.total), icon: "wallet", accent: "",
                   delta: temSerie ? +k.change.toFixed(1) : null,
                   sub: temSerie ? "vs. 7 dias" : "primeira medição" }),
-      C.finCard({ label: "Resultado", value: U.signedMoney(k.profit), icon: "trend",
-                  accent: k.profit >= 0 ? "green" : "", sub: "taxas + variação dos ativos" }),
+      /* acumulado: abertas + já fechadas (ver kpis() em data.js) — fechar
+         uma pool com lucro não pode derrubar este número */
+      C.finCard({ label: "Resultado acumulado", value: U.signedMoney(k.acumulado), icon: "trend",
+                  accent: k.acumulado >= 0 ? "green" : "",
+                  sub: U.signedMoney(k.emAberto) + " em aberto · " + U.signedMoney(k.realizado) + " já fechado" }),
       C.finCard({ label: "Pools Ativas", value: k.activeCount, icon: "pools", accent: "violet", sub: "em operação" }),
       C.finCard({ label: "APR Médio", value: U.pct(k.avgApr), icon: "gauge", accent: "cyan", sub: "ponderado pelo valor" })
     ].join("");

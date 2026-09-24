@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!-- data-atlas-sem-visita: rodar testes não é visitar (core/ui/atlas-shell.js). -->
+<html lang="pt-BR" data-module="atlas" data-atlas-sem-visita>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bateria de testes das contas do ATLAS: fechar e reabrir posições, taxas, prejuízo, saque, redes e carteiras.">
+  <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
+  <title>Testes · Contas</title>
+  <link rel="stylesheet" href="../themes/atlas-fonts.css">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <link rel="stylesheet" href="../themes/atlas-theme.css">
+
+  <script src="../core/atlas-storage.js"></script>
+  <script src="../core/settings.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+  <script src="../core/atlas-auth.js"></script>
+  <script src="../core/atlas-secure.js"></script>
+  <style>
+    body { background: var(--atlas-bg, #05080F); color: var(--atlas-text, #dbe4f0); }
+    .t-wrap { max-width: 940px; margin: 0 auto; padding: 32px 20px 120px; }
+    .t-head h1 { font-size: 24px; margin: 0 0 6px; }
+    .t-head p { color: var(--atlas-text-mut); font-size: 13.5px; margin: 0 0 20px; line-height: 1.6; }
+    .t-score { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0 24px; }
+    .t-pill { padding: 10px 16px; border-radius: 10px; font-family: var(--atlas-font-mono, monospace); font-size: 14px; font-weight: 650; }
+    .t-pill.ok { background: rgba(0,200,83,.14); color: #00c853; }
+    .t-pill.bad { background: rgba(255,86,86,.16); color: #ff7676; }
+    .t-pill.neutro { background: var(--atlas-surface); color: var(--atlas-text-mut); }
+    .t-grupo { margin-bottom: 22px; }
+    .t-grupo h2 { font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--atlas-text-mut); margin: 0 0 10px; }
+    .t-caso { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center;
+              padding: 7px 12px; border-bottom: 1px solid var(--atlas-border); font-size: 13px; }
+    .t-caso:last-child { border-bottom: 0; }
+    .t-caso .st { font-weight: 700; }
+    .t-caso.pass .st { color: #00c853; }
+    .t-caso.fail .st { color: #ff7676; }
+    .t-caso .val { font-family: var(--atlas-font-mono, monospace); font-size: 12px; color: var(--atlas-text-mut); text-align: right; }
+    .t-caso.fail .val { color: #ff7676; }
+    .t-erro { color: #ff7676; font-size: 13px; padding: 7px 12px; }
+    #quadro { position: absolute; width: 1px; height: 1px; border: 0; left: -9999px; }
+    @media (max-width: 640px) {
+      .t-caso { grid-template-columns: 22px 1fr; }
+      .t-caso .val { grid-column: 2; text-align: left; }
+    }
+  </style>
+</head>
+<body>
+<main class="app">
+  <div class="t-wrap">
+    <div class="t-head">
+      <h1>Testes das contas</h1>
+      <p>
+        Cada cenário é uma história real (fechar uma pool e reabrir em outra plataforma, taxa pendente,
+        prejuízo, saque, dinheiro entre redes, várias carteiras), feita pelos mesmos caminhos das telas.
+        Depois de cada história, o ATLAS confere se o dinheiro fecha com o extrato, se a supervisão fica
+        calada e se os gráficos somam o patrimônio. Roda numa memória descartável: seus dados não são lidos nem gravados.
+      </p>
+    </div>
+    <div class="t-score" id="score"><span class="t-pill neutro">rodando…</span></div>
+    <div id="saida"></div>
+  </div>
+</main>
+<iframe id="quadro" title="cenário em execução" aria-hidden="true"></iframe>
+
+<script>
+(function () {
+  "use strict";
+  var quadro = document.getElementById("quadro");
+  var saida = document.getElementById("saida");
+  var ok = 0, falha = 0, atual = 0;
+
+  function el(tag, cls, txt) {
+    var d = document.createElement(tag);
+    if (cls) d.className = cls;
+    if (txt != null) d.textContent = txt;
+    return d;
+  }
+
+  function rodar(i) {
+    atual = i;
+    quadro.src = "testes-contas-cenario.html?c=" + i + "&t=" + Date.now() +
+      (/[?&]atlas-dev=1/.test(location.search) ? "&atlas-dev=1" : "");
+  }
+
+  function placar(fim) {
+    var score = document.getElementById("score");
+    score.textContent = "";
+    [[ok + " passaram", "ok"], [falha + " falharam", falha ? "bad" : "neutro"],
+     [(ok + falha) + " casos" + (fim ? "" : " · rodando…"), "neutro"]]
+      .forEach(function (p) { score.appendChild(el("span", "t-pill " + p[1], p[0])); });
+  }
+
+  window.addEventListener("message", function (ev) {
+    if (ev.origin !== location.origin || !ev.data || ev.data.tipo !== "atlas-testes-contas") return;
+    var d = ev.data;
+    if (d.indice !== atual) return;
+    var sec = el("section", "t-grupo");
+    sec.appendChild(el("h2", "", (d.indice + 1) + ". " + d.nome));
+    d.casos.forEach(function (c) {
+      var row = el("div", "t-caso " + (c.passou ? "pass" : "fail"));
+      row.appendChild(el("span", "st", c.passou ? "✓" : "✗"));
+      row.appendChild(el("span", "", c.nome));
+      row.appendChild(el("span", "val", c.passou ? String(c.veio) : "esperado " + c.esperado + " · veio " + c.veio));
+      sec.appendChild(row);
+      if (c.passou) ok++; else falha++;
+    });
+    if (d.erro) { sec.appendChild(el("div", "t-erro", "O cenário parou: " + d.erro)); falha++; }
+    saida.appendChild(sec);
+    var fim = d.indice + 1 >= d.total;
+    placar(fim);
+    if (!fim) rodar(d.indice + 1);
+  });
+
+  rodar(0);
+})();
+</script>
+</body>
+</html>

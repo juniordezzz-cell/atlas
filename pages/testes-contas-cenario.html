@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<!-- UM cenário da bateria de pages/testes-contas.html, rodando numa
+     memória descartável. Não abra direto: a página-mãe carrega este
+     arquivo num quadro, um cenário por vez (?c=0, ?c=1, ...). -->
+<html lang="pt-BR" data-module="atlas" data-atlas-sem-visita>
+<head>
+  <meta charset="UTF-8">
+  <title>Cenário · Testes das contas</title>
+
+  <!-- ============================================================
+       SANDBOX — PRIMEIRO SCRIPT DA PÁGINA, ANTES DE QUALQUER STORE
+
+       Os stores do ATLAS gravam no localStorage do navegador — o
+       mesmo onde estão os dados de verdade. Aqui ele é trocado por uma
+       memória que morre com o quadro: o cenário deposita, abre e fecha
+       pools à vontade e nada chega aos seus dados.
+
+       Só a sessão de login, o modo dev e as preferências são copiados
+       do real (sem eles a trava de login mandaria o quadro para a tela
+       de entrada). Nenhuma chave de dado é copiada.
+       ============================================================ -->
+  <script>
+  (function () {
+    "use strict";
+    var COPIAR = ["atlas.session.v1", "atlas.dev.semlogin", "atlas.settings.v1", "atlas.intro.seen.v1"];
+    var real = null;
+    try { real = window.localStorage; } catch (e) {}
+    var mem = {};
+    COPIAR.forEach(function (k) {
+      try { var v = real && real.getItem(k); if (v != null) mem[k] = String(v); } catch (e) {}
+    });
+    var falso = {
+      getItem: function (k) { k = String(k); return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+      setItem: function (k, v) { mem[String(k)] = String(v); },
+      removeItem: function (k) { delete mem[String(k)]; },
+      clear: function () { mem = {}; },
+      key: function (i) { return Object.keys(mem)[i] || null; }
+    };
+    Object.defineProperty(falso, "length", { get: function () { return Object.keys(mem).length; } });
+    Object.defineProperty(window, "localStorage", { value: falso, configurable: true });
+    /* prova de isolamento: a página-mãe recusa o resultado sem isto */
+    window.__sandboxContas = (window.localStorage === falso);
+  })();
+  </script>
+
+  <script src="../core/atlas-storage.js"></script>
+  <script src="../core/atlas-snapshots.js"></script>
+  <script src="../core/atlas-contabilidade.js"></script>
+  <script src="../core/atlas-supervisor.js"></script>
+  <script src="../core/settings.js"></script>
+  <script src="../core/i18n.js"></script>
+  <script src="../core/currency.js"></script>
+  <script src="../core/atlas-boot.js"></script>
+  <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+  <script src="../core/atlas-auth.js"></script>
+  <script src="../core/atlas-secure.js"></script>
+</head>
+<body>
+
+<script src="../wallets/walletStore.js"></script>
+<script src="../wallets/walletTypes.js"></script>
+<script src="../wallets/walletLedger.js"></script>
+<script src="../wallets/walletCaixa.js"></script>
+<script src="../wallets/walletManager.js"></script>
+<script src="../core/http.js"></script>
+<script src="../core/providers/registry.js"></script>
+<script src="../core/providers/coingecko.js"></script>
+<script src="../core/atlas-price.js"></script>
+<script src="../core/providers/geckoterminal.js"></script>
+<script src="../core/atlas-precos.js"></script>
+<script src="../core/atlas-tokens.js"></script>
+<script src="../RWA/js/store.js"></script>
+<script src="../defi/js/tokens.js"></script>
+<script src="../defi/js/performance.js"></script>
+<script src="../defi/js/data.js"></script>
+<script src="../hold/data/seed.js"></script>
+<script src="../hold/js/state.js"></script>
+<script src="../trade/assets/js/core/util.js"></script>
+<script src="../trade/assets/js/core/store.js"></script>
+<script src="../trade/assets/js/core/seed.js"></script>
+<script src="../trade/assets/js/core/state.js"></script>
+<script src="../js/atlas-movements.js"></script>
+<script src="../js/atlas-consolidation.js"></script>
+
+<script>
+(function () {
+  "use strict";
+
+  var W = window.AtlasWallets, CX = window.AtlasCaixa, S = window.DeFiStore;
+  var C = window.AtlasConsolidation, SUP = window.AtlasSupervisor;
+
+  /* ------------------------------------------------------------
+     O VOCABULÁRIO DOS CENÁRIOS
+
+     Cada função é um gesto que a pessoa faz na tela, pelo MESMO
+     caminho que a tela usa (os stores), para o teste medir o que o
+     ATLAS realmente faz — não uma cópia da regra.
+     ------------------------------------------------------------ */
+  function carteira(nome) {
+    var w = W.create({ name: nome, type: "global" });
+    if (!w) throw new Error("não criou a carteira " + nome);
+    return w.id;
+  }
+  /* o DeFi opera sobre a carteira ativa dele */
+  function usar(wid) {
+    if (S.setModoTodas) S.setModoTodas(false);
+    S.setWallet(wid);
+  }
+  function deposito(wid, valor, rede, ativo) {
+    var e = CX.registrar({ tipo: "deposito", walletId: wid, valorUSD: valor, ativo: ativo || "USDC",
+                           rede: rede || "Solana", data: "2026-09-01" });
+    if (!e) throw new Error("depósito recusado");
+  }
+  function saque(wid, valor, rede) {
+    var e = CX.registrar({ tipo: "saque", walletId: wid, valorUSD: valor, ativo: "USDT",
+                           rede: rede || "Solana", data: "2026-09-10" });
+    if (!e) throw new Error("saque recusado");
+  }
+  /* troca de token dentro do caixa: USDT → SOL, mesmo valor */
+  function swap(wid, de, para, valor, qtdPara, rede) {
+    var e = CX.registrar({ tipo: "swap", walletId: wid, valorUSD: valor, ativo: de, ativoDestino: para,
+                           qtdOrigem: valor, qtdDestino: qtdPara, rede: rede || "Solana", data: "2026-09-19" });
+    if (!e) throw new Error("swap recusado");
+  }
+  function abrir(wid, o) {
+    usar(wid);
+    var p = S.addPool({ walletId: wid, base: o.base, quote: o.quote, protocol: o.protocolo,
+                        chain: o.rede || "Solana", capital: o.capital, currentValue: o.capital,
+                        openedAt: o.data || "2026-09-02" });
+    if (!p) throw new Error("pool " + o.base + "/" + o.quote + " não abriu (caixa?)");
+    return p.id;
+  }
+  function valeAgora(wid, pid, v) { usar(wid); if (!S.updatePool(pid, { currentValue: v })) throw new Error("não atualizou"); }
+  function taxaPendente(wid, pid, v) { usar(wid); S.addFee(pid, { amount: v, status: "pendente" }); }
+  function fechar(wid, pid) { usar(wid); if (!S.closePool(pid, "teste")) throw new Error("não fechou"); }
+
+  function foto(escopo) {
+    C.setEscopo(escopo || null);
+    var s = C.snapshot(30);
+    C.setEscopo(null);
+    return s;
+  }
+
+  /* ------------------------------------------------------------
+     CONFERÊNCIA
+     ------------------------------------------------------------ */
+  var casos = [];
+  function caso(nome, veio, esperado, tol) {
+    var passou;
+    if (typeof esperado === "number") {
+      passou = typeof veio === "number" && isFinite(veio) && Math.abs(veio - esperado) <= (tol == null ? 0.01 : tol);
+    } else {
+      passou = veio === esperado;
+    }
+    casos.push({ nome: nome, passou: passou,
+                 veio: typeof veio === "number" ? Math.round(veio * 100) / 100 : String(veio),
+                 esperado: esperado });
+  }
+  /* o que TODO passo tem de respeitar, além dos números do cenário */
+  function invariantes(rotulo) {
+    var s = foto();
+    var A = window.AtlasContabilidade;
+    /* regra de ouro nº 4: caixa + investido = depositado − sacado + resultado */
+    var dep = 0, saq = 0;
+    CX.eventos().forEach(function (e) {
+      if (e.tipo === "deposito") dep += Number(e.valorUSD) || 0;
+      if (e.tipo === "saque") saq += Number(e.valorUSD) || 0;
+    });
+    var f = A.conferir.dinheiroFecha({ caixa: s.caixa, investido: s.investido,
+                                       depositado: dep, sacado: saq, resultadoTotal: s.pnl });
+    caso(rotulo + " · dinheiro fecha com o extrato", f.ok ? "fecha" : "diferença " + f.diferenca.toFixed(2), "fecha");
+    /* a supervisão do ATLAS não acusa nada */
+    var aud = SUP && SUP.auditar ? SUP.auditar({ tela: false }) : null;
+    if (aud) {
+      var erros = (aud.achados || []).filter(function (a) { return a.nivel === "erro"; })
+        .map(function (a) { return a.o_que; });
+      caso(rotulo + " · supervisor sem erro", erros.length ? erros.join("; ") : "ok", "ok");
+    }
+    /* soma das carteiras = total */
+    var partes = W.globals().map(function (w) { return foto(w.id).total; });
+    caso(rotulo + " · carteiras somam o total", A.conferir.somaBate(partes, s.total).ok ? "bate" : "não bate", "bate");
+    /* distribuições sem fatia negativa e somando o patrimônio */
+    var plat = C.plataforma(), rede = C.blockchain();
+    var soma = function (l) { return l.reduce(function (a, x) { return a + x.value; }, 0); };
+    caso(rotulo + " · plataformas somam o patrimônio", soma(plat), s.total, 0.05);
+    caso(rotulo + " · redes somam o patrimônio", soma(rede), s.total, 0.05);
+  }
+
+  /* ------------------------------------------------------------
+     OS CENÁRIOS
+
+     Cada um é uma história que alguém vive no ATLAS. Quando um caso
+     falha, a história é que manda: conserta-se a conta, não o caso.
+     ------------------------------------------------------------ */
+  var CENARIOS = [
+    {
+      nome: "Fechar a pool na Orca e reabrir na Raydium (juros compostos)",
+      rodar: function () {
+        var w = carteira("Principal teste");
+        deposito(w, 1000);
+        var orca = abrir(w, { base: "PLTR", quote: "USDC", protocolo: "Orca", capital: 1000 });
+        valeAgora(w, orca, 1100);
+        var s1 = foto();
+        caso("Orca +10%: lucro", s1.pnl, 100);
+        caso("Orca +10%: rentabilidade", s1.pnlPct, 10);
+        fechar(w, orca);
+        var s2 = foto();
+        caso("fechou: US$ 1.100 voltam ao caixa", s2.caixa, 1100);
+        caso("fechou: o lucro fica (realizado)", s2.pnl, 100);
+        caso("fechou: rentabilidade continua 10%", s2.pnlPct, 10);
+        usar(w);
+        caso("fechou: card do DeFi continua +100 (acumulado)", S.kpis().acumulado, 100);
+        caso("fechou: +100 aparece como já fechado", S.kpis().realizado, 100);
+        swap(w, "USDT", "SOL", 1100, 5.5);
+        var s3 = foto();
+        caso("trocou os tokens: patrimônio igual", s3.total, 1100);
+        caso("trocou os tokens: lucro igual", s3.pnl, 100);
+        var ray = abrir(w, { base: "RAY", quote: "SOL", protocolo: "Raydium", capital: 1100, data: "2026-09-20" });
+        var s4 = foto();
+        caso("abriu na Raydium com tudo: patrimônio", s4.total, 1100);
+        caso("abriu na Raydium: lucro continua 100", s4.pnl, 100);
+        caso("abriu na Raydium: rentabilidade continua 10%", s4.pnlPct, 10);
+        valeAgora(w, ray, 1210);
+        var s5 = foto();
+        caso("Raydium +10%: lucro 100 + 110", s5.pnl, 210);
+        caso("Raydium +10%: rentabilidade composta 21%", s5.pnlPct, 21);
+        usar(w);
+        var k5 = S.kpis();
+        caso("card do DeFi: acumulado 210", k5.acumulado, 210);
+        caso("card do DeFi: 110 em aberto + 100 já fechado", Math.round(k5.emAberto * 100) / 100 + "|" + Math.round(k5.realizado * 100) / 100, "110|100");
+        caso("card do DeFi = Lucro Total do Dashboard", k5.acumulado, s5.pnl);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "Fechar com taxa pendente dentro da pool",
+      rodar: function () {
+        var w = carteira("Taxa teste");
+        deposito(w, 500);
+        var p = abrir(w, { base: "SOL", quote: "USDC", protocolo: "Orca", capital: 500 });
+        valeAgora(w, p, 520);
+        taxaPendente(w, p, 20);
+        var s1 = foto();
+        caso("aberta: pool vale 520 + 20 de taxa", s1.investido, 540);
+        caso("aberta: lucro 40", s1.pnl, 40);
+        fechar(w, p);
+        var s2 = foto();
+        caso("fechou: caixa recebe 540 (taxa inclusa)", s2.caixa, 540);
+        caso("fechou: lucro 40", s2.pnl, 40);
+        caso("fechou: rentabilidade 8%", s2.pnlPct, 8);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "Prejuízo, fechar e recuperar em outra pool",
+      rodar: function () {
+        var w = carteira("Perda teste");
+        deposito(w, 1000);
+        var a = abrir(w, { base: "WIF", quote: "SOL", protocolo: "Meteora", capital: 1000 });
+        valeAgora(w, a, 900);
+        fechar(w, a);
+        var s1 = foto();
+        caso("fechou com −10%: lucro −100", s1.pnl, -100);
+        caso("fechou com −10%: rentabilidade −10%", s1.pnlPct, -10);
+        var b = abrir(w, { base: "JUP", quote: "USDC", protocolo: "Raydium", capital: 900, data: "2026-09-20" });
+        valeAgora(w, b, 990);
+        var s2 = foto();
+        caso("nova pool +10% sobre 900: lucro −10", s2.pnl, -10);
+        caso("nova pool: rentabilidade −1% (0,9 × 1,1)", s2.pnlPct, -1);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "Duas pools, uma fecha e o dinheiro reforça a outra",
+      rodar: function () {
+        var w = carteira("Reforço teste");
+        deposito(w, 2000);
+        var a = abrir(w, { base: "PLTR", quote: "USDC", protocolo: "Orca", capital: 1000 });
+        var b = abrir(w, { base: "CAKE", quote: "BNB", protocolo: "PancakeSwap", capital: 1000, rede: "BNB Chain" });
+        valeAgora(w, a, 1200);
+        valeAgora(w, b, 1100);
+        fechar(w, a);
+        var c = abrir(w, { base: "ETH", quote: "USDC", protocolo: "Uniswap", capital: 1200, rede: "Base", data: "2026-09-20" });
+        valeAgora(w, c, 1320);
+        var s = foto();
+        caso("patrimônio 1.320 + 1.100", s.total, 2420);
+        caso("lucro 200 + 100 + 120", s.pnl, 420);
+        caso("rentabilidade 420 ÷ 2.000 depositados", s.pnlPct, 21);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "Dinheiro parado e saque",
+      rodar: function () {
+        var w = carteira("Caixa teste");
+        deposito(w, 1000);
+        var p = abrir(w, { base: "SOL", quote: "USDC", protocolo: "Orca", capital: 600 });
+        valeAgora(w, p, 660);
+        var s1 = foto();
+        caso("600 aplicados +10%, 400 parados: patrimônio", s1.total, 1060);
+        caso("lucro 60", s1.pnl, 60);
+        caso("rentabilidade sobre o que foi depositado: 6%", s1.pnlPct, 6);
+        saque(w, 200);
+        var s2 = foto();
+        caso("sacou 200: patrimônio 860", s2.total, 860);
+        caso("sacou 200: lucro continua 60", s2.pnl, 60);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "Depósito numa rede, pool em outra (ponte)",
+      rodar: function () {
+        var w = carteira("Rede teste");
+        deposito(w, 80, "Base");
+        var p = abrir(w, { base: "CAKE", quote: "BNB", protocolo: "PancakeSwap", capital: 50, rede: "BNB Chain" });
+        valeAgora(w, p, 55);
+        var redes = {};
+        C.blockchain().forEach(function (x) { redes[x.label] = x.value; });
+        caso("BNB Chain = pool 55", redes["BNB Chain"], 55);
+        caso("Base = 30 que sobraram (80 − 50)", redes["Base"], 30);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "Hold: comprar, valorizar, vender com lucro e recomprar",
+      rodar: function () {
+        var H = window.Store;
+        if (H.init) H.init();
+        var w = carteira("Hold teste");
+        W.setActiveGlobal(w);
+        deposito(w, 1000);
+        var sol = H.actions.createAsset({ nome: "Solana teste", ticker: "SOLT", preco_atual: 100 });
+        var btc = H.actions.createAsset({ nome: "Bitcoin teste", ticker: "BTCT", preco_atual: 50000 });
+        var c1 = H.actions.executeBuy({ ativo_id: sol.id, quantidade: 5, preco: 100, walletId: w });
+        if (!c1 || c1.error) throw new Error("compra recusada: " + (c1 && c1.error));
+        H.actions.updateAsset(sol.id, { preco_atual: 120 });
+        var s1 = foto();
+        caso("500 em SOL +20%: lucro 100", s1.pnl, 100);
+        caso("rentabilidade 100 ÷ 1.000", s1.pnlPct, 10);
+        H.actions.executeSell({ ativo_id: sol.id, quantidade: 5, preco: 120, motivo: "realizacao", walletId: w });
+        var s2 = foto();
+        caso("vendeu tudo a 120: caixa 1.100", s2.caixa, 1100);
+        caso("lucro realizado 100", s2.pnl, 100);
+        var c2 = H.actions.executeBuy({ ativo_id: btc.id, quantidade: 0.02, preco: 50000, walletId: w });
+        if (!c2 || c2.error) throw new Error("recompra recusada: " + (c2 && c2.error));
+        H.actions.updateAsset(btc.id, { preco_atual: 55000 });
+        var s3 = foto();
+        caso("recomprou 1.000 em BTC +10%: lucro 100 + 100", s3.pnl, 200);
+        caso("rentabilidade composta 20%", s3.pnlPct, 20);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "Supervisor: apagar o retorno de uma pool fechada é pego",
+      rodar: function () {
+        var w = carteira("Quebra retorno");
+        deposito(w, 1000);
+        var p = abrir(w, { base: "PLTR", quote: "USDC", protocolo: "Orca", capital: 1000 });
+        valeAgora(w, p, 1100);
+        fechar(w, p);
+        var ret = CX.eventos({ module: "defi", refId: p, tipo: "retorno" })[0];
+        CX.remover(ret.id);
+        SUP.invalidar();
+        var achados = SUP.auditar({ tela: false }).achados.map(function (a) { return a.o_que; });
+        caso("acusa: pool fechada sem o dinheiro de volta",
+             achados.indexOf("pool fechada sem o dinheiro de volta no caixa") >= 0, true);
+        caso("acusa: patrimônio não fecha com o extrato",
+             achados.indexOf("o patrimônio não fecha com o extrato") >= 0, true);
+        var alerta = SUP.alertas().filter(function (a) { return /pool fechada/.test(a.texto); });
+        caso("e acende o sino como crítico", alerta.length ? alerta[0].level : "nada", "crit");
+      }
+    },
+    {
+      nome: "Supervisor: resultado guardado de pool fechada adulterado é pego",
+      rodar: function () {
+        var w = carteira("Quebra resultado");
+        deposito(w, 500);
+        var p = abrir(w, { base: "SOL", quote: "USDC", protocolo: "Orca", capital: 500 });
+        valeAgora(w, p, 550);
+        fechar(w, p);
+        /* adultera direto no store, como faria um backup corrompido */
+        var raw = JSON.parse(localStorage.getItem("atlas.defi.state.v3"));
+        raw.byWallet[w].closed[0].closeSummary.resultado = 80;
+        localStorage.setItem("atlas.defi.state.v3", JSON.stringify(raw));
+        if (S._reload) S._reload();
+        SUP.invalidar();
+        var achados = SUP.auditar({ tela: false }).achados.map(function (a) { return a.o_que; });
+        caso("acusa: o resultado da pool fechada não fecha",
+             achados.indexOf("o resultado da pool fechada não fecha") >= 0, true);
+      }
+    },
+    {
+      nome: "Supervisor: fórmula errada de pool é pega",
+      rodar: function () {
+        var w = carteira("Quebra fórmula pool");
+        deposito(w, 1000);
+        var p = abrir(w, { base: "RAY", quote: "SOL", protocolo: "Raydium", capital: 1000 });
+        valeAgora(w, p, 1100);
+        SUP.invalidar();
+        caso("com a fórmula certa, nada", SUP.auditar({ tela: false }).achados
+          .filter(function (a) { return a.area === "fórmula"; }).length, 0);
+        /* alguém muda a conta da pool sem querer: esquece as taxas */
+        var orig = S.poolSummary;
+        S.poolSummary = function (x) { var r = orig.apply(S, arguments); if (r) r.resultadoPct = r.resultadoPct * 2; return r; };
+        try {
+          SUP.invalidar();
+          var achados = SUP.auditar({ tela: false }).achados.map(function (a) { return a.o_que; });
+          caso("acusa: a rentabilidade da pool não fecha",
+               achados.indexOf("a rentabilidade da pool não fecha") >= 0, true);
+        } finally { S.poolSummary = orig; }
+      }
+    },
+    {
+      nome: "Supervisor: a fórmula antiga da rentabilidade é pega",
+      rodar: function () {
+        var w = carteira("Quebra rentabilidade");
+        deposito(w, 1000);
+        var a = abrir(w, { base: "PLTR", quote: "USDC", protocolo: "Orca", capital: 1000 });
+        valeAgora(w, a, 1100);
+        fechar(w, a);
+        abrir(w, { base: "RAY", quote: "SOL", protocolo: "Raydium", capital: 1100, data: "2026-09-20" });
+        /* volta a regra de 23/09: custo das abertas + base realizada */
+        var K = window.AtlasContabilidade, orig = K.patrimonio;
+        K.patrimonio = function (d) {
+          var r = orig.apply(K, arguments);
+          var base = K.somaPosicoes(d.posicoes || []).custo + (Number(d.baseRealizada) || 0);
+          r.base = base; r.rentabilidade = K.pct(r.resultadoTotal, base);
+          return r;
+        };
+        try {
+          SUP.invalidar();
+          var achados = SUP.auditar({ tela: false }).achados.map(function (x) { return x.o_que; });
+          caso("acusa: a rentabilidade não é resultado ÷ depositado",
+               achados.indexOf("a rentabilidade não é resultado ÷ o que foi depositado") >= 0, true);
+        } finally { K.patrimonio = orig; }
+      }
+    },
+    {
+      nome: "Duas carteiras e o seletor do Dashboard",
+      rodar: function () {
+        var a = carteira("A teste"), b = carteira("B teste");
+        deposito(a, 1000); deposito(b, 500);
+        var pa = abrir(a, { base: "SOL", quote: "USDC", protocolo: "Orca", capital: 1000 });
+        var pb = abrir(b, { base: "ETH", quote: "USDC", protocolo: "Uniswap", capital: 500, rede: "Base" });
+        valeAgora(a, pa, 1100);
+        valeAgora(b, pb, 450);
+        var t = foto(), sa = foto(a), sb = foto(b);
+        caso("todas: patrimônio 1.550", t.total, 1550);
+        caso("todas: lucro +100 − 50", t.pnl, 50);
+        caso("só A: lucro 100", sa.pnl, 100);
+        caso("só A: rentabilidade 10%", sa.pnlPct, 10);
+        caso("só B: lucro −50", sb.pnl, -50);
+        caso("só B: rentabilidade −10%", sb.pnlPct, -10);
+        C.setEscopo(a);
+        var platA = C.plataforma().map(function (x) { return x.label; }).join(",");
+        C.setEscopo(null);
+        caso("só A: plataformas só dela", platA, "Orca");
+        invariantes("fim");
+      }
+    }
+  ];
+
+  var i = Number(new URLSearchParams(location.search).get("c")) || 0;
+  var cen = CENARIOS[i];
+  var erro = null;
+  if (!window.__sandboxContas) {
+    erro = "sandbox não ligou — cenário NÃO rodou para não tocar nos dados reais";
+  } else if (cen) {
+    try { cen.rodar(); }
+    catch (e) { erro = e && e.message ? e.message : String(e); }
+  }
+  var msg = { tipo: "atlas-testes-contas", indice: i, total: CENARIOS.length,
+              nome: cen ? cen.nome : "—", casos: casos, erro: erro };
+  if (window.parent && window.parent !== window) window.parent.postMessage(msg, location.origin);
+  else document.body.textContent = JSON.stringify(msg, null, 2);
+})();
+</script>
+</body>
+</html>

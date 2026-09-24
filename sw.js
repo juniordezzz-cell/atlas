@@ -125,7 +125,15 @@
    servidor.js + visões scanner_* no Supabase); painéis de manutenção saíram. */
 /* v75 = Scanner Pools: Descobrir enxuto (rede/plataforma em menu), menus
    escuros, volume do dia = 24h, nota pelo funil do método (Guia 16). */
-var VERSAO = "atlas-v75";
+/* v76 = Dashboard filtra pela carteira do seletor ("Todas as carteiras"
+   por padrão), Distribuição por Plataforma no lugar de Categoria e os
+   dois donuts em 3D (js/donut3d.js). Rentabilidade sobre o capital
+   próprio (juros compostos ao fechar e reabrir), caixa por rede cobre a
+   ponte entre redes, eixo da Evolução com degrau proporcional e a
+   bateria pages/testes-contas.html. Supervisor ganha a verificação 6
+   (fórmulas refeitas por outro caminho) e Hold/Trade entram no gráfico
+   por rede como "Sem rede informada". */
+var VERSAO = "atlas-v76";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

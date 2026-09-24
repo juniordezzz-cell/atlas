@@ -12,6 +12,10 @@
    Este arquivo PERGUNTA a cada um e confere se as respostas fecham
    entre si, com as carteiras e com o que a tela principal mostra.
 
+   A exceção é a verificação 6 (fórmulas, 24/09/2026): ela refaz as
+   contas por um caminho próprio de propósito, como segunda
+   implementação que só serve para comparar — nunca é exibida.
+
    POR QUE ELE EXISTE
    ------------------
    Todo erro grave desta auditoria tinha a mesma assinatura: cada
@@ -466,6 +470,216 @@
   }
 
   /* ============================================================
+     6. AS FÓRMULAS FECHAM? — a conta refeita por outro caminho
+
+     As verificações de cima conferem FONTES entre si (caixa × módulo,
+     patrimônio × extrato). Nenhuma delas pegaria uma FÓRMULA errada
+     aplicada igual em todo lugar — e foi exatamente isso que
+     aconteceu com a rentabilidade: fechar uma pool na Orca e reabrir
+     na Raydium contava o mesmo dinheiro duas vezes, o patrimônio
+     fechava com o extrato e o percentual estava errado (4,76% onde
+     era 10%). Para quem abre e fecha posição a cada três dias, é o
+     tipo de erro que acumula em silêncio.
+
+     Aqui cada número importante é REFEITO a partir dos dados brutos,
+     por um caminho escrito à parte, e comparado com o que o ATLAS
+     exibe. É de propósito uma segunda implementação: se alguém mudar
+     a fórmula oficial sem querer, as duas deixam de concordar e o
+     sino acende. Se a fórmula mudar DE PROPÓSITO, as duas mudam juntas
+     — a daqui é a especificação escrita em código.
+
+       6a. rentabilidade = resultado ÷ (depositado − sacado)
+       6b. pool aberta:   resultado = valor − base + taxas; valor total
+                          = mercado + taxa pendente; % = resultado ÷ aportado
+       6c. pool fechada:  o valor final voltou ao caixa, e o resultado
+                          guardado = valor final + taxas coletadas − base
+       6d. soma das carteiras = patrimônio e lucro do total
+       6e. gráficos por plataforma e por rede somam o patrimônio, sem
+           fatia negativa
+     ============================================================ */
+  var TOL_FORMULA = 0.01;
+
+  function formula(o_que, dados) {
+    dados = dados || {};
+    dados.corrigivel = false;
+    return achado("erro", "fórmula", o_que, dados);
+  }
+
+  /* 6b/6c — a conta da pool, refeita dos eventos e das taxas */
+  function contaDaPool(p) {
+    var A = 0, W = 0, R = 0, temAbertura = false;
+    (p.events || []).forEach(function (e) {
+      var v = Math.abs(n(e.amountUSD));
+      if (e.type === "abertura") temAbertura = true;
+      if (e.type === "abertura" || e.type === "aporte") A += v;
+      else if (e.type === "retirada") W += v;
+      else if (e.type === "reinvest") R += v;
+    });
+    /* pool antiga, anterior ao livro de eventos: o capital declarado
+       é a abertura (mesma leitura de DeFiStore.events) */
+    if (!temAbertura) A += n(p.capital);
+    var col = 0, pend = 0;
+    (p.fees || []).forEach(function (f) {
+      if (f.status === "pendente") pend += n(f.amount); else if (f.status === "coletada") col += n(f.amount);
+    });
+    var base = A + R - W;
+    var V = (p.currentValue == null || !isFinite(Number(p.currentValue))) ? base : n(p.currentValue);
+    return { aportado: A, base: base, mercado: V, coletadas: col, pendentes: pend,
+             valorTotal: V + pend, resultado: V - base + col + pend,
+             pct: A > 0 ? ((V - base + col + pend) / A) * 100 : null };
+  }
+
+  function verFormulas(snap) {
+    var out = [];
+    var K = C(), CX = global.AtlasCaixa, CONS = global.AtlasConsolidation, W = global.AtlasWallets;
+    if (!K || !CX || !CONS || !W) return out;
+
+    var globais = carteirasGlobais();
+    var ehGlobal = {};
+    globais.forEach(function (w) { ehGlobal[w.id] = w; });
+
+    /* ---- 6b / 6c: cada pool do DeFi, em todas as carteiras ---- */
+    var S = global.DeFiStore;
+    if (S && S.all && respondeAoVivo("defi")) {
+      var byWallet = safe(function () { return S.all().byWallet || {}; }, {});
+      Object.keys(byWallet).forEach(function (wid) {
+        var wd = byWallet[wid] || {};
+        var nomeW = (W.get && W.get(wid) && W.get(wid).name) || wid;
+
+        (wd.pools || []).forEach(function (p) {
+          if (p.status === "encerrada" || p.closedAt) return;
+          var eu = contaDaPool(p);
+          var ele = safe(function () { return S.poolSummary(p); }, null);
+          if (!ele) return;
+          var par = (p.base || "?") + "/" + (p.quote || "?") + (p.protocol ? " · " + p.protocol : "");
+          [["resultado", ele.resultado, eu.resultado],
+           ["valor total (mercado + taxa pendente)", ele.valorTotal, eu.valorTotal],
+           ["valor no patrimônio", safe(function () { return S.poolValue(p); }, null), eu.valorTotal]
+          ].forEach(function (c) {
+            if (c[1] == null || Math.abs(n(c[1]) - c[2]) <= TOL_FORMULA) return;
+            out.push(formula("a conta da pool não fecha: " + c[0], {
+              carteira: nomeW, carteiraId: wid, modulo: "defi", pool: par,
+              exibido: n(c[1]), refeito: c[2], diferenca: n(c[1]) - c[2]
+            }));
+          });
+          if (eu.pct != null && Math.abs(n(ele.resultadoPct) - eu.pct) > TOL_FORMULA) {
+            out.push(formula("a rentabilidade da pool não fecha", {
+              carteira: nomeW, carteiraId: wid, modulo: "defi", pool: par,
+              exibido: n(ele.resultadoPct), refeito: eu.pct, diferenca: n(ele.resultadoPct) - eu.pct,
+              detalhe: "Rentabilidade da pool = resultado ÷ o que foi aportado nela."
+            }));
+          }
+        });
+
+        (wd.closed || []).forEach(function (p) {
+          var par = (p.base || "?") + "/" + (p.quote || "?") + (p.protocol ? " · " + p.protocol : "");
+          var fim = n(p.finalValue);
+          /* o dinheiro voltou? procura o retorno desta pool no extrato */
+          if (fim > TOL_FORMULA) {
+            var voltou = safe(function () {
+              return CX.eventos({ module: "defi", refId: p.id, tipo: "retorno" })
+                .filter(function (e) { return p.retornoId ? e.id === p.retornoId : /^Encerramento/.test(e.obs || ""); })
+                .reduce(function (a, e) { return a + n(e.valorUSD); }, 0);
+            }, null);
+            if (voltou != null && Math.abs(voltou - fim) > TOL_FORMULA) {
+              out.push(formula("pool fechada sem o dinheiro de volta no caixa", {
+                carteira: nomeW, carteiraId: wid, modulo: "defi", pool: par,
+                valorFinal: fim, voltouAoCaixa: voltou, diferenca: fim - voltou,
+                detalhe: "Ao fechar, o valor final da pool tem de entrar no caixa da carteira."
+              }));
+            }
+          }
+          /* o resultado guardado no fechamento */
+          if (p.closeSummary && p.closeSummary.resultado != null) {
+            var eu = contaDaPool(p);
+            var esperado = fim + eu.coletadas - eu.base;
+            var guardado = n(p.closeSummary.resultado);
+            if (Math.abs(guardado - esperado) > TOL_FORMULA) {
+              out.push(formula("o resultado da pool fechada não fecha", {
+                carteira: nomeW, carteiraId: wid, modulo: "defi", pool: par,
+                exibido: guardado, refeito: esperado, diferenca: guardado - esperado,
+                detalhe: "Resultado = valor final + taxas já coletadas − capital colocado."
+              }));
+            }
+          }
+        });
+      });
+    }
+
+    /* Daqui para baixo é o TOTAL — só onde os quatro módulos respondem
+       (a mesma regra de verPatrimonioGlobal: fora disso falta pedaço). */
+    if (!MODULOS.every(respondeAoVivo)) return out;
+    var s = snap || safe(function () { return CONS.snapshot(30); }, null);
+    if (!s) return out;
+
+    /* ---- 6a: rentabilidade sobre o dinheiro colocado ---- */
+    var liquido = 0;
+    safe(function () {
+      CX.eventos({}).forEach(function (e) {
+        var v = n(e.valorUSD);
+        if (e.tipo === "deposito" && ehGlobal[e.walletId]) liquido += v;
+        else if (e.tipo === "saque" && ehGlobal[e.walletId]) liquido -= v;
+        else if (e.tipo === "transferencia") {
+          /* entre global e local o dinheiro entra ou sai do total */
+          if (ehGlobal[e.walletId] && !ehGlobal[e.contraWalletId]) liquido -= v;
+          if (!ehGlobal[e.walletId] && ehGlobal[e.contraWalletId]) liquido += v;
+        }
+      });
+      return true;
+    }, null);
+    if (liquido > TOL_FORMULA && s.pnlPct != null) {
+      var pctEsperado = n(s.pnl) / liquido * 100;
+      if (Math.abs(n(s.pnlPct) - pctEsperado) > TOL_FORMULA) {
+        out.push(formula("a rentabilidade não é resultado ÷ o que foi depositado", {
+          exibido: n(s.pnlPct), refeito: pctEsperado, diferenca: n(s.pnlPct) - pctEsperado,
+          resultado: n(s.pnl), depositadoLiquido: liquido,
+          detalhe: "Rentabilidade = resultado ÷ (depositado − sacado). Uma diferença aqui é " +
+                   "dinheiro contado duas vezes ou esquecido no denominador."
+        }));
+      }
+    }
+
+    /* ---- 6d: as carteiras somam o total ---- */
+    var somaPat = 0, somaRes = 0;
+    globais.forEach(function (w) {
+      somaPat += n(safe(function () { return CONS.caixaMercadoDe(w.id); }, 0));
+      MODULOS.forEach(function (m) {
+        somaPat += n(safe(function () { return CONS.valorDe(w.id, m); }, 0));
+        somaRes += n(safe(function () { return CONS.resultadoDe(w.id, m); }, 0));
+      });
+    });
+    somaRes += n(s.pnlCaixa);
+    if (Math.abs(somaPat - n(s.total)) > TOL_FORMULA) {
+      out.push(formula("as carteiras não somam o patrimônio total", {
+        exibido: n(s.total), refeito: somaPat, diferenca: n(s.total) - somaPat
+      }));
+    }
+    if (Math.abs(somaRes - n(s.pnl)) > TOL_FORMULA) {
+      out.push(formula("os resultados por carteira não somam o Lucro Total", {
+        exibido: n(s.pnl), refeito: somaRes, diferenca: n(s.pnl) - somaRes
+      }));
+    }
+
+    /* ---- 6e: os gráficos somam o patrimônio ---- */
+    [["plataforma", CONS.plataforma], ["rede", CONS.blockchain]].forEach(function (g) {
+      if (typeof g[1] !== "function") return;
+      var fatias = safe(function () { return g[1](); }, null);
+      if (!fatias) return;
+      var soma = fatias.reduce(function (a, x) { return a + n(x.value); }, 0);
+      var neg = fatias.filter(function (x) { return n(x.value) < -TOL_FORMULA; });
+      /* 0,05: cada fatia chega arredondada ao centavo */
+      if (Math.abs(soma - n(s.total)) > 0.05 || neg.length) {
+        out.push(formula("o gráfico por " + g[0] + " não soma o patrimônio", {
+          exibido: soma, refeito: n(s.total), diferenca: soma - n(s.total),
+          detalhe: neg.length ? "Há fatia negativa: " + neg.map(function (x) { return x.label; }).join(", ") + "." :
+                   "A soma das fatias tem de ser o patrimônio; senão os percentuais descrevem um pedaço como se fosse o todo."
+        }));
+      }
+    });
+    return out;
+  }
+
+  /* ============================================================
      API
      ============================================================ */
   /* ------------------------------------------------------------
@@ -535,7 +749,8 @@
       .concat(verPatrimonioGlobal(snap))
       .concat(verCacheDoLedger(false))
       .concat(verCarteiras())
-      .concat(verMedicoes());
+      .concat(verMedicoes())
+      .concat(verFormulas(snap));
     if (opts.tela !== false) achados = achados.concat(verTela(snap));
 
     var erros = achados.filter(function (a) { return a.nivel === "erro"; });
@@ -681,6 +896,7 @@
       cacheDoLedger: verCacheDoLedger,
       carteiras: verCarteiras,
       medicoes: verMedicoes,
+      formulas: verFormulas,
       tela: verTela
     }
   };

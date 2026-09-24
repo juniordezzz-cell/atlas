@@ -104,10 +104,10 @@
       var l = d.getDate() + " " + mes[d.getMonth()];
       labels.push(l); labelsCheios.push((i % 7 === 0 || i === 0) ? l : "");
     }
-    var partes = PARTES;
-    var soma = partes.reduce(function (a, p) { return a + p.value; }, 0) || 1;
     var bc = [["Solana", 38], ["Ethereum", 27], ["Base", 14], ["Arbitrum", 11], ["Bitcoin", 10]];
     var bcCores = ["#22D3EE", "#4F8CFF", "#8B5CF6", "#F59E0B", "#22C55E"];
+    var plat = [["Hold", 34, "#8B5CF6"], ["Uniswap", 18, "#4F8CFF"], ["Orca", 14, "#F59E0B"],
+                ["Trade", 12, "#22D3EE"], ["Carteira / Caixa", 12, "#5eead4"], ["Outras", 10, "#4A6480"]];
 
     return {
       usuario: usuario || { nome: "Gestor ATLAS", iniciais: "GA", saudacao: "Olá" },
@@ -124,10 +124,12 @@
         labels: labels, valores: s30.evolution, labelsCheios: labelsCheios,
         medidos: 30, dias: 30
       },
+      /* Distribuição por PLATAFORMA (o gráfico deixou de ser por
+         categoria em 24/09/2026) — exemplo ilustrativo */
       categoria: {
-        labels: partes.map(function (p) { return p.label; }),
-        valores: partes.map(function (p) { return +((p.value / soma) * 100).toFixed(1); }),
-        cores: partes.map(function (p) { return p.color; }),
+        labels: plat.map(function (x) { return x[0]; }),
+        valores: plat.map(function (x) { return x[1]; }),
+        cores: plat.map(function (x) { return x[2]; }),
         sub: null
       },
       blockchain: {

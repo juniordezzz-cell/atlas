@@ -77,6 +77,7 @@
     "Evolução dos Lucros": "Profit evolution",
     "Distribuição por Categoria": "Distribution by category",
     "Distribuição por Blockchain": "Distribution by blockchain",
+    "Distribuição por Plataforma": "Distribution by platform",
     "Distribuição": "Distribution",
     "Distribuições": "Distributions",
     "Categoria": "Category",

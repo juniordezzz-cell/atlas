@@ -1447,20 +1447,33 @@
            "para 30.000 — dinheiro nascendo na compra.");
 
       /* ------------------------------------------------------------
-         ERRO 2 — resultado realizado exige a base que o produziu
-         ------------------------------------------------------------ */
-      var semBase = K.patrimonio({ caixa: 1000, posicoes: [{ valor: 5000, custo: 5000 }],
-                                   realizado: 800, baseRealizada: 0 });
-      is("resultado realizado sem base: recusa calcular", semBase.rentabilidade, null);
-      ok("e diz por quê", semBase.baseIncompleta === true, "baseIncompleta");
+         ERRO 2 — o denominador é o CAPITAL PRÓPRIO (depositado − sacado)
 
-      var comBase = K.patrimonio({ caixa: 1000, posicoes: [{ valor: 5000, custo: 5000 }],
-                                   realizado: 800, baseRealizada: 2000 });
-      eq("com a base, divide por custo + base realizada", comBase.rentabilidade, (800 / 7000) * 100);
-      eq("o numerador é o resultado total", comBase.resultadoTotal, 800);
-      nota("Medido antes: o lucro REALIZADO do Trade era dividido pelo " +
-           "capital das operações ABERTAS. Com tudo encerrado, +5.000 do " +
-           "Trade sobre 30.000 de custo do Hold viravam +16,67% na tela.");
+         Primeiro o lucro realizado do Trade era dividido pelo capital
+         das operações ABERTAS (+5.000 sobre 30.000 do Hold = +16,67%).
+         A correção somou "custo + base realizada" — e passou a contar
+         duas vezes o dinheiro que sai de uma pool e entra noutra. Desde
+         24/09/2026 a base é uma só: patrimônio − resultado.
+         ------------------------------------------------------------ */
+      var realiz = K.patrimonio({ caixa: 1000, posicoes: [{ valor: 5000, custo: 5000 }],
+                                  realizado: 800, baseRealizada: 0 });
+      eq("realizado sem base informada: divide pelo capital próprio (6.000 − 800)",
+         realiz.rentabilidade, (800 / 5200) * 100);
+      eq("o numerador é o resultado total", realiz.resultadoTotal, 800);
+
+      /* depositou 1.000, pool na Orca foi a 1.100, fechou e reabriu
+         na Raydium com os 1.100: a base continua 1.000 */
+      var reciclou = K.patrimonio({ caixa: 0, posicoes: [{ valor: 1100, custo: 1100 }],
+                                    realizado: 100, baseRealizada: 1000 });
+      eq("fechar e reabrir não conta o dinheiro duas vezes: base 1.000", reciclou.base, 1000);
+      eq("e a rentabilidade continua 10%", reciclou.rentabilidade, 10);
+      var composto = K.patrimonio({ caixa: 0, posicoes: [{ valor: 1210, custo: 1100 }],
+                                    realizado: 100, baseRealizada: 1000 });
+      eq("a nova pool +10% compõe: 21%", composto.rentabilidade, 21);
+      nota("Medido antes: reabrir derrubava de 10% para 4,76% (base 2.100) e " +
+           "a nova pool +10% aparecia como 10% no total, onde o composto é 21%.");
+      is("sacou tudo: sem capital, sem percentual",
+         K.patrimonio({ caixa: 0, posicoes: [], realizado: 50 }).rentabilidade, null);
 
       /* -- resultado aberto informado pode divergir de valor − custo -- */
       var comTaxa = K.patrimonio({ caixa: 0, posicoes: [{ valor: 1000, custo: 1000 }],
@@ -1504,8 +1517,8 @@
       });
       eq("a variação do token em caixa é resultado", tokCaixa.resultadoCaixa, 10);
       eq("e entra no resultado total", tokCaixa.resultadoTotal, 30);
-      eq("a base inclui o custo do token volátil (não a stablecoin)", tokCaixa.base, 250);
-      eq("rentabilidade sobre a base completa", tokCaixa.rentabilidade, (30 / 250) * 100);
+      eq("a base é o capital próprio: 330 − 30 = 300 depositados", tokCaixa.base, 300);
+      eq("rentabilidade sobre o que foi depositado", tokCaixa.rentabilidade, 10);
       ok("e o patrimônio fecha com o extrato",
          K.conferir.dinheiroFecha({ caixa: tokCaixa.caixa, investido: tokCaixa.investido,
            depositado: 300, sacado: 0, resultadoTotal: tokCaixa.resultadoTotal }).ok,
@@ -1549,15 +1562,28 @@
                  saldo: falso.valor, capital: falso.capital, assets: [] };
       });
 
+      /* SÓ O QUE ESTE GRUPO MONTOU. O caixa foi zerado acima, mas as
+         pools reais do DeFi continuam no store — cada uma vira um
+         achado "saiu dinheiro que não virou posição" (o aporte dela foi
+         junto com o caixa). Contar tudo fazia estes casos falharem em
+         qualquer navegador com uma pool registrada: medido "4 · esperado 0".
+         O que se testa aqui é o módulo fictício, na carteira do teste. */
+      var doTeste = function (l) {
+        return (l || []).filter(function (a) { return a.modulo === "hold" && a.carteiraId === w25; });
+      };
+      var alertasDoTeste = function (l) {
+        return (l || []).filter(function (x) { return /\(hold/.test(x.texto || ""); });
+      };
+
       /* -- cenário íntegro: depósito e aporte coerentes -- */
       CXs.registrar({ tipo: "deposito", valorUSD: 10000, walletId: w25 });
       CXs.registrar({ tipo: "aporte", valorUSD: 4000, walletId: w25, module: "hold", refId: "p1" });
       falso.valor = 4000; falso.capital = 4000;
-      eq("cenário coerente não gera achado de capital", V.capitalContraCaixa().length, 0);
+      eq("cenário coerente não gera achado de capital", doTeste(V.capitalContraCaixa()).length, 0);
 
       /* -- posição sem dinheiro que a explique -- */
       falso.valor = 9000; falso.capital = 9000;
-      var f25 = V.capitalContraCaixa();
+      var f25 = doTeste(V.capitalContraCaixa());
       eq("posição inflada sem aporte é pega", f25.length, 1);
       is("e classificada como erro", f25.length ? f25[0].nivel : "—", "erro");
       eq("com a diferença exata", f25.length ? f25[0].diferenca : 0, 5000);
@@ -1566,12 +1592,12 @@
 
       /* -- dinheiro que saiu e não virou posição -- */
       falso.valor = 1000; falso.capital = 1000;
-      var f25b = V.capitalContraCaixa();
+      var f25b = doTeste(V.capitalContraCaixa());
       eq("o inverso também é pego", f25b.length, 1);
       ok("com o texto do outro lado",
          f25b.length && f25b[0].detalhe.indexOf("não virou posição") >= 0, "não virou posição");
       falso.valor = 4000; falso.capital = 4000;
-      eq("voltando ao coerente, silencia", V.capitalContraCaixa().length, 0);
+      eq("voltando ao coerente, silencia", doTeste(V.capitalContraCaixa()).length, 0);
 
       /* -- carteira apagada com dinheiro dentro -- */
       CXs.registrar({ tipo: "deposito", valorUSD: 500, walletId: "carteira_que_nao_existe" });
@@ -1626,7 +1652,7 @@
       CXs.registrar({ tipo: "aporte", valorUSD: 4000, walletId: w25, module: "hold", refId: "p2" });
 
       falso.valor = 4000; falso.capital = 4000;
-      var auto = SUP.alertas();
+      var auto = alertasDoTeste(SUP.alertas());
       eq("com tudo coerente, o canal automático fica calado",
          auto.filter(function (x) { return x.module === "sistema"; }).length, 0);
 
@@ -1637,7 +1663,7 @@
          fez o caso falhar quando o escrevi: eu media o cache anterior. */
       falso.valor = 9000; falso.capital = 9000;
       SUP.invalidar();
-      var auto2 = SUP.alertas();
+      var auto2 = alertasDoTeste(SUP.alertas());
       ok("com dinheiro do nada, ele fala", auto2.length > 0, auto2.length + " alerta(s)");
       is("e no nível crítico", auto2.length ? auto2[0].level : "—", "crit");
       ok("dizendo qual é a diferença",
@@ -1645,7 +1671,7 @@
 
       falso.valor = 4000; falso.capital = 4000;
       SUP.invalidar();
-      eq("desfeito, volta ao silêncio", SUP.alertas().length, 0);
+      eq("desfeito, volta ao silêncio", alertasDoTeste(SUP.alertas()).length, 0);
 
       /* As áreas de defasagem continuam visíveis no painel completo —
          o que muda é que elas não gritam sozinhas. */
@@ -1658,7 +1684,7 @@
          saber de onde o achado veio. Provocado aqui, não colhido de
          sobra de caso anterior. */
       falso.valor = 7777; falso.capital = 7777;
-      var qualquer = V.capitalContraCaixa()[0];
+      var qualquer = doTeste(V.capitalContraCaixa())[0];
       ok("todo achado tem nivel, area e o_que",
          !!(qualquer && qualquer.nivel && qualquer.area && qualquer.o_que),
          qualquer ? [qualquer.nivel, qualquer.area].join("/") : "—");

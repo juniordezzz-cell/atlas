@@ -1066,7 +1066,7 @@
         return L("Na demonstração os números são ilustrativos e não saem da conta real. " +
                  "No seu ATLAS: patrimônio = caixa + valor de mercado das posições; " +
                  "resultado = posições abertas (valor − custo) + operações encerradas; " +
-                 "rentabilidade = resultado ÷ capital investido, acumulada desde a entrada." +
+                 "rentabilidade = resultado ÷ capital próprio (depositado − sacado), composta." +
                  AVISO_DEMO(),
                  "Demo numbers are illustrative and don't come from the real calculation." + AVISO_DEMO());
       }
@@ -1077,16 +1077,12 @@
 
       if (assunto === "rentabilidade") {
         if (s.pnlPct == null) {
-          return s.pnlBaseIncompleta
-            ? L("Sem rentabilidade: há resultado de operação encerrada sem o capital que o produziu. " +
-                "Dividir por outra base daria um percentual que não corresponde a nada, então o ATLAS não mostra.",
-                "No return: there is closed-trade result without the capital that produced it.")
-            : L("Sem rentabilidade: não há capital investido para servir de base. " +
-                "Caixa parado não entra na conta — rentabilidade mede o que foi aplicado.",
-                "No return: there is no invested capital to use as the base.");
+          return L("Sem rentabilidade: não há capital próprio (depositado − sacado) para servir de base.",
+                   "No return: there is no own capital (deposited − withdrawn) to use as the base.");
         }
         var linhas = [
-          L("Rentabilidade = resultado ÷ capital investido.", "Return = result ÷ invested capital."),
+          L("Rentabilidade = resultado ÷ capital próprio (o que você depositou − o que sacou).",
+            "Return = result ÷ own capital (deposited − withdrawn)."),
           L("Resultado: ", "Result: ") + ex(s.pnl) + ((temRealizado || temCaixa)
             ? L(" (" + ex(s.pnlAberto) + " em posições abertas" +
                   (temRealizado ? " + " + ex(s.pnlRealizado) + " em operações encerradas" : "") +
@@ -1095,16 +1091,14 @@
                   (temRealizado ? " + " + ex(s.pnlRealizado) + " closed" : "") +
                   (temCaixa ? " + " + ex(s.pnlCaixa) + " tokens in cash" : "") + ")")
             : "") + ".",
-          L("Capital investido: ", "Invested capital: ") + ex(s.base) +
-            L(" — o que foi pago pelas posições abertas" +
-                (temRealizado ? ", mais o capital das operações encerradas" : "") +
-                (temCaixa ? ", mais o custo dos tokens voláteis parados no caixa" : "") + ".",
-              " — cost of open positions" +
-                (temRealizado ? " plus capital of closed trades" : "") +
-                (temCaixa ? " plus cost of volatile tokens in cash" : "") + "."),
+          L("Capital próprio: ", "Own capital: ") + ex(s.base) +
+            L(" — patrimônio " + ex(s.total) + " menos o resultado " + ex(s.pnl) + ".",
+              " — net worth " + ex(s.total) + " minus result " + ex(s.pnl) + "."),
           ex(s.pnl) + " ÷ " + ex(s.base) + " = " + pctExato(s.pnlPct) + ".",
-          L("É acumulada desde a entrada em cada posição, não de um período. Stablecoin parada não entra na base.",
-            "Accumulated since each position was opened, not over a period. Idle stablecoins are not in the base.")
+          L("É composta: fechar uma posição e reabrir outra com o mesmo dinheiro não conta o capital duas vezes, " +
+            "e o lucro de uma continua rendendo na outra. Dinheiro parado no caixa também é capital e entra na base.",
+            "It compounds: closing a position and reopening with the same money doesn't count the capital twice. " +
+            "Idle cash is capital too and is in the base.")
         ];
         return linhas.join(NL);
       }
@@ -1291,7 +1285,7 @@
         if (!s || !s.total) return baseBrain.patrimonio();
         var sinal = s.pnl >= 0 ? "+" : "";
         return L("Resultado acumulado: " + sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) +
-                 " sobre o capital investido. " +
+                 " sobre o capital próprio (depositado − sacado). " +
                  "Renda passiva estimada: " + dinheiro(s.passiveIncome) + "." + (s.demo ? AVISO_DEMO() : ""),
                  "Accumulated result: " + sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) +
                  ". Estimated passive income: " +

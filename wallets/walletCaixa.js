@@ -146,24 +146,40 @@
       if (Math.abs(b.qtd) < 1e-12) b.qtd = 0;   /* poeira de ponto flutuante */
     }
 
-    /* o balde ficou negativo: o que falta sai dos outros da mesma rede */
+    /* o balde ficou negativo: o que falta sai dos outros da mesma rede
+       e, se não bastar, das OUTRAS redes.
+
+       Depositar na Base e abrir uma pool na BNB Chain é uma ponte
+       (bridge) que ninguém lança: o dinheiro saiu da Base. Cobrindo só
+       dentro da rede, a BNB Chain ficava negativa, o gráfico por rede
+       descartava o negativo e a Base aparecia com o depósito inteiro —
+       59% onde o certo eram 35%. */
     function cobrirDosOutros(r, b) {
       var falta = -b.usd;
       if (!(falta > 1e-9)) return;
-      var outros = Object.keys(grupos[r]).map(function (k) { return grupos[r][k]; })
-        .filter(function (x) { return x !== b && x.usd > 1e-9; });
-      var stables = outros.filter(function (x) { return ehStable(x.ativo); })
-        .sort(function (a, c) { return c.usd - a.usd; });
-      stables.forEach(function (x) {
-        if (!(falta > 1e-9)) return;
-        var usar = Math.min(falta, x.usd); tira(x, usar); falta -= usar;
-      });
-      var volateis = outros.filter(function (x) { return !ehStable(x.ativo) && x.usd > 1e-9; });
-      var soma = volateis.reduce(function (s, x) { return s + x.usd; }, 0);
-      if (falta > 1e-9 && soma > 1e-9) {
-        var usarTotal = Math.min(falta, soma);
-        volateis.forEach(function (x) { tira(x, usarTotal * (x.usd / soma)); });
-        falta -= usarTotal;
+      function cobrirCom(outros) {
+        var stables = outros.filter(function (x) { return ehStable(x.ativo); })
+          .sort(function (a, c) { return c.usd - a.usd; });
+        stables.forEach(function (x) {
+          if (!(falta > 1e-9)) return;
+          var usar = Math.min(falta, x.usd); tira(x, usar); falta -= usar;
+        });
+        var volateis = outros.filter(function (x) { return !ehStable(x.ativo) && x.usd > 1e-9; });
+        var soma = volateis.reduce(function (s, x) { return s + x.usd; }, 0);
+        if (falta > 1e-9 && soma > 1e-9) {
+          var usarTotal = Math.min(falta, soma);
+          volateis.forEach(function (x) { tira(x, usarTotal * (x.usd / soma)); });
+          falta -= usarTotal;
+        }
+      }
+      function baldesDe(rede) {
+        return Object.keys(grupos[rede]).map(function (k) { return grupos[rede][k]; })
+          .filter(function (x) { return x !== b && x.usd > 1e-9; });
+      }
+      cobrirCom(baldesDe(r));
+      if (porRede && falta > 1e-9) {
+        Object.keys(grupos).filter(function (x) { return x !== r; })
+          .forEach(function (outra) { if (falta > 1e-9) cobrirCom(baldesDe(outra)); });
       }
       /* o que foi coberto some do balde negativo; o que não deu para
          cobrir fica negativo — caixa negativo de verdade, que o

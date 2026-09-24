@@ -1825,8 +1825,26 @@
          dias" para sempre, com qualquer carteira. */
       var change = Store.changePct(7);
 
+      /* ------------------------------------------------------------
+         RESULTADO ACUMULADO — abertas E fechadas
+
+         O card "Resultado" mostrava `profit`, que soma só as pools
+         ABERTAS: fechar a Palantir com +100 derrubava o card em 100,
+         como se o lucro tivesse sumido — quando ele só tinha voltado ao
+         caixa. Quem abre e fecha posição a cada três dias via o número
+         andar para trás a cada fechamento bem-sucedido.
+
+         `acumulado` é walletProfit sobre a mesma vista (carteira ativa,
+         ou todas no modo "todas"): pools abertas + fechadas + staking e
+         lending. É a mesma conta que entra no Lucro Total do Dashboard.
+         `profit` continua existindo para quem precisa só das abertas.
+         ------------------------------------------------------------ */
+      var acumulado = Store.walletProfit(s);
+      var realizado = Store.walletRealizado(s).resultado;
+
       return {
         total: total, profit: profit, capital: capital,
+        acumulado: acumulado, realizado: realizado, emAberto: acumulado - realizado,
         activeCount: active.length,
         avgApr: avgApr, change: change,
         pools: poolsVal, staking: stakeVal, lending: lendVal

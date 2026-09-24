@@ -53,6 +53,9 @@ function limpouDemo() {
 }
 
 function calcularSemDados() {
+  /* uma carteira escolhida e vazia não é "primeiro acesso": mostra o
+     painel dela zerado, não o roteiro de início */
+  if (window.AtlasConsolidation && AtlasConsolidation.escopo && AtlasConsolidation.escopo()) return false;
   return !D.categoria.labels.length &&
          !D.movimentacoes.length &&
          !D.pools.length;
@@ -281,9 +284,21 @@ function escala(vals) {
   if (!v.length) return { yMin: 0, yMax: 1000, yStep: 1000 };
   const lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
   const pad = Math.max((hi - lo) * 0.25, hi * 0.05, 1);
-  const yMin = Math.max(0, Math.floor((lo - pad) / 1000) * 1000);
-  const yMax = Math.ceil((hi + pad) / 1000) * 1000;
-  return { yMin, yMax, yStep: Math.max(1000, Math.round((yMax - yMin) / 5 / 1000) * 1000) };
+  /* O degrau era cravado em 1.000: com US$ 85 de patrimônio o eixo ia
+     de 0 a 1K e a curva virava um risco no chão do gráfico. Agora o
+     degrau é um número "redondo" (1, 2, 5 × 10ⁿ) do tamanho da faixa. */
+  const bruto = Math.max((hi + pad - Math.max(0, lo - pad)) / 5, 0.01);
+  const mag = Math.pow(10, Math.floor(Math.log10(bruto)));
+  const yStep = [1, 2, 5, 10].map(m => m * mag).find(s => s >= bruto) || 10 * mag;
+  const yMin = Math.max(0, Math.floor((lo - pad) / yStep) * yStep);
+  const yMax = Math.ceil((hi + pad) / yStep) * yStep;
+  return { yMin, yMax, yStep };
+}
+
+/* rótulo do eixo: "1,5K" acima de mil, o número inteiro abaixo */
+function rotuloEixo(v) {
+  if (Math.abs(v) >= 1000) return (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'K';
+  return v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 }
 
 let chartEvolucao = null;
@@ -332,7 +347,7 @@ function criarGraficoEvolucao() {
       scales: {
         y: {
           grid: { color: T ? T.grade() : 'rgba(160,174,192,0.08)' },
-          ticks: { color: T ? T.tick() : undefined, callback: (v) => (v/1000) + 'K', stepSize: e0.yStep },
+          ticks: { color: T ? T.tick() : undefined, callback: rotuloEixo, stepSize: e0.yStep },
           min: e0.yMin, max: e0.yMax, border: { display: false },
         },
         x: { grid: { display: false }, border: { display: false } },
@@ -343,11 +358,8 @@ function criarGraficoEvolucao() {
 }
 
 /* ---- Donut helper ----
-   Guarda a instância por canvas: recriar por cima de um Chart vivo
-   vaza o anterior (o Chart.js mantém o canvas registrado e os
-   listeners de hover continuam ativos). */
-const donuts = {};
-
+   Os dois donuts são desenhados em 3D por js/donut3d.js (anel com
+   espessura, luz e sombra). O Chart.js continua só na Evolução. */
 function donut(canvasId, legendId, cfg) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -355,39 +367,8 @@ function donut(canvasId, legendId, cfg) {
   const T = window.AtlasChartTheme;
   const cores = T ? cfg.cores.map((c) => T.serie(c)) : cfg.cores;
 
-  if (donuts[canvasId]) {
-    const c = donuts[canvasId];
-    c.data.labels = cfg.labels;
-    c.data.datasets[0].data = cfg.valores;
-    c.data.datasets[0].backgroundColor = cores;
-    c.update();
-  } else {
-    donuts[canvasId] = new Chart(canvas.getContext('2d'), {
-      type: 'doughnut',
-      data: {
-        labels: cfg.labels,
-        datasets: [{
-          data: cfg.valores,
-          backgroundColor: cores,
-          borderColor: 'transparent',
-          borderWidth: 0,
-          spacing: 3,
-          hoverOffset: 6,
-        }],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        cutout: '70%',
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            ...(T ? T.tooltip() : { backgroundColor: '#0D1422', borderColor: 'rgba(0,191,255,0.3)', borderWidth: 1 }),
-            padding: 10, displayColors: false,
-            callbacks: { label: (c) => c.label + ': ' + c.parsed + '%' }
-          },
-        },
-      },
-    });
+  if (window.AtlasDonut3D) {
+    AtlasDonut3D.render(canvas, { labels: cfg.labels, valores: cfg.valores, cores: cores });
   }
 
   document.getElementById(legendId).innerHTML = cfg.labels.map((l, i) => `
@@ -441,8 +422,8 @@ function pintarGraficos() {
     notaMedidos(D.evolucao.medidos, D.evolucao.dias);
   }
 
-  donut('chartCategoria', 'legendCategoria', D.categoria);
   donut('chartBlockchain', 'legendBlockchain', D.blockchain);
+  donut('chartCategoria', 'legendCategoria', D.categoria);
 }
 
 /* ===================================================================
@@ -489,7 +470,12 @@ function repintar() {
   }
   SEM_DADOS = calcularSemDados();
   pintarTudo();
+  /* a Evolução volta a 30 dias em pintarTudo(); se o seletor de período
+     estava noutro, reaplica — senão o botão diria "90 dias" sobre 30 */
+  if (reaplicarPeriodo) reaplicarPeriodo();
 }
+
+let reaplicarPeriodo = null;
 
 window.AtlasDashboard = { repintar: repintar };
 
@@ -666,7 +652,10 @@ pintarTudo();
     if (!alvo) return;
     ev.preventDefault(); ev.stopPropagation();
     const p = PERIODOS.find(x => String(x.dias) === alvo.getAttribute('data-dias'));
-    if (p) aplicar(p.dias, p.rotulo);
+    if (p) {
+      aplicar(p.dias, p.rotulo);
+      reaplicarPeriodo = p.dias === 30 ? null : () => aplicar(p.dias, p.rotulo);
+    }
     wrap.setAttribute('data-open', 'false');
     btn.setAttribute('aria-expanded', 'false');
   });
@@ -675,34 +664,62 @@ pintarTudo();
 })();
 
 /* ===================================================================
-   ATLAS — Seletor de carteira GLOBAL (Bloco 3)
-   Troca a carteira global ativa da central → afeta todos os módulos.
-   Só carteiras globais aparecem aqui (são as que somam no total).
+   ATLAS — Seletor de carteira do Dashboard
+   -------------------------------------------------------------------
+   Desde 24/09/2026 o seletor FILTRA o Dashboard:
+
+     "Todas as carteiras"  → soma de todas as globais (padrão; toda vez
+                             que a página abre, começa aqui)
+     uma carteira          → a tela inteira mostra só ela: KPIs,
+                             evolução, distribuições, movimentações,
+                             pools e alertas
+
+   O recorte é AtlasConsolidation.setEscopo — em memória, só nesta
+   página. Escolher uma carteira também a torna a ativa dos módulos
+   (setActiveFor), como sempre foi; "Todas" existe só aqui, porque
+   Hold/Trade/DeFi/RWA registram operações sempre numa carteira.
    =================================================================== */
 (function () {
   "use strict";
   var host = document.getElementById("walletSel");
   if (!host || !window.WalletSelector || !window.AtlasWallets) return;
+  var C = window.AtlasConsolidation;
+  var W = window.AtlasWallets;
 
-  /* O Dashboard monta O MESMO componente dos módulos, com as mesmas
-     opções e as mesmas funções (trocar, criar global, criar local,
-     renomear, excluir). Nada aqui é específico do Dashboard.
+  /* soma mostrada na pílula "Todas as carteiras": o patrimônio das
+     globais, pela mesma consolidação da tela */
+  function somaTodas() {
+    if (!C) return 0;
+    var antes = C.escopo();
+    C.setEscopo(null);
+    var t = 0;
+    try { t = C.snapshot(1).total; } catch (e) {}
+    C.setEscopo(antes);
+    return t;
+  }
 
-     Sem getActive/onSelect: quem guarda a carteira em uso é a central
-     (AtlasWallets.activeFor/setActiveFor). O seletor também se repinta
-     sozinho quando a lista muda — deste módulo, de outro ou de outra
-     aba —, por isso não existe mais um segundo render assinando
-     AtlasWallets aqui.
-
-     SEM `reload: true`. A consolidação soma TODAS as carteiras globais,
-     não a ativa: trocar de carteira não muda nenhum número desta tela,
-     então recarregar era piscar a página inteira para chegar ao mesmo
-     resultado. Criar e excluir MUDAM (o KPI "Carteiras", e os totais se
-     a nova global tiver dados) — nesses casos `afterChange` remonta os
-     dados e repinta, sem flash e sem perder a rolagem. */
   window.WalletSelector.render(host, {
     module: "atlas",
     scope: "module",
-    afterChange: function () { repintar(); }
+    getActive: function () {
+      var id = C && C.escopo ? C.escopo() : null;
+      return (id && W.get(id)) || W.activeFor("atlas");
+    },
+    onSelect: function (id) {
+      W.setActiveFor("atlas", id);
+      if (C) C.setEscopo(id);
+      repintar();
+    },
+    todas: C ? {
+      ativo: function () { return !C.escopo(); },
+      saldo: somaTodas,
+      selecionar: function () { C.setEscopo(null); repintar(); }
+    } : null,
+    /* criar / renomear / excluir: se a carteira do recorte sumiu,
+       volta para "Todas" */
+    afterChange: function () {
+      if (C && C.escopo() && !W.get(C.escopo())) C.setEscopo(null);
+      repintar();
+    }
   });
 })();

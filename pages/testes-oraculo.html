@@ -523,14 +523,17 @@
     var gOrig = W.globals, nA = S.ativos.length, nC = S.carteira.length;
     try {
       S.ativos.push({ id: "t-x", ticker: "TX", preco_atual: 110 });
-      S.carteira.push({ ativo_id: "t-x", walletId: "principal", quantidade: 10, preco_medio: 100 });
+      /* Duas carteiras FICTÍCIAS. Usava a "principal" de verdade: com
+         qualquer posição real nela (uma pool, um depósito) o lucro e a
+         rentabilidade do teste mudavam e o caso ficava vermelho sem
+         nada estar quebrado — medido: "esperado 50 · veio 62". */
+      S.carteira.push({ ativo_id: "t-x", walletId: "t-w1", quantidade: 10, preco_medio: 100 });
       S.carteira.push({ ativo_id: "t-x", walletId: "t-w2", quantidade: 5, preco_medio: 120 });
       W.globals = function () {
-        return gOrig.call(W).filter(function (w) { return w.id === "principal"; })
-          .concat([{ id: "t-w2", name: "W2", type: "global" }]);
+        return [{ id: "t-w1", name: "W1", type: "global" }, { id: "t-w2", name: "W2", type: "global" }];
       };
       var s = C.snapshot();
-      caso(g, "resultado por carteira: Principal +100", C.resultadoDe("principal", "hold"), 100);
+      caso(g, "resultado por carteira: primeira +100", C.resultadoDe("t-w1", "hold"), 100);
       caso(g, "resultado por carteira: segunda −50", C.resultadoDe("t-w2", "hold"), -50);
       caso(g, "Lucro Total soma as duas (+50), não só a ativa (+100)", s.pnl, 50);
       caso(g, "rentabilidade 50 ÷ 1.600 = 3,125%", Math.round(s.pnlPct * 1000) / 1000, 3.125);

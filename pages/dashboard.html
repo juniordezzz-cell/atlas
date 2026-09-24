@@ -122,18 +122,20 @@
       </div>
 
       <div class="card chart-donut">
-        <div class="card-head"><h2>Distribuição por Categoria</h2></div>
-        <div class="donut-wrap">
-          <div class="donut-box"><canvas id="chartCategoria"></canvas></div>
-          <ul class="legend" id="legendCategoria"></ul>
-        </div>
-      </div>
-
-      <div class="card chart-donut">
         <div class="card-head"><h2>Distribuição por Blockchain</h2></div>
         <div class="donut-wrap">
           <div class="donut-box"><canvas id="chartBlockchain"></canvas></div>
           <ul class="legend" id="legendBlockchain"></ul>
+        </div>
+      </div>
+
+      <!-- era "por Categoria" (Caixa × DeFi); desde 24/09/2026 mostra
+           ONDE o dinheiro está. Os ids ficaram para não quebrar nada. -->
+      <div class="card chart-donut">
+        <div class="card-head"><h2>Distribuição por Plataforma</h2></div>
+        <div class="donut-wrap">
+          <div class="donut-box"><canvas id="chartCategoria"></canvas></div>
+          <ul class="legend" id="legendCategoria"></ul>
         </div>
       </div>
     </section>
@@ -221,6 +223,7 @@
 
 <!-- ===== Dashboard ===== -->
 <script src="../js/data.js"></script>
+<script src="../js/donut3d.js"></script>
 <script src="../js/dashboard.js"></script>
 
 <!-- ===== Shell da raiz: navegação móvel + menus da barra superior =====
