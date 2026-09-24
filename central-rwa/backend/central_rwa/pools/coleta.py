@@ -45,26 +45,37 @@ def _dispensa_consulta(simbolo: str) -> bool:
     return (simbolo or "").upper() in config.MAJORS or config.eh_rwa(simbolo)
 
 
-def _infos(cli, store, cands: list[Candidata], agora: datetime) -> tuple[dict[tuple[str, str], TokenInfo], int]:
+def _infos(cli, store, cands: list[Candidata], agora: datetime) -> tuple[dict[tuple[str, str], TokenInfo], int, int]:
     """Segurança de cada token. Majors e RWA conhecidos não gastam consulta;
     o resto vem do cache (7 dias) ou da GeckoTerminal."""
     pedidos: dict[str, set[str]] = {}
     primeira: dict[tuple[str, str], datetime] = {}
+    peso: dict[tuple[str, str], float] = {}   # maior TVL entre as pools do token: prioridade da consulta
     for c in cands:
         for t in (c.token_a, c.token_b):
             if not t.endereco or _dispensa_consulta(t.simbolo):
                 continue
             e = normalizar_endereco(c.rede, t.endereco)
             pedidos.setdefault(c.rede, set()).add(e)
+            peso[(c.rede, e)] = max(peso.get((c.rede, e), 0.0), c.tvl)
             if c.criada_em and ((c.rede, e) not in primeira or c.criada_em < primeira[(c.rede, e)]):
                 primeira[(c.rede, e)] = c.criada_em
     infos: dict[tuple[str, str], TokenInfo] = {}
     consultados = 0
     novos: list[TokenInfo] = []
+    caches = {
+        rede: store.tokens_em_cache(rede, sorted(ends), agora - timedelta(days=config.CACHE_TOKEN_DIAS))
+        for rede, ends in pedidos.items()
+    }
+    # Quem falta, dos tokens das pools maiores para as menores, até o teto da coleta.
+    faltando = sorted(((rede, e) for rede, ends in pedidos.items() for e in ends if e not in caches[rede]),
+                      key=lambda k: -peso[k])
+    agora_vez = set(faltando[: config.MAX_TOKENS_POR_COLETA])
+    pendentes = len(faltando) - len(agora_vez)
     for rede, ends in pedidos.items():
         net = config.GECKO_NET.get(rede)
-        cache = store.tokens_em_cache(rede, sorted(ends), agora - timedelta(days=config.CACHE_TOKEN_DIAS))
-        faltam = [e for e in sorted(ends) if e not in cache]
+        cache = caches[rede]
+        faltam = sorted((e for e in ends if (rede, e) in agora_vez), key=lambda e: -peso[(rede, e)])
         mcaps = parse_tokens_multi(cli.tokens_multi(net, faltam)) if (net and faltam) else {}
         for e in faltam:
             payload = cli.token_info(net, e) if net else None
@@ -84,14 +95,14 @@ def _infos(cli, store, cands: list[Candidata], agora: datetime) -> tuple[dict[tu
                 novos.append(info)
             infos[(rede, e)] = info
     store.salvar_tokens(list({(t.rede, t.endereco): t for t in novos}.values()))
-    return infos, consultados
+    return infos, consultados, pendentes
 
 
 def coletar(cli, store, agora: datetime) -> dict:
     status: list[dict] = []
     todas = _candidatas(cli, status, agora)
     cands = [c for c in todas if passa_pre_corte(c)]
-    infos, consultados = _infos(cli, store, cands, agora)
+    infos, consultados, pendentes = _infos(cli, store, cands, agora)
     leituras = store.leituras([c.id for c in cands])
     notas = calcular_notas(cands, leituras)
     finais: list[PoolFinal] = []
@@ -112,6 +123,7 @@ def coletar(cli, store, agora: datetime) -> dict:
         "caca": sum(f.trilho == "caca" for f in finais),
         "barradas": sum(f.trilho == "barrada" for f in finais),
         "tokens_consultados": consultados,
+        "tokens_pendentes": pendentes,
         "parciais": list(cli.parciais) + [s["estado"] for s in status if str(s["estado"]).startswith("falhou")],
         "gravacao": gravacao,
     }

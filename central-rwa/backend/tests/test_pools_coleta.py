@@ -88,3 +88,24 @@ def test_comando_pools_dry_run(monkeypatch, capsys):
     cli_main.main(["pools", "--dry-run"])
     resumo = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert resumo["pre_corte"] > 0 and resumo["dry_run"] is True
+
+
+# ---- limite de consultas por coleta (verificação real: 1ª coleta passava de 30 min) ----
+def test_consulta_de_token_tem_teto_e_prioriza_pools_maiores(monkeypatch):
+    from central_rwa.pools import config as cfg
+
+    monkeypatch.setattr(cfg, "MAX_TOKENS_POR_COLETA", 2)
+    store, cli = MemoryPoolStore(), FakeCliente()
+    r = coletar(cli, store, AGORA)
+    assert len(cli.infos_pedidas) == 2
+    assert r["tokens_pendentes"] > 0
+    # os dois consultados são de pools com TVL maior que o de qualquer pendente
+    pools = list(store.pools.values())
+    tvl_de = lambda e: max(p["tvl"] for p in pools if e in ((p["token_a"] or "").lower(), (p["token_b"] or "").lower()))
+    from central_rwa.pools.coleta import _dispensa_consulta
+    candidatos = {t for p in pools for t, s in ((p["token_a"], p["simbolo_a"]), (p["token_b"], p["simbolo_b"]))
+                  if t and not _dispensa_consulta(s)}
+    pedidos = {x.lower() for x in cli.infos_pedidas}      # Solana diferencia maiúsculas; aqui só comparamos
+    pendentes = {e.lower() for e in candidatos} - pedidos
+    assert len(pendentes) == r["tokens_pendentes"]
+    assert min(tvl_de(e) for e in pedidos) >= max(tvl_de(e) for e in pendentes)

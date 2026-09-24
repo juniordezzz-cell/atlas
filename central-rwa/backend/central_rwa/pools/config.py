@@ -13,6 +13,9 @@ GECKO_INTERVALO_S = 2.2
 CACHE_TOKEN_DIAS = 7
 LEITURAS_DIAS = 30
 FALHAS_PARA_SUMIR = 3
+# Consultas de segurança de token por coleta: a 2,2 s cada, 300 cabem em ~11 min.
+# O resto fica para as próximas coletas (cache de 7 dias) e, até lá, conta como Caça.
+MAX_TOKENS_POR_COLETA = 300
 
 # chain na DefiLlama -> rótulo da rede no ATLAS
 LLAMA_CHAINS: dict[str, str] = {
