@@ -109,3 +109,30 @@ def test_consulta_de_token_tem_teto_e_prioriza_pools_maiores(monkeypatch):
     pendentes = {e.lower() for e in candidatos} - pedidos
     assert len(pendentes) == r["tokens_pendentes"]
     assert min(tvl_de(e) for e in pedidos) >= max(tvl_de(e) for e in pendentes)
+
+
+# ---- orçamento da GeckoTerminal (medido em 23/09: ~6 pedidos/min por IP) ----
+def test_dexes_grandes_leem_mais_paginas():
+    class Conta(FakeCliente):
+        def __init__(self):
+            super().__init__()
+            self.paginas = {}
+
+        def gecko_pools(self, net, dex, paginas):
+            self.paginas[dex] = paginas
+            return super().gecko_pools(net, dex, paginas)
+
+    cli = Conta()
+    coletar(cli, MemoryPoolStore(), AGORA)
+    from central_rwa.pools import config as cfg
+    assert cli.paginas["pancakeswap-v3-bsc"] == cfg.GECKO_PAGINAS_GRANDES["pancakeswap-v3-bsc"]
+    assert cli.paginas["thena"] == cfg.GECKO_PAGINAS
+
+
+def test_orcamento_da_coleta_cabe_no_workflow():
+    from central_rwa.pools import config as cfg
+    slugs = [s for fontes in cfg.GECKO_SOURCES.values() for src in fontes for s in src["dexes"]]
+    paginas = sum(cfg.GECKO_PAGINAS_GRANDES.get(s, cfg.GECKO_PAGINAS) for s in slugs)
+    minutos = (paginas + cfg.MAX_TOKENS_POR_COLETA + 10) * cfg.GECKO_INTERVALO_S / 60
+    assert cfg.GECKO_INTERVALO_S >= 10          # 6/min: abaixo disso a API devolve 429
+    assert minutos <= 35, minutos               # o workflow tem 55 min

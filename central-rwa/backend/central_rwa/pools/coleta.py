@@ -30,7 +30,7 @@ def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
             net = config.GECKO_NET[src["rede"]]
             for slug in src["dexes"]:
                 antes = len(cli.parciais)
-                itens = cli.gecko_pools(net, slug, config.GECKO_PAGINAS)
+                itens = cli.gecko_pools(net, slug, config.GECKO_PAGINAS_GRANDES.get(slug, config.GECKO_PAGINAS))
                 cands = parse_gecko_pools({"data": itens}, dex, src["rede"])
                 todas += cands
                 estado = "parcial" if len(cli.parciais) > antes else "ok"

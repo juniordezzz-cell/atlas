@@ -8,14 +8,23 @@ import re
 
 TVL_MIN = 100_000.0
 VOL_MIN = 50_000.0
-GECKO_PAGINAS = 10
-GECKO_INTERVALO_S = 2.2
+# A GeckoTerminal libera ~6 pedidos/min por IP (medido em 23/09/2026; a
+# documentação fala em 30, mas acima de 6/min cada 429 custa 15 s). Com 10 s
+# entre pedidos a coleta inteira fica em ~30 min, dentro dos 55 do workflow.
+GECKO_INTERVALO_S = 10.0
+GECKO_PAGINAS = 2                  # 20 pools por página, as mais movimentadas primeiro
+GECKO_PAGINAS_GRANDES = {          # DEXs com muitas pools boas que só a GeckoTerminal cobre
+    "pancakeswap-v3-bsc": 5,
+    "pancakeswap_v2": 4,
+    "meteora": 4,
+    "meteora-damm-v2": 3,
+}
 CACHE_TOKEN_DIAS = 7
 LEITURAS_DIAS = 30
 FALHAS_PARA_SUMIR = 3
-# Consultas de segurança de token por coleta: a 2,2 s cada, 300 cabem em ~11 min.
-# O resto fica para as próximas coletas (cache de 7 dias) e, até lá, conta como Caça.
-MAX_TOKENS_POR_COLETA = 300
+# Consultas de segurança de token por coleta (~17 min). Com 6 coletas por dia e
+# cache de 7 dias, o acervo cresce ~600 tokens/dia; até ser consultado, conta como Caça.
+MAX_TOKENS_POR_COLETA = 100
 
 # chain na DefiLlama -> rótulo da rede no ATLAS
 LLAMA_CHAINS: dict[str, str] = {

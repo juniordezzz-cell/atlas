@@ -18,7 +18,7 @@ permissions:
 jobs:
   pools:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 55   # coleta ~27 min no pior caso (GeckoTerminal a 6 pedidos/min); folga para 429 e lentidão
     defaults:
       run:
         working-directory: central-rwa/backend

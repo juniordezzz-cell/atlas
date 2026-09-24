@@ -152,7 +152,7 @@ GECKO = "https://api.geckoterminal.com/api/v2"
 
 
 class ClienteFontes:
-    """Chamadas HTTP. A GeckoTerminal permite ~30 req/min: toda chamada a ela
+    """Chamadas HTTP. A GeckoTerminal libera ~6 req/min por IP: toda chamada a ela
     espera o intervalo mínimo desde a anterior e, em 429, espera 15 s × tentativa."""
 
     def __init__(self, client: httpx.Client | None = None, sleep=time.sleep, relogio=time.monotonic):
