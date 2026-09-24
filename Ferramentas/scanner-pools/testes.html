@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Testes · Scanner Pools</title>
+<meta name="description" content="Bateria da camada de dados do Scanner Pools: leitura do servidor, marcas, lista de tokens e transição das pools gravadas.">
+<style>
+  body{font:14px/1.5 system-ui,sans-serif;background:#0b1020;color:#dfe6f3;padding:24px;max-width:900px;margin:auto}
+  h1{font-size:20px} .ok{color:#2ec785} .no{color:#f0556a} .res{font-weight:700;margin:12px 0}
+  li{margin:2px 0} small{color:#8a94a8}
+</style>
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+</head>
+<body>
+<h1>Testes · Scanner Pools (camada de dados)</h1>
+<div class="res" id="res">rodando…</div>
+<ul id="out"></ul>
+<script src="servidor.js"></script>
+<script>
+(async function () {
+  "use strict";
+  var S = window.ScannerServidor, out = document.getElementById("out"), passou = 0, falhou = 0;
+  function caso(nome, ok, detalhe) {
+    var li = document.createElement("li");
+    li.className = ok ? "ok" : "no";
+    li.textContent = (ok ? "✓ " : "✕ ") + nome + (detalhe != null ? "  — " + detalhe : "");
+    out.appendChild(li); ok ? passou++ : falhou++;
+  }
+  /* isola o localStorage do usuário: guarda as chaves e devolve no fim */
+  var CHAVES = [S.CACHE_KEY, S.MARCAS_KEY, S.TOKENS_KEY, S.MIGRADO_KEY];
+  var guardado = {}; CHAVES.forEach(function (k) { guardado[k] = localStorage.getItem(k); localStorage.removeItem(k); });
+
+  var ROW = { id: "gecko:bsc:0xabc", rede: "BNB Chain", dex: "PancakeSwap", par: "UNI/WBNB", fee: 0.25, tvl: 2e6,
+              vol_24h: 9e5, vol_7d: null, apr: null, apr_reward: null, visto_em: "2026-09-23T22:00:00Z",
+              trilho: "solida", motivos: [], nota: 72.5, componentes: { rendimento: 0.8 }, sinais: {},
+              criada_em: null, var_tvl_7d: 0.12, leituras: 3 };
+
+  try {
+    /* id */
+    var id = S.idNumerico("gecko:bsc:0xabc");
+    caso("id numérico é estável e alto (não colide com pool manual)", id === S.idNumerico("gecko:bsc:0xabc") && id > 1e9 && Number.isFinite(id), id);
+    caso("ids diferentes para pools diferentes", S.idNumerico("gecko:bsc:0xabd") !== id);
+
+    /* mapeamento */
+    var p = S.paraPool(ROW, { fav: true, level: "segura", notes: "boa" });
+    caso("linha do servidor vira pool do Scanner", p.pool === "UNI/WBNB" && p.platform === "PancakeSwap" && p.network === "BNB Chain" && p.servidor === true);
+    caso("marcas voltam para a pool", p.fav === true && p.level === "segura" && p.notes === "boa");
+    caso("variação de 7 dias e nota chegam", p.varTvl7d === 0.12 && p.nota === 72.5);
+
+    /* marcas */
+    var m = S.extrairMarcas([p, S.paraPool(Object.assign({}, ROW, { id: "x" }), {}), { id: 3, pool: "A/B", fav: true }]);
+    caso("só pool do servidor com ★/nível/nota vira marca", Object.keys(m).join() === "gecko:bsc:0xabc", Object.keys(m).join());
+
+    /* lista de tokens */
+    var caca = S.paraPool(Object.assign({}, ROW, { par: "FOO/USDT", trilho: "caca" }), {});
+    caso("sem lista, Caça continua Caça", S.trilhoEfetivo(caca, { aprovados: [], bloqueados: [] }) === "caca");
+    caso("token aprovado leva a pool para Sólidas", S.trilhoEfetivo(caca, { aprovados: ["FOO"], bloqueados: [] }) === "solida");
+    caso("token bloqueado some com a pool", S.trilhoEfetivo(caca, { aprovados: [], bloqueados: ["FOO"] }) === "oculta");
+    caso("bloquear major não esconde nada (o alvo é o outro token)", S.trilhoEfetivo(p, { aprovados: [], bloqueados: ["WBNB"] }) === "solida");
+    caso("pool manual aparece no padrão", S.trilhoEfetivo({ id: 1, pool: "X/Y" }, { aprovados: [], bloqueados: [] }) === "solida");
+
+    /* transição das pools gravadas */
+    var servidor = [p, S.paraPool({ id: "llama:uuid-1", rede: "Base", dex: "Uniswap", par: "WETH/USDC", fee: 0.3, tvl: 1, vol_24h: 1, trilho: "solida" }, {})];
+    var locais = [
+      { id: 1, pool: "ETH/USDC", platform: "Uniswap", network: "Base", fee: 0.3, srcId: "llama:uuid-1", fav: true, notes: "a" },
+      { id: 2, pool: "UNI/BNB", platform: "PancakeSwap", network: "BNB Chain", fee: 0.25, level: "mediana" },
+      { id: 3, pool: "RARA/USDC", platform: "Orca", network: "Solana", fee: 1 }
+    ];
+    var r = S.casarLocais(locais, servidor);
+    caso("casa pelo id da fonte", r.casadas.some(function (c) { return c.local.id === 1 && c.servidor.sid === "llama:uuid-1"; }));
+    caso("casa por rede + DEX + par normalizado (WBNB = BNB) + taxa", r.casadas.some(function (c) { return c.local.id === 2 && c.servidor.sid === "gecko:bsc:0xabc"; }));
+    caso("o que não casa vira manual", r.manuais.length === 1 && r.manuais[0].id === 3);
+    var mig = S.migrar(locais, servidor, {});
+    caso("★, nível e notas passam para a pool do servidor",
+      mig.marcas["llama:uuid-1"].fav === true && mig.marcas["llama:uuid-1"].notes === "a" && mig.marcas["gecko:bsc:0xabc"].level === "mediana");
+
+    /* leitura com o Supabase */
+    window.ATLAS_SUPABASE = { url: "https://x.supabase.co", publishableKey: "k" };
+    var chamadas = [];
+    var fakeOk = function (url, opt) {
+      chamadas.push(url + " " + opt.headers.Range);
+      var linhas = url.indexOf("scanner_pools") >= 0 ? [ROW] : [{ fonte: "defillama", estado: "ok", em: "2026-09-23T22:00:00Z" }];
+      return Promise.resolve({ ok: true, status: 200, json: function () { return Promise.resolve(linhas); } });
+    };
+    var d = await S.carregar(fakeOk);
+    caso("carrega pools e status", d.pools.length === 1 && d.status.length === 1 && d.doCache === false);
+    caso("pede com a chave publicável e em páginas", chamadas[0].indexOf("0-999") > 0, chamadas[0]);
+    var falha = function () { return Promise.reject(new Error("rede")); };
+    var dc = await S.carregar(falha);
+    caso("Supabase fora: usa a última leitura boa e avisa", dc.doCache === true && dc.pools.length === 1, dc.erro);
+    localStorage.removeItem(S.CACHE_KEY);
+    var semCache = null; try { await S.carregar(falha); } catch (e) { semCache = e; }
+    caso("sem cache nenhum, o erro aparece (nunca tela vazia calada)", !!semCache);
+
+    /* paginação */
+    var n = 0;
+    var fakePag = function () {
+      n++;
+      var linhas = n === 1 ? Array(1000).fill(ROW) : [ROW];
+      return Promise.resolve({ ok: true, status: 206, json: function () { return Promise.resolve(linhas); } });
+    };
+    window.ATLAS_SUPABASE = { url: "https://x.supabase.co", publishableKey: "k" };
+    var dp = await S.carregar(fakePag);
+    caso("mais de 1.000 pools: busca a página seguinte", dp.pools.length === 1001, dp.pools.length);
+
+    /* histórico de uma pool */
+    var h = await S.historico("gecko:bsc:0xabc", function () {
+      return Promise.resolve({ ok: true, status: 200, json: function () {
+        return Promise.resolve([{ pool_id: "gecko:bsc:0xabc", dia: "2026-09-22", tvl: 1, vol_24h: 2, vol_7d: null, apr: null, fee: 0.25 }]); } });
+    });
+    caso("leituras viram histórico do painel de evolução", h.length === 1 && h[0].tvl === 1 && h[0].vol24h === 2 && h[0].ts > 0);
+  } catch (e) {
+    caso("erro inesperado", false, e && e.stack || e);
+  } finally {
+    CHAVES.forEach(function (k) { if (guardado[k] == null) localStorage.removeItem(k); else localStorage.setItem(k, guardado[k]); });
+  }
+  document.getElementById("res").textContent = passou + " passaram · " + falhou + " falharam";
+  document.getElementById("res").className = "res " + (falhou ? "no" : "ok");
+})();
+</script>
+</body>
+</html>
