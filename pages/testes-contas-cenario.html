@@ -96,6 +96,13 @@
      caminho que a tela usa (os stores), para o teste medir o que o
      ATLAS realmente faz — não uma cópia da regra.
      ------------------------------------------------------------ */
+  /* O fechamento de uma pool grava a data de HOJE (relógio real). Uma
+     reabertura no teste tem de vir depois dele, senão o extrato diz que
+     a pool nova abriu antes da velha fechar. */
+  function hoje() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
   function carteira(nome) {
     var w = W.create({ name: nome, type: "global" });
     if (!w) throw new Error("não criou a carteira " + nome);
@@ -113,13 +120,13 @@
   }
   function saque(wid, valor, rede) {
     var e = CX.registrar({ tipo: "saque", walletId: wid, valorUSD: valor, ativo: "USDT",
-                           rede: rede || "Solana", data: "2026-09-10" });
+                           rede: rede || "Solana", data: hoje() });
     if (!e) throw new Error("saque recusado");
   }
   /* troca de token dentro do caixa: USDT → SOL, mesmo valor */
   function swap(wid, de, para, valor, qtdPara, rede) {
     var e = CX.registrar({ tipo: "swap", walletId: wid, valorUSD: valor, ativo: de, ativoDestino: para,
-                           qtdOrigem: valor, qtdDestino: qtdPara, rede: rede || "Solana", data: "2026-09-19" });
+                           qtdOrigem: valor, qtdDestino: qtdPara, rede: rede || "Solana", data: hoje() });
     if (!e) throw new Error("swap recusado");
   }
   function abrir(wid, o) {
@@ -215,7 +222,7 @@
         var s3 = foto();
         caso("trocou os tokens: patrimônio igual", s3.total, 1100);
         caso("trocou os tokens: lucro igual", s3.pnl, 100);
-        var ray = abrir(w, { base: "RAY", quote: "SOL", protocolo: "Raydium", capital: 1100, data: "2026-09-20" });
+        var ray = abrir(w, { base: "RAY", quote: "SOL", protocolo: "Raydium", capital: 1100, data: hoje() });
         var s4 = foto();
         caso("abriu na Raydium com tudo: patrimônio", s4.total, 1100);
         caso("abriu na Raydium: lucro continua 100", s4.pnl, 100);
@@ -262,7 +269,7 @@
         var s1 = foto();
         caso("fechou com −10%: lucro −100", s1.pnl, -100);
         caso("fechou com −10%: rentabilidade −10%", s1.pnlPct, -10);
-        var b = abrir(w, { base: "JUP", quote: "USDC", protocolo: "Raydium", capital: 900, data: "2026-09-20" });
+        var b = abrir(w, { base: "JUP", quote: "USDC", protocolo: "Raydium", capital: 900, data: hoje() });
         valeAgora(w, b, 990);
         var s2 = foto();
         caso("nova pool +10% sobre 900: lucro −10", s2.pnl, -10);
@@ -280,7 +287,7 @@
         valeAgora(w, a, 1200);
         valeAgora(w, b, 1100);
         fechar(w, a);
-        var c = abrir(w, { base: "ETH", quote: "USDC", protocolo: "Uniswap", capital: 1200, rede: "Base", data: "2026-09-20" });
+        var c = abrir(w, { base: "ETH", quote: "USDC", protocolo: "Uniswap", capital: 1200, rede: "Base", data: hoje() });
         valeAgora(w, c, 1320);
         var s = foto();
         caso("patrimônio 1.320 + 1.100", s.total, 2420);
@@ -299,11 +306,12 @@
         var s1 = foto();
         caso("600 aplicados +10%, 400 parados: patrimônio", s1.total, 1060);
         caso("lucro 60", s1.pnl, 60);
-        caso("rentabilidade sobre o que foi depositado: 6%", s1.pnlPct, 6);
+        caso("parado não entra: rentabilidade 60 ÷ 600 = 10%", s1.pnlPct, 10);
         saque(w, 200);
         var s2 = foto();
         caso("sacou 200: patrimônio 860", s2.total, 860);
         caso("sacou 200: lucro continua 60", s2.pnl, 60);
+        caso("sacou 200 do parado: rentabilidade continua 10%", s2.pnlPct, 10);
         invariantes("fim");
       }
     },
@@ -336,7 +344,7 @@
         H.actions.updateAsset(sol.id, { preco_atual: 120 });
         var s1 = foto();
         caso("500 em SOL +20%: lucro 100", s1.pnl, 100);
-        caso("rentabilidade 100 ÷ 1.000", s1.pnlPct, 10);
+        caso("rentabilidade 100 ÷ 500 trabalhando = 20%", s1.pnlPct, 20);
         H.actions.executeSell({ ativo_id: sol.id, quantidade: 5, preco: 120, motivo: "realizacao", walletId: w });
         var s2 = foto();
         caso("vendeu tudo a 120: caixa 1.100", s2.caixa, 1100);
@@ -346,7 +354,67 @@
         H.actions.updateAsset(btc.id, { preco_atual: 55000 });
         var s3 = foto();
         caso("recomprou 1.000 em BTC +10%: lucro 100 + 100", s3.pnl, 200);
-        caso("rentabilidade composta 20%", s3.pnlPct, 20);
+        caso("rentabilidade 200 ÷ 900 (500 + 400 novos que foram trabalhar)", s3.pnlPct, 200 / 900 * 100);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "100 numa pool e 100 parados: o parado não conta",
+      rodar: function () {
+        var w = carteira("Parado teste");
+        deposito(w, 200);
+        var p = abrir(w, { base: "SOL", quote: "USDC", protocolo: "Orca", capital: 100 });
+        valeAgora(w, p, 110);
+        var s = foto();
+        caso("patrimônio 110 + 100 parados", s.total, 210);
+        caso("lucro 10", s.pnl, 10);
+        caso("rentabilidade 10 ÷ 100 trabalhando = 10%", s.pnlPct, 10);
+        deposito(w, 1000);
+        caso("depositar mais e deixar parado não muda a rentabilidade", foto().pnlPct, 10);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "Renda passiva: o que as pools geraram, aberta e fechada",
+      rodar: function () {
+        var w = carteira("Renda teste");
+        deposito(w, 2000);
+        var a = abrir(w, { base: "PLTR", quote: "USDC", protocolo: "Orca", capital: 1000 });
+        var b = abrir(w, { base: "RAY", quote: "SOL", protocolo: "Raydium", capital: 1000 });
+        taxaPendente(w, a, 5);
+        usar(w); S.addFee(a, { amount: 3.6, status: "coletada" });
+        taxaPendente(w, b, 2);
+        var r1 = foto().rendaPassiva;
+        caso("gerado: 5 + 3,60 + 2", r1 ? r1.gerado : null, 10.6);
+        usar(w);
+        var da = S.poolSummary(a).dias, db = S.poolSummary(b).dias;
+        caso("ritmo mensal = gerado de cada aberta ÷ dias × 30",
+             r1 ? r1.mensal : null, 8.6 / da * 30 + 2 / db * 30);
+        fechar(w, a);
+        var r2 = foto().rendaPassiva;
+        caso("fechou a Orca: o gerado continua 10,60", r2 ? r2.gerado : null, 10.6);
+        caso("e o ritmo passa a ser só da Raydium", r2 ? r2.mensal : null, 2 / db * 30);
+        invariantes("fim");
+      }
+    },
+    {
+      nome: "Hold e pools juntos: valorização soma, desvalorização desconta",
+      rodar: function () {
+        var H = window.Store;
+        if (H.init) H.init();
+        var w = carteira("Misto teste");
+        W.setActiveGlobal(w);
+        deposito(w, 1000);
+        var p = abrir(w, { base: "SOL", quote: "USDC", protocolo: "Orca", capital: 500 });
+        valeAgora(w, p, 550);
+        var btc = H.actions.createAsset({ nome: "Bitcoin misto", ticker: "BTCM", preco_atual: 50000 });
+        var c = H.actions.executeBuy({ ativo_id: btc.id, quantidade: 0.01, preco: 50000, walletId: w });
+        if (!c || c.error) throw new Error("compra recusada: " + (c && c.error));
+        H.actions.updateAsset(btc.id, { preco_atual: 48000 });
+        var s = foto();
+        caso("patrimônio: 550 na pool + 480 no BTC", s.total, 1030);
+        caso("lucro: +50 da pool − 20 do BTC", s.pnl, 30);
+        caso("rentabilidade 30 ÷ 1.000 trabalhando = 3%", s.pnlPct, 3);
         invariantes("fim");
       }
     },
@@ -418,7 +486,7 @@
         var a = abrir(w, { base: "PLTR", quote: "USDC", protocolo: "Orca", capital: 1000 });
         valeAgora(w, a, 1100);
         fechar(w, a);
-        abrir(w, { base: "RAY", quote: "SOL", protocolo: "Raydium", capital: 1100, data: "2026-09-20" });
+        abrir(w, { base: "RAY", quote: "SOL", protocolo: "Raydium", capital: 1100, data: hoje() });
         /* volta a regra de 23/09: custo das abertas + base realizada */
         var K = window.AtlasContabilidade, orig = K.patrimonio;
         K.patrimonio = function (d) {
@@ -430,8 +498,8 @@
         try {
           SUP.invalidar();
           var achados = SUP.auditar({ tela: false }).achados.map(function (x) { return x.o_que; });
-          caso("acusa: a rentabilidade não é resultado ÷ depositado",
-               achados.indexOf("a rentabilidade não é resultado ÷ o que foi depositado") >= 0, true);
+          caso("acusa: a rentabilidade não é resultado ÷ o dinheiro que trabalhou",
+               achados.indexOf("a rentabilidade não é resultado ÷ o dinheiro que trabalhou") >= 0, true);
         } finally { K.patrimonio = orig; }
       }
     },

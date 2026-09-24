@@ -387,7 +387,9 @@
 
     eventos: function (opts) {
       opts = opts || {};
-      var arr = ler().filter(function (e) {
+      var ordem = {};
+      var arr = ler().filter(function (e, i) {
+        ordem[e.id] = i;
         if (opts.walletId && e.walletId !== opts.walletId && e.contraWalletId !== opts.walletId) return false;
         if (opts.tipo && e.tipo !== opts.tipo) return false;
         if (opts.module && e.module !== opts.module) return false;
@@ -397,10 +399,19 @@
         return true;
       });
       /* mais recente primeiro; empate resolvido pela ordem de registro,
-         para o extrato ficar estável entre carregamentos */
+         para o extrato ficar estável entre carregamentos.
+
+         O desempate por criadoEm sozinho não bastava: fechar uma pool e
+         abrir a próxima no mesmo milissegundo deixava os dois
+         lançamentos com o mesmo carimbo, e a ordem entre eles ficava
+         ao acaso. A rentabilidade lê essa ordem (abrir antes de fechar
+         conta o dinheiro duas vezes) — então o último desempate é a
+         posição no livro, que é a ordem real em que foram lançados. */
       return arr.sort(function (a, b) {
         if (a.data !== b.data) return a.data < b.data ? 1 : -1;
-        return String(a.criadoEm) < String(b.criadoEm) ? 1 : -1;
+        var ca = String(a.criadoEm || ""), cb = String(b.criadoEm || "");
+        if (ca !== cb) return ca < cb ? 1 : -1;
+        return ordem[b.id] - ordem[a.id];
       });
     },
 

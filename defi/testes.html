@@ -1447,32 +1447,36 @@
            "para 30.000 — dinheiro nascendo na compra.");
 
       /* ------------------------------------------------------------
-         ERRO 2 — o denominador é o CAPITAL PRÓPRIO (depositado − sacado)
+         ERRO 2 — o denominador é o DINHEIRO QUE TRABALHOU
 
          Primeiro o lucro realizado do Trade era dividido pelo capital
          das operações ABERTAS (+5.000 sobre 30.000 do Hold = +16,67%).
          A correção somou "custo + base realizada" — e passou a contar
          duas vezes o dinheiro que sai de uma pool e entra noutra. Desde
-         24/09/2026 a base é uma só: patrimônio − resultado.
+         24/09/2026 a base vem do extrato (capitalTrabalhado): o máximo
+         de dinheiro próprio que esteve em posições ao mesmo tempo.
          ------------------------------------------------------------ */
-      var realiz = K.patrimonio({ caixa: 1000, posicoes: [{ valor: 5000, custo: 5000 }],
-                                  realizado: 800, baseRealizada: 0 });
-      eq("realizado sem base informada: divide pelo capital próprio (6.000 − 800)",
-         realiz.rentabilidade, (800 / 5200) * 100);
-      eq("o numerador é o resultado total", realiz.resultadoTotal, 800);
-
       /* depositou 1.000, pool na Orca foi a 1.100, fechou e reabriu
-         na Raydium com os 1.100: a base continua 1.000 */
+         na Raydium com os 1.100: pelo extrato, trabalharam 1.000 */
       var reciclou = K.patrimonio({ caixa: 0, posicoes: [{ valor: 1100, custo: 1100 }],
-                                    realizado: 100, baseRealizada: 1000 });
+                                    realizado: 100, baseRealizada: 1000, capitalTrabalhado: 1000 });
       eq("fechar e reabrir não conta o dinheiro duas vezes: base 1.000", reciclou.base, 1000);
       eq("e a rentabilidade continua 10%", reciclou.rentabilidade, 10);
       var composto = K.patrimonio({ caixa: 0, posicoes: [{ valor: 1210, custo: 1100 }],
-                                    realizado: 100, baseRealizada: 1000 });
+                                    realizado: 100, baseRealizada: 1000, capitalTrabalhado: 1000 });
       eq("a nova pool +10% compõe: 21%", composto.rentabilidade, 21);
       nota("Medido antes: reabrir derrubava de 10% para 4,76% (base 2.100) e " +
            "a nova pool +10% aparecia como 10% no total, onde o composto é 21%.");
-      is("sacou tudo: sem capital, sem percentual",
+
+      var parado = K.patrimonio({ caixa: 100, posicoes: [{ valor: 110, custo: 100 }], capitalTrabalhado: 100 });
+      eq("100 na pool +10% e 100 parados: 10%, não 5%", parado.rentabilidade, 10);
+
+      /* sem extrato (posição anterior ao livro de caixa): régua antiga */
+      var semExtrato = K.patrimonio({ caixa: 1000, posicoes: [{ valor: 5000, custo: 5000 }],
+                                      realizado: 800, baseRealizada: 2000 });
+      eq("sem extrato: custo das abertas + base realizada", semExtrato.rentabilidade, (800 / 7000) * 100);
+      eq("o numerador é o resultado total", semExtrato.resultadoTotal, 800);
+      is("sem capital nenhum, sem percentual",
          K.patrimonio({ caixa: 0, posicoes: [], realizado: 50 }).rentabilidade, null);
 
       /* -- resultado aberto informado pode divergir de valor − custo -- */
@@ -1517,8 +1521,8 @@
       });
       eq("a variação do token em caixa é resultado", tokCaixa.resultadoCaixa, 10);
       eq("e entra no resultado total", tokCaixa.resultadoTotal, 30);
-      eq("a base é o capital próprio: 330 − 30 = 300 depositados", tokCaixa.base, 300);
-      eq("rentabilidade sobre o que foi depositado", tokCaixa.rentabilidade, 10);
+      eq("sem extrato, a base inclui o custo do token volátil (não a stablecoin)", tokCaixa.base, 250);
+      eq("rentabilidade sobre essa base", tokCaixa.rentabilidade, (30 / 250) * 100);
       ok("e o patrimônio fecha com o extrato",
          K.conferir.dinheiroFecha({ caixa: tokCaixa.caixa, investido: tokCaixa.investido,
            depositado: 300, sacado: 0, resultadoTotal: tokCaixa.resultadoTotal }).ok,

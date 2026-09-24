@@ -488,7 +488,7 @@
      sino acende. Se a fórmula mudar DE PROPÓSITO, as duas mudam juntas
      — a daqui é a especificação escrita em código.
 
-       6a. rentabilidade = resultado ÷ (depositado − sacado)
+       6a. rentabilidade = resultado ÷ dinheiro próprio que trabalhou
        6b. pool aberta:   resultado = valor − base + taxas; valor total
                           = mercado + taxa pendente; % = resultado ÷ aportado
        6c. pool fechada:  o valor final voltou ao caixa, e o resultado
@@ -496,6 +496,7 @@
        6d. soma das carteiras = patrimônio e lucro do total
        6e. gráficos por plataforma e por rede somam o patrimônio, sem
            fatia negativa
+       6f. renda passiva = taxas e rendimentos gerados
      ============================================================ */
   var TOL_FORMULA = 0.01;
 
@@ -612,29 +613,66 @@
     var s = snap || safe(function () { return CONS.snapshot(30); }, null);
     if (!s) return out;
 
-    /* ---- 6a: rentabilidade sobre o dinheiro colocado ---- */
-    var liquido = 0;
-    safe(function () {
-      CX.eventos({}).forEach(function (e) {
-        var v = n(e.valorUSD);
-        if (e.tipo === "deposito" && ehGlobal[e.walletId]) liquido += v;
-        else if (e.tipo === "saque" && ehGlobal[e.walletId]) liquido -= v;
-        else if (e.tipo === "transferencia") {
-          /* entre global e local o dinheiro entra ou sai do total */
-          if (ehGlobal[e.walletId] && !ehGlobal[e.contraWalletId]) liquido -= v;
-          if (!ehGlobal[e.walletId] && ehGlobal[e.contraWalletId]) liquido += v;
-        }
+    /* ---- 6a: rentabilidade sobre o dinheiro que trabalhou ----
+       Refeita do extrato, sem perguntar à consolidação: cada aporte
+       (dinheiro entrando numa posição) soma, cada retorno (fechamento,
+       venda, taxa coletada) subtrai; a base é o maior saldo que isso já
+       teve, com o token volátil parado no caixa somado ao saldo de
+       agora. Sem nenhum aporte/retorno no extrato não há o que refazer
+       (posição anterior ao livro de caixa) e a conferência não roda. */
+    var evs = safe(function () {
+      return CX.eventos({}).filter(function (e) {
+        return (e.tipo === "aporte" || e.tipo === "retorno") && ehGlobal[e.walletId];
       });
-      return true;
-    }, null);
-    if (liquido > TOL_FORMULA && s.pnlPct != null) {
-      var pctEsperado = n(s.pnl) / liquido * 100;
-      if (Math.abs(n(s.pnlPct) - pctEsperado) > TOL_FORMULA) {
-        out.push(formula("a rentabilidade não é resultado ÷ o que foi depositado", {
-          exibido: n(s.pnlPct), refeito: pctEsperado, diferenca: n(s.pnlPct) - pctEsperado,
-          resultado: n(s.pnl), depositadoLiquido: liquido,
-          detalhe: "Rentabilidade = resultado ÷ (depositado − sacado). Uma diferença aqui é " +
-                   "dinheiro contado duas vezes ou esquecido no denominador."
+    }, []);
+    if (evs.length && s.pnlPct != null) {
+      /* eventos() vem do mais recente ao mais antigo (empate pela
+         ordem de lançamento); invertido, é a ordem em que o dinheiro andou */
+      evs = evs.slice().reverse();
+      var corr = 0, pico = 0;
+      evs.forEach(function (e) {
+        corr += (e.tipo === "aporte" ? n(e.valorUSD) : -n(e.valorUSD));
+        if (corr > pico) pico = corr;
+      });
+      var base = Math.max(pico, corr + n(s.baseCaixaVolatil));
+      if (base > TOL_FORMULA) {
+        var pctEsperado = n(s.pnl) / base * 100;
+        if (Math.abs(n(s.pnlPct) - pctEsperado) > TOL_FORMULA) {
+          out.push(formula("a rentabilidade não é resultado ÷ o dinheiro que trabalhou", {
+            exibido: n(s.pnlPct), refeito: pctEsperado, diferenca: n(s.pnlPct) - pctEsperado,
+            resultado: n(s.pnl), dinheiroQueTrabalhou: base,
+            detalhe: "Rentabilidade = resultado ÷ o máximo de dinheiro próprio que já esteve em posições. " +
+                     "Uma diferença aqui é dinheiro contado duas vezes, parado entrando na conta, ou esquecido."
+          }));
+        }
+      }
+    }
+
+    /* ---- 6f: renda passiva = o que as posições geraram ----
+       Refeita das taxas de cada pool e do rendimento de cada staking/
+       lending, abertos e fechados. */
+    var S2 = global.DeFiStore;
+    if (s.rendaPassiva && S2 && S2.all) {
+      var bw = safe(function () { return S2.all().byWallet || {}; }, {});
+      var gerado = 0;
+      globais.forEach(function (w) {
+        var wd = bw[w.id] || {};
+        (wd.pools || []).concat(wd.closed || []).forEach(function (p) {
+          (p.fees || []).forEach(function (f) {
+            if (f.status === "pendente" || f.status === "coletada") gerado += n(f.amount);
+          });
+        });
+        ["staking", "lending"].forEach(function (t) {
+          (wd[t] || []).forEach(function (it) {
+            var r = (it.status === "encerrada" && it.closeSummary) ? it.closeSummary
+              : safe(function () { return S2.rendimentoSummary(t, it); }, null);
+            if (r) gerado += n(r.rendimentoTotal);
+          });
+        });
+      });
+      if (Math.abs(n(s.rendaPassiva.gerado) - gerado) > TOL_FORMULA) {
+        out.push(formula("a renda passiva não é o que as posições geraram", {
+          exibido: n(s.rendaPassiva.gerado), refeito: gerado, diferenca: n(s.rendaPassiva.gerado) - gerado
         }));
       }
     }

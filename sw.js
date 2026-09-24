@@ -133,7 +133,10 @@
    bateria pages/testes-contas.html. Supervisor ganha a verificação 6
    (fórmulas refeitas por outro caminho) e Hold/Trade entram no gráfico
    por rede como "Sem rede informada". */
-var VERSAO = "atlas-v76";
+/* v77 = rentabilidade sobre o dinheiro que trabalhou (parado não conta,
+   reabrir não duplica), renda passiva medida (taxas geradas, ritmo
+   real), extrato com desempate pela ordem de lançamento. */
+var VERSAO = "atlas-v77";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

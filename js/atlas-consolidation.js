@@ -763,38 +763,114 @@
       .sort(function (a, b) { return b.value - a.value; });
   }
 
-  /* ---------- Renda passiva estimada (APR/APY declarado) ----------
-     Lia `s.value` das posições de staking — campo que deixou de
-     existir quando o valor virou derivado (quantidade × preço). O
-     resultado era ZERO para sempre, num KPI que dizia "estimada
-     (mês)". E ignorava as pools, que são a maior parte do rendimento.
+  /* ============================================================
+     RENDA PASSIVA — O QUE AS POOLS GERARAM DE VERDADE
 
-     Agora: valor da posição × APR/APY DECLARADO ÷ 12, em todas as
-     carteiras globais. É estimativa declarada, não medição — posição
-     sem APR informado contribui nada, e uma carteira inteira sem APR
-     devolve null, para a tela poder esconder o KPI em vez de afirmar
-     "US$ 0,00 por mês". */
-  function passiveIncome() {
+     Era `valor × APR DECLARADO ÷ 12`: o APR digitado no cadastro da
+     pool, não o que ela rendeu. Medido em 24/09/2026: o card dizia
+     US$ 2,61 por mês com as pools já tendo gerado US$ 8,60 de taxa. Um
+     número de renda que não sai da renda.
+
+     Agora dois números, os dois MEDIDOS:
+       gerado  taxas das pools (coletadas + pendentes) e rendimento de
+               staking/lending, das posições abertas E fechadas — é o
+               acumulado, não some quando a pool fecha;
+       mensal  o ritmo real das posições ABERTAS: o que cada uma gerou
+               ÷ dias aberta × 30. Fechada não entra no ritmo: ela não
+               rende mais.
+     Sem posição de renda no escopo devolve null (a tela esconde o
+     card em vez de afirmar "US$ 0").
+     ============================================================ */
+  function rendaPassiva() {
     return safe(function () {
       var S = global.DeFiStore;
-      if (!S || !S.poolsDeTodasCarteiras) return null;
-      var y = 0, tem = false;
-      S.poolsDeTodasCarteiras().forEach(function (x) {
-        if (!noEscopo(x.walletId)) return;
-        var apr = n(x.pool.apr);
-        if (apr > 0) { y += S.poolValue(x.pool) * apr / 100; tem = true; }
-      });
-      if (S.rendimentosDeTodasCarteiras && S.rendValue) {
-        ["staking", "lending"].forEach(function (t) {
-          S.rendimentosDeTodasCarteiras(t).forEach(function (x) {
-            if (!noEscopo(x.walletId)) return;
-            var taxa = n(x.item.apr) || n(x.item.apy);
-            if (taxa > 0) { y += S.rendValue(x.item) * taxa / 100; tem = true; }
-          });
+      if (!S || !S.all || !S.poolSummary) return null;
+      var byWallet = S.all().byWallet || {};
+      var gerado = 0, mensal = 0, tem = false;
+      globalIds().forEach(function (wid) {
+        var wd = byWallet[wid]; if (!wd) return;
+        (wd.pools || []).forEach(function (p) {
+          var r = S.poolSummary(p); if (!r) return;
+          tem = true;
+          gerado += n(r.taxasTotal);
+          mensal += n(r.taxasTotal) / Math.max(1, n(r.dias)) * 30;
         });
-      }
-      return tem ? y / 12 : null;    /* mensal */
+        (wd.closed || []).forEach(function (p) {
+          var r = p.closeSummary || S.poolSummary(p); if (!r) return;
+          tem = true;
+          gerado += n(r.taxasTotal);
+        });
+        if (S.rendimentoSummary) {
+          ["staking", "lending"].forEach(function (t) {
+            (wd[t] || []).forEach(function (it) {
+              var fechada = it.status === "encerrada";
+              var r = (fechada && it.closeSummary) ? it.closeSummary : S.rendimentoSummary(t, it);
+              if (!r) return;
+              tem = true;
+              gerado += n(r.rendimentoTotal);
+              if (!fechada) mensal += n(r.rendimentoTotal) / Math.max(1, n(r.dias)) * 30;
+            });
+          });
+        }
+      });
+      return tem ? { gerado: gerado, mensal: mensal } : null;
     }, null);
+  }
+  /* nome antigo: o ritmo mensal (agora medido, não declarado) */
+  function passiveIncome() {
+    var r = rendaPassiva();
+    return r ? r.mensal : null;
+  }
+
+  /* ============================================================
+     CAPITAL QUE TRABALHOU — a base da rentabilidade
+
+     A pergunta do dono (24/09/2026): "com 100 numa pool e 100 parados,
+     não dá para contar a porcentagem sobre 200 — só 100 estão
+     trabalhando". E fechar uma pool e reabrir noutra não pode contar o
+     mesmo dinheiro duas vezes.
+
+     O extrato responde as duas. Cada ABERTURA de posição (aporte) soma
+     o que saiu do caixa para trabalhar; cada FECHAMENTO, venda ou taxa
+     coletada (retorno) subtrai o que voltou — com o lucro dentro. O
+     saldo corrente é o dinheiro SEU que está trabalhando agora:
+       · dinheiro parado nunca entra (não houve aporte);
+       · lucro reaplicado não conta como dinheiro seu (ele saiu no
+         retorno e voltou no aporte: soma zero);
+       · reabrir com o mesmo dinheiro não duplica.
+     A base é o MAIOR valor que esse saldo já teve — o máximo de
+     dinheiro seu que chegou a trabalhar ao mesmo tempo. Com tudo
+     fechado, a rentabilidade continua a mesma em vez de sumir.
+
+     Token volátil parado no caixa (SOL, ETH) também está exposto a
+     preço, então trabalha: entra somado ao saldo corrente. Stablecoin
+     parada não.
+
+     Ordem do extrato: data do movimento e, no mesmo dia, a ordem em
+     que foi lançado.
+     ============================================================ */
+  function capitalTrabalhado(baseVolatil) {
+    var CX = global.AtlasCaixa;
+    if (!CX || !CX.eventos) return null;
+    var ids = {};
+    globalIds().forEach(function (id) { ids[id] = 1; });
+    var evs = safe(function () {
+      return CX.eventos({}).filter(function (e) {
+        return (e.tipo === "aporte" || e.tipo === "retorno") && ids[e.walletId];
+      });
+    }, []);
+    if (!evs.length) return null;
+    /* eventos() vem do mais recente ao mais antigo, com empate pela
+       ordem de lançamento; invertido, é a ordem em que o dinheiro
+       andou. Reordenar aqui por conta própria perdia esse desempate. */
+    evs = evs.slice().reverse();
+    var corrente = 0, pico = 0;
+    evs.forEach(function (e) {
+      corrente += (e.tipo === "aporte" ? 1 : -1) * n(e.valorUSD);
+      if (corrente > pico) pico = corrente;
+    });
+    var agora = corrente + n(baseVolatil);
+    return { pico: Math.max(pico, agora), corrente: corrente };
   }
 
   /* Protocolos EM USO — as plataformas onde há posição aberta, em
@@ -975,6 +1051,7 @@
        core/atlas-contabilidade.js. O que o núcleo garante é que o
        número exibido como resultado é o mesmo que entra na
        rentabilidade. */
+    var trabalhou = capitalTrabalhado(cx.baseVolatil);
     var contas = C ? C.patrimonio({
       caixa: caixa,
       /* token parado no caixa: a variação de preço é resultado, e o
@@ -985,7 +1062,9 @@
       posicoes: [{ valor: total, custo: cost }],
       resultadoAberto: pnl - realizado,   /* Hold + DeFi + RWA */
       realizado: realizado,
-      baseRealizada: baseRealizada
+      baseRealizada: baseRealizada,
+      /* a base da rentabilidade: ver capitalTrabalhado() */
+      capitalTrabalhado: trabalhou ? trabalhou.pico : null
     }) : null;
     var resultadoCaixa = contas ? contas.resultadoCaixa : 0;
 
@@ -1015,6 +1094,13 @@
       caixaCusto: cx.custo,
       base: contas ? contas.base : cost,
       passiveIncome: passiveIncome(),
+      /* renda medida: acumulado gerado e ritmo mensal das abertas */
+      rendaPassiva: rendaPassiva(),
+      /* a base da rentabilidade e as peças dela, para o supervisor e
+         o Oráculo mostrarem a conta com os mesmos números */
+      capitalTrabalhado: trabalhou ? trabalhou.pico : null,
+      capitalTrabalhandoAgora: trabalhou ? trabalhou.corrente : null,
+      baseCaixaVolatil: cx.baseVolatil,
       protocols: protocolsCount(),
       desde: desdeQuando(),
       byModule: byModule,
@@ -1241,6 +1327,7 @@
     moduleList: moduleList,
     blockchain: blockchain,
     plataforma: plataforma,
+    rendaPassiva: rendaPassiva,
     CAIXA_ROTULO: CAIXA_ROTULO,
     /* recorte do Dashboard: null = todas as carteiras */
     setEscopo: setEscopo,

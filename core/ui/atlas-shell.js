@@ -1066,7 +1066,7 @@
         return L("Na demonstração os números são ilustrativos e não saem da conta real. " +
                  "No seu ATLAS: patrimônio = caixa + valor de mercado das posições; " +
                  "resultado = posições abertas (valor − custo) + operações encerradas; " +
-                 "rentabilidade = resultado ÷ capital próprio (depositado − sacado), composta." +
+                 "rentabilidade = resultado ÷ o dinheiro seu que trabalhou (parado não conta)." +
                  AVISO_DEMO(),
                  "Demo numbers are illustrative and don't come from the real calculation." + AVISO_DEMO());
       }
@@ -1077,12 +1077,12 @@
 
       if (assunto === "rentabilidade") {
         if (s.pnlPct == null) {
-          return L("Sem rentabilidade: não há capital próprio (depositado − sacado) para servir de base.",
-                   "No return: there is no own capital (deposited − withdrawn) to use as the base.");
+          return L("Sem rentabilidade: nenhum dinheiro seu chegou a trabalhar numa posição ainda.",
+                   "No return: none of your money has worked in a position yet.");
         }
         var linhas = [
-          L("Rentabilidade = resultado ÷ capital próprio (o que você depositou − o que sacou).",
-            "Return = result ÷ own capital (deposited − withdrawn)."),
+          L("Rentabilidade = resultado ÷ o dinheiro seu que trabalhou.",
+            "Return = result ÷ your money that worked."),
           L("Resultado: ", "Result: ") + ex(s.pnl) + ((temRealizado || temCaixa)
             ? L(" (" + ex(s.pnlAberto) + " em posições abertas" +
                   (temRealizado ? " + " + ex(s.pnlRealizado) + " em operações encerradas" : "") +
@@ -1091,12 +1091,13 @@
                   (temRealizado ? " + " + ex(s.pnlRealizado) + " closed" : "") +
                   (temCaixa ? " + " + ex(s.pnlCaixa) + " tokens in cash" : "") + ")")
             : "") + ".",
-          L("Capital próprio: ", "Own capital: ") + ex(s.base) +
-            L(" — patrimônio " + ex(s.total) + " menos o resultado " + ex(s.pnl) + ".",
-              " — net worth " + ex(s.total) + " minus result " + ex(s.pnl) + "."),
+          L("Dinheiro que trabalhou: ", "Money that worked: ") + ex(s.base) +
+            L(" — o máximo de dinheiro seu que já esteve em posições ao mesmo tempo" +
+                (s.capitalTrabalhandoAgora != null ? " (agora: " + ex(Math.max(0, s.capitalTrabalhandoAgora)) + ")" : "") + ".",
+              " — the most of your money that was in positions at the same time."),
           ex(s.pnl) + " ÷ " + ex(s.base) + " = " + pctExato(s.pnlPct) + ".",
-          L("É composta: fechar uma posição e reabrir outra com o mesmo dinheiro não conta o capital duas vezes, " +
-            "e o lucro de uma continua rendendo na outra. Dinheiro parado no caixa também é capital e entra na base.",
+          L("Abrir uma posição soma, fechar subtrai o que voltou. Por isso reabrir com o mesmo dinheiro não conta duas vezes, " +
+            "o lucro reaplicado continua rendendo sem virar capital, e dinheiro parado no caixa não entra.",
             "It compounds: closing a position and reopening with the same money doesn't count the capital twice. " +
             "Idle cash is capital too and is in the base.")
         ];
@@ -1140,10 +1141,13 @@
 
       if (assunto === "renda") {
         return [
-          L("Renda passiva estimada = (valor × APR de cada staking + valor × APY de cada lending) ÷ 12.",
-            "Estimated passive income = (value × APR of each staking + value × APY of each lending) ÷ 12."),
-          L("Hoje: ", "Now: ") + ex(s.passiveIncome || 0) + L(" por mês.", " per month."),
-          L("Pools não entram nesta estimativa.", "Pools are not part of this estimate.")
+          L("Renda passiva = taxas das pools + rendimento de staking e lending que já foram gerados (coletados e pendentes), " +
+            "das posições abertas e das fechadas.",
+            "Passive income = pool fees + staking and lending rewards already generated (collected and pending), open and closed."),
+          L("Gerado até hoje: ", "Generated so far: ") + ex(s.rendaPassiva ? s.rendaPassiva.gerado : 0) + ".",
+          L("Ritmo atual: ", "Current pace: ") + ex(s.passiveIncome || 0) +
+            L(" por mês — o que cada posição aberta gerou ÷ dias aberta × 30.",
+              " per month — what each open position generated ÷ days open × 30.")
         ].join(NL);
       }
 
@@ -1285,8 +1289,9 @@
         if (!s || !s.total) return baseBrain.patrimonio();
         var sinal = s.pnl >= 0 ? "+" : "";
         return L("Resultado acumulado: " + sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) +
-                 " sobre o capital próprio (depositado − sacado). " +
-                 "Renda passiva estimada: " + dinheiro(s.passiveIncome) + "." + (s.demo ? AVISO_DEMO() : ""),
+                 " sobre o dinheiro seu que trabalhou. " +
+                 "Renda passiva: " + dinheiro(s.rendaPassiva ? s.rendaPassiva.gerado : s.passiveIncome) + " gerada" +
+                 (s.rendaPassiva ? " (≈ " + dinheiro(s.passiveIncome) + "/mês no ritmo atual)" : "") + "." + (s.demo ? AVISO_DEMO() : ""),
                  "Accumulated result: " + sinal + dinheiro(s.pnl) + pctEntre(s.pnlPct) +
                  ". Estimated passive income: " +
                  dinheiro(s.passiveIncome) + "." + (s.demo ? AVISO_DEMO() : ""));

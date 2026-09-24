@@ -92,7 +92,7 @@ function buildAtlasDataReal() {
   /* KPIs reais
 
      pnl e pnlPct são ACUMULADOS — resultado desde a entrada em cada
-     posição, sobre o capital próprio — depositado − sacado (core/atlas-contabilidade.js).
+     posição, sobre o dinheiro seu que trabalhou (core/atlas-contabilidade.js).
      O snapshot não os recorta por período: trocar 7/30/90 dias no
      gráfico não muda o número. Os rótulos diziam "(30d)" e "Período",
      e o Oráculo, ao explicar a conta, teria de desmentir a tela. */
@@ -109,8 +109,12 @@ function buildAtlasDataReal() {
     /* Renda passiva só aparece quando ALGUMA posição declara APR/APY.
        Sem isso o cartão afirmava "US$ 0,00 por mês", que é uma resposta
        errada para uma pergunta que o ATLAS não tinha como responder. */
-    ...(snap.passiveIncome == null ? [] : [
-      { rotulo: "Renda Passiva", valor: usd(snap.passiveIncome), variacao: "estimada pelo APR", periodo: "(mês)", tipo: "pos" }
+    /* Renda passiva MEDIDA (24/09/2026): o que as pools e o staking
+       já geraram, e o ritmo mensal real das posições abertas. Era
+       `valor × APR digitado ÷ 12` — US$ 2,61 com US$ 8,60 gerados. */
+    ...(snap.rendaPassiva == null ? [] : [
+      { rotulo: "Renda Passiva", valor: usd(snap.rendaPassiva.gerado),
+        variacao: "≈ " + usd(snap.rendaPassiva.mensal) + "/mês", periodo: "no ritmo atual", tipo: "pos" }
     ]),
     /* com uma carteira escolhida, o cartão diz QUAL — "11 carteiras"
        ao lado de números de uma só confundiria a leitura */

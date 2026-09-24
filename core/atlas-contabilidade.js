@@ -45,13 +45,16 @@
      base realizada      o capital que produziu o resultado realizado
      resultado do caixa  caixa a mercado − caixa a custo (token parado)
      resultado total     aberto + realizado + resultado do caixa
-     capital próprio     depositado − sacado  (= patrimônio − resultado total)
-     rentabilidade       resultado total ÷ capital próprio
+     capital trabalhado  o máximo de dinheiro próprio que já esteve em
+                         posições ao mesmo tempo (lido do extrato:
+                         abrir soma, fechar subtrai o que voltou)
+     rentabilidade       resultado total ÷ capital trabalhado
 
    A última linha é a que impede o erro nº 2 e a dupla contagem: o
-   denominador é UM número — o dinheiro que a pessoa pôs —, e não a
+   denominador é UM número — o dinheiro seu que trabalhou —, e não a
    soma dos custos de cada posição, que conta duas vezes o dinheiro
-   que sai de uma pool e entra noutra (ver patrimonio()).
+   que sai de uma pool e entra noutra. Dinheiro parado não trabalha e
+   não entra (ver patrimonio()).
 
    REGRA DE OURO Nº 4, EM FORMA DE CONTA
    -------------------------------------
@@ -229,32 +232,37 @@
     var patrimonioTotal = caixa + pos.valor;
 
     /* ------------------------------------------------------------
-       A BASE É O DINHEIRO QUE A PESSOA COLOCOU — JUROS COMPOSTOS
+       A BASE É O DINHEIRO SEU QUE TRABALHOU (24/09/2026)
 
        Era `custo das abertas + capital das encerradas + custo do token
-       volátil em caixa`. Parece completo e conta o MESMO dinheiro duas
-       vezes quando ele é reciclado: depositar 1.000, fechar uma pool na
-       Orca com 1.100 e reabrir na Raydium com os 1.100 dava base 2.100
-       (1.000 da encerrada + 1.100 da nova). A rentabilidade caía de 10%
-       para 4,76% no clique de abrir, e a Raydium rendendo +10% aparecia
-       como 10% no total, onde o composto é 21%.
+       volátil em caixa`. Conta o MESMO dinheiro duas vezes quando ele é
+       reciclado: depositar 1.000, fechar uma pool na Orca com 1.100 e
+       reabrir na Raydium com os 1.100 dava base 2.100. A rentabilidade
+       caía de 10% para 4,76% no clique de abrir, e a Raydium rendendo
+       +10% aparecia como 10%, onde o composto é 21%.
 
-       Agora a base é o capital próprio: depositado − sacado. Pela regra
-       de ouro nº 4 ele é exatamente `patrimônio − resultado`, e é assim
-       que sai daqui — sem precisar ler o extrato, e valendo também para
-       posição antiga registrada sem caixa (aí ele cai no custo dela).
+       Uma primeira correção usou "depositado − sacado" e pôs o dinheiro
+       PARADO na base: 100 numa pool rendendo 10% e 100 parados davam
+       5%. O dono do produto recusou — só 100 estavam trabalhando.
 
-       Consequência aceita pelo dono do produto (24/09/2026): dinheiro
-       parado no caixa conta na base, porque também é capital dele.
-       Depositar 1.000, aplicar 600 e render 10% mostra 6%.
+       A base é o CAPITAL QUE TRABALHOU, lido do extrato por quem chama
+       (js/atlas-consolidation.js, capitalTrabalhado): o máximo de
+       dinheiro próprio que já esteve dentro de posições ao mesmo tempo.
+       Abrir soma, fechar subtrai o que voltou (lucro junto), então
+       reabrir não duplica, lucro reaplicado não vira capital e parado
+       não entra.
 
-       baseRealizada e baseCaixa continuam aceitas (quem chama ainda as
-       informa) mas não entram mais na divisão.
+       Sem extrato (posição registrada antes do livro de caixa, ou quem
+       chama não informa), vale a régua anterior ao livro: custo das
+       abertas + base realizada + custo do token volátil em caixa.
        ------------------------------------------------------------ */
-    var base = patrimonioTotal - resultadoTotal;
-    /* sacou tudo: sobra poeira de ponto flutuante, não capital */
+    var base;
+    if (dados.capitalTrabalhado != null && n(dados.capitalTrabalhado) > EPS) {
+      base = n(dados.capitalTrabalhado);
+    } else {
+      base = pos.custo + baseRealizada + baseCaixa;
+    }
     if (base < EPS) base = 0;
-    void baseRealizada; void baseCaixa;
     var faltaBase = false;
 
     return {
