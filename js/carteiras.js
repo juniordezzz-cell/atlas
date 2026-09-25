@@ -638,7 +638,8 @@
       return '<span class="cx-asset__ico"><img src="' + esc(a.thumb) + '" alt=""></span>';
     }
     var sigla = String((a && a.ativo) || "?").slice(0, 2).toUpperCase();
-    return '<span class="cx-asset__ico cx-asset__ico--txt">' + esc(sigla) + '</span>';
+    /* sem imagem guardada no extrato: core/atlas-token-icons.js busca */
+    return '<span class="cx-asset__ico cx-asset__ico--txt" data-atlas-token="' + esc((a && a.ativo) || "") + '">' + esc(sigla) + '</span>';
   }
 
   function precoLinha(a) {

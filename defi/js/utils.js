@@ -141,7 +141,9 @@
     coin: function (sym) {
       var c = (window.DeFiStore && DeFiStore.colorOf("token", sym)) || "#5B9BFF";
       var initials = String(sym == null ? "" : sym).slice(0, 3).toUpperCase();
-      return '<span class="coin" style="background:' + U.esc(c) + '">' + U.esc(initials) + '</span>';
+      /* data-atlas-token: core/atlas-token-icons.js põe a imagem do
+         token por cima das iniciais (as iniciais ficam de reserva) */
+      return '<span class="coin" data-atlas-token="' + U.esc(sym) + '" style="background:' + U.esc(c) + '">' + U.esc(initials) + '</span>';
     },
 
     /* ---------- Status ---------- */

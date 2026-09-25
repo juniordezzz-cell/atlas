@@ -54,7 +54,9 @@
     /* token badge (iniciais coloridas) */
     tkn: function (a) {
       var init = a.ticker.replace(/[^a-zA-Z0-9]/g, "").slice(0, 4).toUpperCase();
-      return '<span class="asset-tkn" style="background:' + a.color + '">' + init + '</span>';
+      /* data-atlas-token: a imagem do token (core/atlas-token-icons.js) */
+      var t = String(a.ticker || "").replace(/[^a-zA-Z0-9]/g, "");
+      return '<span class="asset-tkn" data-atlas-token="' + t + '" style="background:' + a.color + '">' + init + '</span>';
     },
 
     /* regime chip */

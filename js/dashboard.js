@@ -181,7 +181,9 @@ function pintarMovimentacoes() {
 function pintarPools() {
   document.getElementById('poolList').innerHTML = D.pools.map(p => `
     <li class="pool-item">
-      <span class="pool-icon">${escHTML(String(p.par).split('/')[0].slice(0,3))}</span>
+      <span class="pool-icons">${String(p.par).split('/').slice(0, 2).map(t =>
+        /* os DOIS tokens do par, cada um com a imagem (core/atlas-token-icons.js) */
+        `<span class="pool-icon" data-atlas-token="${escHTML(t.trim())}">${escHTML(t.trim().slice(0,3))}</span>`).join('')}</span>
       <div class="pool-info">
         <div class="par">${escHTML(p.par)}</div>
         <div class="dex">${escHTML(p.dex)}</div>

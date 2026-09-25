@@ -363,7 +363,7 @@
     var header = U.el("div", { class: "card pad" });
     var hrow = U.el("div", { class: "between" });
     var left = U.el("div", { class: "asset-cell" });
-    left.appendChild(U.el("div", { class: "ticker-badge", style: "width:48px;height:48px;font-size:15px", text: a.ticker.slice(0, 4) }));
+    left.appendChild(U.el("div", { class: "ticker-badge", "data-atlas-token": a.ticker, "data-atlas-token-busca": (a.tipo && a.tipo !== "Cripto") ? "nao" : null, style: "width:48px;height:48px;font-size:15px", text: a.ticker.slice(0, 4) }));
     left.appendChild(U.el("div", {}, [
       U.el("h2", { text: a.nome }),
       U.el("div", { class: "dim small", text: a.ticker + " · " + a.tipo + (a.setor ? " · " + a.setor : "") })

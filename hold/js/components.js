@@ -162,7 +162,9 @@
   function assetCell(a) {
     if (!a) return el("span", { class: "dim", text: "—" });
     var cell = el("div", { class: "asset-cell" });
-    cell.appendChild(el("div", { class: "ticker-badge", text: a.ticker.slice(0, 4) }));
+    /* data-atlas-token: a imagem do ativo (core/atlas-token-icons.js) */
+    cell.appendChild(el("div", { class: "ticker-badge", "data-atlas-token": a.ticker,
+      "data-atlas-token-busca": (a.tipo && a.tipo !== "Cripto") ? "nao" : null, text: a.ticker.slice(0, 4) }));
     var col = el("div");
     col.appendChild(el("div", { class: "a-name", text: a.nome }));
     col.appendChild(el("div", { class: "a-tick", text: a.ticker + " · " + a.tipo }));

@@ -136,7 +136,10 @@
 /* v77 = rentabilidade sobre o dinheiro que trabalhou (parado não conta,
    reabrir não duplica), renda passiva medida (taxas geradas, ritmo
    real), extrato com desempate pela ordem de lançamento. */
-var VERSAO = "atlas-v77";
+/* v78 = ícone do token em todo lugar (core/atlas-token-icons.js):
+   DeFi, Hold, RWA, Carteiras e Dashboard marcam a bolinha com
+   data-atlas-token e a imagem entra por cima das iniciais. */
+var VERSAO = "atlas-v78";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
