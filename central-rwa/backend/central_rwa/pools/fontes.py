@@ -71,6 +71,7 @@ def parse_llama(rows: list[dict]) -> list[Candidata]:
             vol_7d=_num(p.get("volumeUsd7d")),
             apr=_num(apr),
             apr_reward=reward if reward and reward > 0 else None,
+            projeto=str(p.get("project") or ""),
         ))
     return out
 
@@ -80,7 +81,7 @@ def _endereco_de(rel: dict) -> str | None:
     return tid.split("_", 1)[1] if "_" in tid else None
 
 
-def parse_gecko_pools(payload: dict, dex: str, rede: str) -> list[Candidata]:
+def parse_gecko_pools(payload: dict, dex: str, rede: str, dex_slug: str | None = None) -> list[Candidata]:
     net = config.GECKO_NET[rede]
     out: list[Candidata] = []
     for item in payload.get("data") or []:
@@ -111,6 +112,7 @@ def parse_gecko_pools(payload: dict, dex: str, rede: str) -> list[Candidata]:
             apr=None,
             apr_reward=None,
             criada_em=_data(a.get("pool_created_at")),
+            projeto=dex_slug or "",
             sinais={
                 "compradores_24h": int(tx.get("buyers") or 0),
                 "vendedores_24h": int(tx.get("sellers") or 0),
@@ -221,6 +223,13 @@ class ClienteFontes:
             if len(data) < 20:
                 break
         return itens
+
+    def gecko_busca(self, net: str, consulta: str) -> dict | None:
+        """Todas as pools de um par numa rede (conferência em segunda fonte)."""
+        r = self._gecko(f"{GECKO}/search/pools?query={consulta}&network={net}&page=1")
+        if r is None or r.status_code >= 400:
+            return None
+        return r.json()
 
     def token_info(self, net: str, endereco: str) -> dict | None:
         r = self._gecko(f"{GECKO}/networks/{net}/tokens/{endereco}/info")

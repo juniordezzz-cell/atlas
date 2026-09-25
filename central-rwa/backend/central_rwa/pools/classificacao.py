@@ -70,4 +70,8 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
         for t, i in ((c.token_a, infos[0]), (c.token_b, infos[1]))
         if not token_solido(t.simbolo, i, agora)
     ]
+    # Sólida é só o que foi conferido: DefiLlama sem par na GeckoTerminal
+    # (conferencia.py) não pode ser recomendada como segura.
+    if (c.sinais.get("conferencia") or {}).get("estado") == "nao_confirmada":
+        fracos.append("números não confirmados em segunda fonte")
     return ("caca", fracos) if fracos else ("solida", [])

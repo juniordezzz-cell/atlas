@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from . import config
 from .classificacao import passa_pre_corte, trilho
+from .conferencia import conferir
 from .fontes import parse_gecko_pools, parse_llama, parse_token_info, parse_tokens_multi
 from .modelos import Candidata, PoolFinal, TokenInfo
 from .nota import calcular_notas
@@ -31,7 +32,7 @@ def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
             for slug in src["dexes"]:
                 antes = len(cli.parciais)
                 itens = cli.gecko_pools(net, slug, config.GECKO_PAGINAS_GRANDES.get(slug, config.GECKO_PAGINAS))
-                cands = parse_gecko_pools({"data": itens}, dex, src["rede"])
+                cands = parse_gecko_pools({"data": itens}, dex, src["rede"], slug)
                 todas += cands
                 estado = "parcial" if len(cli.parciais) > antes else "ok"
                 status.append({"fonte": "geckoterminal", "rede": src["rede"], "dex": slug, "estado": estado, "contagem": len(cands), "em": agora})
@@ -102,6 +103,13 @@ def coletar(cli, store, agora: datetime) -> dict:
     status: list[dict] = []
     todas = _candidatas(cli, status, agora)
     cands = [c for c in todas if passa_pre_corte(c)]
+    # Segunda fonte ANTES de classificar e dar nota: número corrigido aqui é o
+    # que entra na nota, no APR e no ranking. Corrigido para baixo pode sair
+    # do pré-corte — por isso o corte roda de novo.
+    conf = conferir(cli, cands, config.GECKO_NET) if hasattr(cli, "gecko_busca") else {}
+    status.append({"fonte": "conferencia", "rede": None, "dex": None,
+                   "estado": "ok" if conf else "sem conferência", "contagem": conf.get("conferidas", 0), "em": agora})
+    cands = [c for c in cands if passa_pre_corte(c)]
     infos, consultados, pendentes = _infos(cli, store, cands, agora)
     leituras = store.leituras([c.id for c in cands])
     notas = calcular_notas(cands, leituras)
@@ -122,6 +130,7 @@ def coletar(cli, store, agora: datetime) -> dict:
         "solidas": sum(f.trilho == "solida" for f in finais),
         "caca": sum(f.trilho == "caca" for f in finais),
         "barradas": sum(f.trilho == "barrada" for f in finais),
+        "conferencia": conf,
         "tokens_consultados": consultados,
         "tokens_pendentes": pendentes,
         "parciais": list(cli.parciais) + [s["estado"] for s in status if str(s["estado"]).startswith("falhou")],

@@ -28,6 +28,7 @@ class Candidata:
     apr_reward: float | None # emissões (ve(3,3)), %
     criada_em: datetime | None = None
     sinais: dict = field(default_factory=dict)   # Caça: compradores/vendedores 24h, variação 24h, mcap
+    projeto: str = ""        # slug da fonte ("uniswap-v4", "pancakeswap-v3-bsc"): casa a pool na conferência
 
 
 @dataclass
