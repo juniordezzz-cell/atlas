@@ -1,11 +1,11 @@
-"""As três camadas do filtro (a terceira — a lista do usuário — mora no site).
-
-Camada 1 barra sem exceção. Camada 2 separa Sólida de Caça: na dúvida (token
-sem informação), Caça — nunca Sólida."""
+"""Regras autorizadas em 26/09/2026; ver spec scanner-regras-design.
+`caca` é o valor legado para Pendentes de análise, reservado a meme detectada.
+Dados incompletos não são prova de meme nem garantia de segurança."""
 
 from __future__ import annotations
 
 from datetime import datetime
+from math import isfinite
 
 from . import config
 from .modelos import Candidata, Leitura, TokenInfo
@@ -19,7 +19,7 @@ HOLDERS_MIN = 1_000
 
 
 def passa_pre_corte(c: Candidata) -> bool:
-    return c.tvl >= config.TVL_MIN and c.vol_24h >= config.VOL_MIN
+    return isfinite(c.tvl) and isfinite(c.vol_24h) and c.tvl > 0 and c.vol_24h / c.tvl > 0.50
 
 
 def motivos_barrada(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura]) -> list[str]:
@@ -65,13 +65,11 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
     barr = motivos_barrada(c, infos, leituras)
     if barr:
         return "barrada", barr
-    fracos = [
-        f"{t.simbolo}: token novo ou sem histórico"
-        for t, i in ((c.token_a, infos[0]), (c.token_b, infos[1]))
-        if not token_solido(t.simbolo, i, agora)
-    ]
-    # Sólida é só o que foi conferido: DefiLlama sem par na GeckoTerminal
-    # (conferencia.py) não pode ser recomendada como segura.
-    if (c.sinais.get("conferencia") or {}).get("estado") == "nao_confirmada":
-        fracos.append("números não confirmados em segunda fonte")
-    return ("caca", fracos) if fracos else ("solida", [])
+    if not passa_pre_corte(c):
+        return "barrada", ["razão de 24h <= 0,50"]
+    meme = c.sinais.get("memecoin") or {}
+    if meme.get("detectada"):
+        if c.vol_24h / c.tvl <= 2.0:
+            return "barrada", ["memecoin: razão de 24h <= 2,00"]
+        return "caca", ["memecoin detectada: aguarda decisão por pool"]
+    return "solida", []

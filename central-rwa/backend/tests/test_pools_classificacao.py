@@ -6,7 +6,7 @@ from central_rwa.pools.modelos import Candidata, Leitura, TokenInfo, TokenRef
 AGORA = datetime(2026, 9, 23, 22, tzinfo=timezone.utc)
 
 
-def cand(par="FOO/USDT", fee=0.25, tvl=500_000, vol=200_000, apr=None, reward=None):
+def cand(par="FOO/USDT", fee=0.25, tvl=500_000, vol=600_000, apr=None, reward=None):
     a, b = par.split("/")
     return Candidata(id="gecko:bsc:0x1", fonte="geckoterminal", rede="BNB Chain", dex="PancakeSwap", par=par,
                      token_a=TokenRef("0xa", a), token_b=TokenRef("0xb", b), fee=fee, tvl=tvl, vol_24h=vol,
@@ -21,7 +21,7 @@ def info(simbolo="FOO", honeypot=False, mint=False, freeze=False, dev=None, hold
 
 def test_pre_corte():
     assert passa_pre_corte(cand())
-    assert not passa_pre_corte(cand(tvl=99_999))
+    assert passa_pre_corte(cand(tvl=99_999))  # piso fixo removido
     assert not passa_pre_corte(cand(vol=49_999))
 
 
@@ -60,5 +60,5 @@ def test_token_solido():
 def test_trilho():
     assert trilho(cand("WBNB/USDT"), [None, None], [], AGORA) == ("solida", [])
     t, m = trilho(cand("FOO/USDT"), [info(dias=5), None], [], AGORA)
-    assert t == "caca" and m == ["FOO: token novo ou sem histórico"]
+    assert t == "solida" and m == []  # dados incompletos não são meme
     assert trilho(cand("FOO/USDT"), [info(honeypot=True), None], [], AGORA)[0] == "barrada"

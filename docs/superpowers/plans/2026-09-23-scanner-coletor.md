@@ -1,5 +1,7 @@
 # Scanner Pools · Parte 1 — Coletor no servidor · Plano de implementação
 
+> Histórico: regras substituídas pela [spec de 26/09/2026](../specs/2026-09-26-scanner-regras-design.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Um job `python -m central_rwa pools` que, a cada 4 h no GitHub Actions, coleta pools de liquidez na DefiLlama e na GeckoTerminal, barra tokens perigosos, classifica em Sólida/Caça, dá nota 0–100, guarda uma leitura por dia por 30 dias e publica tudo no Supabase por visões públicas `scanner_*`.

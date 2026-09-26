@@ -5,11 +5,12 @@
    no localStorage, e a busca trazia no máximo 30 pools. Agora um coletor
    (central-rwa/backend/central_rwa/pools, a cada 4 h no GitHub Actions)
    busca na DefiLlama e na GeckoTerminal, barra token perigoso, separa
-   Sólidas de Caça, dá nota e publica nas visões públicas scanner_* do
+   Sólidas de Pendentes de análise, dá nota e publica nas visões públicas scanner_* do
    Supabase. Este arquivo lê essas visões e junta com o que é SEU:
 
      marcas   ★, nível do Radar e anotações, por pool do servidor
-     tokens   sua lista: aprovados (contam como Sólida) e bloqueados
+     tokens   lista antiga: bloqueios preservados; aprovações por token inativas
+     decisoes aprovação/rejeição por identidade da pool
      manuais  pools que você registrou no "+ Pool" (ficam no navegador)
 
    Tudo aqui é função pura ou fetch isolado, para a bateria testar.
@@ -20,6 +21,7 @@
   var CACHE_KEY = "estudo_pools_liquidez_servidor_cache";
   var MARCAS_KEY = "estudo_pools_liquidez_marcas";
   var TOKENS_KEY = "estudo_pools_liquidez_tokens";
+  var DECISOES_KEY = "estudo_pools_liquidez_decisoes_v1";
   var MIGRADO_KEY = "estudo_pools_liquidez_migrado_v1";
   var PAGINA = 1000; // teto de linhas por resposta do PostgREST no Supabase
 
@@ -115,16 +117,31 @@
     return out;
   }
 
-  /* Trilho efetivo com a SUA lista por cima (camada 3): bloqueado some,
-     aprovado vira Sólida. Não libera o que a segurança barrou — barradas
-     nem chegam das visões. */
-  function trilhoEfetivo(p, lista) {
-    if (!p.servidor) return "solida";          // pool manual: é sua, aparece no padrão
+  /* Decisões por pool abaixo dos cortes e segurança. `caca` é legado do schema.
+     Aprovações antigas por símbolo não aprovam novas pools. */
+  function chaveDecisao(p) {
+    var sinais = p.sinais || {};
+    var endereco = sinais.endereco_pool || (sinais.conferencia || {}).endereco;
+    if (!endereco && String(p.sid || '').indexOf('gecko:') === 0) endereco = p.sid.split(':').slice(2).join(':');
+    if (endereco) {
+      if (p.network !== 'Solana' && p.network !== 'Sui') endereco = endereco.toLowerCase();
+      return p.network + ':' + endereco;
+    }
+    return p.sid || 'manual:' + p.id;
+  }
+  function trilhoEfetivo(p, lista, decisoes) {
+    var r = Number(p.tvl) > 0 ? Number(p.vol24h) / Number(p.tvl) : 0;
+    if (!Number.isFinite(r) || r <= 0.50 || p.trilho === 'barrada') return 'oculta';
+    var meme = !!((p.sinais || {}).memecoin || {}).detectada;
+    if (meme && r <= 2) return 'oculta';
+    var d = (decisoes || {})[chaveDecisao(p)] || (decisoes || {})[p.sid];
+    if (d === 'rejeitada') return 'oculta';
+    if (!p.servidor) return 'solida';
     var alvo = tokenAlvo(p.pool);
-    var bloq = (lista && lista.bloqueados) || [], aprov = (lista && lista.aprovados) || [];
+    var bloq = (lista && lista.bloqueados) || [];
     if (alvo.some(function (t) { return bloq.indexOf(t) !== -1; })) return "oculta";
-    if (p.trilho === "caca" && alvo.length && alvo.every(function (t) { return aprov.indexOf(t) !== -1; })) return "solida";
-    return p.trilho;
+    if (d === 'aprovada') return 'solida';
+    return meme ? 'caca' : 'solida';
   }
 
   /* ---------- transição das pools gravadas no navegador ----------
@@ -218,15 +235,18 @@
   }
 
   g.ScannerServidor = {
-    CACHE_KEY: CACHE_KEY, MARCAS_KEY: MARCAS_KEY, TOKENS_KEY: TOKENS_KEY, MIGRADO_KEY: MIGRADO_KEY,
+    CACHE_KEY: CACHE_KEY, MARCAS_KEY: MARCAS_KEY, TOKENS_KEY: TOKENS_KEY, MIGRADO_KEY: MIGRADO_KEY, DECISOES_KEY: DECISOES_KEY,
     idNumerico: idNumerico, normPar: normPar, nomePar: nomePar, tokenAlvo: tokenAlvo,
     paraPool: paraPool, extrairMarcas: extrairMarcas, trilhoEfetivo: trilhoEfetivo,
+    chaveDecisao: chaveDecisao,
     casarLocais: casarLocais, migrar: migrar,
     carregar: carregar, historico: historico,
     lerMarcas: function () { return lerJSON(MARCAS_KEY, {}); },
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
     lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [] }; },
     gravarTokens: function (t) { gravarJSON(TOKENS_KEY, t); },
+    lerDecisoes: function () { return lerJSON(DECISOES_KEY, {}); },
+    gravarDecisoes: function (d) { gravarJSON(DECISOES_KEY, d); },
     jaMigrou: function () { return !!lerJSON(MIGRADO_KEY, null); },
     marcarMigrado: function (info) { gravarJSON(MIGRADO_KEY, info); }
   };

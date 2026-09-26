@@ -10,6 +10,8 @@ from .conferencia import conferir
 from .fontes import parse_gecko_pools, parse_llama, parse_token_info, parse_tokens_multi
 from .modelos import Candidata, PoolFinal, TokenInfo
 from .nota import calcular_notas
+from .memes import identificar
+from .descoberta import complementar
 
 _CASO_SENSIVEL = {"Solana", "Sui"}
 
@@ -102,6 +104,11 @@ def _infos(cli, store, cands: list[Candidata], agora: datetime) -> tuple[dict[tu
 def coletar(cli, store, agora: datetime) -> dict:
     status: list[dict] = []
     todas = _candidatas(cli, status, agora)
+    falhas_antes = len(cli.parciais)
+    todas, descoberta = complementar(cli, todas, agora)
+    status.append({'fonte': 'descoberta', 'rede': None, 'dex': None,
+                   'estado': 'parcial' if descoberta.get('pendentes') or len(cli.parciais) > falhas_antes else 'ok',
+                   'contagem': descoberta['adicionadas'], 'em': agora})
     cands = [c for c in todas if passa_pre_corte(c)]
     # Segunda fonte ANTES de classificar e dar nota: número corrigido aqui é o
     # que entra na nota, no APR e no ranking. Corrigido para baixo pode sair
@@ -111,6 +118,10 @@ def coletar(cli, store, agora: datetime) -> dict:
                    "estado": "ok" if conf else "sem conferência", "contagem": conf.get("conferidas", 0), "em": agora})
     cands = [c for c in cands if passa_pre_corte(c)]
     infos, consultados, pendentes = _infos(cli, store, cands, agora)
+    meme_ids = cli.meme_coin_ids() if hasattr(cli, 'meme_coin_ids') else set()
+    status.append({'fonte': 'memecoin', 'rede': None, 'dex': None,
+                   'estado': 'parcial' if any('memecoin:' in s for s in cli.parciais) else 'ok',
+                   'contagem': len(meme_ids), 'em': agora})
     leituras = store.leituras([c.id for c in cands])
     notas = calcular_notas(cands, leituras)
     finais: list[PoolFinal] = []
@@ -119,6 +130,7 @@ def coletar(cli, store, agora: datetime) -> dict:
             infos.get((c.rede, normalizar_endereco(c.rede, t.endereco))) if t.endereco else None
             for t in (c.token_a, c.token_b)
         ]
+        identificar(c, par_infos, meme_ids)
         t, motivos = trilho(c, par_infos, leituras.get(c.id, []), agora)
         nota, comp = notas[c.id]
         finais.append(PoolFinal(c, t, motivos, nota, comp))
@@ -131,6 +143,7 @@ def coletar(cli, store, agora: datetime) -> dict:
         "caca": sum(f.trilho == "caca" for f in finais),
         "barradas": sum(f.trilho == "barrada" for f in finais),
         "conferencia": conf,
+        "descoberta": descoberta,
         "tokens_consultados": consultados,
         "tokens_pendentes": pendentes,
         "parciais": list(cli.parciais) + [s["estado"] for s in status if str(s["estado"]).startswith("falhou")],

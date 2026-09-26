@@ -39,7 +39,7 @@
   .logica .rule{color:var(--green); font-weight:600}
 
   /* stats por plataforma */
-  /* pools do servidor: status da coleta, trilhos Sólidas/Caça, nota, sinais, lista de tokens */
+  /* pools do servidor: status da coleta, trilhos Sólidas/Pendentes de análise, nota, sinais, lista de tokens */
   .srv-status{font-size:12.5px; color:var(--mut); margin:0 0 12px}
   .srv-status.aviso{color:#f5b942}
   .srv-status.ruim{color:#f0556a}
@@ -652,7 +652,7 @@
   .brand-dot{box-shadow:none}
 
   /* ===================================================================
-     DESCOBRIR LIMPO — cabeçalho enxuto: Sólidas|Caça como controle
+     DESCOBRIR LIMPO — cabeçalho enxuto: Sólidas|Pendentes de análise como controle
      segmentado, status discreto ao lado, filtros numa linha só (rede e
      plataforma em menu, não em 19 chips), paginação embaixo.
      =================================================================== */
@@ -675,6 +675,9 @@
   select{color-scheme:dark}
   select option,select optgroup{background:#111827; color:#e6ecf5}
   select option:checked{background:#26324d; color:#fff}
+  .pool-aprovar{color:#2ec785;border-color:#2ec785;min-width:36px;min-height:36px}
+  .pool-rejeitar{color:#f0556a;border-color:#f0556a;min-width:36px;min-height:36px}
+  .rowact:has(.pool-rejeitar){opacity:1}
 </style>
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
@@ -702,11 +705,11 @@
   <div class="dash-head">
     <div class="trilhos" role="tablist" aria-label="Lista">
       <button class="trilho on" data-trilho="solida" onclick="setTrilho('solida')">Sólidas <span class="tn" id="nSolidas"></span></button>
-      <button class="trilho" data-trilho="caca" onclick="setTrilho('caca')">Caça <span class="tn" id="nCaca"></span></button>
+      <button class="trilho" data-trilho="caca" onclick="setTrilho('caca')">Pendentes de análise <span class="tn" id="nCaca"></span></button>
     </div>
     <div class="srv-status" id="srvStatus">Carregando pools do servidor…</div>
   </div>
-  <p class="trilho-dica" id="trilhoDica">Os dois tokens com histórico: stables, majors, RWA ou token com 30+ dias, market cap ≥ US$ 10 mi, 1.000+ holders e listado no CoinGecko.</p>
+  <p class="trilho-dica" id="trilhoDica">Lista principal: pools elegíveis sem memecoin detectada e pools aprovadas por você. Razão de 24h > 0,50. Não é garantia de segurança.</p>
   <div class="toklista" id="tokLista"></div>
 
   <!-- filtros numa linha só: rede e plataforma viraram menus (eram 19 chips) -->
@@ -726,7 +729,7 @@
     <select id="fTvlMin" onchange="state.page=1; render()">
       <option value="0">TVL mín: tudo</option>
       <option value="50000">TVL mín: $50 mil</option>
-      <option value="100000" selected>TVL mín: $100 mil</option>
+      <option value="100000">TVL mín: $100 mil</option>
       <option value="500000">TVL mín: $500 mil</option>
       <option value="1000000">TVL mín: $1 mi</option>
     </select>
@@ -758,7 +761,7 @@
     O ranking é pela <b>Nota</b> (0 a 100): <b>taxa</b> 30% (o fee tier — 0,25% a 0,8% é o ponto bom), <b>giro</b> 30% (a Razão), <b>rendimento</b> 20% (<code>Fee × Razão</code>), <b>consistência</b> 10%, <b>profundidade</b> 5% (TVL) e <b>tendência</b> 5%. Clique no cabeçalho de outra coluna para ordenar por ela. O Guia explica os trilhos (tópico 0) e a nota (tópico 16).
     <span class="rule">Semáforo da Razão: ≥ 3×</span> verde · 1–3× amarelo · &lt;1× vermelho.
     A coluna <b>Categoria</b> é o filtro que taxa e razão não dão: <span style="color:#a97bff;font-weight:600">RWA</span>, <span style="color:#2ec785;font-weight:600">Blue-chip</span> e <span style="color:#3aa0ff;font-weight:600">Stable</span> valem o risco; <span style="color:#f5943b;font-weight:600">Memecoin</span> paga fee gordo mas o IL morde; <span style="color:#7d8aa0;font-weight:600">❓</span> = token ainda não classificado (confirme antes de entrar).
-    ⚠️ Filtro <b>TVL mín $100 mil</b> ligado pra cortar degen.
+    O filtro de TVL é opcional. Razão ≤ 0,50 elimina de todas as listas; memecoins com razão ≤ 2,00 também saem.
     </div>
   </details>
 </section>
@@ -829,15 +832,15 @@
       <div class="lnum">0</div>
       <div class="lbody">
         <h3>Como o Scanner escolhe as pools</h3>
-        <p>Você não cadastra pool: um coletor no servidor procura sozinho, <b>a cada 4 horas</b>, em 11 redes (Solana, Base, Arbitrum, BNB Chain, Ethereum, Optimism, Polygon, Avalanche, Sui, HyperEVM e Robinhood) e 20 DEXs. Uniswap, Raydium, Orca, Aerodrome, Curve e as outras vêm da <b>DefiLlama</b>; PancakeSwap, Meteora, Velodrome e THENA vêm da <b>GeckoTerminal</b>. Toda pool que passa no filtro é <b>acompanhada automaticamente</b>: uma leitura por dia, guardada por 30 dias — a seta de TVL e a consistência da nota saem daí, sem você marcar nada.</p>
+        <p>Você não cadastra pool: um coletor no servidor procura sozinho, <b>a cada 4 horas</b>, em 11 redes (Solana, Base, Arbitrum, BNB Chain, Ethereum, Optimism, Polygon, Avalanche, Sui, HyperEVM e Robinhood) e 20 DEXs. Uniswap, Raydium, Orca, Aerodrome, Curve e as outras vêm da <b>DefiLlama</b>; PancakeSwap, Meteora, Velodrome e THENA vêm da <b>GeckoTerminal</b>. A descoberta também consulta pools pelo contrato do token, com limite por execução e rotação entre coletas; não é uma busca exaustiva. A categoria de memecoins vem do CoinGecko: tokens não identificados ou falhas da fonte podem deixar memes sem detectar. Toda pool que passa no filtro é <b>acompanhada automaticamente</b>: uma leitura por dia, guardada por 30 dias — a seta de TVL e a consistência da nota saem daí, sem você marcar nada.</p>
         <table class="ltable">
           <thead><tr><th>Etapa</th><th>Regra</th><th>Por quê</th></tr></thead>
           <tbody>
-            <tr><td class="tk">Pré-corte</td><td>TVL ≥ US$ 100 mil e volume ≥ US$ 50 mil por dia</td><td>Pool rasa ou parada não paga taxa que valha o risco</td></tr>
+            <tr><td class="tk">Pré-corte</td><td>Volume real de 24h ÷ TVL > 0,50. TVL mínimo é um filtro opcional da tela</td><td>Razão ≤ 0,50 elimina; não há piso fixo de TVL/volume na coleta</td></tr>
             <tr><td class="tk">Segurança</td><td>Some sem exceção: honeypot, mint ou freeze ativos, desenvolvedor com mais de 20%, pool sem taxa e sem APR, APR acima de 10.000%, volume/TVL acima de 50× por 3 dias seguidos</td><td>Golpe, token que o criador pode imprimir ou congelar, ou volume fabricado</td></tr>
-            <tr><td class="tk">Sólidas</td><td>Os dois tokens com histórico: stable, major (BTC, ETH, SOL, BNB e embrulhados), RWA — ou token com 30+ dias, market cap ≥ US$ 10 mi, 1.000+ holders e listado no CoinGecko</td><td>É a lista padrão: dá para deixar dinheiro</td></tr>
-            <tr><td class="tk">Caça</td><td>Pelo menos um token novo ou pequeno. Sem informação de segurança também cai aqui — nunca em Sólidas</td><td>Para entrar e sair rápido; os sinais embaixo do par (idade, market cap, 24h, compradores × vendedores) ajudam a decidir</td></tr>
-            <tr><td class="tk">Sua lista</td><td><b>aprovar</b> um token manda as pools dele para Sólidas; <b>bloquear</b> some com elas das duas listas</td><td>Vale acima da classificação automática — mas não libera o que a segurança barrou</td></tr>
+            <tr><td class="tk">Sólidas</td><td>Pools elegíveis sem memecoin detectada, ou aprovadas individualmente por você</td><td>Lista principal; dados incompletos não garantem segurança</td></tr>
+            <tr><td class="tk">Pendentes de análise</td><td>Memecoin identificada pelo ID CoinGecko associado ao contrato, com razão > 2,00</td><td>Sem decisão permanece pendente. Razão ≤ 2,00 elimina mesmo se aprovada</td></tr>
+            <tr><td class="tk">Sua lista</td><td><b>✓ verde</b> aprova somente esta pool; <b>✕ vermelho</b> rejeita somente esta pool e impede que volte nas atualizações</td><td>Decisões persistem neste navegador e no backup; não contornam os cortes nem a segurança</td></tr>
           </tbody>
         </table>
         <p><b>A nota (0 a 100)</b> ordena as duas listas pela taxa, pelo giro e pelo que os dois rendem juntos — mais consistência, TVL e tendência. A conta inteira está no <a href="#sec16">tópico 16</a>; na tabela, passe o mouse na nota para ver as seis partes.</p>
@@ -880,7 +883,7 @@
         <h3>TVL — o dinheiro preso</h3>
         <p>TVL é o total depositado na pool. É o número que todo iniciante olha primeiro — e o que <b>mais engana</b> sozinho. Pensa nele como o tamanho de uma loja: uma loja gigante e vazia fatura menos que uma pequena e lotada. O que importa é o <b>movimento</b>, não o tamanho.</p>
         <div class="callout bad"><div class="cotip">🔻</div><div><b>SOL-USDC (Raydium)</b> tem TVL enorme de <b>$9,9 M</b>, mas gira só $2,1 M/dia (razão 0,22×) e rende 20%/ano. Já a <b>SKHY</b>, com $958 mil de TVL, gira $2,47 M (razão 2,58×) e rende 235%. Menos dinheiro preso, muito mais retorno.</div></div>
-        <p class="muted">Pra que serve o TVL então? Como <b>piso de segurança</b>. Abaixo de $100 mil, a liquidez é frágil: difícil entrar/sair sem derrapagem e fácil de manipular. Por isso ele entra no funil como filtro de corte, não como critério de escolha.</p>
+        <p class="muted">Pra que serve o TVL então? Como <b>piso de segurança</b>. Abaixo de $100 mil, a liquidez é frágil: difícil entrar/sair sem derrapagem e fácil de manipular. Você pode usar o filtro de TVL na tela; ele não elimina mais pools na coleta.</p>
       </div>
     </div>
 
@@ -1080,7 +1083,7 @@
             <tr><td class="tk r">Holders concentrados</td><td>Poucas carteiras donas do supply podem drenar a pool.</td></tr>
           </tbody>
         </table>
-        <div class="callout bad"><div class="cotip">🚩</div><div>O corte de <b>TVL ≥ $100 mil</b> do dashboard já elimina a maioria dos degens. Mas TVL suficiente não garante segurança — categoria "?" é risco não avaliado. Confirma o token antes de comprometer capital.</div></div>
+        <div class="callout bad"><div class="cotip">🚩</div><div>O filtro opcional de <b>TVL ≥ $100 mil</b> reduz pools rasas. Mas TVL suficiente não garante segurança — categoria "?" é risco não avaliado. Confirma o token antes de comprometer capital.</div></div>
       </div>
     </div>
 
@@ -1222,7 +1225,7 @@
       <button class="linkbtn" onclick="exportJSON()">Exportar</button>
       <button class="linkbtn" onclick="document.getElementById('importfile').click()">Importar</button>
     </div>
-    <div class="foot-note">Scanner Pools · dados em USD · pools coletadas pelo servidor a cada 4 h · suas ★, níveis, notas, lista de tokens e pools manuais ficam no navegador — faça <b>Exportar</b> para ter backup.</div>
+    <div class="foot-note">Scanner Pools · dados em USD · pools coletadas pelo servidor a cada 4 h · suas decisões por pool, ★, níveis, notas, lista de tokens e pools manuais ficam no navegador — faça <b>Exportar</b> para ter backup.</div>
   </footer>
 </div>
 
@@ -1410,7 +1413,19 @@ function save(){
    servidor e a que não casa vira manual. */
 let srv = { carregado:false, doCache:false, em:null, status:[], erro:null, migracao:null };
 let tokensLista = { aprovados:[], bloqueados:[] };
-function trilhoDe(p){ return window.ScannerServidor ? ScannerServidor.trilhoEfetivo(p, tokensLista) : "solida"; }
+let decisoesPool = window.ScannerServidor ? ScannerServidor.lerDecisoes() : {};
+function trilhoDe(p){ return window.ScannerServidor ? ScannerServidor.trilhoEfetivo(p, tokensLista, decisoesPool) : "solida"; }
+function decidirPool(id, decisao){
+  const p = state.pools.find(p=>p.id===id);
+  if(!p || !window.ScannerServidor || !['aprovada','rejeitada'].includes(decisao)) return;
+  const chave = ScannerServidor.chaveDecisao(p);
+  // ID da fonte como alias mantém a decisão quando uma coleta posterior
+  // descobre o endereço e passa a usar a identidade on-chain.
+  decisoesPool[chave] = decisao;
+  if(p.sid) decisoesPool[p.sid] = decisao;
+  ScannerServidor.gravarDecisoes(decisoesPool);
+  render(); renderStatus();
+}
 
 async function carregarServidor(){
   const S = window.ScannerServidor;
@@ -1487,8 +1502,8 @@ function setTrilho(t){
   document.querySelectorAll(".trilho").forEach(b=>b.classList.toggle("on", b.dataset.trilho===t));
   const d = document.getElementById("trilhoDica");
   if(d) d.textContent = t==="caca"
-    ? "Token novo ou pequeno: sem 30 dias, market cap abaixo de US$ 10 mi, poucos holders ou fora do CoinGecko. Entra e sai rápido — os sinais embaixo do par ajudam a decidir."
-    : "Os dois tokens com histórico: stables, majors, RWA ou token com 30+ dias, market cap ≥ US$ 10 mi, 1.000+ holders e listado no CoinGecko.";
+    ? "Memecoin detectada e razão de 24h > 2,00. ✓ aprova esta pool; ✕ rejeita e mantém fora das próximas atualizações."
+    : "Lista principal: pools elegíveis sem memecoin detectada e pools aprovadas por você. Razão de 24h > 0,50. Não é garantia de segurança.";
   render();
 }
 
@@ -1520,15 +1535,13 @@ function renderListaTokens(){
     b.addEventListener("click", ()=>desmarcarToken(t));
     return b;
   };
-  ap.forEach(t=>el.append(chip(t, "ap", "Aprovado: conta como sólido")));
+  ap.forEach(t=>el.append(chip(t, "ap", "Aprovação antiga por token: inativa; aprove cada pool")));
   bl.forEach(t=>el.append(chip(t, "bl", "Bloqueado: pools escondidas")));
 }
 function tokenBtns(p){
   if(!p.servidor || !window.ScannerServidor) return "";
-  return ScannerServidor.tokenAlvo(p.pool).filter(t=>TOKEN_OK.test(t)).map(t=>
-    (p.trilho==="caca" ? `<button class="iconbtn" onclick="marcarToken('${esc(t)}','aprovados')" title="${esc(t)} passa a contar como token sólido">aprovar ${esc(t)}</button>` : "")
-    + `<button class="iconbtn" onclick="marcarToken('${esc(t)}','bloqueados')" title="Esconde todas as pools com ${esc(t)}">bloquear ${esc(t)}</button>`
-  ).join("");
+  return (trilhoDe(p)==='caca' ? `<button class="iconbtn pool-aprovar" onclick="decidirPool(${p.id},'aprovada')" title="Aprovar esta pool" aria-label="Aprovar esta pool">✓</button>` : '')
+    + `<button class="iconbtn pool-rejeitar" onclick="decidirPool(${p.id},'rejeitada')" title="Rejeitar esta pool e manter fora das atualizações" aria-label="Rejeitar esta pool">✕</button>`;
 }
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 
@@ -1801,7 +1814,7 @@ function notaHTML(p){
   const dica = NOTA_PARTES.filter(([k])=>c[k]!=null).map(([k,rot,peso])=>`${rot} ${pc(c[k])} (peso ${peso}%)`).join(" · ");
   return `<span class="nota ${cls}" title="${dica} — cada parte de 0 a 100">${Math.round(p.nota)}</span>`;
 }
-/* Trilho Caça: os sinais para entrar e sair rápido. */
+/* Trilho Pendentes de análise: os sinais para entrar e sair rápido. */
 function sinaisHTML(p){
   if(!p.servidor || trilhoDe(p)!=="caca") return "";
   const s = p.sinais || {}, it = [];
@@ -1837,7 +1850,7 @@ function buildNetworkFilter(){
   sel.innerHTML = nets.map(n=>`<option value="${esc(n)}"${n===valid?' selected':''}>${n==="Todas"?"Todas as redes":esc(n)}</option>`).join("");
 }
 
-/* O que aparece no trilho aberto (Sólidas ou Caça): base dos contadores e dos filtros. */
+/* O que aparece no trilho aberto (Sólidas ou Pendentes de análise): base dos contadores e dos filtros. */
 function poolsDoTrilho(){ return state.pools.filter(p=>!p.arquivada && !p.migrada && trilhoDe(p)===state.trilho); }
 
 /* Menu de plataforma com a contagem real do trilho (e da rede escolhida).
@@ -2068,7 +2081,7 @@ function levelSelectHTML(p){
 function renderRadarToolbar(prefs){
   const bar = document.getElementById("radarToolbar");
   if(!bar) return;
-  const count = f => state.pools.filter(f).length;
+  const count = f => state.pools.filter(p=>trilhoDe(p)!=="oculta" && f(p)).length;
   const chips = [
     {key:"todas", label:"Todas", icon:"📡", color:"var(--accent)", n:count(p=>p.fav || RADAR_LEVEL_BY_KEY[p.level])},
     {key:"fav",   label:"Favoritas", icon:"★", color:"var(--amber)", n:count(p=>p.fav)}
@@ -2113,7 +2126,7 @@ function poolAlerts(p){
   return out;
 }
 function radarAlertList(){
-  return state.pools.filter(p=>p.fav || RADAR_LEVEL_BY_KEY[p.level])
+  return state.pools.filter(p=>trilhoDe(p)!=="oculta" && (p.fav || RADAR_LEVEL_BY_KEY[p.level]))
     .map(p=>({p, alerts:poolAlerts(p)})).filter(x=>x.alerts.length);
 }
 function updateRadarBadge(){
@@ -2307,24 +2320,24 @@ function renderRadar(){
   let html = "";
   if(prefs.filter==="todas"){
     // favoritas primeiro; nos níveis entram as que não são favoritas (senão repetiria)
-    const favs = byRatio(state.pools.filter(p=>p.fav));
+    const favs = byRatio(state.pools.filter(p=>trilhoDe(p)!=="oculta" && p.fav));
     const anyLevel = state.pools.some(p=>RADAR_LEVEL_BY_KEY[p.level]);
     if(favs.length || !anyLevel)
       html += section("★ Favoritas", favs, "Nada no Radar ainda. Marque pools com a ★ na aba principal, ou busque uma pool aqui em cima e escolha um nível no seletor dela.");
     RADAR_LEVELS.forEach(l=>{
-      const pools = byRatio(state.pools.filter(p=>!p.fav && p.level===l.key));
+      const pools = byRatio(state.pools.filter(p=>trilhoDe(p)!=="oculta" && !p.fav && p.level===l.key));
       if(pools.length) html += section(`${l.icon} ${l.label}`, pools, "");
     });
   } else if(prefs.filter==="fav"){
-    html += section("★ Favoritas", byRatio(state.pools.filter(p=>p.fav)), "Nenhuma favorita ainda. Marque pools com a ★ (aqui ou na aba principal).");
+    html += section("★ Favoritas", byRatio(state.pools.filter(p=>trilhoDe(p)!=="oculta" && p.fav)), "Nenhuma favorita ainda. Marque pools com a ★ (aqui ou na aba principal).");
   } else {
     const l = RADAR_LEVEL_BY_KEY[prefs.filter];
-    html += section(`${l.icon} ${l.label}`, byRatio(state.pools.filter(p=>p.level===l.key)),
+    html += section(`${l.icon} ${l.label}`, byRatio(state.pools.filter(p=>trilhoDe(p)!=="oculta" && p.level===l.key)),
       `Nenhuma pool no nível ${l.label} ainda. Busque uma pool aqui em cima e escolha "${l.icon} ${l.label}" no seletor dela.`);
   }
 
   if(q){
-    const results = byRatio(state.pools.filter(p=>radarMatch(p,q) && !shown.has(p.id)));
+    const results = byRatio(state.pools.filter(p=>trilhoDe(p)!=="oculta" && radarMatch(p,q) && !shown.has(p.id)));
     html += section("🔍 Resultados da busca", results, `Nenhuma outra pool encontrada pra "${esc(q)}".`);
   }
   list.innerHTML = radarAlertsHTML() + html + compareBarHTML();
@@ -2772,7 +2785,7 @@ function exportJSON(){
   // o que é seu: pools manuais (e antigas), marcas das pools do servidor e a lista de tokens
   const S = window.ScannerServidor;
   const dado = { versao:2, locais: state.pools.filter(p=>!p.servidor),
-                 marcas: S ? S.lerMarcas() : {}, tokens: S ? S.lerTokens() : {aprovados:[], bloqueados:[]} };
+                 decisoes: S ? S.lerDecisoes() : {}, marcas: S ? S.lerMarcas() : {}, tokens: S ? S.lerTokens() : {aprovados:[], bloqueados:[]} };
   const blob=new Blob([JSON.stringify(dado,null,2)],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
@@ -2828,6 +2841,10 @@ function importJSON(ev){
           const t = bruto.tokens||{};
           tokensLista = { aprovados:(t.aprovados||[]).map(String), bloqueados:(t.bloqueados||[]).map(String) };
           S.gravarTokens(tokensLista);
+          if(bruto.decisoes && typeof bruto.decisoes === "object" && !Array.isArray(bruto.decisoes)){
+            decisoesPool = Object.fromEntries(Object.entries(bruto.decisoes).filter(([k,v])=>["aprovada","rejeitada"].includes(v)));
+            S.gravarDecisoes(decisoesPool);
+          }
         }
         // SEC-002: nada do arquivo entra sem normalizar (ids repetidos renumerados)
         state.pools=assignPoolIds(data.map(normalizePool));

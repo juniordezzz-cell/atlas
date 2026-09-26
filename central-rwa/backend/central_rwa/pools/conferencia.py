@@ -30,8 +30,8 @@ Com o par casado:
   · volume: se as fontes divergem mais de 50%, vale o MENOR — na dúvida o
     Scanner nunca exagera o que a pool rende;
   · APR: se taxa ou volume mudaram, é refeito (volume × taxa × 365 ÷ TVL).
-Sem par casado a pool fica marcada "não confirmada" e vai para Caça: Sólida é
-só o que foi conferido.
+Desde 26/09/2026, sem par casado a pool fica marcada "não confirmada", mas
+isso não significa memecoin e não altera o trilho; ver scanner-regras-design.
 
 Tudo fica registrado em sinais["conferencia"], para a tela poder mostrar.
 """
@@ -104,6 +104,11 @@ def _mesma_dex(projeto: str, dex_gecko: str) -> bool:
 def casar(c: Candidata, pools: list[PoolGecko]) -> PoolGecko | None:
     if c.tvl <= 0:
         return None
+    # A descoberta por contrato já resolveu identidade: não trocar endereço
+    # por outra pool do mesmo par com TVL parecido durante a conferência.
+    known = c.sinais.get('endereco_pool')
+    if known:
+        return next((g for g in pools if g.endereco == known and _mesma_dex(c.projeto, g.dex)), None)
     melhor, dist = None, None
     for g in pools:
         if not _mesma_dex(c.projeto, g.dex) or g.tvl <= 0:

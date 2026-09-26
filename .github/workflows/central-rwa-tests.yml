@@ -2,15 +2,23 @@ name: Central RWA · testes
 
 on:
   push:
-    paths: ["central-rwa/**", ".github/workflows/central-rwa-*.yml"]
+    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "core/atlas-storage.js", ".github/workflows/central-rwa-*.yml"]
   pull_request:
-    paths: ["central-rwa/**"]
+    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "core/atlas-storage.js"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  scanner-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: node --test Ferramentas/scanner-pools/regras.test.cjs
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 10

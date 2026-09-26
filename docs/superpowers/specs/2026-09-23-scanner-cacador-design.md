@@ -1,5 +1,9 @@
 # Scanner Pools — de lista manual a caçador de oportunidades
 
+> HISTÓRICO: classificação, decisões e pré-corte substituídos pelo pedido de
+> 26/09/2026. Leia [a spec vigente](2026-09-26-scanner-regras-design.md) e
+> [o registro compartilhado](../../scanner-pools-2026-09-26.md).
+
 Data: 23/09/2026 · Status: aprovado em conversa, aguardando revisão da spec
 
 ## Problema

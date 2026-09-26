@@ -1,5 +1,8 @@
 # ATLAS
 
+> Agentes Codex/Claude Code: leia [AGENTS.md](AGENTS.md). Mudanças no Scanner em
+> 26/09/2026 estão no [registro compartilhado](docs/scanner-pools-2026-09-26.md).
+
 **Sistema operacional financeiro** para gestão de patrimônio em cripto e ativos
 reais. Reúne quatro frentes de investimento — **Hold · Trade · DeFi · RWA** —
 sob um mesmo shell, com carteiras, caixa, relatórios e consolidação de

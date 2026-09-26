@@ -209,6 +209,42 @@ class ClienteFontes:
             raise RuntimeError("DefiLlama devolveu formato inesperado")
         return j["data"]
 
+    def meme_coin_ids(self) -> set[str]:
+        """Categoria oficial paginada; falha preserva IDs já lidos e sinaliza parcial."""
+        from .memes import CONHECIDOS
+        ids = set(CONHECIDOS)
+        for page in range(1, 21):
+            try:
+                r = self.client.get('https://api.coingecko.com/api/v3/coins/markets',
+                                    params={'vs_currency': 'usd', 'category': 'meme-token',
+                                            'per_page': 250, 'page': page, 'order': 'id_asc'})
+                r.raise_for_status()
+                rows = r.json()
+                if not isinstance(rows, list):
+                    raise ValueError('categoria em formato inesperado')
+                ids.update(p['id'] for p in rows if p.get('id'))
+                if len(rows) < 250:
+                    return ids
+                self.sleep(10)
+            except (httpx.HTTPError, ValueError, KeyError) as e:
+                self.parciais.append(f'memecoin: categoria parcial na página {page}: {type(e).__name__}')
+                return ids
+        self.parciais.append('memecoin: categoria atingiu limite de 20 páginas')
+        return ids
+
+    def token_pools(self, net: str, endereco: str, paginas: int = 1) -> list[dict]:
+        itens = []
+        for pg in range(1, paginas + 1):
+            r = self._gecko(f'{GECKO}/networks/{net}/tokens/{endereco}/pools?page={pg}')
+            if r is None or r.status_code >= 400:
+                self.parciais.append(f'descoberta:{net}/{endereco} p{pg}: sem dados')
+                break
+            data = (r.json() or {}).get('data') or []
+            itens.extend(data)
+            if len(data) < 20:
+                break
+        return itens
+
     def gecko_pools(self, net: str, dex: str, paginas: int) -> list[dict]:
         itens: list[dict] = []
         for pg in range(1, paginas + 1):

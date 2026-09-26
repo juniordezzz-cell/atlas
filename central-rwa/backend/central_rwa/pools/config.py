@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import re
 
-TVL_MIN = 100_000.0
-VOL_MIN = 50_000.0
+# TVL/volume absolutos agora são filtros da tela. Não reintroduzir no coletor:
+# o corte obrigatório é razão real de 24h > 0,50 (spec 26/09/2026).
 # A GeckoTerminal libera ~6 pedidos/min por IP (medido em 23/09/2026; a
 # documentação fala em 30, mas acima de 6/min cada 429 custa 15 s). Com 10 s
 # entre pedidos a coleta inteira fica em ~30 min, dentro dos 55 do workflow.

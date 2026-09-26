@@ -1,8 +1,12 @@
 name: Scanner Pools · coleta (4h)
 
 # Coleta pools de liquidez (DefiLlama + GeckoTerminal), classifica em
-# Sólida/Caça, dá nota e grava no Supabase. O site lê pelas visões scanner_*.
+# Sólidas/Pendentes de análise, dá nota e grava no Supabase.
+# Regras vigentes: docs/superpowers/specs/2026-09-26-scanner-regras-design.md.
 on:
+  push:
+    branches: [main]
+    paths: ['central-rwa/backend/central_rwa/pools/**', '.github/workflows/scanner-pools.yml']
   schedule:
     - cron: "15 */4 * * *"   # a cada 4 h, aos 15 min (não colide com a camada A da Central RWA)
   workflow_dispatch:

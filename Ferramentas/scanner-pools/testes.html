@@ -28,11 +28,11 @@
     out.appendChild(li); ok ? passou++ : falhou++;
   }
   /* isola o localStorage do usuário: guarda as chaves e devolve no fim */
-  var CHAVES = [S.CACHE_KEY, S.MARCAS_KEY, S.TOKENS_KEY, S.MIGRADO_KEY];
+  var CHAVES = [S.CACHE_KEY, S.MARCAS_KEY, S.TOKENS_KEY, S.MIGRADO_KEY, S.DECISOES_KEY];
   var guardado = {}; CHAVES.forEach(function (k) { guardado[k] = localStorage.getItem(k); localStorage.removeItem(k); });
 
   var ROW = { id: "gecko:bsc:0xabc", rede: "BNB Chain", dex: "PancakeSwap", par: "UNI/WBNB", fee: 0.25, tvl: 2e6,
-              vol_24h: 9e5, vol_7d: null, apr: null, apr_reward: null, visto_em: "2026-09-23T22:00:00Z",
+              vol_24h: 6e6, vol_7d: null, apr: null, apr_reward: null, visto_em: "2026-09-23T22:00:00Z",
               trilho: "solida", motivos: [], nota: 72.5, componentes: { rendimento: 0.8 }, sinais: {},
               criada_em: null, var_tvl_7d: 0.12, leituras: 3 };
 
@@ -54,12 +54,12 @@
     caso("só pool do servidor com ★/nível/nota vira marca", Object.keys(m).join() === "gecko:bsc:0xabc", Object.keys(m).join());
 
     /* lista de tokens */
-    var caca = S.paraPool(Object.assign({}, ROW, { par: "FOO/USDT", trilho: "caca" }), {});
-    caso("sem lista, Caça continua Caça", S.trilhoEfetivo(caca, { aprovados: [], bloqueados: [] }) === "caca");
-    caso("token aprovado leva a pool para Sólidas", S.trilhoEfetivo(caca, { aprovados: ["FOO"], bloqueados: [] }) === "solida");
+    var caca = S.paraPool(Object.assign({}, ROW, { par: "FOO/USDT", trilho: "caca", sinais: {memecoin:{detectada:true}} }), {});
+    caso("memecoin sem decisão fica pendente", S.trilhoEfetivo(caca, { aprovados: [], bloqueados: [] }) === "caca");
+    caso("aprovação legada por token não aprova novas pools", S.trilhoEfetivo(caca, { aprovados: ["FOO"], bloqueados: [] }) === "caca");
     caso("token bloqueado some com a pool", S.trilhoEfetivo(caca, { aprovados: [], bloqueados: ["FOO"] }) === "oculta");
     caso("bloquear major não esconde nada (o alvo é o outro token)", S.trilhoEfetivo(p, { aprovados: [], bloqueados: ["WBNB"] }) === "solida");
-    caso("pool manual aparece no padrão", S.trilhoEfetivo({ id: 1, pool: "X/Y" }, { aprovados: [], bloqueados: [] }) === "solida");
+    caso("pool manual aparece no padrão", S.trilhoEfetivo({ id: 1, pool: "X/Y", tvl:100, vol24h:100 }, { aprovados: [], bloqueados: [] }) === "solida");
 
     /* transição das pools gravadas */
     var servidor = [p, S.paraPool({ id: "llama:uuid-1", rede: "Base", dex: "Uniswap", par: "WETH/USDC", fee: 0.3, tvl: 1, vol_24h: 1, trilho: "solida" }, {})];

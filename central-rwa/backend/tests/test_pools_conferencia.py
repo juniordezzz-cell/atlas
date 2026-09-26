@@ -70,12 +70,12 @@ def test_volumes_parecidos_ficam_como_estao():
     assert c.sinais["conferencia"]["ajustes"] == []
 
 
-def test_sem_par_na_segunda_fonte_vira_caca():
-    c = llama("uniswap-v4", 0.30, 3_000_000, 900_000)   # TVL que nenhuma pool da busca tem
+def test_sem_par_na_segunda_fonte_nao_significa_meme():
+    c = llama("uniswap-v4", 0.30, 3_000_000, 1_800_000)   # TVL que nenhuma pool da busca tem
     cf.aplicar(c, cf.casar(c, cf.parse_busca(BUSCA_USDC_CBBTC)))
     assert c.sinais["conferencia"]["estado"] == "nao_confirmada"
     t, motivos = trilho(c, [None, None], [], AGORA)      # USDC e CBBTC são majors
-    assert t == "caca" and "números não confirmados em segunda fonte" in motivos
+    assert t == "solida" and motivos == []
 
 
 def test_fonte_diz_zero_nao_afirma_o_volume_maior():
@@ -131,6 +131,6 @@ def test_coleta_de_ponta_a_ponta_grava_o_numero_conferido():
     r = coletar(Cli(), store, AGORA)
     assert r["conferencia"]["pares_buscados"] > 0
     llamas = [p for p in store.pools.values() if p["id"].startswith("llama:")]
-    assert llamas and all(p["trilho"] != "solida" for p in llamas)
+    assert llamas and all(p["trilho"] == "solida" for p in llamas)  # sem confirmação não é meme
     assert all(p["sinais"]["conferencia"]["estado"] == "nao_confirmada"
                for p in llamas if "conferencia" in p["sinais"])
