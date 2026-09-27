@@ -682,6 +682,7 @@
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
   <script src="../../core/atlas-secure.js"></script>
+<link rel="stylesheet" href="assistente.css">
 </head>
 <body>
 <div class="wrap">
@@ -694,6 +695,7 @@
       <button class="tab on" data-tab="dash" onclick="switchTab('dash')">Descobrir</button>
       <button class="tab" data-tab="hist" onclick="switchTab('hist')">Radar<span class="tabbadge" id="radarBadge" style="display:none"></span></button>
       <button class="tab" data-tab="mine" onclick="switchTab('mine')">Minhas pools</button>
+      <button class="tab" data-tab="assistente" onclick="switchTab('assistente')">✦ Assistente</button>
       <button class="tab" data-tab="learn" onclick="switchTab('learn')">Guia</button>
     </nav>
   </header>
@@ -789,6 +791,7 @@
     <div id="minhasList"></div>
   </section>
 
+  <section id="tab-assistente" style="display:none"></section>
   <section id="tab-learn" style="display:none">
 
     <div class="learn-hero">
@@ -1296,6 +1299,8 @@
 <!-- pools do coletor (visões scanner_* no Supabase) -->
 <script src="../../core/atlas-supabase-config.js"></script>
 <script src="servidor.js"></script>
+<script src="assistente-dados.js"></script>
+<script src="assistente-ui.js"></script>
 <script>
 /* ============ estado + persistência ============ */
 const KEY  = "estudo_pools_liquidez_v1";
@@ -2937,6 +2942,24 @@ function candKey(platform, network, pool){
   return String(platform||"").trim().toLowerCase()+"|"+String(network||"").trim().toLowerCase()+"|"+tokensOf(pool);
 }
 
+/* Assistente independente: contexto vem do mesmo conjunto do scanner. */
+let scannerChat = null;
+const chatHistoricos = new Map();
+async function historicoChat(p){
+  if(p.servidor){
+    const hit=chatHistoricos.get(p.sid);
+    if(hit && Date.now()-hit.em<5*60*1000) return hit.dados;
+    const dados=await ScannerServidor.historicoDiario(p.sid);
+    chatHistoricos.set(p.sid,{em:Date.now(),dados});
+    return dados;
+  }
+  const dias=new Map();
+  (p.history||[]).filter(h=>Number.isFinite(h.ts)).sort((a,b)=>a.ts-b.ts).forEach(h=>{
+    dias.set(new Date(h.ts).toISOString().slice(0,10),{dia:new Date(h.ts).toISOString().slice(0,10),tvl:h.tvl});
+  });
+  return Array.from(dias.values());
+}
+function contextoChat(){return {pools:state.pools,trilho:trilhoDe,identidade:ScannerServidor.chaveDecisao,historico:historicoChat,status:srv};}
 /* ============ abas ============ */
 function switchTab(t){
   if(t==="scan") t = "dash";   // a antiga aba Scanner vive dentro de Descobrir
@@ -2944,6 +2967,8 @@ function switchTab(t){
   document.getElementById("tab-mine").style.display  = (t==="mine") ? "" : "none";
   document.getElementById("tab-hist").style.display  = (t==="hist") ? "" : "none";
   document.getElementById("tab-learn").style.display = (t==="learn")? "" : "none";
+  document.getElementById("tab-assistente").style.display = t==="assistente" ? "" : "none";
+  if(scannerChat) scannerChat.abaAtiva(t);
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===t));
   if(t==="hist") renderRadar();
   if(t==="mine") renderMinhas();
@@ -2960,6 +2985,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   iDate=document.getElementById("iDate");
   document.getElementById("modal").addEventListener("click",e=>{ if(e.target.id==="modal") closeForm(); });
   load(); render();
+  scannerChat = ScannerChat.montar(contextoChat);
 
   apagarChavesAntigasIA();     // chaves de API de versões antigas não ficam no navegador
   checkBackupReminder();

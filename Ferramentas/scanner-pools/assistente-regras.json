@@ -1,0 +1,5 @@
+{
+  "versao": "2026-09-27",
+  "fonte": "docs/scanner-pools-metodologia-ia.md",
+  "resumo": "TVL mínimo: US$ 100.000. Razão = volume real de 24h / TVL, obrigatoriamente > 0,50. Meme detectada exige razão > 2 e análise por pool. Aprovar não contorna cortes; rejeitar persiste após atualização. Sólidas não significa segura. Conservadora não admite memecoin. Mediana pode admitir meme em tese específica. Agressiva envolve faixa apertada e giro curto; SOL pode integrar os três perfis sem mudar sua categoria de token. Range de 6% significa −6%/+6%. Em 9%, objetivo e prazo desempatarão mediana e agressiva. Os perfis dependem da montagem; não há obrigação de abrir 3, 6 ou 9 pools."
+}

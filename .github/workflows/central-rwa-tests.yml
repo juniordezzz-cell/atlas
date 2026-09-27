@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      - run: node --test Ferramentas/scanner-pools/regras.test.cjs
+      - run: node --test Ferramentas/scanner-pools/*.test.cjs
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 10

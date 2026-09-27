@@ -91,3 +91,16 @@ ou classificação; `fTvlMin` não permite baixar o piso. Histórico não é apa
 Regressões cobrem TVL 0; 0,22; 1; 22; 41; 800; 1.000; 99.999,99 e fronteira 100.000,
 inclusive dados em cache, manuais e aprovadas. 152 Python passaram (2 suites
 Postgres puladas no Windows); 8 Node passaram. Regras de razão e decisões preservadas.
+
+
+## Assistente local do Scanner (27/09/2026)
+
+Metodologia e contexto para Codex/Claude: [scanner-pools-metodologia-ia.md](scanner-pools-metodologia-ia.md). Primeira etapa autorizada: aba ampla e botão flutuante nas outras abas, com a mesma conversa em memória. Independente do Oráculo principal (`core/ui/atlas-shell.js`). Ainda não há integração OpenRouter, gateway, chave, pesquisa externa ou simulador de posição.
+
+`assistente-dados.js` consulta todo `state.pools`, não só a página visível, preservando `trilhoDe`, decisões, TVL, razão e exclusões de migração/arquivo. Atende lista/favoritas, perguntas com capital/meta/prazo e evolução diária de TVL das favoritas. Interpretação de linguagem ainda é restrita; pergunta não suportada recebe ajuda explícita. Em meta, capital × fee%/100 × vol24h/TVL × dias é apenas referência agregada. Exclui ve(3,3) dessa fórmula e não promete taxa da faixa nem lucro líquido. A classificação real conservadora/mediana/agressiva exige montagem, objetivo e prazo.
+
+`assistente-ui.js` renderiza conteúdo via `textContent`, compartilha conversa entre aba e painel, não envia espontaneamente. `assistente-regras.json` resume regras vigentes, editadas a partir do MD. `servidor.js` expõe `historicoDiario(sid)` com `dia` original; o histórico é buscado pela consulta mesmo sem abrir Radar, com cache de cinco minutos e até quatro requisições concorrentes. Comparação de “últimos dois dias” requer registro no dia atual e outro exatamente dois dias antes; se não houver, marca histórico insuficiente. Registros diários não são horários exatos de coleta. Favoritos/decisões continuam locais ao navegador.
+
+Validação: 18 testes Node (10 do assistente, 8 anteriores) e 152 Python, 2 suítes Postgres puladas no Windows. Prévia local sem autenticação de produção confirmou aba, regras e conversa compartilhada no painel. Essa cópia de teste não é publicada. Revisão independente identificou e corrigiu comparação de histórico antigo como atual, filtro Sui ignorado e roteamento de diferença de TVL para regras genéricas.
+
+Próximo incremento: gateway autenticado de OpenRouter gratuito e análise de consultas mais livres. Chave somente no servidor; verificar cotas atuais e privacidade antes de enviar qualquer contexto a provedor.

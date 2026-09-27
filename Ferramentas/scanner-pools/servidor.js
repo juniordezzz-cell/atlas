@@ -223,8 +223,11 @@
 
   /* Leituras diárias de UMA pool (painel de evolução), no formato de
      history do Scanner. Buscadas só quando a pool é aberta. */
+  function historicoDiario(sid, fetchImpl) {
+    return buscarVisao("scanner_leituras", "select=*&pool_id=eq." + encodeURIComponent(sid) + "&order=dia.asc", fetchImpl);
+  }
   function historico(sid, fetchImpl) {
-    return buscarVisao("scanner_leituras", "select=*&pool_id=eq." + encodeURIComponent(sid) + "&order=dia.asc", fetchImpl)
+    return historicoDiario(sid, fetchImpl)
       .then(function (ls2) {
         return ls2.map(function (l) {
           return { ts: Date.parse(l.dia + "T12:00:00"), tvl: Number(l.tvl) || 0, vol24h: Number(l.vol_24h) || 0,
@@ -240,7 +243,7 @@
     paraPool: paraPool, extrairMarcas: extrairMarcas, trilhoEfetivo: trilhoEfetivo,
     chaveDecisao: chaveDecisao,
     casarLocais: casarLocais, migrar: migrar,
-    carregar: carregar, historico: historico,
+    carregar: carregar, historico: historico, historicoDiario: historicoDiario,
     lerMarcas: function () { return lerJSON(MARCAS_KEY, {}); },
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
     lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [] }; },
