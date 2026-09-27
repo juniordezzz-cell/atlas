@@ -27,6 +27,9 @@ def dsn(tmp_path_factory):
     with psycopg.connect(uri, autocommit=True) as c:
         c.execute("do $$ begin create role anon; exception when duplicate_object then null; end $$")
         c.execute("do $$ begin create role authenticated; exception when duplicate_object then null; end $$")
+        c.execute("do $$ begin create role service_role; exception when duplicate_object then null; end $$")
+        # Reproduz os grants explícitos padrão do Supabase, além de PUBLIC.
+        c.execute("alter default privileges in schema public grant execute on functions to anon, authenticated")
     apply_migrations(uri, MIGRATIONS)
     apply_migrations(uri, MIGRATIONS)
     yield uri
@@ -86,4 +89,7 @@ def test_chat_reserva_no_maximo_vinte_chamadas_por_dia(dsn):
         assert calls == list(range(1, 21)) + [-1]
         assert conn.execute("select count(*) from scanner.chat_usage where uid = 'uid-123'").fetchone()[0] == 1
         assert conn.execute("select relrowsecurity from pg_class where oid = 'scanner.chat_usage'::regclass").fetchone()[0]
+        for role in ("anon", "authenticated"):
+            assert not conn.execute("select has_function_privilege(%s, 'public.scanner_chat_reserve(text,integer)', 'EXECUTE')", (role,)).fetchone()[0]
+        assert conn.execute("select has_function_privilege('service_role', 'public.scanner_chat_reserve(text,integer)', 'EXECUTE')").fetchone()[0]
 
