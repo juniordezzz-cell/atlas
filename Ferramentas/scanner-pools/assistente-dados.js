@@ -5,6 +5,8 @@
   const n=s=>Number(String(s).replace(',','.'));
   const usd=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'USD',maximumFractionDigits:2});
   const ve33=new Set(['Aerodrome','Velodrome','THENA','Pharaoh','Ramses']);
+  function memeExcluida(text){return /\b(sem|nao|exclu\w*|evit\w*|remov\w*|tir\w*)\b.{0,45}\b(memes?|memecoins?)\b/.test(norm(text));}
+  function memePermitida(text){const q=norm(text);if(memeExcluida(q))return false;return /\b(com|inclu\w*|aceit\w*|permit\w*|analis\w*|avali\w*|compar\w*)\b.{0,40}\b(memes?|memecoins?)\b/.test(q);}
   function eligible(c){
     const seen=new Set();
     return (c.pools||[]).filter(p=>{
@@ -54,6 +56,12 @@
   }
   async function consultar(pergunta,c){
     const q=norm(pergunta);let ps=filtered(q,eligible(c));let r;
+    const pref=c.preferencias;
+    if(memeExcluida(q)||(pref?.evitarMemes&&!memePermitida(q)))ps=ps.filter(p=>!p.sinais?.memecoin?.detectada);
+    if(pref){
+      const nets=['solana','base','arbitrum','ethereum','bnb chain','polygon','optimism','avalanche','sui','hyperevm','robinhood'];
+      if(pref.redes?.length&&!nets.some(v=>new RegExp('\\b'+v+'\\b').test(q)))ps=ps.filter(p=>pref.redes.some(v=>norm(v)===norm(p.network)));
+    }
     if(/(?:explique|quais sao|como funciona|qual e).*\b(?:regra|rating|range)\b|\bregras\b/.test(q)&&!/tvl/.test(q)){
       r={tipo:'regras',items:[],texto:(c.regras?.resumo||'TVL mínimo US$ 100.000; razão > 0,50. Meme: razão > 2 e análise pendente. Conservadora não admite meme; o perfil depende da montagem. Range de 6% significa −6%/+6%.')};
     }else if(/tvl/.test(q)&&/dias?|aument|evolu|cresce/.test(q)){
@@ -80,5 +88,5 @@
     if(dated.length)r.texto+='\nAtualizações das candidatas: '+new Date(Math.min(...dated)).toLocaleString('pt-BR')+' a '+new Date(Math.max(...dated)).toLocaleString('pt-BR')+'.';
     return wrap(c,r);
   }
-  g.ScannerConsultas={consultar};
+  g.ScannerConsultas={consultar,memePermitida,memeExcluida};
 })(window);

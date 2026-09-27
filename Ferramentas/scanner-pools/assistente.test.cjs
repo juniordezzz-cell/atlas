@@ -50,3 +50,15 @@ test('filtro de rede Sui não mistura pools de outras redes',async()=>{
   const r=await C.consultar('Liste pools na Sui',ctx([pool(1),pool(2,{network:'Sui'})]));
   assert.equal(r.items.length,1);assert.equal(r.items[0].id,2);
 });
+test('memória confirmada exclui meme e redes fora da preferência, exceção explícita não altera memória',async()=>{
+  const prefs={evitarMemes:true,redes:['Base']};
+  const c=ctx([pool(1,{network:'Base'}),pool(2,{network:'Base',sinais:{memecoin:{detectada:true}}}),pool(3)],{preferencias:prefs});
+  const r=await C.consultar('Liste pools',c);assert.deepEqual(Array.from(r.items,x=>x.id),[1]);
+  const except=await C.consultar('Liste pools com meme como exceção nesta análise',c);assert.deepEqual(Array.from(except.items,x=>x.id),[1,2]);assert.equal(prefs.evitarMemes,true);
+});
+test('pedidos negativos de meme nunca são interpretados como exceção afirmativa',async()=>{
+  for(const pref of [null,{evitarMemes:true},{evitarMemes:false}])for(const q of ['Liste pools sem memecoins','Não quero memes nas pools','Liste pools, exclua os memes']){
+    const r=await C.consultar(q,ctx([pool(1),pool(2,{sinais:{memecoin:{detectada:true}}})],{preferencias:pref}));
+    assert.deepEqual(Array.from(r.items,x=>x.id),[1],q);
+  }
+});

@@ -46,3 +46,10 @@ test('sem configuração do Supabase devolve indisponível para fallback local',
   const {api,calls}=setup({ATLAS_SUPABASE:null});const r=await api.responder('Olá',context([]),{tipo:'ajuda',texto:'local'});
   assert.equal(r.disponivel,false);assert.equal(calls.length,0);
 });
+test('salvar memória e feedback usam sessão, sem chave de modelo ou chamada de chat',async()=>{
+  const {api,calls}=setup();assert.equal(typeof api.salvarMemoria,'function');
+  await api.salvarMemoria({evitarMemes:true,redes:['Base'],pares:[],notas:'Prefiro crossover'});
+  await api.avaliar({rating:'corrigir',question:'Qual pool?',answer:'A',comment:'A categoria é desconhecida'});
+  assert.deepEqual(calls.map(x=>JSON.parse(x.init.body).operation),['memory.set','feedback']);
+  assert.ok(calls.every(x=>x.init.headers.Authorization==='Bearer firebase-token'));
+});

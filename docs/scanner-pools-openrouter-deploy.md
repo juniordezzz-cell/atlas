@@ -13,7 +13,7 @@ O acesso ao painel/CLI de gestão do projeto é necessário somente para implant
 
 ## Limites e segurança
 
-- Modelo fixo: `openrouter/free`, sem fallback pago. Uma chamada ao modelo por pergunta; 550 tokens de saída no máximo. OpenRouter escolhe o modelo gratuito disponível nessa rota, portanto não se promete identidade/modelo exato ou disponibilidade contínua.
+- Modelo fixo: `openrouter/free`, sem fallback pago. Uma chamada ao modelo por pergunta; 1.000 tokens de saída no máximo. OpenRouter escolhe o modelo gratuito disponível nessa rota, portanto não se promete identidade/modelo exato ou disponibilidade contínua.
 - O contexto enviado ao provedor contém pergunta, resposta local calculada e no máximo 30 pools. Favoritos e decisões permanecem no navegador; apenas marcas necessárias à pergunta viajam nesse contexto. Não enviar dados pessoais ou chaves na pergunta.
 - Dados de pool e texto do usuário são tratados como dados, não comandos. Nenhuma ação de aprovar/rejeitar pool ocorre por resposta da IA.
 - Respostas são análise baseada no snapshot do scanner. APR agregado e volume/TVL não prometem lucro de posição concentrada, especialmente por variação de preço, faixa, custos e perda impermanente.
@@ -22,3 +22,10 @@ O acesso ao painel/CLI de gestão do projeto é necessário somente para implant
 ## Verificação
 
 Na raiz do repositório: `node --test Ferramentas/scanner-pools/*.test.cjs` e `node --test central-rwa/supabase/functions/scanner-chat/handler.test.mjs`. O teste de quota SQL está em `central-rwa/backend/tests/test_pools_postgres.py` e roda no CI com PostgreSQL de teste. Após implantar a função, `GET https://opaimjoimbndwuwkxuva.supabase.co/functions/v1/scanner-chat` deve devolver JSON com `enabled: true` somente depois de cadastrado o segredo. Um POST sem Firebase ID token deve devolver 401.
+
+## Atualização para contexto, memória e avaliações
+
+1. Aguardar o job `deploy` aplicar a migration `20260928000001_scanner_chat_memory.sql`.
+2. Supabase → Edge Functions → scanner-chat → Code → handler.mjs: substituir o conteúdo pelo arquivo atual do GitHub e publicar a nova versão. `index.ts` continua igual; a chave existente permanece em Secrets. Manter Verify JWT with legacy secret desligado, porque o código valida a sessão Firebase.
+3. Atlas → Scanner Pools → Assistente → Ctrl+F5. Em Minhas preferências confirmadas, carregar da conta, revisar os campos e salvar. Testar uma pergunta, depois “E entre essas, qual escolheria?”; as métricas devem vir do snapshot atual. Usar Resposta útil ou Corrigir resposta para registrar avaliação.
+4. Nova conversa limpa o contexto desta sessão. Restaurar preferências iniciais remove critérios pessoais; Apagar avaliações anteriores remove exemplos de feedback. Preferências são privadas da conta, não entram no backup público do navegador.

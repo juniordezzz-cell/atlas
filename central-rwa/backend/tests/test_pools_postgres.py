@@ -93,3 +93,27 @@ def test_chat_reserva_no_maximo_vinte_chamadas_por_dia(dsn):
             assert not conn.execute("select has_function_privilege(%s, 'public.scanner_chat_reserve(text,integer)', 'EXECUTE')", (role,)).fetchone()[0]
         assert conn.execute("select has_function_privilege('service_role', 'public.scanner_chat_reserve(text,integer)', 'EXECUTE')").fetchone()[0]
 
+
+def test_chat_memoria_isolada_feedback_nao_altera_regras_e_grants_fechados(dsn):
+    import psycopg
+    from psycopg.types.json import Jsonb
+
+    with psycopg.connect(dsn, autocommit=True) as conn:
+        prefs = {"evitarMemes": True, "redes": ["Base"], "pares": [], "notas": "Prefiro crossover"}
+        conn.execute("select public.scanner_chat_memory_set(%s,%s)", ("owner-a", Jsonb(prefs)))
+        assert conn.execute("select public.scanner_chat_memory_get('owner-a')").fetchone()[0] == prefs
+        assert conn.execute("select public.scanner_chat_memory_get('owner-b')").fetchone()[0]["redes"] == []
+        review = {"rating": "corrigir", "question": "Qual pool?", "answer": "A", "comment": "Explique categoria"}
+        for _ in range(51):
+            conn.execute("select public.scanner_chat_feedback(%s,%s)", ("owner-a", Jsonb(review)))
+        assert conn.execute("select count(*) from scanner.chat_feedback where uid='owner-a'").fetchone()[0] == 50
+        assert len(conn.execute("select public.scanner_chat_feedback_get('owner-a')").fetchone()[0]) == 3
+        assert conn.execute("select public.scanner_chat_feedback_get('owner-b')").fetchone()[0] == []
+        assert conn.execute("select public.scanner_chat_memory_get('owner-a')").fetchone()[0] == prefs
+        conn.execute("select public.scanner_chat_feedback_clear('owner-a')")
+        assert conn.execute("select public.scanner_chat_feedback_get('owner-a')").fetchone()[0] == []
+        for signature in ("scanner_chat_memory_get(text)", "scanner_chat_memory_set(text,jsonb)", "scanner_chat_feedback(text,jsonb)", "scanner_chat_feedback_get(text)", "scanner_chat_feedback_clear(text)"):
+            for role in ("anon", "authenticated"):
+                assert not conn.execute("select has_function_privilege(%s,%s,'EXECUTE')", (role, "public." + signature)).fetchone()[0]
+            assert conn.execute("select has_function_privilege('service_role',%s,'EXECUTE')", ("public." + signature,)).fetchone()[0]
+

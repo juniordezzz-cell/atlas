@@ -9,6 +9,10 @@
     return (c.pools||[]).filter(p=>{
       const tvl=Number(p.tvl),vol=Number(p.vol24h),trilho=c.trilho(p);
       if(p.migrada||p.arquivada||!Number.isFinite(tvl)||tvl<100000||!Number.isFinite(vol)||vol/tvl<=.5||trilho==='oculta'||(trilho!=='solida'&&!pending))return false;
+      if(p.trilho==='barrada'||(p.sinais?.memecoin?.detectada&&vol/tvl<=2))return false;
+      if((g.ScannerConsultas?.memeExcluida(q)||(c.preferencias?.evitarMemes&&!g.ScannerConsultas?.memePermitida(q)))&&p.sinais?.memecoin?.detectada)return false;
+      const nets=['solana','base','arbitrum','ethereum','bnb chain','polygon','optimism','avalanche','sui','hyperevm','robinhood'];
+      if(c.preferencias?.redes?.length&&!nets.some(v=>new RegExp('\\b'+v+'\\b','i').test(q))&&!c.preferencias.redes.some(v=>normas(v)===normas(p.network)))return false;
       const id=String(p.sid||'manual:'+p.id);if(seen.has(id))return false;seen.add(id);return true;
     });
   }
@@ -33,14 +37,19 @@
     const url=endpoint();if(!url)return {enabled:false};
     try{const res=await g.fetch(url,{method:'GET',headers:{apikey:g.ATLAS_SUPABASE.publishableKey}});return res.ok?await res.json():{enabled:false};}catch(_e){return {enabled:false};}
   }
-  async function responder(q,c,r){
+  async function chamada(body){
     const url=endpoint(),user=g.firebase?.auth?.().currentUser;
-    if(!url||!user?.getIdToken)return {disponivel:false};
+    if(!url||!user?.getIdToken)throw Error('Entre no Atlas para usar a memória e a IA.');
     const token=await user.getIdToken();
-    const res=await g.fetch(url,{method:'POST',headers:{apikey:g.ATLAS_SUPABASE.publishableKey,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(contexto(q,c,r))});
+    const res=await g.fetch(url,{method:'POST',headers:{apikey:g.ATLAS_SUPABASE.publishableKey,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
     let data={};try{data=await res.json();}catch(_e){}
     if(!res.ok){const error=new Error(data.error||'IA indisponível.');error.status=res.status;throw error;}
-    return {disponivel:true,answer:String(data.answer||''),model:data.model||'openrouter/free',usage:data.usage};
+    return data;
   }
-  g.ScannerIA={status,responder,contexto};
+  async function responder(q,c,r,history=[]){
+    if(!endpoint()||!g.firebase?.auth?.().currentUser?.getIdToken)return {disponivel:false};
+    const data=await chamada({...contexto(q,c,r),history});
+    return {disponivel:true,answer:String(data.answer||''),truncated:!!data.truncated,model:data.model||'openrouter/free',usage:data.usage};
+  }
+  g.ScannerIA={status,responder,contexto,memoria:()=>chamada({operation:'memory.get'}),salvarMemoria:preferences=>chamada({operation:'memory.set',preferences}),avaliar:feedback=>chamada({operation:'feedback',feedback}),apagarAvaliacoes:()=>chamada({operation:'feedback.clear'})};
 })(window);
