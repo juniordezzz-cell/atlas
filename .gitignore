@@ -13,6 +13,7 @@ node_modules/
 
 # Segredos — nunca commitar
 .env
+central-rwa/supabase/functions/.env
 *.key
 *.pem
 config.local.*

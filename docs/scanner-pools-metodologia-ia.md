@@ -27,7 +27,9 @@ Exemplos prioritários:
 
 As respostas devem trazer uma seleção curta e justificada, números verificáveis e identificação das pools. O objetivo é evitar que o proprietário procure manualmente entre centenas de linhas. Cálculos e ordenações devem ocorrer em funções determinísticas; o modelo explica os resultados conforme a metodologia pessoal.
 
-Integração futura com OpenRouter e eventualmente outros provedores: somente opções gratuitas, sem fallback pago, com limites por provedor. Chaves protegidas no servidor. Disponibilidade e cotas precisam ser verificadas antes da integração. Pesquisa externa exige uma ferramenta de consulta; não presumir que qualquer modelo acessa a internet.
+Integração futura: começar somente com OpenRouter e modelos gratuitos, sem fallback pago. `central-rwa/supabase/functions/.env.example` reserva o nome `SCANNER_OPENROUTER_API_KEY` sem guardar o valor. Para desenvolvimento, o arquivo real `central-rwa/supabase/functions/.env` é ignorado pelo Git; em produção, o mesmo nome deve ser cadastrado nos segredos das Edge Functions do Supabase. Um GitHub Actions Secret com esse nome só serviria para um workflow, não para o chat da página já publicada. Não colocar o valor em HTML, JavaScript, JSON versionado ou GitHub Pages. A função HTTP do chat ainda precisa ser construída e protegida antes de receber o segredo.
+
+Se a cota ou qualidade do OpenRouter for insuficiente, considerar um roteador próprio com Gemini e outros provedores, com orçamento, prioridade e limites por provedor. Não montar esse roteador antes de medir o uso real. O fato de o assistente responder somente quando chamado reduz chamadas, mas uma pergunta longa ou contexto grande ainda pode consumir muitos tokens; medir e limitar contexto, resposta e chamadas. Verificar cotas atuais antes da integração. Pesquisa externa exige uma ferramenta de consulta; não presumir que qualquer modelo acessa a internet.
 
 ## Duas avaliações distintas
 
