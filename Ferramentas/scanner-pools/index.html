@@ -709,7 +709,7 @@
     </div>
     <div class="srv-status" id="srvStatus">Carregando pools do servidor…</div>
   </div>
-  <p class="trilho-dica" id="trilhoDica">Lista principal: pools elegíveis sem memecoin detectada e pools aprovadas por você. Razão de 24h > 0,50. Não é garantia de segurança.</p>
+  <p class="trilho-dica" id="trilhoDica">Lista principal: pools elegíveis sem memecoin detectada e pools aprovadas por você. TVL ≥ US$ 100 mil e razão de 24h > 0,50. Não é garantia de segurança.</p>
   <div class="toklista" id="tokLista"></div>
 
   <!-- filtros numa linha só: rede e plataforma viraram menus (eram 19 chips) -->
@@ -727,9 +727,9 @@
       <option value="?">❓ A confirmar</option>
     </select>
     <select id="fTvlMin" onchange="state.page=1; render()">
-      <option value="0">TVL mín: tudo</option>
-      <option value="50000">TVL mín: $50 mil</option>
-      <option value="100000">TVL mín: $100 mil</option>
+
+
+      <option value="100000" selected>TVL mín: $100 mil</option>
       <option value="500000">TVL mín: $500 mil</option>
       <option value="1000000">TVL mín: $1 mi</option>
     </select>
@@ -761,7 +761,7 @@
     O ranking é pela <b>Nota</b> (0 a 100): <b>taxa</b> 30% (o fee tier — 0,25% a 0,8% é o ponto bom), <b>giro</b> 30% (a Razão), <b>rendimento</b> 20% (<code>Fee × Razão</code>), <b>consistência</b> 10%, <b>profundidade</b> 5% (TVL) e <b>tendência</b> 5%. Clique no cabeçalho de outra coluna para ordenar por ela. O Guia explica os trilhos (tópico 0) e a nota (tópico 16).
     <span class="rule">Semáforo da Razão: ≥ 3×</span> verde · 1–3× amarelo · &lt;1× vermelho.
     A coluna <b>Categoria</b> é o filtro que taxa e razão não dão: <span style="color:#a97bff;font-weight:600">RWA</span>, <span style="color:#2ec785;font-weight:600">Blue-chip</span> e <span style="color:#3aa0ff;font-weight:600">Stable</span> valem o risco; <span style="color:#f5943b;font-weight:600">Memecoin</span> paga fee gordo mas o IL morde; <span style="color:#7d8aa0;font-weight:600">❓</span> = token ainda não classificado (confirme antes de entrar).
-    O filtro de TVL é opcional. Razão ≤ 0,50 elimina de todas as listas; memecoins com razão ≤ 2,00 também saem.
+    O mínimo obrigatório de TVL é US$ 100 mil; o filtro permite elevar esse piso. Razão ≤ 0,50 elimina de todas as listas; memecoins com razão ≤ 2,00 também saem.
     </div>
   </details>
 </section>
@@ -836,7 +836,7 @@
         <table class="ltable">
           <thead><tr><th>Etapa</th><th>Regra</th><th>Por quê</th></tr></thead>
           <tbody>
-            <tr><td class="tk">Pré-corte</td><td>Volume real de 24h ÷ TVL > 0,50. TVL mínimo é um filtro opcional da tela</td><td>Razão ≤ 0,50 elimina; não há piso fixo de TVL/volume na coleta</td></tr>
+            <tr><td class="tk">Pré-corte</td><td>Volume real de 24h ÷ TVL > 0,50. TVL ≥ US$ 100 mil é obrigatório na coleta e na tela</td><td>Razão ≤ 0,50 elimina; TVL abaixo de US$ 100 mil elimina, inclusive pools manuais e dados em cache</td></tr>
             <tr><td class="tk">Segurança</td><td>Some sem exceção: honeypot, mint ou freeze ativos, desenvolvedor com mais de 20%, pool sem taxa e sem APR, APR acima de 10.000%, volume/TVL acima de 50× por 3 dias seguidos</td><td>Golpe, token que o criador pode imprimir ou congelar, ou volume fabricado</td></tr>
             <tr><td class="tk">Sólidas</td><td>Pools elegíveis sem memecoin detectada, ou aprovadas individualmente por você</td><td>Lista principal; dados incompletos não garantem segurança</td></tr>
             <tr><td class="tk">Pendentes de análise</td><td>Memecoin identificada pelo ID CoinGecko associado ao contrato, com razão > 2,00</td><td>Sem decisão permanece pendente. Razão ≤ 2,00 elimina mesmo se aprovada</td></tr>
@@ -883,7 +883,7 @@
         <h3>TVL — o dinheiro preso</h3>
         <p>TVL é o total depositado na pool. É o número que todo iniciante olha primeiro — e o que <b>mais engana</b> sozinho. Pensa nele como o tamanho de uma loja: uma loja gigante e vazia fatura menos que uma pequena e lotada. O que importa é o <b>movimento</b>, não o tamanho.</p>
         <div class="callout bad"><div class="cotip">🔻</div><div><b>SOL-USDC (Raydium)</b> tem TVL enorme de <b>$9,9 M</b>, mas gira só $2,1 M/dia (razão 0,22×) e rende 20%/ano. Já a <b>SKHY</b>, com $958 mil de TVL, gira $2,47 M (razão 2,58×) e rende 235%. Menos dinheiro preso, muito mais retorno.</div></div>
-        <p class="muted">Pra que serve o TVL então? Como <b>piso de segurança</b>. Abaixo de $100 mil, a liquidez é frágil: difícil entrar/sair sem derrapagem e fácil de manipular. Você pode usar o filtro de TVL na tela; ele não elimina mais pools na coleta.</p>
+        <p class="muted">Pra que serve o TVL então? Como <b>piso de segurança</b>. Abaixo de $100 mil, a liquidez é frágil: difícil entrar/sair sem derrapagem e fácil de manipular. TVL abaixo de US$ 100 mil é eliminado na coleta e na tela.</p>
       </div>
     </div>
 
@@ -1083,7 +1083,7 @@
             <tr><td class="tk r">Holders concentrados</td><td>Poucas carteiras donas do supply podem drenar a pool.</td></tr>
           </tbody>
         </table>
-        <div class="callout bad"><div class="cotip">🚩</div><div>O filtro opcional de <b>TVL ≥ $100 mil</b> reduz pools rasas. Mas TVL suficiente não garante segurança — categoria "?" é risco não avaliado. Confirma o token antes de comprometer capital.</div></div>
+        <div class="callout bad"><div class="cotip">🚩</div><div>O mínimo obrigatório de <b>TVL ≥ $100 mil</b> elimina pools rasas. Mas TVL suficiente não garante segurança — categoria "?" é risco não avaliado. Confirma o token antes de comprometer capital.</div></div>
       </div>
     </div>
 
@@ -1503,7 +1503,7 @@ function setTrilho(t){
   const d = document.getElementById("trilhoDica");
   if(d) d.textContent = t==="caca"
     ? "Memecoin detectada e razão de 24h > 2,00. ✓ aprova esta pool; ✕ rejeita e mantém fora das próximas atualizações."
-    : "Lista principal: pools elegíveis sem memecoin detectada e pools aprovadas por você. Razão de 24h > 0,50. Não é garantia de segurança.";
+    : "Lista principal: pools elegíveis sem memecoin detectada e pools aprovadas por você. TVL ≥ US$ 100 mil e razão de 24h > 0,50. Não é garantia de segurança.";
   render();
 }
 
@@ -1718,7 +1718,7 @@ function render(){
   // regra 2x
   if(document.getElementById("fRule2").checked) list = list.filter(p=>ratio(p)>=2);
   // TVL mínimo (esconde degen de liquidez baixa)
-  const tvlMin = parseFloat(document.getElementById("fTvlMin").value)||0;
+  const tvlMin = Math.max(100000, parseFloat(document.getElementById("fTvlMin").value)||100000);
   if(tvlMin>0) list = list.filter(p=>p.tvl>=tvlMin);
   // categoria
   const cat = document.getElementById("fCat").value;

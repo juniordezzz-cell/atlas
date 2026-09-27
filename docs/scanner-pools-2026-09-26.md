@@ -21,9 +21,11 @@ Referência atual, acima dos documentos de 23/09:
    Sem decisão permanece pendente. Decisões são reaplicadas após novas coletas.
 5. Bloqueios de segurança anteriores continuam prioritários. Fórmula e nota mínima
    não mudaram (não há corte por nota mínima).
-6. TVL mínimo da tela é opcional e começa em “tudo”; pisos absolutos saíram da coleta.
-   UNI 1% com razão ~0,2 agora sai por pedido do usuário; UNI/WETH 0,05% com razão
-   ~1,54 pode aparecer mesmo com TVL ~US$750.
+6. **Pedido posterior vigente: TVL >= US$100 mil obrigatório** na coleta e na tela,
+   incluindo pools manuais, aprovadas e cache. Seletor permite apenas mínimos maiores.
+   A remoção anterior do piso foi substituída pelo usuário após observar pools rasas
+   com razão inflada. UNI/WETH com TVL ~US$750 sai mesmo com razão ~1,54.
+   O piso absoluto independente de volume continua removido.
 
 ## Arquivos e identidade
 
@@ -80,3 +82,12 @@ contratos e falhas de descoberta que poderiam aparecer como status ok.
 
 Conferir a primeira coleta em Actions e comparar UNI/Base/Uniswap com as regras.
 Depois ampliar detecção de memes sem CoinGecko ID, sem alterar critérios sem pedido.
+
+## Correção posterior: TVL mínimo obrigatório
+
+Motivo: denominador minúsculo produz razões gigantes e resultados sem liquidez.
+Corte TVL < US$100.000 no `passa_pre_corte` e no `trilhoEfetivo`, antes de aprovação
+ou classificação; `fTvlMin` não permite baixar o piso. Histórico não é apagado.
+Regressões cobrem TVL 0; 0,22; 1; 22; 41; 800; 1.000; 99.999,99 e fronteira 100.000,
+inclusive dados em cache, manuais e aprovadas. 152 Python passaram (2 suites
+Postgres puladas no Windows); 8 Node passaram. Regras de razão e decisões preservadas.

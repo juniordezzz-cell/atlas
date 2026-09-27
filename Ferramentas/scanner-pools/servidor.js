@@ -131,7 +131,7 @@
   }
   function trilhoEfetivo(p, lista, decisoes) {
     var r = Number(p.tvl) > 0 ? Number(p.vol24h) / Number(p.tvl) : 0;
-    if (!Number.isFinite(r) || r <= 0.50 || p.trilho === 'barrada') return 'oculta';
+    if (!Number.isFinite(Number(p.tvl)) || Number(p.tvl) < 100000 || !Number.isFinite(r) || r <= 0.50 || p.trilho === 'barrada') return 'oculta';
     var meme = !!((p.sinais || {}).memecoin || {}).detectada;
     if (meme && r <= 2) return 'oculta';
     var d = (decisoes || {})[chaveDecisao(p)] || (decisoes || {})[p.sid];

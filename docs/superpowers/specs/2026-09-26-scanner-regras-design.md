@@ -14,12 +14,14 @@ Este documento substitui as regras de classificação e pré-corte da spec de 23
   alternativa. Nunca usar apenas símbolo ou par: versões/taxas diferentes são pools diferentes.
 - Detecção de meme por ID CoinGecko, obtido do contrato na GeckoTerminal, associado
   à categoria `meme-token`. Sem dado não significa meme. Limites/falhas são visíveis.
-- Não eliminar por pisos fixos de TVL/volume antes da tela. TVL mínimo da tela é opcional.
+- Pedido posterior do usuário: **TVL >= US$ 100.000 é obrigatório**, inclusive
+  em dados antigos, pools manuais e aprovadas. O seletor só permite elevar esse mínimo.
+  Não há piso absoluto independente de volume; razão > 0,50 continua obrigatória.
 - Complementar descoberta por contrato de token, com orçamento explícito de chamadas;
   não prometer cobrir todas as pools de todas as redes em uma execução.
 - Persistência das decisões segue a arquitetura existente: navegador + backups;
   não sincroniza entre dispositivos. Lista antiga de bloqueios por token permanece válida.
 
 Regressão principal: UNI na Base/Uniswap. As pools com razão <= 0,50 devem ser
-descobertas mas eliminadas; a UNI/WETH 0,05%, com razão > 0,50 no print, é elegível
-quando removido o piso fixo de TVL e usado o filtro de TVL da tela em “Sem mínimo”.
+descobertas mas eliminadas. Após o pedido de TVL mínimo obrigatório, UNI/WETH
+0,05% com TVL ~US$750 também fica fora, mesmo com razão > 0,50.

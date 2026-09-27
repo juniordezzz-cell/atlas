@@ -6,7 +6,9 @@ Estas regras foram pedidas diretamente pelo usuário e substituem a classificaç
 Sólidas/Caça e os pisos fixos da documentação de 23/09. `caca` permanece somente
 como valor interno compatível com o banco; a interface diz Pendentes de análise.
 Não reintroduza aprovações por símbolo, ausência de dados como prova de meme
-ou pisos fixos de TVL/volume na coleta. Preserve decisões por pool e backups.
+ou falta de dados como aprovação de segurança. Preserve decisões por pool e backups.
+Pedido posterior vigente: TVL >= US$ 100.000 é obrigatório na coleta e na tela,
+inclusive em cache, pools manuais e aprovadas. O piso absoluto de volume continua removido.
 
 Validação: `python -m pytest -q` em `central-rwa/backend` e
 `node --test Ferramentas/scanner-pools/regras.test.cjs` na raiz.

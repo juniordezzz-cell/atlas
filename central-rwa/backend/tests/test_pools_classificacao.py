@@ -21,7 +21,7 @@ def info(simbolo="FOO", honeypot=False, mint=False, freeze=False, dev=None, hold
 
 def test_pre_corte():
     assert passa_pre_corte(cand())
-    assert passa_pre_corte(cand(tvl=99_999))  # piso fixo removido
+    assert not passa_pre_corte(cand(tvl=99_999))
     assert not passa_pre_corte(cand(vol=49_999))
 
 

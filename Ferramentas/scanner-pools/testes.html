@@ -59,7 +59,7 @@
     caso("aprovação legada por token não aprova novas pools", S.trilhoEfetivo(caca, { aprovados: ["FOO"], bloqueados: [] }) === "caca");
     caso("token bloqueado some com a pool", S.trilhoEfetivo(caca, { aprovados: [], bloqueados: ["FOO"] }) === "oculta");
     caso("bloquear major não esconde nada (o alvo é o outro token)", S.trilhoEfetivo(p, { aprovados: [], bloqueados: ["WBNB"] }) === "solida");
-    caso("pool manual aparece no padrão", S.trilhoEfetivo({ id: 1, pool: "X/Y", tvl:100, vol24h:100 }, { aprovados: [], bloqueados: [] }) === "solida");
+    caso("pool manual aparece no padrão", S.trilhoEfetivo({ id: 1, pool: "X/Y", tvl:100000, vol24h:100000 }, { aprovados: [], bloqueados: [] }) === "solida");
 
     /* transição das pools gravadas */
     var servidor = [p, S.paraPool({ id: "llama:uuid-1", rede: "Base", dex: "Uniswap", par: "WETH/USDC", fee: 0.3, tvl: 1, vol_24h: 1, trilho: "solida" }, {})];

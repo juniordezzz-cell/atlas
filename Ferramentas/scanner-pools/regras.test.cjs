@@ -10,7 +10,7 @@ function load() {
   return window.ScannerServidor;
 }
 const p = (r=3, meme=false, sid='gecko:base:0x1') => ({sid, servidor:true, network:'Base',
-  pool:'UNI/WETH', tvl:100, vol24h:100*r, trilho:'caca', sinais:{memecoin:{detectada:meme}}});
+  pool:'UNI/WETH', tvl:100000, vol24h:100000*r, trilho:'caca', sinais:{memecoin:{detectada:meme}}});
 test('legado sem meme entra em Sólidas; cortes inclusivos', () => {
   const S=load();
   assert.equal(S.trilhoEfetivo(p(),{}), 'solida');
@@ -35,7 +35,7 @@ test('endereço comum mantém decisão entre DefiLlama e Gecko', () => {
 test('aprovação não contorna segurança ou corte', () => {
   const S=load(), a=p(.5,true); const d={[S.chaveDecisao(a)]:'aprovada'};
   assert.equal(S.trilhoEfetivo(a,{},d),'oculta');
-  a.vol24h=400; a.trilho='barrada';
+  a.vol24h=400000; a.trilho='barrada';
   assert.equal(S.trilhoEfetivo(a,{},d),'oculta');
 });
 test('aprovação antiga por símbolo não aprova meme nova', () => {
@@ -68,4 +68,16 @@ test('backup central registra a chave de decisões', () => {
   const src=fs.readFileSync(__dirname+'/../../core/atlas-storage.js','utf8');
   const ctx={window:{}}; vm.runInNewContext(src,ctx);
   assert.ok(ctx.window.AtlasStorage.KEYS.includes(load().DECISOES_KEY));
+});
+
+test('TVL mínimo obrigatório em cache, manuais e aprovadas', () => {
+  const S=load();
+  for (const tvl of [0, .22, 1, 22, 41, 800, 1000, 99999.99]) {
+    for (const servidor of [true,false]) {
+      const a={...p(), tvl,vol24h:10_000_000,servidor};
+      assert.equal(S.trilhoEfetivo(a,{}, {[S.chaveDecisao(a)]:'aprovada'}),'oculta');
+    }
+  }
+  const a={...p(),tvl:100000,vol24h:100000};
+  assert.equal(S.trilhoEfetivo(a,{}),'solida');
 });

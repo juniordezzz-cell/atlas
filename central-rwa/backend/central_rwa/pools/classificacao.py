@@ -19,7 +19,7 @@ HOLDERS_MIN = 1_000
 
 
 def passa_pre_corte(c: Candidata) -> bool:
-    return isfinite(c.tvl) and isfinite(c.vol_24h) and c.tvl > 0 and c.vol_24h / c.tvl > 0.50
+    return isfinite(c.tvl) and isfinite(c.vol_24h) and c.tvl >= 100_000 and c.vol_24h / c.tvl > 0.50
 
 
 def motivos_barrada(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura]) -> list[str]:
@@ -66,7 +66,7 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
     if barr:
         return "barrada", barr
     if not passa_pre_corte(c):
-        return "barrada", ["razão de 24h <= 0,50"]
+        return "barrada", ["TVL abaixo de US$ 100 mil ou razão de 24h <= 0,50"]
     meme = c.sinais.get("memecoin") or {}
     if meme.get("detectada"):
         if c.vol_24h / c.tvl <= 2.0:
