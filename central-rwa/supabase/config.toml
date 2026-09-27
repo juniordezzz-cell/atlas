@@ -1,0 +1,4 @@
+# O Atlas usa Firebase Auth. Esta função valida o Firebase ID token no handler.
+# A verificação nativa de JWT do Supabase não entende tokens Firebase.
+[functions.scanner-chat]
+verify_jwt = false

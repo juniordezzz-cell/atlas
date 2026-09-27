@@ -76,3 +76,14 @@ def test_visao_traz_variacao_de_tvl_em_7_dias(dsn):
     finally:
         s.close()
 
+
+def test_chat_reserva_no_maximo_vinte_chamadas_por_dia(dsn):
+    import psycopg
+
+    with psycopg.connect(dsn, autocommit=True) as conn:
+        calls = [conn.execute("select public.scanner_chat_reserve(%s, %s)", ("uid-123", 20)).fetchone()[0]
+                 for _ in range(21)]
+        assert calls == list(range(1, 21)) + [-1]
+        assert conn.execute("select count(*) from scanner.chat_usage where uid = 'uid-123'").fetchone()[0] == 1
+        assert conn.execute("select relrowsecurity from pg_class where oid = 'scanner.chat_usage'::regclass").fetchone()[0]
+
