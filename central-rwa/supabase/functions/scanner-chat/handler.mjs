@@ -1,7 +1,7 @@
 /* Supabase Edge handler. The only paid-capable credential lives in Deno.env. */
 const FIREBASE_API_KEY='AIzaSyCvHDXyRfaozjHKL0S9zvs9C00NS6Bd8cs'; // Public Web API key from Atlas config.
 const OWNER_EMAIL='juniordezzz@gmail.com';
-const MODEL='openrouter/free';
+const MODEL='google/gemma-4-31b-it:free';
 const MAX_POOLS=30;
 const ALLOWED_ORIGIN='https://juniordezzz-cell.github.io';
 const AUTH_URL='https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+encodeURIComponent(FIREBASE_API_KEY);
@@ -112,6 +112,8 @@ export function createHandler({env,fetcher}){
       if(!upstream.ok)return json({error:upstream.status===429?'Cota gratuita do OpenRouter esgotada.':'OpenRouter indisponível no momento.'},upstream.status===429?429:502,origin);
       const data=await upstream.json();const content=data.choices?.[0]?.message?.content;
       if(typeof content!=='string'||!content.trim())return json({error:'OpenRouter não devolveu texto utilizável.'},502,origin);
+      const classifier=/content-safety/i.test(String(data.model||''))||/^\s*(?:user|assistant)\s+safety\s*:\s*(?:safe|unsafe)\b/i.test(content.replace(/[*`_]/g,''));
+      if(classifier)return json({error:'O modelo devolveu uma classificação em vez de responder. Resultado local preservado.'},502,origin);
       return json({answer:content.slice(0,5000),truncated:data.choices?.[0]?.finish_reason==='length'||content.length>5000,model:String(data.model||MODEL).slice(0,100),usage:Number(data.usage?.total_tokens)||null,limit:20},200,origin);
     }catch(_e){return json({error:'OpenRouter não respondeu a tempo. Consultas locais continuam disponíveis.'},503,origin);}
   };

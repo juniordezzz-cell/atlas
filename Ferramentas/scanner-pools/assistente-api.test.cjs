@@ -15,6 +15,10 @@ function setup(overrides={}){
 }
 const pool=(id,pool='SOL/USDC',more={})=>({id,sid:'pool:'+id,pool,network:'Solana',platform:'Orca',tvl:100000,vol24h:200000,fee:.3,nota:70,updatedAt:Date.UTC(2026,8,27),...more});
 const context=pools=>({pools,trilho:p=>p.oculta?'oculta':'solida',status:{doCache:false}});
+test('classificação de segurança vira falha para preservar fallback local mesmo com função antiga',async()=>{
+  const {api}=setup({fetch:async()=>({ok:true,json:async()=>({answer:'User Safety: safe'})})});
+  await assert.rejects(api.responder('Liste minhas favoritas',context([]),{tipo:'lista',texto:'Favorita SOL/USDC'}),/Resultado local preservado/);
+});
 test('sem sessão Firebase não chama gateway nem usa chave no browser',async()=>{
   const {api,calls}=setup({firebase:{auth:()=>({currentUser:null})}});
   const r=await api.responder('Qual pool?',context([pool(1)]),{tipo:'ajuda',texto:'local'});

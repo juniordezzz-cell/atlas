@@ -49,7 +49,8 @@
   async function responder(q,c,r,history=[]){
     if(!endpoint()||!g.firebase?.auth?.().currentUser?.getIdToken)return {disponivel:false};
     const data=await chamada({...contexto(q,c,r),history});
-    return {disponivel:true,answer:String(data.answer||''),truncated:!!data.truncated,model:data.model||'openrouter/free',usage:data.usage};
+    if(/content-safety/i.test(String(data.model||''))||/^\s*(?:user|assistant)\s+safety\s*:\s*(?:safe|unsafe)\b/i.test(String(data.answer||'').replace(/[*`_]/g,'')))throw Error('Resposta inválida da IA. Resultado local preservado.');
+    return {disponivel:true,answer:String(data.answer||''),truncated:!!data.truncated,model:data.model||'não informado',usage:data.usage};
   }
   g.ScannerIA={status,responder,contexto,memoria:()=>chamada({operation:'memory.get'}),salvarMemoria:preferences=>chamada({operation:'memory.set',preferences}),avaliar:feedback=>chamada({operation:'feedback',feedback}),apagarAvaliacoes:()=>chamada({operation:'feedback.clear'})};
 })(window);

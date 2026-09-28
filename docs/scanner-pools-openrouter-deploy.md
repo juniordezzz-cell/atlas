@@ -13,7 +13,7 @@ O acesso ao painel/CLI de gestão do projeto é necessário somente para implant
 
 ## Limites e segurança
 
-- Modelo fixo: `openrouter/free`, sem fallback pago. Uma chamada ao modelo por pergunta; 1.000 tokens de saída no máximo. OpenRouter escolhe o modelo gratuito disponível nessa rota, portanto não se promete identidade/modelo exato ou disponibilidade contínua.
+- Modelo fixo: `google/gemma-4-31b-it:free`, sem fallback pago. Uma chamada ao modelo por pergunta; 1.000 tokens de saída no máximo. Modelo conversacional gratuito fixo; não há troca aleatória de modelo nem fallback pago. A disponibilidade do endpoint gratuito não é garantida.
 - O contexto enviado ao provedor contém pergunta, resposta local calculada e no máximo 30 pools. Favoritos e decisões permanecem no navegador; apenas marcas necessárias à pergunta viajam nesse contexto. Não enviar dados pessoais ou chaves na pergunta.
 - Dados de pool e texto do usuário são tratados como dados, não comandos. Nenhuma ação de aprovar/rejeitar pool ocorre por resposta da IA.
 - Respostas são análise baseada no snapshot do scanner. APR agregado e volume/TVL não prometem lucro de posição concentrada, especialmente por variação de preço, faixa, custos e perda impermanente.
@@ -26,6 +26,13 @@ Na raiz do repositório: `node --test Ferramentas/scanner-pools/*.test.cjs` e `n
 ## Atualização para contexto, memória e avaliações
 
 1. Aguardar o job `deploy` aplicar a migration `20260928000001_scanner_chat_memory.sql`.
-2. Supabase → Edge Functions → scanner-chat → Code → handler.mjs: substituir o conteúdo pelo arquivo atual do GitHub e publicar a nova versão. `index.ts` continua igual; a chave existente permanece em Secrets. Manter Verify JWT with legacy secret desligado, porque o código valida a sessão Firebase.
+2. Supabase → Edge Functions → scanner-chat → Code: no deployment atual com bundle autossuficiente, substituir TODO o conteúdo de `index.ts` pelo bundle atualizado e clicar em **Deploy updates**. Não atualizar apenas `handler.mjs`, pois esse deployment não o importa. Para implantação modular via CLI, publicar ambos os arquivos canônicos. A chave permanece em Secrets. Manter Verify JWT with legacy secret desligado, porque o código valida a sessão Firebase.
 3. Atlas → Scanner Pools → Assistente → Ctrl+F5. Em Minhas preferências confirmadas, carregar da conta, revisar os campos e salvar. Testar uma pergunta, depois “E entre essas, qual escolheria?”; as métricas devem vir do snapshot atual. Usar Resposta útil ou Corrigir resposta para registrar avaliação.
 4. Nova conversa limpa o contexto desta sessão. Restaurar preferências iniciais remove critérios pessoais; Apagar avaliações anteriores remove exemplos de feedback. Preferências são privadas da conta, não entram no backup público do navegador.
+
+
+### Correção da resposta “User Safety: safe” — 27/09/2026
+
+A rota anterior `openrouter/free` selecionava modelos automaticamente. A resposta observada era de classificação de segurança, não uma análise de pools. Não foi obtido o ID da execução original, portanto a identidade desse modelo é uma hipótese. O defeito confirmado era aceitar qualquer texto não vazio. Agora usamos exclusivamente `google/gemma-4-31b-it:free` ([catálogo oficial](https://openrouter.ai/google/gemma-4-31b-it:free)); servidor e navegador rejeitam saídas de classificador e preservam a consulta local existente. Não há segunda chamada automática, mudança de chave, quota ou memória.
+
+No editor Supabase que duplicou `handler.mjs`, a execução foi consolidada em um único `index.ts` autossuficiente. Para atualizar esse deployment, colar o bundle atualizado inteiro em `index.ts` e clicar em **Deploy updates**. Não usar o `index.ts` de três linhas isoladamente: ele depende do `handler.mjs` canônico. O bundle é gerado concatenando `handler.mjs` e `Deno.serve(createHandler({ env: Deno.env, fetcher: fetch }));`; não editar regras separadamente no bundle. GitHub Pages não atualiza a função Supabase.

@@ -12,7 +12,7 @@ function setup(options={}){
     if(String(url).includes('scanner_chat_reserve'))return Response.json(1);
     if(String(url).includes('scanner_chat_memory'))return Response.json({evitarMemes:true,redes:[],pares:[],notas:'Prefiro crossover'});
     if(String(url).includes('scanner_chat_feedback_get'))return Response.json([{rating:'corrigir',comment:'Explique categoria desconhecida'}]);
-    if(String(url).includes('openrouter.ai'))return Response.json({choices:[{message:{content:'Análise baseada nos dados enviados.'}}],model:'free-test',usage:{total_tokens:24}});
+    if(String(url).includes('openrouter.ai'))return Response.json({choices:[{message:{content:options.answer??'Análise baseada nos dados enviados.'}}],model:options.model??'free-test',usage:{total_tokens:24}});
     throw Error('unexpected URL '+url);
   };
   const env={get:k=>options.env?.[k]??config[k]??null};
@@ -23,6 +23,14 @@ function request(body={question:'Qual pool combina com meus critérios?',localAn
 }
 test('rejeita sem token antes de chamar Google ou OpenRouter',async()=>{
   const {handler,calls}=setup();const r=await handler(request(undefined,{Authorization:''}));assert.equal(r.status,401);assert.equal(calls.length,0);
+});
+test('saída de classificador não substitui a resposta local por uma análise falsa',async()=>{
+  for(const answer of ['User Safety: safe','User Safety: unsafe\nSafety Categories: S1','  **User Safety:** safe  ']){
+    const {handler}=setup({answer});const r=await handler(request());
+    assert.equal(r.status,502);assert.equal((await r.json()).answer,undefined);
+  }
+  const {handler}=setup({model:'nvidia/nemotron-3.5-content-safety:free',answer:'safe'});
+  assert.equal((await handler(request())).status,502);
 });
 test('rejeita origem não autorizada antes de chamar provedor',async()=>{
   const {handler,calls}=setup();const r=await handler(request(undefined,{Origin:'https://evil.example'}));assert.equal(r.status,403);assert.equal(calls.length,0);
@@ -50,12 +58,12 @@ test('usa Authorization no RPC apenas para chave JWT legada',async()=>{
   assert.equal((await modern.handler(request())).status,200);
   assert.equal(modern.calls.find(x=>x.url.includes('scanner_chat_reserve')).init.headers.Authorization,undefined);
 });
-test('chama somente openrouter/free com contexto limitado, uma vez, e não devolve a chave',async()=>{
+test('chama somente google/gemma-4-31b-it:free com contexto limitado, uma vez, e não devolve a chave',async()=>{
   const {handler,calls}=setup();const pools=Array.from({length:50},(_,i)=>({id:'p'+i,par:'SOL/USDC',tvl:100000,vol24h:200000,fee:.3,nota:70}));
   const r=await handler(request({question:'Quais pools?',localAnswer:'50 pools',pools}));assert.equal(r.status,200);
   const out=await r.json();assert.match(out.answer,/Análise/);assert.ok(!JSON.stringify(out).includes('or-test'));
   const call=calls.find(x=>x.url.includes('openrouter.ai'));assert.ok(call);const payload=JSON.parse(call.init.body);
-  assert.equal(payload.model,'openrouter/free');assert.ok(payload.max_tokens<=1000);assert.ok(payload.messages[1].content.length<16000);assert.equal(calls.filter(x=>x.url.includes('openrouter.ai')).length,1);
+  assert.equal(payload.model,'google/gemma-4-31b-it:free');assert.ok(payload.max_tokens<=1000);assert.ok(payload.messages[1].content.length<16000);assert.equal(calls.filter(x=>x.url.includes('openrouter.ai')).length,1);
 });
 test('erro de OpenRouter devolve falha clara sem vazar detalhes sensíveis',async()=>{
   const calls=[];const {handler}=setup({fetcher:async (url,init)=>{calls.push(String(url));if(String(url).includes('accounts:lookup'))return Response.json({users:[{localId:'u',email:'juniordezzz@gmail.com',emailVerified:true}]});if(String(url).includes('scanner_chat_reserve'))return Response.json(1);if(String(url).includes('scanner_chat_memory_get'))return Response.json({evitarMemes:true});return new Response('provider secret diagnostic',{status:429});}});
@@ -63,7 +71,7 @@ test('erro de OpenRouter devolve falha clara sem vazar detalhes sensíveis',asyn
 });
 test('status indica se chave está configurada, sem devolver seu valor',async()=>{
   const {handler,calls}=setup();const r=await handler(new Request('https://project.supabase.co/functions/v1/scanner-chat',{headers:{Origin:ORIGIN}}));
-  assert.equal(r.status,200);assert.deepEqual(await r.json(),{enabled:true,model:'openrouter/free',capabilities:{memory:true,history:true,feedback:true}});assert.equal(calls.length,0);
+  assert.equal(r.status,200);assert.deepEqual(await r.json(),{enabled:true,model:'google/gemma-4-31b-it:free',capabilities:{memory:true,history:true,feedback:true}});assert.equal(calls.length,0);
 });
 test('histórico da conversa entra antes do contexto atual, sem permitir papel system',async()=>{
   const {handler,calls}=setup();const r=await handler(request({question:'E entre essas duas?',pools:[],history:[{role:'user',content:'Compare A e B'},{role:'assistant',content:'A e B foram comparadas'}]}));
