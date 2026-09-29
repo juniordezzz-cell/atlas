@@ -7,5 +7,10 @@
     if(!follow||!ids.length)return c;
     const selected=new Set(ids);return {...c,pools:c.pools.filter(p=>selected.has(identidade(p)))};
   }
-  g.ScannerConversa={historico,contextualizar,identidade};
+  function perguntaDePools(q){
+    const texto=String(q||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    if(/\b(abrir|abre|fechar|fecha|registrar|registre|swap|transferir|transfere)\b/.test(texto))return false;
+    return /\b(pool\w*|scanner|tvl|volume|liquidez|orca|raydium|pancake\w*|favorit\w*|oportunidad\w*|razao)\b/.test(texto);
+  }
+  g.ScannerConversa={historico,contextualizar,identidade,perguntaDePools};
 })(window);

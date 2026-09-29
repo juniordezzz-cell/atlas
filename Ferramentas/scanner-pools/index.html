@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-module="tools">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scanner Pools — Pools de Liquidez</title>
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
 <style>
   :root{
     --bg:#0a0e17; --panel:#111723; --panel2:#0d1320; --line:#1e2735;
@@ -702,8 +703,8 @@
   <input type="file" id="importfile" accept="application/json" style="display:none" onchange="importJSON(event)">
 
   <section id="tab-dash">
-  <!-- DESCOBRIR = o ranking das pools que o coletor do servidor acompanha
-       (DefiLlama + GeckoTerminal, a cada 4 h) mais as suas pools manuais. -->
+  <!-- DESCOBRIR = o ranking das pools que o coletor acompanha
+       (DefiLlama, GeckoTerminal, Orca e Raydium; agendado a cada 2 h) mais as pools manuais. -->
   <div class="dash-head">
     <div class="trilhos" role="tablist" aria-label="Lista">
       <button class="trilho on" data-trilho="solida" onclick="setTrilho('solida')">Sólidas <span class="tn" id="nSolidas"></span></button>
@@ -1228,7 +1229,7 @@
       <button class="linkbtn" onclick="exportJSON()">Exportar</button>
       <button class="linkbtn" onclick="document.getElementById('importfile').click()">Importar</button>
     </div>
-    <div class="foot-note">Scanner Pools · dados em USD · pools coletadas pelo servidor a cada 4 h · suas decisões por pool, ★, níveis, notas, lista de tokens e pools manuais ficam no navegador — faça <b>Exportar</b> para ter backup.</div>
+    <div class="foot-note">Scanner Pools · dados em USD · coleta programada a cada 2 h · suas decisões por pool, ★, níveis, notas, lista de tokens e pools manuais ficam no navegador — faça <b>Exportar</b> para ter backup.</div>
   </footer>
 </div>
 
@@ -2997,6 +2998,8 @@ window.addEventListener("DOMContentLoaded",()=>{
   document.getElementById("modal").addEventListener("click",e=>{ if(e.target.id==="modal") closeForm(); });
   load(); render();
   scannerChat = ScannerChat.montar(contextoChat);
+  if(window.AtlasOraculo) AtlasOraculo.registerTool(q=>
+    ScannerConversa.perguntaDePools(q) ? scannerChat.perguntar(q) : null);
 
   apagarChavesAntigasIA();     // chaves de API de versões antigas não ficam no navegador
   checkBackupReminder();
@@ -3006,5 +3009,6 @@ window.addEventListener("DOMContentLoaded",()=>{
   setInterval(()=>{ if(document.visibilityState==='visible') carregarServidor(); }, 5*60*1000);
 });
 </script>
+<script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>
