@@ -23,6 +23,7 @@ Preferências confirmadas ficam em `scanner.chat_memory` por UID Firebase; feedb
 
 ## Estado em 29/09/2026
 
+- Correção de visibilidade: Scanner e Finanças não carregam `atlas-theme.css`; o Oráculo agora define os tokens visuais necessários dentro do próprio componente nas Ferramentas. Sem os tokens de espaçamento, o botão montava no DOM com `right`/`bottom` inválidos e ficava fora da área visível. A guia do Scanner passa a se chamar **Oráculo**; o identificador interno `assistente` permanece para preservar a navegação e o código existentes.
 - PRs #3 e #4 publicaram o painel global no Scanner e nas páginas conectadas de Finanças; o botão independente do Scanner é omitido quando o painel global carrega. Barra móvel de Finanças não deve ser coberta.
 - A Edge Function atual pode ainda conter o prompt anterior que se chamava assistente independente. O código-fonte do novo prompt está no repositório; verificar o deployment no Supabase antes de afirmar que a identidade do modelo está sincronizada.
 - A pergunta global do Scanner ainda transmite no máximo 30 candidatas ao modelo. Qualquer seleção anunciada como global precisa pontuar todas as pools elegíveis **localmente antes** desse limite, registrar o total examinado e declarar os dados ausentes.

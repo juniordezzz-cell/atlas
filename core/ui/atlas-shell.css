@@ -125,6 +125,45 @@ html[data-atlas-shell="on"] #oraculo-root .oraculo {
    módulos; qualquer regra solta de um deles podia empurrar o botão
    e fazê-lo rolar junto com a página. Aqui a posição é lei.
    =================================================================== */
+/* As Ferramentas não carregam atlas-theme.css. O componente precisa
+   fornecer seus próprios tokens; sem --atlas-sp-6, right/bottom viram
+   auto e o botão acaba fora da área visível. */
+html[data-module="tools"] .atlas-oraculo {
+  --atlas-font-ui: "Inter", "Segoe UI", system-ui, sans-serif;
+  --atlas-font-display: "Inter", "Segoe UI", system-ui, sans-serif;
+  --atlas-font-mono: "JetBrains Mono", monospace;
+  --atlas-fs-sm: .8rem;
+  --atlas-sp-2: 8px;
+  --atlas-sp-3: 12px;
+  --atlas-sp-4: 16px;
+  --atlas-sp-6: 24px;
+  --atlas-r-xs: 6px;
+  --atlas-r-sm: 10px;
+  --atlas-r-md: 14px;
+  --atlas-r-xl: 26px;
+  --atlas-r-pill: 999px;
+  --atlas-bg-deep: #05080f;
+  --atlas-bg-raise: #0e1526;
+  --atlas-surface: #121b31;
+  --atlas-border: rgba(140,170,225,.2);
+  --atlas-border-hi: rgba(150,185,255,.35);
+  --atlas-text-hi: #eaf0fb;
+  --atlas-text: #c3cee4;
+  --atlas-text-mut: #9aa5bd;
+  --atlas-accent: #4da3ff;
+  --atlas-accent-2: #22d3ee;
+  --atlas-accent-soft: rgba(77,163,255,.14);
+  --atlas-accent-line: rgba(77,163,255,.28);
+  --atlas-warn: #f5b942;
+  --atlas-grad: linear-gradient(135deg,#4da3ff,#22d3ee);
+  --atlas-grad-soft: linear-gradient(135deg,rgba(77,163,255,.18),rgba(34,211,238,.08));
+  --atlas-glow: 0 0 40px -4px rgba(77,163,255,.5);
+  --atlas-sh-3: 0 22px 48px -20px rgba(0,0,0,.75);
+  --atlas-dur-fast: 140ms;
+  --atlas-dur: 260ms;
+  --atlas-ease: cubic-bezier(.22,1,.36,1);
+  --atlas-ease-out: cubic-bezier(.16,1,.30,1);
+}
 .atlas-oraculo {
   position: fixed !important;
   right: var(--atlas-sp-6) !important;
