@@ -38,7 +38,7 @@
   // tem sidebar/topbar próprios. O ORÁCULO (item 1), porém, é onipresente:
   // existe em TODOS os módulos E no Dashboard, sempre o mesmo componente.
   var STRIP_ENABLED   = ["hold", "trade", "defi", "rwa", "academy"];
-  var ORACULO_ENABLED = ["atlas", "hold", "trade", "defi", "rwa", "academy"];
+  var ORACULO_ENABLED = ["atlas", "hold", "trade", "defi", "rwa", "academy", "tools"];
   if (ORACULO_ENABLED.indexOf(MODULE) === -1) return;
 
   var WANT_STRIP = STRIP_ENABLED.indexOf(MODULE) !== -1;
@@ -46,7 +46,7 @@
   var LABEL = {
     atlas: "ATLAS",
     hold: "HOLD", trade: "TRADE", defi: "DEFI",
-    rwa: "RWA", academy: "ACADEMY"
+    rwa: "RWA", academy: "ACADEMY", tools: "FERRAMENTAS"
   }[MODULE] || MODULE.toUpperCase();
 
   // Profundidade da página → caminho correto para a raiz do projeto.
@@ -67,6 +67,7 @@
   // O Dashboard mora em pages/ agora; daqui até ele é RAIZ + "pages/…".
   var BACK_HREF  = RAIZ + "pages/dashboard.html";
   var ORACULO_AVATAR = RAIZ + "assets/atena.webp";
+  var toolResponder = null;
   var motorOperacoes;
   function carregarOperacoes() {
     if (window.AtlasOraculoAcoes) return Promise.resolve();
@@ -1604,6 +1605,7 @@
           if(arquivo){await carregarImagem();push("Lendo o print. Nenhuma operação será registrada sem sua confirmação.","bot");resposta=await window.AtlasOraculoImagem.ler(arquivo,q,RAIZ);}
           else {
             if(window.AtlasOraculoImagem || /^retomar rascunho /i.test(q)){await carregarImagem();resposta=await window.AtlasOraculoImagem.responder(q,RAIZ);}
+            if(resposta==null && toolResponder) resposta=await toolResponder(q);
             if(resposta==null){await carregarOperacoes();resposta=await window.AtlasOraculoAcoes.responder(q,RAIZ);}
           }
           botaoRevisar.hidden=!(window.AtlasOraculoImagem && AtlasOraculoImagem.pendente());
@@ -2201,6 +2203,9 @@
   };
 
   window.AtlasOraculo = {
+    registerTool: function (responder) {
+      if (typeof responder === "function") toolResponder = responder;
+    },
     registerBrain: function (factory) {
       if (typeof factory === "function") {
         extraBrains.push(factory);

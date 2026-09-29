@@ -2,9 +2,9 @@
   'use strict';
   function montar(contexto){
     const aba=document.getElementById('tab-assistente');
-    const orb=document.createElement('button');orb.type='button';orb.className='sp-chat-orb';orb.textContent='✦';orb.title='Abrir assistente do Scanner';orb.setAttribute('aria-label','Abrir assistente do Scanner');orb.setAttribute('aria-expanded','false');
-    const panel=document.createElement('section');panel.className='sp-chat-panel';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Assistente do Scanner');
-    document.body.append(orb,panel);
+    const orb=document.createElement('button');orb.type='button';orb.className='sp-chat-orb';orb.textContent='✦';orb.title='Abrir Oráculo';orb.setAttribute('aria-label','Abrir Oráculo');orb.setAttribute('aria-expanded','false');
+    const panel=document.createElement('section');panel.className='sp-chat-panel';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Oráculo do Scanner');
+    if(!g.AtlasOraculo)document.body.append(orb,panel);
     let aberto=false,busy=false,regras=null,aiEnabled=false,memorySupported=false,lastIds=[],preferencias=null;
     const messages=[];
     fetch('assistente-regras.json').then(r=>{if(!r.ok)throw Error('regras');return r.json();}).then(r=>{regras=r;}).catch(()=>{});
@@ -12,7 +12,7 @@
     const views=[];
     function view(root,flutuante){
       const head=document.createElement('div');head.className='sp-chat-head';
-      const title=document.createElement('h2');title.textContent='Assistente do Scanner';head.append(title);
+      const title=document.createElement('h2');title.textContent='Oráculo · Scanner Pools';head.append(title);
       if(flutuante){
         const full=document.createElement('button');full.type='button';full.textContent='Ampliar';full.onclick=()=>{setOpen(false);g.switchTab('assistente');views[0].input.focus();};head.append(full);
         const close=document.createElement('button');close.type='button';close.textContent='Fechar ×';close.onclick=()=>setOpen(false);head.append(close);
@@ -35,7 +35,7 @@
     const clear=document.createElement('button');clear.type='button';clear.textContent='Nova conversa';clear.onclick=()=>{if(!busy){messages.length=0;lastIds=[];render();}};aba.append(clear);
     function render(){views.forEach(v=>{
       v.log.replaceChildren();if(!messages.length){const p=document.createElement('p');p.className='sp-chat-empty';p.textContent='Faça uma pergunta para começar. Consulte todas as candidatas ou apenas suas favoritas.';v.log.append(p);}
-      messages.forEach(m=>{const el=document.createElement('div');el.className='sp-chat-message sp-chat-'+m.role;const label=document.createElement('strong');label.textContent=m.role==='user'?'Você':'Assistente';const text=document.createElement('p');text.textContent=m.text;el.append(label,text);
+      messages.forEach(m=>{const el=document.createElement('div');el.className='sp-chat-message sp-chat-'+m.role;const label=document.createElement('strong');label.textContent=m.role==='user'?'Você':'Oráculo';const text=document.createElement('p');text.textContent=m.text;el.append(label,text);
         if(m.calculos){const d=document.createElement('details'),s=document.createElement('summary'),p=document.createElement('p');s.textContent='Ver dados e cálculos do Scanner';p.textContent=m.calculos;d.append(s,p);el.append(d);}
         if(m.role==='assistant'&&m.question){
           const useful=document.createElement('button');useful.type='button';useful.textContent='Resposta útil';
@@ -51,11 +51,11 @@
       v.mode.textContent=aiEnabled?'IA OpenRouter gratuita · dados do Scanner':'Consultas locais · IA aguardando chave/função';
       v.send.disabled=busy;v.examples.querySelectorAll('button').forEach(b=>b.disabled=busy);v.status.textContent=busy?'Consultando os dados do scanner…':'';v.log.scrollTop=v.log.scrollHeight;
     });}
-    async function submit(q){if(busy)return;busy=true;const history=g.ScannerConversa.historico(messages);messages.push({role:'user',text:q});render();try{
+    async function submit(q){if(busy)return 'Já estou analisando sua pergunta anterior. Aguarde um instante.';busy=true;const history=g.ScannerConversa.historico(messages);messages.push({role:'user',text:q});render();try{
       await ready;
       let memoryFailed=false;
       if(memorySupported)try{preferencias=(await g.ScannerIA.memoria()).preferences;}catch(_e){memoryFailed=true;}
-      if(memoryFailed){messages.push({role:'assistant',text:'Sua memória está indisponível. Para não ampliar os critérios sem sua autorização, suspendi esta seleção. Tente novamente ou use Carregar da conta em Minhas preferências confirmadas.'});return;}
+      if(memoryFailed){const text='Sua memória está indisponível. Para não ampliar os critérios sem sua autorização, suspendi esta seleção. Tente novamente ou use Carregar da conta em Minhas preferências confirmadas.';messages.push({role:'assistant',text});return text;}
       const c=g.ScannerConversa.contextualizar(q,contexto(),lastIds);c.regras=regras;c.preferencias=preferencias;const r=await g.ScannerConsultas.consultar(q,c);
       lastIds=r.tipo==='ajuda'?g.ScannerIA.contexto(q,c,r).pools.map(p=>p.id):(r.items||[]).map(x=>g.ScannerConversa.identidade(x.pool));
       let answer=r.texto,calculos=null;
@@ -71,11 +71,12 @@
       }
       if(aiEnabled&&!memorySupported)answer+='\n\nA função Supabase ainda precisa ser atualizada para ativar contexto, memória e avaliações.';
       messages.push({role:'assistant',text:answer,question:q,calculos});
-    }catch(e){messages.push({role:'assistant',text:'Não consegui concluir a consulta. Tente novamente; nenhuma favorita ou decisão foi alterada.'});}finally{busy=false;render();}}
+      return answer;
+    }catch(e){const text='Não consegui concluir a consulta. Tente novamente; nenhuma favorita ou decisão foi alterada.';messages.push({role:'assistant',text});return text;}finally{busy=false;render();}}
     function setOpen(value){aberto=value;panel.hidden=!value;orb.setAttribute('aria-expanded',String(value));if(value)views[1].input.focus();else orb.focus();}
     orb.onclick=()=>setOpen(!aberto);
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&aberto)setOpen(false);});
-    return {abaAtiva(t){orb.hidden=t==='assistente';if(t==='assistente'){panel.hidden=true;aberto=false;orb.setAttribute('aria-expanded','false');if(memorySupported)memory.carregar();}}};
+    return {perguntar:submit,abaAtiva(t){orb.hidden=t==='assistente';if(t==='assistente'){panel.hidden=true;aberto=false;orb.setAttribute('aria-expanded','false');if(memorySupported)memory.carregar();}}};
   }
   g.ScannerChat={montar};
 })(window);

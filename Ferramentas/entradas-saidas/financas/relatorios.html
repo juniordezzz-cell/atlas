@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-module="atlas" data-theme="dark">
+<html lang="pt-BR" data-module="tools" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -16,6 +16,7 @@
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../../core/atlas-auth.js"></script>
   <script src="../../../core/atlas-secure.js"></script>
+  <link rel="stylesheet" href="../../../core/ui/atlas-shell.css">
 </head>
 <body data-page="relatorios">
   <div class="fx-app" data-fx-app>
@@ -66,5 +67,6 @@
   <script src="js/pages/relatorios.js"></script>
   <script>window.Shell.mount({ page: "relatorios", title: "Relatórios", subtitle: "Exportáveis e resumos" });</script>
   <script src="js/pwa.js" defer></script>
+  <script src="../../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

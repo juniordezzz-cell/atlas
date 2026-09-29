@@ -66,7 +66,7 @@
   function mount(opts) {
     opts = opts || {};
     const active = opts.page;
-    document.documentElement.setAttribute("data-module", "atlas");
+    document.documentElement.setAttribute("data-module", /\/Ferramentas\//i.test(location.pathname) ? "tools" : "atlas");
     applyTheme();
     const app = document.querySelector("[data-fx-app]") || document.body;
     const main = document.querySelector("[data-fx-main]");

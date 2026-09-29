@@ -11,3 +11,10 @@ test('referência a candidatas anteriores usa somente pools atuais e não amplia
   assert.equal(w.ScannerConversa.contextualizar('E entre essas?',c,['removida']).pools.length,0);
   assert.equal(w.ScannerConversa.contextualizar('Liste todas as pools',c,['a']).pools.length,2);
 });
+test('encaminha perguntas de pools ao Oráculo do Scanner, sem interceptar operações',()=>{
+  const route=w.ScannerConversa.perguntaDePools;
+  assert.equal(route('Quais são as melhores oportunidades de mercado?'),true);
+  assert.equal(route('O TVL da Orca cresceu?'),true);
+  assert.equal(route('Fechar minha posição em SOL/USDC'),false);
+  assert.equal(route('Quanto tenho em caixa?'),false);
+});
