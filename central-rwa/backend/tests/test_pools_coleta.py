@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 
 from central_rwa.pools.coleta import coletar
+from central_rwa.pools.coleta import reconciliar_diretas
 from central_rwa.pools.modelos import Candidata, PoolFinal, TokenRef
 from central_rwa.pools.repositorio import MemoryPoolStore
 from tests.conftest import fixture_json
@@ -75,6 +76,82 @@ def test_leitura_com_mais_de_30_dias_e_apagada():
     s.gravar([fin("a")], date(2026, 8, 1), AGORA)
     s.gravar([fin("a")], date(2026, 9, 23), AGORA)
     assert [l.dia for l in s.leituras_por_pool["a"]] == [date(2026, 9, 23)]
+
+
+def test_snapshot_guarda_duas_coletas_no_mesmo_dia():
+    s = MemoryPoolStore()
+    a = fin('a')
+    t0 = datetime(2026, 9, 23, 8, tzinfo=timezone.utc)
+    s.gravar([a], t0.date(), t0)
+    a.cand.tvl = 400000
+    s.gravar([a], t0.date(), t0 + timedelta(hours=4))
+    assert [r.tvl for r in s.snapshots['a']] == [1000000, 400000]
+    assert len(s.leituras_por_pool['a']) == 1
+
+
+def test_falha_de_fonte_nao_inativa_pools_anteriores():
+    s = MemoryPoolStore()
+    a = fin('a')
+    a.cand.fonte = 'orca'
+    s.gravar([a], AGORA.date(), AGORA)
+    for hours in (4, 8, 12):
+        s.gravar([], AGORA.date(), AGORA + timedelta(hours=hours), {'orca'})
+    assert s.pools['a']['ativa'] is True
+    assert s.pools['a']['falhas_seguidas'] == 0
+
+
+def test_coleta_inclui_orca_e_raydium_diretas_sem_chave():
+    class Diretas(FakeCliente):
+        def llama_pools(self):
+            return []
+
+        def orca_pools(self):
+            return [{
+                'address': 'orca-1', 'tvlUsdc': 200000, 'feeRate': 2500,
+                'tokenA': {'address': 'sol', 'symbol': 'SOL'},
+                'tokenB': {'address': 'usdc', 'symbol': 'USDC'},
+                'stats': {'24h': {'volume': 200000}},
+            }]
+
+        def raydium_pools(self):
+            return [{
+                'id': 'ray-1', 'tvl': 300000, 'feeRate': 0.0025,
+                'mintA': {'address': 'sol', 'symbol': 'SOL'},
+                'mintB': {'address': 'usdc', 'symbol': 'USDC'},
+                'day': {'volume': 250000},
+            }]
+
+    store = MemoryPoolStore()
+    result = coletar(Diretas(), store, AGORA)
+    assert {'gecko:solana:orca-1', 'gecko:solana:ray-1'} <= set(store.pools)
+    assert result['pre_corte'] >= 2
+    assert next(s for s in store.status if s['fonte'] == 'orca')['contagem'] == 1
+
+
+def test_fonte_direta_atualiza_pool_llama_correspondente_sem_duplicar():
+    llama = fin('llama:pool').cand
+    llama.fonte = 'defillama'
+    llama.dex = 'Orca'
+    llama.rede = 'Solana'
+    llama.token_a = TokenRef('sol', 'SOL')
+    llama.token_b = TokenRef('usdc', 'USDC')
+    llama.fee = 0.25
+    llama.vol_24h = 0
+    direta = fin('gecko:solana:pool').cand
+    direta.fonte = 'orca'
+    direta.dex = 'Orca'
+    direta.rede = 'Solana'
+    direta.token_a = TokenRef('sol', 'SOL')
+    direta.token_b = TokenRef('usdc', 'USDC')
+    direta.fee = 0.25
+    direta.tvl = 1100000
+    direta.vol_24h = 5000000
+    direta.sinais['endereco_pool'] = 'pool'
+    rows = reconciliar_diretas([llama, direta])
+    assert len(rows) == 1
+    assert rows[0].id == 'llama:pool'
+    assert rows[0].vol_24h == 5000000
+    assert rows[0].sinais['endereco_pool'] == 'pool'
 
 
 # ---- Task 8: comando ----

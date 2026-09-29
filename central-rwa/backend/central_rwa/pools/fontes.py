@@ -209,6 +209,63 @@ class ClienteFontes:
             raise RuntimeError("DefiLlama devolveu formato inesperado")
         return j["data"]
 
+    def orca_pools(self, paginas: int = 12) -> list[dict]:
+        """Varre Whirlpools elegíveis por cursor, sem precisar de chave."""
+        from urllib.parse import urlencode
+
+        rows: list[dict] = []
+        cursor = None
+        for _ in range(paginas):
+            params = {'minTvl': 100000, 'sortBy': 'tvl', 'sortDirection': 'desc',
+                      'size': 100, 'stats': '24h,7d'}
+            if cursor:
+                params['next'] = cursor
+            try:
+                response = self.client.get('https://api.orca.so/v2/solana/pools?' + urlencode(params))
+                response.raise_for_status()
+                data = response.json()
+                page = data.get('data') or []
+                if not isinstance(page, list):
+                    raise ValueError('lista de pools inválida')
+                rows.extend(page)
+                cursor = ((data.get('meta') or {}).get('cursor') or {}).get('next') or (data.get('meta') or {}).get('next')
+                if not cursor:
+                    return rows
+            except (httpx.HTTPError, ValueError, TypeError) as exc:
+                self.parciais.append(f'orca: {type(exc).__name__}')
+                return rows
+        if cursor:
+            self.parciais.append('orca: paginação atingiu o orçamento')
+        return rows
+
+    def raydium_pools(self, paginas: int = 12) -> list[dict]:
+        """Varre pools Raydium por liquidez, preservando a paginação incompleta."""
+        rows: list[dict] = []
+        for page in range(1, paginas + 1):
+            try:
+                response = self.client.get('https://api-v3.raydium.io/pools/info/list', params={
+                    'poolType': 'all', 'poolSortField': 'liquidity', 'sortType': 'desc',
+                    'pageSize': 100, 'page': page,
+                })
+                response.raise_for_status()
+                data = response.json()
+                if not data.get('success'):
+                    raise ValueError('resposta sem sucesso')
+                body = data.get('data') or {}
+                batch = body.get('data') or []
+                rows.extend(batch)
+                # A API foi ordenada por TVL decrescente. Depois do primeiro
+                # valor abaixo do piso não há candidata elegível nas demais páginas.
+                if batch and float(batch[-1].get('tvl') or 0) < 100000:
+                    return rows
+                if not body.get('hasNextPage'):
+                    return rows
+            except (httpx.HTTPError, ValueError, TypeError) as exc:
+                self.parciais.append(f'raydium p{page}: {type(exc).__name__}')
+                return rows
+        self.parciais.append('raydium: paginação atingiu o orçamento')
+        return rows
+
     def meme_coin_ids(self) -> set[str]:
         """Categoria oficial paginada; falha preserva IDs já lidos e sinaliza parcial."""
         from .memes import CONHECIDOS

@@ -8,6 +8,7 @@ from . import config
 from .classificacao import passa_pre_corte, trilho
 from .conferencia import conferir
 from .fontes import parse_gecko_pools, parse_llama, parse_token_info, parse_tokens_multi
+from .fontes_diretas import parse_orca, parse_raydium
 from .modelos import Candidata, PoolFinal, TokenInfo
 from .nota import calcular_notas
 from .memes import identificar
@@ -20,6 +21,46 @@ def normalizar_endereco(rede: str, endereco: str) -> str:
     return endereco if rede in _CASO_SENSIVEL else endereco.lower()
 
 
+def reconciliar_diretas(todas: list[Candidata]) -> list[Candidata]:
+    """Mantém o ID histórico da DefiLlama ao enriquecer a mesma pool nativa.
+
+    Pares com mais de uma pool compatível ficam separados; símbolo sozinho
+    nunca é usado como identidade.
+    """
+    def chave(c: Candidata):
+        a, b = c.token_a.endereco, c.token_b.endereco
+        if not a or not b:
+            return None
+        return (c.rede, c.dex, frozenset((normalizar_endereco(c.rede, a),
+                                         normalizar_endereco(c.rede, b))), round(c.fee, 6))
+
+    grupos: dict[tuple, list[Candidata]] = {}
+    for c in todas:
+        k = chave(c)
+        if k:
+            grupos.setdefault(k, []).append(c)
+    removidas: set[str] = set()
+    for grupo in grupos.values():
+        antigas = [c for c in grupo if c.fonte == 'defillama']
+        diretas = [c for c in grupo if c.fonte in {'orca', 'raydium'}]
+        if len(antigas) != 1 or len(diretas) != 1:
+            continue
+        antiga, direta = antigas[0], diretas[0]
+        if antiga.tvl <= 0 or abs(antiga.tvl-direta.tvl)/antiga.tvl > 0.15:
+            continue
+        antiga.tvl = direta.tvl
+        if direta.vol_24h > 0:
+            antiga.vol_24h = direta.vol_24h
+        if direta.vol_7d is not None:
+            antiga.vol_7d = direta.vol_7d
+        if direta.fee > 0:
+            antiga.fee = direta.fee
+        antiga.apr = direta.apr if direta.apr is not None else antiga.apr
+        antiga.sinais.update(direta.sinais)
+        removidas.add(direta.id)
+    return [c for c in todas if c.id not in removidas]
+
+
 def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
     todas: list[Candidata] = []
     try:
@@ -28,6 +69,21 @@ def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
         status.append({"fonte": "defillama", "rede": None, "dex": None, "estado": "ok", "contagem": len(llama), "em": agora})
     except Exception as e:  # DefiLlama fora: segue com a GeckoTerminal
         status.append({"fonte": "defillama", "rede": None, "dex": None, "estado": f"falhou: {e}"[:200], "contagem": 0, "em": agora})
+    for nome, parser, metodo in [('orca', parse_orca, 'orca_pools'),
+                                 ('raydium', parse_raydium, 'raydium_pools')]:
+        if not hasattr(cli, metodo):
+            continue
+        antes = len(cli.parciais)
+        try:
+            cands = parser(getattr(cli, metodo)())
+            todas.extend(cands)
+            estado = 'parcial' if len(cli.parciais) > antes or not cands else 'ok'
+        except Exception as exc:
+            cands = []
+            estado = f'falhou: {type(exc).__name__}'
+            cli.parciais.append(f'{nome}: {type(exc).__name__}')
+        status.append({'fonte': nome, 'rede': 'Solana', 'dex': nome,
+                       'estado': estado, 'contagem': len(cands), 'em': agora})
     for dex, fontes_dex in config.GECKO_SOURCES.items():
         for src in fontes_dex:
             net = config.GECKO_NET[src["rede"]]
@@ -41,7 +97,7 @@ def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
     vistos: dict[str, Candidata] = {}
     for c in todas:
         vistos.setdefault(c.id, c)
-    return list(vistos.values())
+    return reconciliar_diretas(list(vistos.values()))
 
 
 def _dispensa_consulta(simbolo: str) -> bool:
@@ -104,6 +160,9 @@ def _infos(cli, store, cands: list[Candidata], agora: datetime) -> tuple[dict[tu
 def coletar(cli, store, agora: datetime) -> dict:
     status: list[dict] = []
     todas = _candidatas(cli, status, agora)
+    fontes_indisponiveis = {s['fonte'] for s in status
+                            if s['fonte'] in {'defillama', 'orca', 'raydium', 'geckoterminal'}
+                            and s['estado'] != 'ok'}
     falhas_antes = len(cli.parciais)
     todas, descoberta = complementar(cli, todas, agora)
     status.append({'fonte': 'descoberta', 'rede': None, 'dex': None,
@@ -134,7 +193,7 @@ def coletar(cli, store, agora: datetime) -> dict:
         t, motivos = trilho(c, par_infos, leituras.get(c.id, []), agora)
         nota, comp = notas[c.id]
         finais.append(PoolFinal(c, t, motivos, nota, comp))
-    gravacao = store.gravar(finais, agora.date(), agora)
+    gravacao = store.gravar(finais, agora.date(), agora, fontes_indisponiveis)
     store.gravar_status(status)
     return {
         "lidas": len(todas),

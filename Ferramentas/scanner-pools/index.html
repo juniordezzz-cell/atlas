@@ -1496,11 +1496,13 @@ function renderStatus(){
   const coleta = srv.status.reduce((m,x)=>Math.max(m, Date.parse(x.em)||0), 0);
   const falhas = srv.status.filter(x=>x.estado && x.estado!=="ok").length;
   const partes = [`Atualizado ${idadeTxt(coleta)}`, `${doSrv.length.toLocaleString("pt-BR")} pools acompanhadas`];
+  const atrasado = !coleta || Date.now()-coleta > 3*60*60*1000;
+  if(atrasado) partes.unshift('Coleta atrasada; confira os dados antes de decidir');
   if(falhas) partes.push(`${falhas} fonte(s) com falha na última coleta`);
   let txt = partes.join(" · ");
   if(srv.doCache) txt = `Sem conexão com o servidor agora — mostrando a última leitura, ${idadeTxt(srv.em)}. ` + txt;
   if(srv.migracao && (srv.migracao.casadas || srv.migracao.manuais)) txt += ` · ${srv.migracao.casadas} das suas pools passaram para o servidor; ${srv.migracao.manuais} ficaram manuais.`;
-  el.className = "srv-status" + (srv.doCache || falhas ? " aviso" : "");
+  el.className = "srv-status" + (srv.doCache || falhas || atrasado ? " aviso" : "");
   el.textContent = txt;
   const st = document.getElementById("stamp");
   if(st && coleta) st.textContent = new Date(coleta).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
@@ -2017,8 +2019,8 @@ const radarSeries = { tvl:true, vol24h:true, ratio:true };
 const RADAR = {};
 const RADAR_COL = { tvl:"#5b8cff", vol24h:"#f5943b", ratio:"#a97bff" };
 
-function fmtHistDate(ts){ return new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
-function fmtHistDateFull(ts){ return new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function fmtHistDate(ts){ return new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+function fmtHistDateFull(ts){ return new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function pctChange(prev, cur){
   if(prev==null || cur==null) return null;
   if(prev===0) return cur===0 ? 0 : null; // não dá % sobre base zero
@@ -2459,9 +2461,12 @@ function radarPanel(p, snaps){
 function radarCards(snaps){
   const cur = snaps[snaps.length-1];
   const prev = snaps.length>1 ? snaps[snaps.length-2] : null;
+  const alvo12h = cur.ts - 12*60*60*1000;
+  const base12h = snaps.filter(s=>s.ts<=alvo12h && s.ts>=alvo12h-2*60*60*1000).at(-1);
   const first = snaps[0];
   const cards = [];
   cards.push(radarCard("TVL", prev?prev.tvl:null, cur.tvl, prev?prev.ts:null, cur.ts, fUSD, false));
+  if(base12h) cards.push(radarCard("TVL em 12h", base12h.tvl, cur.tvl, base12h.ts, cur.ts, fUSD, false));
   cards.push(radarCard("Volume do dia", prev?prev.vol24h:null, cur.vol24h, prev?prev.ts:null, cur.ts, fUSD, false));
   if(cur.vol30d!=null) cards.push(radarCard("Volume 30d", prev?prev.vol30d:null, cur.vol30d, prev?prev.ts:null, cur.ts, fUSD, false));
   cards.push(radarCard("Razão (Vol/TVL)", prev?prev.ratio:null, cur.ratio, prev?prev.ts:null, cur.ts, fRatio, true));
@@ -2550,15 +2555,18 @@ function radarAxisUSD(n){
 function radarAxisRatio(n){ return n.toLocaleString('pt-BR',{maximumFractionDigits:1})+'×'; }
 
 function initRadarChart(poolId){
-  // pool do servidor: as leituras diárias são buscadas só quando ela é aberta
+  // Pool do servidor: snapshots com horário real, buscados só quando ela é aberta.
   const p0 = state.pools.find(x=>x.id===poolId);
   if(p0 && p0.servidor && !p0._histPedido && window.ScannerServidor){
     p0._histPedido = true;
-    ScannerServidor.historico(p0.sid).then(h=>{
+    ScannerServidor.snapshots(p0.sid).then(h=>{
       if(!h.length) return;
       p0.history = (p0.historyLocal||[]).concat(h).sort((a,b)=>a.ts-b.ts);
       if(radarOpenId===poolId) renderRadar();
-    }).catch(()=>{});
+    }).catch(()=>ScannerServidor.historico(p0.sid).then(h=>{
+      p0.history = (p0.historyLocal||[]).concat(h).sort((a,b)=>a.ts-b.ts);
+      if(radarOpenId===poolId) renderRadar();
+    }).catch(()=>{}));
   }
   const p = state.pools.find(p=>p.id===poolId);
   if(!p) return;
@@ -2995,6 +3003,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   updateRadarBadge();
   renderStatus();
   carregarServidor();          // pools do coletor; até chegar, a tabela mostra "carregando"
+  setInterval(()=>{ if(document.visibilityState==='visible') carregarServidor(); }, 5*60*1000);
 });
 </script>
 </body>

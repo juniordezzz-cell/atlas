@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 
 from ..db.connect import connect
 from . import config
-from .modelos import Leitura, PoolFinal, TokenInfo
+from .modelos import Leitura, PoolFinal, Snapshot, TokenInfo
 
 
 def linha_pool(f: PoolFinal, agora: datetime) -> dict:
@@ -29,7 +29,8 @@ class PoolStore:
     def tokens_em_cache(self, rede: str, enderecos: list[str], validade_desde: datetime) -> dict[str, TokenInfo]: ...
     def salvar_tokens(self, infos: list[TokenInfo]) -> None: ...
     def leituras(self, pool_ids: list[str]) -> dict[str, list[Leitura]]: ...
-    def gravar(self, finais: list[PoolFinal], hoje: date, agora: datetime) -> dict: ...
+    def gravar(self, finais: list[PoolFinal], hoje: date, agora: datetime,
+               fontes_indisponiveis: set[str] | None = None) -> dict: ...
     def gravar_status(self, itens: list[dict]) -> None: ...
     def close(self) -> None: ...
 
@@ -38,6 +39,7 @@ class MemoryPoolStore(PoolStore):
     def __init__(self) -> None:
         self.pools: dict[str, dict] = {}
         self.leituras_por_pool: dict[str, list[Leitura]] = {}
+        self.snapshots: dict[str, list[Snapshot]] = {}
         self.tokens: dict[tuple[str, str], TokenInfo] = {}
         self.status: list[dict] = []
 
@@ -51,7 +53,7 @@ class MemoryPoolStore(PoolStore):
     def leituras(self, pool_ids):
         return {p: list(self.leituras_por_pool.get(p, [])) for p in pool_ids}
 
-    def gravar(self, finais, hoje, agora):
+    def gravar(self, finais, hoje, agora, fontes_indisponiveis=None):
         novas = atualizadas = inativadas = 0
         vistos = set()
         for f in finais:
@@ -66,8 +68,11 @@ class MemoryPoolStore(PoolStore):
             c = f.cand
             ls.append(Leitura(pid, hoje, c.tvl, c.vol_24h, c.vol_7d, c.apr, c.fee))
             self.leituras_por_pool[pid] = ls
+            snaps = [s for s in self.snapshots.get(pid, []) if s.observado_em != agora]
+            snaps.append(Snapshot(pid, agora, c.tvl, c.vol_24h, c.vol_7d, c.apr, c.fee))
+            self.snapshots[pid] = snaps
         for pid, row in self.pools.items():
-            if pid in vistos or not row["ativa"]:
+            if pid in vistos or not row["ativa"] or row['fonte'] in (fontes_indisponiveis or set()):
                 continue
             row["falhas_seguidas"] += 1
             if row["falhas_seguidas"] >= config.FALHAS_PARA_SUMIR:
@@ -76,6 +81,8 @@ class MemoryPoolStore(PoolStore):
         corte = hoje - timedelta(days=config.LEITURAS_DIAS)
         for pid in self.leituras_por_pool:
             self.leituras_por_pool[pid] = [l for l in self.leituras_por_pool[pid] if l.dia > corte]
+        for pid in self.snapshots:
+            self.snapshots[pid] = [s for s in self.snapshots[pid] if s.observado_em > agora - timedelta(days=config.LEITURAS_DIAS)]
         return {"novas": novas, "atualizadas": atualizadas, "inativadas": inativadas}
 
     def gravar_status(self, itens):
@@ -137,7 +144,7 @@ class PostgresPoolStore(PoolStore):
             out[r[0]].append(Leitura(*r))
         return out
 
-    def gravar(self, finais, hoje, agora):
+    def gravar(self, finais, hoje, agora, fontes_indisponiveis=None):
         ids = [f.cand.id for f in finais]
         existentes = {r[0] for r in self._query("select id from scanner.pools where id = any(%s)", (ids,))} if ids else set()
         with self.conn.cursor() as cur:
@@ -156,14 +163,25 @@ class PostgresPoolStore(PoolStore):
                     "vol_7d=excluded.vol_7d, apr=excluded.apr, fee=excluded.fee",
                     (c.id, hoje, c.tvl, c.vol_24h, c.vol_7d, c.apr, c.fee),
                 )
+                cur.execute(
+                    "insert into scanner.snapshots (pool_id, observado_em, tvl, vol_24h, vol_7d, apr, fee) "
+                    "values (%s,%s,%s,%s,%s,%s,%s) on conflict (pool_id, observado_em) do update set "
+                    "tvl=excluded.tvl, vol_24h=excluded.vol_24h, vol_7d=excluded.vol_7d, "
+                    "apr=excluded.apr, fee=excluded.fee",
+                    (c.id, agora, c.tvl, c.vol_24h, c.vol_7d, c.apr, c.fee),
+                )
             cur.execute(
-                "update scanner.pools set falhas_seguidas = falhas_seguidas + 1 where ativa and not (id = any(%s))", (ids,)
+                "update scanner.pools set falhas_seguidas = falhas_seguidas + 1 "
+                "where ativa and not (id = any(%s)) and not (fonte = any(%s))",
+                (ids, list(fontes_indisponiveis or set())),
             )
             cur.execute(
                 "update scanner.pools set ativa = false where ativa and falhas_seguidas >= %s", (config.FALHAS_PARA_SUMIR,)
             )
             inativadas = cur.rowcount
             cur.execute("delete from scanner.leituras where dia <= %s", (hoje - timedelta(days=config.LEITURAS_DIAS),))
+            cur.execute("delete from scanner.snapshots where observado_em <= %s",
+                        (agora - timedelta(days=config.LEITURAS_DIAS),))
         self.conn.commit()
         return {"novas": len(set(ids) - existentes), "atualizadas": len(existentes), "inativadas": inativadas}
 
