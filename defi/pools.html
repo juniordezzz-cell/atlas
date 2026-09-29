@@ -80,6 +80,11 @@
         </div>
       </div>
 
+      <div class="segmented pool-view" id="vistaPools" aria-label="Visão de pools">
+        <button type="button" data-vista="ativas" class="active" aria-pressed="true">Pools abertas</button>
+        <button type="button" data-vista="historico" aria-pressed="false">Histórico de pools</button>
+      </div>
+      <p class="hint" id="histPoolsHint" hidden>Confira cada ciclo, aberto ou encerrado, e expanda os detalhes para ver tokens, resultado e caixa.</p>
       <div class="filterbar">
         <!-- Escopo da lista. "Esta carteira" é o comportamento de
              sempre; "Todas as carteiras" junta as pools abertas de
@@ -335,6 +340,7 @@
   <script src="js/components.js"></script>
   <script src="js/filters.js"></script>
   <script src="js/search.js"></script>
+  <script src="js/pool-history.js"></script>
   <script src="js/pools.js"></script>
 </body>
 </html>

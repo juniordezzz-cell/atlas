@@ -9,7 +9,7 @@
   C.mountNav("pools");
 
   var grid = U.qs("#poolsGrid");
-  var state = { q: "", chain: "", protocol: "", status: "", escopo: lerEscopo() };
+  var state = { q: "", chain: "", protocol: "", status: "", escopo: lerEscopo(), vista: "ativas" };
 
   /* ------------------------------------------------------------
      ESCOPO: ESTA CARTEIRA × TODAS AS CARTEIRAS
@@ -26,9 +26,9 @@
   }
   var carteiraDaPool = {};
   function listaBase() {
-    if (state.escopo !== "todas" || !S.poolsDeTodasCarteiras) return S.pools();
+    if (state.escopo !== "todas" || !S.poolsDeTodasCarteiras) return state.vista === "historico" ? S.pools().concat(S.closed()) : S.pools();
     carteiraDaPool = {};
-    return S.poolsDeTodasCarteiras().map(function (x) {
+    return S.poolsDeTodasCarteiras().concat(state.vista === "historico" ? S.closedDeTodasCarteiras() : []).map(function (x) {
       carteiraDaPool[x.pool.id] = x.walletId;
       return x.pool;
     });
@@ -50,7 +50,7 @@
        `status` ao F.apply compararia com o campo gravado, que agora
        vale só "aberta"/"encerrada" — o filtro devolveria vazio
        sempre. */
-    if (state.status) {
+    if (state.status && state.vista !== "historico") {
       items = items.filter(function (p) {
         var st = S.statusDe(p);
         return st && st.status === state.status;
@@ -58,7 +58,13 @@
     }
 
     var filtering = state.q || state.chain || state.protocol || state.status;
-    pintarPlacar(items);
+    pintarPlacar(state.vista === "historico" ? [] : items);
+    if (state.vista === "historico") {
+      grid.style.display = "block";
+      items.sort(function (a,b) { return String(b.closedAt || b.openedAt || b.createdAt || "").localeCompare(String(a.closedAt || a.openedAt || a.createdAt || "")); });
+      grid.innerHTML = items.length ? items.map(function (p) { return DeFiPoolHistorico.card(p, nomeCarteira(carteiraDaPool[p.id] || p.walletId)); }).join("") : C.empty({icon:"inbox", title:"Nenhum ciclo encontrado", text:"O histórico inclui pools abertas e encerradas desta carteira. Ajuste os filtros ou selecione todas as carteiras."});
+      return;
+    }
     if (!items.length) {
       grid.style.display = "block";
       grid.innerHTML = C.empty({
@@ -194,6 +200,17 @@
     b.classList.toggle("active", on);
     b.setAttribute("aria-selected", on ? "true" : "false");
   });
+
+  U.qsa("#vistaPools button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      state.vista = b.getAttribute("data-vista");
+      U.qsa("#vistaPools button").forEach(function (x) { var on=x===b; x.classList.toggle("active",on); x.setAttribute("aria-pressed",String(on)); });
+      U.qs("#fStatus").disabled = state.vista === "historico";
+      U.qs("#histPoolsHint").hidden = state.vista !== "historico";
+      popularFiltros(); render();
+    });
+  });
+  window.addEventListener("atlas:operacao-registrada", function () { popularFiltros(); render(); });
 
   // popular filtros
   popularFiltros();

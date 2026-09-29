@@ -1541,6 +1541,13 @@
 
     /* histórico */
     closed: function () { return _vista(_read()).closed.slice(); },
+    closedDeTodasCarteiras: function () {
+      var s = _read(), lista = [];
+      idsDoModulo(s).forEach(function (wid) {
+        (s.byWallet[wid].closed || []).forEach(function (p) { lista.push({ walletId: wid, pool: p }); });
+      });
+      return lista;
+    },
 
     /* ============================================================
        STAKING E LENDING — as duas abas que somavam sem existir
