@@ -1,10 +1,10 @@
 # Oráculo — registro de operações internas
 
-Implementado em 29/09/2026. Independente do assistente OpenRouter do Scanner Pools. Não requer chave API e não conecta carteira nem executa transações em protocolos: registra operações que o usuário já realizou.
+Implementado em 29/09/2026. Independente do assistente OpenRouter do Scanner Pools. Comandos de texto usam motor local sem API. A leitura de prints usa a integração separada descrita em [Oráculo por imagem](oraculo-imagem.md). Não conecta carteira nem executa transações em protocolos: registra operações que o usuário já realizou.
 
 ## Fluxo
 
-O Oráculo interpreta comandos definidos, pede campos ausentes e apresenta uma prévia. `confirmar` registra; `cancelar` descarta. A confirmação revalida os dados atuais. Perguntas, negações, saldo insuficiente e posições ambíguas não gravam. Uma operação por mensagem. Rascunhos ficam somente na sessão.
+O Oráculo interpreta comandos definidos, pede campos ausentes e apresenta uma prévia. `confirmar` registra; `cancelar` descarta. A confirmação revalida os dados atuais. Perguntas, negações, saldo insuficiente e posições ambíguas não gravam. Uma operação por mensagem. Rascunhos de comandos de texto ficam somente na sessão; rascunhos de prints são persistidos por usuário na aba Pools.
 
 ## Exemplos
 

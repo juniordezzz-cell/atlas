@@ -82,6 +82,17 @@
     return motorOperacoes;
   }
 
+  var motorImagem;
+  function carregarImagem() {
+    if (window.AtlasOraculoImagem) return Promise.resolve();
+    if (motorImagem) return motorImagem;
+    motorImagem = new Promise(function(resolve,reject) {
+      var el=document.createElement("script"); el.src=RAIZ+"core/atlas-oraculo-imagem.js";
+      el.onload=function(){window.AtlasOraculoImagem ? resolve() : reject();};
+      el.onerror=function(){el.remove();reject();};document.head.appendChild(el);
+    });motorImagem.catch(function(){motorImagem=null;});return motorImagem;
+  }
+
   // Efeitos do Magic UI (contagem dos totais, fita de cotações) —
   // core/ui/atlas-magic.*. Spotlight e feixe saíram no visual sereno. O shell roda em toda tela, então
   // carregar daqui liga os efeitos no sistema inteiro sem tocar em cada HTML.
@@ -1416,6 +1427,10 @@
             return '<button class="atlas-oraculo__chip" data-q="' + esc(c) + '">' + esc(t(c)) + '</button>';
           }).join("") +
         '</div>' +
+        '<div class="atlas-oraculo__anexo" hidden><span></span><button type="button" aria-label="Remover print">×</button></div>' +
+        '<p class="atlas-oraculo__image-note">Prints de pools: enviados ao OpenRouter somente ao clicar Enviar.</p>' +
+        '<div class="atlas-oraculo__image-actions"><button type="button" class="atlas-oraculo__chip atlas-oraculo__attach">Anexar print</button><button type="button" class="atlas-oraculo__chip atlas-oraculo__review" hidden>Revisar dados</button></div>' +
+        '<input type="file" class="atlas-oraculo__file" accept="image/png,image/jpeg,image/webp" hidden>' +
         '<div class="atlas-oraculo__composer">' +
           '<input class="atlas-oraculo__input" placeholder="' + esc(t("Pergunte ao Oráculo…")) + '" aria-label="' + esc(t("Mensagem")) + '">' +
           '<button class="atlas-oraculo__send" aria-label="' + esc(t("Enviar")) + '">' + ICON_SEND + '</button>' +
@@ -1467,6 +1482,7 @@
       }
       log.appendChild(m);
       log.scrollTop = log.scrollHeight;
+      requestAnimationFrame(function(){log.scrollTop=log.scrollHeight;});
     }
 
     var conversa = criarConversa();
@@ -1548,22 +1564,57 @@
     }
 
     var filaOperacoes = Promise.resolve();
-    function ask(q) {
-      if (!q) return;
+    var arquivoPrint=null;
+    var anexo=wrap.querySelector(".atlas-oraculo__anexo"),botaoRevisar=wrap.querySelector(".atlas-oraculo__review");
+    function escolherPrint(file){
+      if(!file)return;
+      if(!["image/png","image/jpeg","image/webp"].includes(file.type)||file.size>12000000){push("Envie PNG, JPEG ou WebP de até12MB; recorte a área da pool.","bot");return;}
+      arquivoPrint=file;anexo.hidden=false;anexo.querySelector("span").textContent=file.name||"Print colado";setOpen(true);
+    }
+    wrap.querySelector(".atlas-oraculo__attach").addEventListener("click",function(){wrap.querySelector(".atlas-oraculo__file").click();});
+    wrap.querySelector(".atlas-oraculo__file").addEventListener("change",function(e){escolherPrint(e.target.files[0]);e.target.value="";});
+    anexo.querySelector("button").addEventListener("click",function(){arquivoPrint=null;anexo.hidden=true;});
+    wrap.addEventListener("paste",function(e){var file=Array.from(e.clipboardData && e.clipboardData.files || []).find(function(f){return f.type.indexOf("image/")===0;});if(file){e.preventDefault();escolherPrint(file);}});
+    botaoRevisar.addEventListener("click",function(){
+      var d=window.AtlasOraculoImagem && AtlasOraculoImagem.dados();if(!d)return;
+      var dlg=document.createElement("dialog");dlg.className="atlas-oraculo__review-dialog";
+      var form=document.createElement("form");form.innerHTML='<h3>Revisar dados do print</h3><p>Corrija os valores; campo vazio continua não informado. A gravação exige confirmação no chat.</p><div class="atlas-oraculo__review-fields"></div>';
+      var host=form.querySelector(".atlas-oraculo__review-fields");
+      var labels={base:"Token1",quote:"Token2",qtyBase:"Quantidade token1",qtyQuote:"Quantidade token2",priceBaseUSD:"Preço token1 (USD)",priceQuoteUSD:"Preço token2 (USD)",capitalUSD:"Capital total (USD)",rangeLow:"Faixa mínima",rangeHigh:"Faixa máxima",ratingPercent:"Rating%por lado",protocol:"Protocolo",chain:"Rede",openedAt:"Data de abertura"};
+      Object.keys(labels).forEach(function(k){var label=document.createElement("label");label.textContent=labels[k]+(d.uncertainFields.includes(k)?" — duvidoso":"");var el=document.createElement("input");el.name=k;el.type=["base","quote","protocol","chain"].includes(k)?"text":k==="openedAt"?"date":"number";if(el.type==="number"){el.step="any";el.min="0";}el.value=d[k]==null?"":d[k];label.appendChild(el);host.appendChild(label);});
+      var label=document.createElement("label");label.textContent="Unidade da faixa";var sel=document.createElement("select");sel.name="rangeDenom";
+      [["","Não informada"],["quote_por_base",(d.quote||"Token2")+" por "+(d.base||"Token1")],["base_por_quote",(d.base||"Token1")+" por "+(d.quote||"Token2")]].forEach(function(x){var o=document.createElement("option");o.value=x[0];o.textContent=x[1];sel.appendChild(o);});sel.value=d.rangeDenom||"";label.appendChild(sel);host.appendChild(label);
+      var check=document.createElement("label"),cb=document.createElement("input");cb.type="checkbox";check.appendChild(cb);check.appendChild(document.createTextNode("Conferi no print os campos marcados como duvidosos."));form.appendChild(check);
+      var save=document.createElement("button");save.type="submit";save.textContent="Aplicar correções";form.appendChild(save);var close=document.createElement("button");close.type="button";close.textContent="Voltar";close.addEventListener("click",function(){dlg.close();});form.appendChild(close);
+      form.addEventListener("submit",function(e){e.preventDefault();var updated=Object.assign({},d);Object.keys(labels).concat(["rangeDenom"]).forEach(function(k){var el=form.elements[k];updated[k]=el.value===""?null:el.type==="number"?Number(el.value):el.value;});if(cb.checked)updated.uncertainFields=[];push(AtlasOraculoImagem.corrigir(updated),"bot");dlg.close();});
+      dlg.appendChild(form);document.body.appendChild(dlg);dlg.addEventListener("close",function(){dlg.remove();});dlg.showModal();
+    });
+    function ask(q, arquivo) {
+      if (!q && !arquivo) return;
+      if(window.AtlasOraculoImagemEmProcessamento){push("Aguarde a resposta e confira a prévia antes de confirmar. Esta mensagem não foi usada como aprovação.","bot");return;}
+      var pedidoImagem=!!arquivo || !!(window.AtlasOraculoImagem && AtlasOraculoImagem.pendente()) || /^retomar rascunho /i.test(q||"");
+      if(pedidoImagem){window.AtlasOraculoImagemEmProcessamento=true;wrap.querySelector(".atlas-oraculo__send").disabled=true;botaoRevisar.disabled=true;}
+      q=q||"Leia o print desta pool.";
       setOpen(true);
-      push(q, "user");
+      push(q+(arquivo?" [print anexado]":""), "user");
       perguntadas[normalizar(q)] = 1;
       filaOperacoes = filaOperacoes.then(async function () {
         var resposta;
         try {
-          await carregarOperacoes();
-          resposta = await window.AtlasOraculoAcoes.responder(q, RAIZ);
+          if(arquivo){await carregarImagem();push("Lendo o print. Nenhuma operação será registrada sem sua confirmação.","bot");resposta=await window.AtlasOraculoImagem.ler(arquivo,q,RAIZ);}
+          else {
+            if(window.AtlasOraculoImagem || /^retomar rascunho /i.test(q)){await carregarImagem();resposta=await window.AtlasOraculoImagem.responder(q,RAIZ);}
+            if(resposta==null){await carregarOperacoes();resposta=await window.AtlasOraculoAcoes.responder(q,RAIZ);}
+          }
+          botaoRevisar.hidden=!(window.AtlasOraculoImagem && AtlasOraculoImagem.pendente());
         } catch (_e) {
-          resposta = /\b(registra|registre|abri|abre|abra|abrir|fecha|feche|fechar|swap|transferi|transfere|confirmar|cancelar)\b/i.test(q)
+          if(arquivo || (window.AtlasOraculoImagem && AtlasOraculoImagem.pendente()) || /^retomar rascunho /i.test(q)) resposta=_e && _e.message || "Leitura de prints indisponível. Nenhuma pool foi criada.";
+          else resposta = /\b(registra|registre|abri|abre|abra|abrir|fecha|feche|fechar|swap|transferi|transfere|confirmar|cancelar)\b/i.test(q)
             ? "Motor de operações indisponível. Nenhum registro foi feito." : null;
         }
+        botaoRevisar.hidden=!(window.AtlasOraculoImagem && AtlasOraculoImagem.pendente());
         push(resposta == null ? responder(q) : resposta, "bot"); renderChips(q);
-      }).catch(function () { push("Não consegui concluir este pedido. Confira os registros antes de tentar novamente.", "bot"); });
+      }).catch(function () { push("Não consegui concluir este pedido. Confira os registros antes de tentar novamente.", "bot"); }).finally(function(){if(pedidoImagem){window.AtlasOraculoImagemEmProcessamento=false;wrap.querySelector(".atlas-oraculo__send").disabled=false;botaoRevisar.disabled=false;}});
     }
     /* ------------------------------------------------------------
        ABRIR O ORÁCULO É LER O ALERTA
@@ -1627,10 +1678,10 @@
     });
     wrap.querySelector(".atlas-oraculo__close").addEventListener("click", function () { setOpen(false); });
     wrap.querySelector(".atlas-oraculo__send").addEventListener("click", function () {
-      var v = input.value.trim(); input.value = ""; ask(v);
+      var v = input.value.trim(),file=arquivoPrint; input.value = ""; arquivoPrint=null; anexo.hidden=true; ask(v,file);
     });
     input.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") { var v = input.value.trim(); input.value = ""; ask(v); }
+      if (e.key === "Enter") { var v = input.value.trim(),file=arquivoPrint; input.value = ""; arquivoPrint=null; anexo.hidden=true; ask(v,file); }
     });
     wrap.querySelectorAll(".atlas-oraculo__chip").forEach(function (c) {
       c.addEventListener("click", function () { ask(c.getAttribute("data-q")); });

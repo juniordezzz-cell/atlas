@@ -2,3 +2,6 @@
 # A verificação nativa de JWT do Supabase não entende tokens Firebase.
 [functions.scanner-chat]
 verify_jwt = false
+
+[functions.oraculo-imagem]
+verify_jwt = false

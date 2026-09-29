@@ -1270,3 +1270,15 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 .atlas-appcard__icon svg { width: 100%; height: 100%; }
 .atlas-appcard__name { font-weight: 600; font-size: 14px; }
 .atlas-appcard__desc { font-size: 11.5px; color: var(--texto-fraco); line-height: 1.4; }
+.atlas-oraculo__image-actions { display:flex; gap:8px; padding:8px 14px; flex-wrap:wrap; }
+.atlas-oraculo__image-note { font-size:11px; color:var(--atlas-text-mut,#92a3ba); margin:0; padding:4px 14px; }
+.atlas-oraculo__anexo { padding:8px 14px; font-size:12px; overflow-wrap:anywhere; }
+.atlas-oraculo__anexo[hidden],.atlas-oraculo__review[hidden] { display:none; }
+.atlas-oraculo__anexo button { margin-left:8px; }
+.atlas-oraculo__review-dialog { width:min(560px,calc(100vw - 32px)); max-height:85vh; overflow-y:auto; box-sizing:border-box; border:1px solid var(--atlas-border,#33435c); border-radius:18px; background:var(--atlas-surface,#111b2c); color:var(--atlas-text,#dbe4f2); padding:22px; }
+.atlas-oraculo__review-dialog::backdrop { background:rgba(0,0,0,.65); }
+.atlas-oraculo__review-dialog p,.atlas-oraculo__review-dialog label { font-size:12px; line-height:1.6; }
+.atlas-oraculo__review-fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.atlas-oraculo__review-fields input,.atlas-oraculo__review-fields select { width:100%; box-sizing:border-box; display:block; margin-top:4px; background:#0b1422; border:1px solid #33435c; border-radius:8px; color:#dbe4f2; padding:8px; }
+.atlas-oraculo__review-dialog button { margin:12px 8px 0 0; padding:9px 12px; border-radius:8px; border:1px solid #33435c; background:#1b314d; color:#dbe4f2; cursor:pointer; }
+@media(max-width:440px) { .atlas-oraculo__review-fields { grid-template-columns:1fr; } }

@@ -43,6 +43,7 @@
   }
 
   function render() {
+    pintarRascunhos();
     var items = listaBase();
     items = Sr.match(items, state.q, ["base", "quote", "protocol", "chain", "category"]);
     items = F.apply(items, { chain: state.chain, protocol: state.protocol });
@@ -83,6 +84,20 @@
     grid.innerHTML = items.map(C.poolCard).join("");
     U.reveal("#poolsGrid .pos-card");
   }
+
+  function pintarRascunhos() {
+    var host=U.qs("#poolPrintDrafts");if(!host||!window.AtlasOraculoImagemFluxo)return;
+    var drafts=AtlasOraculoImagemFluxo.rascunhos();host.hidden=!drafts.length;host.replaceChildren();if(!drafts.length)return;
+    var title=document.createElement("h3");title.textContent="Rascunhos de prints";host.appendChild(title);
+    var hint=document.createElement("p");hint.className="hint";hint.textContent="Não são posições abertas e não movimentam o caixa. Retome para revisar os dados e confirmar a carteira.";host.appendChild(hint);
+    drafts.forEach(function(d){var row=document.createElement("div");row.className="pool-print-draft";
+      var text=document.createElement("span"),w=window.AtlasWallets && AtlasWallets.get(d.walletId);
+      text.textContent=(d.data.base||"Token não identificado")+"/"+(d.data.quote||"Token não identificado")+" · "+(w?w.name:"Carteira pendente");row.appendChild(text);
+      var b=document.createElement("button");b.className="btn";b.type="button";b.textContent="Retomar";b.addEventListener("click",function(){if(window.AtlasOraculo)AtlasOraculo.ask("retomar rascunho "+d.id);});row.appendChild(b);
+      var del=document.createElement("button");del.className="btn";del.type="button";del.textContent="Excluir rascunho";del.addEventListener("click",function(){try{AtlasOraculoImagemFluxo.excluirRascunho(d.id);pintarRascunhos();}catch(_){U.toast("Não consegui excluir o rascunho.","warn");}});row.appendChild(del);host.appendChild(row);
+    });
+  }
+  document.addEventListener("atlas:auth",pintarRascunhos);
 
   /* A etiqueta da carteira vem do próprio cartão (C.tagCarteira) e a
      página da posição acha a pool de qualquer carteira no modo "todas"

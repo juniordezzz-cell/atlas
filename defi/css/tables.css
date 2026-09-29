@@ -66,3 +66,6 @@
 .pool-audit .data-table { min-width:560px; }
 .pool-audit .hint { margin:12px 0; line-height:1.6; }
 @media(max-width:600px) { .pool-audit summary { align-items:flex-start; flex-direction:column; } .pool-audit__result { text-align:left; } .pool-audit__body { padding:12px; } }
+.pool-print-drafts { padding:16px; margin:16px 0; border:1px solid var(--glass-border); border-radius:var(--r-md); background:var(--surface); }
+.pool-print-draft { display:flex; gap:10px; flex-wrap:wrap; align-items:center; padding:10px 0; }
+.pool-print-draft span { flex:1; min-width:160px; overflow-wrap:anywhere; }
