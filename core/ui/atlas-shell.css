@@ -442,6 +442,16 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   .atlas-oraculo__panel { right: var(--atlas-sp-3); left: var(--atlas-sp-3); width: auto; bottom: calc(var(--atlas-sp-4) + 72px); }
 }
 
+/* Finanças tem navegação fixa de 64px no celular. O Oráculo fica acima dela. */
+@media (max-width: 768px) {
+  html[data-module="tools"] body[data-page] .atlas-oraculo {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  html[data-module="tools"] body[data-page] .atlas-oraculo__panel {
+    bottom: calc(148px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ===================================================================
    5. DIÁLOGO DE CARTEIRA
    -------------------------------------------------------------------
