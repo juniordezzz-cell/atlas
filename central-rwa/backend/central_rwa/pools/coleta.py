@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from time import perf_counter
 
 from . import config
 from .classificacao import passa_pre_corte, trilho
@@ -159,12 +160,22 @@ def _infos(cli, store, cands: list[Candidata], agora: datetime) -> tuple[dict[tu
 
 def coletar(cli, store, agora: datetime) -> dict:
     status: list[dict] = []
+    etapas: dict[str, float] = {}
+    marco = perf_counter()
+    def medir(nome: str) -> None:
+        nonlocal marco
+        fim = perf_counter()
+        etapas[nome] = round(fim - marco, 1)
+        marco = fim
+
     todas = _candidatas(cli, status, agora)
+    medir('fontes')
     fontes_indisponiveis = {s['fonte'] for s in status
                             if s['fonte'] in {'defillama', 'orca', 'raydium', 'geckoterminal'}
                             and s['estado'] != 'ok'}
     falhas_antes = len(cli.parciais)
     todas, descoberta = complementar(cli, todas, agora)
+    medir('descoberta')
     status.append({'fonte': 'descoberta', 'rede': None, 'dex': None,
                    'estado': 'parcial' if descoberta.get('pendentes') or len(cli.parciais) > falhas_antes else 'ok',
                    'contagem': descoberta['adicionadas'], 'em': agora})
@@ -173,11 +184,14 @@ def coletar(cli, store, agora: datetime) -> dict:
     # que entra na nota, no APR e no ranking. Corrigido para baixo pode sair
     # do pré-corte — por isso o corte roda de novo.
     conf = conferir(cli, cands, config.GECKO_NET) if hasattr(cli, "gecko_busca") else {}
+    medir('conferencia')
     status.append({"fonte": "conferencia", "rede": None, "dex": None,
                    "estado": "ok" if conf else "sem conferência", "contagem": conf.get("conferidas", 0), "em": agora})
     cands = [c for c in cands if passa_pre_corte(c)]
     infos, consultados, pendentes = _infos(cli, store, cands, agora)
+    medir('tokens')
     meme_ids = cli.meme_coin_ids() if hasattr(cli, 'meme_coin_ids') else set()
+    medir('memecoin')
     status.append({'fonte': 'memecoin', 'rede': None, 'dex': None,
                    'estado': 'parcial' if any('memecoin:' in s for s in cli.parciais) else 'ok',
                    'contagem': len(meme_ids), 'em': agora})
@@ -195,7 +209,10 @@ def coletar(cli, store, agora: datetime) -> dict:
         finais.append(PoolFinal(c, t, motivos, nota, comp))
     gravacao = store.gravar(finais, agora.date(), agora, fontes_indisponiveis)
     store.gravar_status(status)
+    medir('classificacao_e_gravacao')
     return {
+        "tempos_s": etapas,
+        "gecko": getattr(cli, 'gecko_metricas', {}),
         "lidas": len(todas),
         "pre_corte": len(cands),
         "solidas": sum(f.trilho == "solida" for f in finais),
