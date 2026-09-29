@@ -36,6 +36,8 @@ Preferências confirmadas ficam em `scanner.chat_memory` por UID Firebase; feedb
 
 **Implantação:** o site publica o JSON e a ordenação via GitHub Pages, mas salvar `estrategia` na conta e atualizar a instrução do modelo exige republicar `scanner-chat` no Supabase. A interface detecta uma função antiga que descarta o campo e avisa que a estratégia não foi confirmada. Não declarar sincronização de conta até verificar o round-trip após deploy.
 
+**Estado verificado em 29/09/2026, após PR #5:** CI passou; GitHub Pages publicou `estrategia-pools.json` com SOL/UNI/BNB/WBNB e limite inicial de oito resultados. A publicação da Edge Function **não foi verificada nem executada** nesta sessão: não havia sessão/credencial de gestão Supabase disponível. A fonte canônica para o bundle do editor é `handler.mjs` + `Deno.serve(createHandler({env:Deno.env,fetcher:fetch}));`. Depois de implantar, salvar e recarregar o JSON pela conta para confirmar persistência.
+
 ## Regras de manutenção
 
 1. Ler `docs/scanner-pools-metodologia-ia.md`, `docs/superpowers/specs/2026-09-26-scanner-regras-design.md` e `docs/scanner-pools-2026-09-26.md` antes de mudar seleção ou elegibilidade.
