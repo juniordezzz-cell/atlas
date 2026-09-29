@@ -3,7 +3,7 @@
 
    O Scanner era uma lista manual: só existia o que alguém tinha gravado
    no localStorage, e a busca trazia no máximo 30 pools. Agora um coletor
-   (central-rwa/backend/central_rwa/pools, a cada 4 h no GitHub Actions)
+   (central-rwa/backend/central_rwa/pools, nominalmente a cada 2 h no GitHub Actions)
    busca na DefiLlama e na GeckoTerminal, barra token perigoso, separa
    Sólidas de Pendentes de análise, dá nota e publica nas visões públicas scanner_* do
    Supabase. Este arquivo lê essas visões e junta com o que é SEU:
@@ -226,6 +226,16 @@
   function historicoDiario(sid, fetchImpl) {
     return buscarVisao("scanner_leituras", "select=*&pool_id=eq." + encodeURIComponent(sid) + "&order=dia.asc", fetchImpl);
   }
+  function snapshots(sid, fetchImpl) {
+    return buscarVisao("scanner_snapshots", "select=*&pool_id=eq." + encodeURIComponent(sid) + "&order=observado_em.asc", fetchImpl)
+      .then(function (rows) {
+        return rows.map(function (r) {
+          return { ts: Date.parse(r.observado_em), tvl: Number(r.tvl) || 0,
+            vol24h: Number(r.vol_24h) || 0, vol7d: r.vol_7d == null ? null : Number(r.vol_7d),
+            vol30d: null, fee: Number(r.fee) || 0, apr: r.apr == null ? null : Number(r.apr) };
+        }).filter(function (r) { return Number.isFinite(r.ts); });
+      });
+  }
   function historico(sid, fetchImpl) {
     return historicoDiario(sid, fetchImpl)
       .then(function (ls2) {
@@ -243,7 +253,7 @@
     paraPool: paraPool, extrairMarcas: extrairMarcas, trilhoEfetivo: trilhoEfetivo,
     chaveDecisao: chaveDecisao,
     casarLocais: casarLocais, migrar: migrar,
-    carregar: carregar, historico: historico, historicoDiario: historicoDiario,
+    carregar: carregar, historico: historico, historicoDiario: historicoDiario, snapshots: snapshots,
     lerMarcas: function () { return lerJSON(MARCAS_KEY, {}); },
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
     lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [] }; },

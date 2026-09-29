@@ -14,8 +14,9 @@ import re
 GECKO_INTERVALO_S = 10.0
 GECKO_PAGINAS = 2                  # 20 pools por página, as mais movimentadas primeiro
 GECKO_PAGINAS_GRANDES = {          # DEXs com muitas pools boas que só a GeckoTerminal cobre
-    "pancakeswap-v3-bsc": 5,
-    "pancakeswap_v2": 4,
+    "pancakeswap-v3-bsc": 8,
+    "pancakeswap_v2": 6,
+    "pancakeswap-infinity-clmm": 5,
     "meteora": 4,
     "meteora-damm-v2": 3,
 }
@@ -68,7 +69,7 @@ LLAMA_PROJECTS: set[str] = {
 # DEXes puxadas da GeckoTerminal (a DefiLlama não traz volume delas)
 GECKO_SOURCES: dict[str, list[dict]] = {
     "PancakeSwap": [
-        {"rede": "BNB Chain", "dexes": ["pancakeswap-v3-bsc", "pancakeswap_v2"]},
+        {"rede": "BNB Chain", "dexes": ["pancakeswap-v3-bsc", "pancakeswap_v2", "pancakeswap-infinity-clmm"]},
         {"rede": "Base", "dexes": ["pancakeswap-v3-base", "pancakeswap-v2-base", "pancakeswap-infinity-clmm-base"]},
         {"rede": "Arbitrum", "dexes": ["pancakeswap-v3-arbitrum", "pancakeswap-v2-arbitrum", "pancakeswap-stableswap-arbitrum"]},
         {"rede": "Robinhood", "dexes": ["pancakeswap-v3-robinhood", "pancakeswap-v2-robinhood"]},

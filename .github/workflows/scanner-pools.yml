@@ -1,6 +1,6 @@
-name: Scanner Pools · coleta (4h)
+name: Scanner Pools · coleta (2h)
 
-# Coleta pools de liquidez (DefiLlama + GeckoTerminal), classifica em
+# Coleta pools de liquidez (DefiLlama, GeckoTerminal, Orca e Raydium), classifica em
 # Sólidas/Pendentes de análise, dá nota e grava no Supabase.
 # Regras vigentes: docs/superpowers/specs/2026-09-26-scanner-regras-design.md.
 on:
@@ -8,12 +8,12 @@ on:
     branches: [main]
     paths: ['central-rwa/backend/central_rwa/pools/**', '.github/workflows/scanner-pools.yml']
   schedule:
-    - cron: "15 */4 * * *"   # a cada 4 h, aos 15 min (não colide com a camada A da Central RWA)
+    - cron: "37 */2 * * *"   # a cada 2 h; minuto fora dos horários de maior carga
   workflow_dispatch:
 
-# Mesmo grupo dos jobs da Central RWA: nunca gravam no banco ao mesmo tempo.
+# O scanner escreve no schema scanner; seu grupo não bloqueia jobs da Central RWA.
 concurrency:
-  group: central-rwa-db
+  group: scanner-pools-db
   cancel-in-progress: false
 
 permissions:

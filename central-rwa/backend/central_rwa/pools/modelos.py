@@ -59,6 +59,17 @@ class Leitura:
 
 
 @dataclass
+class Snapshot:
+    pool_id: str
+    observado_em: datetime
+    tvl: float
+    vol_24h: float
+    vol_7d: float | None
+    apr: float | None
+    fee: float
+
+
+@dataclass
 class PoolFinal:
     cand: Candidata
     trilho: str              # "solida" | "caca" | "barrada"

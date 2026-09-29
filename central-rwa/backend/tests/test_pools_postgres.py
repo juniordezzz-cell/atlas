@@ -80,6 +80,21 @@ def test_visao_traz_variacao_de_tvl_em_7_dias(dsn):
         s.close()
 
 
+def test_snapshots_intradiarios_aparecem_na_visao_publica(dsn):
+    from datetime import timedelta
+    s = PostgresPoolStore(dsn)
+    try:
+        f = fin('gecko:bsc:snapshot')
+        s.gravar([f], AGORA.date(), AGORA)
+        f.cand.tvl = 400000
+        s.gravar([f], AGORA.date(), AGORA + timedelta(hours=4))
+        rows = s._query("select observado_em, tvl from public.scanner_snapshots "
+                        "where pool_id='gecko:bsc:snapshot' order by observado_em")
+        assert [r[1] for r in rows] == [2000000, 400000]
+    finally:
+        s.close()
+
+
 def test_chat_reserva_no_maximo_vinte_chamadas_por_dia(dsn):
     import psycopg
 
