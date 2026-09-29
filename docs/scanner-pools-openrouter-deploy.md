@@ -1,6 +1,6 @@
 # Scanner Pools: implantação do chat OpenRouter
 
-O código do chat fica somente em `Ferramentas/scanner-pools/` e `central-rwa/supabase/functions/scanner-chat/`. O Oráculo principal não usa essa chave. **Nunca cole a chave num arquivo do GitHub, HTML, issue ou conversa.** O segredo de produção pertence ao projeto Supabase `opaimjoimbndwuwkxuva`.
+O código da especialização de pools do Oráculo fica em `Ferramentas/scanner-pools/` e `central-rwa/supabase/functions/scanner-chat/`. O motor de operações do Oráculo não usa a chave do Scanner. **Nunca cole a chave num arquivo do GitHub, HTML, issue ou conversa.** O segredo de produção pertence ao projeto Supabase `opaimjoimbndwuwkxuva`.
 
 ## O que precisa estar implantado
 
@@ -43,5 +43,9 @@ No editor Supabase que duplicou `handler.mjs`, a execução foi consolidada em u
 Não repetir cadastro da chave, migrations ou configuração da conta. A revisão modifica os filtros/resumo publicados no GitHub Pages e o prompt da Edge Function. No deployment atual autossuficiente, substituir todo o conteúdo de `scanner-chat → Code → index.ts` pelo bundle novo e clicar **Deploy updates**. O bundle deriva do `handler.mjs` atual seguido de `Deno.serve(createHandler({ env: Deno.env, fetcher: fetch }));`.
 
 Recarregar o Atlas com Ctrl+F5. Se quiser priorização de pares específica, usar os pares já salvos em Minhas preferências confirmadas; exemplos do MD não são contratos aprovados nem filtros exclusivos. Não é obrigatório salvar novamente preferências existentes.
+
+## Estratégia JSON e identidade única do Oráculo — 29/09/2026
+
+Depois de publicar o site, implantar novamente a função `scanner-chat` pelo procedimento acima. Não há nova chave, migração SQL ou alteração de cota. Abrir Scanner Pools → aba do Oráculo → Minhas preferências confirmadas, carregar a conta, revisar `estrategia-pools.json` (TVL, volume, razão, tokens favoritos, número de resultados) e salvar. Recarregar da conta: o campo `estrategia` precisa voltar idêntico; se o deployment antigo o descartar, a interface avisa que o JSON não foi confirmado. Então perguntar “Quais são as melhores oportunidades de mercado?” e conferir o total examinado, a lista curta e os motivos. O prompt novo usa o nome Oráculo e aceita até oito oportunidades calculadas, respeitando o limite editável do JSON. `docs/oraculo-ferramentas.md` é a referência de continuidade.
 
 Validar: perguntar sobre range de 9% com giro curto e com objetivo de equilíbrio; perguntar se ETH/BTC é conservadora só pelo par; solicitar favoritas com meta de taxas. A resposta deve separar cálculo agregado de adequação pessoal e pedir dados faltantes. Testes automatizados validam seleção e instruções enviadas, não a qualidade de toda geração real do modelo.

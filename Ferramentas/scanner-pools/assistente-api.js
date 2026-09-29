@@ -9,6 +9,8 @@
     return (c.pools||[]).filter(p=>{
       const tvl=Number(p.tvl),vol=Number(p.vol24h),trilho=c.trilho(p);
       if(p.migrada||p.arquivada||!Number.isFinite(tvl)||tvl<100000||!Number.isFinite(vol)||vol/tvl<=.5||trilho==='oculta'||(trilho!=='solida'&&!pending))return false;
+      const e=c.preferencias?.estrategia;
+      if(e&&(tvl<e.tvlMinUsd||vol<e.volume24hMinUsd||vol/tvl<=e.razao24hMin))return false;
       if(p.trilho==='barrada'||(p.sinais?.memecoin?.detectada&&vol/tvl<=2))return false;
       if((g.ScannerConsultas?.memeExcluida(q)||(c.preferencias?.evitarMemes&&!g.ScannerConsultas?.memePermitida(q)))&&p.sinais?.memecoin?.detectada)return false;
       const nets=['solana','base','arbitrum','ethereum','bnb chain','polygon','optimism','avalanche','sui','hyperevm','robinhood'];
@@ -25,15 +27,17 @@
     const favorite=/favorit/i.test(q);
     const par=s=>normas(s).replace(/\s+/g,'').split(/[/\-]/).sort().join('/');
     const preferidos=new Set(candidatas.filter(p=>(c.preferencias?.pares||[]).some(v=>par(v)===par(p.pool))));
+    const tokens=new Set((c.preferencias?.estrategia?.tokensFavoritos||[]).map(normas));
     const ordered=candidatas.slice().sort((a,b)=>{
-      const score=p=>Number(ids.has(String(p.sid||p.id)))*10000+Number(relevant(p))*1000+Number(favorite&&p.fav)*500+Number(preferidos.has(p))*200+(Number(p.nota)||0);
+      const score=p=>Number(ids.has(String(p.sid||p.id)))*10000+Number(relevant(p))*1000+Number(favorite&&p.fav)*500+Number(preferidos.has(p))*200+
+        normas(p.pool).split(/[^A-Z0-9.]+/).filter(t=>tokens.has(t)).length*80+(Number(p.nota)||0);
       return score(b)-score(a)||Number(b.tvl)-Number(a.tvl);
     });
     return {question:q,localAnswer:r.tipo==='ajuda'?'':String(r.texto||'').slice(0,7000),
       pools:ordered.slice(0,MAX).map(p=>({id:String(p.sid||'manual:'+p.id),par:p.pool,rede:p.network,dex:p.platform,tvl:p.tvl,
         volume24h:p.vol24h,feePercent:p.fee,nota:p.nota,categoria:p.sinais?.memecoin?.detectada?'memecoin detectada':'não confirmada',
         favorita:!!p.fav,atualizadoEm:p.updatedAt?new Date(p.updatedAt).toISOString():null})),
-      totalElegiveis:candidatas.length,dadosEmCache:!!c.status?.doCache,historicoInsuficiente:!!r.indisponiveis};
+      totalElegiveis:r.totalElegiveis??candidatas.length,dadosEmCache:!!c.status?.doCache,historicoInsuficiente:!!r.indisponiveis};
   }
   async function status(){
     const url=endpoint();if(!url)return {enabled:false};

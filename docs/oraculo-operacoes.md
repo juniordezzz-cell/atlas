@@ -1,6 +1,6 @@
 # Oráculo — registro de operações internas
 
-Implementado em 29/09/2026. Independente do assistente OpenRouter do Scanner Pools. Comandos de texto usam motor local sem API. A leitura de prints usa a integração separada descrita em [Oráculo por imagem](oraculo-imagem.md). Não conecta carteira nem executa transações em protocolos: registra operações que o usuário já realizou.
+Implementado em 29/09/2026. O Oráculo tem identidade visual única no Atlas; esta especialização de operações é independente da análise OpenRouter do Scanner Pools. Comandos de texto usam motor local sem API. A leitura de prints usa a integração separada descrita em [Oráculo por imagem](oraculo-imagem.md). Não conecta carteira nem executa transações em protocolos: registra operações que o usuário já realizou. Ver [o contrato das Ferramentas](oraculo-ferramentas.md).
 
 ## Fluxo
 

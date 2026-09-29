@@ -1,0 +1,8 @@
+{
+  "versao": 1,
+  "tvlMinUsd": 100000,
+  "volume24hMinUsd": 0,
+  "razao24hMin": 0.5,
+  "tokensFavoritos": ["SOL", "UNI", "BNB", "WBNB"],
+  "maxResultados": 8
+}

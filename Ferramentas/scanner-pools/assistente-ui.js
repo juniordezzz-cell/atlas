@@ -21,7 +21,7 @@
       const log=document.createElement('div');log.className='sp-chat-log';log.setAttribute('role','log');log.setAttribute('aria-live','polite');
       const empty=document.createElement('p');empty.className='sp-chat-empty';empty.textContent='Pergunte sobre as pools disponíveis, suas favoritas ou as regras do scanner.';log.append(empty);
       const examples=document.createElement('div');examples.className='sp-chat-examples';
-      ['Liste minhas favoritas','Quais favoritas aumentaram o TVL nos últimos dois dias?','Quais pools para gerar 2 a 3 dólares em um dia com 100 dólares?','Explique as regras'].forEach(q=>{const b=document.createElement('button');b.type='button';b.textContent=q;b.onclick=()=>submit(q);examples.append(b);});
+      ['Quais são as melhores oportunidades de mercado?','Liste minhas favoritas','Quais favoritas aumentaram o TVL nos últimos dois dias?','Quais pools para gerar 2 a 3 dólares em um dia com 100 dólares?'].forEach(q=>{const b=document.createElement('button');b.type='button';b.textContent=q;b.onclick=()=>submit(q);examples.append(b);});
       const form=document.createElement('form');form.className='sp-chat-form';
       const input=document.createElement('textarea');input.rows=2;input.maxLength=1200;input.placeholder='Pergunte sobre as pools…';input.setAttribute('aria-label','Pergunta ao assistente');
       const send=document.createElement('button');send.type='submit';send.textContent='Enviar';form.append(input,send);
@@ -54,7 +54,7 @@
     async function submit(q){if(busy)return 'Já estou analisando sua pergunta anterior. Aguarde um instante.';busy=true;const history=g.ScannerConversa.historico(messages);messages.push({role:'user',text:q});render();try{
       await ready;
       let memoryFailed=false;
-      if(memorySupported)try{preferencias=(await g.ScannerIA.memoria()).preferences;}catch(_e){memoryFailed=true;}
+      if(memorySupported)try{preferencias=await memory.combinar((await g.ScannerIA.memoria()).preferences);}catch(_e){memoryFailed=true;}
       if(memoryFailed){const text='Sua memória está indisponível. Para não ampliar os critérios sem sua autorização, suspendi esta seleção. Tente novamente ou use Carregar da conta em Minhas preferências confirmadas.';messages.push({role:'assistant',text});return text;}
       const c=g.ScannerConversa.contextualizar(q,contexto(),lastIds);c.regras=regras;c.preferencias=preferencias;const r=await g.ScannerConsultas.consultar(q,c);
       lastIds=r.tipo==='ajuda'?g.ScannerIA.contexto(q,c,r).pools.map(p=>p.id):(r.items||[]).map(x=>g.ScannerConversa.identidade(x.pool));

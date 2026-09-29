@@ -20,6 +20,16 @@ test('avaliação: continuidade não recupera favorita que saiu do universo atua
   const c=window.ScannerConversa.contextualizar('E dessas, qual escolheria?',{pools:[pool(2)],trilho:()=> 'solida'},['p:1']);
   const r=await window.ScannerConsultas.consultar('Liste essas pools',c);assert.equal(r.items.length,0);
 });
+test('oportunidades percorrem todas as elegíveis, aplicam JSON e preferem tokens escolhidos',async()=>{
+  const ps=Array.from({length:40},(_,i)=>pool(i,{pool:'QNT/USDC',nota:75,tvl:250000,vol24h:500000}));
+  ps.push(pool(99,{pool:'SOL/USDC',nota:74,tvl:300000,vol24h:600000}));
+  ps.push(pool(100,{pool:'UNI/USDC',nota:99,tvl:120000,vol24h:240000}));
+  const estrategia={tvlMinUsd:200000,volume24hMinUsd:400000,razao24hMin:0.5,tokensFavoritos:['SOL','UNI'],maxResultados:8};
+  const r=await window.ScannerConsultas.consultar('Quais as melhores oportunidades de mercado?',{pools:ps,preferencias:{estrategia},trilho:()=> 'solida'});
+  assert.equal(r.tipo,'oportunidades');assert.equal(r.totalElegiveis,41);assert.equal(r.items.length,8);
+  assert.equal(r.items[0].id,99);assert.ok(!r.items.some(x=>x.id===100));
+  assert.match(r.texto,/41 pool\(s\)/);assert.match(r.texto,/SOL\/USDC/);
+});
 
 test('método: pares preferidos entram antes da redução, sem ultrapassar cortes',async()=>{
   const ps=Array.from({length:12},(_,i)=>pool(i,{nota:90,pool:'QNT/USDC'}));

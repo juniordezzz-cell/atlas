@@ -1,7 +1,7 @@
 # Orientações para agentes
 
-Antes de alterar o Scanner Pools, leia [as regras vigentes de 26/09/2026](docs/superpowers/specs/2026-09-26-scanner-regras-design.md) e [o registro de implementação](docs/scanner-pools-2026-09-26.md).
-Para o chat independente, leia [a metodologia do assistente](docs/scanner-pools-metodologia-ia.md). Ele não é o Oráculo principal. Não inserir chaves no navegador; OpenRouter está integrado por Edge Function Supabase. Consultar a auditoria de aplicação do método de 29/09/2026 no MD e o guia de implantação antes de alterar prompt/filtros. GitHub Pages não republica a função.
+Antes de alterar o Oráculo nas Ferramentas, leia [o contrato de continuidade](docs/oraculo-ferramentas.md) e atualize-o na mesma PR quando mudar comportamento, estratégia, memória, integração ou implantação. O proprietário decidiu usar uma identidade visual única do Oráculo, com especializações e permissões separadas por ferramenta.
+Antes de alterar o Scanner Pools, leia [as regras vigentes de 26/09/2026](docs/superpowers/specs/2026-09-26-scanner-regras-design.md), [o registro de implementação](docs/scanner-pools-2026-09-26.md) e [a metodologia do assistente](docs/scanner-pools-metodologia-ia.md). Não inserir chaves no navegador; OpenRouter está integrado por Edge Function Supabase. Consultar a auditoria de aplicação do método de 29/09/2026 no MD e o guia de implantação antes de alterar prompt/filtros. GitHub Pages não republica a função.
 
 Estas regras foram pedidas diretamente pelo usuário e substituem a classificação
 Sólidas/Caça e os pisos fixos da documentação de 23/09. `caca` permanece somente

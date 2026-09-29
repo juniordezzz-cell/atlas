@@ -70,3 +70,11 @@ test('par de interesse chega ao modelo mesmo com mais de 30 candidatas por nota'
   c.preferencias={pares:['ETH/BTC']};const r=api.contexto('O que combina com meus critérios?',c,{tipo:'ajuda',items:[]});
   assert.equal(r.pools[0].id,'pool:99');assert.equal(r.totalElegiveis,36);assert.equal(r.pools.length,30);
 });
+test('oportunidades informam o universo examinado e enviam somente a lista calculada',async()=>{
+  const {api,win}=setup();const ps=Array.from({length:40},(_,i)=>pool(i,'QNT/USDC',{tvl:250000,vol24h:500000}));
+  ps.push(pool(99,'SOL/USDC',{tvl:300000,vol24h:600000}));
+  const c=context(ps);c.preferencias={estrategia:{versao:1,tvlMinUsd:200000,volume24hMinUsd:400000,razao24hMin:0.5,tokensFavoritos:['SOL'],maxResultados:8}};
+  const r=await win.ScannerConsultas.consultar('Melhores oportunidades?',c);
+  const enviado=api.contexto('Melhores oportunidades?',c,r);
+  assert.equal(enviado.totalElegiveis,41);assert.equal(enviado.pools.length,8);assert.equal(enviado.pools[0].id,'pool:99');
+});

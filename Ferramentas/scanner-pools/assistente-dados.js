@@ -9,7 +9,10 @@
   function par(s){return norm(s).replace(/\s+/g,'').split(/[/\-]/).sort().join('/');}
   function ordenar(ps,c){
     const preferencias=(c.preferencias?.pares||[]).map(par);
-    return ps.slice().sort((a,b)=>Number(preferencias.includes(par(b.pool)))-Number(preferencias.includes(par(a.pool)))||(b.nota||0)-(a.nota||0)||b.tvl-a.tvl);
+    const tokens=new Set((c.preferencias?.estrategia?.tokensFavoritos||[]).map(x=>String(x).toUpperCase()));
+    const score=p=>(Number(p.nota)||0)+
+      String(p.pool||'').toUpperCase().split(/[/\-]/).filter(t=>tokens.has(t.trim())).length*8+Number(!!p.fav)*6;
+    return ps.slice().sort((a,b)=>Number(preferencias.includes(par(b.pool)))-Number(preferencias.includes(par(a.pool)))||score(b)-score(a)||Number(b.tvl)-Number(a.tvl));
   }
   function memeExcluida(text){return /\b(sem|nao|exclu\w*|evit\w*|remov\w*|tir\w*)\b.{0,45}\b(memes?|memecoins?)\b/.test(norm(text));}
   function memePermitida(text){const q=norm(text);if(memeExcluida(q))return false;return /\b(com|inclu\w*|aceit\w*|permit\w*|analis\w*|avali\w*|compar\w*)\b.{0,40}\b(memes?|memecoins?)\b/.test(q);}
@@ -82,6 +85,13 @@
       r={tipo:'regras',items:[],texto:(c.regras?.resumo||regrasBase)};
     }else if(/tvl/.test(q)&&/dias?|aument|evolu|cresce/.test(q)){
       r=await historyAnswer(q,c,ps);
+    }else if(/\b(melhor\w*|oportunidad\w*|recomend\w*|merece\w*.*atencao)\b/.test(q)){
+      const e=pref?.estrategia;
+      ps=ps.filter(p=>c.trilho(p)==='solida'&&(!e||(
+        p.tvl>=e.tvlMinUsd&&p.vol24h>=e.volume24hMinUsd&&p.vol24h/p.tvl>e.razao24hMin)));
+      const total=ps.length,limite=e?.maxResultados||8;
+      const items=ordenar(ps,c).slice(0,limite).map(p=>({id:p.id,pool:p}));
+      r={tipo:'oportunidades',items,totalElegiveis:total,texto:`${total} pool(s) examinadas após os cortes do scanner e da sua estratégia. Mostrando ${items.length} para análise; preferência não é aprovação.\n\n${items.map(x=>describe(x.pool)+'\nTVL '+usd(x.pool.tvl)+'; volume 24h '+usd(x.pool.vol24h)+'; razão '+(x.pool.vol24h/x.pool.tvl).toFixed(2)+'; nota '+(x.pool.nota??'não informada')+'.').join('\n\n')||'Nenhuma pool atende aos critérios atuais.'}\n\nClassificação por nota, pares/tokens favoritos e favoritas marcadas. Crescimento de TVL/volume em 12h ainda não integra esta nota quando falta histórico comparável. Taxas e volume não são lucro líquido nem garantia de oportunidade.`};
     }else if(/dolar|\$|\busd\b/.test(q)){
       const capital=q.match(/(?:com|capital de|investindo|aplicando)\s*(?:us\$|\$|usd)?\s*(\d+(?:[.,]\d+)?)/);
       const goal=q.match(/(\d+(?:[.,]\d+)?)\s*(?:a|ou|ate|e|-)\s*(\d+(?:[.,]\d+)?)\s*(?:dolares?|usd|us\$)/)||q.match(/(?:fazer|ganhar|gerar|render|devolver)\s*(?:us\$|\$)?\s*(\d+(?:[.,]\d+)?)\s*(?:dolares?|usd)/);
