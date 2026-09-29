@@ -10,11 +10,11 @@ O proprietário autorizou aproveitar a lógica de qualidade, montagem, faixa, ho
 
 ## Identidade e escopo
 
-Assistente independente do Oráculo principal, inicialmente exclusivo do Scanner Pools: Descobrir, Radar e comparação. Pode reaproveitar a estrutura visual do Oráculo, mas deve ter nome, instruções, contexto e configuração próprios. Só responde quando chamado.
+Decisão mais recente do proprietário: o mesmo Oráculo do Atlas atua no Scanner Pools como uma especialização, usando o painel e avatar globais. O contexto, função `scanner-chat`, chave e permissões da análise de pools continuam isolados do motor de operações. Só responde quando chamado. Ver `docs/oraculo-ferramentas.md`.
 
 ### Escopo esclarecido pelo proprietário: chat sobre os dados internos
 
-O produto solicitado NÃO é uma aba de simulador. É um assistente de consulta e análise em linguagem natural, com uma aba própria para chat em janela maior e um botão flutuante nas demais abas do Scanner Pools. As duas interfaces devem acessar a mesma conversa/contexto, sem se integrar ao Oráculo principal.
+O produto solicitado NÃO é uma aba de simulador. É uma especialização de consulta e análise em linguagem natural, com uma aba própria para preferências e conversa ampliada. O botão flutuante é o Oráculo global; ambas as interfaces acessam o mesmo contexto do Scanner.
 
 A fonte de dados é o próprio scanner: conjunto de pools armazenadas, favoritas, decisões, métricas atuais e histórico disponível. Não restringir uma consulta global às linhas da página visível. Respeitar os filtros explicitamente pedidos e distinguir universo completo, favoritos e seleção da tela. Não buscar CoinGecko ou outra fonte externa por padrão.
 

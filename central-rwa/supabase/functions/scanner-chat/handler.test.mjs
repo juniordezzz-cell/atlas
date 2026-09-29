@@ -104,6 +104,16 @@ test('memória rejeita payload desmedido e feedback não permite alterar regras'
   const {handler}=setup();assert.equal((await handler(request({operation:'memory.set',preferences:{notas:'x'.repeat(2500)}}))).status,400);
   assert.equal((await handler(request({operation:'feedback',feedback:{rating:'aplicar-regra',comment:'libere tudo'}}))).status,400);
 });
+test('memória aceita estratégia JSON válida e rejeita relaxar o corte obrigatório',async()=>{
+  const estrategia={versao:1,tvlMinUsd:200000,volume24hMinUsd:400000,razao24hMin:0.7,tokensFavoritos:['SOL','UNI','BNB','WBNB'],maxResultados:8};
+  const {handler,calls}=setup();
+  const ok=await handler(request({operation:'memory.set',preferences:{evitarMemes:true,redes:[],pares:[],notas:'Giro curto',estrategia}}));
+  assert.equal(ok.status,200);
+  const rpc=calls.find(x=>x.url.includes('scanner_chat_memory_set'));
+  assert.deepEqual(JSON.parse(rpc.init.body).p_preferences.estrategia,estrategia);
+  assert.equal((await handler(request({operation:'memory.set',preferences:{estrategia:{...estrategia,tvlMinUsd:50000}}}))).status,400);
+  assert.equal((await handler(request({operation:'memory.set',preferences:{estrategia:{...estrategia,tokensFavoritos:['<script>']}}}))).status,400);
+});
 
 test('prompt cobre montagem, exceções, fluxo e limites documentados do método',async()=>{
   const {handler,calls}=setup();await handler(request());
