@@ -1451,9 +1451,11 @@
        que foi encerrada.
        ------------------------------------------------------------ */
     closePool: function (id, reason) {
-      var s = _read(), wd = _baldeCom(s, "pools", id), p = this.pool(id); if (!p) return null;
+      var s = _read(), wd = _baldeCom(s, "pools", id);
+      // O ID identifica a posição inclusive fora da carteira selecionada.
+      var p = (wd.pools || []).filter(function (x) { return x.id === id; })[0]; if (!p) return null;
 
-      var resumo = this.poolSummary(id);   // calcula ANTES de tirar da lista ativa
+      var resumo = this.poolSummary(p);   // calcula ANTES de tirar da lista ativa
       var hoje = _hoje();
 
       wd.pools = wd.pools.filter(function (x) { return x.id !== id; });

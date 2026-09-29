@@ -139,7 +139,7 @@
 /* v78 = ícone do token em todo lugar (core/atlas-token-icons.js):
    DeFi, Hold, RWA, Carteiras e Dashboard marcam a bolinha com
    data-atlas-token e a imagem entra por cima das iniciais. */
-var VERSAO = "atlas-v78";
+var VERSAO = "atlas-v79";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

@@ -67,6 +67,20 @@
   // O Dashboard mora em pages/ agora; daqui até ele é RAIZ + "pages/…".
   var BACK_HREF  = RAIZ + "pages/dashboard.html";
   var ORACULO_AVATAR = RAIZ + "assets/atena.webp";
+  var motorOperacoes;
+  function carregarOperacoes() {
+    if (window.AtlasOraculoAcoes) return Promise.resolve();
+    if (motorOperacoes) return motorOperacoes;
+    motorOperacoes = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = RAIZ + "core/atlas-oraculo-operacoes-loader.js";
+      s.onload = function () { if (window.AtlasOraculoAcoes) resolve(); else reject(); };
+      s.onerror = function () { s.remove(); reject(); };
+      document.head.appendChild(s);
+    });
+    motorOperacoes.catch(function () { motorOperacoes = null; });
+    return motorOperacoes;
+  }
 
   // Efeitos do Magic UI (contagem dos totais, fita de cotações) —
   // core/ui/atlas-magic.*. Spotlight e feixe saíram no visual sereno. O shell roda em toda tela, então
@@ -1533,12 +1547,23 @@
       });
     }
 
+    var filaOperacoes = Promise.resolve();
     function ask(q) {
       if (!q) return;
       setOpen(true);
       push(q, "user");
       perguntadas[normalizar(q)] = 1;
-      setTimeout(function () { push(responder(q), "bot"); renderChips(q); }, 240);
+      filaOperacoes = filaOperacoes.then(async function () {
+        var resposta;
+        try {
+          await carregarOperacoes();
+          resposta = await window.AtlasOraculoAcoes.responder(q, RAIZ);
+        } catch (_e) {
+          resposta = /\b(registra|registre|abri|abre|abra|abrir|fecha|feche|fechar|swap|transferi|transfere|confirmar|cancelar)\b/i.test(q)
+            ? "Motor de operações indisponível. Nenhum registro foi feito." : null;
+        }
+        push(resposta == null ? responder(q) : resposta, "bot"); renderChips(q);
+      }).catch(function () { push("Não consegui concluir este pedido. Confira os registros antes de tentar novamente.", "bot"); });
     }
     /* ------------------------------------------------------------
        ABRIR O ORÁCULO É LER O ALERTA

@@ -13,3 +13,5 @@ inclusive em cache, pools manuais e aprovadas. O piso absoluto de volume continu
 
 Validação: `python -m pytest -q` em `central-rwa/backend` e
 `node --test Ferramentas/scanner-pools/regras.test.cjs` na raiz.
+
+Para operações internas do Oráculo, consulte [o contrato e exemplos](docs/oraculo-operacoes.md). Motor determinístico sem API; nunca executar blockchain ou criar depósitos implícitos. Preservar prévia, confirmar/cancelar, carteira proprietária e histórico separado por ciclo. Validar com `node --test core/atlas-oraculo-operacoes.test.cjs`.
