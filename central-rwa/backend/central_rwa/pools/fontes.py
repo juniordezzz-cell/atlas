@@ -185,20 +185,27 @@ class ClienteFontes:
         self.relogio = relogio
         self._ultima = -1e9
         self.parciais: list[str] = []
+        self.gecko_metricas = {"requisicoes": 0, "limites_429": 0, "espera_s": 0.0}
 
     def _gecko(self, url: str) -> httpx.Response | None:
         for tentativa in range(1, 6):
             falta = self._ultima + config.GECKO_INTERVALO_S - self.relogio()
             if falta > 0:
                 self.sleep(falta)
+                self.gecko_metricas["espera_s"] += falta
             self._ultima = self.relogio()
             try:
+                self.gecko_metricas["requisicoes"] += 1
                 r = self.client.get(url)
             except httpx.HTTPError:
                 r = None
             if r is not None and r.status_code != 429:
                 return r
-            self.sleep(15 * tentativa)
+            if r is not None:
+                self.gecko_metricas["limites_429"] += 1
+            espera = 15 * tentativa
+            self.sleep(espera)
+            self.gecko_metricas["espera_s"] += espera
         return None
 
     def llama_pools(self) -> list[dict]:
