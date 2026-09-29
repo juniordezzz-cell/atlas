@@ -36,3 +36,12 @@ Na raiz do repositório: `node --test Ferramentas/scanner-pools/*.test.cjs` e `n
 A rota anterior `openrouter/free` selecionava modelos automaticamente. A resposta observada era de classificação de segurança, não uma análise de pools. Não foi obtido o ID da execução original, portanto a identidade desse modelo é uma hipótese. O defeito confirmado era aceitar qualquer texto não vazio. Agora usamos exclusivamente `google/gemma-4-31b-it:free` ([catálogo oficial](https://openrouter.ai/google/gemma-4-31b-it:free)); servidor e navegador rejeitam saídas de classificador e preservam a consulta local existente. Não há segunda chamada automática, mudança de chave, quota ou memória.
 
 No editor Supabase que duplicou `handler.mjs`, a execução foi consolidada em um único `index.ts` autossuficiente. Para atualizar esse deployment, colar o bundle atualizado inteiro em `index.ts` e clicar em **Deploy updates**. Não usar o `index.ts` de três linhas isoladamente: ele depende do `handler.mjs` canônico. O bundle é gerado concatenando `handler.mjs` e `Deno.serve(createHandler({ env: Deno.env, fetcher: fetch }));`; não editar regras separadamente no bundle. GitHub Pages não atualiza a função Supabase.
+
+
+## Atualização do método — 29/09/2026 (chat já ativo)
+
+Não repetir cadastro da chave, migrations ou configuração da conta. A revisão modifica os filtros/resumo publicados no GitHub Pages e o prompt da Edge Function. No deployment atual autossuficiente, substituir todo o conteúdo de `scanner-chat → Code → index.ts` pelo bundle novo e clicar **Deploy updates**. O bundle deriva do `handler.mjs` atual seguido de `Deno.serve(createHandler({ env: Deno.env, fetcher: fetch }));`.
+
+Recarregar o Atlas com Ctrl+F5. Se quiser priorização de pares específica, usar os pares já salvos em Minhas preferências confirmadas; exemplos do MD não são contratos aprovados nem filtros exclusivos. Não é obrigatório salvar novamente preferências existentes.
+
+Validar: perguntar sobre range de 9% com giro curto e com objetivo de equilíbrio; perguntar se ETH/BTC é conservadora só pelo par; solicitar favoritas com meta de taxas. A resposta deve separar cálculo agregado de adequação pessoal e pedir dados faltantes. Testes automatizados validam seleção e instruções enviadas, não a qualidade de toda geração real do modelo.

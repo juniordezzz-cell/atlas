@@ -5,6 +5,12 @@
   const n=s=>Number(String(s).replace(',','.'));
   const usd=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'USD',maximumFractionDigits:2});
   const ve33=new Set(['Aerodrome','Velodrome','THENA','Pharaoh','Ramses']);
+  const regrasBase='TVL mínimo US$ 100.000; razão > 0,50. Meme detectada: razão > 2 e aprovação por pool; conservadora nunca admite meme. Sólidas não significa segura. Referências por lado: conservadora 30% a 60%, 3 a 9 meses; mediana 9% a 27%, cerca de 27 dias; agressiva 3% a 9%, giro de 3 a 9 dias. Essas referências não classificam automaticamente: considerar faixa, função, prazo e ativos. Em 9%, objetivo e prazo desempatarão; entre 27% e 30%, pedir contexto. Range de 6% = −6%/+6%, não −3%/+3%; faixa assimétrica mantém os limites informados. Mediana pode admitir meme em tese com prazo e saída. BTC e ETH geralmente ficam fora de agressivas; exceções exigem justificativa confirmada. SOL pode integrar os três perfis sem virar meme. Crossovers são interesses, não aprovação automática. Não há obrigação de abrir 3, 6 ou 9 pools. Taxas agregadas não são lucro líquido nem rendimento garantido da posição concentrada.';
+  function par(s){return norm(s).replace(/\s+/g,'').split(/[/\-]/).sort().join('/');}
+  function ordenar(ps,c){
+    const preferencias=(c.preferencias?.pares||[]).map(par);
+    return ps.slice().sort((a,b)=>Number(preferencias.includes(par(b.pool)))-Number(preferencias.includes(par(a.pool)))||(b.nota||0)-(a.nota||0)||b.tvl-a.tvl);
+  }
   function memeExcluida(text){return /\b(sem|nao|exclu\w*|evit\w*|remov\w*|tir\w*)\b.{0,45}\b(memes?|memecoins?)\b/.test(norm(text));}
   function memePermitida(text){const q=norm(text);if(memeExcluida(q))return false;return /\b(com|inclu\w*|aceit\w*|permit\w*|analis\w*|avali\w*|compar\w*)\b.{0,40}\b(memes?|memecoins?)\b/.test(q);}
   function eligible(c){
@@ -31,6 +37,16 @@
     if(network)ps=ps.filter(p=>norm(p.network)===network);
     const dex=['uniswap','orca','raydium','pancakeswap','aerodrome'].find(v=>new RegExp('\\b'+v+'\\b').test(q));
     if(dex)ps=ps.filter(p=>norm(p.platform)===dex);
+    const pares=[],excluidos=[];
+    let fimAnterior=0,negacaoAnterior=false;
+    for(const m of q.matchAll(/\b([a-z][a-z0-9]{1,14})\s*\/\s*([a-z][a-z0-9]{1,14})\b/g)){
+      const ligaLista=/^\s*(?:,\s*)?(?:(?:e|ou)\s+)?$/.test(q.slice(fimAnterior,m.index));
+      const negativo=(negacaoAnterior&&ligaLista)||/\b(?:sem|nao|exclu\w*|evit\w*)\s+(?:\w+\s+){0,3}$/.test(q.slice(Math.max(0,m.index-45),m.index));
+      (negativo?excluidos:pares).push(par(m[1]+'/'+m[2]));
+      fimAnterior=m.index+m[0].length;negacaoAnterior=negativo;
+    }
+    if(pares.length)ps=ps.filter(p=>pares.includes(par(p.pool)));
+    if(excluidos.length)ps=ps.filter(p=>!excluidos.includes(par(p.pool)));
     return ps;
   }
   async function historyAnswer(q,c,ps){
@@ -63,10 +79,10 @@
       if(pref.redes?.length&&!nets.some(v=>new RegExp('\\b'+v+'\\b').test(q)))ps=ps.filter(p=>pref.redes.some(v=>norm(v)===norm(p.network)));
     }
     if(/(?:explique|quais sao|como funciona|qual e).*\b(?:regra|rating|range)\b|\bregras\b/.test(q)&&!/tvl/.test(q)){
-      r={tipo:'regras',items:[],texto:(c.regras?.resumo||'TVL mínimo US$ 100.000; razão > 0,50. Meme: razão > 2 e análise pendente. Conservadora não admite meme; o perfil depende da montagem. Range de 6% significa −6%/+6%.')};
+      r={tipo:'regras',items:[],texto:(c.regras?.resumo||regrasBase)};
     }else if(/tvl/.test(q)&&/dias?|aument|evolu|cresce/.test(q)){
       r=await historyAnswer(q,c,ps);
-    }else if(/dolar|\$|usd/.test(q)){
+    }else if(/dolar|\$|\busd\b/.test(q)){
       const capital=q.match(/(?:com|capital de|investindo|aplicando)\s*(?:us\$|\$|usd)?\s*(\d+(?:[.,]\d+)?)/);
       const goal=q.match(/(\d+(?:[.,]\d+)?)\s*(?:a|ou|ate|e|-)\s*(\d+(?:[.,]\d+)?)\s*(?:dolares?|usd|us\$)/)||q.match(/(?:fazer|ganhar|gerar|render|devolver)\s*(?:us\$|\$)?\s*(\d+(?:[.,]\d+)?)\s*(?:dolares?|usd)/);
       if(!capital||!goal){r={tipo:'esclarecimento',items:[],texto:'Informe capital, meta de taxas e prazo. Exemplo: quais pools para gerar 2 a 3 dólares em um dia com 100 dólares?'};}
@@ -76,17 +92,19 @@
         ps=ps.filter(p=>c.trilho(p)==='solida');
         if(/conservador/.test(q))ps=ps.filter(p=>!p.sinais?.memecoin?.detectada);
         const scored=ps.filter(p=>!ve33.has(p.platform)&&Number.isFinite(Number(p.fee))&&p.fee>0).map(p=>({id:p.id,pool:p,estimativa:money*(p.fee/100)*(p.vol24h/p.tvl)*days}));
-        const items=scored.filter(x=>x.estimativa>=min-1e-9&&x.estimativa<=max+1e-9).sort((a,b)=>(b.pool.nota||0)-(a.pool.nota||0)||b.pool.tvl-a.pool.tvl).slice(0,10);
+        const aprovadas=scored.filter(x=>x.estimativa>=min-1e-9&&x.estimativa<=max+1e-9),porId=new Map(aprovadas.map(x=>[x.pool,x]));
+        const items=ordenar(aprovadas.map(x=>x.pool),c).slice(0,10).map(p=>porId.get(p));
         r={tipo:'meta',items,texto:`Referência agregada de taxas para ${usd(money)} em ${days} dia(s), meta ${usd(min)}–${usd(max)}. ${ps.length} candidatas após filtros; ${scored.length} com taxa utilizável.\n\n${items.map(x=>describe(x.pool)+'\nTVL '+usd(x.pool.tvl)+'; volume24h '+usd(x.pool.vol24h)+'; razão '+(x.pool.vol24h/x.pool.tvl).toFixed(2)+'; referência '+usd(x.estimativa)+'; nota '+(x.pool.nota??'não informada')+'.').join('\n\n')||'Nenhuma pool atende à meta com essa referência.'}\n\nCálculo: capital × (fee% ÷ 100) × volume24h/TVL × dias. Não é projeção de posição concentrada: faixa, liquidez ativa, tempo dentro da faixa, preço e custos não estão calculados. Taxas não equivalem a lucro líquido. Ordenação por nota e TVL não substitui sua análise pessoal. Protocolos de emissões não entram nesta conta.`};
       }
     }else if(/pool|favorit|conservador|median|agressiv/.test(q)){
       ps=ps.filter(p=>c.trilho(p)==='solida');if(/conservador/.test(q))ps=ps.filter(p=>!p.sinais?.memecoin?.detectada);
-      const items=ps.slice().sort((a,b)=>(b.nota||0)-(a.nota||0)||b.tvl-a.tvl).slice(0,10).map(p=>({id:p.id,pool:p}));
-      r={tipo:'lista',items,texto:`${ps.length} pool(s) após filtros. Mostrando até 10 por nota e TVL.\n\n${items.map(x=>describe(x.pool)+'\nTVL '+usd(x.pool.tvl)+'; volume24h '+usd(x.pool.vol24h)+'.').join('\n\n')||'Nenhuma candidata.'}\n\nO perfil conservador, mediano ou agressivo depende da montagem, faixa, objetivo e prazo. Meme não é permitida em conservadora; ausência de detecção não certifica a categoria dos ativos.`};
-    }else r={tipo:'ajuda',items:[],texto:'Nesta etapa respondo consultas locais: liste minhas favoritas; quais pools para gerar 2 a 3 dólares em um dia com 100 dólares; quais favoritas aumentaram o TVL nos últimos dois dias; explique as regras. O modelo de IA ainda não está conectado. Não consigo interpretar livremente outras perguntas.'};
+      const items=ordenar(ps,c).slice(0,10).map(p=>({id:p.id,pool:p}));
+      r={tipo:'lista',items,texto:`${ps.length} pool(s) após filtros. Mostrando até 10, priorizando pares de interesse confirmados quando houver; depois nota e TVL. Isso não confirma adequação ao método.\n\n${items.map(x=>describe(x.pool)+'\nTVL '+usd(x.pool.tvl)+'; volume24h '+usd(x.pool.vol24h)+'.').join('\n\n')||'Nenhuma candidata.'}\n\nO perfil conservador, mediano ou agressivo depende da montagem, faixa, objetivo e prazo. Meme não é permitida em conservadora; ausência de detecção não certifica a categoria dos ativos.`};
+    }else r={tipo:'ajuda',items:[],texto:'O cálculo local cobre favoritas, referência de taxas, histórico de TVL e regras. Esta pergunta requer interpretação da IA, se disponível; o resultado dependerá dos dados internos enviados.'};
+    if(r.tipo==='meta'&&c.preferencias?.pares?.length)r.texto+='\nPares de interesse confirmados priorizados antes de nota e TVL; essa preferência não confirma adequação nem ignora cortes.';
     const dated=r.items.map(x=>x.pool?.updatedAt).filter(v=>Number.isFinite(v)&&v>0);
     if(dated.length)r.texto+='\nAtualizações das candidatas: '+new Date(Math.min(...dated)).toLocaleString('pt-BR')+' a '+new Date(Math.max(...dated)).toLocaleString('pt-BR')+'.';
     return wrap(c,r);
   }
-  g.ScannerConsultas={consultar,memePermitida,memeExcluida};
+  g.ScannerConsultas={consultar,memePermitida,memeExcluida,filtrarPergunta:filtered,ordenar,regrasBase};
 })(window);

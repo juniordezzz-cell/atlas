@@ -10,6 +10,7 @@ function setup(overrides={}){
     fetch:async(url,init)=>{calls.push({url,init});return {ok:true,json:async()=>({answer:'Texto da IA',model:'openrouter/free'})};},
     ...overrides
   };
+  vm.runInNewContext(fs.readFileSync(__dirname+'/assistente-dados.js','utf8'),{window:win});
   vm.runInNewContext(code,{window:win,fetch:(...args)=>win.fetch(...args)});
   return {api:win.ScannerIA,calls,win};
 }
@@ -56,4 +57,16 @@ test('salvar memória e feedback usam sessão, sem chave de modelo ou chamada de
   await api.avaliar({rating:'corrigir',question:'Qual pool?',answer:'A',comment:'A categoria é desconhecida'});
   assert.deepEqual(calls.map(x=>JSON.parse(x.init.body).operation),['memory.set','feedback']);
   assert.ok(calls.every(x=>x.init.headers.Authorization==='Bearer firebase-token'));
+});
+
+test('contexto de pergunta livre respeita par, rede e favoritas antes de enviar',async()=>{
+  const {api}=setup();const c=context([pool(1,'HYPE/SOL',{fav:true}),pool(2,'SOL/USDC',{fav:true}),pool(3,'SOL/HYPE',{fav:false})]);
+  const r=api.contexto('Compare minhas favoritas SOL/HYPE na Solana sem memes',c,{tipo:'ajuda',items:[]});
+  assert.deepEqual(r.pools.map(p=>p.id),['pool:1']);
+});
+
+test('par de interesse chega ao modelo mesmo com mais de 30 candidatas por nota',()=>{
+  const {api}=setup(),c=context([...Array.from({length:35},(_,i)=>pool(i,'QNT/USDC',{nota:90})),pool(99,'BTC/ETH',{nota:10})]);
+  c.preferencias={pares:['ETH/BTC']};const r=api.contexto('O que combina com meus critérios?',c,{tipo:'ajuda',items:[]});
+  assert.equal(r.pools[0].id,'pool:99');assert.equal(r.totalElegiveis,36);assert.equal(r.pools.length,30);
 });

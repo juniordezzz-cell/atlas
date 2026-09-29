@@ -1,6 +1,6 @@
 # Assistente do Scanner Pools: metodologia e regras
 
-Status: primeira versão para validação com o proprietário, em 27/09/2026. Não representa uma integração de IA já implementada.
+Status: assistente implementado e ativo; configuração OpenRouter confirmada no endpoint Supabase em 29/09/2026. Esta revisão amplia a cobertura da metodologia; o novo prompt precisa ser republicado na Edge Function.
 
 ## Origem e prioridade
 
@@ -175,3 +175,23 @@ Convenção simétrica dos percentuais, compatibilidade/exceções e desempate e
 A rota anterior `openrouter/free` selecionava modelos automaticamente. A resposta observada era de classificação de segurança, não uma análise de pools. Não foi obtido o ID da execução original, portanto a identidade desse modelo é uma hipótese. O defeito confirmado era aceitar qualquer texto não vazio. Agora usamos exclusivamente `google/gemma-4-31b-it:free` ([catálogo oficial](https://openrouter.ai/google/gemma-4-31b-it:free)); servidor e navegador rejeitam saídas de classificador e preservam a consulta local existente. Não há segunda chamada automática, mudança de chave, quota ou memória.
 
 No editor Supabase que duplicou `handler.mjs`, a execução foi consolidada em um único `index.ts` autossuficiente. Para atualizar esse deployment, colar o bundle atualizado inteiro em `index.ts` e clicar em **Deploy updates**. Não usar o `index.ts` de três linhas isoladamente: ele depende do `handler.mjs` canônico. O bundle é gerado concatenando `handler.mjs` e `Deno.serve(createHandler({ env: Deno.env, fetcher: fetch }));`; não editar regras separadamente no bundle. GitHub Pages não atualiza a função Supabase.
+
+
+## Auditoria da aplicação do método — 29/09/2026
+
+Autorizado pelo proprietário: comparar regras, corrigir lacunas e testar o fluxo. O chat já existe; não recriar integração nem chave. Não confundir com o rascunho não publicado de operações do Oráculo principal.
+
+| Regra | Aplicação e evidência |
+|---|---|
+| TVL, razão, decisões por pool, conservadora sem meme | Filtros determinísticos preservados; regressões locais. |
+| Pares de interesse salvos | Prioridade antes de reduzir para 10 resultados locais/30 enviados; depois nota e TVL. Não é filtro exclusivo nem certificação de adequação. Comparação usa símbolos exatos, aceita ordem invertida; não presume equivalência ETH/WETH nem identidade de contratos. |
+| Par explícito na pergunta | Filtra pares no motor local e no contexto de perguntas livres; negativas excluem em vez de incluir. Favoritas, rede e plataforma também são aplicadas antes do envio. |
+| Faixas, prazos, função e manutenção | Prompt ampliado com todas as referências do MD, desempate em 9%, lacuna 27%–30%, simetria por lado e limites assimétricos. São instruções de análise; não criam selo automático por percentual. |
+| BTC/ETH e SOL | Preferência padrão contra BTC/ETH em agressivas, exceções explicitamente justificadas; SOL nos três perfis. Não criar bloqueio absoluto nem promessa de valorização. |
+| Crossovers e PDF | Exemplos não aprovam contratos nem perfil; não exigir 3/6/9 pools ou alocação do PDF. |
+| Processo e matemática | Prompt exige separar passa na conta de atende ao método, risco/qualidade antes da montagem, fonte/horários reais, cenários como hipóteses e plano de monitoramento/saída. Categorias ausentes continuam não confirmadas. |
+| Memória e avaliação | Preferências continuam salvas explicitamente; feedback não altera regras nem retreina pesos. |
+
+Os testes verificam filtros e conteúdo efetivamente enviado ao provedor, não garantem obediência de toda geração da IA. Não há chamada real autenticada ao modelo nesses testes. O MD é fonte editorial; `assistente-regras.json`/fallback local e `handler.mjs` resumem as regras operacionais, com regressão para tópicos essenciais. Não enviar o MD inteiro a cada pergunta: contém histórico de implantação e casos que não são dados atuais.
+
+Implantação: GitHub Pages recebe filtros/resumo; para o prompt, substituir todo o bundle atualizado em `scanner-chat → Code → index.ts` e clicar Deploy updates. Não cadastrar outra chave, não executar SQL e não alterar a memória existente. Perguntas de validação: “Com range de 9%, giro de 3 dias, como classificaria?”; “ETH/BTC é conservadora só pelo par?”; “Quais favoritas se encaixam em US$2–3 de taxas com US$100 em um dia?”; “Uma agressiva que ficou aberta 27 dias virou mediana?”.

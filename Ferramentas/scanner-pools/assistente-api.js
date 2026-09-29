@@ -17,14 +17,16 @@
     });
   }
   function contexto(q,c,r){
-    const ps=elegiveis(c,q),ids=new Set((r.items||[]).map(x=>x.pool?.sid||x.pool?.id||x.id).map(String));
+    const eleg=elegiveis(c,q),ps=g.ScannerConsultas?.filtrarPergunta?g.ScannerConsultas.filtrarPergunta(normas(q).toLowerCase(),eleg):eleg,ids=new Set((r.items||[]).map(x=>x.pool?.sid||x.pool?.id||x.id).map(String));
     // Nas consultas calculadas, só o resultado aprovado pelos filtros locais pode virar candidata da IA.
     const candidatas=r.tipo==='ajuda'?ps:(r.items||[]).map(x=>x.pool).filter(Boolean);
     const words=normas(q).match(/\b[A-Z][A-Z0-9]{1,9}\b/g)||[];
     const relevant=p=>words.some(w=>normas(p.pool).split(/[^A-Z0-9]+/).includes(w));
     const favorite=/favorit/i.test(q);
+    const par=s=>normas(s).replace(/\s+/g,'').split(/[/\-]/).sort().join('/');
+    const preferidos=new Set(candidatas.filter(p=>(c.preferencias?.pares||[]).some(v=>par(v)===par(p.pool))));
     const ordered=candidatas.slice().sort((a,b)=>{
-      const score=p=>Number(ids.has(String(p.sid||p.id)))*10000+Number(relevant(p))*1000+Number(favorite&&p.fav)*500+(Number(p.nota)||0);
+      const score=p=>Number(ids.has(String(p.sid||p.id)))*10000+Number(relevant(p))*1000+Number(favorite&&p.fav)*500+Number(preferidos.has(p))*200+(Number(p.nota)||0);
       return score(b)-score(a)||Number(b.tvl)-Number(a.tvl);
     });
     return {question:q,localAnswer:r.tipo==='ajuda'?'':String(r.texto||'').slice(0,7000),

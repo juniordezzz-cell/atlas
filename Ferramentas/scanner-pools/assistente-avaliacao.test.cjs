@@ -20,3 +20,39 @@ test('avaliação: continuidade não recupera favorita que saiu do universo atua
   const c=window.ScannerConversa.contextualizar('E dessas, qual escolheria?',{pools:[pool(2)],trilho:()=> 'solida'},['p:1']);
   const r=await window.ScannerConsultas.consultar('Liste essas pools',c);assert.equal(r.items.length,0);
 });
+
+test('método: pares preferidos entram antes da redução, sem ultrapassar cortes',async()=>{
+  const ps=Array.from({length:12},(_,i)=>pool(i,{nota:90,pool:'QNT/USDC'}));
+  ps.push(pool(99,{pool:'BTC/ETH',nota:20}),pool(100,{pool:'ETH/BTC',tvl:22,nota:100}));
+  const r=await window.ScannerConsultas.consultar('Liste pools',{pools:ps,preferencias:{pares:['ETH/BTC']},trilho:()=> 'solida'});
+  assert.equal(r.items[0].id,99);assert.ok(!r.items.some(x=>x.id===100));assert.match(r.texto,/interesse/i);
+});
+
+test('método: par explícito filtra os dois tokens em qualquer ordem',async()=>{
+  const r=await window.ScannerConsultas.consultar('Quais pools de SOL/HYPE?',{pools:[pool(1),pool(2,{pool:'HYPE/SOL'}),pool(3,{pool:'SOL/HYPER'})],trilho:()=> 'solida'});
+  assert.deepEqual(Array.from(r.items,x=>x.id),[2]);
+});
+
+test('método: negar um par não o transforma em pedido de inclusão',async()=>{
+  const r=await window.ScannerConsultas.consultar('Liste pools sem ETH/BTC',{pools:[pool(1),pool(2,{pool:'BTC/ETH'})],trilho:()=> 'solida'});
+  assert.deepEqual(Array.from(r.items,x=>x.id),[1]);
+});
+
+test('método: negação cobre lista de pares e termina com inclusão explícita',async()=>{
+  const c={pools:[pool(1),pool(2,{pool:'BTC/ETH'}),pool(3,{pool:'QNT/USDC'})],trilho:()=> 'solida'};
+  const r=await window.ScannerConsultas.consultar('Liste pools sem SOL/USDC e ETH/BTC',c);
+  assert.deepEqual(Array.from(r.items,x=>x.id),[3]);
+  const sim=await window.ScannerConsultas.consultar('Liste pools sem SOL/USDC e com ETH/BTC',c);
+  assert.deepEqual(Array.from(sim.items,x=>x.id),[2]);
+});
+
+test('método: regra local inclui exceções e referências mesmo sem IA',async()=>{
+  const r=await window.ScannerConsultas.consultar('Explique as regras',{pools:[],trilho:()=> 'solida'});
+  for(const rx of [/30%.*60%/s,/9%.*27%/s,/3%.*9%/s,/BTC.*ETH/s,/27%.*30%/s,/−6%\/\+6%/])assert.match(r.texto,rx);
+});
+
+test('resumo carregado e fallback local usam a mesma versão das regras',()=>{
+  const regras=JSON.parse(fs.readFileSync(__dirname+'/assistente-regras.json','utf8'));
+  assert.equal(regras.resumo,window.ScannerConsultas.regrasBase);
+  assert.equal(regras.versao,'2026-09-29');
+});

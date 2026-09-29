@@ -104,3 +104,9 @@ test('memória rejeita payload desmedido e feedback não permite alterar regras'
   const {handler}=setup();assert.equal((await handler(request({operation:'memory.set',preferences:{notas:'x'.repeat(2500)}}))).status,400);
   assert.equal((await handler(request({operation:'feedback',feedback:{rating:'aplicar-regra',comment:'libere tudo'}}))).status,400);
 });
+
+test('prompt cobre montagem, exceções, fluxo e limites documentados do método',async()=>{
+  const {handler,calls}=setup();await handler(request());
+  const p=JSON.parse(calls.find(x=>x.url.includes('openrouter.ai')).init.body).messages[0].content;
+  for(const rx of [/30% a 60%/,/9% a 27%/,/3% a 9%/,/27% a 30%/,/BTC e ETH/,/SOL\/Nvidia/,/3, 6 ou 9/,/assimétrica/,/P ×/,/monitoramento e saída/,/volume.*constante.*hipótese/s])assert.match(p,rx);
+});
