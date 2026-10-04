@@ -32,6 +32,7 @@ class PoolStore:
     def gravar(self, finais: list[PoolFinal], hoje: date, agora: datetime,
                fontes_indisponiveis: set[str] | None = None) -> dict: ...
     def gravar_status(self, itens: list[dict]) -> None: ...
+    def ultima_coleta(self) -> datetime | None: ...
     def close(self) -> None: ...
 
 
@@ -87,6 +88,9 @@ class MemoryPoolStore(PoolStore):
 
     def gravar_status(self, itens):
         self.status = list(itens)
+
+    def ultima_coleta(self):
+        return max((s["em"] for s in self.status), default=None)
 
     def close(self):
         pass
@@ -194,6 +198,10 @@ class PostgresPoolStore(PoolStore):
                     (s["fonte"], s["rede"], s["dex"], s["estado"], s["contagem"], s["em"]),
                 )
         self.conn.commit()
+
+    def ultima_coleta(self):
+        rows = self._query("select max(em) from scanner.status_coleta")
+        return rows[0][0] if rows else None
 
     def close(self):
         self.conn.close()

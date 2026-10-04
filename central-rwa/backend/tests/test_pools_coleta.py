@@ -213,3 +213,17 @@ def test_orcamento_da_coleta_cabe_no_workflow():
     minutos = (paginas + cfg.MAX_TOKENS_POR_COLETA + 10) * cfg.GECKO_INTERVALO_S / 60
     assert cfg.GECKO_INTERVALO_S >= 10          # 6/min: abaixo disso a API devolve 429
     assert minutos <= 35, minutos               # o workflow tem 55 min
+
+
+def test_reserva_pula_quando_ha_coleta_recente():
+    from datetime import datetime, timedelta, timezone
+    from central_rwa.pools.comando import pular_por_recente
+    from central_rwa.pools.repositorio import MemoryPoolStore
+    agora = datetime(2026, 10, 4, 12, 50, tzinfo=timezone.utc)
+    s = MemoryPoolStore()
+    assert pular_por_recente(s, agora, 260) is False          # banco vazio: coleta
+    s.gravar_status([{"em": agora - timedelta(minutes=49)}])
+    assert pular_por_recente(s, agora, 260) is True           # o Supabase disparou às 12:00
+    assert pular_por_recente(s, agora, None) is False         # disparo direto sempre coleta
+    s.gravar_status([{"em": agora - timedelta(hours=4, minutes=49)}])
+    assert pular_por_recente(s, agora, 260) is False          # o disparo das 12:00 falhou

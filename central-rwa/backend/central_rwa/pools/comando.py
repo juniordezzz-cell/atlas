@@ -15,9 +15,26 @@ from .fontes import ClienteFontes
 from .repositorio import MemoryPoolStore, PostgresPoolStore
 
 
+def pular_por_recente(store, agora: datetime, minutos: int | None) -> bool:
+    """A reserva agendada no GitHub roda de hora em hora e só coleta se o
+    disparo do Supabase falhou. Esperando na fila (concurrency) atrás de uma
+    coleta em andamento, ela confere DEPOIS que a outra gravou."""
+    if not minutos:
+        return False
+    ultima = store.ultima_coleta()
+    if ultima is None or (agora - ultima).total_seconds() >= minutos * 60:
+        return False
+    idade = round((agora - ultima).total_seconds() / 60)
+    annotate("notice", "Scanner Pools", f"coleta recente (há {idade} min) — esta execução de reserva foi pulada")
+    return True
+
+
 def rodar(argv: list[str]) -> None:
     p = argparse.ArgumentParser(prog="central_rwa pools")
     p.add_argument("--dry-run", action="store_true", help="coleta de verdade, mas não grava no banco")
+    p.add_argument("--pular-se-recente", type=int, metavar="MIN", default=None,
+                   help="não coleta se a última coleta começou há menos de MIN minutos "
+                        "(reserva do GitHub: o disparo de 4 em 4 h vem do Supabase)")
     args = p.parse_args(argv)
     if args.dry_run:
         store = MemoryPoolStore()
@@ -32,6 +49,9 @@ def rodar(argv: list[str]) -> None:
             annotate("error", "Banco", hint)
             sys.exit(hint)
     inicio = datetime.now(timezone.utc)
+    if pular_por_recente(store, inicio, args.pular_se_recente):
+        store.close()
+        return
     try:
         resumo = coletar(ClienteFontes(), store, inicio)
     finally:

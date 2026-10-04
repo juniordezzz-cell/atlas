@@ -1,14 +1,25 @@
-name: Scanner Pools · coleta (2h)
+name: Scanner Pools · coleta (4h)
 
 # Coleta pools de liquidez (DefiLlama, GeckoTerminal, Orca e Raydium), classifica em
 # Sólidas/Pendentes de análise, dá nota e grava no Supabase.
 # Regras vigentes: docs/superpowers/specs/2026-09-26-scanner-regras-design.md.
+#
+# QUEM DISPARA (desde 04/10/2026)
+#   workflow_dispatch  o pg_cron do Supabase, às 00/04/08/12/16/20 h UTC
+#                      (migração 20261004000001_scanner_agendamento.sql), ou o
+#                      botão "Run workflow". Sempre coleta.
+#   schedule           RESERVA de hora em hora: só coleta se a última coleta
+#                      tiver mais de 4 h 20 min — ou seja, se o Supabase falhou.
+#                      O cron do GitHub atrasa de 2 a 5 h; por isso não é ele
+#                      quem marca o ritmo.
+#   push               aplica as migrações na hora; também não coleta fora de hora.
 on:
   push:
     branches: [main]
-    paths: ['central-rwa/backend/central_rwa/pools/**', '.github/workflows/scanner-pools.yml']
+    paths: ['central-rwa/backend/central_rwa/pools/**', '.github/workflows/scanner-pools.yml',
+            'central-rwa/supabase/migrations/*scanner*']
   schedule:
-    - cron: "37 */2 * * *"   # a cada 2 h; minuto fora dos horários de maior carga
+    - cron: "50 * * * *"
   workflow_dispatch:
 
 # O scanner escreve no schema scanner; seu grupo não bloqueia jobs da Central RWA.
@@ -48,4 +59,8 @@ jobs:
             echo "::warning::SUPABASE_DB_URL não configurada — coleta pulada (configure o segredo para ativar)."
             exit 0
           fi
-          python -m central_rwa pools
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python -m central_rwa pools
+          else
+            python -m central_rwa pools --pular-se-recente 260
+          fi
