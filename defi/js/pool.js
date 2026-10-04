@@ -1113,7 +1113,98 @@
     var be = U.qs("#btnEdit");
     if (be) be.addEventListener("click", abrirEdicao);
     var bc = U.qs("#btnClose");
-    if (bc) bc.addEventListener("click", function () { U.openModal("#modalClose"); });
+    if (bc) bc.addEventListener("click", function () { montarFechamento(); U.openModal("#modalClose"); });
+  }
+
+  /* ------------------------------------------------------------
+     FECHAMENTO COM O QUE DE FATO CAIU NA CARTEIRA
+
+     O modal só pedia o motivo, e o encerramento usava a estimativa da
+     tela — último preço conhecido + taxa pendente — devolvendo tudo ao
+     caixa como dólar sem ativo (que o caixa trata como USDT). Agora
+     pede a data e, para cada token que saiu da pool, a quantidade e o
+     valor em US$. Em branco, vale a estimativa, como antes.
+     ------------------------------------------------------------ */
+  function montarFechamento() {
+    var host = U.qs("#closeBody");
+    if (!host) return;
+    var r = S.poolSummary(p.id) || {};
+    var abertura = String(p.openedAt || p.createdAt || "").slice(0, 10);
+
+    function linha(i, sym) {
+      var q = Number(i === 0 ? (p.qtyBaseNow || p.qtyBase) : (p.qtyQuoteNow || p.qtyQuote)) || 0;
+      return '<div class="fee-form" style="grid-template-columns:90px 1fr 1fr;margin-bottom:8px">' +
+        '<input class="input" data-cl="ativo" data-i="' + i + '" value="' + esc(sym || "") + '" aria-label="Token" />' +
+        '<input class="input" data-cl="qtd" data-i="' + i + '" type="number" step="any" min="0" ' +
+          'placeholder="' + (q ? "na pool: " + q : "quantidade") + '" aria-label="Quantidade recebida" />' +
+        '<div class="input-money"><span>US$</span><input class="input" data-cl="usd" data-i="' + i + '" ' +
+          'type="number" step="any" min="0" placeholder="0,00" aria-label="Valor recebido em US$" /></div>' +
+      '</div>';
+    }
+
+    host.innerHTML =
+      '<div class="field"><label>Data do encerramento</label>' +
+        '<input class="input" id="closeDate" type="date" value="' + U.hoje() + '" max="' + U.hoje() + '"' +
+        (abertura ? ' min="' + esc(abertura) + '"' : '') + ' /></div>' +
+      '<div class="field"><label>O que você recebeu ao retirar a liquidez</label>' +
+        linha(0, p.base) + linha(1, p.quote) +
+        '<div class="hint" style="margin-top:4px">Use os números da carteira, depois de retirar — já com a taxa ' +
+        'pendente que saiu junto. Recebeu tudo num token só? Troque o símbolo e deixe a outra linha vazia. ' +
+        'Os swaps que você fez depois se lançam na carteira, em <b>Swap</b>.</div>' +
+      '</div>' +
+      '<div class="mov-list" style="margin-bottom:14px" id="closeConta"></div>';
+
+    var usdManual = {};
+    function conta() {
+      var total = 0;
+      U.qsa('#closeBody [data-cl="usd"]').forEach(function (el) { total += Number(el.value) || 0; });
+      var real = total > 0;
+      var fim = real ? total : (r.valorTotal || 0);
+      var res = fim + (r.taxasColetadas || 0) - (r.baseInvestida || 0);
+      U.qs("#closeConta").innerHTML =
+        '<div class="mov-row" style="display:flex;justify-content:space-between"><span class="muted">Estimativa do ATLAS</span><b>' +
+          U.money(r.valorTotal || 0) + '</b></div>' +
+        '<div class="mov-row" style="display:flex;justify-content:space-between"><span class="muted">' +
+          (real ? "Você recebeu" : "Sem valores: vale a estimativa") + '</span><b>' + U.money(fim) + '</b></div>' +
+        '<div class="mov-row" style="display:flex;justify-content:space-between"><span class="muted">Resultado da posição</span><b class="' +
+          (res >= 0 ? "up" : "down") + '">' + U.money(res) + '</b></div>';
+    }
+
+    U.qsa("#closeBody [data-cl]").forEach(function (el) {
+      el.addEventListener("input", function () {
+        var i = el.dataset.i;
+        if (el.dataset.cl === "usd") usdManual[i] = !!el.value;
+        if (el.dataset.cl !== "usd" && !usdManual[i]) {
+          var sym = U.qs('#closeBody [data-cl="ativo"][data-i="' + i + '"]').value.trim();
+          var qtd = Number(U.qs('#closeBody [data-cl="qtd"][data-i="' + i + '"]').value) || 0;
+          var preco = sym ? S.precoDe(sym) : 0;
+          U.qs('#closeBody [data-cl="usd"][data-i="' + i + '"]').value =
+            (qtd > 0 && preco > 0) ? String(Math.round(qtd * preco * 100) / 100) : "";
+        }
+        conta();
+      });
+    });
+    conta();
+  }
+
+  /* lê o modal; devolve null (com aviso) se algo não fecha */
+  function lerFechamento() {
+    var data = (U.qs("#closeDate") || {}).value || U.hoje();
+    var abertura = String(p.openedAt || p.createdAt || "").slice(0, 10);
+    if (data > U.hoje()) { U.toast("A data do encerramento não pode estar no futuro.", "warn"); return null; }
+    if (abertura && data < abertura) { U.toast("A data do encerramento é anterior à abertura da pool.", "warn"); return null; }
+    var recebido = [], erro = null;
+    [0, 1].forEach(function (i) {
+      var sym = U.qs('#closeBody [data-cl="ativo"][data-i="' + i + '"]').value.trim();
+      var qtd = Number(U.qs('#closeBody [data-cl="qtd"][data-i="' + i + '"]').value) || 0;
+      var usd = Number(U.qs('#closeBody [data-cl="usd"][data-i="' + i + '"]').value) || 0;
+      if (!qtd && !usd) return;
+      if (!sym) erro = "Informe o token de cada linha preenchida.";
+      else if (!(usd > 0)) erro = "Falta o valor em US$ de " + sym + " (sem preço conhecido, digite à mão).";
+      recebido.push({ ativo: sym, qtd: qtd || null, usd: usd });
+    });
+    if (erro) { U.toast(erro, "warn"); return null; }
+    return { data: data, recebido: recebido };
   }
 
   /* ---------- taxas + eventos, religados a cada render ---------- */
@@ -1196,7 +1287,9 @@
   var cc = U.qs("#confirmClose");
   if (cc) cc.addEventListener("click", function () {
     var reason = U.qs("#closeReason").value.trim() || "Encerramento manual.";
-    S.closePool(p.id, reason);
+    var fech = lerFechamento();
+    if (!fech) return;
+    if (!S.closePool(p.id, reason, fech)) { U.toast("Não foi possível encerrar a posição.", "warn"); return; }
     U.closeModal("#modalClose");
     U.toast("Posição encerrada e movida ao Histórico.", "ok");
     setTimeout(function () { location.href = "historico.html"; }, 700);

@@ -822,10 +822,16 @@
         obs: obs || ""
       });
     },
-    _caixaRetorno: function (p, valor, obs) {
+    /* `extra` (opcional): { ativo, qtd, data }. Sem ele o retorno entra
+       em dólar, sem ativo — e o caixa o trata como USDT. */
+    _caixaRetorno: function (p, valor, obs, extra) {
       if (!global_.AtlasCaixa || !(valor > 0)) return null;
+      extra = extra || {};
       return global_.AtlasCaixa.registrar({
         tipo: "retorno", valorUSD: valor, rede: (p && p.chain) || null,
+        ativo: extra.ativo || undefined,
+        qtd: extra.qtd > 0 ? extra.qtd : undefined,
+        data: extra.data || undefined,
         walletId: p.walletId || _read().currentWalletId,
         module: "defi", refId: p.id,
         obs: obs || ""
@@ -837,6 +843,10 @@
     _estornaEncerramento: function (a) {
       var CX = global_.AtlasCaixa;
       if (!CX || !a) return false;
+      /* encerramento com o que foi recebido lança um retorno por token */
+      if (a.retornoIds && a.retornoIds.length) {
+        return a.retornoIds.map(function (rid) { return CX.remover(rid); }).some(Boolean);
+      }
       if (a.retornoId) return CX.remover(a.retornoId);
       var alvo = CX.eventos({ module: "defi", refId: a.id, tipo: "retorno" }).filter(function (e) {
         return /^Encerramento/.test(e.obs || "") &&
@@ -1256,11 +1266,14 @@
        honesto quando existem aportes: dobrar o capital no último dia
        não pode dividir o APR por dois.
        ------------------------------------------------------------ */
-    capitalFlows: function (id) {
+    /* `ate` (opcional): a data em que a conta para. Encerrar hoje uma
+       pool que foi fechada dias atrás contava os dias até hoje, e o APR
+       realizado caía pelos dias em que o dinheiro já não estava nela. */
+    capitalFlows: function (id, ate) {
       var p = (typeof id === "object" && id) ? id : this.pool(id);
       if (!p) return null;
       var evs = Store.events(p);
-      var hoje = new Date();
+      var hoje = _dia(ate) || new Date();
 
       var A = 0, W = 0, R = 0, TS = 0;
       evs.forEach(function (e) {
@@ -1340,7 +1353,7 @@
          PnL = (V + Fp + Fc − R + W) − A
          PnL = resultadoAtivos + resultadoTaxas
        ------------------------------------------------------------ */
-    poolSummary: function (id) {
+    poolSummary: function (id, ate) {
       var p = (typeof id === "object" && id) ? id : this.pool(id);
       if (!p) return null;
 
@@ -1351,7 +1364,7 @@
                           .reduce(function (a, f) { return a + (Number(f.amount) || 0); }, 0);
       var totalTaxas = coletadas + pendentes;
 
-      var f = Store.capitalFlows(p);
+      var f = Store.capitalFlows(p, ate);
       var A = f.aportadoBruto, W = f.retirado, R = f.reinvestido, TS = f.taxaSaida;
       var base = f.baseInvestida;
 
@@ -1450,17 +1463,52 @@
        fechamento e de uma fotografia do resultado no momento em
        que foi encerrada.
        ------------------------------------------------------------ */
-    closePool: function (id, reason) {
+    /* ------------------------------------------------------------
+       ENCERRAR COM O QUE DE FATO CAIU NA CARTEIRA
+
+       opts (opcional):
+         data      dia em que a posição foi fechada (padrão: hoje)
+         recebido  [{ ativo, qtd, usd }] — os tokens que saíram da pool
+
+       Sem `recebido`, o encerramento usava a ESTIMATIVA da tela (último
+       preço conhecido + taxa pendente) e devolvia tudo ao caixa como
+       um valor em dólar sem ativo — que o caixa trata como USDT. Quem
+       recebia ETH + USDC ficava com "USDT" no caixa, e a variação do
+       ETH dali em diante não entrava no Lucro. Com `recebido`, o valor
+       final é o que chegou, e cada token volta ao caixa como ele é.
+
+       O recebido já inclui a taxa pendente (ela sai junto ao retirar a
+       liquidez). Por isso o valor de mercado da fotografia é o recebido
+       menos a pendente: a conta do resultado fecha igual nos dois
+       caminhos (ver poolSummary).
+       ------------------------------------------------------------ */
+    closePool: function (id, reason, opts) {
       var s = _read(), wd = _baldeCom(s, "pools", id);
       // O ID identifica a posição inclusive fora da carteira selecionada.
       var p = (wd.pools || []).filter(function (x) { return x.id === id; })[0]; if (!p) return null;
+      opts = opts || {};
 
-      var resumo = this.poolSummary(p);   // calcula ANTES de tirar da lista ativa
-      var hoje = _hoje();
+      var hoje = _dia(opts.data) ? _hoje(_dia(opts.data)) : _hoje();
+      var recebido = (opts.recebido || []).map(function (r) {
+        return { ativo: String(r.ativo || "").trim().toUpperCase(),
+                 qtd: Number(r.qtd) > 0 ? Number(r.qtd) : null,
+                 usd: Number(r.usd) || 0 };
+      }).filter(function (r) { return r.ativo && r.usd > 0; });
+      var totalRecebido = recebido.reduce(function (a, r) { return a + r.usd; }, 0);
+
+      var base = p;
+      if (totalRecebido > 0) {
+        var pend = (p.fees || []).reduce(function (a, f) {
+          return a + (f.status === "pendente" ? (Number(f.amount) || 0) : 0);
+        }, 0);
+        base = JSON.parse(JSON.stringify(p));
+        base.currentValue = Math.round((totalRecebido - pend) * 1e6) / 1e6;
+      }
+      var resumo = this.poolSummary(base, hoje);   // calcula ANTES de tirar da lista ativa
 
       wd.pools = wd.pools.filter(function (x) { return x.id !== id; });
 
-      var arquivo = JSON.parse(JSON.stringify(p));   // cópia integral
+      var arquivo = JSON.parse(JSON.stringify(base));   // cópia integral
       arquivo.status = "encerrada";
       arquivo.closedAt = hoje;
       arquivo.updatedAt = hoje;
@@ -1468,7 +1516,8 @@
       /* Valor final é o PATRIMÔNIO da posição, não só o de mercado: a
          taxa pendente estava lá dentro no momento do encerramento e
          some da fotografia se for ignorada. */
-      arquivo.finalValue = Store.poolValue(p);
+      arquivo.finalValue = totalRecebido > 0 ? totalRecebido : Store.poolValue(p);
+      if (totalRecebido > 0) arquivo.recebido = recebido;
       /* fotografia do desfecho: como o valor atual para de ser
          atualizado depois do encerramento, guardamos o resultado
          já decomposto para o histórico não precisar recalcular. */
@@ -1502,13 +1551,22 @@
          coletada, e somá-la agora seria contar duas vezes. Só a que
          ainda estava dentro da posição no momento do encerramento.
          ------------------------------------------------------------ */
-      var ret = Store._caixaRetorno(arquivo, arquivo.finalValue,
-        "Encerramento da pool " + arquivo.base + "/" + arquivo.quote +
-        (resumo ? " · resultado " + resumo.resultado.toFixed(2) : ""));
+      var obsRet = "Encerramento da pool " + arquivo.base + "/" + arquivo.quote +
+        (resumo ? " · resultado " + resumo.resultado.toFixed(2) : "");
       /* O id do lançamento fica na pool arquivada: reabrir precisa
          estornar EXATAMENTE este retorno — o refId é o mesmo do aporte
          de abertura, e apagar por refId levaria o aporte junto. */
-      if (ret && ret.id) { arquivo.retornoId = ret.id; _persist(); }
+      if (recebido.length) {
+        arquivo.retornoIds = recebido.map(function (r) {
+          var ret = Store._caixaRetorno(arquivo, r.usd, obsRet, { ativo: r.ativo, qtd: r.qtd, data: hoje });
+          return ret && ret.id;
+        }).filter(Boolean);
+        if (arquivo.retornoIds.length) arquivo.retornoId = arquivo.retornoIds[0];
+        _persist();
+      } else {
+        var ret = Store._caixaRetorno(arquivo, arquivo.finalValue, obsRet, { data: hoje });
+        if (ret && ret.id) { arquivo.retornoId = ret.id; _persist(); }
+      }
 
       return true;
     },
@@ -1534,6 +1592,8 @@
       p.updatedAt = _hoje();
       delete p.closeSummary;
       delete p.retornoId;
+      delete p.retornoIds;
+      delete p.recebido;
       delete p.finalValue;
       wd.pools.unshift(p);
       _persist(); return p;

@@ -26,7 +26,8 @@
 
 .input-money { position: relative; }
 .input-money > span { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-mut); font-family: var(--font-mono); font-size: 14px; }
-.input-money .input { padding-left: 34px; font-family: var(--font-mono); }
+/* 46px: o prefixo "US$" termina em ~41px; com 34 o número nascia por baixo dele */
+.input-money .input { padding-left: 46px; font-family: var(--font-mono); }
 
 /* Segmento de opções (blockchain / protocolo em grade) */
 .opt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }

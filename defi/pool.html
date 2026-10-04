@@ -93,7 +93,10 @@
     <div class="modal">
       <div class="modal-head"><h3>Fechar posição</h3><button class="modal-close" data-close="modalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
       <div class="modal-body">
-        <p class="muted" style="margin-bottom:16px;font-size:14px">A posição será movida para o Histórico, e o valor dela volta ao caixa da carteira.</p>
+        <p class="muted" style="margin-bottom:16px;font-size:14px">A posição será movida para o Histórico, e o que você recebeu volta ao caixa da carteira, token por token.</p>
+        <!-- data e tokens recebidos: montados por defi/js/pool.js, que
+             conhece o par, os preços e a estimativa da posição -->
+        <div id="closeBody"></div>
         <div class="field"><label>Motivo do encerramento</label>
           <textarea class="textarea" id="closeReason" placeholder="ex.: Objetivo de rendimento atingido."></textarea>
         </div>

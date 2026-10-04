@@ -579,7 +579,11 @@
           if (fim > TOL_FORMULA) {
             var voltou = safe(function () {
               return CX.eventos({ module: "defi", refId: p.id, tipo: "retorno" })
-                .filter(function (e) { return p.retornoId ? e.id === p.retornoId : /^Encerramento/.test(e.obs || ""); })
+                .filter(function (e) {
+                  /* encerrada com o que foi recebido: um retorno por token */
+                  if (p.retornoIds && p.retornoIds.length) return p.retornoIds.indexOf(e.id) >= 0;
+                  return p.retornoId ? e.id === p.retornoId : /^Encerramento/.test(e.obs || "");
+                })
                 .reduce(function (a, e) { return a + n(e.valorUSD); }, 0);
             }, null);
             if (voltou != null && Math.abs(voltou - fim) > TOL_FORMULA) {

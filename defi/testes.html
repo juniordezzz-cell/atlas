@@ -1860,6 +1860,34 @@
         if (achD.length) nota("achado: módulo diz " + fmt(achD[0].moduloDiz) + ", caixa diz " + fmt(achD[0].caixaDiz));
       }
 
+      /* -- item 9b: encerrar com o que de fato foi recebido --
+         Estimativa 110 + 2 pendente; caiu na carteira 0,5 SOL (60) +
+         45 USDC = 105. O valor final é o recebido, cada token volta ao
+         caixa como ele é, na data do fechamento. */
+      var lucroAntesR = S.globalProfit();
+      var pr = S.addPool(base({ base: "SOL", quote: "USDC", protocol: "Orca",
+        capital: 100, currentValue: 100, openedAt: diasAtras(10) }));
+      S.addFee(pr.id, { amount: 2, status: "pendente", date: diasAtras(1) });
+      S.updatePool(pr.id, { currentValue: 110 });
+      S.closePool(pr.id, "teste recebido", { data: diasAtras(3), recebido: [
+        { ativo: "SOL", qtd: 0.5, usd: 60 }, { ativo: "USDC", qtd: 45, usd: 45 }] });
+      var arqR = S.closed().filter(function (x) { return x.id === pr.id; })[0];
+      eq("valor final é o recebido, não a estimativa (105)", arqR.finalValue, 105);
+      eq("resultado da pool = 105 − 100", arqR.closeSummary.resultado, 5);
+      eq("o resultado global sobe só o resultado real", S.globalProfit() - lucroAntesR, 5);
+      ok("encerrada na data informada", arqR.closedAt === diasAtras(3), arqR.closedAt);
+      var retsR = CX7.eventos({ refId: pr.id, tipo: "retorno" });
+      eq("um retorno por token", retsR.length, 2);
+      ok("o SOL volta ao caixa como SOL, com quantidade",
+         retsR.some(function (e) { return e.ativo === "SOL" && e.qtd === 0.5 && e.valorUSD === 60; }), "");
+      ok("o retorno leva a data do fechamento",
+         retsR.every(function (e) { return e.data === diasAtras(3); }), retsR.map(function (e) { return e.data; }).join(","));
+      fecha27("encerrar com o recebido fecha");
+      S.reopenPool(pr.id);
+      eq("reabrir estorna os dois retornos", CX7.eventos({ refId: pr.id, tipo: "retorno" }).length, 0);
+      fecha27("reabrir depois de encerrar com o recebido fecha");
+      S.closePool(pr.id, "fecha de vez");
+
       /* -- item 10: a quantidade de cada ativo em caixa bate com o dinheiro --
          Os módulos lançam aporte/retorno em US$, sem ativo nem
          quantidade (cai em "USDT"). A quantidade dos baldes ficava
