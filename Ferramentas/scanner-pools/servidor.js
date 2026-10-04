@@ -141,7 +141,10 @@
     var bloq = (lista && lista.bloqueados) || [];
     if (alvo.some(function (t) { return bloq.indexOf(t) !== -1; })) return "oculta";
     if (d === 'aprovada') return 'solida';
-    return meme ? 'caca' : 'solida';
+    /* lista de memecoins incompleta na coleta: token não conferido não é
+       "sem memecoin" — vai para Pendentes até uma coleta completa */
+    var naoVerificada = ((p.sinais || {}).memecoin || {}).estado === 'nao_verificada';
+    return (meme || naoVerificada) ? 'caca' : 'solida';
   }
 
   /* ---------- transição das pools gravadas no navegador ----------

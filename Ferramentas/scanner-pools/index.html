@@ -803,7 +803,7 @@
         <div><b>16</b><span>tópicos</span></div>
         <div><b>11</b><span>redes</span></div>
         <div><b>20</b><span>DEXs</span></div>
-        <div><b>4 h</b><span>entre coletas</span></div>
+        <div><b>2–7 h</b><span>entre coletas</span></div>
       </div>
     </div>
 
@@ -836,7 +836,7 @@
       <div class="lnum">0</div>
       <div class="lbody">
         <h3>Como o Scanner escolhe as pools</h3>
-        <p>Você não cadastra pool: um coletor no servidor procura sozinho, <b>a cada 4 horas</b>, em 11 redes (Solana, Base, Arbitrum, BNB Chain, Ethereum, Optimism, Polygon, Avalanche, Sui, HyperEVM e Robinhood) e 20 DEXs. Uniswap, Raydium, Orca, Aerodrome, Curve e as outras vêm da <b>DefiLlama</b>; PancakeSwap, Meteora, Velodrome e THENA vêm da <b>GeckoTerminal</b>. A descoberta também consulta pools pelo contrato do token, com limite por execução e rotação entre coletas; não é uma busca exaustiva. A categoria de memecoins vem do CoinGecko: tokens não identificados ou falhas da fonte podem deixar memes sem detectar. Toda pool que passa no filtro é <b>acompanhada automaticamente</b>: uma leitura por dia, guardada por 30 dias — a seta de TVL e a consistência da nota saem daí, sem você marcar nada.</p>
+        <p>Você não cadastra pool: um coletor no servidor procura sozinho, <b>agendado a cada 2 horas</b> (o GitHub costuma atrasar: na prática, de 4 a 7 horas), em 11 redes (Solana, Base, Arbitrum, BNB Chain, Ethereum, Optimism, Polygon, Avalanche, Sui, HyperEVM e Robinhood) e 20 DEXs. Uniswap, Raydium, Orca, Aerodrome, Curve e as outras vêm da <b>DefiLlama</b>; PancakeSwap, Meteora, Velodrome e THENA vêm da <b>GeckoTerminal</b>. A descoberta também consulta pools pelo contrato do token, com limite por execução e rotação entre coletas; não é uma busca exaustiva. A categoria de memecoins vem do CoinGecko: tokens sem identificação podem deixar memes sem detectar. Quando a lista do CoinGecko vem incompleta, a pool com token que ficou sem conferir vai para <b>Pendentes de análise</b>, não para Sólidas. Toda pool que passa no filtro é <b>acompanhada automaticamente</b>: uma leitura por dia, guardada por 30 dias — a seta de TVL e a consistência da nota saem daí, sem você marcar nada.</p>
         <table class="ltable">
           <thead><tr><th>Etapa</th><th>Regra</th><th>Por quê</th></tr></thead>
           <tbody>
@@ -1182,7 +1182,7 @@
       <div class="lnum">16</div>
       <div class="lbody">
         <h3>A nota de 0 a 100</h3>
-        <p>A nota olha as duas coisas que o método manda olhar primeiro: <b>quanto a pool cobra por troca</b> (a taxa, o número ao lado do par) e <b>quanto ela gira</b> (a razão). Nenhuma das duas sozinha decide — por isso cada uma vale 30%, e mais 20% vão para o que as duas rendem juntas. Cada parte tem uma <b>régua fixa</b>: a mesma pool tem a mesma nota, não importa o que mais entrou na coleta. O coletor calcula a cada 4 horas; a tela só mostra.</p>
+        <p>A nota olha as duas coisas que o método manda olhar primeiro: <b>quanto a pool cobra por troca</b> (a taxa, o número ao lado do par) e <b>quanto ela gira</b> (a razão). Nenhuma das duas sozinha decide — por isso cada uma vale 30%, e mais 20% vão para o que as duas rendem juntas. Cada parte tem uma <b>régua fixa</b>: a mesma pool tem a mesma nota, não importa o que mais entrou na coleta. O coletor calcula a cada coleta; a tela só mostra.</p>
         <table class="ltable">
           <thead><tr><th>Parte</th><th>Peso</th><th>O que mede</th><th>Régua (0 a 100)</th></tr></thead>
           <tbody>
@@ -1229,7 +1229,7 @@
       <button class="linkbtn" onclick="exportJSON()">Exportar</button>
       <button class="linkbtn" onclick="document.getElementById('importfile').click()">Importar</button>
     </div>
-    <div class="foot-note">Scanner Pools · dados em USD · coleta programada a cada 2 h · suas decisões por pool, ★, níveis, notas, lista de tokens e pools manuais ficam no navegador — faça <b>Exportar</b> para ter backup.</div>
+    <div class="foot-note">Scanner Pools · dados em USD · coleta agendada a cada 2 h (na prática, 4 a 7 h) · suas decisões por pool, ★, níveis, notas, lista de tokens e pools manuais ficam no navegador — faça <b>Exportar</b> para ter backup.</div>
   </footer>
 </div>
 
@@ -1497,7 +1497,9 @@ function renderStatus(){
   const coleta = srv.status.reduce((m,x)=>Math.max(m, Date.parse(x.em)||0), 0);
   const falhas = srv.status.filter(x=>x.estado && x.estado!=="ok").length;
   const partes = [`Atualizado ${idadeTxt(coleta)}`, `${doSrv.length.toLocaleString("pt-BR")} pools acompanhadas`];
-  const atrasado = !coleta || Date.now()-coleta > 3*60*60*1000;
+  /* agendada a cada 2 h, o GitHub dispara de 4 a 7 h (medido em out/2026):
+     com 3 h o aviso ficava aceso quase sempre e deixava de avisar algo */
+  const atrasado = !coleta || Date.now()-coleta > 8*60*60*1000;
   if(atrasado) partes.unshift('Coleta atrasada; confira os dados antes de decidir');
   if(falhas) partes.push(`${falhas} fonte(s) com falha na última coleta`);
   let txt = partes.join(" · ");

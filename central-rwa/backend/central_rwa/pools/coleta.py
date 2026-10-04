@@ -203,7 +203,7 @@ def coletar(cli, store, agora: datetime) -> dict:
             infos.get((c.rede, normalizar_endereco(c.rede, t.endereco))) if t.endereco else None
             for t in (c.token_a, c.token_b)
         ]
-        identificar(c, par_infos, meme_ids)
+        identificar(c, par_infos, meme_ids, getattr(cli, 'meme_cobertura_ate', None))
         t, motivos = trilho(c, par_infos, leituras.get(c.id, []), agora)
         nota, comp = notas[c.id]
         finais.append(PoolFinal(c, t, motivos, nota, comp))

@@ -273,27 +273,50 @@ class ClienteFontes:
         self.parciais.append('raydium: paginação atingiu o orçamento')
         return rows
 
+    def _coingecko(self, params: dict) -> httpx.Response:
+        """A CoinGecko gratuita recusa com 429 depois de ~9 páginas seguidas.
+        Desistir na primeira recusa deixava a lista de memecoins cortada; espera
+        30 s × tentativa e tenta de novo, como a GeckoTerminal já fazia."""
+        for tentativa in range(1, 4):
+            r = self.client.get('https://api.coingecko.com/api/v3/coins/markets', params=params)
+            if r.status_code != 429 and r.status_code < 500:
+                return r
+            if tentativa < 3:
+                self.sleep(30 * tentativa)
+        return r
+
     def meme_coin_ids(self) -> set[str]:
-        """Categoria oficial paginada; falha preserva IDs já lidos e sinaliza parcial."""
+        """Categoria oficial paginada; falha preserva IDs já lidos e sinaliza parcial.
+
+        A página vem em ordem de ID (id_asc). Se a leitura parar no meio,
+        `meme_cobertura_ate` guarda o último ID lido: tudo depois dele não foi
+        conferido, e "não está na lista" deixa de significar "não é memecoin".
+        Lista completa → None."""
         from .memes import CONHECIDOS
         ids = set(CONHECIDOS)
+        ultimo = ''
+        self.meme_cobertura_ate = None
         for page in range(1, 21):
             try:
-                r = self.client.get('https://api.coingecko.com/api/v3/coins/markets',
-                                    params={'vs_currency': 'usd', 'category': 'meme-token',
-                                            'per_page': 250, 'page': page, 'order': 'id_asc'})
+                r = self._coingecko({'vs_currency': 'usd', 'category': 'meme-token',
+                                     'per_page': 250, 'page': page, 'order': 'id_asc'})
                 r.raise_for_status()
                 rows = r.json()
                 if not isinstance(rows, list):
                     raise ValueError('categoria em formato inesperado')
-                ids.update(p['id'] for p in rows if p.get('id'))
+                lidos = [p['id'] for p in rows if p.get('id')]
+                ids.update(lidos)
+                if lidos:
+                    ultimo = max(ultimo, max(lidos))
                 if len(rows) < 250:
                     return ids
                 self.sleep(10)
             except (httpx.HTTPError, ValueError, KeyError) as e:
                 self.parciais.append(f'memecoin: categoria parcial na página {page}: {type(e).__name__}')
+                self.meme_cobertura_ate = ultimo
                 return ids
         self.parciais.append('memecoin: categoria atingiu limite de 20 páginas')
+        self.meme_cobertura_ate = ultimo
         return ids
 
     def token_pools(self, net: str, endereco: str, paginas: int = 1) -> list[dict]:

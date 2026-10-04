@@ -72,4 +72,6 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
         if c.vol_24h / c.tvl <= 2.0:
             return "barrada", ["memecoin: razão de 24h <= 2,00"]
         return "caca", ["memecoin detectada: aguarda decisão por pool"]
+    if meme.get("estado") == "nao_verificada":
+        return "caca", ["memecoin não verificada: a lista da CoinGecko veio incompleta nesta coleta"]
     return "solida", []

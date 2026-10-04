@@ -10,11 +10,23 @@ CONHECIDOS = {'dogecoin', 'shiba-inu', 'pepe', 'bonk', 'floki', 'dogwifcoin',
               'official-trump', 'fartcoin', 'dogelon-mars'}
 
 
-def identificar(c: Candidata, infos: list[TokenInfo | None], meme_ids: set[str]) -> None:
+def identificar(c: Candidata, infos: list[TokenInfo | None], meme_ids: set[str],
+                cobertura_ate: str | None = None) -> None:
+    """`cobertura_ate`: último ID da categoria lido quando a lista veio
+    incompleta (ordem alfabética). ID depois dele não foi conferido: a pool
+    fica "nao_verificada" e não entra nas Sólidas por falta de dado."""
     ids = {i.coingecko_id for i in infos if i and i.coingecko_id}
     detectados = sorted(ids & (meme_ids | CONHECIDOS))
+    if detectados:
+        estado = 'detectada'
+    elif not ids:
+        estado = 'sem_identificacao'
+    elif cobertura_ate is not None and any(i > cobertura_ate for i in ids):
+        estado = 'nao_verificada'
+    else:
+        estado = 'nao_detectada'
     c.sinais['memecoin'] = {
         'detectada': bool(detectados), 'ids': detectados,
         'fonte': 'coingecko:meme-token',
-        'estado': 'detectada' if detectados else ('nao_detectada' if ids else 'sem_identificacao'),
+        'estado': estado,
     }

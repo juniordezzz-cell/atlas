@@ -18,6 +18,12 @@ test('legado sem meme entra em Sólidas; cortes inclusivos', () => {
   assert.equal(S.trilhoEfetivo(p(2,true),{}), 'oculta');
   assert.equal(S.trilhoEfetivo(p(2.01,true),{}), 'caca');
 });
+test('lista de memecoins incompleta: token não conferido vai para Pendentes', () => {
+  const S=load(), x=p(); x.sinais.memecoin.estado='nao_verificada';
+  assert.equal(S.trilhoEfetivo(x,{}), 'caca');
+  const d={}; d[S.chaveDecisao(x)]='aprovada';
+  assert.equal(S.trilhoEfetivo(x,{},d), 'solida');   // aprovação por pool continua valendo
+});
 test('decisão por pool persiste em refresh e não afeta outra taxa/endereço', () => {
   let S=load(), a=p(3,true), b=p(3,true,'gecko:base:0x2');
   const d={}; d[S.chaveDecisao(a)]='aprovada';
