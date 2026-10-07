@@ -9,7 +9,9 @@ name: Scanner Pools · coleta (4h)
 #                      (migração 20261004000001_scanner_agendamento.sql), ou o
 #                      botão "Run workflow". Sempre coleta.
 #   schedule           RESERVA de hora em hora: só coleta se a última coleta
-#                      tiver mais de 4 h 20 min — ou seja, se o Supabase falhou.
+#                      tiver mais de 3 h. Era 4 h 20 min, mas o GitHub só dispara
+#                      este cron a cada 4 a 8 h: em 07/10 a reserva pulou uma
+#                      coleta com 3 h 56 min e o Scanner ficou ~12 h sem dado.
 #                      O cron do GitHub atrasa de 2 a 5 h; por isso não é ele
 #                      quem marca o ritmo.
 #   push               aplica as migrações na hora; também não coleta fora de hora.
@@ -62,5 +64,5 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             python -m central_rwa pools
           else
-            python -m central_rwa pools --pular-se-recente 260
+            python -m central_rwa pools --pular-se-recente 180
           fi
