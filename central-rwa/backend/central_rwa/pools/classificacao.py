@@ -9,6 +9,7 @@ from math import isfinite
 
 from . import config
 from .modelos import Candidata, Leitura, TokenInfo
+from .nota import eficiencia
 
 APR_MAX = 10_000.0
 WASH_RAZAO = 50.0
@@ -46,19 +47,54 @@ def motivos_barrada(c: Candidata, infos: list[TokenInfo | None], leituras: list[
     return list(dict.fromkeys(m))   # sem repetição, na ordem
 
 
-def token_solido(simbolo: str, info: TokenInfo | None, agora: datetime) -> bool:
+def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime) -> str | None:
+    """Por que o token não é sólido, ou None se é. Ligado em 07/10/2026: a
+    regra existia desde 23/09 e nunca era chamada — 380 das 680 Sólidas
+    tinham token sem cadastro na CoinGecko.
+
+    Majors, stables e RWA conhecidos não precisam de consulta. Dado que a
+    fonte não informa não reprova sozinho: sem idade (a DefiLlama não traz a
+    data da pool), vale a combinação cadastro na CoinGecko + valor de
+    mercado; sem contagem de holders, idem."""
     s = (simbolo or "").upper()
     if s in config.MAJORS or config.eh_rwa(simbolo):
-        return True
-    if info is None or info.primeira_pool_em is None:
-        return False
-    idade = (agora - info.primeira_pool_em).days
-    return (
-        idade >= IDADE_MIN_DIAS
-        and (info.mcap or 0) >= MCAP_MIN
-        and (info.holders or 0) >= HOLDERS_MIN
-        and bool(info.coingecko_id)
-    )
+        return None
+    if info is None:
+        return f"{s} ainda sem dados de segurança"
+    if not info.coingecko_id:
+        return f"{s} sem cadastro na CoinGecko"
+    if (info.mcap or 0) < MCAP_MIN:
+        return f"{s} com valor de mercado abaixo de US$ 10 mi"
+    if info.primeira_pool_em is not None and (agora - info.primeira_pool_em).days < IDADE_MIN_DIAS:
+        return f"{s} com menos de {IDADE_MIN_DIAS} dias"
+    if info.holders is not None and info.holders < HOLDERS_MIN:
+        return f"{s} com menos de 1.000 holders"
+    return None
+
+
+def token_solido(simbolo: str, info: TokenInfo | None, agora: datetime) -> bool:
+    return fraqueza_token(simbolo, info, agora) is None
+
+
+def classe_token(simbolo: str) -> str:
+    s = (simbolo or "").upper()
+    if s in config.STABLES:
+        return "stable"
+    if s in config.MAJORS or config.eh_rwa(simbolo):
+        return "grande"
+    return "outro"
+
+
+def classe_par(c: Candidata) -> str:
+    """stable/stable · grande/stable · grande/grande · cauda longa."""
+    a, b = classe_token(c.token_a.simbolo), classe_token(c.token_b.simbolo)
+    if "outro" in (a, b):
+        return "cauda"
+    if a == b == "stable":
+        return "stable"
+    if a == b == "grande":
+        return "grande"
+    return "grande_stable"
 
 
 def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura], agora: datetime) -> tuple[str, list[str]]:
@@ -74,4 +110,16 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
         return "caca", ["memecoin detectada: aguarda decisão por pool"]
     if meme.get("estado") == "nao_verificada":
         return "caca", ["memecoin não verificada: a lista da CoinGecko veio incompleta nesta coleta"]
+    fracos = [m for t, i in zip((c.token_a, c.token_b), list(infos) + [None, None])
+              if (m := fraqueza_token(t.simbolo, i, agora))]
+    if fracos:
+        return "caca", ["token fraco: " + "; ".join(fracos)]
+    r = c.vol_24h / c.tvl
+    if c.criada_em is not None and (agora - c.criada_em).days < config.SUSPEITO_IDADE_DIAS and r > config.SUSPEITO_RAZAO:
+        return "caca", [f"volume suspeito: pool com {(agora - c.criada_em).days} dias girando {r:.0f}× o TVL"]
+    classe = classe_par(c)
+    minimo = config.MIN_EFIC_DIA[classe]
+    efic = eficiencia(c)
+    if efic < minimo:
+        return "caca", [f"rende {efic:.3f}%/dia, abaixo do mínimo de {minimo}%/dia para {config.CLASSE_ROTULO[classe]}"]
     return "solida", []

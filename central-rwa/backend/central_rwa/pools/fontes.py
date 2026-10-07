@@ -171,6 +171,7 @@ def parse_tokens_multi(payload: dict) -> dict[str, float | None]:
 # HTTP
 # ======================================================================
 
+MEME_PAGINAS = 40   # 250 moedas por página
 LLAMA_URL = "https://yields.llama.fi/pools"
 GECKO = "https://api.geckoterminal.com/api/v2"
 
@@ -296,7 +297,9 @@ class ClienteFontes:
         ids = set(CONHECIDOS)
         ultimo = ''
         self.meme_cobertura_ate = None
-        for page in range(1, 21):
+        # A categoria passou de 5.000 moedas: com 20 páginas a lista parava no
+        # teto e 131 pools caíam em "não verificada" (07/10/2026).
+        for page in range(1, MEME_PAGINAS + 1):
             try:
                 r = self._coingecko({'vs_currency': 'usd', 'category': 'meme-token',
                                      'per_page': 250, 'page': page, 'order': 'id_asc'})
@@ -315,7 +318,7 @@ class ClienteFontes:
                 self.parciais.append(f'memecoin: categoria parcial na página {page}: {type(e).__name__}')
                 self.meme_cobertura_ate = ultimo
                 return ids
-        self.parciais.append('memecoin: categoria atingiu limite de 20 páginas')
+        self.parciais.append(f'memecoin: categoria atingiu limite de {MEME_PAGINAS} páginas')
         self.meme_cobertura_ate = ultimo
         return ids
 

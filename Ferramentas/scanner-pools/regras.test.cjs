@@ -24,6 +24,12 @@ test('lista de memecoins incompleta: token não conferido vai para Pendentes', (
   const d={}; d[S.chaveDecisao(x)]='aprovada';
   assert.equal(S.trilhoEfetivo(x,{},d), 'solida');   // aprovação por pool continua valendo
 });
+test('Pendentes com motivo do coletor (token fraco, rendimento, volume suspeito) não viram Sólidas', () => {
+  const S=load(), x=p(); x.motivos=['token fraco: FOO sem cadastro na CoinGecko'];
+  assert.equal(S.trilhoEfetivo(x,{}), 'caca');
+  const d={}; d[S.chaveDecisao(x)]='aprovada';
+  assert.equal(S.trilhoEfetivo(x,{},d), 'solida');
+});
 test('decisão por pool persiste em refresh e não afeta outra taxa/endereço', () => {
   let S=load(), a=p(3,true), b=p(3,true,'gecko:base:0x2');
   const d={}; d[S.chaveDecisao(a)]='aprovada';

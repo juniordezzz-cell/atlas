@@ -144,7 +144,11 @@
     /* lista de memecoins incompleta na coleta: token não conferido não é
        "sem memecoin" — vai para Pendentes até uma coleta completa */
     var naoVerificada = ((p.sinais || {}).memecoin || {}).estado === 'nao_verificada';
-    return (meme || naoVerificada) ? 'caca' : 'solida';
+    /* desde 07/10 o coletor também manda para Pendentes token fraco, volume
+       suspeito e rendimento abaixo do mínimo da classe — sempre com motivo.
+       `caca` sem motivo é legado do schema e continua valendo como Sólida. */
+    var comMotivo = p.trilho === 'caca' && Array.isArray(p.motivos) && p.motivos.length > 0;
+    return (meme || naoVerificada || comMotivo) ? 'caca' : 'solida';
   }
 
   /* ---------- transição das pools gravadas no navegador ----------

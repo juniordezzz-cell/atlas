@@ -679,6 +679,7 @@
   /* ✓/✕ por pool: discretos como as outras ações, cor só no hover. Com
      36 px e borda vermelha sempre acesa, a coluna alargava, a tabela passava
      da largura da área e o ✕ saía cortado pela borda (out/2026). */
+  .sinais.motivo{color:var(--amber)}
   .pool-aprovar,.pool-rejeitar{min-width:28px;min-height:28px;padding:4px 8px;font-size:12px;line-height:1}
   .pool-aprovar{color:#2ec785}
   .pool-rejeitar{color:var(--mut)}
@@ -725,7 +726,7 @@
     </div>
     <div class="srv-status" id="srvStatus">Carregando pools do servidor…</div>
   </div>
-  <p class="trilho-dica" id="trilhoDica">Lista principal: pools elegíveis sem memecoin detectada e pools aprovadas por você. TVL ≥ US$ 100 mil e razão de 24h > 0,50. Não é garantia de segurança.</p>
+  <p class="trilho-dica" id="trilhoDica">Lista principal: tokens sólidos e rendimento à altura do risco do par, mais as pools aprovadas por você. TVL ≥ US$ 100 mil e razão de 24h > 0,50. Não é garantia de segurança.</p>
   <div class="toklista" id="tokLista"></div>
 
   <!-- filtros numa linha só: rede e plataforma viraram menus (eram 19 chips) -->
@@ -855,8 +856,8 @@
           <tbody>
             <tr><td class="tk">Pré-corte</td><td>Volume real de 24h ÷ TVL > 0,50. TVL ≥ US$ 100 mil é obrigatório na coleta e na tela</td><td>Razão ≤ 0,50 elimina; TVL abaixo de US$ 100 mil elimina, inclusive pools manuais e dados em cache</td></tr>
             <tr><td class="tk">Segurança</td><td>Some sem exceção: honeypot, mint ou freeze ativos, desenvolvedor com mais de 20%, pool sem taxa e sem APR, APR acima de 10.000%, volume/TVL acima de 50× por 3 dias seguidos</td><td>Golpe, token que o criador pode imprimir ou congelar, ou volume fabricado</td></tr>
-            <tr><td class="tk">Sólidas</td><td>Pools elegíveis sem memecoin detectada, ou aprovadas individualmente por você</td><td>Lista principal; dados incompletos não garantem segurança</td></tr>
-            <tr><td class="tk">Pendentes de análise</td><td>Memecoin identificada pelo ID CoinGecko associado ao contrato, com razão > 2,00</td><td>Sem decisão permanece pendente. Razão ≤ 2,00 elimina mesmo se aprovada</td></tr>
+            <tr><td class="tk">Sólidas</td><td>Pools elegíveis com tokens sólidos, que pagam o mínimo da classe do par, ou aprovadas individualmente por você</td><td>Lista principal; dados incompletos não garantem segurança</td></tr>
+            <tr><td class="tk">Pendentes de análise</td><td>Memecoin identificada pelo ID CoinGecko (razão > 2,00); <b>token fraco</b> — sem cadastro na CoinGecko, valor de mercado abaixo de US$ 10 mi, menos de 30 dias ou menos de 1.000 holders (majors, stables e RWA isentos); <b>volume suspeito</b> — pool com menos de 30 dias girando mais de 20× o TVL; <b>rendimento abaixo do mínimo</b> da classe do par — stable/stable 0,01%, grande/stable 0,05%, grande/grande 0,1% e cauda longa 0,5% ao dia</td><td>Sem decisão permanece pendente; o motivo aparece embaixo do par. Meme com razão ≤ 2,00 elimina mesmo se aprovada</td></tr>
             <tr><td class="tk">Sua lista</td><td><b>✓ verde</b> aprova somente esta pool; <b>✕ vermelho</b> rejeita somente esta pool e impede que volte nas atualizações</td><td>Decisões persistem neste navegador e no backup; não contornam os cortes nem a segurança</td></tr>
           </tbody>
         </table>
@@ -1529,8 +1530,8 @@ function setTrilho(t){
   document.querySelectorAll(".trilho").forEach(b=>b.classList.toggle("on", b.dataset.trilho===t));
   const d = document.getElementById("trilhoDica");
   if(d) d.textContent = t==="caca"
-    ? "Memecoin detectada e razão de 24h > 2,00. ✓ aprova esta pool; ✕ rejeita e mantém fora das próximas atualizações."
-    : "Lista principal: pools elegíveis sem memecoin detectada e pools aprovadas por você. TVL ≥ US$ 100 mil e razão de 24h > 0,50. Não é garantia de segurança.";
+    ? "Memecoin, token fraco (novo, pequeno ou sem cadastro na CoinGecko), volume suspeito ou rendimento abaixo do mínimo da classe do par — o motivo aparece embaixo do par. ✓ aprova esta pool; ✕ rejeita e mantém fora das próximas atualizações."
+    : "Lista principal: tokens sólidos e rendimento à altura do risco do par, mais as pools aprovadas por você. TVL ≥ US$ 100 mil e razão de 24h > 0,50. Não é garantia de segurança.";
   render();
 }
 
@@ -1845,11 +1846,13 @@ function notaHTML(p){
 function sinaisHTML(p){
   if(!p.servidor || trilhoDe(p)!=="caca") return "";
   const s = p.sinais || {}, it = [];
+  /* por que está aqui: o motivo que o coletor gravou */
+  const motivo = (p.motivos||[])[0] ? `<div class="sinais motivo">${esc(p.motivos[0])}</div>` : "";
   if(p.criadaEm) it.push(`pool de ${Math.max(0,Math.floor((Date.now()-p.criadaEm)/86400000))} dias`);
   if(s.mcap) it.push(`mcap ${fUSD(s.mcap)}`);
   if(s.variacao_24h!=null) it.push(`24h ${s.variacao_24h>0?"+":""}${Number(s.variacao_24h).toLocaleString("pt-BR",{maximumFractionDigits:1})}%`);
   if(s.compradores_24h || s.vendedores_24h) it.push(`${s.compradores_24h||0} compram × ${s.vendedores_24h||0} vendem`);
-  return it.length ? `<div class="sinais">${esc(it.join(" · "))}</div>` : "";
+  return motivo + (it.length ? `<div class="sinais">${esc(it.join(" · "))}</div>` : "");
 }
 
 function buildHead(){

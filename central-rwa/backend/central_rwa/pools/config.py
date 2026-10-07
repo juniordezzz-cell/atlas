@@ -88,6 +88,18 @@ MAJORS: set[str] = {
     "SOL", "WSOL", "JITOSOL", "MSOL", "BSOL", "JUPSOL", "INF",
     "BNB", "WBNB", "AVAX", "WAVAX", "POL", "MATIC", "WPOL", "SUI", "HYPE", "WHYPE",
 }
+STABLES: set[str] = {"USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC"}
+
+# Rendimento mínimo por dia (fee × razão, em %) para a pool ficar nas Sólidas,
+# pela classe do par: quanto mais arriscados os ativos, mais a pool tem de
+# pagar. Abaixo disso vai para Pendentes. Régua do dono, 07/10/2026.
+MIN_EFIC_DIA: dict[str, float] = {"stable": 0.01, "grande_stable": 0.05, "grande": 0.10, "cauda": 0.50}
+CLASSE_ROTULO: dict[str, str] = {"stable": "stable/stable", "grande_stable": "grande/stable",
+                                 "grande": "grande/grande", "cauda": "cauda longa"}
+# Volume suspeito: pool nova girando demais vai para Pendentes antes dos 3 dias
+# seguidos de 50× que a barram.
+SUSPEITO_IDADE_DIAS = 30
+SUSPEITO_RAZAO = 20.0
 
 _TAXA_FIXA_V2 = {"uniswap-v2": 0.3, "sushiswap": 0.3}
 _TAXA_EM_BP = {"cetus-clmm", "cetus-amm"}

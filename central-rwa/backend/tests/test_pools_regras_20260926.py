@@ -20,7 +20,9 @@ def test_corte_razao_inclusivo_com_tvl_minimo():
 
 
 def test_dados_incompletos_nao_significam_meme():
-    assert trilho(pool(), [None, None], [], NOW)[0] == 'solida'
+    # sem dados o token vai para Pendentes como "token fraco" (07/10) — nunca como meme
+    t, m = trilho(pool(), [None, None], [], NOW)
+    assert t == 'caca' and 'token fraco' in m[0] and 'meme' not in m[0]
 
 
 def test_meme_so_pendente_acima_de_dois():
@@ -31,7 +33,7 @@ def test_meme_so_pendente_acima_de_dois():
 def test_segunda_fonte_incompleta_nao_muda_trilho():
     p = pool()
     p.sinais['conferencia'] = {'estado': 'nao_confirmada'}
-    assert trilho(p, [None, None], [], NOW)[0] == 'solida'
+    assert trilho(p, [None, None], [], NOW) == trilho(pool(), [None, None], [], NOW)
 
 
 def test_tvl_minimo_obrigatorio_inclusive():
