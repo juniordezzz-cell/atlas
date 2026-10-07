@@ -1436,7 +1436,7 @@ function save(){
    servidor — nada é apagado: a casada passa a ser acompanhada pelo
    servidor e a que não casa vira manual. */
 let srv = { carregado:false, doCache:false, em:null, status:[], erro:null, migracao:null };
-let tokensLista = { aprovados:[], bloqueados:[] };
+let tokensLista = { aprovados:[], bloqueados:[], bloqueadosEnd:[] };
 let decisoesPool = window.ScannerServidor ? ScannerServidor.lerDecisoes() : {};
 function trilhoDe(p){ return window.ScannerServidor ? ScannerServidor.trilhoEfetivo(p, tokensLista, decisoesPool) : "solida"; }
 function decidirPool(id, decisao){
@@ -1453,12 +1453,16 @@ function decidirPool(id, decisao){
      Sólidas, nos Pendentes e nas próximas coletas. Rejeitar a elizaOS/USDC
      bloqueia o ELIZAOS, nunca o USDC. Desfazer: clicar no chip do token. */
   if(decisao==='rejeitada'){
-    const alvo = ScannerServidor.tokenAlvo(p.pool).filter(t=>TOKEN_OK.test(t));
-    alvo.forEach(t=>{
-      tokensLista.aprovados = tokensLista.aprovados.filter(x=>x!==t);
-      if(tokensLista.bloqueados.indexOf(t)===-1) tokensLista.bloqueados.push(t);
+    /* pelo contrato (+ ID CoinGecko, que pega as outras redes); sem endereço
+       conhecido, cai no bloqueio pelo nome, como antes */
+    const S = ScannerServidor, alvos = S.bloqueiosDaPool(p);
+    tokensLista.bloqueadosEnd = tokensLista.bloqueadosEnd || [];
+    alvos.forEach(b=>{
+      const k = S.chaveEndereco(b.rede, b.endereco);
+      if(k){ if(!tokensLista.bloqueadosEnd.some(x=>S.chaveEndereco(x.rede,x.endereco)===k)) tokensLista.bloqueadosEnd.push(b); }
+      else if(TOKEN_OK.test(b.simbolo) && tokensLista.bloqueados.indexOf(b.simbolo)===-1) tokensLista.bloqueados.push(b.simbolo);
     });
-    if(alvo.length){ ScannerServidor.gravarTokens(tokensLista); renderListaTokens(); }
+    if(alvos.length){ S.gravarTokens(tokensLista); renderListaTokens(); }
   }
   render(); renderStatus();
 }
@@ -1569,7 +1573,8 @@ function renderListaTokens(){
   const el = document.getElementById("tokLista"); if(!el) return;
   el.replaceChildren();
   const ap = tokensLista.aprovados.filter(t=>TOKEN_OK.test(t)), bl = tokensLista.bloqueados.filter(t=>TOKEN_OK.test(t));
-  if(!ap.length && !bl.length) return;
+  const be = (tokensLista.bloqueadosEnd||[]).filter(b=>b && b.endereco);
+  if(!ap.length && !bl.length && !be.length) return;
   el.append(h("span", {class:"muted2"}, "Sua lista de tokens: "));
   const chip = (t, cls, rot) => {
     const b = h("button", {class:"tokchip "+cls, type:"button", title: rot+" — clique para tirar da sua lista"}, t+" ✕");
@@ -1577,14 +1582,25 @@ function renderListaTokens(){
     return b;
   };
   ap.forEach(t=>el.append(chip(t, "ap", "Aprovação antiga por token: inativa; aprove cada pool")));
-  if(bl.length) el.append(h("span", {class:"muted2"}, " Bloqueados (toda pool com eles some; clique para desbloquear): "));
-  bl.forEach(t=>el.append(chip(t, "bl", "Bloqueado: pools escondidas")));
+  if(bl.length || be.length) el.append(h("span", {class:"muted2"}, " Bloqueados (toda pool com eles some; clique para desbloquear): "));
+  be.forEach(b=>{
+    const rot = b.simbolo + (b.cg ? " · todas as redes" : " · "+b.rede);
+    const btn = h("button", {class:"tokchip bl", type:"button", title:`Contrato ${b.endereco} (${b.rede})${b.cg?" · CoinGecko: "+b.cg:""} — clique para desbloquear`}, rot+" ✕");
+    btn.addEventListener("click", ()=>{
+      const k = ScannerServidor.chaveEndereco(b.rede, b.endereco);
+      tokensLista.bloqueadosEnd = tokensLista.bloqueadosEnd.filter(x=>ScannerServidor.chaveEndereco(x.rede,x.endereco)!==k);
+      ScannerServidor.gravarTokens(tokensLista); render(); renderStatus(); renderListaTokens();
+    });
+    el.append(btn);
+  });
+  bl.forEach(t=>el.append(chip(t, "bl", "Bloqueado pelo nome: pools escondidas")));
 }
 function tokenBtns(p){
   if(!p.servidor || !window.ScannerServidor) return "";
   return (trilhoDe(p)==='caca' ? `<button class="iconbtn pool-aprovar" onclick="decidirPool(${p.id},'aprovada')" title="Aprovar esta pool" aria-label="Aprovar esta pool">✓</button>` : '')
-    + (()=>{ const alvo = ScannerServidor.tokenAlvo(p.pool);
-        const tit = alvo.length ? `Rejeitar e bloquear ${alvo.join(" e ")}: toda pool com ${alvo.length>1?"esses tokens":"esse token"} sai da lista, inclusive nas próximas coletas` : "Rejeitar esta pool e manter fora das atualizações";
+    + (()=>{ const alvo = ScannerServidor.bloqueiosDaPool(p);
+        const comoBloq = b=> b.endereco ? (b.cg ? `${b.simbolo} (este contrato e o mesmo token oficial em todas as redes)` : `${b.simbolo} (este contrato, na ${b.rede})`) : `${b.simbolo} (pelo nome)`;
+        const tit = alvo.length ? `Rejeitar e bloquear ${alvo.map(comoBloq).join(" e ")}: toda pool com ele sai da lista, inclusive nas próximas coletas` : "Rejeitar esta pool e manter fora das atualizações";
         return `<button class="iconbtn pool-rejeitar" onclick="decidirPool(${p.id},'rejeitada')" title="${esc(tit)}" aria-label="${esc(tit)}">✕</button>`; })();
 }
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
@@ -2896,7 +2912,7 @@ function importJSON(ev){
           Object.keys(bruto.marcas||{}).forEach(k=>{ const v=bruto.marcas[k]||{}; m[String(k)] = {fav:!!v.fav, level: v.level?String(v.level):null, notes:String(v.notes||"")}; });
           S.gravarMarcas(m);
           const t = bruto.tokens||{};
-          tokensLista = { aprovados:(t.aprovados||[]).map(String), bloqueados:(t.bloqueados||[]).map(String) };
+          tokensLista = { aprovados:(t.aprovados||[]).map(String), bloqueados:(t.bloqueados||[]).map(String), bloqueadosEnd:(Array.isArray(t.bloqueadosEnd)?t.bloqueadosEnd:[]).filter(b=>b&&b.endereco&&b.rede).map(b=>({simbolo:String(b.simbolo||''),rede:String(b.rede),endereco:String(b.endereco),cg:b.cg?String(b.cg):null})) };
           S.gravarTokens(tokensLista);
           if(bruto.decisoes && typeof bruto.decisoes === "object" && !Array.isArray(bruto.decisoes)){
             decisoesPool = Object.fromEntries(Object.entries(bruto.decisoes).filter(([k,v])=>["aprovada","rejeitada"].includes(v)));

@@ -97,6 +97,9 @@
       criadaEm: row.criada_em ? Date.parse(row.criada_em) : null,
       varTvl7d: row.var_tvl_7d == null ? null : Number(row.var_tvl_7d),
       leituras: Number(row.leituras) || 0,
+      /* contrato e ID CoinGecko de cada lado: o ✕ bloqueia por eles */
+      tokens: [{ simbolo: String(row.simbolo_a || "").toUpperCase(), endereco: row.token_a || null, cg: row.cg_a || null },
+               { simbolo: String(row.simbolo_b || "").toUpperCase(), endereco: row.token_b || null, cg: row.cg_b || null }],
       history: [],
       fav: !!marca.fav,
       notes: marca.notes || ""
@@ -129,6 +132,33 @@
     }
     return p.sid || 'manual:' + p.id;
   }
+  /* ---------- bloqueio por contrato (07/10/2026) ----------
+     O ✕ grava o token pelo endereço na rede e, se tiver, pelo ID CoinGecko.
+     Endereço separa o oficial de uma cópia com o mesmo nome; o ID pega o
+     mesmo token oficial nas outras redes (cada rede tem outro endereço). */
+  function chaveEndereco(rede, endereco) {
+    if (!endereco) return null;
+    var e = String(endereco);
+    if (rede !== "Solana" && rede !== "Sui") e = e.toLowerCase();
+    return rede + ":" + e;
+  }
+  /* os tokens desta pool que o ✕ bloquearia: o lado que não é major/stable */
+  function bloqueiosDaPool(p) {
+    var alvo = tokenAlvo(p.pool);
+    return (p.tokens || []).filter(function (t) { return t && alvo.indexOf(t.simbolo) !== -1; })
+      .map(function (t) { return { simbolo: t.simbolo, rede: p.network, endereco: t.endereco || null, cg: t.cg || null }; });
+  }
+  function bloqueadaPorEndereco(p, lista) {
+    if (!lista.length || !p.tokens) return false;
+    var chaves = {}, cgs = {};
+    lista.forEach(function (b) { var k = chaveEndereco(b.rede, b.endereco); if (k) chaves[k] = 1; if (b.cg) cgs[b.cg] = 1; });
+    return p.tokens.some(function (t) {
+      if (!t) return false;
+      var k = chaveEndereco(p.network, t.endereco);
+      return (k && chaves[k]) || (t.cg && cgs[t.cg]);
+    });
+  }
+
   function trilhoEfetivo(p, lista, decisoes) {
     var r = Number(p.tvl) > 0 ? Number(p.vol24h) / Number(p.tvl) : 0;
     if (!Number.isFinite(Number(p.tvl)) || Number(p.tvl) < 100000 || !Number.isFinite(r) || r <= 0.50 || p.trilho === 'barrada') return 'oculta';
@@ -140,6 +170,7 @@
     var alvo = tokenAlvo(p.pool);
     var bloq = (lista && lista.bloqueados) || [];
     if (alvo.some(function (t) { return bloq.indexOf(t) !== -1; })) return "oculta";
+    if (bloqueadaPorEndereco(p, (lista && lista.bloqueadosEnd) || [])) return "oculta";
     if (d === 'aprovada') return 'solida';
     /* lista de memecoins incompleta na coleta: token não conferido não é
        "sem memecoin" — vai para Pendentes até uma coleta completa */
@@ -263,7 +294,8 @@
     carregar: carregar, historico: historico, historicoDiario: historicoDiario, snapshots: snapshots,
     lerMarcas: function () { return lerJSON(MARCAS_KEY, {}); },
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
-    lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [] }; },
+    lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [], bloqueadosEnd: t.bloqueadosEnd || [] }; },
+    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco,
     gravarTokens: function (t) { gravarJSON(TOKENS_KEY, t); },
     lerDecisoes: function () { return lerJSON(DECISOES_KEY, {}); },
     gravarDecisoes: function (d) { gravarJSON(DECISOES_KEY, d); },

@@ -93,3 +93,17 @@ test('TVL mínimo obrigatório em cache, manuais e aprovadas', () => {
   const a={...p(),tvl:100000,vol24h:100000};
   assert.equal(S.trilhoEfetivo(a,{}),'solida');
 });
+test('✕ bloqueia pelo contrato e pelo ID CoinGecko, não pelo nome', () => {
+  const S=load();
+  const mk=(rede,end,cg,sid)=>({...p(3,false,sid), network:rede, pool:'ELIZAOS/USDC',
+    tokens:[{simbolo:'ELIZAOS',endereco:end,cg},{simbolo:'USDC',endereco:'0xusdc',cg:'usd-coin'}]});
+  const oficialBsc=mk('BNB Chain','0xABC','elizaos','gecko:bsc:0x1');
+  const lista={bloqueados:[],bloqueadosEnd:S.bloqueiosDaPool(oficialBsc)};
+  assert.equal(lista.bloqueadosEnd[0].endereco,'0xABC');assert.equal(lista.bloqueadosEnd[0].cg,'elizaos');
+  assert.equal(S.trilhoEfetivo(oficialBsc,lista),'oculta');                                   // o próprio contrato
+  assert.equal(S.trilhoEfetivo(mk('BNB Chain','0xabc',null,'gecko:bsc:0x2'),lista),'oculta');  // mesmo contrato, outra pool
+  assert.equal(S.trilhoEfetivo(mk('Solana','Eliza111',"elizaos",'gecko:sol:0x3'),lista),'oculta'); // oficial em outra rede
+  assert.equal(S.trilhoEfetivo(mk('Base','0xcopia',null,'gecko:base:0x4'),lista),'solida');    // cópia com o mesmo nome
+  // o USDC do par nunca entra no bloqueio
+  assert.ok(!lista.bloqueadosEnd.some(b=>b.simbolo==='USDC'));
+});
