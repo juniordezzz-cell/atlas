@@ -10,7 +10,7 @@ function load() {
   return window.ScannerServidor;
 }
 const p = (r=3, meme=false, sid='gecko:base:0x1') => ({sid, servidor:true, network:'Base',
-  pool:'UNI/WETH', tvl:100000, vol24h:100000*r, trilho:'caca', sinais:{memecoin:{detectada:meme}}});
+  pool:'UNI/WETH', tvl:100000, vol24h:100000*r, trilho:'caca', sinais:{memecoin:{detectada:meme}, classe_par:'cauda'}});
 test('legado sem meme entra em Sólidas; cortes inclusivos', () => {
   const S=load();
   assert.equal(S.trilhoEfetivo(p(),{}), 'solida');
@@ -106,4 +106,8 @@ test('✕ bloqueia pelo contrato e pelo ID CoinGecko, não pelo nome', () => {
   assert.equal(S.trilhoEfetivo(mk('Base','0xcopia',null,'gecko:base:0x4'),lista),'solida');    // cópia com o mesmo nome
   // o USDC do par nunca entra no bloqueio
   assert.ok(!lista.bloqueadosEnd.some(b=>b.simbolo==='USDC'));
+});
+test('pool classificada antes das regras de 07/10 (sem classe_par) não fica nas Sólidas', () => {
+  const S=load(), x=p(); delete x.sinais.classe_par; x.trilho='solida';
+  assert.equal(S.trilhoEfetivo(x,{}), 'caca');
 });

@@ -179,7 +179,10 @@
        suspeito e rendimento abaixo do mínimo da classe — sempre com motivo.
        `caca` sem motivo é legado do schema e continua valendo como Sólida. */
     var comMotivo = p.trilho === 'caca' && Array.isArray(p.motivos) && p.motivos.length > 0;
-    return (meme || naoVerificada || comMotivo) ? 'caca' : 'solida';
+    /* sem classe_par = classificada antes das regras de 07/10 (a pool não
+       foi lida desde então): não pode ficar nas Sólidas com a regra velha */
+    var regraVelha = !(p.sinais || {}).classe_par;
+    return (meme || naoVerificada || comMotivo || regraVelha) ? 'caca' : 'solida';
   }
 
   /* ---------- transição das pools gravadas no navegador ----------

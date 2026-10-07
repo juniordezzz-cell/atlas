@@ -1884,7 +1884,8 @@ function sinaisHTML(p){
   if(!p.servidor || trilhoDe(p)!=="caca") return "";
   const s = p.sinais || {}, it = [];
   /* por que está aqui: o motivo que o coletor gravou */
-  const motivo = (p.motivos||[])[0] ? `<div class="sinais motivo">${esc(p.motivos[0])}</div>` : "";
+  const textoMotivo = (p.motivos||[])[0] || (!s.classe_par ? "classificada antes das regras de 07/10: aguarda a próxima coleta que ler esta pool" : "");
+  const motivo = textoMotivo ? `<div class="sinais motivo">${esc(textoMotivo)}</div>` : "";
   if(p.criadaEm) it.push(`pool de ${Math.max(0,Math.floor((Date.now()-p.criadaEm)/86400000))} dias`);
   if(s.mcap) it.push(`mcap ${fUSD(s.mcap)}`);
   if(s.variacao_24h!=null) it.push(`24h ${s.variacao_24h>0?"+":""}${Number(s.variacao_24h).toLocaleString("pt-BR",{maximumFractionDigits:1})}%`);
