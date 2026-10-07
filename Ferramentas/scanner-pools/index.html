@@ -751,6 +751,7 @@
       <option value="1000000">TVL mín: $1 mi</option>
     </select>
     <label class="chk"><input type="checkbox" id="fRule2" onchange="state.page=1; render()"> Razão ≥ 2×</label>
+    <label class="chk" title="TVL subiu 10% ou mais em 7 dias, com volume de pelo menos 1× o TVL e 3 leituras ou mais. Ordena pelo maior crescimento."><input type="checkbox" id="fCresce" onchange="state.page=1; if(this.checked){state.sortKey='trend'; state.sortDir='desc';} render()"> Em crescimento</label>
     <div class="spacer"></div>
     <button class="ghost addbtn" onclick="openForm()" title="Registrar uma pool que o servidor não acompanha">+ Pool manual</button>
   </div>
@@ -1745,6 +1746,11 @@ function render(){
   if(q) list = list.filter(p=>p.pool.toLowerCase().includes(q));
   // regra 2x
   if(document.getElementById("fRule2").checked) list = list.filter(p=>ratio(p)>=2);
+  // em crescimento: TVL entrando de verdade, com volume acompanhando — não um pico
+  if(document.getElementById("fCresce")?.checked) list = list.filter(p=>{
+    const t = trendOf(p);
+    return t!=null && t>=10 && ratio(p)>=1 && (!p.servidor || (p.leituras||0)>=3);
+  });
   // TVL mínimo (esconde degen de liquidez baixa)
   const tvlMin = Math.max(100000, parseFloat(document.getElementById("fTvlMin").value)||100000);
   if(tvlMin>0) list = list.filter(p=>p.tvl>=tvlMin);
