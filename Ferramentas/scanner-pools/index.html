@@ -676,9 +676,22 @@
   select{color-scheme:dark}
   select option,select optgroup{background:#111827; color:#e6ecf5}
   select option:checked{background:#26324d; color:#fff}
-  .pool-aprovar{color:#2ec785;border-color:#2ec785;min-width:36px;min-height:36px}
-  .pool-rejeitar{color:#f0556a;border-color:#f0556a;min-width:36px;min-height:36px}
+  /* ✓/✕ por pool: discretos como as outras ações, cor só no hover. Com
+     36 px e borda vermelha sempre acesa, a coluna alargava, a tabela passava
+     da largura da área e o ✕ saía cortado pela borda (out/2026). */
+  .pool-aprovar,.pool-rejeitar{min-width:28px;min-height:28px;padding:4px 8px;font-size:12px;line-height:1}
+  .pool-aprovar{color:#2ec785}
+  .pool-rejeitar{color:var(--mut)}
+  .pool-aprovar:hover{background:rgba(46,199,133,.12);color:#2ec785}
+  .pool-rejeitar:hover{background:rgba(240,85,106,.12);color:#f0556a}
   .rowact:has(.pool-rejeitar){opacity:1}
+  /* se ainda faltar espaço, a tabela rola — nunca corta uma coluna */
+  @media (min-width:701px){
+    .tablewrap{overflow-x:auto}   /* no celular a tabela vira cartões */
+    /* 14 colunas: 3 px a menos de cada lado devolvem ~80 px e a tabela
+       volta a caber numa tela de 1.366–1.500 px */
+    .tablewrap thead th,.tablewrap tbody td{padding-left:9px;padding-right:9px}
+  }
 </style>
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
