@@ -94,8 +94,8 @@ STABLES: set[str] = {"USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "U
 # pela classe do par: quanto mais arriscados os ativos, mais a pool tem de
 # pagar. Abaixo disso vai para Pendentes. Régua do dono, 07/10/2026.
 MIN_EFIC_DIA: dict[str, float] = {"stable": 0.01, "grande_stable": 0.05, "grande": 0.10, "cauda": 0.50}
-CLASSE_ROTULO: dict[str, str] = {"stable": "stable/stable", "grande_stable": "grande/stable",
-                                 "grande": "grande/grande", "cauda": "cauda longa"}
+CLASSE_ROTULO: dict[str, str] = {"stable": "stable/stable", "grande_stable": "blue chip ou RWA com stable",
+                                 "grande": "blue chip ou RWA com blue chip ou RWA", "cauda": "par com altcoin ou meme"}
 # Volume suspeito: pool nova girando demais vai para Pendentes antes dos 3 dias
 # seguidos de 50× que a barram.
 SUSPEITO_IDADE_DIAS = 30
@@ -103,8 +103,45 @@ SUSPEITO_RAZAO = 20.0
 
 _TAXA_FIXA_V2 = {"uniswap-v2": 0.3, "sushiswap": 0.3}
 _TAXA_EM_BP = {"cetus-clmm", "cetus-amm"}
-_RWA = re.compile(r"^[A-Z]{1,6}X$")          # xStocks: NVDAx, SPYx... (comparado em maiúsculas)
-RWA_EXTRA: set[str] = {"XAUT", "PAXG", "BUIDL", "USTB", "USYC", "OUSG"}
+RWA_EXTRA: set[str] = {"XAUT", "PAXG", "BUIDL", "USTB", "USYC", "OUSG", "SP500"}
+
+# ---------- categoria de cada token (decisão do dono, 07/10/2026) ----------
+# Blue chip = Bitcoin, Ethereum e Solana (com embrulhados e staking). Stable.
+# RWA = ação/ETF tokenizada e commodity. Meme = memecoin detectada. O resto,
+# inclusive BNB, AVAX e SUI, é altcoin.
+BLUECHIPS: set[str] = {
+    "BTC", "WBTC", "CBBTC", "BTCB", "TBTC",
+    "ETH", "WETH", "WSTETH", "STETH", "CBETH", "RETH", "WEETH",
+    "SOL", "WSOL", "JITOSOL", "MSOL", "BSOL", "JUPSOL", "INF",
+}
+# Tickers de ações e ETFs tokenizados. Com "x" no fim (xStocks: NVDAx,
+# GOOGLX) valem em qualquer rede; sem o "x", também — salvo os AMBIGUOS, que
+# têm cripto homônima (META, GME…) e só contam como ação na rede Robinhood.
+# A regra antiga ("qualquer símbolo terminado em X") pegava GMX, LCX, MYX e
+# SAVAX como ação, e deixava NFLX, RBLX e SPY de fora (07/10/2026).
+ACOES: set[str] = {
+    "AAPL", "AMZN", "GOOGL", "GOOG", "MSFT", "NVDA", "TSLA", "META", "NFLX", "AMD", "INTC", "AVGO",
+    "PLTR", "MSTR", "CRCL", "COIN", "HOOD", "RBLX", "GME", "MCD", "KO", "PEP", "JPM", "V", "MA",
+    "STRC", "SPCX", "TCENT", "BABA", "ORCL", "CRM", "UBER", "ABNB", "DIS", "NKE", "WMT", "COST",
+    "SPY", "QQQ", "IWM", "DIA", "VTI", "VOO", "TBLL",
+}
+ACOES_AMBIGUAS: set[str] = {"META", "GME", "COIN", "AMD", "V", "MA", "KO", "DIS", "DIA"}
+COMMODITIES: set[str] = {"GLD", "SLV", "IAU", "USO", "PAXG", "XAUT", "SP500"}
+
+
+def eh_rwa(simbolo: str, rede: str | None = None) -> bool:
+    s = (simbolo or "").upper()
+    if s in RWA_EXTRA or s in COMMODITIES:
+        return True
+    if s.endswith("X") and len(s) > 2:
+        base = s[:-1]
+        if base.startswith("W") and base[1:] in ACOES:     # wTCENTx: ação embrulhada
+            base = base[1:]
+        if base in ACOES or base in COMMODITIES:
+            return True
+    if s in ACOES and (s not in ACOES_AMBIGUAS or rede == "Robinhood"):
+        return True
+    return False
 
 
 def pretty_project(slug: str) -> str:
@@ -121,8 +158,3 @@ def parse_llama_fee(meta, projeto: str) -> float:
         v = float(m.group(1))
         return v / 100 if p in _TAXA_EM_BP else v
     return _TAXA_FIXA_V2.get(p, 0.0)
-
-
-def eh_rwa(simbolo: str) -> bool:
-    s = (simbolo or "").upper()
-    return bool(_RWA.match(s)) or s in RWA_EXTRA

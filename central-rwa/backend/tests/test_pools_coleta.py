@@ -40,7 +40,10 @@ def test_coleta_real_de_ponta_a_ponta():
     assert r["pre_corte"] > 0
     assert r["solidas"] + r["caca"] + r["barradas"] == r["pre_corte"]
     usdt_wbnb = next(p for p in store.pools.values() if p["par"] == "USDT/WBNB" and p["dex"] == "PancakeSwap")
-    assert usdt_wbnb["trilho"] == "solida" and 0 <= usdt_wbnb["nota"] <= 100
+    # BNB é altcoin desde 07/10: stable/altcoin precisa render 0,5%/dia
+    assert usdt_wbnb["sinais"]["categoria"] == ["stable", "altcoin"]
+    assert usdt_wbnb["sinais"]["classe_par"] == "cauda"
+    assert usdt_wbnb["trilho"] in ("solida", "caca") and 0 <= usdt_wbnb["nota"] <= 100
     assert len(store.leituras_por_pool[usdt_wbnb["id"]]) == 1
 
 

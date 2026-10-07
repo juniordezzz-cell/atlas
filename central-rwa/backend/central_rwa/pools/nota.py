@@ -58,6 +58,17 @@ def _taxa(fee: float) -> float:
     return max(0.2, 0.4 - 0.2 * (fee - 1))                             # 2% ou mais -> 0,2
 
 
+def taxa_inferida(c: Candidata) -> float:
+    """Fee tier estimado quando a fonte não informa (fee 0): o APR de taxas
+    da fonte é fee × razão × 365, então fee ≈ APR ÷ 365 ÷ razão. Sem APR ou
+    sem giro, 0 — e _taxa devolve o valor neutro de taxa desconhecida.
+    Antes a pool perdia até 21 pontos só por a fonte não informar."""
+    r = razao(c)
+    if c.fee > 0 or not c.apr or r <= 0 or c.dex in VE33:
+        return 0.0
+    return round(c.apr / 365 / r, 4)
+
+
 def _rendimento(efic: float) -> float:
     if efic <= 0:
         return 0.0
@@ -105,7 +116,7 @@ def calcular_notas(cands: list[Candidata], leituras_por_pool: dict[str, list[Lei
     for c in cands:
         ls = leituras_por_pool.get(c.id, [])
         comp = {
-            "taxa": round(_taxa(c.fee), 4),
+            "taxa": round(_taxa(c.fee if c.fee > 0 else taxa_inferida(c)), 4),
             "rendimento": round(_rendimento(eficiencia(c)), 4),
             "giro": round(_giro(razao(c)), 4),
             "consistencia": round(_consistencia(ls), 4),

@@ -111,3 +111,18 @@ test('pool classificada antes das regras de 07/10 (sem classe_par) não fica nas
   const S=load(), x=p(); delete x.sinais.classe_par; x.trilho='solida';
   assert.equal(S.trilhoEfetivo(x,{}), 'caca');
 });
+test('categoria da pool: blue chip só BTC/ETH/SOL; BNB e cia são altcoin; ações e ouro são RWA', () => {
+  const S=load(), r=(pool,extra={})=>S.rotuloCategoria({pool, network:'Solana', sinais:{}, ...extra});
+  assert.equal(r('SPCXx/USDC'),'RWA / Stable');
+  assert.equal(r('USDC/NVDAx'),'RWA / Stable');            // stable vai para o fim
+  assert.equal(r('WBTC/WETH'),'Blue chip / Blue chip');
+  assert.equal(r('NEAR/WBNB'),'Altcoin / Altcoin');
+  assert.equal(r('SOL/USDC'),'Blue chip / Stable');
+  assert.equal(r('USDC/USDT'),'Stable / Stable');
+  assert.equal(r('GMX/WETH'),'Altcoin / Blue chip');
+  assert.equal(r('wXIAOx/USDT'),'Altcoin / Stable');
+  assert.equal(r('META/USDC'),'Altcoin / Stable');
+  assert.equal(r('META/USDC',{network:'Robinhood'}),'RWA / Stable');
+  assert.equal(r('FOO/SOL',{sinais:{memecoin:{detectada:true}}}),'Meme / Blue chip');
+  assert.equal(r('FOO/SOL',{sinais:{categoria:['meme','bluechip']}}),'Meme / Blue chip');   // a do coletor vale primeiro
+});

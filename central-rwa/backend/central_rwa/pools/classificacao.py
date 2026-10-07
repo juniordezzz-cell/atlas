@@ -47,7 +47,7 @@ def motivos_barrada(c: Candidata, infos: list[TokenInfo | None], leituras: list[
     return list(dict.fromkeys(m))   # sem repetição, na ordem
 
 
-def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime) -> str | None:
+def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: str | None = None) -> str | None:
     """Por que o token não é sólido, ou None se é. Ligado em 07/10/2026: a
     regra existia desde 23/09 e nunca era chamada — 380 das 680 Sólidas
     tinham token sem cadastro na CoinGecko.
@@ -57,7 +57,7 @@ def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime) -> str
     data da pool), vale a combinação cadastro na CoinGecko + valor de
     mercado; sem contagem de holders, idem."""
     s = (simbolo or "").upper()
-    if s in config.MAJORS or config.eh_rwa(simbolo):
+    if s in config.MAJORS or config.eh_rwa(simbolo, rede):
         return None
     if info is None:
         return f"{s} ainda sem dados de segurança"
@@ -72,29 +72,45 @@ def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime) -> str
     return None
 
 
-def token_solido(simbolo: str, info: TokenInfo | None, agora: datetime) -> bool:
-    return fraqueza_token(simbolo, info, agora) is None
+def token_solido(simbolo: str, info: TokenInfo | None, agora: datetime, rede: str | None = None) -> bool:
+    return fraqueza_token(simbolo, info, agora, rede) is None
 
 
-def classe_token(simbolo: str) -> str:
+def categoria_token(simbolo: str, rede: str | None = None, info: TokenInfo | None = None,
+                    memes: set[str] | frozenset = frozenset()) -> str:
+    """stable · bluechip · rwa · meme · altcoin (decisão do dono, 07/10/2026).
+    Blue chip é só Bitcoin, Ethereum e Solana; BNB, AVAX, SUI… são altcoin.
+    Meme = o ID CoinGecko do token está entre as memecoins detectadas."""
     s = (simbolo or "").upper()
     if s in config.STABLES:
         return "stable"
-    if s in config.MAJORS or config.eh_rwa(simbolo):
-        return "grande"
-    return "outro"
+    if s in config.BLUECHIPS:
+        return "bluechip"
+    if config.eh_rwa(simbolo, rede):
+        return "rwa"
+    if info is not None and info.coingecko_id and info.coingecko_id in memes:
+        return "meme"
+    return "altcoin"
 
 
-def classe_par(c: Candidata) -> str:
-    """stable/stable · grande/stable · grande/grande · cauda longa."""
-    a, b = classe_token(c.token_a.simbolo), classe_token(c.token_b.simbolo)
-    if "outro" in (a, b):
+def categorias(c: Candidata, infos: list[TokenInfo | None] | None = None) -> list[str]:
+    infos = list(infos or []) + [None, None]
+    memes = set((c.sinais.get("memecoin") or {}).get("ids") or [])
+    return [categoria_token(t.simbolo, c.rede, i, memes) for t, i in zip((c.token_a, c.token_b), infos)]
+
+
+def classe_par(c: Candidata, infos: list[TokenInfo | None] | None = None) -> str:
+    """A classe de risco que define o rendimento mínimo:
+    stable/stable · (blue chip|RWA)/stable · (blue chip|RWA)/(blue chip|RWA) ·
+    qualquer par com altcoin ou meme."""
+    a, b = categorias(c, infos)
+    if "altcoin" in (a, b) or "meme" in (a, b):
         return "cauda"
     if a == b == "stable":
         return "stable"
-    if a == b == "grande":
-        return "grande"
-    return "grande_stable"
+    if "stable" in (a, b):
+        return "grande_stable"
+    return "grande"
 
 
 def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura], agora: datetime) -> tuple[str, list[str]]:
@@ -111,13 +127,13 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
     if meme.get("estado") == "nao_verificada":
         return "caca", ["memecoin não verificada: a lista da CoinGecko veio incompleta nesta coleta"]
     fracos = [m for t, i in zip((c.token_a, c.token_b), list(infos) + [None, None])
-              if (m := fraqueza_token(t.simbolo, i, agora))]
+              if (m := fraqueza_token(t.simbolo, i, agora, c.rede))]
     if fracos:
         return "caca", ["token fraco: " + "; ".join(fracos)]
     r = c.vol_24h / c.tvl
     if c.criada_em is not None and (agora - c.criada_em).days < config.SUSPEITO_IDADE_DIAS and r > config.SUSPEITO_RAZAO:
         return "caca", [f"volume suspeito: pool com {(agora - c.criada_em).days} dias girando {r:.0f}× o TVL"]
-    classe = classe_par(c)
+    classe = classe_par(c, infos)
     minimo = config.MIN_EFIC_DIA[classe]
     efic = eficiencia(c)
     if efic < minimo:

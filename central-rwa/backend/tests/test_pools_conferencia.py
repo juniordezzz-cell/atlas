@@ -134,3 +134,27 @@ def test_coleta_de_ponta_a_ponta_grava_o_numero_conferido():
     assert llamas and all(p["trilho"] == "solida" for p in llamas)  # sem confirmação não é meme
     assert all(p["sinais"]["conferencia"]["estado"] == "nao_confirmada"
                for p in llamas if "conferencia" in p["sinais"])
+
+
+def test_taxa_nao_informada_e_preenchida_pela_segunda_fonte():
+    # DefiLlama manda 0 (não informada) para várias pools da Orca; a GeckoTerminal traz o tier no nome
+    c = llama("orca-dex", 0, 30_000_000, 120_000_000, apr=60.0, par="SOL/USDC", dex="Orca")
+    g = cf.PoolGecko(dex="orca", fee=0.04, tvl=30_100_000, vol_24h=118_000_000, endereco="Czfq")
+    cf.aplicar(c, g)
+    assert c.fee == 0.04 and c.sinais["conferencia"]["ajustes"]
+    # taxa dinâmica (Aerodrome): o nome mente (0,6% vs 0,075% efetivo) — 0 continua
+    # "não informada" e a nota estima pela APR
+    a = llama("aerodrome-slipstream", 0, 1_600_000, 7_000_000, apr=50.0, par="AERO/CBBTC", dex="Aerodrome")
+    cf.aplicar(a, cf.PoolGecko(dex="aerodrome-slipstream", fee=0.6, tvl=1_610_000, vol_24h=7_100_000, endereco="0xdfe5"))
+    assert a.fee == 0
+
+
+def test_taxa_nao_informada_e_conferida_primeiro():
+    sem_fee = llama("orca-dex", 0, 500_000, 2_000_000, apr=80.0, par="SOL/ZEUS", dex="Orca")
+    boa = llama("uniswap-v3", 1.0, 500_000, 5_000_000, par="ETH/USDC")
+    vistos = []
+    class Cli:
+        def gecko_busca(self, net, par):
+            vistos.append(par); return None
+    cf.conferir(Cli(), [boa, sem_fee], {"Base": "base"}, max_pares=1)
+    assert vistos == ["SOL ZEUS"]

@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from time import perf_counter
 
 from . import config
-from .classificacao import classe_par, passa_pre_corte, trilho
+from .classificacao import categorias, classe_par, passa_pre_corte, trilho
 from .conferencia import conferir
 from .fontes import parse_gecko_pools, parse_llama, parse_token_info, parse_tokens_multi
 from .fontes_diretas import parse_orca, parse_raydium
@@ -204,7 +204,8 @@ def coletar(cli, store, agora: datetime) -> dict:
             for t in (c.token_a, c.token_b)
         ]
         identificar(c, par_infos, meme_ids, getattr(cli, 'meme_cobertura_ate', None))
-        c.sinais['classe_par'] = classe_par(c)
+        c.sinais['categoria'] = categorias(c, par_infos)
+        c.sinais['classe_par'] = classe_par(c, par_infos)
         t, motivos = trilho(c, par_infos, leituras.get(c.id, []), agora)
         nota, comp = notas[c.id]
         finais.append(PoolFinal(c, t, motivos, nota, comp))

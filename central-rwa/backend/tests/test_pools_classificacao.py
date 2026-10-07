@@ -58,7 +58,7 @@ def test_token_solido():
 
 
 def test_trilho():
-    assert trilho(cand("WBNB/USDT"), [None, None], [], AGORA) == ("solida", [])
+    assert trilho(cand("WETH/USDT"), [None, None], [], AGORA) == ("solida", [])
     t, m = trilho(cand("FOO/USDT"), [info(dias=5), None], [], AGORA)
     assert t == "caca" and "token fraco" in m[0] and "menos de 30 dias" in m[0]   # token novo vai para Pendentes
     assert trilho(cand("FOO/USDT", vol=1_500_000), [info(), None], [], AGORA) == ("solida", [])   # 0,75%/dia
@@ -76,15 +76,17 @@ def test_token_fraco_vai_para_pendentes_com_motivo():
 def test_rendimento_minimo_pela_classe_do_par():
     from central_rwa.pools.classificacao import classe_par
     assert classe_par(cand("USDC/USDT")) == "stable"
-    assert classe_par(cand("WBNB/USDT")) == "grande_stable"
-    assert classe_par(cand("WBNB/WETH")) == "grande"
+    assert classe_par(cand("WETH/USDT")) == "grande_stable"
+    assert classe_par(cand("NVDAx/USDC")) == "grande_stable"     # RWA com stable
+    assert classe_par(cand("WBTC/WETH")) == "grande"
+    assert classe_par(cand("WBNB/USDT")) == "cauda"              # BNB é altcoin (07/10)
     assert classe_par(cand("FOO/USDT")) == "cauda"
     # cauda longa precisa de 0,5%/dia
     baixa = cand("FOO/USDT", fee=0.25, tvl=500_000, vol=600_000)          # 0,25 × 1,2 = 0,30%/dia
     t, m = trilho(baixa, [info(), None], [], AGORA)
-    assert t == "caca" and "abaixo do mínimo de 0.5%/dia para cauda longa" in m[0]
+    assert t == "caca" and "abaixo do mínimo de 0.5%/dia para par com altcoin ou meme" in m[0]
     # a mesma eficiência basta para grande/stable (mínimo 0,05%/dia)
-    assert trilho(cand("WBNB/USDT", fee=0.25, vol=600_000), [None, None], [], AGORA) == ("solida", [])
+    assert trilho(cand("WETH/USDT", fee=0.25, vol=600_000), [None, None], [], AGORA) == ("solida", [])
     # stable/stable com 0,01% × 1,2 = 0,012%/dia passa; 0,005% × 1,2 não
     assert trilho(cand("USDC/USDT", fee=0.01, vol=600_000), [None, None], [], AGORA)[0] == "solida"
     assert trilho(cand("USDC/USDT", fee=0.005, vol=600_000), [None, None], [], AGORA)[0] == "caca"
@@ -97,3 +99,28 @@ def test_volume_suspeito_em_pool_nova():
     assert t == "caca" and "volume suspeito" in m[0]
     c.criada_em = AGORA - timedelta(days=60)                 # pool antiga com giro alto: segue
     assert trilho(c, [None, None], [], AGORA)[0] == "solida"
+
+
+def test_categoria_de_cada_token():
+    from central_rwa.pools.classificacao import categoria_token, categorias
+    assert categoria_token("USDC") == "stable"
+    for t in ("WBTC", "cbBTC", "WETH", "SOL", "JitoSOL"):
+        assert categoria_token(t) == "bluechip", t
+    for t in ("WBNB", "AVAX", "SUI", "NEAR", "AERO", "GMX", "LCX", "MYX", "SAVAX", "wXIAOx"):
+        assert categoria_token(t) == "altcoin", t
+    for t in ("NVDAx", "GOOGLX", "SPCXx", "SPCX", "wTCENTx", "GLDx", "XAUt", "PAXG", "SP500", "NFLX", "RBLX"):
+        assert categoria_token(t) == "rwa", t
+    assert categoria_token("META") == "altcoin"                    # cripto homônima fora da Robinhood
+    assert categoria_token("META", "Robinhood") == "rwa"
+    assert categoria_token("SPY", "Robinhood") == "rwa"
+    c = cand("FOO/USDT"); c.sinais["memecoin"] = {"detectada": True, "ids": ["foo"]}
+    assert categorias(c, [info(cg="foo"), None]) == ["meme", "stable"]
+
+
+def test_taxa_nao_informada_e_estimada_pelo_apr():
+    from central_rwa.pools.nota import calcular_notas, taxa_inferida
+    c = cand("WETH/USDT", fee=0, vol=1_000_000, apr=182.5)        # razão 2 → fee ≈ 182,5/365/2 = 0,25%
+    assert taxa_inferida(c) == 0.25
+    sem = cand("WETH/USDT", fee=0, vol=1_000_000)
+    assert calcular_notas([c], {})[c.id][1]["taxa"] == 1.0           # 0,25% é o ponto bom
+    assert calcular_notas([sem], {})[sem.id][1]["taxa"] == 0.3       # sem APR: neutro, como antes

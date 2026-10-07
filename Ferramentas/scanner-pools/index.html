@@ -680,6 +680,8 @@
      36 px e borda vermelha sempre acesa, a coluna alargava, a tabela passava
      da largura da área e o ✕ saía cortado pela borda (out/2026). */
   .sinais.motivo{color:var(--amber)}
+  /* "Blue chip / Blue chip" quebra em duas linhas em vez de alargar a tabela */
+  .catbadge{display:inline-block; white-space:normal; max-width:92px; line-height:1.3; text-align:center; font-size:11px}
   .pool-aprovar,.pool-rejeitar{min-width:28px;min-height:28px;padding:4px 8px;font-size:12px;line-height:1}
   .pool-aprovar{color:#2ec785}
   .pool-rejeitar{color:var(--mut)}
@@ -736,12 +738,11 @@
     <select id="fPlat" onchange="setPlatform(this.value)" aria-label="Plataforma"></select>
     <select id="fCat" onchange="state.page=1; render()" aria-label="Categoria">
       <option value="Todas">Toda categoria</option>
-      <option value="Stable">Stable</option>
-      <option value="Blue-chip">Blue-chip</option>
-      <option value="RWA">RWA</option>
-      <option value="Memecoin">Memecoin</option>
-      <option value="DeFi">DeFi</option>
-      <option value="?">❓ A confirmar</option>
+      <option value="Stable / Stable">Stable / Stable</option>
+      <option value="Blue chip">Com blue chip</option>
+      <option value="RWA">Com RWA</option>
+      <option value="Altcoin">Com altcoin</option>
+      <option value="Meme">Com meme</option>
     </select>
     <select id="fTvlMin" onchange="state.page=1; render()">
 
@@ -858,7 +859,7 @@
             <tr><td class="tk">Pré-corte</td><td>Volume real de 24h ÷ TVL > 0,50. TVL ≥ US$ 100 mil é obrigatório na coleta e na tela</td><td>Razão ≤ 0,50 elimina; TVL abaixo de US$ 100 mil elimina, inclusive pools manuais e dados em cache</td></tr>
             <tr><td class="tk">Segurança</td><td>Some sem exceção: honeypot, mint ou freeze ativos, desenvolvedor com mais de 20%, pool sem taxa e sem APR, APR acima de 10.000%, volume/TVL acima de 50× por 3 dias seguidos</td><td>Golpe, token que o criador pode imprimir ou congelar, ou volume fabricado</td></tr>
             <tr><td class="tk">Sólidas</td><td>Pools elegíveis com tokens sólidos, que pagam o mínimo da classe do par, ou aprovadas individualmente por você</td><td>Lista principal; dados incompletos não garantem segurança</td></tr>
-            <tr><td class="tk">Pendentes de análise</td><td>Memecoin identificada pelo ID CoinGecko (razão > 2,00); <b>token fraco</b> — sem cadastro na CoinGecko, valor de mercado abaixo de US$ 10 mi, menos de 30 dias ou menos de 1.000 holders (majors, stables e RWA isentos); <b>volume suspeito</b> — pool com menos de 30 dias girando mais de 20× o TVL; <b>rendimento abaixo do mínimo</b> da classe do par — stable/stable 0,01%, grande/stable 0,05%, grande/grande 0,1% e cauda longa 0,5% ao dia</td><td>Sem decisão permanece pendente; o motivo aparece embaixo do par. Meme com razão ≤ 2,00 elimina mesmo se aprovada</td></tr>
+            <tr><td class="tk">Pendentes de análise</td><td>Memecoin identificada pelo ID CoinGecko (razão > 2,00); <b>token fraco</b> — sem cadastro na CoinGecko, valor de mercado abaixo de US$ 10 mi, menos de 30 dias ou menos de 1.000 holders (majors, stables e RWA isentos); <b>volume suspeito</b> — pool com menos de 30 dias girando mais de 20× o TVL; <b>rendimento abaixo do mínimo</b> da categoria do par — Stable / Stable 0,01%, blue chip ou RWA com stable 0,05%, blue chip ou RWA entre si 0,1% e qualquer par com altcoin ou meme 0,5% ao dia (tópico 6)</td><td>Sem decisão permanece pendente; o motivo aparece embaixo do par. Meme com razão ≤ 2,00 elimina mesmo se aprovada</td></tr>
             <tr><td class="tk">Sua lista</td><td><b>✓ verde</b> aprova somente esta pool; <b>✕ vermelho</b> rejeita somente esta pool e impede que volte nas atualizações</td><td>Decisões persistem neste navegador e no backup; não contornam os cortes nem a segurança</td></tr>
           </tbody>
         </table>
@@ -984,15 +985,14 @@
     <div class="lsec" id="sec6">
       <div class="lnum">6</div>
       <div class="lbody">
-        <h3>As 6 categorias — natureza e risco</h3>
-        <p>Razão e taxa dizem <i>quanto rende</i>. A categoria diz <i>se vale o risco</i>. Um número não distingue um ETF tokenizado de uma memecoin — essa camada é classificada à mão.</p>
+        <h3>As categorias — natureza e risco</h3>
+        <p>Razão e taxa dizem <i>quanto rende</i>. A categoria diz <i>se vale o risco</i>. Cada token do par recebe uma categoria e a pool mostra as duas — <b>RWA / Stable</b>, <b>Blue chip / Blue chip</b>, <b>Altcoin / Altcoin</b>. Quanto mais arriscado o par, mais ele tem de render para ficar nas Sólidas.</p>
         <div class="catlist">
-          <div class="catrow" style="border-left-color:#3aa0ff"><div class="cathead"><b style="color:#3aa0ff">Stable</b><span class="risk risk-low">Risco baixo</span></div><p>Par stable/stable. IL ~zero. Taxa baixa, mas seguro e previsível.<br><span class="ex">Ex: USDC/USDT, syrupUSDG/USDG</span></p></div>
-          <div class="catrow" style="border-left-color:#2ec785"><div class="cathead"><b style="color:#2ec785">Blue-chip</b><span class="risk risk-mod">Risco moderado</span></div><p>BTC, ETH, SOL, BNB e wrappers. Consolidados. A base de qualquer portfólio de LP.<br><span class="ex">Ex: SOL-USDC, ETH/USDC, WBTC/ETH, cbBTC/USDC, ZEC/USDC</span></p></div>
-          <div class="catrow" style="border-left-color:#a97bff"><div class="cathead"><b style="color:#a97bff">RWA</b><span class="risk risk-mod">Risco moderado</span></div><p>Ação/ETF/índice tokenizado, lastreado 1:1 em ativo real. Fundamento fora da cripto.<br><span class="ex">Ex: QQQB (ETF QQQ), SNDK (SanDisk), HOODx, TSLAx, NVDAx, COINx, CRCLx</span></p></div>
-          <div class="catrow" style="border-left-color:#f5943b"><div class="cathead"><b style="color:#f5943b">Memecoin</b><span class="risk risk-high">Risco alto</span></div><p>Sem fundamento técnico, movido por hype. Taxa gorda, mas o <b>IL morde forte</b>.<br><span class="ex">Ex: KOMA, BOME, PUMP, PIPEDOG, CASHCAT, STONKBROKER, BALD, DINO, PENGU</span></p></div>
-          <div class="catrow" style="border-left-color:#22c7c7"><div class="cathead"><b style="color:#22c7c7">DeFi</b><span class="risk risk-high">Risco médio-alto</span></div><p>Tokens de protocolo/infra. Ligados à saúde do projeto e a token unlocks.<br><span class="ex">Ex: CAKE (PancakeSwap), HYPE (Hyperliquid), VIRTUAL (IA)</span></p></div>
-          <div class="catrow" style="border-left-color:#7d8aa0"><div class="cathead"><b style="color:#7d8aa0">❓ A confirmar</b><span class="risk risk-unk">Desconhecido</span></div><p>Token ainda não verificado. <b>Nunca se chuta</b> — sem saber o que é, não dá pra avaliar o risco.<br><span class="ex">Ex: SKHY, CARDS, SOL-READY, UB, ARK, IBS, PONS, RAIN, WYT</span></p></div>
+          <div class="catrow" style="border-left-color:#3aa0ff"><div class="cathead"><b style="color:#3aa0ff">Stable</b><span class="risk risk-low">Risco baixo</span></div><p>Dólar tokenizado. Stable / Stable tem IL ~zero; mínimo de <b>0,01% ao dia</b>.<br><span class="ex">Ex: USDC, USDT, DAI, USDe, USDG</span></p></div>
+          <div class="catrow" style="border-left-color:#2ec785"><div class="cathead"><b style="color:#2ec785">Blue chip</b><span class="risk risk-mod">Risco moderado</span></div><p>Só Bitcoin, Ethereum e Solana, com as versões embrulhadas e de staking. Com stable: mínimo de <b>0,05% ao dia</b>; com outro blue chip ou RWA: <b>0,1%</b>.<br><span class="ex">Ex: WBTC, cbBTC, WETH, stETH, SOL, jitoSOL</span></p></div>
+          <div class="catrow" style="border-left-color:#a97bff"><div class="cathead"><b style="color:#a97bff">RWA</b><span class="risk risk-mod">Risco moderado</span></div><p>Ação, ETF ou commodity tokenizada — o ticker com "x" no fim (xStocks) ou, na rede Robinhood, o próprio ticker. Mesmos mínimos do blue chip.<br><span class="ex">Ex: SPCXx (SpaceX), NVDAx, GOOGLx, SPY, QQQ, ouro (PAXG, XAUT, GLDx)</span></p></div>
+          <div class="catrow" style="border-left-color:#c9a227"><div class="cathead"><b style="color:#c9a227">Altcoin</b><span class="risk risk-high">Risco alto</span></div><p>Todo o resto — inclusive BNB, AVAX, SUI, NEAR, AERO. Par com altcoin precisa de <b>0,5% ao dia</b>, e o token tem de ter cadastro na CoinGecko, US$ 10 mi de valor de mercado e 30 dias de vida.<br><span class="ex">Ex: WBNB, AVAX, NEAR, AERO, ZRO, GMX</span></p></div>
+          <div class="catrow" style="border-left-color:#f5943b"><div class="cathead"><b style="color:#f5943b">Meme</b><span class="risk risk-high">Risco alto</span></div><p>Memecoin identificada pelo ID CoinGecko. Vai para Pendentes de análise; o ✕ bloqueia o token para sempre.<br><span class="ex">Ex: PEPE, BONK, PUMP, KOMA</span></p></div>
         </div>
       </div>
     </div>
@@ -1173,7 +1173,7 @@
           <tbody>
             <tr><td class="tk">TVL</td><td>Total Value Locked. Capital total depositado na pool.</td></tr>
             <tr><td class="tk">Fee tier</td><td>Taxa cobrada por swap (0,01% a 1%). Fonte do rendimento do LP.</td></tr>
-            <tr><td class="tk">Razão (Vol/TVL)</td><td>Volume do dia (últimas 24h) ÷ TVL. Quantas vezes o capital gira por dia. Tem que passar de 1×.</td></tr>
+            <tr><td class="tk">Razão (Vol/TVL)</td><td>Volume do dia (últimas 24h) ÷ TVL. Quantas vezes o capital gira por dia. Para entrar no Scanner tem que passar de 0,50; acima de 1× o volume já supera o capital preso.</td></tr>
             <tr><td class="tk">Eficiência</td><td>Fee × Razão. Rendimento real de taxas por dia. A maior parte da nota.</td></tr>
             <tr><td class="tk">Nota</td><td>0 a 100: taxa 30%, giro 30%, rendimento 20%, consistência 10%, TVL 5%, tendência 5%. Ordena as listas (tópico 16).</td></tr>
             <tr><td class="tk">APR</td><td>Annual Percentage Rate. Retorno anual sem juros compostos.</td></tr>
@@ -1713,7 +1713,24 @@ function autoCat(pool){
   if(up.some(isRwa) && up.some(t=>isStable(t)||isMajor(t))) return "RWA";
   return null;
 }
-function getCat(p){ return p.cat || CAT_MAP[p.pool] || autoCat(p.pool) || "?"; }
+/* Categoria do par por token (07/10/2026): Blue chip (BTC, ETH, SOL), Stable,
+   RWA (ação/ETF/commodity tokenizada), Meme e Altcoin (todo o resto). Vem do
+   coletor (sinais.categoria); pool manual com categoria escolhida mantém a dela. */
+function getCat(p){
+  if(p.cat) return p.cat;
+  if(window.ScannerServidor) return ScannerServidor.rotuloCategoria(p);
+  return CAT_MAP[p.pool] || autoCat(p.pool) || "?";
+}
+/* cor do selo: a do lado mais arriscado do par */
+function catCor(rot){
+  const r = String(rot||"");
+  if(/Meme/.test(r)) return "#f5943b";
+  if(/Altcoin/.test(r)) return "#c9a227";
+  if(/RWA/.test(r)) return "#a97bff";
+  if(/Blue/.test(r)) return "#2ec785";
+  if(/Stable/.test(r)) return "#3aa0ff";
+  return CAT_COLORS[r] || "#7d8aa0";
+}
 
 /* ============ formatação (USD, padrão pt-BR) ============ */
 function fUSD(n){
@@ -1787,7 +1804,7 @@ function render(){
   if(tvlMin>0) list = list.filter(p=>p.tvl>=tvlMin);
   // categoria
   const cat = document.getElementById("fCat").value;
-  if(cat!=="Todas") list = list.filter(p=>getCat(p)===cat);
+  if(cat!=="Todas") list = list.filter(p=>{ const r = getCat(p); return cat==="Stable / Stable" ? r===cat : r.includes(cat); });
 
   // ordenação
   const k = state.sortKey, dir = state.sortDir==="asc"?1:-1;
@@ -1848,7 +1865,7 @@ function rowHTML(p, rank){
       <span class="platbadge"><span class="pdot" style="background:${PLAT_COLORS[p.platform]||'#8a94a8'}"></span>${esc(p.platform)}</span>
       <span class="net">${esc(p.network)}</span>
     </td>
-    <td class="plat" data-label="Categoria"><span class="catbadge" style="color:${CAT_COLORS[getCat(p)]};border-color:${CAT_COLORS[getCat(p)]}44">${esc(getCat(p))}</span></td>
+    <td class="plat" data-label="Categoria"><span class="catbadge" style="color:${catCor(getCat(p))};border-color:${catCor(getCat(p))}44">${esc(getCat(p))}</span></td>
     <td class="num m-hide" data-label="Fee">${fFee(p.fee)}</td>
     <td class="num" data-label="TVL">${fUSD(p.tvl)}${low?`<span class="warn" title="TVL baixo (<$100k): razão pode enganar">⚠</span>`:''}</td>
     <td class="num" data-label="Vol/dia">${fUSD(volDia(p))}${volFonte(p)==='7d'?'<span class="volsrc" title="A fonte não informou o volume das últimas 24h: vale a média diária dos últimos 7 dias">média 7d</span>':''}</td>
@@ -2318,7 +2335,7 @@ function simResultHTML(p){
   const d = simAmount * efic(p) / 100;
   const money = v=>"$"+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   const cat = getCat(p);
-  const risky = cat==="Memecoin" || cat==="?";
+  const risky = /Meme|Altcoin/.test(cat) || cat==="?";
   return `<div class="simgrid">
       <div><span>por dia</span><b>${money(d)}</b></div>
       <div><span>por mês</span><b>${money(d*30)}</b></div>

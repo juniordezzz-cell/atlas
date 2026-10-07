@@ -132,6 +132,55 @@
     }
     return p.sid || 'manual:' + p.id;
   }
+  /* ---------- categoria de cada token (decisão do dono, 07/10/2026) ----------
+     As MESMAS listas de central_rwa/pools/config.py. A categoria gravada pelo
+     coletor (sinais.categoria, que sabe quem é meme pelo ID CoinGecko) vale
+     primeiro; esta conta cobre pools manuais e as lidas antes da regra. */
+  var CAT_STABLES = ["USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC"];
+  var CAT_BLUECHIPS = ["BTC", "WBTC", "CBBTC", "BTCB", "TBTC", "ETH", "WETH", "WSTETH", "STETH", "CBETH", "RETH", "WEETH",
+    "SOL", "WSOL", "JITOSOL", "MSOL", "BSOL", "JUPSOL", "INF"];
+  var CAT_ACOES = ["AAPL", "AMZN", "GOOGL", "GOOG", "MSFT", "NVDA", "TSLA", "META", "NFLX", "AMD", "INTC", "AVGO",
+    "PLTR", "MSTR", "CRCL", "COIN", "HOOD", "RBLX", "GME", "MCD", "KO", "PEP", "JPM", "V", "MA",
+    "STRC", "SPCX", "TCENT", "BABA", "ORCL", "CRM", "UBER", "ABNB", "DIS", "NKE", "WMT", "COST",
+    "SPY", "QQQ", "IWM", "DIA", "VTI", "VOO", "TBLL"];
+  var CAT_AMBIGUAS = ["META", "GME", "COIN", "AMD", "V", "MA", "KO", "DIS", "DIA"];
+  var CAT_COMMODITIES = ["GLD", "SLV", "IAU", "USO", "PAXG", "XAUT", "SP500"];
+  var CAT_RWA_EXTRA = ["XAUT", "PAXG", "BUIDL", "USTB", "USYC", "OUSG", "SP500"];
+  function ehRwa(sim, rede) {
+    var s = String(sim || "").toUpperCase();
+    if (CAT_RWA_EXTRA.indexOf(s) !== -1 || CAT_COMMODITIES.indexOf(s) !== -1) return true;
+    if (s.length > 2 && s.charAt(s.length - 1) === "X") {
+      var base = s.slice(0, -1);
+      if (base.charAt(0) === "W" && CAT_ACOES.indexOf(base.slice(1)) !== -1) base = base.slice(1);
+      if (CAT_ACOES.indexOf(base) !== -1 || CAT_COMMODITIES.indexOf(base) !== -1) return true;
+    }
+    return CAT_ACOES.indexOf(s) !== -1 && (CAT_AMBIGUAS.indexOf(s) === -1 || rede === "Robinhood");
+  }
+  function categoriaToken(sim, rede) {
+    var s = String(sim || "").toUpperCase();
+    if (CAT_STABLES.indexOf(s) !== -1) return "stable";
+    if (CAT_BLUECHIPS.indexOf(s) !== -1) return "bluechip";
+    if (ehRwa(s, rede)) return "rwa";
+    return "altcoin";
+  }
+  function categoriasDaPool(p) {
+    var cs = p && p.sinais && Array.isArray(p.sinais.categoria) ? p.sinais.categoria : null;
+    if (cs && cs.length === 2) return cs;
+    var t = tokensDoPar(p && p.pool), rede = p && p.network;
+    cs = t.slice(0, 2).map(function (x) { return categoriaToken(x, rede); });
+    /* sem a categoria do coletor: meme detectada marca o lado altcoin */
+    if (((p.sinais || {}).memecoin || {}).detectada) cs = cs.map(function (c) { return c === "altcoin" ? "meme" : c; });
+    return cs;
+  }
+  var CAT_NOME = { stable: "Stable", bluechip: "Blue chip", rwa: "RWA", meme: "Meme", altcoin: "Altcoin" };
+  /* "RWA / Stable", "Blue chip / Blue chip", "Altcoin / Altcoin": stable sempre por último */
+  function rotuloCategoria(p) {
+    var cs = categoriasDaPool(p).slice();
+    if (cs.length < 2) return "?";
+    if (cs[0] === "stable" && cs[1] !== "stable") cs.reverse();
+    return CAT_NOME[cs[0]] + " / " + CAT_NOME[cs[1]];
+  }
+
   /* ---------- bloqueio por contrato (07/10/2026) ----------
      O ✕ grava o token pelo endereço na rede e, se tiver, pelo ID CoinGecko.
      Endereço separa o oficial de uma cópia com o mesmo nome; o ID pega o
@@ -299,6 +348,7 @@
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
     lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [], bloqueadosEnd: t.bloqueadosEnd || [] }; },
     bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco,
+    categoriaToken: categoriaToken, categoriasDaPool: categoriasDaPool, rotuloCategoria: rotuloCategoria,
     gravarTokens: function (t) { gravarJSON(TOKENS_KEY, t); },
     lerDecisoes: function () { return lerJSON(DECISOES_KEY, {}); },
     gravarDecisoes: function (d) { gravarJSON(DECISOES_KEY, d); },

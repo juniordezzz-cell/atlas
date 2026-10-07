@@ -41,6 +41,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from .nota import eficiencia
 from .modelos import Candidata
 
 TOL_TVL = 0.15          # TVL a menos de 15%: é a mesma pool
@@ -152,7 +153,10 @@ def conferir(cli, cands: list[Candidata], gecko_net: dict[str, str], max_pares: 
     """Confere as candidatas da DefiLlama, das mais eficientes para as menos,
     até `max_pares` buscas. Devolve um resumo para o log da coleta."""
     alvo = [c for c in cands if c.fonte == "defillama" and c.rede in gecko_net]
-    alvo.sort(key=_eficiencia, reverse=True)
+    # Taxa não informada primeiro: com fee 0 a eficiência dá 0 e essas pools
+    # ficavam no fim da fila, nunca conferidas (89 em 07/10/2026). Depois, as
+    # mais eficientes — pelo APR da fonte quando a taxa falta.
+    alvo.sort(key=lambda c: (c.fee <= 0 and (c.apr or 0) > 0, eficiencia(c)), reverse=True)
     pares: dict[tuple[str, str], list[Candidata]] = {}
     for c in alvo:
         k = (c.rede, c.par)
