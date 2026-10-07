@@ -683,7 +683,7 @@
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
   <script src="../../core/atlas-secure.js"></script>
-<link rel="stylesheet" href="assistente.css">
+<link rel="stylesheet" href="assistente.css?v=oraculo-7">
 </head>
 <body>
 <div class="wrap">
@@ -1300,11 +1300,11 @@
 <!-- pools do coletor (visões scanner_* no Supabase) -->
 <script src="../../core/atlas-supabase-config.js"></script>
 <script src="servidor.js"></script>
-<script src="assistente-dados.js"></script>
-<script src="assistente-api.js"></script>
-<script src="assistente-conversa.js"></script>
-<script src="assistente-memoria.js"></script>
-<script src="assistente-ui.js"></script>
+<script src="assistente-dados.js?v=oraculo-7"></script>
+<script src="assistente-api.js?v=oraculo-7"></script>
+<script src="assistente-conversa.js?v=oraculo-7"></script>
+<script src="assistente-memoria.js?v=oraculo-7"></script>
+<script src="assistente-ui.js?v=oraculo-7"></script>
 <script>
 /* ============ estado + persistência ============ */
 const KEY  = "estudo_pools_liquidez_v1";
@@ -2974,7 +2974,20 @@ async function historicoChat(p){
   });
   return Array.from(dias.values());
 }
-function contextoChat(){return {pools:state.pools,trilho:trilhoDe,identidade:ScannerServidor.chaveDecisao,historico:historicoChat,status:srv};}
+/* O Guia vira fonte do Oráculo para "o que é IL", "o que é razão"…: lido do
+   próprio HTML da aba, então resposta e Guia nunca divergem. */
+let _guiaChat=null;
+function guiaChat(){
+  if(_guiaChat) return _guiaChat;
+  _guiaChat=[...document.querySelectorAll("#tab-learn .lsec")].map(s=>({
+    num:(s.querySelector(".lnum")||{}).textContent||"",
+    titulo:(s.querySelector("h3")||{}).textContent||"",
+    texto:[...s.querySelectorAll(".lbody > p")].map(p=>p.textContent.trim()).join(" "),
+    termos:s.id==="sec15"?[...s.querySelectorAll("tr")].map(tr=>({termo:tr.cells[0]?.textContent.trim()||"",def:tr.cells[1]?.textContent.trim()||""})).filter(t=>t.termo):[]
+  })).filter(s=>s.titulo);
+  return _guiaChat;
+}
+function contextoChat(){return {pools:state.pools,trilho:trilhoDe,identidade:ScannerServidor.chaveDecisao,historico:historicoChat,status:srv,guia:guiaChat};}
 /* ============ abas ============ */
 function switchTab(t){
   if(t==="scan") t = "dash";   // a antiga aba Scanner vive dentro de Descobrir

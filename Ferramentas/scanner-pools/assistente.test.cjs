@@ -62,3 +62,56 @@ test('pedidos negativos de meme nunca são interpretados como exceção afirmati
     assert.deepEqual(Array.from(r.items,x=>x.id),[1],q);
   }
 });
+/* ---- perguntas que antes devolviam sempre a mesma lista por nota ---- */
+const varias=()=>[
+  pool(1,{pool:'SOL/USDC',platform:'Raydium',vol24h:500000,fee:.25,nota:50}),
+  pool(2,{pool:'WBNB/USDT',network:'BNB Chain',platform:'PancakeSwap',vol24h:900000,fee:.05,nota:90}),
+  pool(3,{pool:'SOL/USDT',platform:'Orca',tvl:6000000,vol24h:30000000,fee:.01,nota:40}),
+  pool(4,{pool:'ETH/USDC',network:'Base',platform:'Aerodrome',vol24h:200000,fee:.3,nota:70})];
+test('token sozinho filtra pelas pools que têm o token',async()=>{
+  const r=await C.consultar('pools de SOL',ctx(varias()));
+  assert.equal(r.tipo,'lista');assert.deepEqual(Array.from(r.items,x=>x.id).sort(),[1,3]);
+});
+test('maior volume ordena por volume, não por nota',async()=>{
+  const r=await C.consultar('qual pool tem maior volume?',ctx(varias()));
+  assert.equal(r.items[0].id,3);
+});
+test('DEX pelo nome curto e rede pelo apelido',async()=>{
+  const r=await C.consultar('pools da pancake na bsc',ctx(varias()));
+  assert.deepEqual(Array.from(r.items,x=>x.id),[2]);assert.match(r.texto,/PancakeSwap/);assert.match(r.texto,/BNB Chain/);
+});
+test('DEX sem pools nos cortes diz isso, em vez de listar outras',async()=>{
+  const r=await C.consultar('me mostra pools na Meteora',ctx(varias()));
+  assert.equal(r.items.length,0);assert.match(r.texto,/Meteora/);
+});
+test('limites com unidade: "milhões" não vira mil',async()=>{
+  const r=await C.consultar('pools com tvl acima de 5 milhões',ctx(varias()));
+  assert.deepEqual(Array.from(r.items,x=>x.id),[3]);
+  const g=await C.consultar('pools com razão acima de 6',ctx(varias()));   // razões: 5, 9, 5, 2
+  assert.deepEqual(Array.from(g.items,x=>x.id),[2]);
+});
+test('quanto rende um valor numa pool: capital × fee × razão × dias',async()=>{
+  const r=await C.consultar('quanto rende 1000 dólares na SOL/USDC em 7 dias?',ctx(varias()));
+  assert.equal(r.tipo,'projecao');assert.equal(r.items[0].id,1);
+  assert.ok(Math.abs(r.items[0].estimativa-1000*0.0025*5*7)<1e-9);assert.match(r.texto,/faixa/i);
+});
+test('comparar dois pares põe as duas lado a lado',async()=>{
+  const r=await C.consultar('compara SOL/USDC e SOL/USDT',ctx(varias()));
+  assert.equal(r.tipo,'comparar');assert.deepEqual(Array.from(r.items,x=>x.id),[1,3]);assert.match(r.texto,/Rende mais/);
+});
+test('conceito vem do Guia, sem IA',async()=>{
+  const guia=()=>[{num:'7',titulo:'Impermanent Loss',texto:'IL é a perda frente a segurar os tokens. A pool reequilibra sozinha.',termos:[]},
+    {num:'15',titulo:'Glossário',texto:'',termos:[{termo:'IL',def:'Impermanent Loss. Perda por variação de preço do par vs. segurar.'}]}];
+  const r=await C.consultar('o que é impermanent loss?',ctx(varias(),{guia}));
+  assert.equal(r.tipo,'conceito');assert.match(r.texto,/segurar/);assert.match(r.texto,/tópico 7/);
+});
+test('saudação curta responde sem listar pools',async()=>{
+  const r=await C.consultar('oi',ctx(varias()));
+  assert.equal(r.tipo,'saudacao');assert.equal(r.items.length,0);
+});
+test('comparar prefere a pool do par com fee conhecida',async()=>{
+  const ps=[pool(1,{pool:'SOL/USDC',tvl:9000000,vol24h:20000000,fee:0}),pool(2,{pool:'SOL/USDC',platform:'Raydium',tvl:500000,vol24h:2000000,fee:.25}),
+    pool(3,{pool:'SOL/USDT',tvl:800000,vol24h:2000000,fee:.05})];
+  const r=await C.consultar('compara SOL/USDC e SOL/USDT',ctx(ps));
+  assert.deepEqual(Array.from(r.items,x=>x.id),[2,3]);assert.match(r.texto,/Rende mais em taxas por dólar: SOL\/USDC/);
+});
