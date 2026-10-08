@@ -159,3 +159,16 @@ test('link direto da pool na corretora (formatos conferidos em 08/10)', () => {
   assert.equal(L({sid:'gecko:optimism:0x47',platform:'Velodrome',network:'Optimism'}).url,'https://www.geckoterminal.com/optimism/pools/0x47');
   assert.equal(L({sid:'llama:abc-123',platform:'Aerodrome',network:'Base'}).url,'https://defillama.com/yields/pool/abc-123');
 });
+test('trava de domínio: só sites oficiais e só https', () => {
+  const S=load(), ok=u=>!!S.linkSeguro({url:u,onde:'x'});
+  assert.equal(ok('https://raydium.io/liquidity-pools/?token=9n3d'),true);
+  assert.equal(S.linkSeguro({url:'https://www.orca.so/pools/Ck',onde:'Orca'}).dominio,'www.orca.so');
+  assert.equal(ok('http://raydium.io/x'),false);                    // sem https
+  assert.equal(ok('https://raydium.io.evil.com/x'),false);          // domínio parecido
+  assert.equal(ok('https://raydium.io@evil.com/x'),false);          // truque do @
+  assert.equal(ok('https://raydlum.io/x'),false);                   // letra trocada
+  assert.equal(ok('https://evil.com/?r=https://raydium.io/'),false);
+  // endereço malicioso vindo dos dados não muda o domínio
+  const L=S.linkPool({servidor:true,sid:'gecko:solana:x',platform:'Raydium',network:'Solana',sinais:{endereco_pool:'@evil.com/'}});
+  assert.equal(L.dominio,'raydium.io'); assert.ok(L.url.startsWith('https://raydium.io/'));
+});

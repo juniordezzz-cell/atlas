@@ -236,7 +236,20 @@
     if (sid.indexOf("gecko:") === 0) return sid.split(":").slice(2).join(":");
     return null;
   }
-  function linkPool(p) {
+  /* Trava (08/10/2026): só sai link para estes domínios, e só em https.
+     O domínio vem do código, nunca dos dados; esta conferência garante que
+     uma mudança futura na montagem do link não leve a outro site. */
+  var DOMINIOS_OFICIAIS = ["pancakeswap.finance", "app.uniswap.org", "www.orca.so", "raydium.io",
+    "www.geckoterminal.com", "defillama.com"];
+  function seguro(link) {
+    if (!link) return null;
+    var m = /^https:\/\/([^\/?#:@]+)[\/?#]/.exec(link.url);
+    if (!m || DOMINIOS_OFICIAIS.indexOf(m[1].toLowerCase()) === -1) return null;
+    link.dominio = m[1].toLowerCase();
+    return link;
+  }
+  function linkPool(p) { return seguro(montarLink(p)); }
+  function montarLink(p) {
     var end = enderecoPool(p), rede = p.network, dex = String(p.platform || ""), e = end ? encodeURIComponent(end) : "";
     if (end) {
       if (dex === "PancakeSwap" && LINK_PANCAKE[rede]) return { url: "https://pancakeswap.finance/liquidity/pool/" + LINK_PANCAKE[rede] + "/" + e, onde: "PancakeSwap" };
@@ -433,7 +446,7 @@
     lerMarcas: function () { return lerJSON(MARCAS_KEY, {}); },
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
     lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [], bloqueadosEnd: t.bloqueadosEnd || [] }; },
-    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco, semDuplicatas: semDuplicatas, linkPool: linkPool, emissorToken: emissorToken, emissoresDaPool: emissoresDaPool, rotuloEmissor: rotuloEmissor,
+    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco, semDuplicatas: semDuplicatas, linkPool: linkPool, linkSeguro: seguro, emissorToken: emissorToken, emissoresDaPool: emissoresDaPool, rotuloEmissor: rotuloEmissor,
     categoriaToken: categoriaToken, categoriasDaPool: categoriasDaPool, rotuloCategoria: rotuloCategoria,
     gravarTokens: function (t) { gravarJSON(TOKENS_KEY, t); },
     lerDecisoes: function () { return lerJSON(DECISOES_KEY, {}); },
