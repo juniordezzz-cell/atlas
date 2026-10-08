@@ -158,3 +158,21 @@ def test_taxa_nao_informada_e_conferida_primeiro():
             vistos.append(par); return None
     cf.conferir(Cli(), [boa, sem_fee], {"Base": "base"}, max_pares=1)
     assert vistos == ["SOL ZEUS"]
+
+
+def test_mesma_pool_de_duas_fontes_vira_uma():
+    from central_rwa.pools.coleta import unir_mesma_pool
+    # 08/10/2026: SOL/SPCXx da Orca vinha da GeckoTerminal (taxa 0,16%) e da DefiLlama (taxa 0)
+    lla = Candidata(id="llama:3beb", fonte="defillama", rede="Solana", dex="Orca", par="SOL/SPCXX",
+                    token_a=TokenRef("So111", "SOL"), token_b=TokenRef("Xs3oZ", "SPCXX"),
+                    fee=0, tvl=133_263, vol_24h=800_000, vol_7d=None, apr=270.0, apr_reward=None, projeto="orca-dex")
+    lla.sinais["conferencia"] = {"estado": "conferida", "endereco": "CN32jwm"}
+    gk = Candidata(id="gecko:solana:CN32jwm", fonte="geckoterminal", rede="Solana", dex="Orca", par="SOL/SPCXx",
+                   token_a=TokenRef("So111", "SOL"), token_b=TokenRef("Xs3oZ", "SPCXx"),
+                   fee=0.16, tvl=133_466, vol_24h=803_000, vol_7d=None, apr=None, apr_reward=None)
+    outra = Candidata(id="gecko:solana:OUTRA", fonte="geckoterminal", rede="Solana", dex="Orca", par="SOL/USDC",
+                      token_a=TokenRef("So111", "SOL"), token_b=TokenRef("EPj", "USDC"),
+                      fee=0.04, tvl=30e6, vol_24h=120e6, vol_7d=None, apr=None, apr_reward=None)
+    r = unir_mesma_pool([lla, gk, outra])
+    assert [c.id for c in r] == ["llama:3beb", "gecko:solana:OUTRA"]
+    assert r[0].fee == 0.16 and r[0].sinais["mesma_pool"] == "gecko:solana:CN32jwm"

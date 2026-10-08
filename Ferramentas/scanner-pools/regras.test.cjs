@@ -126,3 +126,10 @@ test('categoria da pool: blue chip só BTC/ETH/SOL; BNB e cia são altcoin; aç�
   assert.equal(r('FOO/SOL',{sinais:{memecoin:{detectada:true}}}),'Meme / Blue chip');
   assert.equal(r('FOO/SOL',{sinais:{categoria:['meme','bluechip']}}),'Meme / Blue chip');   // a do coletor vale primeiro
 });
+test('mesma pool da DefiLlama e da GeckoTerminal aparece uma vez só', () => {
+  const S=load();
+  const lla={sid:'llama:3beb',network:'Solana',pool:'SOL/SPCXX',sinais:{conferencia:{endereco:'CN32jwm'}}};
+  const gk={sid:'gecko:solana:CN32jwm',network:'Solana',pool:'SOL/SPCXx',sinais:{}};
+  const outra={sid:'gecko:solana:OUTRA',network:'Solana',pool:'SOL/USDC',sinais:{}};
+  assert.deepEqual(S.semDuplicatas([lla,gk,outra]).map(p=>p.sid),['llama:3beb','gecko:solana:OUTRA']);
+});

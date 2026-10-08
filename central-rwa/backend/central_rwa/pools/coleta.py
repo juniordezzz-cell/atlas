@@ -62,6 +62,31 @@ def reconciliar_diretas(todas: list[Candidata]) -> list[Candidata]:
     return [c for c in todas if c.id not in removidas]
 
 
+def unir_mesma_pool(cands: list[Candidata]) -> list[Candidata]:
+    """A mesma pool on-chain vinda da DefiLlama e da GeckoTerminal vira UMA.
+
+    A conferência descobre o endereço da pool da DefiLlama; se a GeckoTerminal
+    trouxe esse mesmo endereço como outra candidata, a tela mostrava a pool
+    duas vezes ("SOL/SPCXx" com taxa e "SOL/SPCXX" sem, Orca, 08/10/2026).
+    Fica o ID da DefiLlama (é o que tem histórico); a taxa e a data de
+    criação da GeckoTerminal completam o que a DefiLlama não informou."""
+    gecko = {(c.rede, normalizar_endereco(c.rede, c.id.split(":", 2)[2])): c
+             for c in cands if c.fonte == "geckoterminal" and c.id.count(":") >= 2}
+    remover: set[str] = set()
+    for c in cands:
+        end = (c.sinais.get("conferencia") or {}).get("endereco") if c.fonte == "defillama" else None
+        g = gecko.get((c.rede, normalizar_endereco(c.rede, end))) if end else None
+        if g is None or g.id in remover:
+            continue
+        if c.fee <= 0 < g.fee:
+            c.fee = g.fee
+        if c.criada_em is None:
+            c.criada_em = g.criada_em
+        c.sinais["mesma_pool"] = g.id
+        remover.add(g.id)
+    return [c for c in cands if c.id not in remover]
+
+
 def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
     todas: list[Candidata] = []
     try:
@@ -184,6 +209,7 @@ def coletar(cli, store, agora: datetime) -> dict:
     # que entra na nota, no APR e no ranking. Corrigido para baixo pode sair
     # do pré-corte — por isso o corte roda de novo.
     conf = conferir(cli, cands, config.GECKO_NET) if hasattr(cli, "gecko_busca") else {}
+    cands = unir_mesma_pool(cands)
     medir('conferencia')
     status.append({"fonte": "conferencia", "rede": None, "dex": None,
                    "estado": "ok" if conf else "sem conferência", "contagem": conf.get("conferidas", 0), "em": agora})

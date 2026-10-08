@@ -181,6 +181,23 @@
     return CAT_NOME[cs[0]] + " / " + CAT_NOME[cs[1]];
   }
 
+  /* A mesma pool vinda da DefiLlama e da GeckoTerminal: a da DefiLlama
+     carrega o endereço on-chain na conferência; a da GeckoTerminal com esse
+     endereço sai da lista (o coletor faz o mesmo desde 08/10; isto cobre as
+     linhas antigas ainda ativas no banco). */
+  function semDuplicatas(pools) {
+    var conferidos = {};
+    pools.forEach(function (p) {
+      var e = ((p.sinais || {}).conferencia || {}).endereco;
+      if (String(p.sid || "").indexOf("llama:") === 0 && e) conferidos[chaveEndereco(p.network, e)] = 1;
+    });
+    return pools.filter(function (p) {
+      var sid = String(p.sid || "");
+      if (sid.indexOf("gecko:") !== 0) return true;
+      return !conferidos[chaveEndereco(p.network, sid.split(":").slice(2).join(":"))];
+    });
+  }
+
   /* ---------- bloqueio por contrato (07/10/2026) ----------
      O ✕ grava o token pelo endereço na rede e, se tiver, pelo ID CoinGecko.
      Endereço separa o oficial de uma cópia com o mesmo nome; o ID pega o
@@ -347,7 +364,7 @@
     lerMarcas: function () { return lerJSON(MARCAS_KEY, {}); },
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
     lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [], bloqueadosEnd: t.bloqueadosEnd || [] }; },
-    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco,
+    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco, semDuplicatas: semDuplicatas,
     categoriaToken: categoriaToken, categoriasDaPool: categoriasDaPool, rotuloCategoria: rotuloCategoria,
     gravarTokens: function (t) { gravarJSON(TOKENS_KEY, t); },
     lerDecisoes: function () { return lerJSON(DECISOES_KEY, {}); },

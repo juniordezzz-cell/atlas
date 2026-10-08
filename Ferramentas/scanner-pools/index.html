@@ -1474,7 +1474,7 @@ async function carregarServidor(){
   try{
     const d = await S.carregar();
     let marcas = S.lerMarcas();
-    const doServidor = d.pools.map(r=>S.paraPool(r, marcas[r.id]));
+    const doServidor = S.semDuplicatas(d.pools.map(r=>S.paraPool(r, marcas[r.id])));
     const locais = state.pools.filter(p=>!p.servidor);
     if(!S.jaMigrou()){
       const m = S.migrar(locais.filter(l=>!l.migrada && !l.arquivada), doServidor, marcas);
