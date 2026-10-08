@@ -133,6 +133,24 @@ ACOES_AMBIGUAS: set[str] = {"META", "GME", "COIN", "AMD", "V", "MA", "KO", "DIS"
 COMMODITIES: set[str] = {"GLD", "SLV", "IAU", "USO", "PAXG", "XAUT", "SP500"}
 
 
+# ---------- contratos reconhecidos sem cadastro na CoinGecko ----------
+# Versões embrulhadas (bridged) de tokens consolidados que a CoinGecko não
+# ligou ao cadastro do token original. Sempre pelo CONTRATO, nunca pelo
+# símbolo: uma cópia chamada "NEAR" com outro endereço continua barrada.
+# Entrada nova: conferir nome, holders e nota na GeckoTerminal.
+CONTRATOS_RECONHECIDOS: dict[tuple[str, str], str] = {
+    # "Wrapped NEAR fungible token": 17.409 holders, nota 75 na GeckoTerminal (08/10/2026)
+    ("Solana", "3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG"): "NEAR (wNEAR, bridged)",
+}
+
+
+def contrato_reconhecido(rede: str | None, endereco: str | None) -> str | None:
+    if not rede or not endereco:
+        return None
+    e = endereco if rede in ("Solana", "Sui") else endereco.lower()
+    return CONTRATOS_RECONHECIDOS.get((rede, e)) or CONTRATOS_RECONHECIDOS.get((rede, endereco))
+
+
 # ---------- emissor do RWA (08/10/2026) ----------
 # O ID oficial na CoinGecko carrega o emissor: spacex-xstocks,
 # spacex-backpack-securities, spacex-bstocks-tokenized-stock,

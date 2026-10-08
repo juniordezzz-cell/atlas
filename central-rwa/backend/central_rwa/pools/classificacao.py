@@ -65,6 +65,8 @@ def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: 
     s = (simbolo or "").upper()
     if s in config.MAJORS or config.eh_rwa(simbolo, rede):
         return None
+    if info is not None and config.contrato_reconhecido(info.rede, info.endereco):
+        return None   # versão bridged conferida à mão (lista em config.py)
     if info is None:
         return f"{s} ainda sem dados de segurança"
     if not info.coingecko_id:

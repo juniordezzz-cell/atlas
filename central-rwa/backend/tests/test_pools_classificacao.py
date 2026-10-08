@@ -151,3 +151,15 @@ def test_rwa_controlado_pelo_emissor_nao_e_barrado():
     assert "honeypot" in motivos_barrada(cand("SPCXx/USDC"), [info(simbolo="SPCXx", honeypot=True), None], [])
     # token comum com mint ativo continua barrado
     assert "mint ativo" in motivos_barrada(cand(), [info(mint=True), None], [])
+
+
+def test_contrato_reconhecido_vale_pelo_endereco_nao_pelo_nome():
+    from central_rwa.pools.classificacao import fraqueza_token
+    wnear = TokenInfo(rede="Solana", endereco="3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG", simbolo="NEAR",
+                      honeypot=False, mint_ativo=False, freeze_ativo=False, dev_pct=None, holders=17409,
+                      coingecko_id=None, mcap=None, primeira_pool_em=None, consultado_em=AGORA)
+    assert fraqueza_token("NEAR", wnear, AGORA, "Solana") is None
+    copia = TokenInfo(rede="Solana", endereco="FaKeNEAR111", simbolo="NEAR",
+                      honeypot=False, mint_ativo=False, freeze_ativo=False, dev_pct=None, holders=50,
+                      coingecko_id=None, mcap=None, primeira_pool_em=None, consultado_em=AGORA)
+    assert "sem cadastro na CoinGecko" in fraqueza_token("NEAR", copia, AGORA, "Solana")
