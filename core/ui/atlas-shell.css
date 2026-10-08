@@ -237,6 +237,17 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   50%      { transform: translateY(-9px) rotate(2deg); }
 }
 @keyframes atlas-fab-spin { to { transform: rotate(360deg); } }
+@keyframes atlas-badge-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-2px) rotate(3deg); }
+}
+/* vidro só onde o navegador desfoca; senão, sólido como antes */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .atlas-oraculo__panel { background: var(--atlas-bg-raise); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas-oraculo__badge::before, .atlas-oraculo__badge-img { animation: none; }
+}
 
 /* Fallback caso a imagem não carregue: núcleo luminoso do tema */
 .atlas-oraculo__orb--fallback {
@@ -281,10 +292,17 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
      do Dashboard atrás aparecia por baixo das respostas e competia com
      elas ("Alertas Inteligentes" lido junto com o chip). Um painel de
      leitura não pode ser vidro. */
-  background: var(--atlas-bg-raise);
-  border: 1px solid var(--atlas-border-hi);
-  border-radius: var(--atlas-r-xl);
-  box-shadow: var(--atlas-sh-3), var(--atlas-glow);
+  /* VIDRO FOSCO (out/2026, pedido do dono: menos opaco, menos quadrado).
+     Era sólido porque o texto do Dashboard atrás competia com as
+     respostas; o desfoque forte resolve isso sem precisar de opacidade
+     total. Sem backdrop-filter, volta a ser sólido (@supports abaixo).
+     Sem glow — só sombra, como pede a linha serena. */
+  background: rgba(12, 18, 32, 0.72);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+          backdrop-filter: blur(22px) saturate(150%);
+  border: 1px solid rgba(160, 185, 230, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   overflow: hidden;
   opacity: 0;
   visibility: hidden;
@@ -305,7 +323,7 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   align-items: center;
   gap: var(--atlas-sp-3);
   padding: var(--atlas-sp-4) var(--atlas-sp-4) var(--atlas-sp-3);
-  border-bottom: 1px solid var(--atlas-border);
+  border-bottom: 1px solid rgba(160, 185, 230, 0.08);
   flex: none;
 }
 .atlas-oraculo__head h3 {
@@ -321,16 +339,33 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   color: var(--atlas-text-mut);
 }
 .atlas-oraculo__badge {
-  width: 34px; height: 34px;
+  position: relative;
+  width: 40px; height: 40px;
   border-radius: 50%;
   display: grid; place-items: center;
   flex: none;
 }
+/* o mesmo aro vermelho↔azul girando do botão flutuante, em miniatura */
+.atlas-oraculo__badge::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  padding: 1.5px;
+  background: conic-gradient(from 0deg,
+    rgba(153, 27, 27, 0.9), rgba(30, 64, 175, 0.9), rgba(153, 27, 27, 0.9));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: atlas-fab-spin 8s linear infinite;
+  pointer-events: none;
+}
 /* O avatar do botão flutuante, em miniatura, com o mesmo brilho azul e
-   vermelho — sem a flutuação, que num cabeçalho só distrairia. */
+   vermelho. Flutua de leve (o dono pediu o ícone vivo, out/2026) —
+   amplitude menor que a do botão para não puxar o olho do texto. */
 .atlas-oraculo__badge-img {
-  width: 34px; height: 34px;
+  width: 32px; height: 32px;
   object-fit: contain;
+  animation: atlas-badge-float 4.5s ease-in-out infinite;
   filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.55))
           drop-shadow(0 0 4px rgba(239, 68, 68, 0.35));
 }
@@ -351,17 +386,21 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 }
 .atlas-oraculo__close {
   margin-left: auto;
-  width: 30px; height: 30px;
+  width: 32px; height: 32px;
+  /* o estilo de botão das páginas (9px 14px no Scanner) vazava aqui e
+     empurrava o ícone para fora do círculo */
+  padding: 0 !important;
+  min-width: 0;
   border-radius: 50%;
-  border: 1px solid var(--atlas-border);
-  background: transparent;
+  border: 0;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--atlas-text-mut);
   cursor: pointer;
   display: grid; place-items: center;
   transition: color var(--atlas-dur-fast) var(--atlas-ease),
               border-color var(--atlas-dur) var(--atlas-ease);
 }
-.atlas-oraculo__close:hover { color: var(--atlas-text-hi); border-color: var(--atlas-border-hi); }
+.atlas-oraculo__close:hover { color: var(--atlas-text-hi); background: rgba(255, 255, 255, 0.1); }
 
 .atlas-oraculo__log {
   flex: 1 1 auto;
@@ -384,17 +423,17 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 }
 .atlas-oraculo__msg--bot {
   align-self: flex-start;
-  background: var(--atlas-surface);
-  border: 1px solid var(--atlas-border);
+  background: rgba(148, 170, 215, 0.08);
+  border: 0;
   color: var(--atlas-text);
-  border-bottom-left-radius: var(--atlas-r-xs);
+  border-radius: 18px 18px 18px 6px;
 }
 .atlas-oraculo__msg--user {
   align-self: flex-end;
-  background: var(--atlas-accent-soft);
-  border: 1px solid var(--atlas-accent-line);
+  background: rgba(77, 140, 255, 0.22);
+  border: 0;
   color: var(--atlas-text-hi);
-  border-bottom-right-radius: var(--atlas-r-xs);
+  border-radius: 18px 18px 6px 18px;
 }
 
 .atlas-oraculo__chips {
@@ -407,10 +446,10 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 .atlas-oraculo__chip {
   padding: 6px var(--atlas-sp-3);
   border-radius: var(--atlas-r-pill);
-  border: 1px solid var(--atlas-border);
-  background: transparent;
-  color: var(--atlas-text-mut);
-  font-size: 0.72rem;
+  border: 0;
+  background: rgba(148, 170, 215, 0.08);
+  color: var(--atlas-text);
+  font-size: 0.74rem;
   cursor: pointer;
   transition: color var(--atlas-dur-fast) var(--atlas-ease),
               border-color var(--atlas-dur) var(--atlas-ease),
@@ -436,34 +475,38 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
 }
 .atlas-oraculo__chip:hover {
   color: var(--atlas-text-hi);
-  border-color: var(--atlas-accent-line);
-  background: var(--atlas-accent-soft);
+  background: rgba(148, 170, 215, 0.16);
 }
 
 .atlas-oraculo__composer {
   display: flex;
   gap: var(--atlas-sp-2);
-  padding: var(--atlas-sp-3) var(--atlas-sp-4) var(--atlas-sp-4);
-  border-top: 1px solid var(--atlas-border);
+  align-items: center;
+  margin: 0 var(--atlas-sp-3) var(--atlas-sp-3);
+  padding: 5px 5px 5px var(--atlas-sp-4);
+  border-radius: 999px;
+  background: rgba(148, 170, 215, 0.09);
   flex: none;
 }
+.atlas-oraculo__composer:focus-within { box-shadow: 0 0 0 2px rgba(91, 140, 255, 0.35); }
 .atlas-oraculo__input {
   flex: 1 1 auto;
   min-width: 0;
-  height: 38px;
-  padding: 0 var(--atlas-sp-3);
-  border-radius: var(--atlas-r-sm);
-  border: 1px solid var(--atlas-border);
-  background: var(--atlas-bg-deep);
+  height: 36px;
+  padding: 0 !important;
+  border: 0 !important;
+  outline: none;
+  background: transparent !important;
   color: var(--atlas-text-hi);
   font-family: inherit;
   font-size: var(--atlas-fs-sm);
 }
 .atlas-oraculo__send {
-  width: 38px; height: 38px;
+  width: 36px; height: 36px;
   flex: none;
-  border-radius: var(--atlas-r-sm);
-  border: 1px solid var(--atlas-accent-line);
+  padding: 0 !important;
+  border-radius: 50%;
+  border: 0;
   background: var(--atlas-grad);
   color: #04121F;
   cursor: pointer;
