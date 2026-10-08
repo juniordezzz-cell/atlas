@@ -129,16 +129,52 @@ ACOES_AMBIGUAS: set[str] = {"META", "GME", "COIN", "AMD", "V", "MA", "KO", "DIS"
 COMMODITIES: set[str] = {"GLD", "SLV", "IAU", "USO", "PAXG", "XAUT", "SP500"}
 
 
+# ---------- emissor do RWA (08/10/2026) ----------
+# O ID oficial na CoinGecko carrega o emissor: spacex-xstocks,
+# spacex-backpack-securities, spacex-bstocks-tokenized-stock,
+# spacex-ondo-tokenized-stock, spacex-coinbase-tokenized-stock,
+# spacex-robinhood-tokenized-stock. Conferido nos 6 SpaceX em 08/10.
+EMISSORES: list[tuple[str, str]] = [
+    ("xstock", "xStocks"), ("backpack", "Backpack"), ("bstock", "Binance bStocks"),
+    ("ondo", "Ondo"), ("coinbase", "Coinbase"), ("robinhood", "Robinhood"),
+    ("backed", "Backed"), ("dinari", "Dinari"), ("remora", "Remora"), ("prestock", "PreStocks"),
+    ("pax-gold", "Paxos"), ("tether-gold", "Tether"),
+]
+# Sem cadastro na CoinGecko, o sufixo do símbolo indica o provável emissor.
+_SUFIXO_EMISSOR = [("ON", "Ondo"), ("X", "xStocks"), ("B", "Binance bStocks"), ("C", "Coinbase")]
+
+
+def emissor(simbolo: str, coingecko_id: str | None, rede: str | None = None) -> dict | None:
+    """{"nome": ..., "provavel": bool} para um token RWA; None se não identificado."""
+    cg = (coingecko_id or "").lower()
+    for chave, nome in EMISSORES:
+        if chave in cg:
+            return {"nome": nome, "provavel": False}
+    if rede == "Robinhood":
+        return {"nome": "Robinhood", "provavel": True}
+    s = (simbolo or "").upper()
+    for suf, nome in _SUFIXO_EMISSOR:
+        base = s[: -len(suf)]
+        if suf != "X" and base in ACOES_AMBIGUAS:
+            continue
+        if s.endswith(suf) and (base in ACOES or base in COMMODITIES or (base.startswith("W") and base[1:] in ACOES)):
+            return {"nome": nome, "provavel": True}
+    return None
+
+
 def eh_rwa(simbolo: str, rede: str | None = None) -> bool:
     s = (simbolo or "").upper()
     if s in RWA_EXTRA or s in COMMODITIES:
         return True
-    if s.endswith("X") and len(s) > 2:
-        base = s[:-1]
-        if base.startswith("W") and base[1:] in ACOES:     # wTCENTx: ação embrulhada
-            base = base[1:]
-        if base in ACOES or base in COMMODITIES:
-            return True
+    for suf in ("ON", "X", "B", "C"):                     # Ondo, xStocks, bStocks, Coinbase
+        if s.endswith(suf) and len(s) > len(suf) + 1:
+            base = s[: -len(suf)]
+            if base.startswith("W") and base[1:] in ACOES:   # wTCENTx: ação embrulhada
+                base = base[1:]
+            if suf != "X" and base in ACOES_AMBIGUAS:        # MAC, VB, KOB: não são ação
+                continue
+            if base in ACOES or (suf == "X" and base in COMMODITIES):
+                return True
     if s in ACOES and (s not in ACOES_AMBIGUAS or rede == "Robinhood"):
         return True
     return False

@@ -127,7 +127,8 @@ def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
 
 
 def _dispensa_consulta(simbolo: str) -> bool:
-    return (simbolo or "").upper() in config.MAJORS or config.eh_rwa(simbolo)
+    # RWA agora é consultado (cache de 7 dias): o ID CoinGecko diz o emissor
+    return (simbolo or "").upper() in config.MAJORS
 
 
 def _infos(cli, store, cands: list[Candidata], agora: datetime) -> tuple[dict[tuple[str, str], TokenInfo], int, int]:
@@ -232,6 +233,10 @@ def coletar(cli, store, agora: datetime) -> dict:
         identificar(c, par_infos, meme_ids, getattr(cli, 'meme_cobertura_ate', None))
         c.sinais['categoria'] = categorias(c, par_infos)
         c.sinais['classe_par'] = classe_par(c, par_infos)
+        cats = c.sinais['categoria']
+        c.sinais['emissor'] = [
+            config.emissor(t.simbolo, i.coingecko_id if i else None, c.rede) if cat == 'rwa' else None
+            for t, i, cat in zip((c.token_a, c.token_b), par_infos, cats)]
         t, motivos = trilho(c, par_infos, leituras.get(c.id, []), agora)
         nota, comp = notas[c.id]
         finais.append(PoolFinal(c, t, motivos, nota, comp))

@@ -133,3 +133,19 @@ test('mesma pool da DefiLlama e da GeckoTerminal aparece uma vez só', () => {
   const outra={sid:'gecko:solana:OUTRA',network:'Solana',pool:'SOL/USDC',sinais:{}};
   assert.deepEqual(S.semDuplicatas([lla,gk,outra]).map(p=>p.sid),['llama:3beb','gecko:solana:OUTRA']);
 });
+test('emissor do RWA pelo ID CoinGecko e, sem ele, pelo sufixo', () => {
+  const S=load();
+  const mk=(pool,rede,cg)=>({pool, network:rede, sinais:{}, tokens:[{simbolo:pool.split('/')[0].toUpperCase(),cg},{simbolo:'USDC',cg:null}]});
+  assert.equal(S.rotuloEmissor(mk('SPCX/USDC','Solana','spacex-backpack-securities')),'Backpack');
+  assert.equal(S.rotuloEmissor(mk('SPCXx/USDC','Solana','spacex-xstocks')),'xStocks');
+  assert.equal(S.rotuloEmissor(mk('SPCXB/USDC','BNB Chain','spacex-bstocks-tokenized-stock')),'Binance bStocks');
+  assert.equal(S.rotuloEmissor(mk('SPCXON/USDC','Ethereum',null)),'Ondo (provável)');
+  assert.equal(S.rotuloEmissor(mk('SPCX/USDG','Robinhood',null)),'Robinhood (provável)');
+  assert.equal(S.rotuloEmissor(mk('SOL/USDC','Solana',null)),'');
+  assert.equal(S.rotuloCategoria(mk('SPCXON/USDC','Ethereum',null)),'RWA / Stable');
+});
+test('categoria antiga "altcoin" de um RWA pela regra nova vira RWA', () => {
+  const S=load();
+  assert.equal(S.rotuloCategoria({pool:'USDT/SPCXB',network:'BNB Chain',sinais:{categoria:['stable','altcoin']}}),'RWA / Stable');
+  assert.equal(S.rotuloCategoria({pool:'FOO/SOL',network:'Solana',sinais:{categoria:['meme','bluechip']}}),'Meme / Blue chip');
+});

@@ -149,10 +149,14 @@
   function ehRwa(sim, rede) {
     var s = String(sim || "").toUpperCase();
     if (CAT_RWA_EXTRA.indexOf(s) !== -1 || CAT_COMMODITIES.indexOf(s) !== -1) return true;
-    if (s.length > 2 && s.charAt(s.length - 1) === "X") {
-      var base = s.slice(0, -1);
+    var sufs = ["ON", "X", "B", "C"];                      /* Ondo, xStocks, bStocks, Coinbase */
+    for (var i = 0; i < sufs.length; i++) {
+      var suf = sufs[i];
+      if (s.length <= suf.length + 1 || s.slice(-suf.length) !== suf) continue;
+      var base = s.slice(0, -suf.length);
       if (base.charAt(0) === "W" && CAT_ACOES.indexOf(base.slice(1)) !== -1) base = base.slice(1);
-      if (CAT_ACOES.indexOf(base) !== -1 || CAT_COMMODITIES.indexOf(base) !== -1) return true;
+      if (suf !== "X" && CAT_AMBIGUAS.indexOf(base) !== -1) continue;
+      if (CAT_ACOES.indexOf(base) !== -1 || (suf === "X" && CAT_COMMODITIES.indexOf(base) !== -1)) return true;
     }
     return CAT_ACOES.indexOf(s) !== -1 && (CAT_AMBIGUAS.indexOf(s) === -1 || rede === "Robinhood");
   }
@@ -165,12 +169,44 @@
   }
   function categoriasDaPool(p) {
     var cs = p && p.sinais && Array.isArray(p.sinais.categoria) ? p.sinais.categoria : null;
-    if (cs && cs.length === 2) return cs;
     var t = tokensDoPar(p && p.pool), rede = p && p.network;
+    /* a do coletor vale (só ela sabe quem é meme), mas "altcoin" gravado por
+       uma regra de RWA mais antiga (SPCXB, SPCXON antes de 08/10) vira RWA */
+    if (cs && cs.length === 2) return cs.map(function (c, i) { return c === "altcoin" && ehRwa(t[i], rede) ? "rwa" : c; });
     cs = t.slice(0, 2).map(function (x) { return categoriaToken(x, rede); });
     /* sem a categoria do coletor: meme detectada marca o lado altcoin */
     if (((p.sinais || {}).memecoin || {}).detectada) cs = cs.map(function (c) { return c === "altcoin" ? "meme" : c; });
     return cs;
+  }
+  /* emissor do RWA: o ID CoinGecko diz (spacex-xstocks, …-ondo-tokenized-stock);
+     sem ele, o sufixo do símbolo dá o provável. Mesma lista do config.py. */
+  var EMISSORES = [["xstock", "xStocks"], ["backpack", "Backpack"], ["bstock", "Binance bStocks"],
+    ["ondo", "Ondo"], ["coinbase", "Coinbase"], ["robinhood", "Robinhood"], ["backed", "Backed"],
+    ["dinari", "Dinari"], ["remora", "Remora"], ["prestock", "PreStocks"], ["pax-gold", "Paxos"], ["tether-gold", "Tether"]];
+  var SUFIXO_EMISSOR = [["ON", "Ondo"], ["X", "xStocks"], ["B", "Binance bStocks"], ["C", "Coinbase"]];
+  function emissorToken(sim, cg, rede) {
+    var id = String(cg || "").toLowerCase();
+    for (var i = 0; i < EMISSORES.length; i++) if (id.indexOf(EMISSORES[i][0]) !== -1) return { nome: EMISSORES[i][1], provavel: false };
+    if (rede === "Robinhood") return { nome: "Robinhood", provavel: true };
+    var s = String(sim || "").toUpperCase();
+    for (var j = 0; j < SUFIXO_EMISSOR.length; j++) {
+      var suf = SUFIXO_EMISSOR[j][0], base = s.slice(0, -suf.length);
+      if (s.length > suf.length + 1 && s.slice(-suf.length) === suf && !(suf !== "X" && CAT_AMBIGUAS.indexOf(base) !== -1) &&
+          (CAT_ACOES.indexOf(base) !== -1 || CAT_COMMODITIES.indexOf(base) !== -1)) return { nome: SUFIXO_EMISSOR[j][1], provavel: true };
+    }
+    return null;
+  }
+  /* um por lado do par; null onde o token não é RWA ou o emissor é desconhecido */
+  function emissoresDaPool(p) {
+    var gravado = (p.sinais || {}).emissor, cats = categoriasDaPool(p), toks = p.tokens || [], par = tokensDoPar(p.pool);
+    return cats.map(function (c, i) {
+      if (c !== "rwa") return null;
+      if (Array.isArray(gravado) && gravado[i]) return gravado[i];
+      return emissorToken((toks[i] && toks[i].simbolo) || par[i], toks[i] && toks[i].cg, p.network);
+    });
+  }
+  function rotuloEmissor(p) {
+    return emissoresDaPool(p).filter(Boolean).map(function (e) { return e.nome + (e.provavel ? " (provável)" : ""); }).join(" · ");
   }
   var CAT_NOME = { stable: "Stable", bluechip: "Blue chip", rwa: "RWA", meme: "Meme", altcoin: "Altcoin" };
   /* "RWA / Stable", "Blue chip / Blue chip", "Altcoin / Altcoin": stable sempre por último */
@@ -364,7 +400,7 @@
     lerMarcas: function () { return lerJSON(MARCAS_KEY, {}); },
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
     lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [], bloqueadosEnd: t.bloqueadosEnd || [] }; },
-    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco, semDuplicatas: semDuplicatas,
+    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco, semDuplicatas: semDuplicatas, emissorToken: emissorToken, emissoresDaPool: emissoresDaPool, rotuloEmissor: rotuloEmissor,
     categoriaToken: categoriaToken, categoriasDaPool: categoriasDaPool, rotuloCategoria: rotuloCategoria,
     gravarTokens: function (t) { gravarJSON(TOKENS_KEY, t); },
     lerDecisoes: function () { return lerJSON(DECISOES_KEY, {}); },

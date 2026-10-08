@@ -680,6 +680,7 @@
      36 px e borda vermelha sempre acesa, a coluna alargava, a tabela passava
      da largura da área e o ✕ saía cortado pela borda (out/2026). */
   .sinais.motivo{color:var(--amber)}
+  .emissor{font-size:10.5px; color:var(--mut); margin-top:3px; white-space:nowrap}
   /* "Blue chip / Blue chip" quebra em duas linhas em vez de alargar a tabela */
   .catbadge{display:inline-block; white-space:normal; max-width:92px; line-height:1.3; text-align:center; font-size:11px}
   .pool-aprovar,.pool-rejeitar{min-width:28px;min-height:28px;padding:4px 8px;font-size:12px;line-height:1}
@@ -699,7 +700,7 @@
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
   <script src="../../core/atlas-secure.js"></script>
-<link rel="stylesheet" href="assistente.css?v=oraculo-10">
+<link rel="stylesheet" href="assistente.css?v=oraculo-12">
 </head>
 <body>
 <div class="wrap">
@@ -743,6 +744,14 @@
       <option value="RWA">Com RWA</option>
       <option value="Altcoin">Com altcoin</option>
       <option value="Meme">Com meme</option>
+      <optgroup label="Emissor do RWA">
+        <option value="emissor:xStocks">xStocks</option>
+        <option value="emissor:Backpack">Backpack</option>
+        <option value="emissor:Binance bStocks">Binance bStocks</option>
+        <option value="emissor:Ondo">Ondo</option>
+        <option value="emissor:Coinbase">Coinbase</option>
+        <option value="emissor:Robinhood">Robinhood</option>
+      </optgroup>
     </select>
     <select id="fTvlMin" onchange="state.page=1; render()">
 
@@ -1315,11 +1324,11 @@
 <!-- pools do coletor (visões scanner_* no Supabase) -->
 <script src="../../core/atlas-supabase-config.js"></script>
 <script src="servidor.js"></script>
-<script src="assistente-dados.js?v=oraculo-10"></script>
-<script src="assistente-api.js?v=oraculo-10"></script>
-<script src="assistente-conversa.js?v=oraculo-10"></script>
-<script src="assistente-memoria.js?v=oraculo-10"></script>
-<script src="assistente-ui.js?v=oraculo-10"></script>
+<script src="assistente-dados.js?v=oraculo-12"></script>
+<script src="assistente-api.js?v=oraculo-12"></script>
+<script src="assistente-conversa.js?v=oraculo-12"></script>
+<script src="assistente-memoria.js?v=oraculo-12"></script>
+<script src="assistente-ui.js?v=oraculo-12"></script>
 <script>
 /* ============ estado + persistência ============ */
 const KEY  = "estudo_pools_liquidez_v1";
@@ -1804,7 +1813,8 @@ function render(){
   if(tvlMin>0) list = list.filter(p=>p.tvl>=tvlMin);
   // categoria
   const cat = document.getElementById("fCat").value;
-  if(cat!=="Todas") list = list.filter(p=>{ const r = getCat(p); return cat==="Stable / Stable" ? r===cat : r.includes(cat); });
+  if(cat.startsWith("emissor:")){ const nome = cat.slice(8); list = list.filter(p=>window.ScannerServidor && ScannerServidor.rotuloEmissor(p).includes(nome)); }
+  else if(cat!=="Todas") list = list.filter(p=>{ const r = getCat(p); return cat==="Stable / Stable" ? r===cat : r.includes(cat); });
 
   // ordenação
   const k = state.sortKey, dir = state.sortDir==="asc"?1:-1;
@@ -1865,7 +1875,7 @@ function rowHTML(p, rank){
       <span class="platbadge"><span class="pdot" style="background:${PLAT_COLORS[p.platform]||'#8a94a8'}"></span>${esc(p.platform)}</span>
       <span class="net">${esc(p.network)}</span>
     </td>
-    <td class="plat" data-label="Categoria"><span class="catbadge" style="color:${catCor(getCat(p))};border-color:${catCor(getCat(p))}44">${esc(getCat(p))}</span></td>
+    <td class="plat" data-label="Categoria"><span class="catbadge" style="color:${catCor(getCat(p))};border-color:${catCor(getCat(p))}44">${esc(getCat(p))}</span>${(()=>{ const e = window.ScannerServidor && p.servidor ? ScannerServidor.rotuloEmissor(p) : ""; return e ? `<div class="emissor">${esc(e)}</div>` : ""; })()}</td>
     <td class="num m-hide" data-label="Fee">${fFee(p.fee)}</td>
     <td class="num" data-label="TVL">${fUSD(p.tvl)}${low?`<span class="warn" title="TVL baixo (<$100k): razão pode enganar">⚠</span>`:''}</td>
     <td class="num" data-label="Vol/dia">${fUSD(volDia(p))}${volFonte(p)==='7d'?'<span class="volsrc" title="A fonte não informou o volume das últimas 24h: vale a média diária dos últimos 7 dias">média 7d</span>':''}</td>

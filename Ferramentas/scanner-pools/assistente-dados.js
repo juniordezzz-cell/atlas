@@ -81,6 +81,9 @@
       const alvo=new RegExp('\\b('+d.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+(curto.length>=5&&curto!==d?'|'+curto:'')+(d.endsWith('swap')&&d.length>8?'|'+d.slice(0,-4):'')+')\\b');
       if(alvo.test(resto)){f.dex=d;f.dexCurto=d.endsWith('swap')?d.slice(0,-4):curto;f.dexNome=(pools.find(p=>norm(p.platform)===d)||{}).platform||d.replace(/\b\w/g,ch=>ch.toUpperCase());resto=resto.replace(alvo,' ');break;}
     }
+    /* emissor do RWA ("SpaceX da Ondo", "pools da xStocks") */
+    const EMI=[['xStocks',/\bx ?stocks?\b/],['Backpack',/\bbackpack\b/],['Binance bStocks',/\bb ?stocks?\b/],['Ondo',/\bondo\b/],['Coinbase',/\bcoinbase\b/]];
+    for(const [nome,re] of EMI)if(re.test(resto)){f.emissor=nome;resto=resto.replace(re,' ');break;}
     f.pares=[];f.excluidos=[];
     let fimAnterior=0,negacaoAnterior=false;
     for(const m of resto.matchAll(/\b([a-z][a-z0-9.]{1,14})\s*\/\s*([a-z][a-z0-9.]{1,14})\b/g)){
@@ -111,7 +114,7 @@
       const met={giro:'razao',liquidez:'tvl',taxa:'fee'}[m[1]]||m[1];
       if(Number.isFinite(v))f.limites.push({metrica:met,min:!/abaixo|menor|menos|inferior|ate|maximo|</.test(m[2]),valor:v});
     }
-    f.temFiltro=!!(f.rede||f.dex||f.pares.length||f.tokens.length||f.ordem||f.limites.length);
+    f.temFiltro=!!(f.emissor||f.rede||f.dex||f.pares.length||f.tokens.length||f.ordem||f.limites.length);
     return f;
   }
   const VALOR={volume:p=>Number(p.vol24h),tvl:p=>Number(p.tvl),apr:aprDe,razao,fee:p=>Number(p.fee),nota:p=>Number(p.nota)||0,rendimento:eficiencia};
@@ -121,6 +124,7 @@
     if(f.dex)ps=ps.filter(p=>{const x=semEspaco(norm(p.platform));return x===semEspaco(f.dex)||x.startsWith(semEspaco(f.dexCurto||f.dex));});
     if(f.pares.length)ps=ps.filter(p=>f.pares.includes(par(p.pool)));
     if(f.excluidos.length)ps=ps.filter(p=>!f.excluidos.includes(par(p.pool)));
+    if(f.emissor)ps=ps.filter(p=>String(g.ScannerServidor?.rotuloEmissor?.(p)||'').includes(f.emissor));
     if(f.tokens.length)ps=ps.filter(p=>{const s=String(p.pool||'').toUpperCase().split(/[/\-]/).map(x=>x.trim());return f.tokens.every(t=>s.includes(t));});
     for(const l of f.limites)ps=ps.filter(p=>{const v=VALOR[l.metrica](p);return l.min?v>l.valor:v<=l.valor;});
     return ps;
@@ -139,6 +143,7 @@
     const partes=[];
     if(f.tokens.length)partes.push('com '+f.tokens.join(' e '));
     if(f.pares.length)partes.push('par '+f.pares.map(x=>x.toUpperCase()).join(', '));
+    if(f.emissor)partes.push('emissor '+f.emissor);
     if(f.dex)partes.push('na '+f.dexNome);
     if(f.rede)partes.push('rede '+f.redeNome);
     f.limites.forEach(l=>partes.push(ROTULO[l.metrica]+(l.min?' acima de ':' até ')+(['tvl','volume'].includes(l.metrica)?usdc(l.valor):num(l.valor))));

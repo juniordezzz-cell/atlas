@@ -124,3 +124,21 @@ def test_taxa_nao_informada_e_estimada_pelo_apr():
     sem = cand("WETH/USDT", fee=0, vol=1_000_000)
     assert calcular_notas([c], {})[c.id][1]["taxa"] == 1.0           # 0,25% é o ponto bom
     assert calcular_notas([sem], {})[sem.id][1]["taxa"] == 0.3       # sem APR: neutro, como antes
+
+
+def test_emissor_do_rwa_pelo_id_coingecko():
+    from central_rwa.pools import config
+    # os 6 SpaceX conferidos em 08/10/2026
+    casos = {"spacex-xstocks": "xStocks", "spacex-backpack-securities": "Backpack",
+             "spacex-bstocks-tokenized-stock": "Binance bStocks", "spacex-ondo-tokenized-stock": "Ondo",
+             "spacex-coinbase-tokenized-stock": "Coinbase", "spacex-robinhood-tokenized-stock": "Robinhood"}
+    for cg, nome in casos.items():
+        assert config.emissor("SPCX", cg) == {"nome": nome, "provavel": False}, cg
+    # sem cadastro: o sufixo dá o provável
+    assert config.emissor("TSLAON", None) == {"nome": "Ondo", "provavel": True}
+    assert config.emissor("NVDAx", None) == {"nome": "xStocks", "provavel": True}
+    assert config.emissor("SPCX", None, "Robinhood") == {"nome": "Robinhood", "provavel": True}
+    assert config.emissor("FOO", None) is None
+    # sufixos novos também contam como RWA, sem pegar ticker ambíguo
+    assert config.eh_rwa("SPCXON") and config.eh_rwa("SPCXB") and config.eh_rwa("SPCXC")
+    assert not config.eh_rwa("MAC") and not config.eh_rwa("VB")
