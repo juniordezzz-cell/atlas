@@ -45,6 +45,8 @@ class TokenInfo:
     mcap: float | None
     primeira_pool_em: datetime | None
     consultado_em: datetime
+    nome: str | None = None        # nome na GeckoTerminal ("Wrapped NEAR fungible token")
+    gt_score: float | None = None  # nota de confiança da GeckoTerminal, 0 a 100
 
 
 @dataclass

@@ -163,3 +163,23 @@ def test_contrato_reconhecido_vale_pelo_endereco_nao_pelo_nome():
                       honeypot=False, mint_ativo=False, freeze_ativo=False, dev_pct=None, holders=50,
                       coingecko_id=None, mcap=None, primeira_pool_em=None, consultado_em=AGORA)
     assert "sem cadastro na CoinGecko" in fraqueza_token("NEAR", copia, AGORA, "Solana")
+
+
+def test_versao_embrulhada_legitima_sem_coingecko_e_aceita():
+    from central_rwa.pools.classificacao import fraqueza_token
+    def tk(nome, score, holders, end="NoNe1"):
+        return TokenInfo(rede="Solana", endereco=end, simbolo="FOO", honeypot=False, mint_ativo=False,
+                         freeze_ativo=False, dev_pct=None, holders=holders, coingecko_id=None, mcap=None,
+                         primeira_pool_em=None, consultado_em=AGORA, nome=nome, gt_score=score)
+    assert fraqueza_token("FOO", tk("Wrapped FOO (Wormhole)", 75.0, 17_000), AGORA, "Solana") is None
+    # falta qualquer um dos três: continua fraco
+    assert "CoinGecko" in fraqueza_token("FOO", tk("FOO Token", 90.0, 50_000), AGORA, "Solana")       # nome não diz que é embrulhada
+    assert "CoinGecko" in fraqueza_token("FOO", tk("Wrapped FOO", 40.0, 50_000), AGORA, "Solana")      # nota baixa
+    assert "CoinGecko" in fraqueza_token("FOO", tk("Wrapped FOO", 80.0, 300), AGORA, "Solana")         # poucos holders
+
+
+def test_token_info_le_nome_e_nota():
+    from central_rwa.pools.fontes import parse_token_info
+    t = parse_token_info({"data": {"attributes": {"address": "3ZLek", "symbol": "wNEAR",
+        "name": "Wrapped NEAR fungible token", "gt_score": 75.32, "holders": {"count": 17409}}}}, "Solana", AGORA)
+    assert t.nome == "Wrapped NEAR fungible token" and t.gt_score == 75.32

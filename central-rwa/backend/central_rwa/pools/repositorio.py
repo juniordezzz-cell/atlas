@@ -128,7 +128,7 @@ class PostgresPoolStore(PoolStore):
             return {}
         rows = self._query(
             "select rede, endereco, simbolo, honeypot, mint_ativo, freeze_ativo, dev_pct, holders, coingecko_id, "
-            "mcap, primeira_pool_em, consultado_em from scanner.tokens "
+            "mcap, primeira_pool_em, consultado_em, nome, gt_score from scanner.tokens "
             "where rede=%s and endereco = any(%s) and consultado_em >= %s",
             (rede, enderecos, validade_desde),
         )

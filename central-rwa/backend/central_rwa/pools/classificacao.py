@@ -4,6 +4,7 @@ Dados incompletos não são prova de meme nem garantia de segurança."""
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from math import isfinite
 
@@ -70,6 +71,8 @@ def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: 
     if info is None:
         return f"{s} ainda sem dados de segurança"
     if not info.coingecko_id:
+        if bridged_confiavel(info):
+            return None
         return f"{s} sem cadastro na CoinGecko"
     if (info.mcap or 0) < MCAP_MIN:
         return f"{s} com valor de mercado abaixo de US$ 10 mi"
@@ -78,6 +81,22 @@ def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: 
     if info.holders is not None and info.holders < HOLDERS_MIN:
         return f"{s} com menos de 1.000 holders"
     return None
+
+
+_BRIDGED = re.compile(r"\b(wrapped|bridged|wormhole|portal|allbridge|pegged|binance-peg)\b", re.I)
+BRIDGED_GT_SCORE_MIN = 70.0
+BRIDGED_HOLDERS_MIN = 10_000
+
+
+def bridged_confiavel(info: TokenInfo) -> bool:
+    """Versão embrulhada legítima sem cadastro na CoinGecko (08/10/2026): a
+    CoinGecko liga a NEAR da Ethereum e da BNB Chain, não a wNEAR da Solana.
+    Aceita quando o nome na GeckoTerminal diz que é embrulhada E a nota de
+    confiança dela é alta E há muitos holders — as três juntas. Uma cópia
+    que só copia o nome não tem a nota nem os holders."""
+    return bool(info.nome and _BRIDGED.search(info.nome)
+                and (info.gt_score or 0) >= BRIDGED_GT_SCORE_MIN
+                and (info.holders or 0) >= BRIDGED_HOLDERS_MIN)
 
 
 def token_solido(simbolo: str, info: TokenInfo | None, agora: datetime, rede: str | None = None) -> bool:

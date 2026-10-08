@@ -156,6 +156,8 @@ def parse_token_info(payload: dict, rede: str, agora: datetime) -> TokenInfo:
         mcap=None,
         primeira_pool_em=None,
         consultado_em=agora,
+        nome=str(a.get("name") or "") or None,
+        gt_score=_num(a.get("gt_score")),
     )
 
 
