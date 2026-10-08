@@ -243,9 +243,17 @@
            valor de posição do módulo era calculado com o preço
            digitado no dia do cadastro. */
         botaoPrecos(),
-        U.button("Adicionar ativo", { variant: "primary", icon: "plus", onClick: F.newAsset })
+        U.button("Watchlist", { variant: "ghost", icon: "eye", onClick: F.newAsset }),
+        U.button("Registrar compra", { variant: "primary", icon: "plus", onClick: function () { F.novaCompra(); } })
       ])
     ]));
+
+    /* Sem nenhum ativo, a faixa de zeros e os filtros vazios não dizem
+       nada: a tela vira o começo (ver heroVazio no dashboard.js). */
+    if (!S.state.ativos.length && window.Pages._heroVazio) {
+      view.appendChild(window.Pages._heroVazio(S.wallets.caixa()));
+      return { title: "Ativos", crumb: "Universo de ativos", node: view };
+    }
 
     view.appendChild(faixaResumo());
 

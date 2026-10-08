@@ -96,9 +96,14 @@
         U.button("Atualizar preços", { icon: "refresh", onClick: atualizarPrecos }),
         U.button("Carteiras e caixa", { variant: "ghost", icon: "wallet",
           onClick: function () { location.href = "../pages/carteiras.html"; } }),
-        U.button("Adicionar ativo", { variant: "primary", icon: "plus", onClick: function () { F.newAsset(); } })
+        U.button("Registrar compra", { variant: "primary", icon: "plus", onClick: function () { F.novaCompra(); } })
       ])
     ]));
+
+    if (!posicoes.length && !realizado) {
+      view.appendChild(heroVazio(caixa));
+      return { title: "Painel", crumb: "Visão geral", node: view };
+    }
 
     /* ------------------------------------------------------------
        OS QUATRO NÚMEROS, EXATOS
@@ -179,9 +184,9 @@
       posCard.classList.add("mt-16");
       view.appendChild(posCard);
     } else {
-      var vazio = U.card({ body: [U.empty("wallet", "Sua carteira de hold começa aqui",
-        "Cadastre o ativo e registre a compra com a quantidade, o preço que você pagou, a taxa e a data.",
-        U.button("Adicionar e comprar", { variant: "primary", icon: "plus", onClick: function () { F.newAsset(); } }))] });
+      var vazio = U.card({ body: [U.empty("wallet", "Nenhuma posição aberta",
+        "Tudo foi vendido. Registre uma nova compra quando quiser voltar a investir.",
+        U.button("Registrar compra", { variant: "primary", icon: "plus", onClick: function () { F.novaCompra(); } }))] });
       vazio.classList.add("mt-16");
       view.appendChild(vazio);
     }
@@ -355,6 +360,43 @@
     });
   }
   window.Pages._historicoOrdenado = historicoOrdenado;
+  /* ------------------------------------------------------------
+     CARTEIRA VAZIA: UMA AÇÃO, NÃO UMA FAIXA DE ZEROS
+
+     Sem posição, o painel mostrava "US$ 0", "+0,00%", "US$ 0" e um
+     vazio no meio — parecia uma tela quebrada, e o caminho para
+     começar era um botão pequeno perdido no centro. Agora a tela vazia
+     é o começo: o que o Hold faz e o botão que abre a compra.
+     ------------------------------------------------------------ */
+  function heroVazio(caixa) {
+    var hero = U.el("div", { class: "hold-hero" });
+    hero.appendChild(U.el("div", { class: "hh-txt" }, [
+      U.el("div", { class: "eyebrow", text: "Comece por aqui" }),
+      U.el("h2", { text: "Registre a sua primeira compra" }),
+      U.el("p", { text: "Escolha o ativo e informe quanto comprou, o preço que pagou, a taxa e a data. " +
+        "O Hold calcula o preço médio, a valorização de cada ativo e o resultado da carteira — e atualiza os preços sozinho." }),
+      U.el("div", { class: "hh-acoes" }, [
+        U.button("Registrar compra", { variant: "primary", icon: "plus", onClick: function () { F.novaCompra(); } }),
+        U.button("Só acompanhar (watchlist)", { variant: "ghost", icon: "eye", onClick: function () { F.newAsset(); } })
+      ])
+    ]));
+    var passos = U.el("ol", { class: "hh-passos" });
+    [["Ativo", "busque pelo nome; ticker e preço de hoje vêm sozinhos"],
+     ["Quantidade e preço", "ou o valor total que você colocou"],
+     ["Taxa e data", "da corretora ou da rede; data passada busca o preço do dia"]
+    ].forEach(function (p, i) {
+      passos.appendChild(U.el("li", {}, [
+        U.el("span", { class: "hh-n", text: String(i + 1) }),
+        U.el("span", {}, [U.el("b", { text: p[0] }), U.el("span", { class: "dim", text: " — " + p[1] })])
+      ]));
+    });
+    hero.appendChild(passos);
+    if (caixa > 0) hero.appendChild(U.el("div", { class: "small dim hh-caixa",
+      text: "Você tem " + U.money(caixa) + " em caixa; o que faltar entra como depósito automático." }));
+    return hero;
+  }
+  window.Pages._heroVazio = heroVazio;
+
   window.Pages._historyItem = historyItem;
   window.Pages._labelAction = labelAction;
 })();

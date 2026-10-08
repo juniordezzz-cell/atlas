@@ -265,10 +265,29 @@
   }
 
   /* ---------- Trade (compra/venda) ---------- */
-  function trade(assetId, side) {
+  /* ============================================================
+     REGISTRAR COMPRA NUMA JANELA SÓ
+
+     Registrar uma compra pedia DUAS janelas: cadastrar o ativo e, só
+     depois, abrir "Operar" para pôr a quantidade. Na prática o dono
+     cadastrou, não achou a quantidade e desistiu — o Hold ficou vazio.
+
+     Com opts.novo, a mesma janela de operação ganha a busca do ativo
+     no topo: escolher na lista (ou digitar o ticker) e preencher
+     quantidade, preço pago, taxa, data e carteira ali mesmo. Se o
+     ticker já existe, a compra cai nele (um ticker, um ativo); se não,
+     o ativo é criado junto com a compra — e apagado de novo se a
+     compra for recusada, para não sobrar lixo na watchlist.
+     ============================================================ */
+  function novaCompra() { trade(null, "buy", { novo: true }); }
+
+  function trade(assetId, side, opts) {
+    opts = opts || {};
+    var novo = !!opts.novo;
     /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
-    if (side !== "sell" && window.AtlasDemo && AtlasDemo.bloquear(function () { trade(assetId, side); })) return;
-    var a = S.get.asset(assetId); if (!a) return;
+    if (side !== "sell" && window.AtlasDemo && AtlasDemo.bloquear(function () { trade(assetId, side, opts); })) return;
+    var a = novo ? { id: null, ticker: "", nome: "", tipo: "Cripto", preco_atual: 0 } : S.get.asset(assetId);
+    if (!a) return;
     var isSell = side === "sell";
     var carteiras = (S.wallets && S.wallets.list) ? S.wallets.list() : [{ id: "principal", name: "Principal" }];
     /* A carteira oferecida é sempre uma carteira de verdade. Com a tela
@@ -345,8 +364,25 @@
        ------------------------------------------------------------ */
     var infoCaixa = U.el("div", { class: "small dim", style: "margin-bottom:10px" });
 
+    var topo;
+    var nomeI, tickerI, tipoI, escolhido = null;
+    if (novo) {
+      nomeI = U.input({ placeholder: "Busque: Bitcoin, Pendle, Solana…" });
+      tickerI = U.input({ placeholder: "BTC", style: "text-transform:uppercase" });
+      tipoI = U.select([
+        { value: "Cripto", label: "Cripto" }, { value: "Ação", label: "Ação" },
+        { value: "ETF", label: "ETF" }, { value: "Commodity", label: "Commodity" }, { value: "Outro", label: "Outro" }
+      ], "Cripto");
+      topo = U.el("div", { class: "ativo-busca" }, [
+        U.field("Ativo", nomeI, { required: true, hint: "Escolha na lista: o ticker e o preço de hoje vêm sozinhos." }),
+        U.el("div", { class: "form-row" }, [U.field("Ticker", tickerI, { required: true }), U.field("Tipo", tipoI)])
+      ]);
+    } else {
+      topo = U.el("div", { class: "between", style: "margin-bottom:16px" }, [U.assetCellSafe(a), seg]);
+    }
+
     var body = U.el("div", {}, [
-      U.el("div", { class: "between", style: "margin-bottom:16px" }, [U.assetCellSafe(a), seg]),
+      topo,
       U.field("Carteira da posição", walletSel, { required: true, hint: "Compra e venda desta posição caem nesta carteira." }),
       infoCaixa,
       posInfo,
@@ -496,7 +532,7 @@
       var d = dataI.value;
       if (!d) return;
       if (d > hojeIso) { dataI.value = hojeIso; dicaData.textContent = "Data no futuro não vale — voltou para hoje."; return; }
-      if (d === hojeIso || !window.AtlasPrecos || !AtlasPrecos.emData || (a.tipo && a.tipo !== "Cripto")) return;
+      if (d === hojeIso || !a.ticker || !window.AtlasPrecos || !AtlasPrecos.emData || (a.tipo && a.tipo !== "Cripto")) return;
       dicaData.textContent = "Buscando o preço de " + d.split("-").reverse().join("/") + "…";
       AtlasPrecos.emData(a.ticker, d).then(function (r) {
         if (dataI.value !== d) return;
@@ -514,6 +550,21 @@
 
     var confirmBtn = U.button(isSell ? "Registrar venda" : "Registrar compra", {
       variant: isSell ? "danger" : "primary", icon: "check", onClick: function () {
+        var criado = null;
+        if (novo && !assetId) {
+          var nm = nomeI.value.trim(), tk = tickerI.value.trim().toUpperCase();
+          if (!nm && !tk) return erroTrade.mostrar("Escolha o ativo que você comprou.", nomeI);
+          if (!tk) return erroTrade.mostrar("Informe o ticker (ex.: BTC, PENDLE).", tickerI);
+          criado = S.actions.createAsset({
+            /* cotação de HOJE, não o preço pago: com data passada eles
+               diferem, e usar o pago zerava a valorização na tela */
+            nome: nm || tk, ticker: tk, tipo: tipoI.value,
+            preco_atual: a.preco_atual > 0 ? a.preco_atual : (dataI.value === hojeIso ? precoI.value : 0),
+            cg_id: (escolhido && tipoI.value === "Cripto" && escolhido.symbol === tk) ? escolhido.id : null
+          });
+          if (criado && criado.error) return erroTrade.mostrar(criado.error, tickerI);
+          assetId = criado.id; a = criado;
+        }
         var payload = {
           ativo_id: assetId, quantidade: qtdI.value, preco: precoI.value,
           justificativa: just.value.trim(), walletId: walletSel.value,
@@ -523,8 +574,16 @@
         var res;
         if (currentSide === "sell") res = S.actions.executeSell(payload);
         else { payload.cobrirFalta = true; res = S.actions.executeBuy(payload); }
-        if (res && res.error) return erroTrade.mostrar(res.error, campoDoErro(res.error));
+        if (res && res.error) {
+          /* compra recusada: o ativo criado agora não fica de sobra */
+          if (criado) { S.actions.deleteAsset(criado.id); assetId = null; a = { id: null, ticker: tickerI.value.trim().toUpperCase(), nome: nomeI.value.trim(), tipo: tipoI.value, preco_atual: 0 }; }
+          return erroTrade.mostrar(res.error, campoDoErro(res.error));
+        }
         U.closeModal();
+        /* ativo novo: busca a cotação de agora logo em seguida */
+        if (criado && S.actions.refreshPrices) {
+          S.actions.refreshPrices().then(function () { if (!document.querySelector(".modal-scrim")) afterChange(); }).catch(function () {});
+        }
         U.toast(currentSide === "sell" ? "Venda registrada" : "Compra registrada",
           a.ticker + " atualizado." +
           (res && res.venda ? " " + (res.venda.resultado >= 0 ? "Lucro" : "Prejuízo") + " realizado: " + U.money(res.venda.resultado) + "." : "") +
@@ -535,9 +594,52 @@
       }
     });
 
-    U.modal({ eyebrow: "Executar decisão", title: "Operar " + a.ticker, body: body,
+    U.modal({ eyebrow: novo ? "Nova compra" : "Executar decisão", title: novo ? "Registrar compra" : "Operar " + a.ticker, body: body,
       footer: [U.button("Cancelar", { variant: "ghost", onClick: U.closeModal }), U.el("div", { class: "spacer" }), confirmBtn] });
     atualizarResumoCarteira();
+
+    if (novo) {
+      /* O ativo escolhido (ou digitado) decide a quantidade de casas, o
+         preço sugerido e se a compra cai num ativo que já existe. */
+      var definirAtivo = function (tk, nm, coin) {
+        tk = String(tk || "").trim().toUpperCase();
+        var existente = tk ? S.state.ativos.filter(function (x) { return String(x.ticker || "").toUpperCase() === tk; })[0] : null;
+        if (existente) {
+          assetId = existente.id; a = existente;
+          tipoI.value = existente.tipo || "Cripto";
+          if (!precoDigitado && existente.preco_atual > 0) precoI.value = existente.preco_atual;
+        } else {
+          assetId = null;
+          a = { id: null, ticker: tk, nome: nm || tk, tipo: tipoI.value, preco_atual: 0 };
+        }
+        atualizarResumoCarteira();
+        sincronizar("preco");
+        if (!existente && tk && tipoI.value === "Cripto" && window.AtlasPrecos) {
+          AtlasPrecos.de(tk).then(function (r) {
+            if (!(r && r.usd > 0) || a.ticker !== tk) return;
+            a.preco_atual = r.usd;   // cotação de hoje: vira o preço atual do ativo
+            /* o campo "preço pago" só recebe a cotação de hoje se a compra
+               for de hoje — com data passada, quem preenche é o
+               fechamento daquele dia (ver dataI) */
+            if (!precoDigitado && (!dataI.value || dataI.value === hojeIso)) { precoI.value = r.usd; sincronizar("preco"); }
+          }).catch(function () {});
+        }
+        if (dataI.value && dataI.value !== hojeIso) dataI.dispatchEvent(new Event("change"));
+      };
+      if (window.AtlasAssets) {
+        var aoEscolher = function (coin) {
+          nomeI.value = coin.name; tickerI.value = coin.symbol;
+          escolhido = coin.id ? { id: coin.id, symbol: String(coin.symbol || "").toUpperCase() } : null;
+          tipoI.value = "Cripto";
+          definirAtivo(coin.symbol, coin.name, coin);
+        };
+        AtlasAssets.attach(nomeI, { value: "name", onSelect: aoEscolher });
+        AtlasAssets.attach(tickerI, { value: "symbol", onSelect: aoEscolher });
+      }
+      tickerI.addEventListener("change", function () { escolhido = null; definirAtivo(tickerI.value, nomeI.value, null); });
+      tipoI.addEventListener("change", function () { if (!assetId) a.tipo = tipoI.value; });
+      setTimeout(function () { try { nomeI.focus(); } catch (e) {} }, 250);
+    }
   }
 
   // helper pra assetCell dentro de modal sem quebrar se UI ainda não tiver
@@ -545,6 +647,6 @@
 
   window.Forms = {
     newAsset: newAsset, editAsset: editAsset,
-    trade: trade
+    trade: trade, novaCompra: novaCompra
   };
 })();
