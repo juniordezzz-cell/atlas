@@ -17,6 +17,14 @@
     [['viewBox','0 0 24 24'],['width','18'],['height','18'],['fill','none'],['stroke','currentColor'],['stroke-width','2'],['stroke-linecap','round'],['stroke-linejoin','round'],['aria-hidden','true']].forEach(([k,v])=>s.setAttribute(k,v));
     p.setAttribute('d','M5 12h14M13 6l6 6-6 6');s.append(p);return s;
   }
+  /* o ícone do Oráculo (a Atena do ATLAS), com o aro vermelho/azul girando;
+     se a imagem não carregar, volta a estrela */
+  function avatar(cls){
+    const sp=el('span','sp-avatar '+(cls||''));const img=document.createElement('img');
+    img.src='../../assets/atena.webp';img.alt='';img.decoding='async';
+    img.onerror=()=>{img.remove();sp.textContent='✦';sp.classList.add('sp-avatar-sem-img');};
+    sp.append(img);return sp;
+  }
   const usdc=v=>{v=Number(v);if(!Number.isFinite(v))return '—';const a=Math.abs(v);
     if(a>=1e9)return 'US$ '+(v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:2})+' bi';
     if(a>=1e6)return 'US$ '+(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+' mi';
@@ -77,7 +85,7 @@
     function view(root,flutuante){
       root.classList.add('sp-oraculo');if(flutuante)root.classList.add('sp-oraculo-flutuante');
       const head=el('header','sp-head');
-      const marca=el('div','sp-marca');marca.append(el('span','sp-avatar','✦'));
+      const marca=el('div','sp-marca');marca.append(avatar());
       const tit=el('div');tit.append(el('h2',null,'Oráculo'),el('p','sp-sub','Pools do Scanner'));marca.append(tit);
       const mode=el('span','sp-modo');
       const acoes=el('div','sp-head-acoes');
@@ -95,7 +103,7 @@
       const send=el('button','sp-enviar');send.type='submit';send.append(iconeEnviar());send.setAttribute('aria-label','Enviar pergunta');
       form.append(input,send);
       const dica=el('p','sp-dica','Enter envia · Shift+Enter quebra a linha. Respostas usam só os dados do Scanner; não são recomendação.');
-      const ajusta=()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,160)+'px';};
+      const ajusta=()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,160)+'px';input.style.overflowY=input.scrollHeight>160?'auto':'hidden';};
       input.addEventListener('input',ajusta);
       form.onsubmit=e=>{e.preventDefault();const q=input.value.trim();if(q&&!busy){input.value='';ajusta();submit(q);}};
       input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}};
@@ -108,7 +116,7 @@
 
     function vazio(v){
       const box=el('div','sp-vazio');
-      box.append(el('span','sp-avatar sp-avatar-g','✦'),el('h3',null,'O que você quer saber das pools?'),
+      box.append(avatar('sp-avatar-g'),el('h3',null,'O que você quer saber das pools?'),
         el('p',null,'Filtre por token, par, DEX ou rede, peça a ordem (maior volume, maior APR), limites (razão acima de 3) ou quanto rende um valor numa pool.'));
       const grade=el('div','sp-sugestoes');
       EXEMPLOS.forEach(([rot,q])=>{const b=el('button','sp-sugestao',rot);b.type='button';b.onclick=()=>submit(q);b.disabled=busy;grade.append(b);});
@@ -116,7 +124,7 @@
     }
     function mensagem(m){
       if(m.role==='user'){const row=el('div','sp-msg sp-msg-user');row.append(el('p','sp-balao',m.text));return row;}
-      const row=el('div','sp-msg sp-msg-oraculo');row.append(el('span','sp-avatar sp-avatar-p','✦'));
+      const row=el('div','sp-msg sp-msg-oraculo');row.append(avatar('sp-avatar-p'));
       const body=el('div','sp-msg-corpo');
       const items=(m.items||[]).filter(x=>x&&x.pool);
       const local=partes(m.local||'');
@@ -144,7 +152,7 @@
       v.log.replaceChildren();
       if(!messages.length)vazio(v);
       messages.forEach(m=>v.log.append(mensagem(m)));
-      if(busy){const row=el('div','sp-msg sp-msg-oraculo');row.append(el('span','sp-avatar sp-avatar-p','✦'));const d=el('div','sp-digitando');d.setAttribute('aria-label','Consultando os dados do Scanner');d.append(el('i'),el('i'),el('i'));row.append(d);v.log.append(row);}
+      if(busy){const row=el('div','sp-msg sp-msg-oraculo');row.append(avatar('sp-avatar-p'));const d=el('div','sp-digitando');d.setAttribute('aria-label','Consultando os dados do Scanner');d.append(el('i'),el('i'),el('i'));row.append(d);v.log.append(row);}
       const ia=aiEnabled&&logado();
       v.mode.textContent=ia?'IA ativa':'Respostas locais';v.mode.classList.toggle('on',ia);
       v.mode.title=ia?'Perguntas abertas usam a IA (OpenRouter gratuito) sobre os dados do Scanner.':aiEnabled?'Entre no ATLAS para usar a IA; as consultas locais funcionam sem ela.':'IA aguardando configuração; as consultas locais funcionam sem ela.';
