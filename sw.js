@@ -139,7 +139,7 @@
 /* v78 = ícone do token em todo lugar (core/atlas-token-icons.js):
    DeFi, Hold, RWA, Carteiras e Dashboard marcam a bolinha com
    data-atlas-token e a imagem entra por cima das iniciais. */
-var VERSAO = "atlas-v88";
+var VERSAO = "atlas-v89";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
@@ -235,8 +235,21 @@ self.addEventListener("fetch", function (e) {
      arquivo alterado volta inteiro. O offline continua funcionando —
      revalidação sem rede falha, e o .catch() abaixo serve o cache.
      ------------------------------------------------------------ */
+  /* ------------------------------------------------------------
+     PÁGINA HTML: SEMPRE INTEIRA ("reload"), NUNCA REVALIDADA
+
+     Medido em 08/10/2026 no Chrome do dono: com o Hold já publicado
+     (hold-88 no servidor), a navegação continuava abrindo a página
+     anterior (hold-87) mesmo após vários F5. A revalidação ("no-cache")
+     aceita o 304 de uma cópia velha — o CDN do GitHub Pages guarda o
+     HTML por 10 min — e a página antiga carregava os scripts antigos.
+     Para o HTML (poucos KB) baixar inteiro custa nada e garante o
+     código novo; os .js/.css do Hold levam ?v= no endereço, então a
+     revalidação deles basta.
+     ------------------------------------------------------------ */
+  var ehPagina = req.mode === "navigate" || req.destination === "document";
   e.respondWith(
-    fetch(req, { cache: "no-cache" }).then(function (res) {
+    fetch(req, { cache: ehPagina ? "reload" : "no-cache" }).then(function (res) {
       /* Guarda uma cópia do que veio bem. Resposta de erro não entra:
          cachear um 404 é transformar um problema momentâneo em
          permanente. */
