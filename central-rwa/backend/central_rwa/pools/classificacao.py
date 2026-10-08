@@ -30,6 +30,12 @@ def motivos_barrada(c: Candidata, infos: list[TokenInfo | None], leituras: list[
             continue
         if i.honeypot:
             m.append("honeypot")
+        # Ação tokenizada é controlada pelo emissor por desenho (emitir,
+        # congelar, guardar a oferta). Desde 08/10 os RWA são consultados para
+        # saber o emissor, e isso barrava as xStocks da Solana como golpe.
+        emi = config.emissor(i.simbolo, i.coingecko_id) if i.coingecko_id else None
+        if config.eh_rwa(i.simbolo, i.rede) or (emi and not emi["provavel"]):
+            continue
         if i.mint_ativo:
             m.append("mint ativo")
         if i.freeze_ativo:

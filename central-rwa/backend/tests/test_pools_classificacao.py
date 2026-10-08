@@ -142,3 +142,12 @@ def test_emissor_do_rwa_pelo_id_coingecko():
     # sufixos novos também contam como RWA, sem pegar ticker ambíguo
     assert config.eh_rwa("SPCXON") and config.eh_rwa("SPCXB") and config.eh_rwa("SPCXC")
     assert not config.eh_rwa("MAC") and not config.eh_rwa("VB")
+
+
+def test_rwa_controlado_pelo_emissor_nao_e_barrado():
+    # 08/10/2026: xStocks na Solana têm mint/freeze do emissor — não é golpe
+    x = info(simbolo="SPCXx", mint=True, freeze=True, dev=60.0, cg="spacex-xstocks")
+    assert motivos_barrada(cand("SPCXx/USDC"), [x, None], []) == []
+    assert "honeypot" in motivos_barrada(cand("SPCXx/USDC"), [info(simbolo="SPCXx", honeypot=True), None], [])
+    # token comum com mint ativo continua barrado
+    assert "mint ativo" in motivos_barrada(cand(), [info(mint=True), None], [])
