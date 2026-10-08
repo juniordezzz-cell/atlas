@@ -79,7 +79,15 @@
     const panel=el('section','sp-chat-panel');panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Oráculo do Scanner');
     if(!g.AtlasOraculo)document.body.append(orb,panel);
     let aberto=false,busy=false,regras=null,aiEnabled=false,memorySupported=false,lastIds=[],preferencias=null,memoriaLida=false;
-    const messages=[];
+    /* várias conversas salvas + a temporária de 24 h (assistente-conversas.js) */
+    const CV=g.ScannerConversas;
+    let conversas=CV?CV.carregar():[];
+    let atual=CV?CV.nova():{mensagens:[]};
+    let messages=atual.mensagens;
+    function abrirConversa(c){if(busy)return;atual=c;messages=atual.mensagens;lastIds=[];fecharLista();render();}
+    function novaConversa(temporaria){if(busy)return;atual=CV?CV.nova({temporaria}):{mensagens:[]};messages=atual.mensagens;lastIds=[];fecharLista();render();views.forEach(v=>v.input.focus());}
+    function persistir(){if(CV)conversas=CV.salvar(conversas,atual);}
+    function fecharLista(){views.forEach(v=>v.root.classList.remove('sp-lista-aberta'));}
     fetch('assistente-regras.json').then(r=>{if(!r.ok)throw Error('regras');return r.json();}).then(r=>{regras=r;}).catch(()=>{});
     const ready=g.ScannerIA?g.ScannerIA.status().then(s=>{aiEnabled=!!s.enabled;memorySupported=!!s.capabilities?.memory;render();}).catch(()=>{}):Promise.resolve();
     const logado=()=>!!g.firebase?.auth?.().currentUser;
@@ -91,9 +99,14 @@
       const marca=el('div','sp-marca');marca.append(avatar());
       const tit=el('div');tit.append(el('h2',null,'Oráculo'),el('p','sp-sub','Pools do Scanner'));marca.append(tit);
       const mode=el('span','sp-modo');
+      const temp=el('span','sp-temp');temp.hidden=true;
       const acoes=el('div','sp-head-acoes');
-      const nova=el('button','sp-ghost','Nova conversa');nova.type='button';nova.onclick=()=>{if(!busy){messages.length=0;lastIds=[];render();views.forEach(v=>v.input.focus());}};
-      acoes.append(mode,nova);
+      const nova=el('button','sp-ghost','Nova conversa');nova.type='button';nova.onclick=()=>novaConversa(false);
+      acoes.append(temp,mode,nova);
+      if(!flutuante){
+        const listaBtn=el('button','sp-ghost sp-lista-btn','Conversas');listaBtn.type='button';
+        listaBtn.onclick=()=>root.classList.toggle('sp-lista-aberta');acoes.prepend(listaBtn);
+      }
       if(flutuante){
         const full=el('button','sp-ghost','Ampliar');full.type='button';full.onclick=()=>{setOpen(false);g.switchTab('assistente');views[0].input.focus();};
         const close=el('button','sp-ghost','Fechar');close.type='button';close.setAttribute('aria-label','Fechar Oráculo');close.onclick=()=>setOpen(false);
@@ -111,8 +124,15 @@
       form.onsubmit=e=>{e.preventDefault();const q=input.value.trim();if(q&&!busy){input.value='';ajusta();submit(q);}};
       input.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}};
       const pe=el('div','sp-pe');pe.append(form,dica);
-      root.append(head,log,pe);
-      const v={root,mode,log,input,send,pe,flutuante};views.push(v);return v;
+      let lista=null;
+      if(flutuante)root.append(head,log,pe);
+      else{
+        /* coluna da esquerda: nova, temporária e as conversas salvas */
+        lista=el('aside','sp-lista');lista.setAttribute('aria-label','Conversas');
+        const principal=el('div','sp-principal');principal.append(head,log,pe);
+        root.append(lista,principal);
+      }
+      const v={root,mode,temp,log,input,send,pe,flutuante,lista};views.push(v);return v;
     }
     view(aba,false);view(panel,true);
     const memory=g.ScannerMemoria.montar(views[0].pe,p=>{preferencias=p;memoriaLida=true;});
@@ -151,7 +171,29 @@
       }
       row.append(body);return row;
     }
+    function dataCurta(t){const d=new Date(t),h=new Date();return d.toDateString()===h.toDateString()?d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});}
+    function renderLista(v){
+      if(!v.lista)return;
+      v.lista.replaceChildren();
+      const topo=el('div','sp-lista-topo');
+      const b1=el('button','sp-lista-nova','+ Nova conversa');b1.type='button';b1.onclick=()=>novaConversa(false);
+      const b2=el('button','sp-lista-temp','Conversa temporária · 24 h');b2.type='button';b2.title='Some sozinha 24 horas depois de criada';b2.onclick=()=>novaConversa(true);
+      topo.append(b1,b2);v.lista.append(topo);
+      if(!conversas.length){v.lista.append(el('p','sp-lista-vazia','As conversas ficam salvas aqui, neste navegador.'));return;}
+      const ul=el('ul','sp-lista-itens');
+      conversas.forEach(c=>{
+        const li=el('li','sp-lista-item'+(c.id===atual.id?' on':'')+(c.temporaria?' temp':''));
+        const abrir=el('button','sp-lista-abrir');abrir.type='button';abrir.onclick=()=>abrirConversa(c);
+        abrir.append(el('span','sp-lista-titulo',c.titulo||CV.titulo(c)),el('span','sp-lista-data',c.temporaria?'⏱ '+CV.restante(c):dataCurta(c.atualizadaEm)));
+        const del=el('button','sp-lista-del','×');del.type='button';del.title='Apagar esta conversa';del.setAttribute('aria-label','Apagar a conversa '+(c.titulo||''));
+        del.onclick=()=>{if(busy)return;conversas=CV.apagar(conversas,c.id);if(c.id===atual.id)novaConversa(false);else render();};
+        li.append(abrir,del);ul.append(li);
+      });
+      v.lista.append(ul);
+    }
     function render(){views.forEach(v=>{
+      renderLista(v);
+      v.temp.hidden=!atual.temporaria;v.temp.textContent=atual.temporaria?'⏱ Temporária · '+(CV?CV.restante(atual):''):'';
       v.log.replaceChildren();
       if(!messages.length)vazio(v);
       messages.forEach(m=>v.log.append(mensagem(m)));
@@ -185,7 +227,14 @@
       }
       messages.push(m);
       return m.text;
-    }catch(e){const text='Não consegui concluir a consulta. Tente novamente; nenhuma favorita ou decisão foi alterada.';messages.push({role:'assistant',text});return text;}finally{busy=false;render();}}
+    }catch(e){const text='Não consegui concluir a consulta. Tente novamente; nenhuma favorita ou decisão foi alterada.';messages.push({role:'assistant',text});return text;}finally{busy=false;persistir();render();}}
+    /* a cada minuto: a temporária vencida some (e a tela volta a uma nova) */
+    setInterval(()=>{
+      if(!CV||busy)return;
+      const antes=conversas.length;conversas=CV.podar(conversas);
+      if(atual.temporaria&&Date.now()>=atual.expiraEm){novaConversa(false);return;}
+      if(atual.temporaria||conversas.length!==antes||conversas.some(c=>c.temporaria))render();
+    },60000);
     function setOpen(value){aberto=value;panel.hidden=!value;orb.setAttribute('aria-expanded',String(value));if(value)views[1].input.focus();else orb.focus();}
     orb.onclick=()=>setOpen(!aberto);
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&aberto)setOpen(false);});

@@ -3,7 +3,31 @@
 .sp-oraculo{--sp-fundo:rgba(148,170,215,.06);--sp-fundo2:rgba(148,170,215,.10);--sp-user:#1d2d4d;--sp-r:20px}
 
 /* ---------- aba inteira ---------- */
-#tab-assistente.sp-oraculo{max-width:860px;margin:0 auto;padding:20px 16px 0;display:flex;flex-direction:column;min-height:calc(100dvh - 72px)}
+#tab-assistente.sp-oraculo{max-width:1140px;margin:0 auto;padding:20px 16px 0;display:grid;grid-template-columns:232px minmax(0,1fr);gap:28px;align-items:start}
+.sp-principal{display:flex;flex-direction:column;min-height:calc(100dvh - 72px);min-width:0}
+
+/* ---------- lista de conversas ---------- */
+.sp-lista{position:sticky;top:76px;max-height:calc(100dvh - 96px);overflow:auto;padding-top:6px}
+.sp-lista-topo{display:grid;gap:6px;margin-bottom:14px}
+.sp-lista-nova,.sp-lista-temp{border:0;text-align:left;font:inherit;font-size:13px;padding:10px 12px;border-radius:12px;cursor:pointer}
+.sp-lista-nova{background:rgba(91,140,255,.16);color:#cfe0ff}
+.sp-lista-nova:hover{background:rgba(91,140,255,.24)}
+.sp-lista-temp{background:var(--sp-fundo);color:var(--mut)}
+.sp-lista-temp:hover{background:var(--sp-fundo2);color:var(--txt)}
+.sp-lista-vazia{font-size:12px;color:var(--mut2);margin:6px 2px}
+.sp-lista-itens{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.sp-lista-item{display:flex;align-items:center;border-radius:10px}
+.sp-lista-item:hover,.sp-lista-item.on{background:var(--sp-fundo)}
+.sp-lista-abrir{flex:1;min-width:0;border:0;background:transparent;text-align:left;font:inherit;padding:8px 10px;cursor:pointer;display:grid;gap:2px}
+.sp-lista-titulo{font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-lista-data{font-size:11px;color:var(--mut2)}
+.sp-lista-item.temp .sp-lista-data{color:var(--amber)}
+.sp-lista-del{border:0;background:transparent;color:var(--mut2);font-size:16px;line-height:1;padding:6px 9px;border-radius:8px;cursor:pointer;opacity:0}
+.sp-lista-item:hover .sp-lista-del,.sp-lista-item.on .sp-lista-del,.sp-lista-del:focus-visible{opacity:1}
+.sp-lista-del:hover{color:var(--red);background:rgba(240,85,106,.1)}
+.sp-lista-btn{display:none}
+.sp-temp{white-space:nowrap;font-size:12px;color:var(--amber);background:rgba(245,185,66,.12);padding:6px 11px;border-radius:999px}
+.sp-temp[hidden]{display:none}
 .sp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line)}
 .sp-marca{display:flex;align-items:center;gap:12px}
 .sp-marca h2{margin:0;font-size:18px;font-weight:600;color:var(--txt)}
@@ -105,7 +129,12 @@
 .sp-oraculo-flutuante .sp-pe{background:#0f1625}
 
 @media (max-width:640px){
-  #tab-assistente.sp-oraculo{padding-top:14px}
+  #tab-assistente.sp-oraculo{padding-top:14px;grid-template-columns:minmax(0,1fr);gap:0}
+  /* no celular a lista vira gaveta, aberta pelo botão "Conversas" */
+  .sp-lista{display:none}
+  .sp-lista-aberta .sp-lista{display:block;position:fixed;inset:64px 12px auto 12px;max-height:70dvh;z-index:60;background:#0f1625;border-radius:18px;padding:14px;box-shadow:0 24px 60px -20px rgba(0,0,0,.8)}
+  .sp-lista-btn{display:inline-block}
+  .sp-lista-item .sp-lista-del{opacity:1}
   .sp-head{align-items:flex-start}
   .sp-sub{white-space:nowrap}
   .sp-modo{display:none}   /* só informativo; no celular empurrava a página para os lados */
