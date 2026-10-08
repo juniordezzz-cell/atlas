@@ -73,6 +73,10 @@ GECKO_SOURCES: dict[str, list[dict]] = {
         {"rede": "Base", "dexes": ["pancakeswap-v3-base", "pancakeswap-v2-base", "pancakeswap-infinity-clmm-base"]},
         {"rede": "Arbitrum", "dexes": ["pancakeswap-v3-arbitrum", "pancakeswap-v2-arbitrum", "pancakeswap-stableswap-arbitrum"]},
         {"rede": "Robinhood", "dexes": ["pancakeswap-v3-robinhood", "pancakeswap-v2-robinhood"]},
+        # Ethereum e Solana: a PancakeSwap está nas duas e o coletor não lia
+        # (slugs conferidos em /networks/{rede}/dexes, 08/10/2026)
+        {"rede": "Ethereum", "dexes": ["pancakeswap-v3-ethereum", "pancakeswap_ethereum"]},
+        {"rede": "Solana", "dexes": ["pancakeswap-v3-solana"]},
     ],
     "Uniswap": [{"rede": "Robinhood", "dexes": ["uniswap-v3-robinhood", "uniswap-v2-robinhood", "uniswap-v4-robinhood"]}],
     "Meteora": [{"rede": "Solana", "dexes": ["meteora", "meteora-damm-v2"]}],
