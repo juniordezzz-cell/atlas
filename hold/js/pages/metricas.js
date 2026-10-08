@@ -38,15 +38,8 @@
        carteira, e apresentar isso como leitura quantitativa é dar nota
        a uma prova em branco.
        ------------------------------------------------------------ */
-    if (!posicoes.length) {
-      view.appendChild(U.empty("chart", "Ainda não há o que medir",
-        "As métricas descrevem uma carteira: concentração, exposição por setor e peso " +
-        "das posições. Registre a primeira compra e elas passam a existir." +
-        (carteira ? " Carteira ativa: " + carteira.name + "." : ""),
-        U.button("Ir para Ativos", { variant: "primary", icon: "layers",
-          onClick: function () { location.hash = "#/ativos"; } })));
-      return { title: "Métricas", crumb: "Análise quantitativa", node: view };
-    }
+    /* Carteira vazia: a tela fica no lugar, zerada (pedido do dono,
+       08/10/2026). O índice diz "sem posições" em vez de dar nota. */
 
     /* ---- exposição por setor ---- */
     var porSetor = {};
@@ -81,7 +74,7 @@
         ? "as 3 maiores somam " + top3.toFixed(0) + "%"
         : posicoes.length + (posicoes.length === 1 ? " posição na carteira" : " posições na carteira") }));
     strip.appendChild(U.kpi({ icon: "layers", label: "Índice de concentração",
-      value: hhi.toFixed(2), sub: leituraHHI(hhi, posicoes.length) }));
+      value: hhi.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }), sub: leituraHHI(hhi, posicoes.length) }));
     strip.appendChild(U.kpi({ icon: "shield", label: "Setores", value: String(setores.length),
       sub: setores.length ? "maior: " + setores[0].label : "—" }));
     view.appendChild(strip);

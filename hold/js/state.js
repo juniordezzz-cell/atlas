@@ -1173,7 +1173,9 @@
       },
       eventosCaixa: function () {
         if (!window.AtlasCaixa) return [];
-        return escopoIds().reduce(function (acc, id) { return acc.concat(window.AtlasCaixa.eventos(id) || []); }, []);
+        /* eventos() recebe { walletId }, não o id solto — com o id solto o
+           filtro era ignorado e voltava o livro de TODAS as carteiras */
+        return escopoIds().reduce(function (acc, id) { return acc.concat(window.AtlasCaixa.eventos({ walletId: id }) || []); }, []);
       },
       list: function () { return window.AtlasWallets ? window.AtlasWallets.forModule("hold") : [{ id: "principal", name: "Principal", type: "global", color: "#4C9AFF" }]; },
       active: function () {

@@ -636,23 +636,9 @@ html:root body .modal [aria-invalid="true"] { box-shadow: 0 0 0 2px var(--danger
   .kpi .kpi-delta, .kpi .kpi-sub { font-size: 12px; }
 }
 
-/* ---- Começo do Hold (carteira vazia) ---- */
-.hold-hero {
-  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px;
-  align-items: center; margin-top: 8px; padding: 32px; border-radius: 20px;
-  background: var(--surface-alt);
-}
-.hold-hero h2 { font-size: 24px; line-height: 1.25; margin: 6px 0 10px; }
-.hold-hero p { color: var(--text-dim); font-size: 14px; line-height: 1.6; max-width: 54ch; }
-.hh-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
-.hh-passos { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.hh-passos li { display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; line-height: 1.5; }
-.hh-n {
-  flex: 0 0 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--primary-14); color: var(--primary-text); font-weight: 600; font-size: 13px;
-}
-.hh-caixa { grid-column: 1 / -1; }
-@media (max-width: 860px) { .hold-hero { grid-template-columns: 1fr; padding: 22px; gap: 22px; } }
+/* eixo do zero sem posição (painel zerado) */
+.ganho-linha.vazio { cursor: default; }
+.ganho-linha.vazio:hover { background: none; }
 
 /* busca do ativo no topo do "Registrar compra" */
 .ativo-busca { padding-bottom: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }

@@ -100,10 +100,9 @@
       ])
     ]));
 
-    if (!posicoes.length && !realizado) {
-      view.appendChild(heroVazio(caixa));
-      return { title: "Painel", crumb: "Visão geral", node: view };
-    }
+    /* Carteira vazia mostra o painel inteiro ZERADO, não instruções:
+       pedido do dono (08/10/2026) — os números e os gráficos ficam no
+       lugar e se preenchem conforme as compras entram. */
 
     /* ------------------------------------------------------------
        OS QUATRO NÚMEROS, EXATOS
@@ -137,7 +136,7 @@
        quanto vale hoje. O preço atual fica ao lado do preço médio —
        a valorização se lê na própria linha, sem fazer conta.
        ------------------------------------------------------------ */
-    if (posicoes.length) {
+    {
       var cols = [
         { head: "Ativo", render: function (p) { return U.assetCell(S.get.asset(p.ativo_id)); } },
         { head: "Quantidade", right: true, render: function (p) {
@@ -179,16 +178,11 @@
         action: U.button("Ver todas", { variant: "ghost", size: "sm",
           onClick: function () { location.hash = "#/ativos"; } }),
         body: [U.table(cols, posicoes.slice(0, 8), {
+          empty: "Nenhuma posição ainda — registre uma compra e ela aparece aqui.",
           onRow: function (p) { location.hash = "#/ativos?id=" + p.ativo_id; }
         })] });
       posCard.classList.add("mt-16");
       view.appendChild(posCard);
-    } else {
-      var vazio = U.card({ body: [U.empty("wallet", "Nenhuma posição aberta",
-        "Tudo foi vendido. Registre uma nova compra quando quiser voltar a investir.",
-        U.button("Registrar compra", { variant: "primary", icon: "plus", onClick: function () { F.novaCompra(); } }))] });
-      vazio.classList.add("mt-16");
-      view.appendChild(vazio);
     }
 
     /* ------------------------------------------------------------
@@ -200,7 +194,7 @@
        resposta direta a "como vão os meus ativos", e existe desde o
        primeiro dia — a curva de evolução precisa de dias de medição.
        ------------------------------------------------------------ */
-    if (posicoes.length) {
+    {
       var mid = U.el("div", { class: "grid g-12 mt-16" });
       var porRes = posicoes.slice().sort(function (x, y) { return S.get.positionPnL(y) - S.get.positionPnL(x); });
       var maxAbs = porRes.reduce(function (m, p) { return Math.max(m, Math.abs(S.get.positionPnL(p))); }, 0) || 1;
@@ -220,6 +214,14 @@
           text: U.money(v, 0) + " · " + U.pct(pc, 1) }));
         lista.appendChild(linha);
       });
+      if (!porRes.length) {
+        /* sem posição: o eixo do zero vazio, no lugar do gráfico */
+        var linhaVazia = U.el("div", { class: "ganho-linha vazio" });
+        linhaVazia.appendChild(U.el("span", { class: "gl-tick dim", text: "—" }));
+        linhaVazia.appendChild(U.el("span", { class: "gl-trilho" }));
+        linhaVazia.appendChild(U.el("span", { class: "gl-val num neu", text: U.money(0, 0) + " · " + U.pct(0, 1) }));
+        lista.appendChild(linhaVazia);
+      }
       var ganhoCard = U.card({ eyebrow: "Valorização", title: "Ganho ou perda por ativo",
         action: U.el("span", { class: "small dim", text: "em aberto, sobre o preço médio" }),
         body: [lista] });
@@ -231,7 +233,7 @@
         return { label: a ? a.ticker : "?", id: p.ativo_id, value: S.get.positionValue(p), color: C.color(i) };
       });
       var allocBody = U.el("div");
-      allocBody.appendChild(C.donut(segs, { centerTop: segs.length, centerBottom: segs.length === 1 ? "ativo" : "ativos" }));
+      allocBody.appendChild(C.donut(segs, { centerTop: String(segs.length), centerBottom: segs.length === 1 ? "ativo" : "ativos" }));
       var legend = U.el("div", { class: "legend-list" });
       segs.forEach(function (sg) {
         var pctv = (sg.value / (val || 1)) * 100;
@@ -360,42 +362,6 @@
     });
   }
   window.Pages._historicoOrdenado = historicoOrdenado;
-  /* ------------------------------------------------------------
-     CARTEIRA VAZIA: UMA AÇÃO, NÃO UMA FAIXA DE ZEROS
-
-     Sem posição, o painel mostrava "US$ 0", "+0,00%", "US$ 0" e um
-     vazio no meio — parecia uma tela quebrada, e o caminho para
-     começar era um botão pequeno perdido no centro. Agora a tela vazia
-     é o começo: o que o Hold faz e o botão que abre a compra.
-     ------------------------------------------------------------ */
-  function heroVazio(caixa) {
-    var hero = U.el("div", { class: "hold-hero" });
-    hero.appendChild(U.el("div", { class: "hh-txt" }, [
-      U.el("div", { class: "eyebrow", text: "Comece por aqui" }),
-      U.el("h2", { text: "Registre a sua primeira compra" }),
-      U.el("p", { text: "Escolha o ativo e informe quanto comprou, o preço que pagou, a taxa e a data. " +
-        "O Hold calcula o preço médio, a valorização de cada ativo e o resultado da carteira — e atualiza os preços sozinho." }),
-      U.el("div", { class: "hh-acoes" }, [
-        U.button("Registrar compra", { variant: "primary", icon: "plus", onClick: function () { F.novaCompra(); } }),
-        U.button("Só acompanhar (watchlist)", { variant: "ghost", icon: "eye", onClick: function () { F.newAsset(); } })
-      ])
-    ]));
-    var passos = U.el("ol", { class: "hh-passos" });
-    [["Ativo", "busque pelo nome; ticker e preço de hoje vêm sozinhos"],
-     ["Quantidade e preço", "ou o valor total que você colocou"],
-     ["Taxa e data", "da corretora ou da rede; data passada busca o preço do dia"]
-    ].forEach(function (p, i) {
-      passos.appendChild(U.el("li", {}, [
-        U.el("span", { class: "hh-n", text: String(i + 1) }),
-        U.el("span", {}, [U.el("b", { text: p[0] }), U.el("span", { class: "dim", text: " — " + p[1] })])
-      ]));
-    });
-    hero.appendChild(passos);
-    if (caixa > 0) hero.appendChild(U.el("div", { class: "small dim hh-caixa",
-      text: "Você tem " + U.money(caixa) + " em caixa; o que faltar entra como depósito automático." }));
-    return hero;
-  }
-  window.Pages._heroVazio = heroVazio;
 
   window.Pages._historyItem = historyItem;
   window.Pages._labelAction = labelAction;

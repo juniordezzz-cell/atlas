@@ -248,13 +248,6 @@
       ])
     ]));
 
-    /* Sem nenhum ativo, a faixa de zeros e os filtros vazios não dizem
-       nada: a tela vira o começo (ver heroVazio no dashboard.js). */
-    if (!S.state.ativos.length && window.Pages._heroVazio) {
-      view.appendChild(window.Pages._heroVazio(S.wallets.caixa()));
-      return { title: "Ativos", crumb: "Universo de ativos", node: view };
-    }
-
     view.appendChild(faixaResumo());
 
     /* Contagem em cada filtro: sem ela, "Vendidos" é uma aposta — a
@@ -379,10 +372,8 @@
       } else {
         /* Primeiro uso: o estado vazio ensina o caminho inteiro em vez
            de só constatar que não há nada. */
-        body = U.empty("layers", "Nenhum ativo ainda",
-          "Cadastre o ativo e registre a compra com a data e o preço que você pagou. " +
-          "Se a carteira não tiver caixa, o valor entra como depósito automático.",
-          U.button("Adicionar o primeiro ativo", { variant: "primary", icon: "plus", onClick: F.newAsset }));
+        /* tabela no lugar, vazia — sem passo a passo (pedido do dono) */
+        body = U.table(cols, [], { empty: "Nenhum ativo ainda — use \"Registrar compra\" para o primeiro." });
       }
       tableHolder.appendChild(U.card({ tight: true, body: [body] }));
     }
