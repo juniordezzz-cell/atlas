@@ -683,6 +683,10 @@
   .foot-info{max-width:760px; margin:0 auto 14px; text-align:center}
   .foot-info .srv-status{margin:0 0 6px; font-size:12px}
   .foot-info .trilho-dica{margin:0 auto; font-size:12px; max-width:none}
+  a.poollink{color:inherit; text-decoration:none}
+  a.poollink:hover{color:var(--accent)}
+  a.poollink .ext{font-size:11px; margin-left:3px; color:var(--mut2)}
+  a.poollink:hover .ext{color:var(--accent)}
   .emissor{font-size:10.5px; color:var(--mut); margin-top:3px; white-space:nowrap}
   /* "Blue chip / Blue chip" quebra em duas linhas em vez de alargar a tabela */
   .catbadge{display:inline-block; white-space:normal; max-width:92px; line-height:1.3; text-align:center; font-size:11px}
@@ -703,7 +707,7 @@
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
   <script src="../../core/atlas-secure.js"></script>
-<link rel="stylesheet" href="assistente.css?v=oraculo-12">
+<link rel="stylesheet" href="assistente.css?v=oraculo-13">
 </head>
 <body>
 <div class="wrap">
@@ -1331,11 +1335,11 @@
 <!-- pools do coletor (visões scanner_* no Supabase) -->
 <script src="../../core/atlas-supabase-config.js"></script>
 <script src="servidor.js"></script>
-<script src="assistente-dados.js?v=oraculo-12"></script>
-<script src="assistente-api.js?v=oraculo-12"></script>
-<script src="assistente-conversa.js?v=oraculo-12"></script>
-<script src="assistente-memoria.js?v=oraculo-12"></script>
-<script src="assistente-ui.js?v=oraculo-12"></script>
+<script src="assistente-dados.js?v=oraculo-13"></script>
+<script src="assistente-api.js?v=oraculo-13"></script>
+<script src="assistente-conversa.js?v=oraculo-13"></script>
+<script src="assistente-memoria.js?v=oraculo-13"></script>
+<script src="assistente-ui.js?v=oraculo-13"></script>
 <script>
 /* ============ estado + persistência ============ */
 const KEY  = "estudo_pools_liquidez_v1";
@@ -1877,7 +1881,7 @@ function rowHTML(p, rank){
   const tr = trendOf(p), ta = trendArrow(tr);
   return `<tr>
     <td class="favcell"><button class="favbtn ${p.fav?'on':''}" onclick="toggleFav(${p.id})" title="${p.fav?'Remover dos favoritos':'Marcar como favorita'}">${p.fav?'★':'☆'}</button></td>
-    <td class="pool"><span class="rank num">${rank}.</span> <span class="poolname">${esc(p.pool)}</span><span class="feepill">${fFee(p.fee)}</span>${p.servidor ? "" : '<span class="manualpill" title="Pool registrada por você no + Pool — o servidor não acompanha">manual</span>'}${sinaisHTML(p)}</td>
+    <td class="pool"><span class="rank num">${rank}.</span> ${(()=>{ const L = window.ScannerServidor && p.servidor ? ScannerServidor.linkPool(p) : null; return L ? `<a class="poolname poollink" href="${esc(L.url)}" target="_blank" rel="noopener noreferrer" title="Abrir esta pool na ${esc(L.onde)}">${esc(p.pool)}<span class="ext" aria-hidden="true">↗</span></a>` : `<span class="poolname">${esc(p.pool)}</span>`; })()}<span class="feepill">${fFee(p.fee)}</span>${p.servidor ? "" : '<span class="manualpill" title="Pool registrada por você no + Pool — o servidor não acompanha">manual</span>'}${sinaisHTML(p)}</td>
     <td class="plat" data-label="Plataforma">
       <span class="platbadge"><span class="pdot" style="background:${PLAT_COLORS[p.platform]||'#8a94a8'}"></span>${esc(p.platform)}</span>
       <span class="net">${esc(p.network)}</span>

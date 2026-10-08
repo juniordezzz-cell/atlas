@@ -217,6 +217,39 @@
     return CAT_NOME[cs[0]] + " / " + CAT_NOME[cs[1]];
   }
 
+  /* ---------- link direto para a pool na corretora (08/10/2026) ----------
+     Formatos conferidos abrindo pools reais: PancakeSwap (bsc, base, arb),
+     Uniswap (inclusive id de 32 bytes da v4), Orca e a busca da Raydium (que
+     serve para pool concentrada e comum). Sem formato conferido, a página da
+     pool na GeckoTerminal (tem o atalho para a corretora); sem endereço, a
+     página da pool na DefiLlama. */
+  var LINK_PANCAKE = { "BNB Chain": "bsc", "Base": "base", "Arbitrum": "arb", "Ethereum": "eth" };
+  var LINK_UNISWAP = { "Ethereum": "ethereum", "Base": "base", "Arbitrum": "arbitrum", "Optimism": "optimism",
+    "Polygon": "polygon", "BNB Chain": "bnb", "Avalanche": "avalanche" };
+  var LINK_GECKO = { "Solana": "solana", "Base": "base", "Arbitrum": "arbitrum", "BNB Chain": "bsc", "Ethereum": "eth",
+    "Optimism": "optimism", "Polygon": "polygon_pos", "Avalanche": "avax", "Sui": "sui-network", "HyperEVM": "hyperevm",
+    "Robinhood": "robinhood" };
+  function enderecoPool(p) {
+    var s = p.sinais || {}, sid = String(p.sid || "");
+    if (s.endereco_pool) return String(s.endereco_pool);
+    if (s.conferencia && s.conferencia.endereco) return String(s.conferencia.endereco);
+    if (sid.indexOf("gecko:") === 0) return sid.split(":").slice(2).join(":");
+    return null;
+  }
+  function linkPool(p) {
+    var end = enderecoPool(p), rede = p.network, dex = String(p.platform || ""), e = end ? encodeURIComponent(end) : "";
+    if (end) {
+      if (dex === "PancakeSwap" && LINK_PANCAKE[rede]) return { url: "https://pancakeswap.finance/liquidity/pool/" + LINK_PANCAKE[rede] + "/" + e, onde: "PancakeSwap" };
+      if (dex === "Uniswap" && LINK_UNISWAP[rede]) return { url: "https://app.uniswap.org/explore/pools/" + LINK_UNISWAP[rede] + "/" + e, onde: "Uniswap" };
+      if (dex === "Orca") return { url: "https://www.orca.so/pools/" + e, onde: "Orca" };
+      if (dex === "Raydium") return { url: "https://raydium.io/liquidity-pools/?token=" + e, onde: "Raydium" };
+      if (LINK_GECKO[rede]) return { url: "https://www.geckoterminal.com/" + LINK_GECKO[rede] + "/pools/" + e, onde: "GeckoTerminal" };
+    }
+    var sid = String(p.sid || "");
+    if (sid.indexOf("llama:") === 0) return { url: "https://defillama.com/yields/pool/" + encodeURIComponent(sid.slice(6)), onde: "DefiLlama" };
+    return null;
+  }
+
   /* A mesma pool vinda da DefiLlama e da GeckoTerminal: a da DefiLlama
      carrega o endereço on-chain na conferência; a da GeckoTerminal com esse
      endereço sai da lista (o coletor faz o mesmo desde 08/10; isto cobre as
@@ -400,7 +433,7 @@
     lerMarcas: function () { return lerJSON(MARCAS_KEY, {}); },
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
     lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [], bloqueadosEnd: t.bloqueadosEnd || [] }; },
-    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco, semDuplicatas: semDuplicatas, emissorToken: emissorToken, emissoresDaPool: emissoresDaPool, rotuloEmissor: rotuloEmissor,
+    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco, semDuplicatas: semDuplicatas, linkPool: linkPool, emissorToken: emissorToken, emissoresDaPool: emissoresDaPool, rotuloEmissor: rotuloEmissor,
     categoriaToken: categoriaToken, categoriasDaPool: categoriasDaPool, rotuloCategoria: rotuloCategoria,
     gravarTokens: function (t) { gravarJSON(TOKENS_KEY, t); },
     lerDecisoes: function () { return lerJSON(DECISOES_KEY, {}); },

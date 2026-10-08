@@ -149,3 +149,13 @@ test('categoria antiga "altcoin" de um RWA pela regra nova vira RWA', () => {
   assert.equal(S.rotuloCategoria({pool:'USDT/SPCXB',network:'BNB Chain',sinais:{categoria:['stable','altcoin']}}),'RWA / Stable');
   assert.equal(S.rotuloCategoria({pool:'FOO/SOL',network:'Solana',sinais:{categoria:['meme','bluechip']}}),'Meme / Blue chip');
 });
+test('link direto da pool na corretora (formatos conferidos em 08/10)', () => {
+  const S=load(), L=(o)=>S.linkPool({servidor:true, sinais:{}, ...o});
+  assert.equal(L({sid:'gecko:bsc:0x47bc',platform:'PancakeSwap',network:'BNB Chain'}).url,'https://pancakeswap.finance/liquidity/pool/bsc/0x47bc');
+  assert.equal(L({sid:'gecko:arbitrum:0x7f',platform:'PancakeSwap',network:'Arbitrum'}).url,'https://pancakeswap.finance/liquidity/pool/arb/0x7f');
+  assert.equal(L({sid:'llama:x',platform:'Uniswap',network:'Ethereum',sinais:{conferencia:{endereco:'0x8366'}}}).url,'https://app.uniswap.org/explore/pools/ethereum/0x8366');
+  assert.equal(L({sid:'llama:y',platform:'Orca',network:'Solana',sinais:{endereco_pool:'Ckp1'}}).url,'https://www.orca.so/pools/Ckp1');
+  assert.equal(L({sid:'gecko:solana:9n3d',platform:'Raydium',network:'Solana'}).url,'https://raydium.io/liquidity-pools/?token=9n3d');
+  assert.equal(L({sid:'gecko:optimism:0x47',platform:'Velodrome',network:'Optimism'}).url,'https://www.geckoterminal.com/optimism/pools/0x47');
+  assert.equal(L({sid:'llama:abc-123',platform:'Aerodrome',network:'Base'}).url,'https://defillama.com/yields/pool/abc-123');
+});

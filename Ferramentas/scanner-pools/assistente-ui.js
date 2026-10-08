@@ -45,7 +45,10 @@
   function cartao(x){
     const p=x.pool,c=el('div','sp-card');
     const topo=el('div','sp-card-top');
-    topo.append(el('strong','sp-card-par',p.pool),el('span','sp-card-onde',p.platform+' · '+p.network));
+    const L=g.ScannerServidor&&p.servidor?g.ScannerServidor.linkPool(p):null;
+    let nome=el('strong','sp-card-par',p.pool);
+    if(L){const a=document.createElement('a');a.className='sp-card-par sp-card-link';a.href=L.url;a.target='_blank';a.rel='noopener noreferrer';a.title='Abrir esta pool na '+L.onde;a.textContent=p.pool+' ↗';nome=a;}
+    topo.append(nome,el('span','sp-card-onde',p.platform+' · '+p.network));
     if(p.sinais?.memecoin?.detectada)topo.append(el('span','sp-tag sp-tag-meme','meme'));
     if(p.fav)topo.append(el('span','sp-tag','★ favorita'));
     const ms=el('dl','sp-card-num');
