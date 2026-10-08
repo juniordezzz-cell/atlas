@@ -217,9 +217,9 @@
       d.innerHTML = icon(opts.delta > 0 ? "arrowUp" : opts.delta < 0 ? "arrowDown" : "check");
       d.appendChild(document.createTextNode(" " + opts.deltaText));
       c.appendChild(d);
-    } else if (opts.sub) {
-      c.appendChild(el("div", { class: "kpi-delta flat", text: opts.sub }));
     }
+    /* variação E contexto juntos: antes, ter delta escondia o subtítulo */
+    if (opts.sub) c.appendChild(el("div", { class: "kpi-delta flat kpi-sub", text: opts.sub }));
     if (opts.spark) {
       var s = el("div", { class: "kpi-spark" }); s.appendChild(opts.spark); c.appendChild(s);
     }
@@ -296,8 +296,11 @@
     ordenadas.forEach(function (row) {
       var tr = el("tr", { class: opts.onRow ? "clickable" : "" });
       if (opts.onRow) tr.addEventListener("click", function () { opts.onRow(row); });
-      columns.forEach(function (col) {
-        var td = el("td", { class: (col.right ? "right " : "") + (col.actions ? "acts" : "") });
+      columns.forEach(function (col, ci) {
+        /* data-label: no celular a linha vira cartão e cada célula mostra
+           o nome da coluna ao lado do valor (ver .tbl no components.css). */
+        var td = el("td", { class: (col.right ? "right " : "") + (col.actions ? "acts" : "") + (ci === 0 ? " cel-titulo" : ""),
+                            "data-label": col.actions ? null : col.head });
         /* A célula de ações engole o clique: quem aperta "excluir" não
            quer, junto, abrir o ativo. */
         if (col.actions) td.addEventListener("click", function (e) { e.stopPropagation(); });

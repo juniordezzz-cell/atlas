@@ -9,6 +9,44 @@
 
   function afterChange() { if (window.Router) window.Router.rerender(); }
 
+  /* ------------------------------------------------------------
+     ERRO NO FORMULÁRIO, NÃO NUM AVISO QUE SOME
+
+     As validações apareciam só num aviso flutuante no canto, que some
+     em 3 segundos e não diz QUAL campo está errado — a pessoa lia pela
+     metade e voltava a procurar. Agora a mensagem fica dentro do
+     formulário (role="alert", lida por leitor de tela), o campo
+     culpado ganha contorno vermelho e recebe o foco. Editar o campo
+     limpa o erro.
+     ------------------------------------------------------------ */
+  function caixaErro() {
+    var box = U.el("div", { class: "form-erro", role: "alert" });
+    box.style.display = "none";
+    var campos = [];
+    box.mostrar = function (msg, campo) {
+      campos.forEach(function (c) { c.removeAttribute("aria-invalid"); });
+      box.textContent = "";
+      box.appendChild(U.iconEl("alert"));
+      box.appendChild(U.el("span", { text: msg }));
+      box.style.display = "";
+      if (campo) {
+        campo.setAttribute("aria-invalid", "true");
+        if (campos.indexOf(campo) < 0) {
+          campos.push(campo);
+          campo.addEventListener("input", box.limpar);
+          campo.addEventListener("change", box.limpar);
+        }
+        try { campo.focus(); } catch (e) {}
+      }
+      return false;
+    };
+    box.limpar = function () {
+      box.style.display = "none";
+      campos.forEach(function (c) { c.removeAttribute("aria-invalid"); });
+    };
+    return box;
+  }
+
   /* ---------- Novo ativo ---------- */
   function newAsset() {
     /* modo demonstração: limpar antes de cadastrar dado real (core/atlas-demo.js) */
@@ -39,6 +77,7 @@
        ------------------------------------------------------------ */
     /* Market cap, setor e categoria são acessórios: ficam recolhidos
        para o cadastro caber em quatro campos. */
+    var erroNovo = caixaErro();
     var extras = U.el("details", { class: "form-extras" }, [
       U.el("summary", { text: "Mais detalhes (opcional)" }),
       U.el("div", { class: "form-row" }, [U.field("Market cap (USD)", mcap), U.el("div")]),
@@ -49,6 +88,7 @@
       U.el("div", { class: "form-row" }, [U.field("Ticker", ticker, { required: true }), U.field("Tipo", tipo)]),
       U.field("Preço atual (USD)", preco, { hint: "Preenchido sozinho quando você escolhe a moeda na lista." }),
       extras,
+      erroNovo,
       U.el("div", { class: "small dim", style: "margin-top:4px",
         text: "Em \"Adicionar e comprar\" você informa em seguida a quantidade, o preço que pagou, a taxa, a data e a carteira." })
     ]);
@@ -66,7 +106,8 @@
        continua para quem está só acompanhando.
        ------------------------------------------------------------ */
     function salvar(comprar) {
-      if (!nome.value.trim() || !ticker.value.trim()) return U.toast("Campos obrigatórios", "Nome e ticker são necessários.", "warning");
+      if (!nome.value.trim()) return erroNovo.mostrar("Informe o nome do ativo.", nome);
+      if (!ticker.value.trim()) return erroNovo.mostrar("Informe o ticker (ex.: BTC, PENDLE).", ticker);
       var a = S.actions.createAsset({
         nome: nome.value.trim(), ticker: ticker.value.trim(), tipo: tipo.value,
         preco_atual: preco.value, market_cap: mcap.value, setor: setor.value.trim(),
@@ -84,7 +125,7 @@
           U.toast("Ativo já cadastrado", a.asset.ticker + " já existia — registrando a compra nele.", "success");
           return trade(a.asset.id, "buy");
         }
-        return U.toast("Ticker já cadastrado", a.error, "warning");
+        return erroNovo.mostrar(a.error, ticker);
       }
       U.closeModal(); afterChange();
       if (comprar) return trade(a.id, "buy");
@@ -176,6 +217,7 @@
     var preco = U.input({ type: "number", step: "any", value: a.preco_atual || "" });
 
     var m = (window.AtlasPrecos && a.ticker) ? AtlasPrecos.manual(a.ticker) : null;
+    var erroEdit = caixaErro();
     var dicaPreco = m
       ? ("Preço informado por você" + (m.vencido ? " há " + m.dias + " dias — vale reconferir." : ".") +
          " Ele vence a API até você limpar o campo.")
@@ -188,11 +230,12 @@
       U.field("Nome", nome, { required: true }),
       U.el("div", { class: "form-row" }, [U.field("Tipo", tipo), U.field("Market cap (USD)", mcap)]),
       U.el("div", { class: "form-row" }, [U.field("Setor", setor), U.field("Categoria", categoria)]),
-      U.field("Preço (USD)", preco, { hint: dicaPreco })
+      U.field("Preço (USD)", preco, { hint: dicaPreco }),
+      erroEdit
     ]);
 
     var save = U.button("Salvar", { variant: "primary", icon: "check", onClick: function () {
-      if (!nome.value.trim()) return U.toast("Campo obrigatório", "O nome não pode ficar vazio.", "warning");
+      if (!nome.value.trim()) return erroEdit.mostrar("O nome não pode ficar vazio.", nome);
 
       S.actions.updateAsset(assetId, {
         nome: nome.value.trim(), tipo: tipo.value,
@@ -206,10 +249,10 @@
         if (window.AtlasPrecos && a.ticker) AtlasPrecos.limparManual(a.ticker);
       } else {
         var v = parseFloat(txt);
-        if (!(v > 0)) return U.toast("Preço inválido", "O preço precisa ser maior que zero.", "warning");
+        if (!(v > 0)) return erroEdit.mostrar("O preço precisa ser maior que zero.", preco);
         if (v !== a.preco_atual || !m) {
           var r = S.actions.precoManual(assetId, v);
-          if (r && r.error) return U.toast("Preço não salvo", r.error, "warning");
+          if (r && r.error) return erroEdit.mostrar(r.error, preco);
         }
       }
       U.closeModal();
@@ -280,6 +323,17 @@
     var just = U.textarea({ placeholder: "Justificativa (registrada no histórico)", style: "min-height:64px" });
     var posInfo = U.el("div", { class: "small dim" });
     var previa = U.el("div", { class: "trade-previa" });
+    var erroTrade = caixaErro();
+    /* qual campo a mensagem do store aponta */
+    function campoDoErro(msg) {
+      var t = String(msg || "").toLowerCase();
+      if (/taxa/.test(t)) return taxaI;
+      if (/data/.test(t)) return dataI;
+      if (/quantidade|vender|você tem/.test(t)) return qtdI;
+      if (/preço/.test(t)) return precoI;
+      if (/carteira/.test(t)) return walletSel;
+      return null;
+    }
 
     /* ------------------------------------------------------------
        O CAIXA DISPONÍVEL, NA TELA ONDE ELE É GASTO
@@ -306,7 +360,8 @@
       ]),
       U.field("Taxa (USD)", taxaI, { hint: "Da corretora ou da rede. Deixe vazio se não houve." }),
       previa,
-      U.field("Justificativa", just)
+      U.field("Justificativa", just),
+      erroTrade
     ]);
 
     var currentSide = side;
@@ -354,6 +409,16 @@
       var linhas = [];
       if (currentSide === "sell") {
         if (!p) { previa.style.display = "none"; return; }
+        /* Vender mais do que se tem: a prévia anunciava um lucro que
+           nunca vai acontecer. Diz o limite em vez disso. */
+        if (q > Math.round(p.quantidade * 1e10) / 1e10) {
+          previa.appendChild(U.el("div", { class: "tp-linha" }, [
+            U.el("span", { class: "tp-k", text: "Quantidade acima da posição" }),
+            U.el("span", { class: "tp-v num neg", text: "você tem " + U.qty(p.quantidade) + " " + a.ticker })
+          ]));
+          previa.style.display = "";
+          return;
+        }
         var res = q * (pr - p.preco_medio) - tx;
         var custoV = q * p.preco_medio;
         var pctR = custoV > 0 ? (res / custoV) * 100 : 0;
@@ -458,7 +523,7 @@
         var res;
         if (currentSide === "sell") res = S.actions.executeSell(payload);
         else { payload.cobrirFalta = true; res = S.actions.executeBuy(payload); }
-        if (res && res.error) return U.toast("Não foi possível", res.error, "warning");
+        if (res && res.error) return erroTrade.mostrar(res.error, campoDoErro(res.error));
         U.closeModal();
         U.toast(currentSide === "sell" ? "Venda registrada" : "Compra registrada",
           a.ticker + " atualizado." +

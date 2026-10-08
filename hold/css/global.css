@@ -390,3 +390,48 @@ body { animation: atlasPageFade .45s ease both; }
   .sidebar .atlas-side-search,
   .sidebar .atlas-backfoot { justify-content: center; padding-left: 0; padding-right: 0; }
 }
+
+/* ============================================================
+   NAVEGAÇÃO INFERIOR NO CELULAR (auditoria UI/UX, 08/10/2026)
+
+   A 375px o trilho lateral de 72px ficava fixo e comia 19% da largura
+   — a tela útil caía para 303px. Abaixo de 640px o menu desce para uma
+   barra inferior, ao alcance do polegar, com as cinco telas do Hold
+   (o limite recomendado para navegação inferior é cinco) e o "Voltar
+   ao Atlas" como ícone na ponta. O conteúdo ganha a largura inteira.
+   ============================================================ */
+@media (max-width: 640px) {
+  .app, .app.collapsed { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; top: auto; bottom: 0; left: 0; right: 0;
+    height: auto; flex-direction: row; align-items: stretch;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    border-right: 0; border-top: 1px solid var(--border);
+    z-index: 60;
+  }
+  .sidebar .brand, .sidebar .atlas-side-search, .sidebar .nav-section, .sidebar .collapse-btn { display: none !important; }
+  .sidebar .nav { display: flex; flex-direction: row; flex: 1; gap: 2px; padding: 0; margin: 0; overflow: visible; }
+  .sidebar .nav-item {
+    flex: 1 1 0; flex-direction: column; justify-content: center; gap: 3px;
+    min-height: 52px; padding: 4px 2px; margin: 0; border-radius: 12px;
+  }
+  .sidebar .nav-item .label { display: block !important; font-size: 11px; line-height: 1.1; }
+  .sidebar .nav-item .count { display: none !important; }
+  .sidebar .nav-item.active::before { display: none; }
+  /* html body na frente: o atlas-shell.css (carregado depois) dá ao
+     "Voltar ao Atlas" largura inteira e o empilhava como 2ª linha */
+  html body .sidebar .nav-back, html body .sidebar .atlas-backfoot {
+    order: -1; flex: 0 0 44px; width: 44px; min-height: 52px; margin: 0; padding: 0;
+    position: static; display: flex; align-items: center; justify-content: center; border-radius: 12px;
+  }
+  html body .sidebar { flex-direction: row; flex-wrap: nowrap; align-items: stretch; }
+  .sidebar .nav-back .label, .sidebar .atlas-backfoot span { display: none; }
+  .view { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  /* o botão do Oráculo sobe acima da barra (ficava em cima de "Relatórios") */
+  html[data-module="hold"] body .atlas-oraculo { bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important; }
+  html[data-module="hold"] body .atlas-oraculo__panel { bottom: calc(152px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Com uma janela aberta, o botão do Oráculo sai da frente: no celular
+   ele cobria o "Registrar venda" no rodapé do formulário. */
+html[data-module="hold"] body:has(.modal-scrim) .atlas-oraculo { display: none !important; }

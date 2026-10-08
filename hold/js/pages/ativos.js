@@ -218,7 +218,7 @@
     var caixa = S.wallets.caixa();   // a carteira em uso, ou a soma de todas
 
     var strip = U.el("div", { class: "grid g-4" });
-    strip.appendChild(U.kpi({ icon: "wallet", label: "Valor investido", value: U.compact(val),
+    strip.appendChild(U.kpi({ icon: "wallet", label: "Valor investido", value: Math.abs(val) >= 1e6 ? U.compact(val) : U.money(val, 0),
       sub: c.posicoes + (c.posicoes === 1 ? " posição" : " posições") }));
     strip.appendChild(U.kpi({ icon: "trendUp", label: "Resultado em aberto", value: U.money(pnl, 0),
       delta: pnl, deltaText: U.pct(pnlPct) }));

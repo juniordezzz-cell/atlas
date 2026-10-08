@@ -540,3 +540,98 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 }
 .form-extras > summary:hover { color: var(--text); }
 .form-extras[open] > summary { margin-bottom: 10px; }
+
+/* ============================================================
+   AUDITORIA UI/UX (UI UX Pro Max, 08/10/2026)
+   ============================================================ */
+
+/* Indicador: a variação e o contexto agora aparecem juntos */
+.kpi .kpi-sub { display: flex; margin-top: 4px; }
+
+/* ---- Ganho ou perda por ativo ----
+   Barra centrada no zero: ganho cresce para a direita em verde, perda
+   para a esquerda em vermelho. Valor e % escritos ao lado — a cor
+   nunca é a única pista (regra "color-only"). */
+.ganho-lista { display: grid; gap: 4px; }
+.ganho-linha {
+  display: grid; grid-template-columns: 72px minmax(0, 1fr) minmax(150px, auto);
+  align-items: center; gap: 14px; width: 100%;
+  min-height: 40px; padding: 6px 10px; border-radius: 10px;
+  background: none; border: 0; color: inherit; font: inherit; cursor: pointer; text-align: left;
+  transition: background .15s ease;
+}
+.ganho-linha:hover { background: var(--surface-alt); }
+.ganho-linha:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.gl-tick { font-weight: 600; font-size: 13px; }
+.gl-trilho { position: relative; height: 10px; border-radius: 6px; background: var(--surface-alt); }
+.gl-trilho::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--border); }
+.gl-trilho > i { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
+.gl-trilho > i.pos { background: var(--success); }
+.gl-trilho > i.neg { background: var(--danger); }
+.gl-val { font-size: 13px; text-align: right; white-space: nowrap; }
+
+/* ---- Texto auxiliar no mínimo de 12px ----
+   Medido na auditoria: cabeçalho de tabela, dicas e contadores em 11px,
+   abaixo do mínimo recomendado para leitura. */
+.tbl thead th { font-size: 12px; }
+.field .hint { font-size: 12px; }
+.segmented .seg-count { font-size: 12px; }
+
+/* ---- Erro dentro do formulário ----
+   O erro aparecia só num aviso flutuante que sumia em 3 s e não dizia
+   qual campo estava errado. Agora fica no formulário, junto do botão,
+   e o campo culpado ganha contorno vermelho. */
+.form-erro {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: 4px 0 14px; padding: 10px 12px; border-radius: 12px;
+  background: var(--danger-12); color: var(--text); font-size: 13px; line-height: 1.45;
+}
+.form-erro .ico { width: 16px; height: 16px; color: var(--danger); flex-shrink: 0; margin-top: 2px; }
+html:root body .modal [aria-invalid="true"] { box-shadow: 0 0 0 2px var(--danger) !important; }
+
+/* ---- Tabela vira cartão no celular ----
+   A 375px a tabela de ativos tinha 823px dentro de 271px: só Ativo e
+   Preço apareciam, o resultado ficava escondido de lado. Abaixo de
+   640px cada linha vira um cartão, com o nome da coluna ao lado do
+   valor (data-label, gravado pelo U.table). */
+@media (max-width: 640px) {
+  .table-wrap { overflow: visible; }
+  .tbl, .tbl tbody, .tbl tr, .tbl td { display: block; width: 100%; }
+  .tbl thead { display: none; }
+  .tbl tbody tr {
+    padding: 12px 14px; margin-bottom: 10px; border-radius: 14px;
+    background: var(--surface-alt);
+  }
+  .tbl tbody td {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 6px 0; border: 0; text-align: right;
+  }
+  .tbl tbody td::before {
+    content: attr(data-label); color: var(--text-dim); font-size: 12px;
+    text-align: left; flex-shrink: 0;
+  }
+  .tbl tbody td.cel-titulo { padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .tbl tbody td.cel-titulo::before, .tbl tbody td.acts::before { content: none; }
+  .tbl tbody td .stack { align-items: flex-end !important; }
+  .tbl tbody td.acts { justify-content: flex-end; padding-top: 8px; width: 100%; }
+  .tbl tbody .row-acts .act-btn { opacity: 1; }
+  .ganho-linha { grid-template-columns: 56px minmax(0, 1fr); }
+  .gl-val { grid-column: 1 / -1; text-align: left; padding-left: 70px; margin-top: -4px; }
+}
+
+/* ---- Celular: nada pode passar da largura da tela ----
+   Medido: a barra de filtros (Todos/Investidos/Watchlist/Vendidos)
+   tinha 444px numa tela de 375 — o navegador do celular "afastava" a
+   página inteira para caber, e a barra inferior ia parar fora da vista.
+   Os filtros rolam dentro da própria faixa; a busca desce para a linha
+   de baixo; os quatro números ficam dois a dois. */
+@media (max-width: 640px) {
+  .segmented { max-width: 100%; overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+  .segmented::-webkit-scrollbar { display: none; }
+  .segmented button { flex: 0 0 auto; }
+  .view-head .row, .between { flex-wrap: wrap; gap: 10px; }
+  .between > .search { flex: 1 1 100%; }
+  .grid.g-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
+  .kpi .kpi-val { font-size: 20px; }
+  .kpi .kpi-delta, .kpi .kpi-sub { font-size: 12px; }
+}

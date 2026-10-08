@@ -72,155 +72,203 @@
     var carteira = S.wallets.active();
     var caixa = S.wallets.caixa();   // a carteira em uso, ou a soma de todas
     var custo = S.get.portfolioCost();
+    var posicoes = S.get.walletPositions().slice().sort(function (x, y) {
+      return S.get.positionValue(y) - S.get.positionValue(x);
+    });
 
     var view = U.el("div");
 
-    /* head */
+    /* ------------------------------------------------------------
+       CABEÇALHO COM AS AÇÕES
+
+       Os quatro cartões de atalho ficavam ANTES dos números: a primeira
+       coisa da tela era um menu, e o patrimônio ficava abaixo da dobra
+       no notebook. As ações continuam a um clique, no cabeçalho, como
+       nas outras telas do módulo.
+       ------------------------------------------------------------ */
     view.appendChild(U.el("div", { class: "view-head" }, [
       U.el("div", { class: "row" }, [
         U.el("div", { class: "grow" }, [
           U.el("h1", { text: "Painel" }),
-          U.el("p", { text: "Visão consolidada da carteira e das decisões de longo prazo." })
-        ])
-        /* "Registrar operação" saiu daqui: ele abria a compra do
-           PRIMEIRO ativo da lista — `inv[0]` —, e não do ativo
-           que a pessoa queria operar. Num painel, um botão que escolhe
-           sozinho em qual ativo você vai colocar dinheiro é pior que
-           nenhum. A compra continua onde ela tem contexto: na página do
-           ativo (Ativos → o ativo → Comprar). */
+          U.el("p", { text: (carteira ? carteira.name : "Carteira") + " · " +
+            c.posicoes + (c.posicoes === 1 ? " posição" : " posições") })
+        ]),
+        U.button("Atualizar preços", { icon: "refresh", onClick: atualizarPrecos }),
+        U.button("Carteiras e caixa", { variant: "ghost", icon: "wallet",
+          onClick: function () { location.href = "../pages/carteiras.html"; } }),
+        U.button("Adicionar ativo", { variant: "primary", icon: "plus", onClick: function () { F.newAsset(); } })
       ])
     ]));
 
     /* ------------------------------------------------------------
-       AÇÕES RÁPIDAS
+       OS QUATRO NÚMEROS, EXATOS
 
-       O painel tinha só dois botões de atalho. Todo
-       o resto — cadastrar ativo, comprar, atualizar preço, depositar —
-       exigia navegar até outra tela para só então achar o botão. Um
-       painel é onde se decide; se decidir custa três telas, ele vira
-       um relatório.
-
-       As quatro que estão aqui são as que começam alguma coisa.
-       Nenhuma delas escolhe por você em QUE ativo mexer: "Comprar"
-       leva à lista de ativos, onde o ativo é escolhido. Foi o defeito
-       do antigo "Registrar operação", que abria a compra do primeiro
-       ativo da lista.
+       "US$ 9,6 mil" arredondava o número principal de um painel de
+       dinheiro — com 9.615 na carteira, a tela escondia 15 dólares no
+       maior número dela. Abaixo de um milhão, o valor vai inteiro.
+       E o primeiro número passa a ser o PATRIMÔNIO (posições + caixa):
+       o que você tem no Hold, não só o que está aplicado.
        ------------------------------------------------------------ */
-    var acoes = U.el("div", { class: "quick" });
-    function rapida(icone, titulo, sub, onClick) {
-      var b = U.el("button", { class: "quick-item", type: "button" });
-      b.appendChild(U.el("span", { class: "qi-ico", html: U.icon(icone) }));
-      b.appendChild(U.el("span", { class: "qi-txt" }, [
-        U.el("span", { class: "qi-t", text: titulo }),
-        U.el("span", { class: "qi-s", text: sub })
-      ]));
-      b.addEventListener("click", onClick);
-      return b;
-    }
-    acoes.appendChild(rapida("plus", "Adicionar ativo", "cadastrar no universo",
-      function () { F.newAsset(); }));
-    acoes.appendChild(rapida("arrowUp", "Comprar",
-      caixa > 0 ? "há " + U.money(caixa, 0) + " em caixa" : "sem caixa: entra como depósito",
-      function () { location.hash = "#/ativos"; }));
-    acoes.appendChild(rapida("refresh", "Atualizar preços",
-      c.ativos + (c.ativos === 1 ? " ativo" : " ativos") + " para remarcar",
-      atualizarPrecos));
-    acoes.appendChild(rapida("wallet", "Carteiras e caixa", "depositar, sacar, transferir",
-      function () { location.href = "../pages/carteiras.html"; }));
-    view.appendChild(acoes);
-
-    /* KPIs — quatro, não três. O caixa entrou porque é ele que decide
-       se a próxima compra acontece, e o painel não o mostrava em lugar
-       nenhum apesar de o módulo depender dele. */
-    var kpis = U.el("div", { class: "grid g-4 mt-16" });
-    /* O sparkline só aparece quando há duas medições. Com uma só, ele
-       desenharia uma linha reta com cara de estabilidade — e o que
-       existe é falta de histórico, não estabilidade. */
-    kpis.appendChild(U.kpi({ icon: "wallet", label: "Valor da carteira", value: U.compact(val),
-      sub: c.posicoes + (c.posicoes === 1 ? " posição · custo " : " posições · custo ") + U.compact(custo),
+    function exato(v) { return Math.abs(v) >= 1e6 ? U.compact(v) : U.money(v, 0); }
+    var kpis = U.el("div", { class: "grid g-4" });
+    kpis.appendChild(U.kpi({ icon: "wallet", label: "Patrimônio no Hold",
+      value: exato(val + (caixa || 0)),
+      sub: "posições " + exato(val) + " · caixa " + exato(caixa || 0),
       spark: serie.length >= 2 ? C.sparkline(serie.map(function (p) { return p.v; }), { w: 84, h: 26 }) : null }));
     kpis.appendChild(U.kpi({ icon: "trendUp", label: "Resultado em aberto", value: U.money(pnl, 0),
-      delta: pnl, deltaText: U.pct(pnlPct) }));
+      delta: pnl, deltaText: U.pct(pnlPct), sub: "sobre " + exato(custo) + " de custo" }));
+    kpis.appendChild(U.kpi({ icon: "target", label: "Resultado realizado", value: U.money(realizado, 0),
+      sub: "total com o aberto: " + U.money(pnl + realizado, 0) }));
     kpis.appendChild(U.kpi({ icon: "coins", label: "Caixa disponível",
       value: caixa == null ? "—" : U.money(caixa, 0),
       sub: carteira ? "em " + carteira.name : "sem carteira" }));
-    /* O lucro das vendas já feitas: sai da posição e fica no caixa,
-       então nenhum dos três números acima o mostra. */
-    kpis.appendChild(U.kpi({ icon: "target", label: "Resultado realizado", value: U.money(realizado, 0),
-      sub: "total com o aberto: " + U.money(pnl + realizado, 0) }));
     view.appendChild(kpis);
 
-    /* performance + allocation */
-    var mid = U.el("div", { class: "grid g-12 mt-16" });
+    /* ------------------------------------------------------------
+       POSIÇÕES LOGO ABAIXO DOS NÚMEROS
 
+       A tabela das posições era o ÚLTIMO bloco da página. Num painel
+       de hold, é a leitura principal: o que eu tenho, quanto paguei,
+       quanto vale hoje. O preço atual fica ao lado do preço médio —
+       a valorização se lê na própria linha, sem fazer conta.
+       ------------------------------------------------------------ */
+    if (posicoes.length) {
+      var cols = [
+        { head: "Ativo", render: function (p) { return U.assetCell(S.get.asset(p.ativo_id)); } },
+        { head: "Quantidade", right: true, render: function (p) {
+          return U.el("span", { class: "num", text: U.qty(p.quantidade) }); } },
+        { head: "Preço médio → atual", right: true, render: function (p) {
+          var a = S.get.asset(p.ativo_id) || {};
+          var varp = p.preco_medio > 0 ? (a.preco_atual / p.preco_medio - 1) * 100 : 0;
+          return U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
+            U.el("span", { class: "num" }, [
+              U.el("span", { class: "dim", text: U.money(p.preco_medio) + " → " }),
+              document.createTextNode(a.preco_atual > 0 ? U.money(a.preco_atual) : "—")
+            ]),
+            U.el("span", { class: "small " + U.signClass(varp), text: U.pct(varp, 1) + " no preço" })
+          ]);
+        } },
+        { head: "Valor", right: true, render: function (p) {
+          var wrap = U.el("div", { class: "stack", style: "align-items:flex-end;gap:3px" }, [
+            U.el("span", { class: "num", text: U.money(S.get.positionValue(p), 0) })
+          ]);
+          var w = S.get.positionWeight(p);
+          var peso = U.el("span", { class: "peso-mini" + (S.get.concentrada(w) ? " alto" : "") });
+          var bar = U.el("span", { class: "bar" });
+          bar.appendChild(U.el("i", { style: "width:" + w.toFixed(0) + "%" }));
+          peso.appendChild(bar);
+          peso.appendChild(U.el("span", { class: "n", text: w.toFixed(0) + "%" }));
+          wrap.appendChild(peso);
+          return wrap;
+        } },
+        { head: "Resultado", right: true, render: function (p) {
+          var v = S.get.positionPnL(p);
+          return U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
+            U.el("span", { class: "num " + U.signClass(v), text: U.money(v, 0) }),
+            U.el("span", { class: "small " + U.signClass(v), text: U.pct(S.get.positionPnLPct(p), 1) })
+          ]);
+        } }
+      ];
+      var posCard = U.card({ eyebrow: "Carteira · " + (carteira ? carteira.name : "—"),
+        title: "Posições" + (posicoes.length > 8 ? " · 8 maiores" : ""), tight: true,
+        action: U.button("Ver todas", { variant: "ghost", size: "sm",
+          onClick: function () { location.hash = "#/ativos"; } }),
+        body: [U.table(cols, posicoes.slice(0, 8), {
+          onRow: function (p) { location.hash = "#/ativos?id=" + p.ativo_id; }
+        })] });
+      posCard.classList.add("mt-16");
+      view.appendChild(posCard);
+    } else {
+      var vazio = U.card({ body: [U.empty("wallet", "Sua carteira de hold começa aqui",
+        "Cadastre o ativo e registre a compra com a quantidade, o preço que você pagou, a taxa e a data.",
+        U.button("Adicionar e comprar", { variant: "primary", icon: "plus", onClick: function () { F.newAsset(); } }))] });
+      vazio.classList.add("mt-16");
+      view.appendChild(vazio);
+    }
+
+    /* ------------------------------------------------------------
+       QUEM VALORIZOU, QUEM DESVALORIZOU
+
+       Barras horizontais com o resultado em aberto de cada posição,
+       centradas no zero: verde para a direita, vermelho para a
+       esquerda, valor e % escritos (a cor nunca é a única pista). É a
+       resposta direta a "como vão os meus ativos", e existe desde o
+       primeiro dia — a curva de evolução precisa de dias de medição.
+       ------------------------------------------------------------ */
+    if (posicoes.length) {
+      var mid = U.el("div", { class: "grid g-12 mt-16" });
+      var porRes = posicoes.slice().sort(function (x, y) { return S.get.positionPnL(y) - S.get.positionPnL(x); });
+      var maxAbs = porRes.reduce(function (m, p) { return Math.max(m, Math.abs(S.get.positionPnL(p))); }, 0) || 1;
+      var lista = U.el("div", { class: "ganho-lista" });
+      porRes.forEach(function (p) {
+        var a = S.get.asset(p.ativo_id) || {};
+        var v = S.get.positionPnL(p), pc = S.get.positionPnLPct(p);
+        var largura = Math.max(1, Math.abs(v) / maxAbs * 50);
+        var linha = U.el("button", { class: "ganho-linha", type: "button", title: "Abrir " + (a.ticker || "") });
+        linha.addEventListener("click", function () { location.hash = "#/ativos?id=" + p.ativo_id; });
+        linha.appendChild(U.el("span", { class: "gl-tick", text: a.ticker || "?" }));
+        var trilho = U.el("span", { class: "gl-trilho" });
+        trilho.appendChild(U.el("i", { class: v >= 0 ? "pos" : "neg",
+          style: (v >= 0 ? "left:50%;" : "right:50%;") + "width:" + largura.toFixed(1) + "%" }));
+        linha.appendChild(trilho);
+        linha.appendChild(U.el("span", { class: "gl-val num " + U.signClass(v),
+          text: U.money(v, 0) + " · " + U.pct(pc, 1) }));
+        lista.appendChild(linha);
+      });
+      var ganhoCard = U.card({ eyebrow: "Valorização", title: "Ganho ou perda por ativo",
+        action: U.el("span", { class: "small dim", text: "em aberto, sobre o preço médio" }),
+        body: [lista] });
+      ganhoCard.classList.add("col-8");
+      mid.appendChild(ganhoCard);
+
+      var segs = posicoes.map(function (p, i) {
+        var a = S.get.asset(p.ativo_id);
+        return { label: a ? a.ticker : "?", id: p.ativo_id, value: S.get.positionValue(p), color: C.color(i) };
+      });
+      var allocBody = U.el("div");
+      allocBody.appendChild(C.donut(segs, { centerTop: segs.length, centerBottom: segs.length === 1 ? "ativo" : "ativos" }));
+      var legend = U.el("div", { class: "legend-list" });
+      segs.forEach(function (sg) {
+        var pctv = (sg.value / (val || 1)) * 100;
+        var li = U.el("button", { class: "ll-item" + (S.get.concentrada(pctv) ? " alto" : ""), type: "button",
+          title: "Abrir " + sg.label });
+        li.appendChild(U.el("span", { class: "sw", style: "background:" + sg.color }));
+        li.appendChild(U.el("span", { class: "ll-tick", text: sg.label }));
+        li.appendChild(U.el("span", { class: "ll-val num", text: U.money(sg.value, 0) }));
+        li.appendChild(U.el("span", { class: "ll-pct num", text: pctv.toFixed(0) + "%" }));
+        li.addEventListener("click", function () { location.hash = "#/ativos?id=" + sg.id; });
+        legend.appendChild(li);
+      });
+      allocBody.appendChild(legend);
+      var allocCard = U.card({ eyebrow: "Distribuição", title: "Alocação", body: [allocBody] });
+      allocCard.classList.add("col-4");
+      mid.appendChild(allocCard);
+      view.appendChild(mid);
+    }
+
+    /* Evolução: a curva medida. Sem duas medições, uma linha curta em
+       vez de meia tela vazia. */
     var perfBody;
     if (serie.length >= 2) {
       perfBody = U.el("div", {}, [
         C.lineChart(serie),
         U.el("div", { class: "small dim", style: "margin-top:8px",
           text: medidos + (medidos === 1 ? " dia medido" : " dias medidos") +
-                " · o traçado entre medições repete o último valor conhecido." })
+                " · entre medições a linha repete o último valor conhecido." })
       ]);
     } else {
-      perfBody = U.empty("chart", "Ainda sem histórico medido",
-        "O ATLAS registra o valor da carteira uma vez por dia, a partir de agora. " +
-        "A curva aparece quando houver duas medições — ele não desenha o passado que não mediu.");
+      perfBody = U.el("div", { class: "small dim",
+        text: "O ATLAS mede o valor da carteira uma vez por dia. A curva aparece a partir da segunda medição — " +
+              "ele não desenha o passado que não mediu." });
     }
     var perfCard = U.card({ eyebrow: "Evolução", title: "Performance da carteira",
       action: U.el("span", { class: "badge " + (pnl >= 0 ? "invested" : "invalid") }, [U.pct(pnlPct)]),
       body: [perfBody] });
-    perfCard.classList.add("col-8");
-    mid.appendChild(perfCard);
+    perfCard.classList.add("mt-16");
+    view.appendChild(perfCard);
 
-    // allocation donut
-    var segs = S.get.walletPositions().map(function (p, i) {
-      var a = S.get.asset(p.ativo_id);
-      return { label: a ? a.ticker : "?", id: p.ativo_id, value: S.get.positionValue(p), color: C.color(i) };
-    }).sort(function (x, y) { return y.value - x.value; });
-    var allocBody = U.el("div");
-    if (segs.length) {
-      allocBody.appendChild(C.donut(segs, { centerTop: segs.length, centerBottom: "ativos" }));
-      /* A legenda virou lista clicável com o valor em dólar ao lado.
-         Antes trazia só "SOL · 21%" e não levava a lugar nenhum — o
-         donut mostrava a concentração e deixava a pessoa procurar o
-         ativo na outra tela para agir sobre ela. */
-      var legend = U.el("div", { class: "legend-list" });
-      segs.forEach(function (s) {
-        var pctv = (s.value / (val || 1)) * 100;
-        var li = U.el("button", { class: "ll-item" + (S.get.concentrada(pctv) ? " alto" : ""), type: "button",
-          title: "Abrir " + s.label });
-        li.appendChild(U.el("span", { class: "sw", style: "background:" + s.color }));
-        li.appendChild(U.el("span", { class: "ll-tick", text: s.label }));
-        li.appendChild(U.el("span", { class: "ll-val num", text: U.compact(s.value) }));
-        li.appendChild(U.el("span", { class: "ll-pct num", text: pctv.toFixed(0) + "%" }));
-        li.addEventListener("click", function () { location.hash = "#/ativos?id=" + s.id; });
-        legend.appendChild(li);
-      });
-      allocBody.appendChild(legend);
-    } else {
-      allocBody.appendChild(U.empty("wallet", "Sem alocação",
-        "Registre uma compra para ver a distribuição.",
-        U.button("Ver ativos", { variant: "secondary", icon: "layers",
-          onClick: function () { location.hash = "#/ativos"; } })));
-    }
-    var allocCard = U.card({ eyebrow: "Distribuição", title: "Alocação", body: [allocBody] });
-    allocCard.classList.add("col-4");
-    mid.appendChild(allocCard);
-    view.appendChild(mid);
-
-    /* alerts + recent */
+    /* alertas + atividade */
     var bottom = U.el("div", { class: "grid g-12 mt-16" });
-
-    /* ------------------------------------------------------------
-       ALERTAS QUE LEVAM AO ATIVO
-
-       Cada alerta já sabia de qual ativo fala (`a.asset`) e a
-       informação era jogada fora: a linha era um <div> morto. "SOL
-       representa 62% da carteira" e nenhum caminho para resolver — a
-       pessoa lia, ia para Ativos, procurava SOL na lista
-       e só então agia. Alerta que não leva à ação é decoração de
-       gravidade.
-       ------------------------------------------------------------ */
     var al = S.get.alerts();
     var alertBody = U.el("div");
     if (al.length) {
@@ -232,15 +280,12 @@
           type: alvo ? "button" : null,
           title: alvo ? "Abrir " + alvo.ticker : null
         });
-        row.innerHTML = '<div class="ai">' + U.icon(nivel === "info" ? "target" : "alert") + '</div>';
+        row.appendChild(U.el("div", { class: "ai" }, [U.iconEl(nivel === "info" ? "target" : "alert")]));
         var col = U.el("div", { class: "grow" });
         col.appendChild(U.el("div", { class: "a-t", text: a.title }));
         col.appendChild(U.el("div", { class: "a-s", text: a.sub }));
         row.appendChild(col);
-        if (alvo) {
-          row.appendChild(U.el("span", { class: "a-go", html: U.icon("arrow") }));
-          row.addEventListener("click", function () { location.hash = "#/ativos?id=" + a.asset; });
-        }
+        if (alvo) row.addEventListener("click", function () { location.hash = "#/ativos?id=" + a.asset; });
         alertBody.appendChild(row);
       });
     } else {
@@ -253,13 +298,17 @@
     alertCard.classList.add("col-4");
     bottom.appendChild(alertCard);
 
-    // recent history timeline
+    /* Atividade: só o que mexeu em dinheiro ou preço. "Ativo
+       adicionado" ocupava as cinco linhas logo depois de um cadastro e
+       empurrava a compra para fora da lista. */
     var tl = U.el("div", { class: "timeline" });
-    var recent = historicoOrdenado().slice(0, 5);
+    var recent = historicoOrdenado().filter(function (h) {
+      return h.tipo_acao === "TRADE_EXECUTED" || h.subtipo === "price";
+    }).slice(0, 5);
     if (recent.length) {
       recent.forEach(function (h) { tl.appendChild(historyItem(h)); });
     } else {
-      tl = U.empty("history", "Sem histórico", "As decisões aparecem aqui conforme forem registradas.");
+      tl = U.empty("history", "Sem operações ainda", "Compras, vendas e preços informados aparecem aqui.");
     }
     var histCard = U.card({ eyebrow: "Registro", title: "Atividade recente",
       action: U.button("Ver histórico", { variant: "ghost", size: "sm", onClick: function () { location.hash = "#/historico"; } }),
@@ -267,53 +316,6 @@
     histCard.classList.add("col-8");
     bottom.appendChild(histCard);
     view.appendChild(bottom);
-
-    /* ------------------------------------------------------------
-       AS POSIÇÕES, NO PAINEL
-
-       O painel mostrava quanto a carteira vale e como está distribuída
-       — sem nunca dizer QUAIS são as posições e como cada uma vai. Era
-       preciso ir até Ativos para ver a lista, e o painel virava um
-       resumo de si mesmo. A tabela aqui é curta de propósito: as cinco
-       maiores, com o caminho para o resto.
-       ------------------------------------------------------------ */
-    var posicoes = S.get.walletPositions().slice().sort(function (x, y) {
-      return S.get.positionValue(y) - S.get.positionValue(x);
-    });
-    if (posicoes.length) {
-      var cols = [
-        { head: "Ativo", render: function (p) { return U.assetCell(S.get.asset(p.ativo_id)); } },
-        { head: "Preço médio", right: true, render: function (p) {
-          return U.el("span", { class: "num dim", text: U.money(p.preco_medio) }); } },
-        { head: "Valor", right: true, render: function (p) {
-          return U.el("span", { class: "num", text: U.money(S.get.positionValue(p), 0) }); } },
-        { head: "Peso", right: true, render: function (p) {
-          var w = S.get.positionWeight(p);
-          var wrap = U.el("span", { class: "peso-mini" + (S.get.concentrada(w) ? " alto" : "") });
-          var bar = U.el("span", { class: "bar" });
-          bar.appendChild(U.el("i", { style: "width:" + w.toFixed(0) + "%" }));
-          wrap.appendChild(bar);
-          wrap.appendChild(U.el("span", { class: "n", text: w.toFixed(0) + "%" }));
-          return wrap;
-        } },
-        { head: "Resultado", right: true, render: function (p) {
-          var v = S.get.positionPnL(p);
-          return U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
-            U.el("span", { class: "num " + U.signClass(v), text: U.money(v, 0) }),
-            U.el("span", { class: "small " + U.signClass(v), text: U.pct(S.get.positionPnLPct(p), 1) })
-          ]);
-        } }
-      ];
-      var posCard = U.card({ eyebrow: "Carteira · " + (carteira ? carteira.name : "—"),
-        title: "Posições" + (posicoes.length > 5 ? " · 5 maiores" : ""), tight: true,
-        action: U.button("Ver todas", { variant: "ghost", size: "sm",
-          onClick: function () { location.hash = "#/ativos"; } }),
-        body: [U.table(cols, posicoes.slice(0, 5), {
-          onRow: function (p) { location.hash = "#/ativos?id=" + p.ativo_id; }
-        })] });
-      posCard.classList.add("mt-16");
-      view.appendChild(posCard);
-    }
 
     return { title: "Painel", crumb: "Visão geral", node: view };
   };
