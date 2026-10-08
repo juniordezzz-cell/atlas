@@ -183,3 +183,9 @@ def test_token_info_le_nome_e_nota():
     t = parse_token_info({"data": {"attributes": {"address": "3ZLek", "symbol": "wNEAR",
         "name": "Wrapped NEAR fungible token", "gt_score": 75.32, "holders": {"count": 17409}}}}, "Solana", AGORA)
     assert t.nome == "Wrapped NEAR fungible token" and t.gt_score == 75.32
+
+
+def test_motivo_de_rendimento_nunca_mostra_o_proprio_minimo():
+    c = cand("FOO/USDT", fee=0.25, tvl=1_000_000, vol=1_998_400)   # 0,25 × 1,9984 = 0,4996%/dia
+    t, m = trilho(c, [info(), None], [], AGORA)
+    assert t == "caca" and m[0].startswith("rende 0.499%/dia")

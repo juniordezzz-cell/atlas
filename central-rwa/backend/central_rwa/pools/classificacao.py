@@ -164,5 +164,7 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
     minimo = config.MIN_EFIC_DIA[classe]
     efic = eficiencia(c)
     if efic < minimo:
-        return "caca", [f"rende {efic:.3f}%/dia, abaixo do mínimo de {minimo}%/dia para {config.CLASSE_ROTULO[classe]}"]
+        # arredonda PARA BAIXO: 0,4996 virava "0.500 … abaixo do mínimo de 0.5"
+        mostra = int(efic * 1000) / 1000
+        return "caca", [f"rende {mostra:.3f}%/dia, abaixo do mínimo de {minimo}%/dia para {config.CLASSE_ROTULO[classe]}"]
     return "solida", []
