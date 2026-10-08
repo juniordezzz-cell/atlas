@@ -51,10 +51,10 @@
        feita aqui.
        ------------------------------------------------------------ */
     var carteira = S.wallets.active();
-    var caixa = (window.AtlasCaixa && carteira) ? AtlasCaixa.saldo(carteira.id) : null;
+    var caixa = S.wallets.caixa();   // a carteira em uso, ou a soma de todas
     var mov = { aporte: 0, retorno: 0 };
     if (window.AtlasCaixa && carteira) {
-      AtlasCaixa.eventos(carteira.id).forEach(function (e) {
+      S.wallets.eventosCaixa().forEach(function (e) {
         if (e.module !== "hold") return;
         if (e.tipo === "aporte") mov.aporte += (+e.valorUSD || 0);
         if (e.tipo === "retorno") mov.retorno += (+e.valorUSD || 0);

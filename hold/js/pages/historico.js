@@ -10,7 +10,7 @@
   window.Pages.historico = function () {
     var view = U.el("div");
 
-    var todos = S.state.historico;
+    var todos = window.Pages._historicoOrdenado ? window.Pages._historicoOrdenado() : S.state.historico;
 
     view.appendChild(U.el("div", { class: "view-head" }, [
       U.el("div", { class: "row" }, [
@@ -151,11 +151,11 @@
   function exportar() {
     if (!window.AtlasExport) return U.toast("Exportar", "Camada de exportação não carregada.", "warning");
     var linhas = [["Data", "Ação", "Ativo", "Impacto", "Justificativa"]];
-    S.state.historico.forEach(function (h) {
+    window.Pages._historicoOrdenado().forEach(function (h) {
       var a = S.get.asset(h.ativo_id);
       linhas.push([
         h.data || "",
-        window.Pages._labelAction(h.tipo_acao),
+        window.Pages._labelAction(h.tipo_acao, h),
         a ? a.ticker : "",
         h.impacto || "",
         h.justificativa || ""
@@ -168,10 +168,10 @@
   function fullItem(h) {
     var a = S.get.asset(h.ativo_id);
     var kind = h.subtipo === "buy" ? "buy" : h.subtipo === "sell" ? "sell" : "";
-    var item = U.el("div", { class: "tl-item " + kind });
-    item.innerHTML = '<div class="tl-dot">' + U.icon(h.subtipo === "buy" ? "arrowUp" : h.subtipo === "sell" ? "arrowDown" : "check") + '</div>';
+    var item = U.el("div", { class: "tl-item " + kind + (h.desfeita ? " desfeita" : "") });
+    item.innerHTML = '<div class="tl-dot">' + U.icon(h.subtipo === "buy" ? "arrowUp" : h.subtipo === "sell" ? "arrowDown" : h.subtipo === "undo" ? "history" : "check") + '</div>';
     var head = U.el("div", { class: "tl-head" });
-    head.appendChild(U.el("span", { class: "tl-title", text: window.Pages._labelAction(h.tipo_acao) }));
+    head.appendChild(U.el("span", { class: "tl-title", text: window.Pages._labelAction(h.tipo_acao, h) }));
     /* O ativo vira atalho quando ainda existe. Exclusão não apaga o
        histórico — a linha continua, e o selo deixa de ser clicável em
        vez de sumir. */

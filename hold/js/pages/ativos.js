@@ -29,9 +29,18 @@
         b.disabled = false; b.textContent = rotulo;
         var partes = [];
         if (r.atualizados) partes.push(r.atualizados + " preço(s) atualizado(s)");
-        if (r.faltando.length) {
+        /* Fonte principal fora do ar não é "ativo desconhecido": sem
+           este aviso a pessoa ia digitar preço manual — que depois
+           vence a API por sete dias — por causa de uma queda de rede. */
+        if (r.erro) {
+          partes.push("a fonte principal não respondeu (" + (r.erro.message || "erro de rede") +
+                     ") — tente de novo antes de digitar preço na mão");
+        } else if (r.faltando.length) {
           partes.push("nenhuma fonte reconheceu " + r.faltando.join(", ") +
                       " — informe o preço na mão em Editar");
+        }
+        if (r.soManual && r.soManual.length) {
+          partes.push(r.soManual.join(", ") + " não é cripto: o preço é o que você informar em Editar");
         }
         /* U.toast do Hold é (título, mensagem, tipo) — assinatura
            diferente da do DeFi, que é (mensagem, tipo). */
@@ -133,6 +142,47 @@
     });
   }
 
+  /* ============================================================
+     DESFAZER — a saída para a operação digitada errado
+
+     Não existia. Uma compra com a quantidade trocada só se corrigia
+     vendendo (e gravando um resultado que nunca aconteceu) ou apagando
+     o módulo inteiro. A regra de o que pode ser desfeito mora no
+     store (undoLast); aqui só se mostra o que vai acontecer.
+     ============================================================ */
+  function textoOperacao(op, a) {
+    return (op.tipo === "buy" ? "Compra" : "Venda") + " de " + S.fmt.qtd(op.quantidade) + " " + a.ticker +
+      " a " + U.money(op.preco) + " em " + op.data.split("-").reverse().join("/");
+  }
+  function desfazerUltima(a) {
+    var op = S.get.ultimaOperacao(a.id);
+    if (!op) {
+      return U.toast("Nada para desfazer",
+        "Não há operação de " + a.ticker + " nesta carteira que possa ser desfeita " +
+        "(operações anteriores a esta versão do Hold não guardavam o necessário).", "warning");
+    }
+    var itens = [
+      { icon: "layers", texto: "A posição volta a ser o que era antes (quantidade e preço médio)" },
+      { icon: "coins", texto: op.tipo === "buy"
+          ? "O valor volta para o caixa — e o depósito automático, se houve, sai do extrato"
+          : "O valor da venda sai do caixa e o resultado realizado deixa de contar" }
+    ];
+    U.confirmar({
+      eyebrow: "Desfazer operação",
+      titulo: "Desfazer a última operação de " + a.ticker + "?",
+      mensagem: textoOperacao(op, a) + ".",
+      itens: itens,
+      nota: "O histórico mantém a linha original, riscada, e ganha um registro de que ela foi desfeita.",
+      confirmar: "Desfazer",
+      onConfirm: function () {
+        var r = S.actions.undoLast(a.id);
+        if (r && r.error) return U.toast("Não foi possível desfazer", r.error, "warning");
+        U.toast("Operação desfeita", textoOperacao(op, a) + " foi desfeita.", "success");
+        window.Router.rerender();
+      }
+    });
+  }
+
   function acoesDoAtivo(a, opts) {
     opts = opts || {};
     var pos = S.get.positionOf(a.id);
@@ -144,6 +194,10 @@
         return [
           { icon: "edit", label: "Editar ativo", onClick: function () { F.editAsset(a.id); } },
           opts.semAbrir ? null : { icon: "eye", label: "Abrir ativo", onClick: function () { location.hash = "#/ativos?id=" + a.id; } },
+          { icon: "refresh", label: "Desfazer última operação",
+            disabled: !S.get.ultimaOperacao(a.id),
+            hint: "Nenhuma operação desfazível nesta carteira",
+            onClick: function () { desfazerUltima(a); } },
           { sep: true },
           { icon: "trash", label: "Excluir ativo", danger: true,
             disabled: !!S.get.anyPositionOf(a.id),
@@ -161,12 +215,12 @@
     var val = S.get.portfolioValue(), custo = S.get.portfolioCost();
     var pnl = val - custo, pnlPct = custo ? (pnl / custo) * 100 : 0;
     var carteira = S.wallets.active();
-    var caixa = (window.AtlasCaixa && carteira) ? AtlasCaixa.saldo(carteira.id) : null;
+    var caixa = S.wallets.caixa();   // a carteira em uso, ou a soma de todas
 
     var strip = U.el("div", { class: "grid g-4" });
     strip.appendChild(U.kpi({ icon: "wallet", label: "Valor investido", value: U.compact(val),
       sub: c.posicoes + (c.posicoes === 1 ? " posição" : " posições") }));
-    strip.appendChild(U.kpi({ icon: "trendUp", label: "Resultado", value: U.money(pnl, 0),
+    strip.appendChild(U.kpi({ icon: "trendUp", label: "Resultado em aberto", value: U.money(pnl, 0),
       delta: pnl, deltaText: U.pct(pnlPct) }));
     /* O caixa aparece aqui porque é ele que decide se a próxima compra
        acontece — e esta é a tela de onde as compras partem. */
@@ -229,7 +283,12 @@
       });
 
       function valorDe(a) { var p = S.get.positionOf(a.id); return p ? S.get.positionValue(p) : 0; }
-      function pnlDe(a)   { var p = S.get.positionOf(a.id); return p ? S.get.positionPnL(p) : 0; }
+      /* Ordena pelo resultado TOTAL (aberto + realizado): um ativo já
+         vendido com lucro não pode ir para o fim da lista como zero. */
+      function pnlDe(a)   {
+        var p = S.get.positionOf(a.id);
+        return (p ? S.get.positionPnL(p) : 0) + S.get.realizadoDoAtivo(a.id).resultado;
+      }
 
       var cols = [
         { key: "Ativo", head: "Ativo", sort: function (a) { return a.ticker || ""; },
@@ -265,12 +324,25 @@
         { key: "Resultado", head: "Resultado", right: true, sort: pnlDe,
           render: function (a) {
             var p = S.get.positionOf(a.id);
-            if (!p) return U.el("span", { class: "dim", text: "—" });
+            var real = S.get.realizadoDoAtivo(a.id);
+            if (!p && !real.vendas) return U.el("span", { class: "dim", text: "—" });
+            if (!p) {
+              /* encerrada: o que sobrou foi o realizado */
+              return U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
+                U.el("span", { class: "num " + U.signClass(real.resultado), text: U.money(real.resultado, 0) }),
+                U.el("span", { class: "small dim", text: "realizado" })
+              ]);
+            }
             var v = S.get.positionPnL(p);
-            return U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
+            var wrap = U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
               U.el("span", { class: "num " + U.signClass(v), text: U.money(v, 0) }),
               U.el("span", { class: "small " + U.signClass(v), text: U.pct(S.get.positionPnLPct(p), 1) })
             ]);
+            if (real.vendas) {
+              wrap.appendChild(U.el("span", { class: "small " + U.signClass(real.resultado),
+                text: "+ realizado " + U.money(real.resultado, 0) }));
+            }
+            return wrap;
           } },
         { key: "Status", head: "Status", sort: function (a) { return S.get.statusDe(a); },
           render: function (a) { return U.badge(S.get.statusDe(a)); } },
@@ -300,8 +372,8 @@
         /* Primeiro uso: o estado vazio ensina o caminho inteiro em vez
            de só constatar que não há nada. */
         body = U.empty("layers", "Nenhum ativo ainda",
-          "Cadastre o ativo, deposite na carteira e registre a compra — nessa ordem. " +
-          "Sem caixa na carteira o Hold não abre posição.",
+          "Cadastre o ativo e registre a compra com a data e o preço que você pagou. " +
+          "Se a carteira não tiver caixa, o valor entra como depósito automático.",
           U.button("Adicionar o primeiro ativo", { variant: "primary", icon: "plus", onClick: F.newAsset }));
       }
       tableHolder.appendChild(U.card({ tight: true, body: [body] }));
@@ -332,7 +404,7 @@
     var view = U.el("div");
 
     var carteira = S.wallets.active();
-    var caixa = (window.AtlasCaixa && carteira) ? AtlasCaixa.saldo(carteira.id) : null;
+    var caixa = S.wallets.caixa();   // a carteira em uso, ou a soma de todas
 
     view.appendChild(U.el("div", { class: "view-head" }, [
       U.el("div", { class: "row" }, [
@@ -349,6 +421,10 @@
         U.menuBtn(function () {
           return [
             { icon: "refresh", label: "Atualizar preço deste ativo", onClick: function () { atualizarUm(a); } },
+            { icon: "history", label: "Desfazer última operação",
+              disabled: !S.get.ultimaOperacao(a.id),
+              hint: "Nenhuma operação desfazível nesta carteira",
+              onClick: function () { desfazerUltima(a); } },
             { sep: true },
             { icon: "trash", label: "Excluir ativo", danger: true,
               disabled: !!S.get.anyPositionOf(a.id),
@@ -394,6 +470,7 @@
        a pessoa está decidindo comprar: o número que ela precisa (o
        caixa) não estava em lugar nenhum.
        ------------------------------------------------------------ */
+    var real = S.get.realizadoDoAtivo(id);
     if (pos) {
       var pv = S.get.positionValue(pos), pl = S.get.positionPnL(pos), plp = S.get.positionPnLPct(pos);
       var peso = S.get.positionWeight(pos);
@@ -410,41 +487,89 @@
         U.el("span", { class: "num", text: U.money(pv, 0) }),
         pesoMini(peso)
       ])));
-      posGrid.appendChild(miniStatNode("Resultado", U.el("div", { class: "stack", style: "gap:2px" }, [
+      /* Resultado em aberto = valorização (ou desvalorização) da
+         posição sobre o preço médio. Se já houve venda, o realizado
+         aparece embaixo e o total junta os dois — senão a tela de um
+         ativo que você já realizou lucro mostrava só metade da conta. */
+      var resNode = U.el("div", { class: "stack", style: "gap:2px" }, [
         U.el("span", { class: "num " + U.signClass(pl), text: U.money(pl, 0) }),
-        U.el("span", { class: "small " + U.signClass(pl), text: U.pct(plp) })
-      ])));
+        U.el("span", { class: "small " + U.signClass(pl), text: U.pct(plp) + " em aberto" })
+      ]);
+      if (real.vendas) {
+        resNode.appendChild(U.el("span", { class: "small " + U.signClass(real.resultado),
+          text: "realizado " + U.money(real.resultado, 0) + " · total " + U.money(pl + real.resultado, 0) }));
+      }
+      posGrid.appendChild(miniStatNode("Resultado", resNode));
+      /* Na visão somada, a mesma moeda em duas carteiras vira uma
+         linha só — e a pessoa precisa saber onde está cada parte. */
+      var corpoPos = [posGrid];
+      if (pos.partes && pos.partes.length > 1) {
+        var nomes = {};
+        S.wallets.list().forEach(function (w) { nomes[w.id] = w.name; });
+        corpoPos.push(U.el("div", { class: "small dim", style: "margin-top:12px",
+          text: "Dividida entre: " + pos.partes.map(function (pp) {
+            return (nomes[pp.walletId] || pp.walletId) + " " + U.qty(pp.quantidade) + " (PM " + U.money(pp.preco_medio) + ")";
+          }).join(" · ") }));
+      }
       var posCard = U.card({ eyebrow: "Carteira · " + (carteira ? carteira.name : "—"),
         title: "Posição atual",
         action: S.get.concentrada(peso) ? U.el("span", { class: "badge review" }, [
           U.el("span", { class: "dot" }), "Concentração de " + peso.toFixed(0) + "%"
         ]) : null,
-        body: [posGrid] });
+        body: corpoPos });
       posCard.classList.add("mt-16");
       view.appendChild(posCard);
+    } else if (real.vendas) {
+      /* ------------------------------------------------------------
+         POSIÇÃO ENCERRADA — não "ainda não investido"
+
+         Um ativo vendido com prejuízo mostrava "Ainda não investido",
+         como se o dinheiro nunca tivesse passado por ali. O que importa
+         depois de vender é quanto se ganhou ou perdeu no ciclo.
+         ------------------------------------------------------------ */
+      var pctReal = real.custo ? (real.resultado / real.custo) * 100 : 0;
+      var encGrid = U.el("div", { class: "grid g-4" });
+      encGrid.appendChild(miniStat("Custo vendido", U.money(real.custo, 0)));
+      encGrid.appendChild(miniStat("Apurado nas vendas", U.money(real.apurado, 0)));
+      encGrid.appendChild(miniStatNode("Resultado realizado", U.el("div", { class: "stack", style: "gap:2px" }, [
+        U.el("span", { class: "num " + U.signClass(real.resultado), text: U.money(real.resultado, 0) }),
+        U.el("span", { class: "small " + U.signClass(real.resultado), text: U.pct(pctReal) + " sobre o custo" })
+      ])));
+      encGrid.appendChild(miniStatNode("Caixa disponível", U.el("div", { class: "stack", style: "gap:2px" }, [
+        U.el("span", { class: "num", text: caixa == null ? "—" : U.money(caixa, 0) }),
+        U.el("span", { class: "small dim", text: "em " + (carteira ? carteira.name : "—") })
+      ])));
+      var encCard = U.card({ eyebrow: "Carteira · " + (carteira ? carteira.name : "—"),
+        title: "Posição encerrada",
+        action: U.button("Comprar de novo", { variant: "secondary", size: "sm", icon: "arrowUp",
+          onClick: function () { F.trade(id, "buy"); } }),
+        body: [encGrid] });
+      encCard.classList.add("mt-16");
+      view.appendChild(encCard);
     } else {
+      /* Sem caixa a compra continua possível: o que faltar entra como
+         depósito automático na carteira escolhida (regra de 21/09).
+         O botão mandava para Carteiras e dizia que era preciso
+         depositar antes — instrução de uma regra que já não vale. */
       var semPos = U.el("div", { class: "sem-pos" });
       semPos.appendChild(U.el("div", { class: "stack" }, [
-        U.el("div", { class: "eyebrow", text: "Sem posição em " + (carteira ? carteira.name : "esta carteira") }),
+        U.el("div", { class: "eyebrow", text: "Caixa em " + (carteira ? carteira.name : "esta carteira") }),
         U.el("div", { class: "sp-caixa num", text: caixa == null ? "—" : U.money(caixa, 0) }),
         U.el("div", { class: "small dim",
           text: caixa > 0
-            ? "é o caixa disponível — é daqui que sai o valor da compra."
-            : "sem caixa nesta carteira. Registre um depósito em Carteiras & Movimentações antes de comprar." })
+            ? "é daqui que sai o valor da compra; o que faltar entra como depósito automático."
+            : "sem caixa: ao comprar, o valor entra como depósito automático nesta carteira." })
       ]));
       semPos.appendChild(U.el("div", { class: "spacer" }));
-      semPos.appendChild(U.button(caixa > 0 ? "Comprar " + a.ticker : "Ver carteiras",
-        { variant: "primary", icon: caixa > 0 ? "arrowUp" : "wallet",
-          onClick: caixa > 0
-            ? function () { F.trade(id, "buy"); }
-            : function () { location.href = "../pages/carteiras.html"; } }));
+      semPos.appendChild(U.button("Comprar " + a.ticker,
+        { variant: "primary", icon: "arrowUp", onClick: function () { F.trade(id, "buy"); } }));
       var spCard = U.card({ eyebrow: "Carteira", title: "Ainda não investido", body: [semPos] });
       spCard.classList.add("mt-16");
       view.appendChild(spCard);
     }
 
     // history for this asset
-    var hs = S.state.historico.filter(function (h) { return h.ativo_id === id; });
+    var hs = window.Pages._historicoOrdenado().filter(function (h) { return h.ativo_id === id; });
     var tl = U.el("div", { class: "timeline" });
     if (hs.length) hs.slice(0, 8).forEach(function (h) { tl.appendChild(window.Pages._historyItem(h)); });
     else tl = U.empty("history", "Sem histórico", "As decisões deste ativo aparecerão aqui.");

@@ -794,3 +794,120 @@ html[data-module="rwa"] .crwa-strip b { font-size: 18px; font-weight: 600; font-
 @media (max-width: 560px) {
   html[data-module="rwa"] .crwa-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ===================================================================
+   8. FORMA SUAVE — fim do "tudo quadrado" (08/10/2026, direção B)
+
+   Pedido do dono: o site estava "muito quadrado". O que fazia isso
+   eram três coisas repetidas em todos os módulos: campos com canto de
+   6–8px e contorno duro, botões retangulares e janelas com canto
+   pequeno e linhas cortando cabeçalho e rodapé.
+
+   Linguagem nova, uma só para o ATLAS inteiro:
+     · campo   = superfície PREENCHIDA, sem contorno, canto 12px; o
+                 contorno só aparece no foco (anel azul suave);
+     · botão   = canto 12px;
+     · janela  = canto 20px, sem linhas internas;
+     · filtros segmentados = trilho 12px com opção 9px.
+
+   Os módulos usam nomes de classe diferentes para a mesma coisa
+   (.input, .set-input, .awd__field, .rd__field…). Por isso as regras
+   miram o ELEMENTO, com `html:root body` na frente para vencer o CSS
+   de cada módulo, e excluem o que já tem moldura própria: busca,
+   seletor de carteira, composer do Oráculo e calendário.
+   =================================================================== */
+:root, html[data-theme="dark"] {
+  --suave-campo:      rgba(148, 170, 215, 0.075);
+  --suave-campo-hi:   rgba(148, 170, 215, 0.11);
+  --suave-anel:       rgba(76, 154, 255, 0.55);
+  --suave-r-campo:    12px;
+  --suave-r-botao:    12px;
+  --suave-r-janela:   20px;
+}
+html[data-theme="light"] {
+  --suave-campo:      rgba(15, 30, 60, 0.05);
+  --suave-campo-hi:   rgba(15, 30, 60, 0.08);
+  --suave-anel:       rgba(37, 99, 235, 0.5);
+}
+
+/* ---- 8a. Campos ---- */
+html:root body :is(
+  input:not([type]), input[type="text"], input[type="number"], input[type="date"],
+  input[type="email"], input[type="password"], input[type="url"], input[type="tel"],
+  input[type="datetime-local"], input[type="month"], select, textarea
+):not(:is(.search, [class*="search"], [class*="busca"], .awsel, [class*="oraculo"], .atlas-calfield, .input-money, [class*="palette"]) *):not([class*="search"]):not([class*="oraculo"]) {
+  border-color: transparent;
+  background-color: var(--suave-campo);
+  border-radius: var(--suave-r-campo);
+  box-shadow: none;
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+html:root body :is(
+  input:not([type]), input[type="text"], input[type="number"], input[type="date"],
+  input[type="email"], input[type="password"], input[type="url"], input[type="tel"],
+  input[type="datetime-local"], input[type="month"], select, textarea
+):not(:is(.search, [class*="search"], [class*="busca"], .awsel, [class*="oraculo"], .atlas-calfield, .input-money, [class*="palette"]) *):not([class*="search"]):not([class*="oraculo"]):hover {
+  background-color: var(--suave-campo-hi);
+}
+html:root body :is(
+  input:not([type]), input[type="text"], input[type="number"], input[type="date"],
+  input[type="email"], input[type="password"], input[type="url"], input[type="tel"],
+  input[type="datetime-local"], input[type="month"], select, textarea
+):not(:is(.search, [class*="search"], [class*="busca"], .awsel, [class*="oraculo"], .atlas-calfield, .input-money, [class*="palette"]) *):not([class*="search"]):not([class*="oraculo"]):focus {
+  outline: none;
+  border-color: transparent;
+  background-color: var(--suave-campo-hi);
+  box-shadow: 0 0 0 2px var(--suave-anel);
+}
+/* campo com prefixo/sufixo colado (US$ …): a moldura é o contêiner */
+html:root body .input-money {
+  border-color: transparent;
+  background-color: var(--suave-campo);
+  border-radius: var(--suave-r-campo);
+}
+html:root body .input-money:focus-within { box-shadow: 0 0 0 2px var(--suave-anel); }
+html:root body .input-money :is(input, select) { background: transparent; border: 0; box-shadow: none; }
+
+/* ---- 8b. Botões de ação (os que têm texto) ---- */
+html:root body :is(
+  .btn, .rep-btn, .card-btn, .awd__btn, .aonb__btn, .lp-btn, .tool-card__cta,
+  .modal-foot button, .modal-footer button, [class*="__btn--go"], [class*="btn-primary"],
+  [class*="btn-secondary"], [class*="btn-ghost"]
+):not(.icon-btn):not(.act-btn) {
+  border-radius: var(--suave-r-botao);
+}
+/* botões só de ícone ficam com canto proporcional, não quadrado */
+html:root body :is(.icon-btn, .act-btn, .collapse-btn) { border-radius: 10px; }
+
+/* ---- 8c. Janelas ---- */
+html:root body :is(.modal, .awd, .atlas-oraculo__review-dialog, [role="dialog"]:not(.modal-scrim):not(.modal-overlay)) {
+  border-radius: var(--suave-r-janela);
+  /* sem overflow:hidden de propósito: cortaria a lista do
+     autocompletar de moedas, que abre dentro da janela */
+}
+html:root body :is(.modal-head, .modal-header, .modal-foot, .modal-footer) {
+  border-color: transparent;
+}
+
+/* ---- 8d. Filtros segmentados e abas em trilho ---- */
+html:root body :is(.cc-tab, .tab-btn, .period-btn) { border-radius: 10px; }
+html:root body :is(.segmented, .seg, .defidom-seg) {
+  border-radius: var(--suave-r-botao);
+}
+html:root body :is(.segmented, .seg, .defidom-seg) > :is(button, a, .seg__opt) {
+  border-radius: 9px;
+}
+
+/* ---- 8e. Menus suspensos e avisos ---- */
+html:root body :is(.menu, [class*="dropdown"]:not(button), .awsel__menu, .toast, [class*="toast"]:not(button)) {
+  border-radius: 14px;
+}
+
+/* ---- 8f. Tabelas: a moldura arredonda junto ---- */
+html:root body :is(.table-wrap, .data-table, .tbl) { border-radius: 14px; }
+
+/* ---- 8g. O "fio de luz" sob o campo em foco sai ----
+   atlas-effects.css desenha um traço degradê embaixo de .field,
+   .form-field e .atlas-field no foco. Com o campo arredondado, o traço
+   reto aparecia solto sob o canto — e o anel do foco já diz o mesmo. */
+html:root body :is(.field, .form-field, .atlas-field)::after { content: none; }

@@ -41,9 +41,18 @@
     S.actions.refreshPrices().then(function (r) {
       var partes = [];
       if (r.atualizados) partes.push(r.atualizados + " preço(s) atualizado(s)");
-      if (r.faltando.length) {
+      /* Fonte principal fora do ar não é "ativo desconhecido": sem
+         este aviso a pessoa ia digitar preço manual — que depois
+         vence a API por sete dias — por causa de uma queda de rede. */
+      if (r.erro) {
+        partes.push("a fonte principal não respondeu (" + (r.erro.message || "erro de rede") +
+                   ") — tente de novo antes de digitar preço na mão");
+      } else if (r.faltando.length) {
         partes.push("nenhuma fonte reconheceu " + r.faltando.join(", ") +
-                    " — informe o preço em Ativos → o ativo → Editar");
+                    " — informe o preço na mão em Editar");
+      }
+      if (r.soManual && r.soManual.length) {
+        partes.push(r.soManual.join(", ") + " não é cripto: o preço é o que você informar em Editar");
       }
       U.toast("Preços", partes.join(" · ") || "Todos os preços já estavam atualizados.",
               r.atualizados ? "success" : "");
@@ -61,7 +70,7 @@
     var realizado = S.get.realizado ? S.get.realizado() : 0;
 
     var carteira = S.wallets.active();
-    var caixa = (window.AtlasCaixa && carteira) ? AtlasCaixa.saldo(carteira.id) : null;
+    var caixa = S.wallets.caixa();   // a carteira em uso, ou a soma de todas
     var custo = S.get.portfolioCost();
 
     var view = U.el("div");
@@ -111,7 +120,7 @@
     acoes.appendChild(rapida("plus", "Adicionar ativo", "cadastrar no universo",
       function () { F.newAsset(); }));
     acoes.appendChild(rapida("arrowUp", "Comprar",
-      caixa > 0 ? "há " + U.money(caixa, 0) + " em caixa" : "sem caixa nesta carteira",
+      caixa > 0 ? "há " + U.money(caixa, 0) + " em caixa" : "sem caixa: entra como depósito",
       function () { location.hash = "#/ativos"; }));
     acoes.appendChild(rapida("refresh", "Atualizar preços",
       c.ativos + (c.ativos === 1 ? " ativo" : " ativos") + " para remarcar",
@@ -130,7 +139,7 @@
     kpis.appendChild(U.kpi({ icon: "wallet", label: "Valor da carteira", value: U.compact(val),
       sub: c.posicoes + (c.posicoes === 1 ? " posição · custo " : " posições · custo ") + U.compact(custo),
       spark: serie.length >= 2 ? C.sparkline(serie.map(function (p) { return p.v; }), { w: 84, h: 26 }) : null }));
-    kpis.appendChild(U.kpi({ icon: "trendUp", label: "Resultado (PnL)", value: U.money(pnl, 0),
+    kpis.appendChild(U.kpi({ icon: "trendUp", label: "Resultado em aberto", value: U.money(pnl, 0),
       delta: pnl, deltaText: U.pct(pnlPct) }));
     kpis.appendChild(U.kpi({ icon: "coins", label: "Caixa disponível",
       value: caixa == null ? "—" : U.money(caixa, 0),
@@ -138,7 +147,7 @@
     /* O lucro das vendas já feitas: sai da posição e fica no caixa,
        então nenhum dos três números acima o mostra. */
     kpis.appendChild(U.kpi({ icon: "target", label: "Resultado realizado", value: U.money(realizado, 0),
-      sub: "em vendas nesta carteira" }));
+      sub: "total com o aberto: " + U.money(pnl + realizado, 0) }));
     view.appendChild(kpis);
 
     /* performance + allocation */
@@ -178,7 +187,7 @@
       var legend = U.el("div", { class: "legend-list" });
       segs.forEach(function (s) {
         var pctv = (s.value / (val || 1)) * 100;
-        var li = U.el("button", { class: "ll-item" + (pctv > 40 ? " alto" : ""), type: "button",
+        var li = U.el("button", { class: "ll-item" + (S.get.concentrada(pctv) ? " alto" : ""), type: "button",
           title: "Abrir " + s.label });
         li.appendChild(U.el("span", { class: "sw", style: "background:" + s.color }));
         li.appendChild(U.el("span", { class: "ll-tick", text: s.label }));
@@ -246,7 +255,7 @@
 
     // recent history timeline
     var tl = U.el("div", { class: "timeline" });
-    var recent = S.state.historico.slice(0, 5);
+    var recent = historicoOrdenado().slice(0, 5);
     if (recent.length) {
       recent.forEach(function (h) { tl.appendChild(historyItem(h)); });
     } else {
@@ -312,21 +321,38 @@
   function historyItem(h) {
     var a = S.get.asset(h.ativo_id);
     var kind = h.subtipo === "buy" ? "buy" : h.subtipo === "sell" ? "sell" : "";
-    var item = U.el("div", { class: "tl-item " + kind });
-    item.innerHTML = '<div class="tl-dot">' + U.icon(h.subtipo === "buy" ? "arrowUp" : h.subtipo === "sell" ? "arrowDown" : "check") + '</div>';
+    var item = U.el("div", { class: "tl-item " + kind + (h.desfeita ? " desfeita" : "") });
+    item.innerHTML = '<div class="tl-dot">' + U.icon(h.subtipo === "buy" ? "arrowUp" : h.subtipo === "sell" ? "arrowDown" : h.subtipo === "undo" ? "history" : "check") + '</div>';
     var head = U.el("div", { class: "tl-head" });
-    head.appendChild(U.el("span", { class: "tl-title", text: (a ? a.ticker + " · " : "") + labelAction(h.tipo_acao) }));
+    head.appendChild(U.el("span", { class: "tl-title", text: (a ? a.ticker + " · " : "") + labelAction(h.tipo_acao, h) }));
     head.appendChild(U.el("span", { class: "tl-time", text: U.dateTime(h.data) }));
     item.appendChild(head);
     item.appendChild(U.el("div", { class: "tl-body", text: h.impacto || h.justificativa }));
     return item;
   }
-  function labelAction(t) {
+  /* "Operação executada" para compra e venda igualmente obrigava a ler
+     o corpo para saber o que aconteceu. O subtipo já dizia. */
+  function labelAction(t, h) {
+    var sub = h && h.subtipo;
+    if (t === "TRADE_EXECUTED" && sub) {
+      var r = { buy: "Compra", sell: "Venda", undo: "Operação desfeita" }[sub];
+      if (r) return r + (h.desfeita ? " (desfeita)" : "");
+    }
+    if (t === "POSITION_UPDATED" && sub === "price") return "Preço informado";
+    if (t === "ASSET_CREATED" && h && /exclu/.test(h.justificativa || "")) return "Ativo excluído";
     return {
       TRADE_EXECUTED: "Operação executada", ASSET_CREATED: "Ativo adicionado",
       POSITION_UPDATED: "Posição atualizada"
     }[t] || t;
   }
+  /* A data de uma operação pode ser passada (compra registrada hoje,
+     feita em março). A lista segue a data do fato, não a do cadastro. */
+  function historicoOrdenado() {
+    return S.state.historico.slice().sort(function (x, y) {
+      return String(y.data).localeCompare(String(x.data));
+    });
+  }
+  window.Pages._historicoOrdenado = historicoOrdenado;
   window.Pages._historyItem = historyItem;
   window.Pages._labelAction = labelAction;
 })();

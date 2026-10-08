@@ -216,8 +216,19 @@
       balanceModule: "hold",
       /* o Hold guarda a carteira em uso no estado dele, porque é por
          ela que a partição dos dados do módulo é feita */
-      getActive: S.wallets.active,
-      onSelect: function (id) { S.wallets.set(id); },   // Hold reage via emit()
+      getActive: S.wallets.real,
+      onSelect: function (id) { S.wallets.set(id); },   // Hold reage via emit(); sai do modo todas
+      /* "Todas as carteiras": soma as carteiras que o Hold enxerga
+         (globais + locais do Hold). Ver modoTodas em state.js. */
+      todas: {
+        ativo: S.wallets.todas,
+        saldo: function () {
+          return window.AtlasWallets.forModule("hold").reduce(function (s, w) {
+            var t = totaisDe(w.id); return s + (t ? Number(t.valorAtual) || 0 : 0);
+          }, 0);
+        },
+        selecionar: function () { S.wallets.setTodas(true); }
+      },
       /* o ponto da pastilha diz a idade do preço mais velho das posições */
       status: idadeDosPrecos,
       /* alimenta o ledger central. Antes reportava SÓ a carteira ativa,
@@ -310,6 +321,13 @@
     window.addEventListener("hashchange", render);
     if (!location.hash) location.hash = "#/dashboard";
     render();
+    /* preços velhos se remarcam sozinhos ao abrir; com modal aberto
+       não redesenha (derrubaria o formulário) */
+    if (S.actions.refreshIfStale) {
+      S.actions.refreshIfStale(15).then(function (r) {
+        if (r && r.atualizados && !document.querySelector(".modal-scrim")) render();
+      });
+    }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

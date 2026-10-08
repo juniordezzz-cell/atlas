@@ -49,6 +49,31 @@
     return window.AtlasWallets.get(activeWalletId()) || window.AtlasWallets.activeGlobal();
   }
 
+  /* ------------------------------------------------------------
+     MODO "TODAS AS CARTEIRAS"
+
+     Escolhido no seletor de carteira. Ligado, as leituras do Hold
+     (posições, caixa, realizado, curva, alertas) passam a somar TODAS
+     as carteiras que o Hold enxerga: as globais e as locais do Hold.
+     Escolher uma carteira específica desliga o modo e mostra só ela.
+     As escritas (comprar, vender, desfazer) sempre usam a carteira
+     explícita da operação — nunca a soma.
+     ------------------------------------------------------------ */
+  var KEY_ESCOPO = "atlas.hold.escopo.v1";
+  function modoTodas() {
+    try { return localStorage.getItem(KEY_ESCOPO) === "todas"; } catch (e) { return false; }
+  }
+  function setModoTodas(on) {
+    try { localStorage.setItem(KEY_ESCOPO, on ? "todas" : "carteira"); } catch (e) {}
+  }
+  function idsDoHold() {
+    return window.AtlasWallets && window.AtlasWallets.forModule
+      ? window.AtlasWallets.forModule("hold").map(function (w) { return w.id; })
+      : ["principal"];
+  }
+  /* as carteiras que a tela está olhando agora */
+  function escopoIds() { return modoTodas() ? idsDoHold() : [activeWalletId()]; }
+
   /* Toda posição antiga sem walletId é adotada pela carteira principal. */
   function ensureWalletStamp() {
     var changed = false;
@@ -84,7 +109,12 @@
        os dois. Sem isto o lucro de uma venda ia para o caixa e para
        resultado nenhum — o "Lucro Total" ficava abaixo do que o
        patrimônio mostrava. Ver executeSell e realizado(). */
-    vendas: []
+    vendas: [],
+    /* Uma linha por compra/venda com TUDO o que ela mexeu: a posição
+       como era antes, os eventos de caixa que gravou e a venda que
+       apurou. É o que permite desfazer uma operação digitada errado
+       sem deixar resto no caixa nem no preço médio. Ver undoLast(). */
+    operacoes: []
   };
 
   function uid(prefix) {
@@ -178,27 +208,79 @@
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
 
   /* ---- history helper (toda ação gera histórico) ---- */
-  function logHistory(tipo_acao, subtipo, ativo_id, justificativa, impacto) {
-    HOLD_STATE.historico.unshift({
+  function logHistory(tipo_acao, subtipo, ativo_id, justificativa, impacto, quando) {
+    var h = {
       id: uid("h"), tipo_acao: tipo_acao, subtipo: subtipo || null,
       ativo_id: ativo_id || null,
       justificativa: justificativa || "", impacto: impacto || "",
-      data: new Date().toISOString()
-    });
+      data: quando || new Date().toISOString()
+    };
+    HOLD_STATE.historico.unshift(h);
+    return h;
+  }
+
+  /* ------------------------------------------------------------
+     QUANTIDADE SEM RESTO DE PONTO FLUTUANTE
+
+     0,7 − 0,4 dá 0,29999999999999993 em JavaScript. A tela mostrava
+     "0,3", a pessoa digitava 0,3 para vender tudo e a venda era
+     recusada como "Quantidade inválida" — não havia como fechar a
+     posição. Toda quantidade passa a ser arredondada em 10 casas
+     (mais fina que qualquer token real) antes de ser gravada ou
+     comparada.
+     ------------------------------------------------------------ */
+  var CASAS_QTD = 1e10;
+  function arredQtd(q) { return Math.round((+q || 0) * CASAS_QTD) / CASAS_QTD; }
+
+  /* Data da operação: o dia escolhido no formulário vira um instante
+     para o histórico. Hoje → agora; dia passado → meio-dia local
+     daquele dia (evita o dia "pular" ao converter para UTC). */
+  function instanteDe(dia) {
+    var s = String(dia || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || s >= diaIso()) return new Date().toISOString();
+    return new Date(s + "T12:00:00").toISOString();
   }
 
   /* ============================================================
      SELECTORS (derivações — nunca alteram estado)
      ============================================================ */
   function asset(id) { return HOLD_STATE.ativos.find(function (a) { return a.id === id; }); }
-  function positionOf(aid, walletId) {
-    var wid = walletId || activeWalletId();
+  function posicaoReal(aid, wid) {
     return HOLD_STATE.carteira.find(function (p) { return p.ativo_id === aid && (p.walletId || "principal") === wid; });
   }
-  /* posições da carteira ativa (o que as páginas veem) */
+  /* O mesmo ativo em várias carteiras vira UMA linha na visão somada:
+     quantidade somada e preço médio ponderado pelo custo. É só leitura
+     — `partes` guarda as posições verdadeiras, e nenhuma ação grava
+     neste objeto. */
+  function somarPosicoes(lista) {
+    if (lista.length === 1) return lista[0];
+    var q = 0, custo = 0;
+    lista.forEach(function (p) { q += p.quantidade; custo += p.quantidade * p.preco_medio; });
+    return { ativo_id: lista[0].ativo_id, quantidade: arredQtd(q), preco_medio: q ? custo / q : 0,
+             walletId: null, virtual: true, partes: lista };
+  }
+  /* Com carteira explícita, a posição verdadeira dela. Sem, a posição
+     do que a tela está olhando (uma carteira, ou todas somadas). */
+  function positionOf(aid, walletId) {
+    if (walletId) return posicaoReal(aid, walletId);
+    var ids = escopoIds();
+    var achadas = HOLD_STATE.carteira.filter(function (p) {
+      return p.ativo_id === aid && ids.indexOf(p.walletId || "principal") >= 0;
+    });
+    return achadas.length ? somarPosicoes(achadas) : undefined;
+  }
+  /* posições do que a tela está olhando — uma por ativo */
   function walletPositions(walletId) {
-    var wid = walletId || activeWalletId();
-    return HOLD_STATE.carteira.filter(function (p) { return (p.walletId || "principal") === wid; });
+    if (walletId) {
+      return HOLD_STATE.carteira.filter(function (p) { return (p.walletId || "principal") === walletId; });
+    }
+    var ids = escopoIds(), porAtivo = {}, ordem = [];
+    HOLD_STATE.carteira.forEach(function (p) {
+      if (ids.indexOf(p.walletId || "principal") < 0) return;
+      if (!porAtivo[p.ativo_id]) { porAtivo[p.ativo_id] = []; ordem.push(p.ativo_id); }
+      porAtivo[p.ativo_id].push(p);
+    });
+    return ordem.map(function (aid) { return somarPosicoes(porAtivo[aid]); });
   }
   /* posição de um ativo em QUALQUER carteira */
   function anyPositionOf(aid) {
@@ -227,8 +309,9 @@
   function statusDe(a) {
     if (!a) return "watchlist";
     if (anyPositionOf(a.id)) return "invested";
+    /* Venda desfeita não conta: a linha fica no histórico, marcada. */
     var vendeu = HOLD_STATE.historico.some(function (h) {
-      return h.ativo_id === a.id && h.subtipo === "sell";
+      return h.ativo_id === a.id && h.subtipo === "sell" && !h.desfeita;
     });
     return vendeu ? "sold" : "watchlist";
   }
@@ -269,14 +352,38 @@
      produziu (a base dele na rentabilidade). Andam juntos pelo mesmo
      motivo do Trade: numerador sem o seu denominador é o erro nº 2. */
   function vendasDe(walletId) {
-    var wid = walletId || activeWalletId();
-    return (HOLD_STATE.vendas || []).filter(function (v) { return (v.walletId || "principal") === wid; });
+    var ids = walletId ? [walletId] : escopoIds();
+    return (HOLD_STATE.vendas || []).filter(function (v) { return ids.indexOf(v.walletId || "principal") >= 0; });
   }
   function realizado(walletId) {
     return vendasDe(walletId).reduce(function (s, v) { return s + (Number(v.resultado) || 0); }, 0);
   }
   function capitalRealizado(walletId) {
     return vendasDe(walletId).reduce(function (s, v) { return s + (Number(v.custo) || 0); }, 0);
+  }
+  /* O realizado de UM ativo na carteira. Sem isto, um ativo vendido
+     com prejuízo aparecia na lista com "—" no resultado, e a tela dele
+     dizia "Ainda não investido" — como se o dinheiro nunca tivesse
+     passado por ali. */
+  function realizadoDoAtivo(aid, walletId) {
+    return vendasDe(walletId).filter(function (v) { return v.ativo_id === aid; })
+      .reduce(function (acc, v) {
+        acc.resultado += Number(v.resultado) || 0;
+        acc.custo += Number(v.custo) || 0;
+        acc.apurado += Number(v.apurado) || 0;
+        acc.vendas++;
+        return acc;
+      }, { resultado: 0, custo: 0, apurado: 0, vendas: 0 });
+  }
+
+  /* A última operação desfazível de um ativo numa carteira. Só a mais
+     recente: desfazer uma do meio deixaria o preço médio das seguintes
+     calculado sobre uma base que deixou de existir. */
+  function ultimaOperacao(aid, walletId) {
+    var ids = walletId ? [walletId] : escopoIds();
+    return (HOLD_STATE.operacoes || []).filter(function (o) {
+      return o.ativo_id === aid && ids.indexOf(o.walletId) >= 0;
+    })[0] || null;
   }
 
   function positionWeight(p) {
@@ -332,10 +439,20 @@
      file:// sem o arquivo compartilhado carregado — o módulo continua
      desenhando a própria curva, só não alimenta a consolidação.
      ------------------------------------------------------------ */
+  /* Mede CADA carteira do Hold pelas posições dela — não "a carteira
+     ativa". No modo todas, gravar a soma sob o id da ativa poria o
+     valor de todas dentro de uma só. */
   function recordSnapshot() {
-    var wid = activeWalletId();
-    var v = portfolioValue(), c = portfolioCost();
-
+    var r = null;
+    idsDoHold().forEach(function (wid) {
+      var ps = walletPositions(wid);
+      var v = ps.reduce(function (s, p) { return s + positionValue(p); }, 0);
+      var c = ps.reduce(function (s, p) { return s + positionCost(p); }, 0);
+      r = registrarSnapshot(wid, v, c);
+    });
+    return r;
+  }
+  function registrarSnapshot(wid, v, c) {
     if (window.AtlasSnapshots) {
       return window.AtlasSnapshots.registrar("hold", wid, { v: v, c: c });
     }
@@ -371,10 +488,10 @@
     dias = dias || 90;
     if (window.AtlasSnapshots) {
       return window.AtlasSnapshots.serie(dias, {
-        modules: ["hold"], wallets: [activeWalletId()]
+        modules: ["hold"], wallets: escopoIds()
       }).map(function (p) { return { date: p.date, value: p.value, medido: p.medido }; });
     }
-    return reservaSerie(HOLD_STATE.snapshots[activeWalletId()] || [], dias);
+    return reservaSerie(HOLD_STATE.snapshots[escopoIds()[0]] || [], dias);
   }
 
   /* Série somando TODAS as carteiras globais — o que a consolidação
@@ -512,6 +629,9 @@
         preco_atual: num(data.preco_atual), market_cap: num(data.market_cap),
         setor: data.setor || "", categoria: data.categoria || ""
       };
+      /* id exato da CoinGecko, quando o ativo veio do autocompletar:
+         é por ele que o preço é buscado (ver refreshPrices). */
+      if (data.cg_id) a.cg_id = String(data.cg_id);
       /* `status` NÃO é gravado aqui — ver statusDe(). Todo ativo nasce
          em watchlist porque é isso que ele é: cadastrado e não
          comprado. Vira "investido" quando a compra acontece. */
@@ -630,26 +750,87 @@
       if (!window.AtlasPrecos) {
         return Promise.reject(new Error("Camada de preços não carregada nesta página."));
       }
-      var comTicker = HOLD_STATE.ativos.filter(function (a) { return a.ticker; });
+      /* ------------------------------------------------------------
+         SÓ CRIPTO VAI PARA A CADEIA AUTOMÁTICA
+
+         A cadeia do ATLAS é de cripto: CoinGecko e, por último, pools
+         de DEX casadas pelo SÍMBOLO. Medido em 08/10/2026: AAPL, TSLA,
+         SPY e GOLD voltavam com preço — de tokens homônimos em DEX. Uma
+         ação cadastrada no Hold era marcada pelo preço de um token
+         qualquer, com cara de cotação. Ação, ETF, commodity e "outro"
+         ficam no preço informado por você (Editar).
+         ------------------------------------------------------------ */
+      var todos = HOLD_STATE.ativos.filter(function (a) { return a.ticker; });
+      var comTicker = todos.filter(ehCripto);
+      var soManual = todos.filter(function (a) { return !ehCripto(a) && !(a.preco_atual > 0); })
+        .map(function (a) { return a.ticker; });
       if (!comTicker.length) {
-        return Promise.resolve({ atualizados: 0, faltando: [], divergentes: [] });
+        return Promise.resolve({ atualizados: 0, faltando: [], divergentes: [], soManual: soManual, erro: null });
       }
 
-      return window.AtlasPrecos.deVarios(comTicker.map(function (a) { return a.ticker; }))
-        .then(function (d) {
-          var n = 0;
-          comTicker.forEach(function (a) {
-            var p = d.valores[String(a.ticker).toUpperCase()];
-            if (p == null || !(p > 0)) return;
-            if (a.preco_atual === p) return;
-            a.preco_atual = p;
-            a.precoFonte = d.fonte[String(a.ticker).toUpperCase()] || null;
+      /* Quem foi cadastrado pelo autocompletar tem o id exato da
+         CoinGecko. Buscar pelo id evita o casamento por símbolo, que
+         é ambíguo (há dezenas de "UNI", "PEPE"...). Preço manual
+         continua vencendo — ele nem entra nesta lista. */
+      var prov = window.AtlasProviders && window.AtlasProviders.get && window.AtlasProviders.get("coingecko");
+      var porId = comTicker.filter(function (a) {
+        return a.cg_id && prov && prov.pricesRaw && !window.AtlasPrecos.manual(a.ticker);
+      });
+      var porSimbolo = comTicker.filter(function (a) { return porId.indexOf(a) < 0; });
+
+      var pIds = porId.length
+        ? prov.pricesRaw(porId.map(function (a) { return a.cg_id; })).catch(function (e) { return { __erro: e }; })
+        : Promise.resolve({});
+      var pSim = porSimbolo.length
+        ? window.AtlasPrecos.deVarios(porSimbolo.map(function (a) { return a.ticker; }))
+        : Promise.resolve({ valores: {}, fonte: {}, faltando: [], divergentes: [], erro: null });
+
+      return Promise.all([pIds, pSim]).then(function (rs) {
+        var mapaId = rs[0] || {}, d = rs[1];
+        var n = 0, faltando = (d.faltando || []).slice();
+        var erro = mapaId.__erro || d.erro || null;
+        function aplicar(a, p, fonte) {
+          if (p == null || !(p > 0)) return false;
+          if (a.preco_atual !== p) {
+            a.preco_atual = p; a.precoFonte = fonte; n++;
             a.precoEm = new Date().toISOString();
-            n++;
-          });
-          if (n) { persist(); emit(EVENTS.STATE_CHANGED, { evt: "prices_refreshed" }); }
-          return { atualizados: n, faltando: d.faltando, divergentes: d.divergentes };
+          } else if (fonte !== "manual") {
+            /* conferido agora e igual: o preço continua fresco. O
+               manual não — a idade dele é a de quando você o digitou. */
+            a.precoEm = new Date().toISOString();
+          }
+          return true;
+        }
+        porId.forEach(function (a) {
+          if (!aplicar(a, mapaId[a.cg_id], "coingecko")) faltando.push(a.ticker);
         });
+        porSimbolo.forEach(function (a) {
+          var k = String(a.ticker).toUpperCase();
+          /* Com a fonte principal fora do ar, TODO ativo cai na DEX,
+             que casa pelo símbolo — inclusive BTC e ETH, que ganhariam
+             o preço de qualquer token homônimo. Melhor manter o preço
+             anterior e tentar de novo. */
+          if (erro && d.fonte[k] === "dex") return;
+          aplicar(a, d.valores[k], d.fonte[k] || null);
+        });
+        persist();
+        if (n) emit(EVENTS.STATE_CHANGED, { evt: "prices_refreshed" });
+        return { atualizados: n, faltando: faltando, divergentes: d.divergentes || [],
+                 soManual: soManual, erro: erro };
+      });
+    },
+
+    /* Remarcação automática ao abrir o Hold: o preço só mudava quando
+       alguém lembrava de clicar em "Atualizar preços", e a valorização
+       da carteira ficava parada no preço do cadastro. Só dispara se
+       algum ativo cripto estiver mais velho que `minutos`. */
+    refreshIfStale: function (minutos) {
+      var lim = Date.now() - (minutos || 15) * 60000;
+      var velho = HOLD_STATE.ativos.some(function (a) {
+        return a.ticker && ehCripto(a) && (!a.precoEm || new Date(a.precoEm).getTime() < lim);
+      });
+      if (!velho || !window.AtlasPrecos) return Promise.resolve(null);
+      return actions.refreshPrices().catch(function () { return null; });
     },
 
     /* -- Carteira / trades -- */
@@ -657,8 +838,21 @@
     executeBuy: function (data) {
       var a = asset(data.ativo_id); if (!a) return { error: "Ativo inexistente." };
 
-      var qty = num(data.quantidade), price = num(data.preco);
+      var qty = arredQtd(num(data.quantidade)), price = num(data.preco);
       if (qty <= 0 || price <= 0) return { error: "Quantidade e preço devem ser positivos." };
+      if (data.data && String(data.data).slice(0, 10) > diaIso()) {
+        return { error: "A data da compra não pode estar no futuro." };
+      }
+      /* ------------------------------------------------------------
+         TAXA — da corretora ou da rede, em dólar
+
+         Na compra ela é custo de entrar na posição: sai do caixa junto
+         com o valor dos tokens e entra no preço médio. Comprar 1 BTC a
+         60.000 pagando 60 de taxa custa 60.060 — é a partir daí que o
+         ativo precisa subir para dar lucro.
+         ------------------------------------------------------------ */
+      var taxa = num(data.taxa);
+      if (taxa < 0) return { error: "A taxa não pode ser negativa." };
 
       /* ------------------------------------------------------------
          O CUSTO SAI DO CAIXA DA CARTEIRA ESCOLHIDA
@@ -669,7 +863,7 @@
          formulário), o que faltar entra antes como depósito automático
          (AtlasCaixa.cobrirFalta); sem ela, carteira sem caixa não compra.
          ------------------------------------------------------------ */
-      var custo = qty * price;
+      var custo = qty * price + taxa;
       var widC = data.walletId || activeWalletId();
       if (window.AtlasWallets && (!window.AtlasWallets.get || !window.AtlasWallets.get(widC))) {
         return { error: "Carteira inválida para registrar a compra." };
@@ -692,37 +886,51 @@
       }
 
       var pos = positionOf(a.id, widC);
+      var antes = pos ? clone(pos) : null;
       if (pos) {
-        var newQty = pos.quantidade + qty;
-        pos.preco_medio = ((pos.quantidade * pos.preco_medio) + (qty * price)) / newQty;
+        var newQty = arredQtd(pos.quantidade + qty);
+        pos.preco_medio = ((pos.quantidade * pos.preco_medio) + custo) / newQty;
         pos.quantidade = newQty;
       } else {
-        pos = { ativo_id: a.id, quantidade: qty, preco_medio: price, status: "invested" };
+        pos = { ativo_id: a.id, quantidade: qty, preco_medio: custo / qty, status: "invested" };
         // estampa de carteira/proveniência (o dinheiro é por carteira)
         if (window.AtlasWallets) Object.assign(pos, window.AtlasWallets.stamp("hold", data.origem || "compra", widC));
         else pos.walletId = "principal";
+        /* aberta no dia da compra, não no dia do cadastro */
+        if (data.data) pos.data = instanteDe(data.data);
         HOLD_STATE.carteira.push(pos);
       }
       /* `a.status = "invested"` saiu: existir posição JÁ é ser
          investido, e statusDe() lê isso direto. */
-      logHistory(EVENTS.TRADE_EXECUTED, "buy", a.id,
+      var hBuy = logHistory(EVENTS.TRADE_EXECUTED, "buy", a.id,
         data.justificativa || "Compra registrada.",
-        "Compra de " + qty + " " + a.ticker + " a " + fmtMoney(price) + ".");
-      emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "buy" });
-      emit(EVENTS.POSITION_UPDATED, pos); persist();
+        "Compra de " + fmtQtd(qty) + " " + a.ticker + " a " + fmtMoney(price) +
+        " (total " + fmtMoney(custo) + (taxa > 0 ? ", com taxa de " + fmtMoney(taxa) : "") + ").",
+        instanteDe(data.data));
       /* O dinheiro sai do caixa e vira posição. Era gravado TAMBÉM em
          AtlasMovements.record() — a mesma compra virava um movimento
          gravado ali, um movimento derivado das posições e um evento de
          caixa aqui. O AtlasMovements passou a ser uma vista do caixa,
          então este é o único registro. */
+      var evAporte = null;
       if (window.AtlasCaixa) {
-        window.AtlasCaixa.registrar({
+        evAporte = window.AtlasCaixa.registrar({
           tipo: "aporte", valorUSD: custo, walletId: widC,
           module: "hold", refId: "hold:" + a.id,
           data: data.data,
-          obs: "Compra de " + qty + " " + (a.ticker || "")
+          obs: "Compra de " + fmtQtd(qty) + " " + (a.ticker || "") +
+               (taxa > 0 ? " (taxa " + fmtMoney(taxa) + ")" : "")
         });
       }
+      HOLD_STATE.operacoes.unshift({
+        id: uid("op"), tipo: "buy", ativo_id: a.id, walletId: widC,
+        quantidade: qty, preco: price, taxa: taxa, valorCaixa: custo, data: data.data || diaIso(),
+        antes: antes,
+        eventos: [evAporte && evAporte.id, depAuto && depAuto.id].filter(Boolean),
+        histId: hBuy.id
+      });
+      emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "buy" });
+      emit(EVENTS.POSITION_UPDATED, pos); persist();
       return { position: pos, depositoAuto: depAuto ? depAuto.valorUSD : 0 };
     },
 
@@ -731,8 +939,15 @@
       var a = asset(data.ativo_id); if (!a) return { error: "Ativo inexistente." };
       var widS = data.walletId || activeWalletId();
       var pos = positionOf(a.id, widS); if (!pos) return { error: "Sem posição para vender nesta carteira." };
-      var qty = num(data.quantidade), price = num(data.preco);
-      if (qty <= 0 || qty > pos.quantidade) return { error: "Quantidade inválida." };
+      var qty = arredQtd(num(data.quantidade)), price = num(data.preco);
+      var tem = arredQtd(pos.quantidade);
+      if (qty <= 0) return { error: "Informe a quantidade a vender." };
+      if (qty > tem) {
+        return { error: "Você tem " + fmtQtd(tem) + " " + a.ticker + " nesta carteira — não dá para vender " + fmtQtd(qty) + "." };
+      }
+      if (data.data && String(data.data).slice(0, 10) > diaIso()) {
+        return { error: "A data da venda não pode estar no futuro." };
+      }
       /* ------------------------------------------------------------
          VENDA A PREÇO ZERO FAZIA O DINHEIRO SUMIR
 
@@ -749,30 +964,44 @@
         return { error: "Informe o preço de venda. A " + fmtMoney(0) +
                         " a posição sairia da carteira sem nada voltar ao caixa." };
       }
+      /* Na venda a taxa sai do que volta: vender 1 BTC a 70.000 com 70
+         de taxa devolve 69.930 ao caixa, e é sobre isso que o lucro é
+         apurado. */
+      var taxa = num(data.taxa);
+      if (taxa < 0) return { error: "A taxa não pode ser negativa." };
+      if (taxa >= qty * price) {
+        return { error: "A taxa (" + fmtMoney(taxa) + ") é maior que o valor da venda (" +
+                        fmtMoney(qty * price) + ") — confira os números." };
+      }
 
       /* O resultado da venda é apurado ANTES de a quantidade baixar,
          sobre o preço médio da posição: é esse custo que sai dela. */
+      var antes = clone(pos);
       var custoVendido = qty * pos.preco_medio;
-      HOLD_STATE.vendas.unshift({
+      var venda = {
         id: uid("v"), ativo_id: a.id, walletId: pos.walletId || widS,
         quantidade: qty, preco: price, precoMedio: pos.preco_medio,
-        custo: custoVendido, apurado: qty * price, resultado: qty * price - custoVendido,
+        taxa: taxa, custo: custoVendido, apurado: qty * price - taxa,
+        resultado: qty * price - taxa - custoVendido,
         data: data.data || new Date().toISOString()
-      });
+      };
+      HOLD_STATE.vendas.unshift(venda);
 
-      pos.quantidade -= qty;
-      if (pos.quantidade <= 0.00000001) {
+      pos.quantidade = arredQtd(tem - qty);
+      if (pos.quantidade <= 0) {
         HOLD_STATE.carteira = HOLD_STATE.carteira.filter(function (p) { return p !== pos; });
         /* O ativo vira "vendido" sozinho: sem posição em carteira
            nenhuma e com venda no histórico, statusDe() já responde. */
       }
-      logHistory(EVENTS.TRADE_EXECUTED, "sell", a.id,
+      var resTxt = venda.resultado >= 0 ? "lucro de " + fmtMoney(venda.resultado) : "prejuízo de " + fmtMoney(-venda.resultado);
+      var hSell = logHistory(EVENTS.TRADE_EXECUTED, "sell", a.id,
         data.justificativa || "Venda registrada.",
-        "Venda de " + qty + " " + a.ticker + " a " + fmtMoney(price) + ".");
-      emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "sell" });
-      emit(EVENTS.POSITION_UPDATED, pos); persist();
+        "Venda de " + fmtQtd(qty) + " " + a.ticker + " a " + fmtMoney(price) +
+        (taxa > 0 ? ", taxa de " + fmtMoney(taxa) : "") +
+        " (" + resTxt + " sobre o preço médio de " + fmtMoney(venda.precoMedio) + ").",
+        instanteDe(data.data));
       var widRet = pos.walletId || widS;
-      var apurado = qty * price;
+      var apurado = venda.apurado;
       /* ------------------------------------------------------------
          VENDER NÃO É TIRAR DINHEIRO DO ATLAS
 
@@ -782,15 +1011,78 @@
          decisão. Quem quiser tirar do ATLAS registra um saque, que é
          outro evento e reduz o patrimônio de propósito.
          ------------------------------------------------------------ */
+      var evRet = null;
       if (window.AtlasCaixa) {
-        window.AtlasCaixa.registrar({
+        evRet = window.AtlasCaixa.registrar({
           tipo: "retorno", valorUSD: apurado, walletId: widRet,
           module: "hold", refId: "hold:" + a.id,
           data: data.data,
-          obs: "Venda de " + qty + " " + (a.ticker || "")
+          obs: "Venda de " + fmtQtd(qty) + " " + (a.ticker || "") +
+               (taxa > 0 ? " (taxa " + fmtMoney(taxa) + ")" : "")
         });
       }
-      return { position: pos };
+      HOLD_STATE.operacoes.unshift({
+        id: uid("op"), tipo: "sell", ativo_id: a.id, walletId: widRet,
+        quantidade: qty, preco: price, taxa: taxa, valorCaixa: apurado, data: data.data || diaIso(),
+        antes: antes, eventos: evRet ? [evRet.id] : [],
+        vendaId: venda.id, histId: hSell.id
+      });
+      emit(EVENTS.TRADE_EXECUTED, { position: pos, side: "sell" });
+      emit(EVENTS.POSITION_UPDATED, pos); persist();
+      return { position: pos, venda: venda };
+    },
+
+    /* ============================================================
+       DESFAZER A ÚLTIMA OPERAÇÃO — para o erro de digitação
+
+       Não havia como corrigir uma compra lançada errado: o único
+       caminho era vender (gravando um resultado que não existiu) ou
+       apagar o módulo. Agora a operação mais recente de um ativo numa
+       carteira pode ser desfeita por inteiro: a posição volta a ser o
+       que era (quantidade E preço médio), os eventos de caixa que ela
+       gravou saem do extrato — inclusive o depósito automático — e a
+       venda deixa de contar no realizado.
+
+       Só a mais recente, de propósito (ver ultimaOperacao). E venda só
+       se desfaz se o dinheiro dela ainda está no caixa: se já foi
+       gasto em outra compra, apagar o retorno deixaria o caixa
+       negativo — desfaça a outra compra antes.
+
+       O histórico NÃO é apagado: ganha a linha "Operação desfeita", e
+       a original fica marcada. Livro de decisões não se reescreve.
+       ============================================================ */
+    undoLast: function (aid, walletId) {
+      var op = ultimaOperacao(aid, walletId);
+      if (!op) return { error: "Não há operação para desfazer nesta carteira." };
+      var a = asset(aid);
+      var C = window.AtlasCaixa;
+
+      if (op.tipo === "sell" && C && op.eventos.length) {
+        var apurado = op.valorCaixa != null ? op.valorCaixa : op.quantidade * op.preco;
+        var conf = C.podeGastar(op.walletId, apurado);
+        if (!conf.ok) {
+          return { error: "O dinheiro desta venda (" + fmtMoney(apurado) + ") já não está todo no caixa — há " +
+                          fmtMoney(conf.saldo) + ". Desfaça antes a operação que usou esse dinheiro." };
+        }
+      }
+
+      /* posição: volta exatamente ao que era */
+      var atual = positionOf(aid, op.walletId);
+      HOLD_STATE.carteira = HOLD_STATE.carteira.filter(function (p) { return p !== atual; });
+      if (op.antes) HOLD_STATE.carteira.push(clone(op.antes));
+
+      if (op.vendaId) {
+        HOLD_STATE.vendas = HOLD_STATE.vendas.filter(function (v) { return v.id !== op.vendaId; });
+      }
+      if (C && C.remover) op.eventos.forEach(function (id) { C.remover(id); });
+
+      HOLD_STATE.operacoes = HOLD_STATE.operacoes.filter(function (o) { return o !== op; });
+      HOLD_STATE.historico.forEach(function (h) { if (h.id === op.histId) h.desfeita = true; });
+      logHistory(EVENTS.TRADE_EXECUTED, "undo", aid, "Operação desfeita.",
+        (op.tipo === "buy" ? "Compra" : "Venda") + " de " + fmtQtd(op.quantidade) + " " +
+        (a ? a.ticker : "") + " a " + fmtMoney(op.preco) + " foi desfeita — posição e caixa voltaram ao que eram.");
+      emit(EVENTS.POSITION_UPDATED, op.antes); persist();
+      return { desfeita: op };
     },
 
     /* updateConfig() saiu: nenhuma tela a chamava. As preferências do
@@ -823,16 +1115,25 @@
   };
 
   /* ---- utils ---- */
+  function ehCripto(a) { return !a.tipo || a.tipo === "Cripto"; }
   function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
   function statusLabel(s) {
     return { invested: "investido", watchlist: "watchlist", sold: "vendido" }[s] || s;
   }
+  /* Texto que fica GRAVADO no histórico: sempre em dólar e na grafia
+     do resto do ATLAS ("US$ 1.234,56"). Era "$1,234" em en-US — a
+     única tela do sistema com vírgula de milhar. Não passa pelo
+     conversor de moeda de propósito: o registro não pode mudar de
+     valor quando alguém troca a moeda de exibição. */
   function fmtMoney(v) {
     var n = num(v);
     var abs = Math.abs(n);
-    var opt = abs >= 1000 ? { maximumFractionDigits: 0 } : { maximumFractionDigits: 2 };
-    return "$" + n.toLocaleString("en-US", opt);
+    var opt = abs >= 1000 ? { maximumFractionDigits: 0 }
+      : abs > 0 && abs < 1 ? { maximumFractionDigits: 6 }
+      : { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    return (n < 0 ? "−" : "") + "US$ " + Math.abs(n).toLocaleString("pt-BR", opt);
   }
+  function fmtQtd(q) { return (+q || 0).toLocaleString("pt-BR", { maximumFractionDigits: 8 }); }
 
   /* ---- public API ---- */
   window.Store = {
@@ -845,6 +1146,7 @@
       positionValue: positionValue, positionCost: positionCost, positionPnL: positionPnL,
       positionPnLPct: positionPnLPct, positionWeight: positionWeight,
       realizado: realizado, capitalRealizado: capitalRealizado,
+      realizadoDoAtivo: realizadoDoAtivo, ultimaOperacao: ultimaOperacao,
       portfolioValue: portfolioValue, portfolioCost: portfolioCost,
       portfolioPnL: portfolioPnL, portfolioPnLPct: portfolioPnLPct,
       globalTotal: globalTotal, statusDe: statusDe,
@@ -855,13 +1157,36 @@
     },
     /* ---- Carteiras (ponte com a central) ---- */
     wallets: {
+      /* No modo todas, `active()` devolve uma carteira-vista ("Todas as
+         carteiras") para os rótulos das telas; `real()` é sempre a
+         carteira de verdade — é ela que um formulário oferece. */
+      todas: modoTodas,
+      setTodas: function (on) {
+        setModoTodas(!!on);
+        emit(EVENTS.STATE_CHANGED, { evt: "wallet_change" });
+      },
+      escopo: escopoIds,
+      real: activeWallet,
+      caixa: function () {
+        if (!window.AtlasCaixa) return null;
+        return escopoIds().reduce(function (s, id) { return s + (window.AtlasCaixa.saldo(id) || 0); }, 0);
+      },
+      eventosCaixa: function () {
+        if (!window.AtlasCaixa) return [];
+        return escopoIds().reduce(function (acc, id) { return acc.concat(window.AtlasCaixa.eventos(id) || []); }, []);
+      },
       list: function () { return window.AtlasWallets ? window.AtlasWallets.forModule("hold") : [{ id: "principal", name: "Principal", type: "global", color: "#4C9AFF" }]; },
-      active: activeWallet,
+      active: function () {
+        return modoTodas()
+          ? { id: null, name: "Todas as carteiras", todas: true, type: "todas" }
+          : activeWallet();
+      },
       activeId: activeWalletId,
       set: function (id) {
         if (!window.AtlasWallets) return;
         var w = window.AtlasWallets.get(id);
         if (!w) return;
+        setModoTodas(false);   // escolher uma carteira sai da soma
         if (w.type === "global") { setLocalWalletId(null); window.AtlasWallets.setActiveGlobal(id); }
         else { setLocalWalletId(id); } // Local do Hold: fica só aqui, mas persiste
         emit(EVENTS.STATE_CHANGED, { evt: "wallet_change" });
@@ -872,6 +1197,6 @@
         return window.AtlasWallets.create({ name: opts.name, type: opts.type || "isolada", module: "hold", color: opts.color, emoji: opts.emoji });
       }
     },
-    fmt: { money: fmtMoney }
+    fmt: { money: fmtMoney, qtd: fmtQtd }
   };
 })();

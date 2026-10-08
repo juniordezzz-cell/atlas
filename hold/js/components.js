@@ -124,7 +124,9 @@
       n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
   }
   function signClass(v) { return v > 0 ? "pos" : v < 0 ? "neg" : "neu"; }
-  function qty(v) { return (+v || 0).toLocaleString("en-US", { maximumFractionDigits: 6 }); }
+  /* Quantidade com vírgula decimal, como todo número do ATLAS, e até
+     8 casas — 6 cortava satoshis e frações de token barato. */
+  function qty(v) { return (+v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 8 }); }
   function dateShort(iso) {
     try { return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }); }
     catch (e) { return iso; }
