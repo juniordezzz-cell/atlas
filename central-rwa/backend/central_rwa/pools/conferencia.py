@@ -123,6 +123,8 @@ def casar(c: Candidata, pools: list[PoolGecko]) -> PoolGecko | None:
 def aplicar(c: Candidata, g: PoolGecko | None) -> None:
     """Corrige a candidata com o que a segunda fonte confirmou (no lugar)."""
     if g is None:
+        if (c.sinais.get("conferencia") or {}).get("endereco"):
+            return   # a busca não achou desta vez: o endereço da memória continua valendo
         c.sinais["conferencia"] = {"estado": "nao_confirmada"}
         return
     ajustes: list[str] = []
@@ -156,7 +158,10 @@ def conferir(cli, cands: list[Candidata], gecko_net: dict[str, str], max_pares: 
     # Taxa não informada primeiro: com fee 0 a eficiência dá 0 e essas pools
     # ficavam no fim da fila, nunca conferidas (89 em 07/10/2026). Depois, as
     # mais eficientes — pelo APR da fonte quando a taxa falta.
-    alvo.sort(key=lambda c: (c.fee <= 0 and (c.apr or 0) > 0, eficiencia(c)), reverse=True)
+    # Sem endereço conhecido vem antes de tudo (08/10): cada pool descoberta
+    # fica com link direto por 7 dias, e a fila cobre o acervo em ~2 dias.
+    alvo.sort(key=lambda c: (not (c.sinais.get("conferencia") or {}).get("endereco"),
+                             c.fee <= 0 and (c.apr or 0) > 0, eficiencia(c)), reverse=True)
     pares: dict[tuple[str, str], list[Candidata]] = {}
     for c in alvo:
         k = (c.rede, c.par)

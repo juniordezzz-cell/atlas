@@ -176,3 +176,33 @@ def test_mesma_pool_de_duas_fontes_vira_uma():
     r = unir_mesma_pool([lla, gk, outra])
     assert [c.id for c in r] == ["llama:3beb", "gecko:solana:OUTRA"]
     assert r[0].fee == 0.16 and r[0].sinais["mesma_pool"] == "gecko:solana:CN32jwm"
+
+
+def test_endereco_da_pool_fica_guardado_por_7_dias():
+    from datetime import timedelta
+    from central_rwa.pools.coleta import lembrar_enderecos
+    agora = datetime(2026, 10, 8, 12, tzinfo=timezone.utc)
+    store = MemoryPoolStore()
+    store.pools = {
+        "llama:a": {"sinais": {"conferencia": {"endereco": "0xA", "em": (agora - timedelta(days=2)).isoformat()}}},
+        "llama:b": {"sinais": {"conferencia": {"endereco": "0xB", "em": (agora - timedelta(days=9)).isoformat()}}},
+    }
+    a = llama("uniswap-v3", 0.3, 500_000, 1_000_000); a.id = "llama:a"
+    b = llama("uniswap-v3", 0.3, 500_000, 1_000_000); b.id = "llama:b"
+    assert lembrar_enderecos(store, [a, b], agora) == 1
+    assert a.sinais["conferencia"]["endereco"] == "0xA" and a.sinais["conferencia"]["estado"] == "memoria"
+    assert "conferencia" not in b.sinais                       # vencido: volta para a fila
+    cf.aplicar(a, None)                                          # busca não achou desta vez
+    assert a.sinais["conferencia"]["endereco"] == "0xA"
+
+
+def test_pool_sem_endereco_e_conferida_antes():
+    com = llama("uniswap-v3", 1.0, 500_000, 5_000_000, par="ETH/USDC")
+    com.sinais["conferencia"] = {"estado": "memoria", "endereco": "0xE", "em": "2026-10-08T00:00:00+00:00"}
+    sem = llama("uniswap-v3", 0.05, 500_000, 600_000, par="UNI/WETH")
+    vistos = []
+    class Cli:
+        def gecko_busca(self, net, par):
+            vistos.append(par); return None
+    cf.conferir(Cli(), [com, sem], {"Base": "base"}, max_pares=1)
+    assert vistos == ["UNI WETH"]

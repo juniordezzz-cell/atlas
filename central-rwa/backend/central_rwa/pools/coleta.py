@@ -62,6 +62,33 @@ def reconciliar_diretas(todas: list[Candidata]) -> list[Candidata]:
     return [c for c in todas if c.id not in removidas]
 
 
+MEMORIA_ENDERECO_DIAS = 7
+
+
+def lembrar_enderecos(store, cands: list[Candidata], agora: datetime) -> int:
+    """O endereço on-chain de uma pool não muda; só TVL, volume e taxa.
+
+    A conferência descobre o endereço (até 40 pares por coleta), mas os
+    sinais eram refeitos do zero a cada coleta e ele se perdia — só 32 das
+    270 pools da Uniswap tinham link direto (08/10/2026). Agora o endereço
+    conferido há menos de 7 dias volta com a pool, marcado "memoria" (não
+    afirma nada sobre o volume de hoje). Vencido, a pool volta para o começo
+    da fila da conferência."""
+    alvo = [c for c in cands if c.fonte == "defillama"]
+    mem = store.enderecos_conhecidos([c.id for c in alvo]) if hasattr(store, "enderecos_conhecidos") else {}
+    usados = 0
+    for c in alvo:
+        m = mem.get(c.id) or {}
+        try:
+            em = datetime.fromisoformat(str(m.get("em")))
+        except ValueError:
+            continue
+        if m.get("endereco") and (agora - em).days < MEMORIA_ENDERECO_DIAS:
+            c.sinais["conferencia"] = {"estado": "memoria", "endereco": m["endereco"], "em": m["em"]}
+            usados += 1
+    return usados
+
+
 def unir_mesma_pool(cands: list[Candidata]) -> list[Candidata]:
     """A mesma pool on-chain vinda da DefiLlama e da GeckoTerminal vira UMA.
 
@@ -209,7 +236,14 @@ def coletar(cli, store, agora: datetime) -> dict:
     # Segunda fonte ANTES de classificar e dar nota: número corrigido aqui é o
     # que entra na nota, no APR e no ranking. Corrigido para baixo pode sair
     # do pré-corte — por isso o corte roda de novo.
+    lembrados = lembrar_enderecos(store, cands, agora)
     conf = conferir(cli, cands, config.GECKO_NET) if hasattr(cli, "gecko_busca") else {}
+    for c in cands:   # data da conferência: é ela que vence em 7 dias
+        cf = c.sinais.get("conferencia") or {}
+        if cf.get("estado") == "conferida" and cf.get("endereco") and not cf.get("em"):
+            cf["em"] = agora.isoformat()
+    if conf:
+        conf["enderecos_da_memoria"] = lembrados
     cands = unir_mesma_pool(cands)
     medir('conferencia')
     status.append({"fonte": "conferencia", "rede": None, "dex": None,

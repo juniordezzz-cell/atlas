@@ -33,6 +33,7 @@ class PoolStore:
                fontes_indisponiveis: set[str] | None = None) -> dict: ...
     def gravar_status(self, itens: list[dict]) -> None: ...
     def ultima_coleta(self) -> datetime | None: ...
+    def enderecos_conhecidos(self, pool_ids: list[str]) -> dict[str, dict]: ...
     def close(self) -> None: ...
 
 
@@ -91,6 +92,14 @@ class MemoryPoolStore(PoolStore):
 
     def ultima_coleta(self):
         return max((s["em"] for s in self.status), default=None)
+
+    def enderecos_conhecidos(self, pool_ids):
+        out = {}
+        for pid in pool_ids:
+            conf = ((self.pools.get(pid) or {}).get("sinais") or {}).get("conferencia") or {}
+            if conf.get("endereco"):
+                out[pid] = conf
+        return out
 
     def close(self):
         pass
@@ -202,6 +211,13 @@ class PostgresPoolStore(PoolStore):
     def ultima_coleta(self):
         rows = self._query("select max(em) from scanner.status_coleta")
         return rows[0][0] if rows else None
+
+    def enderecos_conhecidos(self, pool_ids):
+        if not pool_ids:
+            return {}
+        rows = self._query("select id, sinais->'conferencia' from scanner.pools "
+                           "where id = any(%s) and sinais->'conferencia'->>'endereco' is not null", (list(pool_ids),))
+        return {pid: conf for pid, conf in rows if isinstance(conf, dict)}
 
     def close(self):
         self.conn.close()
