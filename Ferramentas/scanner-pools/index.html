@@ -1487,18 +1487,42 @@ function decidirPool(id, decisao){
      Sólidas, nos Pendentes e nas próximas coletas. Rejeitar a elizaOS/USDC
      bloqueia o ELIZAOS, nunca o USDC. Desfazer: clicar no chip do token. */
   if(decisao==='rejeitada'){
-    /* pelo contrato (+ ID CoinGecko, que pega as outras redes); sem endereço
-       conhecido, cai no bloqueio pelo nome, como antes */
-    const S = ScannerServidor, alvos = S.bloqueiosDaPool(p);
-    tokensLista.bloqueadosEnd = tokensLista.bloqueadosEnd || [];
-    alvos.forEach(b=>{
-      const k = S.chaveEndereco(b.rede, b.endereco);
-      if(k){ if(!tokensLista.bloqueadosEnd.some(x=>S.chaveEndereco(x.rede,x.endereco)===k)) tokensLista.bloqueadosEnd.push(b); }
-      else if(TOKEN_OK.test(b.simbolo) && tokensLista.bloqueados.indexOf(b.simbolo)===-1) tokensLista.bloqueados.push(b.simbolo);
-    });
-    if(alvos.length){ S.gravarTokens(tokensLista); renderListaTokens(); }
+    const alvos = ScannerServidor.bloqueiosDaPool(p);
+    /* Dois tokens fora dos majors (AERO/VELO, SPCX/SPCXX): bloquear os dois
+       derrubava um token que você quer. Pergunta qual (10/10/2026). */
+    if(alvos.length > 1){ escolherBloqueio(p, alvos); render(); renderStatus(); return; }
+    bloquearTokens(alvos);
   }
   render(); renderStatus();
+}
+/* pelo contrato (+ ID CoinGecko, que pega as outras redes); sem endereço
+   conhecido, cai no bloqueio pelo nome, como antes */
+function bloquearTokens(alvos){
+  const S = ScannerServidor;
+  tokensLista.bloqueadosEnd = tokensLista.bloqueadosEnd || [];
+  alvos.forEach(b=>{
+    const k = S.chaveEndereco(b.rede, b.endereco);
+    if(k){ if(!tokensLista.bloqueadosEnd.some(x=>S.chaveEndereco(x.rede,x.endereco)===k)) tokensLista.bloqueadosEnd.push(b); }
+    else if(TOKEN_OK.test(b.simbolo) && tokensLista.bloqueados.indexOf(b.simbolo)===-1) tokensLista.bloqueados.push(b.simbolo);
+  });
+  if(alvos.length){ S.gravarTokens(tokensLista); renderListaTokens(); render(); renderStatus(); }
+}
+/* A pool já ficou rejeitada; aqui só se decide se algum token vai junto. */
+function escolherBloqueio(p, alvos){
+  document.getElementById("bloqModal")?.remove();
+  const fechar = ()=>m.remove();
+  const btn = (rot, cls, fn)=>{ const b = h("button", {type:"button", class:cls}, rot); b.addEventListener("click", ()=>{ fn(); fechar(); }); return b; };
+  const m = h("div", {class:"modal on", id:"bloqModal", role:"dialog", "aria-modal":"true", "aria-labelledby":"bloqTit"},
+    h("div", {class:"card", style:"max-width:420px"},
+      h("h2", {id:"bloqTit"}, `${p.pool} rejeitada`),
+      h("p", {class:"hint"}, "Os dois tokens desta pool podem ser bloqueados. Bloquear um tira da lista toda pool com ele, em qualquer rede."),
+      h("div", {class:"actions", style:"flex-wrap:wrap; justify-content:flex-start"},
+        ...alvos.map(b=>btn(`Bloquear ${b.simbolo}`, "danger", ()=>bloquearTokens([b]))),
+        btn("Só esta pool", "", ()=>{}))));
+  m.addEventListener("click", e=>{ if(e.target===m) fechar(); });
+  m.addEventListener("keydown", e=>{ if(e.key==="Escape") fechar(); });
+  document.body.append(m);
+  m.querySelector("button:last-child").focus();
 }
 
 async function carregarServidor(){
@@ -1634,7 +1658,8 @@ function tokenBtns(p){
   return (trilhoDe(p)==='caca' ? `<button class="iconbtn pool-aprovar" onclick="decidirPool(${p.id},'aprovada')" title="Aprovar esta pool" aria-label="Aprovar esta pool">✓</button>` : '')
     + (()=>{ const alvo = ScannerServidor.bloqueiosDaPool(p);
         const comoBloq = b=> b.endereco ? (b.cg ? `${b.simbolo} (este contrato e o mesmo token oficial em todas as redes)` : `${b.simbolo} (este contrato, na ${b.rede})`) : `${b.simbolo} (pelo nome)`;
-        const tit = alvo.length ? `Rejeitar e bloquear ${alvo.map(comoBloq).join(" e ")}: toda pool com ele sai da lista, inclusive nas próximas coletas` : "Rejeitar esta pool e manter fora das atualizações";
+        const tit = alvo.length > 1 ? `Rejeitar esta pool e escolher se bloqueia ${alvo.map(b=>b.simbolo).join(" ou ")}`
+          : alvo.length ? `Rejeitar e bloquear ${comoBloq(alvo[0])}: toda pool com ele sai da lista, inclusive nas próximas coletas` : "Rejeitar esta pool e manter fora das atualizações";
         return `<button class="iconbtn pool-rejeitar" onclick="decidirPool(${p.id},'rejeitada')" title="${esc(tit)}" aria-label="${esc(tit)}">✕</button>`; })();
 }
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
