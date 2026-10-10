@@ -702,7 +702,17 @@
     /* 14 colunas: 3 px a menos de cada lado devolvem ~80 px e a tabela
        volta a caber numa tela de 1.366–1.500 px */
     .tablewrap thead th,.tablewrap tbody td{padding-left:9px;padding-right:9px}
+    /* ✓/✕ presos na borda direita: com a tabela larga, aprovar ou rejeitar
+       pedia rolar até o fim e voltar para ler o nome (out/2026) */
+    .tablewrap thead th:last-child,.tablewrap td.actcell{position:sticky; right:0; z-index:1; background:#080c18;
+      box-shadow:-10px 0 12px -6px rgba(0,0,0,.55)}
+    .tablewrap tbody tr:hover td.actcell{background:#0d1220}
   }
+  /* Descobrir usa a largura da tela: com o teto de 1.400 px o zoom do
+     navegador não ganhava espaço e a tabela rolava mesmo em monitor largo */
+  .wrap.wrap-larga{max-width:1880px}
+  /* sinais da pool pendente quebram linha em vez de alargar a coluna */
+  td.pool .sinais{white-space:normal; min-width:235px; max-width:340px; line-height:1.35}
 </style>
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
@@ -710,7 +720,7 @@
 <link rel="stylesheet" href="assistente.css?v=oraculo-17">
 </head>
 <body>
-<div class="wrap">
+<div class="wrap wrap-larga">
 
   <header class="topbar">
     <!-- Voltar ao Atlas: leva à bancada de Ferramentas, de onde o Scanner é aberto -->
@@ -3089,6 +3099,7 @@ function switchTab(t){
   document.getElementById("tab-hist").style.display  = (t==="hist") ? "" : "none";
   document.getElementById("tab-learn").style.display = (t==="learn")? "" : "none";
   document.getElementById("tab-assistente").style.display = t==="assistente" ? "" : "none";
+  document.querySelector(".wrap").classList.toggle("wrap-larga", t==="dash");
   if(scannerChat) scannerChat.abaAtiva(t);
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===t));
   if(t==="hist") renderRadar();
