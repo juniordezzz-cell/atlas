@@ -257,3 +257,18 @@ def test_moeda_nativa_nao_e_consultada():
     assert not _dispensa_consulta("WETH", "0x4200000000000000000000000000000000000006")
     assert not _dispensa_consulta("USDC", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
     assert not _dispensa_consulta("USDC", None)
+
+
+def test_altcoin_preferida_e_solida_rendendo_pouco():
+    # 10/10/2026: SOL/PYTH a 0,252%/dia ficava em Pendentes (mínimo 0,3%)
+    pyth = info(simbolo="PYTH", cg="pyth-network")
+    assert trilho(cand("SOL/PYTH", fee=0.25, tvl=1_000_000, vol=600_000), [None, pyth], [], AGORA) == ("solida", [])
+    aave = info(simbolo="AAVE", cg="aave")
+    assert trilho(cand("WETH/AAVE", fee=0.05, tvl=1_000_000, vol=600_000), [None, aave], [], AGORA) == ("solida", [])
+    # com altcoin fora da lista, a régua vale
+    t, m = trilho(cand("PYTH/FOO", fee=0.05, vol=600_000), [pyth, info()], [], AGORA)
+    assert t == "caca" and "abaixo do mínimo" in m[0]
+    # cópia com o símbolo não passa: sem cadastro é removida
+    assert trilho(cand("SOL/PYTH", vol=600_000), [None, info(simbolo="PYTH", cg=None)], [], AGORA)[0] == "barrada"
+    # token fraco continua fraco (valor de mercado baixo)
+    assert trilho(cand("SOL/PYTH", vol=600_000), [None, info(simbolo="PYTH", cg="pyth-network", mcap=1e6)], [], AGORA)[0] == "caca"

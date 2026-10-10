@@ -100,6 +100,10 @@ STABLES: set[str] = {"USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "U
 # baixou de 0,5 para 0,3 em 10/10 (NEAR/WBNB, AERO/CBBTC, VELO/WETH e SOL/RAY
 # rendiam 0,32–0,42%/dia com tokens sólidos).
 MIN_EFIC_DIA: dict[str, float] = {"stable": 0.01, "grande_stable": 0.05, "grande": 0.10, "cauda": 0.30}
+# Altcoins que o dono usa: par delas com major/stable (ou entre si) é Sólida
+# rendendo quanto for (10/10/2026). Vale só com o contrato confirmado
+# (cadastro na CoinGecko, bridged conferida ou contrato reconhecido).
+ALTCOINS_PREFERIDAS: set[str] = {"PYTH", "RAY", "ONDO", "NEAR", "AAVE", "JUP"}
 CLASSE_ROTULO: dict[str, str] = {"stable": "stable/stable", "grande_stable": "blue chip ou RWA com stable",
                                  "grande": "blue chip ou RWA com blue chip ou RWA", "cauda": "par com altcoin ou meme"}
 # Volume suspeito: pool nova girando demais vai para Pendentes antes dos 3 dias

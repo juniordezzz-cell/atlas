@@ -104,6 +104,13 @@ def sem_cadastro(simbolo: str, info: TokenInfo | None, rede: str | None = None) 
     return f"{s} sem cadastro na CoinGecko"
 
 
+def preferida(simbolo: str, info: TokenInfo | None, rede: str | None = None) -> bool:
+    """Altcoin da lista do dono com o contrato confirmado — o símbolo sozinho
+    não basta, como nos majors."""
+    return ((simbolo or "").upper() in config.ALTCOINS_PREFERIDAS and info is not None
+            and sem_cadastro(simbolo, info, rede) is None)
+
+
 def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: str | None = None) -> str | None:
     """Por que o token não é sólido, ou None se é. Ligado em 07/10/2026: a
     regra existia desde 23/09 e nunca era chamada — 380 das 680 Sólidas
@@ -224,6 +231,11 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
     # Ação tokenizada confirmada é Sólida mesmo rendendo abaixo da régua
     # (decisão do dono, 10/10/2026): NVDA/WETH da Robinhood a 0,032%/dia.
     if any(rwa_confirmado(i) for i in infos):
+        return "solida", []
+    # altcoin preferida com major/stable ou outra preferida: sem mínimo (10/10/2026)
+    pares = list(zip((c.token_a, c.token_b), list(infos) + [None, None]))
+    pref = [preferida(t.simbolo, i, c.rede) for t, i in pares]
+    if any(pref) and all(p or (t.simbolo or "").upper() in config.MAJORS for p, (t, _) in zip(pref, pares)):
         return "solida", []
     classe = classe_par(c, infos)
     minimo = config.MIN_EFIC_DIA[classe]
