@@ -87,6 +87,23 @@ def major_falso(simbolo: str, info: TokenInfo | None) -> bool:
     return not config.contrato_reconhecido(info.rede, info.endereco)
 
 
+def sem_cadastro(simbolo: str, info: TokenInfo | None, rede: str | None = None) -> str | None:
+    """Token consultado e sem cadastro na CoinGecko: a pool é removida, não
+    fica em Pendentes (decisão do dono, 10/10/2026) — inclusive cópia de
+    token grande e ticker de ação sem emissor. Sem consulta ainda (info
+    None) não remove; bridged conferida e contrato reconhecido passam."""
+    if info is None or info.coingecko_id:
+        return None
+    if config.contrato_reconhecido(info.rede, info.endereco) or bridged_confiavel(info):
+        return None
+    s = (simbolo or "").upper()
+    if s in config.MAJORS:
+        return f"{s} usa o símbolo de um token grande, mas este contrato não tem cadastro na CoinGecko"
+    if config.eh_rwa(simbolo, rede):
+        return f"{s} parece ação tokenizada, mas o emissor não está confirmado na CoinGecko"
+    return f"{s} sem cadastro na CoinGecko"
+
+
 def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: str | None = None) -> str | None:
     """Por que o token não é sólido, ou None se é. Ligado em 07/10/2026: a
     regra existia desde 23/09 e nunca era chamada — 380 das 680 Sólidas
@@ -186,6 +203,10 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
         return "barrada", barr
     if not passa_pre_corte(c):
         return "barrada", ["TVL abaixo de US$ 100 mil ou razão de 24h <= 0,50"]
+    sem = [m for t, i in zip((c.token_a, c.token_b), list(infos) + [None, None])
+           if (m := sem_cadastro(t.simbolo, i, c.rede))]
+    if sem:
+        return "barrada", sem
     meme = c.sinais.get("memecoin") or {}
     if meme.get("detectada"):
         if c.vol_24h / c.tvl <= 2.0:

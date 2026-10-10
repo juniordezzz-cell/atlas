@@ -96,8 +96,10 @@ STABLES: set[str] = {"USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "U
 
 # Rendimento mínimo por dia (fee × razão, em %) para a pool ficar nas Sólidas,
 # pela classe do par: quanto mais arriscados os ativos, mais a pool tem de
-# pagar. Abaixo disso vai para Pendentes. Régua do dono, 07/10/2026.
-MIN_EFIC_DIA: dict[str, float] = {"stable": 0.01, "grande_stable": 0.05, "grande": 0.10, "cauda": 0.50}
+# pagar. Abaixo disso vai para Pendentes. Régua do dono, 07/10/2026; cauda
+# baixou de 0,5 para 0,3 em 10/10 (NEAR/WBNB, AERO/CBBTC, VELO/WETH e SOL/RAY
+# rendiam 0,32–0,42%/dia com tokens sólidos).
+MIN_EFIC_DIA: dict[str, float] = {"stable": 0.01, "grande_stable": 0.05, "grande": 0.10, "cauda": 0.30}
 CLASSE_ROTULO: dict[str, str] = {"stable": "stable/stable", "grande_stable": "blue chip ou RWA com stable",
                                  "grande": "blue chip ou RWA com blue chip ou RWA", "cauda": "par com altcoin ou meme"}
 # Volume suspeito: pool nova girando demais vai para Pendentes antes dos 3 dias

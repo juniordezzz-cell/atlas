@@ -70,7 +70,7 @@ def test_token_fraco_vai_para_pendentes_com_motivo():
     t, m = trilho(cand("FOO/USDT"), [None, None], [], AGORA)
     assert t == "caca" and "FOO ainda sem dados" in m[0]
     t, m = trilho(cand("FOO/USDT"), [info(cg=None), None], [], AGORA)
-    assert t == "caca" and "sem cadastro na CoinGecko" in m[0]
+    assert t == "barrada" and "sem cadastro na CoinGecko" in m[0]          # removida desde 10/10
     assert trilho(cand("FOO/USDT", vol=1_500_000), [info(holders=None), None], [], AGORA)[0] == "solida"   # holders não informado não reprova
 
 
@@ -82,10 +82,12 @@ def test_rendimento_minimo_pela_classe_do_par():
     assert classe_par(cand("WBTC/WETH")) == "grande"
     assert classe_par(cand("WBNB/USDT")) == "cauda"              # BNB é altcoin (07/10)
     assert classe_par(cand("FOO/USDT")) == "cauda"
-    # cauda longa precisa de 0,5%/dia
-    baixa = cand("FOO/USDT", fee=0.25, tvl=500_000, vol=600_000)          # 0,25 × 1,2 = 0,30%/dia
+    # cauda longa precisa de 0,3%/dia (era 0,5 até 10/10)
+    baixa = cand("FOO/USDT", fee=0.25, tvl=500_000, vol=500_000)          # 0,25 × 1,0 = 0,25%/dia
     t, m = trilho(baixa, [info(), None], [], AGORA)
-    assert t == "caca" and "abaixo do mínimo de 0.5%/dia para par com altcoin ou meme" in m[0]
+    assert t == "caca" and "abaixo do mínimo de 0.3%/dia para par com altcoin ou meme" in m[0]
+    # NEAR/WBNB do print: 0,25 × 1,67 ≈ 0,42%/dia agora é Sólida
+    assert trilho(cand("NEAR/WBNB", fee=0.25, tvl=600_000, vol=1_000_000), [info(simbolo="NEAR"), None], [], AGORA)[0] == "solida"
     # a mesma eficiência basta para grande/stable (mínimo 0,05%/dia)
     assert trilho(cand("WETH/USDT", fee=0.25, vol=600_000), [None, None], [], AGORA) == ("solida", [])
     # stable/stable com 0,01% × 1,2 = 0,012%/dia passa; 0,005% × 1,2 não
@@ -187,9 +189,9 @@ def test_token_info_le_nome_e_nota():
 
 
 def test_motivo_de_rendimento_nunca_mostra_o_proprio_minimo():
-    c = cand("FOO/USDT", fee=0.25, tvl=1_000_000, vol=1_998_400)   # 0,25 × 1,9984 = 0,4996%/dia
+    c = cand("FOO/USDT", fee=0.25, tvl=1_000_000, vol=1_198_400)   # 0,25 × 1,1984 = 0,2996%/dia
     t, m = trilho(c, [info(), None], [], AGORA)
-    assert t == "caca" and m[0].startswith("rende 0.499%/dia")
+    assert t == "caca" and m[0].startswith("rende 0.299%/dia")
 
 
 def _rh(simbolo, cg, holders=80_000, mcap=3e6):
@@ -218,11 +220,11 @@ def test_acao_confirmada_e_solida_mesmo_rendendo_abaixo_da_regua():
     assert "volume suspeito" in trilho(nova, [nvda, None], [], AGORA)[1][0]
 
 
-def test_copia_com_ticker_de_acao_vai_para_pendentes():
+def test_copia_com_ticker_de_acao_e_removida():
     # "Apple (Robinhood)": símbolo AAPL, 11 holders, sem cadastro na CoinGecko
     copia = _rh("AAPL", None, holders=11)
     t, m = trilho(rh_cand("AAPL/USDG", vol=5_000_000), [copia, None], [], AGORA)
-    assert t == "caca" and "emissor não está confirmado" in m[0]
+    assert t == "barrada" and "emissor não está confirmado" in m[0]
 
 
 def test_acao_nova_fora_da_lista_vale_pelo_cadastro():
@@ -241,7 +243,7 @@ def test_simbolo_de_major_sem_cadastro_e_copia():
     falso = info(simbolo="PYUSD", cg=None, holders=110, mcap=None)
     assert major_falso("PYUSD", falso) and categoria_token("PYUSD", "Solana", falso) == "altcoin"
     t, m = trilho(cand("PYUSD/USDC", fee=0.05, vol=2_000_000), [falso, None], [], AGORA)
-    assert t == "caca" and "símbolo de um token grande" in m[0]
+    assert t == "barrada" and "símbolo de um token grande" in m[0]
     # o verdadeiro tem cadastro; sem consulta ainda, vale o símbolo
     real = info(simbolo="USDG", cg="global-dollar", holders=418_893, mcap=None, dias=None)
     assert not major_falso("USDG", real) and categoria_token("USDG", "Robinhood", real) == "stable"
