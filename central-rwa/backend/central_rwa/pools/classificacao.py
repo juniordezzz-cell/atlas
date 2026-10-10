@@ -76,6 +76,17 @@ def rwa_confirmado(info: TokenInfo | None) -> bool:
     return bool(emi and not emi["provavel"])
 
 
+def major_falso(simbolo: str, info: TokenInfo | None) -> bool:
+    """Símbolo de stable/blue chip num contrato sem cadastro na CoinGecko
+    (10/10/2026). Todo major verdadeiro conferido tem cadastro — USDG da
+    Robinhood (global-dollar, 418 mil holders), USDT da BNB, WETH da Base —;
+    o "PYUSD" DuXfm3… da Solana tinha 110 holders e nenhum. Sem consulta
+    ainda (info None), vale o símbolo até a próxima coleta."""
+    if (simbolo or "").upper() not in config.MAJORS or info is None or info.coingecko_id:
+        return False
+    return not config.contrato_reconhecido(info.rede, info.endereco)
+
+
 def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: str | None = None) -> str | None:
     """Por que o token não é sólido, ou None se é. Ligado em 07/10/2026: a
     regra existia desde 23/09 e nunca era chamada — 380 das 680 Sólidas
@@ -86,6 +97,8 @@ def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: 
     data da pool), vale a combinação cadastro na CoinGecko + valor de
     mercado; sem contagem de holders, idem."""
     s = (simbolo or "").upper()
+    if major_falso(simbolo, info):
+        return f"{s} usa o símbolo de um token grande, mas este contrato não tem cadastro na CoinGecko"
     if s in config.MAJORS or rwa_confirmado(info):
         return None
     if info is not None and config.contrato_reconhecido(info.rede, info.endereco):
@@ -134,6 +147,8 @@ def categoria_token(simbolo: str, rede: str | None = None, info: TokenInfo | Non
     Blue chip é só Bitcoin, Ethereum e Solana; BNB, AVAX, SUI… são altcoin.
     Meme = o ID CoinGecko do token está entre as memecoins detectadas."""
     s = (simbolo or "").upper()
+    if major_falso(simbolo, info):
+        return "altcoin"                # cópia com símbolo de stable/blue chip
     if s in config.STABLES:
         return "stable"
     if s in config.BLUECHIPS:

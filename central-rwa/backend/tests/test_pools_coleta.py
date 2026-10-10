@@ -47,10 +47,11 @@ def test_coleta_real_de_ponta_a_ponta():
     assert len(store.leituras_por_pool[usdt_wbnb["id"]]) == 1
 
 
-def test_majors_nao_gastam_consulta_e_cache_evita_repetir():
+def test_majors_sao_consultados_e_cache_evita_repetir():
     store, cli = MemoryPoolStore(), FakeCliente()
     coletar(cli, store, AGORA)
-    assert "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c" not in cli.infos_pedidas     # WBNB é major
+    # desde 10/10/2026 major também é consultado: cópia com o símbolo não passa
+    assert "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c" in cli.infos_pedidas         # WBNB
     antes = len(cli.infos_pedidas)
     coletar(cli, store, AGORA + timedelta(hours=4))
     assert len(cli.infos_pedidas) == antes                                           # cache de 7 dias
@@ -184,7 +185,7 @@ def test_consulta_de_token_tem_teto_e_prioriza_pools_maiores(monkeypatch):
     tvl_de = lambda e: max(p["tvl"] for p in pools if e in ((p["token_a"] or "").lower(), (p["token_b"] or "").lower()))
     from central_rwa.pools.coleta import _dispensa_consulta
     candidatos = {t for p in pools for t, s in ((p["token_a"], p["simbolo_a"]), (p["token_b"], p["simbolo_b"]))
-                  if t and not _dispensa_consulta(s)}
+                  if t and not _dispensa_consulta(s, t)}
     pedidos = {x.lower() for x in cli.infos_pedidas}      # Solana diferencia maiúsculas; aqui só comparamos
     pendentes = {e.lower() for e in candidatos} - pedidos
     assert len(pendentes) == r["tokens_pendentes"]

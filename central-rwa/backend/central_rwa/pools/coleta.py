@@ -153,9 +153,11 @@ def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
     return reconciliar_diretas(list(vistos.values()))
 
 
-def _dispensa_consulta(simbolo: str) -> bool:
-    # RWA agora é consultado (cache de 7 dias): o ID CoinGecko diz o emissor
-    return (simbolo or "").upper() in config.MAJORS
+def _dispensa_consulta(simbolo: str, endereco: str | None = None) -> bool:
+    # RWA agora é consultado (cache de 7 dias): o ID CoinGecko diz o emissor.
+    # Majors também (10/10/2026): um "PYUSD" com 110 holders passava como
+    # stable pelo símbolo. Só a moeda nativa (endereço zero) não tem o que consultar.
+    return bool(endereco) and set(endereco.lower().removeprefix("0x")) == {"0"}
 
 
 def _infos(cli, store, cands: list[Candidata], agora: datetime) -> tuple[dict[tuple[str, str], TokenInfo], int, int]:
@@ -166,7 +168,7 @@ def _infos(cli, store, cands: list[Candidata], agora: datetime) -> tuple[dict[tu
     peso: dict[tuple[str, str], float] = {}   # maior TVL entre as pools do token: prioridade da consulta
     for c in cands:
         for t in (c.token_a, c.token_b):
-            if not t.endereco or _dispensa_consulta(t.simbolo):
+            if not t.endereco or _dispensa_consulta(t.simbolo, t.endereco):
                 continue
             e = normalizar_endereco(c.rede, t.endereco)
             pedidos.setdefault(c.rede, set()).add(e)

@@ -233,3 +233,25 @@ def test_acao_nova_fora_da_lista_vale_pelo_cadastro():
     # o ID de uma cripto que só menciona o emissor não confirma ação
     assert not rwa_confirmado(info(simbolo="ONDO", cg="ondo-finance"))
     assert not rwa_confirmado(_rh("FMRGN", None, holders=900))
+
+
+def test_simbolo_de_major_sem_cadastro_e_copia():
+    # 10/10/2026: "PYUSD" DuXfm3… na Solana, 110 holders, sem cadastro; o real é 2b1kV6…
+    from central_rwa.pools.classificacao import categoria_token, major_falso
+    falso = info(simbolo="PYUSD", cg=None, holders=110, mcap=None)
+    assert major_falso("PYUSD", falso) and categoria_token("PYUSD", "Solana", falso) == "altcoin"
+    t, m = trilho(cand("PYUSD/USDC", fee=0.05, vol=2_000_000), [falso, None], [], AGORA)
+    assert t == "caca" and "símbolo de um token grande" in m[0]
+    # o verdadeiro tem cadastro; sem consulta ainda, vale o símbolo
+    real = info(simbolo="USDG", cg="global-dollar", holders=418_893, mcap=None, dias=None)
+    assert not major_falso("USDG", real) and categoria_token("USDG", "Robinhood", real) == "stable"
+    assert not major_falso("WETH", None)
+    assert trilho(cand("WETH/USDT"), [None, None], [], AGORA) == ("solida", [])
+
+
+def test_moeda_nativa_nao_e_consultada():
+    from central_rwa.pools.coleta import _dispensa_consulta
+    assert _dispensa_consulta("ETH", "0x0000000000000000000000000000000000000000")
+    assert not _dispensa_consulta("WETH", "0x4200000000000000000000000000000000000006")
+    assert not _dispensa_consulta("USDC", "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+    assert not _dispensa_consulta("USDC", None)
