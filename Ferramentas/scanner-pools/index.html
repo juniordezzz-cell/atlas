@@ -747,7 +747,8 @@
     </div>
   </div>
   <!-- lista de tokens bloqueados/aprovados: oculta da tela a pedido do dono
-       (10/10/2026); os bloqueios continuam valendo -->
+       (10/10/2026); os bloqueios continuam valendo. Abre pelo "Bloqueados"
+       do rodapé. -->
   <div class="toklista" id="tokLista" hidden></div>
 
   <!-- filtros numa linha só: rede e plataforma viraram menus (eram 19 chips) -->
@@ -1276,6 +1277,8 @@
       <span class="foot-stamp">Coleta de <b id="stamp">—</b></span>
       <button class="linkbtn" onclick="exportJSON()">Exportar</button>
       <button class="linkbtn" onclick="document.getElementById('importfile').click()">Importar</button>
+      <!-- desbloqueio discreto: a lista fica oculta e só abre por aqui (10/10/2026) -->
+      <button class="linkbtn" onclick="const l=document.getElementById('tokLista'); l.hidden=!l.hidden; if(!l.hidden) switchTab('dash');">Bloqueados</button>
     </div>
     <div class="foot-note">Scanner Pools · dados em USD · coleta a cada 4 h · suas decisões por pool, ★, níveis, notas, lista de tokens e pools manuais ficam no navegador — faça <b>Exportar</b> para ter backup.</div>
   </footer>
