@@ -47,7 +47,8 @@ def test_barrada_por_wash_trading_em_3_dias():
 
 def test_token_solido():
     assert token_solido("WBNB", None, AGORA)                     # major dispensa consulta
-    assert token_solido("NVDAx", None, AGORA)                    # RWA conhecido
+    assert token_solido("NVDAx", info(simbolo="NVDAx", cg="nvidia-xstock", mcap=None), AGORA)   # RWA confirmado
+    assert not token_solido("NVDAx", None, AGORA)                # só o ticker não prova (10/10)
     assert token_solido("FOO", info(), AGORA)
     assert not token_solido("FOO", None, AGORA)                  # sem informação = não sólido
     assert not token_solido("FOO", info(dias=10), AGORA)         # novo
@@ -189,3 +190,46 @@ def test_motivo_de_rendimento_nunca_mostra_o_proprio_minimo():
     c = cand("FOO/USDT", fee=0.25, tvl=1_000_000, vol=1_998_400)   # 0,25 × 1,9984 = 0,4996%/dia
     t, m = trilho(c, [info(), None], [], AGORA)
     assert t == "caca" and m[0].startswith("rende 0.499%/dia")
+
+
+def _rh(simbolo, cg, holders=80_000, mcap=3e6):
+    i = info(simbolo=simbolo, cg=cg, holders=holders, mcap=mcap, dias=None)
+    i.rede = "Robinhood"
+    return i
+
+
+def rh_cand(par, fee=0.05, tvl=1_000_000, vol=600_000):
+    c = cand(par, fee=fee, tvl=tvl, vol=vol)
+    c.rede = "Robinhood"
+    return c
+
+
+def test_acao_confirmada_e_solida_mesmo_rendendo_abaixo_da_regua():
+    # 10/10/2026: NVDA/WETH da Robinhood rendia 0,032%/dia (mínimo 0,10%) e ficava em Pendentes
+    from central_rwa.pools.classificacao import rwa_confirmado
+    nvda = _rh("NVDA", "nvidia-robinhood-tokenized-stock")
+    assert rwa_confirmado(nvda)
+    assert trilho(rh_cand("NVDA/WETH", fee=0.05, vol=640_000), [nvda, None], [], AGORA) == ("solida", [])
+    # segurança e manipulação continuam valendo
+    golpe = info(simbolo="NVDA", cg="nvidia-robinhood-tokenized-stock", honeypot=True)
+    assert trilho(rh_cand("NVDA/WETH"), [golpe, None], [], AGORA)[0] == "barrada"
+    nova = rh_cand("NVDA/USDG", vol=25_000_000)
+    nova.criada_em = AGORA - timedelta(days=3)
+    assert "volume suspeito" in trilho(nova, [nvda, None], [], AGORA)[1][0]
+
+
+def test_copia_com_ticker_de_acao_vai_para_pendentes():
+    # "Apple (Robinhood)": símbolo AAPL, 11 holders, sem cadastro na CoinGecko
+    copia = _rh("AAPL", None, holders=11)
+    t, m = trilho(rh_cand("AAPL/USDG", vol=5_000_000), [copia, None], [], AGORA)
+    assert t == "caca" and "emissor não está confirmado" in m[0]
+
+
+def test_acao_nova_fora_da_lista_vale_pelo_cadastro():
+    from central_rwa.pools.classificacao import categoria_token, rwa_confirmado
+    crwv = _rh("CRWV", "coreweave-robinhood-tokenized-stock", mcap=2e6)
+    assert rwa_confirmado(crwv) and categoria_token("CRWV", "Robinhood", crwv) == "rwa"
+    assert trilho(rh_cand("CRWV/USDG", vol=600_000), [crwv, None], [], AGORA) == ("solida", [])
+    # o ID de uma cripto que só menciona o emissor não confirma ação
+    assert not rwa_confirmado(info(simbolo="ONDO", cg="ondo-finance"))
+    assert not rwa_confirmado(_rh("FMRGN", None, holders=900))

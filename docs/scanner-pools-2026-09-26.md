@@ -104,3 +104,12 @@ Metodologia e contexto para Codex/Claude: [scanner-pools-metodologia-ia.md](scan
 Validação: 18 testes Node (10 do assistente, 8 anteriores) e 152 Python, 2 suítes Postgres puladas no Windows. Prévia local sem autenticação de produção confirmou aba, regras e conversa compartilhada no painel. Essa cópia de teste não é publicada. Revisão independente identificou e corrigiu comparação de histórico antigo como atual, filtro Sui ignorado e roteamento de diferença de TVL para regras genéricas.
 
 Próximo incremento: gateway autenticado de OpenRouter gratuito e análise de consultas mais livres. Chave somente no servidor; verificar cotas atuais e privacidade antes de enviar qualquer contexto a provedor.
+
+
+## Ação tokenizada confirmada pelo emissor (10/10/2026)
+
+Pedido do dono: ação tokenizada da Robinhood confirmada vai para Sólidas. Diagnóstico: FMRGN, OTLGR e RROVR (Uniswap, Robinhood Chain) são FalconMargin, OtterLedger e RenderRover, tokens lançados em 09/10, sem cadastro na CoinGecko; ficam em Pendentes. As ações reais ("Apple • Robinhood Token", 87 mil holders) têm ID `*-robinhood-tokenized-stock`; a cópia "Apple (Robinhood)" usa o símbolo AAPL, tem 11 holders e $1,3 mi de TVL.
+
+Decisões do dono: (1) ação com emissor confirmado é Sólida mesmo abaixo do mínimo de rendimento; (2) ticker de ação sem emissor confirmado vai para Pendentes.
+
+`classificacao.rwa_confirmado(info)`: ID CoinGecko com `tokenized-stock|xstock|backpack-securities|bstock`, ou RWA_EXTRA/COMMODITIES com cadastro, ou ticker de ação com emissor não provável. `fraqueza_token` deixou de isentar pelo ticker; `categoria_token` aceita ticker novo confirmado; `trilho` pula o mínimo de rendimento quando um token é confirmado. Barradas (honeypot, wash, APR impossível) e volume suspeito continuam valendo. Efeito esperado na próxima coleta: NVDA/WETH, NVDA/USDG, SPCX/WETH e SPY/WETH da Robinhood e xStocks/bStocks em Pendentes por rendimento sobem; NFLX/USDC (Solana, sem cadastro) e wTCENTx/USDT (BNB, emissor provável) descem para Pendentes. 183 Python passaram (2 Postgres puladas).

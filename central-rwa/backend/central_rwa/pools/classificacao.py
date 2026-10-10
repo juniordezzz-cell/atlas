@@ -54,6 +54,28 @@ def motivos_barrada(c: Candidata, infos: list[TokenInfo | None], leituras: list[
     return list(dict.fromkeys(m))   # sem repetição, na ordem
 
 
+# ID CoinGecko de ação tokenizada: apple-robinhood-tokenized-stock,
+# nvidia-xstock, spacex-backpack-securities, nvidia-bstocks…
+_CG_ACAO = re.compile(r"tokenized-stock|xstock|backpack-securities|bstock")
+
+
+def rwa_confirmado(info: TokenInfo | None) -> bool:
+    """Ação ou commodity tokenizada com o emissor provado pelo cadastro na
+    CoinGecko, que é ligado ao CONTRATO (10/10/2026). O ticker sozinho não
+    prova: na Robinhood Chain a "Apple (Robinhood)" usa o símbolo AAPL, tem
+    11 holders e $1,3 mi de TVL; a verdadeira, "Apple • Robinhood Token",
+    tem 87 mil holders e o ID apple-robinhood-tokenized-stock."""
+    if info is None or not info.coingecko_id:
+        return False
+    cg, s = info.coingecko_id.lower(), (info.simbolo or "").upper()
+    if _CG_ACAO.search(cg):
+        return True
+    if s in config.RWA_EXTRA or s in config.COMMODITIES:
+        return True
+    emi = config.emissor(s, cg) if config.eh_rwa(s, info.rede) else None
+    return bool(emi and not emi["provavel"])
+
+
 def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: str | None = None) -> str | None:
     """Por que o token não é sólido, ou None se é. Ligado em 07/10/2026: a
     regra existia desde 23/09 e nunca era chamada — 380 das 680 Sólidas
@@ -64,12 +86,15 @@ def fraqueza_token(simbolo: str, info: TokenInfo | None, agora: datetime, rede: 
     data da pool), vale a combinação cadastro na CoinGecko + valor de
     mercado; sem contagem de holders, idem."""
     s = (simbolo or "").upper()
-    if s in config.MAJORS or config.eh_rwa(simbolo, rede):
+    if s in config.MAJORS or rwa_confirmado(info):
         return None
     if info is not None and config.contrato_reconhecido(info.rede, info.endereco):
         return None   # versão bridged conferida à mão (lista em config.py)
     if info is None:
         return f"{s} ainda sem dados de segurança"
+    if config.eh_rwa(simbolo, rede):
+        # ticker de ação sem o emissor confirmado: pode ser cópia (10/10/2026)
+        return f"{s} parece ação tokenizada, mas o emissor não está confirmado na CoinGecko"
     if not info.coingecko_id:
         if bridged_confiavel(info):
             return None
@@ -113,7 +138,7 @@ def categoria_token(simbolo: str, rede: str | None = None, info: TokenInfo | Non
         return "stable"
     if s in config.BLUECHIPS:
         return "bluechip"
-    if config.eh_rwa(simbolo, rede):
+    if config.eh_rwa(simbolo, rede) or rwa_confirmado(info):   # ticker novo com emissor confirmado também
         return "rwa"
     if info is not None and info.coingecko_id and info.coingecko_id in memes:
         return "meme"
@@ -160,6 +185,10 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
     r = c.vol_24h / c.tvl
     if c.criada_em is not None and (agora - c.criada_em).days < config.SUSPEITO_IDADE_DIAS and r > config.SUSPEITO_RAZAO:
         return "caca", [f"volume suspeito: pool com {(agora - c.criada_em).days} dias girando {r:.0f}× o TVL"]
+    # Ação tokenizada confirmada é Sólida mesmo rendendo abaixo da régua
+    # (decisão do dono, 10/10/2026): NVDA/WETH da Robinhood a 0,032%/dia.
+    if any(rwa_confirmado(i) for i in infos):
+        return "solida", []
     classe = classe_par(c, infos)
     minimo = config.MIN_EFIC_DIA[classe]
     efic = eficiencia(c)
