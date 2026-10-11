@@ -720,6 +720,7 @@
   <script src="../../core/atlas-auth.js"></script>
   <script src="../../core/atlas-secure.js"></script>
 <link rel="stylesheet" href="assistente.css?v=oraculo-17">
+<link rel="stylesheet" href="battle-pools.css?v=btl-1">
 </head>
 <body>
 <div class="wrap wrap-larga">
@@ -731,6 +732,7 @@
     <nav class="tabs">
       <button class="tab on" data-tab="dash" onclick="switchTab('dash')">Descobrir</button>
       <button class="tab" data-tab="hist" onclick="switchTab('hist')">Radar<span class="tabbadge" id="radarBadge" style="display:none"></span></button>
+      <button class="tab" data-tab="battle" onclick="switchTab('battle')">Battle Pools</button>
       <button class="tab" data-tab="mine" onclick="switchTab('mine')">Minhas pools</button>
       <button class="tab" data-tab="assistente" onclick="switchTab('assistente')">Oráculo</button>
       <button class="tab" data-tab="learn" onclick="switchTab('learn')">Guia</button>
@@ -825,6 +827,9 @@
     <!-- o que é o Radar: desceu do topo para o rodapé a pedido do dono (11/10/2026) -->
     <div class="foot-info radar-nota"><p class="trilho-dica"><b>Radar</b> — Aqui você organiza as pools em <b>níveis</b>: ★ Favoritas, 🟢 Segura, 🟡 Mediana, 🔴 Agressiva e 👁 Observação (pool que você está testando antes de decidir). Classifica pelo seletor em cada pool — ou busca qualquer pool no campo de busca e classifica direto do resultado. Clique numa pool pra abrir a evolução: cartões antes→agora, gráfico de TVL, Volume do dia e Razão, e o histórico de cada atualização.</p></div>
   </section>
+
+  <!-- Battle Pools: duas pools lado a lado; desenhada por battle-pools.js (11/10/2026) -->
+  <section id="tab-battle" style="display:none"></section>
 
   <section id="tab-mine" style="display:none">
     <div class="scan-hero">
@@ -1959,6 +1964,7 @@ function rowHTML(p, rank){
       <span class="rowact">
         ${p.servidor ? "" : `<button class="iconbtn" onclick="openForm(${idx})">editar</button>`}
         <button class="iconbtn" onclick="goToHistory(${p.id})">histórico</button>
+        <button class="iconbtn" onclick="BattlePools.adicionar(${p.id})" title="Comparar esta pool com outra no Battle Pools">⚔</button>
         ${tokenBtns(p)}
       </span>
     </td>
@@ -2569,7 +2575,7 @@ function radarPoolCard(p){
       <div class="rm"><span>Taxa</span><b>${feeHTML(p)}</b></div>
       <div class="rm"><span>${p.servidor ? "vs. ontem" : "vs. última"}</span><b class="trend ${aTvl.cls}">${aTvl.arrow} ${dTvl==null?'—':fPctSigned(dTvl)}</b></div>
     </div>
-    <div class="rc-foot">${levelSelectHTML(p)}${cmpBtnHTML(p)}</div>
+    <div class="rc-foot">${levelSelectHTML(p)}${cmpBtnHTML(p)}<button class="cmpbtn" onclick="event.stopPropagation(); BattlePools.adicionar(${p.id})" title="Levar para o Battle Pools">⚔</button></div>
   </div>`;
 }
 
@@ -3167,12 +3173,14 @@ function switchTab(t){
   document.getElementById("tab-dash").style.display  = (t==="dash") ? "" : "none";
   document.getElementById("tab-mine").style.display  = (t==="mine") ? "" : "none";
   document.getElementById("tab-hist").style.display  = (t==="hist") ? "" : "none";
+  document.getElementById("tab-battle").style.display = (t==="battle") ? "" : "none";
   document.getElementById("tab-learn").style.display = (t==="learn")? "" : "none";
   document.getElementById("tab-assistente").style.display = t==="assistente" ? "" : "none";
   document.querySelector(".wrap").classList.toggle("wrap-larga", t==="dash");
   if(scannerChat) scannerChat.abaAtiva(t);
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===t));
   if(t==="hist") renderRadar();
+  if(t==="battle" && window.BattlePools) BattlePools.render();
   if(t==="mine") renderMinhas();
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -3199,6 +3207,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   setInterval(()=>{ if(document.visibilityState==='visible') carregarServidor(); }, 5*60*1000);
 });
 </script>
+<script src="battle-pools.js?v=btl-1"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

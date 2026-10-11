@@ -1,0 +1,41 @@
+/* Battle Pools — duas pools lado a lado (11/10/2026) */
+#tab-battle{max-width:1100px; margin:0 auto}
+.btl-escolha{display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:start; margin:6px 0 18px}
+.btl-lado{background:var(--panel); border-radius:16px; padding:14px 16px; border-top:3px solid var(--btl); position:relative}
+.btl-rotulo{font-size:12px; color:var(--mut); display:flex; align-items:center; gap:7px; margin-bottom:8px}
+.btl-rotulo i{width:9px; height:9px; border-radius:50%; background:var(--btl)}
+.btl-busca{width:100%; box-sizing:border-box; padding:9px 12px; font-size:13.5px; color:var(--txt)}
+.btl-res{display:flex; flex-direction:column; gap:4px; margin-top:6px; max-height:280px; overflow:auto}
+.btl-opcao{display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; background:transparent; border:0; border-radius:9px; padding:7px 9px; color:var(--txt); cursor:pointer}
+.btl-opcao:hover,.btl-opcao:focus-visible{background:rgba(148,170,215,.08)}
+.btl-opcao span{font-size:11.5px; color:var(--mut)}
+.btl-vazio{font-size:12px; color:var(--mut); padding:6px 2px}
+.btl-escolhida{display:flex; justify-content:space-between; align-items:center; gap:10px}
+.btl-escolhida b{display:block; font-size:16px}
+.btl-escolhida span{font-size:12px; color:var(--mut)}
+.btl-vs{align-self:center; width:44px; height:44px; border-radius:50%; font-size:20px; background:var(--panel2); border:0; cursor:pointer}
+.btl-vs:hover{background:rgba(148,170,215,.12)}
+
+.btl-controles{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px}
+.btl-seg{display:inline-flex; gap:2px; padding:3px; border-radius:11px; background:var(--panel2)}
+.btl-seg button{background:transparent; border:0; color:var(--mut); border-radius:8px; padding:6px 12px; font-size:12.5px; font-weight:600; cursor:pointer}
+.btl-seg button:hover{color:var(--txt)}
+.btl-seg button.on{background:rgba(91,140,255,.18); color:var(--txt)}
+
+.btl-chartbox{position:relative; background:var(--panel); border-radius:16px; padding:10px 10px 4px}
+.btl-legenda{display:flex; flex-wrap:wrap; gap:16px; font-size:12px; color:var(--mut); margin:8px 4px 18px}
+.btl-legenda i{display:inline-block; width:12px; height:3px; border-radius:2px; margin-right:6px; vertical-align:middle}
+
+.btl-placar{width:100%; border-collapse:collapse; font-size:13.5px; font-variant-numeric:tabular-nums}
+.btl-placar th,.btl-placar td{padding:10px 12px; border-bottom:1px solid #161e2b; text-align:right}
+.btl-placar thead th{font-size:14px; vertical-align:bottom}
+.btl-placar thead th small{display:block; font-size:11px; color:var(--mut); font-weight:400; margin-top:2px}
+.btl-placar tbody th{text-align:left; color:var(--mut); font-weight:500}
+.btl-placar td.btl-win{color:var(--green); font-weight:700}
+.btl-veredito{font-size:13px; color:#c3ccdb; line-height:1.55; margin:14px 2px 0}
+
+@media (max-width:700px){
+  .btl-escolha{grid-template-columns:1fr}
+  .btl-vs{justify-self:center}
+  .btl-placar th,.btl-placar td{padding:8px 6px; font-size:12.5px}
+}
