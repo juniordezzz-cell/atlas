@@ -259,7 +259,6 @@ def coletar(cli, store, agora: datetime) -> dict:
                    'estado': 'parcial' if any('memecoin:' in s for s in cli.parciais) else 'ok',
                    'contagem': len(meme_ids), 'em': agora})
     leituras = store.leituras([c.id for c in cands])
-    notas = calcular_notas(cands, leituras)
     finais: list[PoolFinal] = []
     for c in cands:
         par_infos = [
@@ -274,7 +273,8 @@ def coletar(cli, store, agora: datetime) -> dict:
             config.emissor(t.simbolo, i.coingecko_id if i else None, c.rede) if cat == 'rwa' else None
             for t, i, cat in zip((c.token_a, c.token_b), par_infos, cats)]
         t, motivos = trilho(c, par_infos, leituras.get(c.id, []), agora)
-        nota, comp = notas[c.id]
+        # depois da categoria: a nota mede a pool contra a classe do par (11/10/2026)
+        nota, comp = calcular_notas([c], leituras)[c.id]
         finais.append(PoolFinal(c, t, motivos, nota, comp))
     gravacao = store.gravar(finais, agora.date(), agora, fontes_indisponiveis)
     store.gravar_status(status)

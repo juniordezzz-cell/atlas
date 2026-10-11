@@ -10,13 +10,19 @@
 
 A régua é absoluta (não percentil): a mesma pool tem a mesma nota não
 importa quantas outras entrem na coleta. Cada componente vai de 0 a 1 e
-fica gravado, para o Guia e a dica da tela explicarem a nota."""
+fica gravado, para o Guia e a dica da tela explicarem a nota.
+
+Desde 11/10/2026 taxa e rendimento são medidos contra a CLASSE do par:
+stable/stable a 0,01% com giro alto é ótima, e antes tirava 41 (USDT/WBNB
+da PancakeSwap) porque a régua única pedia 0,25–0,8%. E nas ve(3,3) a nota
+conta só a taxa: a emissão (AERO/VELO impresso) aparece no APR, não pontua."""
 
 from __future__ import annotations
 
 import math
 from statistics import mean, pstdev
 
+from . import config
 from .modelos import Candidata, Leitura
 
 VE33 = {"Aerodrome", "Velodrome", "THENA", "Pharaoh", "Ramses"}
@@ -38,6 +44,48 @@ def eficiencia(c: Candidata) -> float:
     if c.fee <= 0 and c.apr:  # taxa dinâmica (Uniswap v4) chega como 0: vale o APR da fonte
         return c.apr / 365
     return taxa
+
+
+def eficiencia_nota(c: Candidata) -> float:
+    """Rendimento que pontua: nas ve(3,3) só a taxa × giro, sem a emissão."""
+    return c.fee * razao(c) if c.dex in VE33 else eficiencia(c)
+
+
+def classe_nota(c: Candidata) -> str:
+    """Classe do par para a nota. Como em classificacao.classe_par, mas os
+    majors que são altcoin (BNB, AVAX, SUI, HYPE, POL) contam como blue chip:
+    USDT/WBNB é par de ativo grande, não de cauda. Sem categoria gravada,
+    "cauda" — a régua antiga."""
+    cats = c.sinais.get("categoria")
+    if not cats or len(cats) != 2:
+        return "cauda"
+    ajust = ["bluechip" if cat == "altcoin" and (t.simbolo or "").upper() in config.MAJORS else cat
+             for cat, t in zip(cats, (c.token_a, c.token_b))]
+    if "altcoin" in ajust or "meme" in ajust:
+        return "cauda"
+    if ajust[0] == ajust[1] == "stable":
+        return "stable"
+    return "grande_stable" if "stable" in ajust else "grande"
+
+
+# Taxa: (zero em, ponto bom de, até) em %. Rendimento: (zero em, cheio em) em %/dia.
+TAXA_CLASSE = {"stable": (0.0001, 0.005, 0.1), "grande_stable": (0.001, 0.01, 0.3), "grande": (0.001, 0.01, 0.3)}
+RENDIMENTO_CLASSE = {"stable": (0.001, 0.05), "grande_stable": (0.005, 0.2), "grande": (0.01, 0.3), "cauda": (0.01, 1.0)}
+
+
+def _taxa_classe(fee: float, classe: str) -> float:
+    if classe not in TAXA_CLASSE:
+        return _taxa(fee)
+    if fee <= 0:
+        return TAXA_DESCONHECIDA
+    zero, bom, ate = TAXA_CLASSE[classe]
+    if fee <= zero:
+        return 0.0
+    if fee < bom:
+        return (math.log10(fee) - math.log10(zero)) / (math.log10(bom) - math.log10(zero))
+    if fee <= ate:
+        return 1.0
+    return max(0.5, 1.0 - 0.5 * (fee - ate) / (1.0 - ate))         # 1% -> 0,5
 
 
 def _taxa(fee: float) -> float:
@@ -69,10 +117,11 @@ def taxa_inferida(c: Candidata) -> float:
     return round(c.apr / 365 / r, 4)
 
 
-def _rendimento(efic: float) -> float:
+def _rendimento(efic: float, classe: str = "cauda") -> float:
     if efic <= 0:
         return 0.0
-    return max(0.0, min(1.0, (math.log10(efic) + 2) / 2))    # 0,01%/dia -> 0 · 1%/dia -> 1
+    zero, cheio = RENDIMENTO_CLASSE.get(classe, RENDIMENTO_CLASSE["cauda"])   # cauda: 0,01%/dia -> 0 · 1%/dia -> 1
+    return max(0.0, min(1.0, (math.log10(efic) - math.log10(zero)) / (math.log10(cheio) - math.log10(zero))))
 
 
 def _giro(r: float) -> float:
@@ -115,9 +164,10 @@ def calcular_notas(cands: list[Candidata], leituras_por_pool: dict[str, list[Lei
     out: dict[str, tuple[float, dict]] = {}
     for c in cands:
         ls = leituras_por_pool.get(c.id, [])
+        classe = classe_nota(c)
         comp = {
-            "taxa": round(_taxa(c.fee if c.fee > 0 else taxa_inferida(c)), 4),
-            "rendimento": round(_rendimento(eficiencia(c)), 4),
+            "taxa": round(_taxa_classe(c.fee if c.fee > 0 else taxa_inferida(c), classe), 4),
+            "rendimento": round(_rendimento(eficiencia_nota(c), classe), 4),
             "giro": round(_giro(razao(c)), 4),
             "consistencia": round(_consistencia(ls), 4),
             "profundidade": round(_profundidade(c.tvl), 4),

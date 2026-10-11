@@ -77,3 +77,34 @@ def test_taxa_boa_ganha_de_razao_maior_com_taxa_infima():
     boa = c("boa", fee=0.25, tvl=1e6, vol=10e6)
     n = calcular_notas([infima, boa], {})
     assert n["boa"][0] > n["infima"][0] + 30
+
+
+def _par(id, a, b, cats, **kw):
+    x = c(id, **kw)
+    x.token_a, x.token_b = TokenRef(None, a), TokenRef(None, b)
+    x.sinais["categoria"] = cats
+    return x
+
+
+def test_nota_mede_a_pool_contra_a_classe_do_par():
+    # 11/10/2026: USDT/WBNB da PancakeSwap, 0,01%, US$ 15,6 mi, giro 2,31 — tirava 41
+    from central_rwa.pools.nota import classe_nota
+    p = _par("u", "USDT", "WBNB", ["stable", "altcoin"], fee=0.01, tvl=15.6e6, vol=36e6)
+    assert classe_nota(p) == "grande_stable"                         # WBNB é major: conta como blue chip na nota
+    nota, comp = calcular_notas([p], {})["u"]
+    assert comp["taxa"] == 1.0 and nota >= 60
+    # par de cauda continua com a régua antiga
+    alt = _par("t", "FOO", "USDT", ["altcoin", "stable"], fee=0.01, tvl=15.6e6, vol=36e6)
+    assert classe_nota(alt) == "cauda" and calcular_notas([alt], {})["t"][0] < 45
+    # stable/stable a 0,01% também é o ponto bom
+    s = _par("s", "USDC", "USDT", ["stable", "stable"], fee=0.01, tvl=5e6, vol=10e6)
+    assert calcular_notas([s], {})["s"][1]["taxa"] == 1.0
+
+
+def test_nota_ve33_conta_so_a_taxa():
+    # SOL/CBBTC na Aerodrome: 0,03% × 6,95 = 0,21%/dia em taxa; emissão 424% a.a.
+    p = _par("a", "SOL", "CBBTC", ["bluechip", "bluechip"], fee=0.03, tvl=1e6, vol=6.95e6, apr=113, reward=424, dex="Aerodrome")
+    so_taxa = _par("b", "SOL", "CBBTC", ["bluechip", "bluechip"], fee=0.03, tvl=1e6, vol=6.95e6, dex="Aerodrome")
+    n = calcular_notas([p, so_taxa], {})
+    assert n["a"][1]["rendimento"] == n["b"][1]["rendimento"]       # a emissão não pontua
+    assert round(eficiencia(p), 3) == round(424 / 365, 3)          # mas a régua das Sólidas ainda a vê
