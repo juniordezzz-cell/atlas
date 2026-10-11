@@ -709,9 +709,9 @@
       box-shadow:-10px 0 12px -6px rgba(0,0,0,.55)}
     .tablewrap tbody tr:hover td.actcell{background:#0d1220}
   }
-  /* Descobrir usa a largura da tela: com o teto de 1.400 px o zoom do
-     navegador não ganhava espaço e a tabela rolava mesmo em monitor largo */
-  .wrap.wrap-larga{max-width:1880px}
+  /* Descobrir um pouco mais largo que o resto: 1.400 px fazia a tabela rolar;
+     1.880 px esticava tudo de ponta a ponta num monitor de 1.920 (11/10/2026) */
+  .wrap.wrap-larga{max-width:1560px}
   /* sinais da pool pendente quebram linha em vez de alargar a coluna */
   td.pool .sinais{white-space:normal; min-width:235px; max-width:340px; line-height:1.35}
 </style>
