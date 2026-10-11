@@ -684,6 +684,7 @@
   .foot-info{max-width:760px; margin:0 auto 14px; text-align:center}
   .foot-info .srv-status{margin:0 0 6px; font-size:12px}
   .foot-info .trilho-dica{margin:0 auto; font-size:12px; max-width:none}
+  .radar-nota{margin-top:28px}
   a.poollink{color:inherit; text-decoration:none}
   a.poollink:hover{color:var(--accent)}
   a.poollink .ext{font-size:11px; margin-left:3px; color:var(--mut2)}
@@ -814,11 +815,6 @@
 </section>
 
   <section id="tab-hist" style="display:none">
-    <div class="scan-hero">
-      <h2>📡 Radar</h2>
-      <p>Aqui você organiza as pools em <b>níveis</b>: ★ Favoritas, 🟢 Segura, 🟡 Mediana, 🔴 Agressiva e 👁 Observação (pool que você está testando antes de decidir). Classifica pelo seletor em cada pool — ou busca qualquer pool abaixo e classifica direto do resultado. Clique numa pool pra abrir a evolução: cartões antes→agora, gráfico de TVL, Volume do dia e Razão, e o histórico de cada atualização.</p>
-    </div>
-
     <div class="keybox">
       <span style="font-size:20px">🔍</span>
       <input type="text" id="radarSearch" placeholder="Buscar qualquer pool pra classificar (ex: NVDA, TSLA, ETH/USDC)..." style="flex:1; min-width:220px; color:var(--txt)" oninput="renderRadar()">
@@ -826,6 +822,8 @@
 
     <div class="radar-toolbar" id="radarToolbar"></div>
     <div id="radarList"></div>
+    <!-- o que é o Radar: desceu do topo para o rodapé a pedido do dono (11/10/2026) -->
+    <div class="foot-info radar-nota"><p class="trilho-dica"><b>Radar</b> — Aqui você organiza as pools em <b>níveis</b>: ★ Favoritas, 🟢 Segura, 🟡 Mediana, 🔴 Agressiva e 👁 Observação (pool que você está testando antes de decidir). Classifica pelo seletor em cada pool — ou busca qualquer pool no campo de busca e classifica direto do resultado. Clique numa pool pra abrir a evolução: cartões antes→agora, gráfico de TVL, Volume do dia e Razão, e o histórico de cada atualização.</p></div>
   </section>
 
   <section id="tab-mine" style="display:none">
