@@ -433,7 +433,7 @@
   .scan-footbar .cnt{color:var(--mut); font-size:12.5px}
 
   /* ===== HISTÓRICO ===== */
-  #tab-hist{max-width:1100px}
+  #tab-hist{max-width:1100px; margin:0 auto}   /* centralizada sob o cabeçalho (11/10/2026) */
   .histcard{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px 24px; margin-top:6px}
   .histtitle{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px}
   .histtitle h2{margin:0; font-size:20px}
@@ -2172,7 +2172,9 @@ const radarSeries = { tvl:true, vol24h:true, ratio:true };
 const RADAR = {};
 const RADAR_COL = { tvl:"#5b8cff", vol24h:"#f5943b", ratio:"#a97bff" };
 
-function fmtHistDate(ts){ return new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
+/* leitura diária do servidor vem marcada ao meio-dia (servidor.historico): mostra só o dia */
+function ehLeituraDiaria(ts){ const d = new Date(ts); return d.getHours()===12 && d.getMinutes()===0 && d.getSeconds()===0 && d.getMilliseconds()===0; }
+function fmtHistDate(ts){ return new Date(ts).toLocaleString('pt-BR', ehLeituraDiaria(ts) ? {day:'2-digit',month:'2-digit'} : {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 function fmtHistDateFull(ts){ return new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function pctChange(prev, cur){
   if(prev==null || cur==null) return null;
@@ -2506,6 +2508,38 @@ function renderRadar(){
   list.innerHTML = radarAlertsHTML() + html + compareBarHTML();
   updateRadarBadge();
   if(radarOpenId!=null) initRadarChart(radarOpenId);
+  carregarSparks();
+}
+
+/* Histórico diário das pools do servidor, para o mini gráfico dos cards e o
+   painel. Até 4 pedidos ao mesmo tempo; cada pool é pedida uma vez. */
+const histFila = []; let histAtivos = 0;
+function carregarHistDia(p){
+  if(!p.servidor || !window.ScannerServidor) return Promise.resolve(false);
+  if(p._histDia) return p._histDia;
+  p._histDia = new Promise(res=>{ histFila.push({p, res}); puxarHist(); });
+  return p._histDia;
+}
+function puxarHist(){
+  while(histAtivos < 4 && histFila.length){
+    const {p, res} = histFila.shift(); histAtivos++;
+    ScannerServidor.historico(p.sid).then(h=>{
+      if(h.length) p.history = (p.historyLocal||[]).concat(h).sort((a,b)=>a.ts-b.ts);
+      res(h.length > 0);
+    }).catch(()=>res(false)).finally(()=>{ histAtivos--; puxarHist(); });
+  }
+}
+/* desenha o mini gráfico de cada card visível assim que o histórico chega */
+function carregarSparks(){
+  document.querySelectorAll("#radarList .radar-card, #radarList .radar-row").forEach(el=>{
+    const id = Number(el.id.replace("radar-row-","")), p = state.pools.find(x=>x.id===id);
+    if(!p || !p.servidor || p._histDia) return;
+    carregarHistDia(p).then(ok=>{
+      if(!ok) return;
+      const alvo = document.querySelector(`#radar-row-${id} .rc-spark, #radar-row-${id} .radar-spark`);
+      if(alvo) alvo.innerHTML = radarSparkline(radarSnaps(p));
+    });
+  });
 }
 
 /* modo cards: resumo compacto; clicar abre a pool na largura toda (vira a linha com gráfico) */
@@ -2533,7 +2567,7 @@ function radarPoolCard(p){
       <div class="rm"><span>Razão</span><b class="ratio ${rc}">${fRatio(r)}</b></div>
       <div class="rm"><span>APR</span><b>${fApr(p)}</b></div>
       <div class="rm"><span>Taxa</span><b>${feeHTML(p)}</b></div>
-      <div class="rm"><span>vs. última</span><b class="trend ${aTvl.cls}">${aTvl.arrow} ${dTvl==null?'—':fPctSigned(dTvl)}</b></div>
+      <div class="rm"><span>${p.servidor ? "vs. ontem" : "vs. última"}</span><b class="trend ${aTvl.cls}">${aTvl.arrow} ${dTvl==null?'—':fPctSigned(dTvl)}</b></div>
     </div>
     <div class="rc-foot">${levelSelectHTML(p)}${cmpBtnHTML(p)}</div>
   </div>`;
@@ -2561,7 +2595,7 @@ function radarRow(p){
         <div class="rm"><span>TVL</span><b>${fUSD(p.tvl)}</b></div>
         <div class="rm"><span>Vol/dia (${volFonte(p)})</span><b>${fUSD(volDia(p))}</b></div>
         <div class="rm"><span>Razão</span><b class="ratio ${rc}">${fRatio(r)}</b></div>
-        <div class="rm"><span>vs. última</span><b class="trend ${aTvl.cls}">${aTvl.arrow} ${dTvl==null?'—':fPctSigned(dTvl)}</b></div>
+        <div class="rm"><span>${p.servidor ? "vs. ontem" : "vs. última"}</span><b class="trend ${aTvl.cls}">${aTvl.arrow} ${dTvl==null?'—':fPctSigned(dTvl)}</b></div>
       </div>
       ${levelSelectHTML(p)}
       ${cmpBtnHTML(p)}
@@ -2595,7 +2629,6 @@ function radarPanel(p, snaps){
   return `<div class="radar-panel">
     ${radarCards(snaps)}
     ${chart}
-    ${radarTable(snaps)}
     <div class="simbox">
       <label>💰 Simular: se eu colocar US$
         <input type="text" inputmode="decimal" value="${simAmount.toLocaleString('pt-BR')}" oninput="updateSim(${p.id}, this.value)" style="width:110px"></label>
@@ -2708,19 +2741,10 @@ function radarAxisUSD(n){
 function radarAxisRatio(n){ return n.toLocaleString('pt-BR',{maximumFractionDigits:1})+'×'; }
 
 function initRadarChart(poolId){
-  // Pool do servidor: snapshots com horário real, buscados só quando ela é aberta.
+  // Pool do servidor: uma leitura por dia (ontem → hoje), buscada quando ela
+  // aparece. Os snapshots de 4 em 4 h viravam uma lista enorme (11/10/2026).
   const p0 = state.pools.find(x=>x.id===poolId);
-  if(p0 && p0.servidor && !p0._histPedido && window.ScannerServidor){
-    p0._histPedido = true;
-    ScannerServidor.snapshots(p0.sid).then(h=>{
-      if(!h.length) return;
-      p0.history = (p0.historyLocal||[]).concat(h).sort((a,b)=>a.ts-b.ts);
-      if(radarOpenId===poolId) renderRadar();
-    }).catch(()=>ScannerServidor.historico(p0.sid).then(h=>{
-      p0.history = (p0.historyLocal||[]).concat(h).sort((a,b)=>a.ts-b.ts);
-      if(radarOpenId===poolId) renderRadar();
-    }).catch(()=>{}));
-  }
+  if(p0 && p0.servidor && !p0._histDia) carregarHistDia(p0).then(ok=>{ if(ok && radarOpenId===poolId) renderRadar(); });
   const p = state.pools.find(p=>p.id===poolId);
   if(!p) return;
   const snaps = radarSnaps(p);
