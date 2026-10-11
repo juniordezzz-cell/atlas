@@ -8,7 +8,7 @@ from time import perf_counter
 from . import config
 from .classificacao import categorias, classe_par, passa_pre_corte, trilho
 from .conferencia import conferir
-from .fontes import parse_gecko_pools, parse_llama, parse_token_info, parse_tokens_multi
+from .fontes import _data, parse_gecko_pools, parse_llama, parse_token_info, parse_tokens_multi
 from .fontes_diretas import parse_orca, parse_raydium
 from .modelos import Candidata, PoolFinal, TokenInfo
 from .nota import calcular_notas
@@ -85,6 +85,10 @@ def lembrar_enderecos(store, cands: list[Candidata], agora: datetime) -> int:
             continue
         if m.get("endereco") and (agora - em).days < MEMORIA_ENDERECO_DIAS:
             c.sinais["conferencia"] = {"estado": "memoria", "endereco": m["endereco"], "em": m["em"]}
+            if m.get("criada_em"):
+                c.sinais["conferencia"]["criada_em"] = m["criada_em"]
+                if c.criada_em is None:
+                    c.criada_em = _data(m["criada_em"])
             usados += 1
     return usados
 

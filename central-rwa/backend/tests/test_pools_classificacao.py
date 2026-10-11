@@ -272,3 +272,20 @@ def test_altcoin_preferida_e_solida_rendendo_pouco():
     assert trilho(cand("SOL/PYTH", vol=600_000), [None, info(simbolo="PYTH", cg=None)], [], AGORA)[0] == "barrada"
     # token fraco continua fraco (valor de mercado baixo)
     assert trilho(cand("SOL/PYTH", vol=600_000), [None, info(simbolo="PYTH", cg="pyth-network", mcap=1e6)], [], AGORA)[0] == "caca"
+
+
+def test_pool_com_30_dias_e_solida_rendendo_pouco():
+    # 11/10/2026: CAKE/WBNB, 333 dias, 0,05% × 1,7 = 0,085%/dia (mínimo 0,3%)
+    cake = info(simbolo="CAKE", cg="pancakeswap-token")
+    c = cand("CAKE/WBNB", fee=0.05, tvl=1_000_000, vol=1_700_000)
+    c.criada_em = AGORA - timedelta(days=333)
+    assert trilho(c, [cake, None], [], AGORA) == ("solida", [])
+    c.criada_em = AGORA - timedelta(days=29)                     # nova: a régua vale
+    assert trilho(c, [cake, None], [], AGORA)[0] == "caca"
+    c.criada_em = None                                           # sem data: a régua vale
+    assert trilho(c, [cake, None], [], AGORA)[0] == "caca"
+    # a idade não passa por cima de token fraco nem de memecoin
+    velha = cand("CAKE/WBNB", fee=0.05, vol=1_700_000); velha.criada_em = AGORA - timedelta(days=333)
+    assert trilho(velha, [info(simbolo="CAKE", cg="pancakeswap-token", mcap=1e6), None], [], AGORA)[0] == "caca"
+    velha.sinais["memecoin"] = {"detectada": True, "ids": ["pancakeswap-token"]}
+    assert trilho(velha, [cake, None], [], AGORA)[0] == "caca"

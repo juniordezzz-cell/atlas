@@ -104,6 +104,10 @@ MIN_EFIC_DIA: dict[str, float] = {"stable": 0.01, "grande_stable": 0.05, "grande
 # rendendo quanto for (10/10/2026). Vale só com o contrato confirmado
 # (cadastro na CoinGecko, bridged conferida ou contrato reconhecido).
 ALTCOINS_PREFERIDAS: set[str] = {"PYTH", "RAY", "ONDO", "NEAR", "AAVE", "JUP"}
+# Pool com 30 dias ou mais não precisa do rendimento mínimo (11/10/2026):
+# CAKE/WBNB, 333 dias, a 0,085%/dia ficava em Pendentes. Sem data de criação
+# (a DefiLlama não informa), a régua continua valendo.
+IDADE_SOLIDA_DIAS = 30
 CLASSE_ROTULO: dict[str, str] = {"stable": "stable/stable", "grande_stable": "blue chip ou RWA com stable",
                                  "grande": "blue chip ou RWA com blue chip ou RWA", "cauda": "par com altcoin ou meme"}
 # Volume suspeito: pool nova girando demais vai para Pendentes antes dos 3 dias

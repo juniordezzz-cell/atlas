@@ -206,3 +206,17 @@ def test_pool_sem_endereco_e_conferida_antes():
             vistos.append(par); return None
     cf.conferir(Cli(), [com, sem], {"Base": "base"}, max_pares=1)
     assert vistos == ["UNI WETH"]
+
+
+def test_conferencia_traz_a_idade_da_pool():
+    # 11/10/2026: 130 pools da DefiLlama ficavam sem idade para a regra dos 30 dias
+    from datetime import datetime, timezone
+    payload = {"data": [{"attributes": {"name": "WETH / ARB 0.05%", "reserve_in_usd": "1000000",
+                                        "volume_usd": {"h24": "900000"}, "address": "0xabc",
+                                        "pool_created_at": "2024-03-01T00:00:00Z"},
+                         "relationships": {"dex": {"data": {"id": "uniswap_v3_arbitrum"}}}}]}
+    g = cf.parse_busca(payload)[0]
+    assert g.criada_em == datetime(2024, 3, 1, tzinfo=timezone.utc)
+    c = llama("uniswap-v3", 0.05, 1_000_000, 900_000, par="WETH/ARB", dex="Uniswap")
+    cf.aplicar(c, g)
+    assert c.criada_em == g.criada_em and c.sinais["conferencia"]["criada_em"].startswith("2024-03-01")

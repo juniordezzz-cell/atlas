@@ -232,6 +232,8 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
     # (decisão do dono, 10/10/2026): NVDA/WETH da Robinhood a 0,032%/dia.
     if any(rwa_confirmado(i) for i in infos):
         return "solida", []
+    if c.criada_em is not None and (agora - c.criada_em).days >= config.IDADE_SOLIDA_DIAS:
+        return "solida", []   # pool madura: sem mínimo de rendimento (11/10/2026)
     # altcoin preferida com major/stable ou outra preferida: sem mínimo (10/10/2026)
     pares = list(zip((c.token_a, c.token_b), list(infos) + [None, None]))
     pref = [preferida(t.simbolo, i, c.rede) for t, i in pares]

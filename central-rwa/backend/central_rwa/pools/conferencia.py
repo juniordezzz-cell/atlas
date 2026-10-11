@@ -40,8 +40,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import datetime
 
 from .nota import eficiencia
+from .fontes import _data
 from .modelos import Candidata
 
 TOL_TVL = 0.15          # TVL a menos de 15%: é a mesma pool
@@ -59,6 +61,7 @@ class PoolGecko:
     tvl: float
     vol_24h: float
     endereco: str
+    criada_em: datetime | None = None   # pool_created_at: a DefiLlama não informa a idade
 
 
 def _num(v) -> float:
@@ -80,6 +83,7 @@ def parse_busca(payload: dict) -> list[PoolGecko]:
             tvl=_num(a.get("reserve_in_usd")),
             vol_24h=_num((a.get("volume_usd") or {}).get("h24")),
             endereco=str(a.get("address") or ""),
+            criada_em=_data(a.get("pool_created_at")),
         ))
     return out
 
@@ -145,6 +149,11 @@ def aplicar(c: Candidata, g: PoolGecko | None) -> None:
         c.apr = c.vol_24h * c.fee / 100 * 365 / c.tvl * 100
     c.sinais["conferencia"] = {"estado": "conferida", "fonte": "geckoterminal",
                                "endereco": g.endereco, "ajustes": ajustes}
+    # idade da pool para a regra dos 30 dias (11/10/2026); fica guardada com o endereço
+    if g.criada_em is not None:
+        c.sinais["conferencia"]["criada_em"] = g.criada_em.isoformat()
+        if c.criada_em is None:
+            c.criada_em = g.criada_em
 
 
 def _eficiencia(c: Candidata) -> float:
