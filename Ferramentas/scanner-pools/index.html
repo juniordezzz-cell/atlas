@@ -983,7 +983,7 @@
         <div class="callout warn"><div class="cotip">⚠️</div><div><b>A armadilha:</b> USDC/USDT (Uniswap Arbitrum) tem razão <b>4,52×</b> — gira $10 M sobre $2 M — mas taxa <b>0,0008%</b>. Rende <b>~0,00%/dia</b>. O giro é enorme, quase nada vira taxa.</div></div>
         <div class="callout bad"><div class="cotip">🚩</div><div><b>A outra armadilha:</b> taxa alta não é qualidade. 1% costuma marcar par volátil/memecoin, onde o <i>impermanent loss</i> come a taxa. Taxa alta é prêmio de risco, não garantia.</div></div>
         <div class="callout"><div class="cotip">🗳️</div><div><b>DEXes ve(3,3) — Aerodrome, Velodrome, THENA, Pharaoh, Ramses.</b> Nelas o LP escolhe: <b>sem stake</b> fica com a taxa das trocas; <b>com stake</b> recebe emissões do token da DEX (AERO, VELO, THE, PHAR, RAM) e a taxa vai para quem vota. É um ou outro. Por isso, nessas DEXes o Scanner não usa Taxa × Razão: a Eficiência e o APR são o <b>maior</b> dos dois rendimentos que a fonte informa, e a coluna APR diz "em AERO" quando o ganho vem de emissão. Emissão é paga num token que oscila — se ele cai, o seu rendimento em dólar cai junto. Exemplo real (22/09/2026): Pharaoh WAVAX/USDC, taxa 0% para o LP e 378% ao ano em PHAR.</div></div>
-        <div class="callout"><div class="cotip">❓</div><div><b>"taxa ?" na tabela</b> — a GeckoTerminal (PancakeSwap, Meteora) nem sempre informa a taxa da pool. Sem taxa, a Eficiência é <b>desconhecida</b>, não zero: a pool vai para o fim do ranking com "taxa ?" até você completar a taxa em <b>editar</b>. Antes, ela aparecia como 0% — como se fosse ruim, quando só faltava o dado.</div></div>
+        <div class="callout"><div class="cotip">❓</div><div><b>"taxa ?" na tabela</b> — a GeckoTerminal (PancakeSwap, Meteora) nem sempre informa a taxa da pool. Sem taxa, a Eficiência é <b>desconhecida</b>, não zero: a pool vai para o fim do ranking com "taxa ?" até você completar a taxa em <b>editar</b>. Antes, ela aparecia como 0% — como se fosse ruim, quando só faltava o dado. Quando a fonte não traz o fee tier mas traz o APR das taxas (Curve, Orca, LFJ, Uniswap v4 de taxa dinâmica), a tabela mostra a <b>taxa efetiva estimada com "~"</b> (APR ÷ 365 ÷ razão) e a Eficiência sai do APR.</div></div>
       </div>
     </div>
 
@@ -1709,10 +1709,27 @@ function aprLP(p){
    NÃO é zero — é desconhecida. Zero jogava PancakeSwap e Meteora para o
    fim do ranking por falta de dado, não por serem piores. Nas ve(3,3), o
    que precisa ser conhecido é o rendimento do LP, não a taxa. */
-function temTaxa(p){ return ehVe33(p) ? aprLP(p)!=null : p.fee>0; }
+/* Taxa 0 = a fonte não informou o fee tier (Curve, Orca, LFJ, Uniswap v4 de
+   taxa dinâmica ou abaixo de 0,005%). A DefiLlama informa o APR das taxas, e a
+   coleta já usa esse APR; a tela fazia taxa × giro = 0 e mostrava "taxa ?"
+   (43 pools em 11/10/2026). Taxa efetiva ≈ APR ÷ 365 ÷ razão. */
+function aprTaxaFonte(p){ return !ehVe33(p) && !(p.fee>0) && p.apr>0 ? Number(p.apr) : null; }
+function feeEfetiva(p){
+  if(p.fee>0) return p.fee;
+  const a = aprTaxaFonte(p), r = ratio(p);
+  return a!=null && r>0 ? a/365/r : null;
+}
+function feeHTML(p){
+  if(p.fee>0 || ehVe33(p)) return fFee(p.fee);
+  const f = feeEfetiva(p);
+  return f==null ? '<span class="muted2" title="A fonte não informou a taxa nem o APR das taxas">?</span>'
+    : `<span title="Taxa efetiva estimada pelo APR das taxas da fonte (APR ÷ 365 ÷ razão): a fonte não informa o fee tier desta pool">~${fFee(Math.round(f*10000)/10000)}</span>`;
+}
+function temTaxa(p){ return ehVe33(p) ? aprLP(p)!=null : (p.fee>0 || aprTaxaFonte(p)!=null); }
 function efic(p){
   if(ehVe33(p)){ const a = aprLP(p); return a ? a.v/365 : 0; }
-  return p.fee * ratio(p);
+  const a = aprTaxaFonte(p);
+  return a!=null ? a/365 : p.fee * ratio(p);
 } // % ao dia
 /* APR da fonte quando existe; senão estima pela fórmula do app: 365 × taxa × razão */
 function aprOf(p){
@@ -1923,13 +1940,13 @@ function rowHTML(p, rank){
   const tr = trendOf(p), ta = trendArrow(tr);
   return `<tr>
     <td class="favcell"><button class="favbtn ${p.fav?'on':''}" onclick="toggleFav(${p.id})" title="${p.fav?'Remover dos favoritos':'Marcar como favorita'}">${p.fav?'★':'☆'}</button></td>
-    <td class="pool"><span class="rank num">${rank}.</span> ${(()=>{ const L = window.ScannerServidor && p.servidor ? ScannerServidor.linkPool(p) : null; return L ? `<a class="poolname poollink" href="${esc(L.url)}" target="_blank" rel="noopener noreferrer" title="Abrir em ${esc(L.dominio)} (${esc(L.onde)}) — site oficial">${esc(p.pool)}<span class="ext" aria-hidden="true">↗</span></a>` : `<span class="poolname">${esc(p.pool)}</span>`; })()}<span class="feepill">${fFee(p.fee)}</span>${p.servidor ? "" : '<span class="manualpill" title="Pool registrada por você no + Pool — o servidor não acompanha">manual</span>'}${sinaisHTML(p)}</td>
+    <td class="pool"><span class="rank num">${rank}.</span> ${(()=>{ const L = window.ScannerServidor && p.servidor ? ScannerServidor.linkPool(p) : null; return L ? `<a class="poolname poollink" href="${esc(L.url)}" target="_blank" rel="noopener noreferrer" title="Abrir em ${esc(L.dominio)} (${esc(L.onde)}) — site oficial">${esc(p.pool)}<span class="ext" aria-hidden="true">↗</span></a>` : `<span class="poolname">${esc(p.pool)}</span>`; })()}<span class="feepill">${feeHTML(p)}</span>${p.servidor ? "" : '<span class="manualpill" title="Pool registrada por você no + Pool — o servidor não acompanha">manual</span>'}${sinaisHTML(p)}</td>
     <td class="plat" data-label="Plataforma">
       <span class="platbadge"><span class="pdot" style="background:${PLAT_COLORS[p.platform]||'#8a94a8'}"></span>${esc(p.platform)}</span>
       <span class="net">${esc(p.network)}</span>
     </td>
     <td class="plat" data-label="Categoria"><span class="catbadge" style="color:${catCor(getCat(p))};border-color:${catCor(getCat(p))}44">${esc(getCat(p))}</span>${(()=>{ const e = window.ScannerServidor && p.servidor ? ScannerServidor.rotuloEmissor(p) : ""; return e ? `<div class="emissor">${esc(e)}</div>` : ""; })()}</td>
-    <td class="num m-hide" data-label="Fee">${fFee(p.fee)}</td>
+    <td class="num m-hide" data-label="Fee">${feeHTML(p)}</td>
     <td class="num" data-label="TVL">${fUSD(p.tvl)}${low?`<span class="warn" title="TVL baixo (<$100k): razão pode enganar">⚠</span>`:''}</td>
     <td class="num" data-label="Vol/dia">${fUSD(volDia(p))}${volFonte(p)==='7d'?'<span class="volsrc" title="A fonte não informou o volume das últimas 24h: vale a média diária dos últimos 7 dias">média 7d</span>':''}</td>
     <td class="num" data-label="Δ TVL"><span class="trend ${ta.cls}" title="${p.servidor ? 'Variação do TVL em 7 dias' : 'Variação do TVL desde a atualização anterior'}">${tr==null?'<span class="muted2">—</span>':`${ta.arrow} ${fPctSigned(tr)}`}</span></td>
@@ -2517,7 +2534,7 @@ function radarPoolCard(p){
       <div class="rm"><span>Vol/dia (${volFonte(p)})</span><b>${fUSD(volDia(p))}</b></div>
       <div class="rm"><span>Razão</span><b class="ratio ${rc}">${fRatio(r)}</b></div>
       <div class="rm"><span>APR</span><b>${fApr(p)}</b></div>
-      <div class="rm"><span>Taxa</span><b>${fFee(p.fee)}</b></div>
+      <div class="rm"><span>Taxa</span><b>${feeHTML(p)}</b></div>
       <div class="rm"><span>vs. última</span><b class="trend ${aTvl.cls}">${aTvl.arrow} ${dTvl==null?'—':fPctSigned(dTvl)}</b></div>
     </div>
     <div class="rc-foot">${levelSelectHTML(p)}${cmpBtnHTML(p)}</div>
