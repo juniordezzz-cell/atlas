@@ -76,7 +76,10 @@
      nota gravada antes da regra não tem "emissao": a tela aplica a perda. */
   var VE33 = ["Aerodrome", "Velodrome", "THENA", "Pharaoh", "Ramses"];
   var PERDA_EMISSAO = 0.5;
+  var PARTE_EMISSAO_PRESUMIDA = 0.6;   /* fonte sem dado (THENA): mediana da Aerodrome, 55% */
+  function semDadoEmissao(dex, apr, reward) { return VE33.indexOf(dex) !== -1 && apr == null && reward == null; }
   function parteEmissao(dex, apr, reward) {
+    if (semDadoEmissao(dex, apr, reward)) return PARTE_EMISSAO_PRESUMIDA;
     if (VE33.indexOf(dex) === -1 || !(Number(reward) > 0)) return 0;
     return Number(reward) / (Number(reward) + Math.max(Number(apr) || 0, 0));
   }
@@ -86,6 +89,7 @@
     var parte = parteEmissao(row.dex, row.apr, row.apr_reward);
     var c = {}; for (var k in comp) c[k] = comp[k];
     c.emissao = Math.round(parte * 10000) / 10000;
+    if (semDadoEmissao(row.dex, row.apr, row.apr_reward)) c.emissao_presumida = true;
     return { nota: Math.round(nota * (1 - PERDA_EMISSAO * parte) * 10) / 10, componentes: c };
   }
 

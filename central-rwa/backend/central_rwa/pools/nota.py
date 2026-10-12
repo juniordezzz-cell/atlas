@@ -33,7 +33,10 @@ from .modelos import Candidata, Leitura
 VE33 = {"Aerodrome", "Velodrome", "THENA", "Pharaoh", "Ramses"}
 PESOS = {"taxa": 0.30, "giro": 0.30, "rendimento": 0.20, "consistencia": 0.10, "profundidade": 0.05, "tendencia": 0.05}
 TAXA_DESCONHECIDA = 0.3
-PERDA_EMISSAO = 0.5       # pool 100% paga em emissão fica com metade da nota   # fee 0 = a fonte não informou (ou taxa dinâmica): não é "taxa boa"
+PERDA_EMISSAO = 0.5       # pool 100% paga em emissão fica com metade da nota
+# ve(3,3) sem dado nenhum da fonte (GeckoTerminal: THENA, parte da Velodrome):
+# presume esta parte em emissão. Mediana medida na Aerodrome em 12/10/2026: 55%.
+PARTE_EMISSAO_PRESUMIDA = 0.6   # fee 0 = a fonte não informou (ou taxa dinâmica): não é "taxa boa"
 
 
 def razao(c: Candidata) -> float:
@@ -61,7 +64,11 @@ def parte_emissao(c: Candidata) -> float:
     """Que parte da renda da pool vem em emissão (AERO, VELO, THE…), de 0 a 1.
     Só nas ve(3,3), onde o LP em stake troca a taxa pela emissão; nas outras
     DEXs o reward é um extra pago junto com a taxa."""
-    if c.dex not in VE33 or not c.apr_reward or c.apr_reward <= 0:
+    if c.dex not in VE33:
+        return 0.0
+    if c.apr is None and c.apr_reward is None:
+        return PARTE_EMISSAO_PRESUMIDA   # a fonte não informa: presume (ver acima)
+    if not c.apr_reward or c.apr_reward <= 0:
         return 0.0
     return c.apr_reward / (c.apr_reward + max(c.apr or 0, 0))
 
@@ -191,5 +198,7 @@ def calcular_notas(cands: list[Candidata], leituras_por_pool: dict[str, list[Lei
         base = 100 * sum(PESOS[k] * v for k, v in comp.items())
         emissao = parte_emissao(c)
         comp["emissao"] = round(emissao, 4)
+        if c.dex in VE33 and c.apr is None and c.apr_reward is None:
+            comp["emissao_presumida"] = True
         out[c.id] = (round(base * (1 - PERDA_EMISSAO * emissao), 1), comp)
     return out

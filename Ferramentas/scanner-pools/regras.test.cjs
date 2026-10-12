@@ -209,3 +209,12 @@ test('pool ve(3,3) que paga em AERO perde nota; sem emissão não muda (12/10/20
   assert.equal(S.paraPool(row('PancakeSwap', 67, 3376)).nota, 89.3);               // reward é extra
   assert.equal(S.paraPool(row('Aerodrome', 67, 3376, {taxa:1, emissao:0.98})).nota, 89.3);   // coletor já aplicou
 });
+
+test('ve(3,3) sem dado de emissão (THENA) presume 60%: nota × 0,7 (12/10/2026)', () => {
+  const S=load();
+  const row={id:'gecko:bsc:0xth', par:'ETH/USDT', dex:'THENA', rede:'BNB Chain', fee:0.05, tvl:1e6, vol_24h:2e6,
+    apr:null, apr_reward:null, nota:62.4, componentes:{taxa:1}, trilho:'solida', motivos:[], sinais:{}};
+  const p=S.paraPool(row);
+  assert.equal(p.nota, 43.7); assert.equal(p.componentes.emissao_presumida, true);
+  assert.equal(S.paraPool(Object.assign({}, row, {dex:'PancakeSwap'})).nota, 62.4);
+});

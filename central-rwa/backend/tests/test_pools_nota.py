@@ -129,3 +129,18 @@ def test_pool_que_paga_em_aero_perde_nota():
     # fora das ve(3,3) o APR de reward não pesa (incentivo pago à parte)
     pk = _par("p", "WETH", "CBBTC", ["bluechip", "bluechip"], fee=0.0085, tvl=2.3e6, vol=40e6, apr=67, reward=3376)
     assert calcular_notas([pk], {})["p"][1]["emissao"] == 0
+
+
+def test_ve33_sem_dado_de_emissao_presume_parte_em_emissao():
+    # 12/10/2026: THENA só vem da GeckoTerminal, sem APR nem reward; o dono
+    # quer a nota dela baixa como a da Aerodrome. Presume 60% (mediana medida
+    # na Aerodrome: 55%) e marca como presumido.
+    from central_rwa.pools.nota import PARTE_EMISSAO_PRESUMIDA
+    th = _par("t", "ETH", "USDT", ["bluechip", "stable"], fee=0.05, tvl=1e6, vol=2e6, dex="THENA")
+    pk = _par("p", "ETH", "USDT", ["bluechip", "stable"], fee=0.05, tvl=1e6, vol=2e6)
+    n = calcular_notas([th, pk], {})
+    assert n["t"][1]["emissao"] == PARTE_EMISSAO_PRESUMIDA and n["t"][1]["emissao_presumida"] is True
+    assert abs(n["t"][0] - n["p"][0] * (1 - 0.5 * PARTE_EMISSAO_PRESUMIDA)) < 0.2
+    # com APR de taxa informado e sem reward: a fonte diz que não há emissão
+    so_taxa = _par("s", "ETH", "USDT", ["bluechip", "stable"], fee=0.05, tvl=1e6, vol=2e6, apr=36, dex="THENA")
+    assert calcular_notas([so_taxa], {})["s"][1]["emissao"] == 0
