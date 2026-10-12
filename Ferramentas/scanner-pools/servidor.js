@@ -294,13 +294,51 @@
     var conferidos = {};
     pools.forEach(function (p) {
       var e = ((p.sinais || {}).conferencia || {}).endereco;
-      if (String(p.sid || "").indexOf("llama:") === 0 && e) conferidos[chaveEndereco(p.network, e)] = 1;
+      if (String(p.sid || "").indexOf("llama:") === 0 && e) conferidos[chaveEndereco(p.network, e)] = p;
     });
-    return pools.filter(function (p) {
+    var restantes = pools.filter(function (p) {
       var sid = String(p.sid || "");
       if (sid.indexOf("gecko:") !== 0) return true;
-      return !conferidos[chaveEndereco(p.network, sid.split(":").slice(2).join(":"))];
+      var llama = conferidos[chaveEndereco(p.network, sid.split(":").slice(2).join(":"))];
+      if (!llama) return true;
+      /* a DefiLlama não informa a taxa: fica a da cópia que sai */
+      if (!(Number(llama.fee) > 0) && Number(p.fee) > 0) llama.fee = Number(p.fee);
+      return false;
     });
+    return semDuplicataDireta(restantes);
+  }
+
+  /* A mesma pool da DefiLlama (taxa 0, não informada) e direto da Orca/
+     Raydium (taxa real): mesma rede e DEX, os mesmos dois contratos, TVL até
+     15% diferente e taxa igual ou não informada de um lado. Taxas diferentes
+     (0,08% × 0,25%) são pools diferentes; casamento ambíguo não junta. A da
+     DefiLlama fica (tem o histórico) e ganha a taxa da direta. Igual a
+     coleta.reconciliar_diretas (12/10/2026); cobre as linhas já gravadas. */
+  function semDuplicataDireta(pools) {
+    function chavePar(p) {
+      var t = p.tokens || [], a = t[0] && t[0].endereco, b = t[1] && t[1].endereco;
+      if (!a || !b) return null;
+      return [p.network, p.platform].concat([chaveEndereco(p.network, a), chaveEndereco(p.network, b)].sort()).join("|");
+    }
+    function casam(llama, direta) {
+      var tl = Number(llama.tvl) || 0, td = Number(direta.tvl) || 0, fl = Number(llama.fee) || 0, fd = Number(direta.fee) || 0;
+      if (tl <= 0 || Math.abs(tl - td) / tl > 0.15) return false;
+      return fl <= 0 || fd <= 0 || Math.abs(fl - fd) < 1e-6;
+    }
+    var grupos = {};
+    pools.forEach(function (p) { var k = chavePar(p); if (k) (grupos[k] = grupos[k] || []).push(p); });
+    var remover = {};
+    Object.keys(grupos).forEach(function (k) {
+      var llamas = grupos[k].filter(function (p) { return String(p.sid || "").indexOf("llama:") === 0; });
+      var diretas = grupos[k].filter(function (p) { return String(p.sid || "").indexOf("gecko:") === 0; });
+      diretas.forEach(function (d) {
+        var op = llamas.filter(function (l) { return casam(l, d); });
+        if (op.length !== 1 || diretas.filter(function (x) { return casam(op[0], x); }).length !== 1) return;
+        if (!(Number(op[0].fee) > 0) && Number(d.fee) > 0) op[0].fee = Number(d.fee);
+        remover[d.sid] = 1;
+      });
+    });
+    return pools.filter(function (p) { return !remover[p.sid]; });
   }
 
   /* ---------- bloqueio por contrato (07/10/2026) ----------

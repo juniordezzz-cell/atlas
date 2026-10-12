@@ -218,3 +218,14 @@ test('ve(3,3) sem dado de emissão (THENA) presume 60%: nota × 0,7 (12/10/2026)
   assert.equal(p.nota, 43.7); assert.equal(p.componentes.emissao_presumida, true);
   assert.equal(S.paraPool(Object.assign({}, row, {dex:'PancakeSwap'})).nota, 62.4);
 });
+
+test('mesma pool da DefiLlama (taxa 0) e da Orca vira uma; taxas diferentes ficam (12/10/2026)', () => {
+  const S=load();
+  const p=(sid, fee, tvl, a='pltrx') => ({sid, pool:'X/USDC', network:'Solana', platform:'Orca', fee, tvl,
+    tokens:[{simbolo:'X', endereco:a}, {simbolo:'USDC', endereco:'usdc'}]});
+  let r=S.semDuplicatas([p('llama:1', 0, 124000), p('gecko:solana:1', 0.65, 126000)]);
+  assert.deepEqual(r.map(x=>x.sid), ['llama:1']); assert.equal(r[0].fee, 0.65);
+  assert.equal(S.semDuplicatas([p('llama:2', 0.08, 500000), p('gecko:solana:2', 0.25, 510000)]).length, 2);
+  assert.equal(S.semDuplicatas([p('llama:3', 0, 200000), p('gecko:solana:3', 0.05, 200000), p('gecko:solana:4', 0.3, 205000)]).length, 3);
+  assert.equal(S.semDuplicatas([p('llama:5', 0.2, 224000), p('gecko:solana:5', 0.2, 161000)]).length, 2);
+});

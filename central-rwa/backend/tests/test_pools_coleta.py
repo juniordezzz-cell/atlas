@@ -158,6 +158,51 @@ def test_fonte_direta_atualiza_pool_llama_correspondente_sem_duplicar():
     assert rows[0].sinais['endereco_pool'] == 'pool'
 
 
+
+def _par_solana(pid, fonte, fee, tvl, a='pltrx', b='usdc', dex='Orca'):
+    c = fin(pid).cand
+    c.fonte, c.dex, c.rede = fonte, dex, 'Solana'
+    c.token_a, c.token_b = TokenRef(a, a.upper()), TokenRef(b, b.upper())
+    c.fee, c.tvl, c.vol_24h = fee, tvl, 0 if fonte == 'defillama' else 190_000
+    return c
+
+
+def test_taxa_nao_informada_pela_defillama_nao_duplica_a_pool():
+    # 12/10/2026: PLTRx/USDC aparecia duas vezes (DefiLlama com taxa 0, Orca com 0,65%)
+    rows = reconciliar_diretas([_par_solana('llama:pltr', 'defillama', 0, 124_000),
+                                _par_solana('gecko:solana:pltr', 'orca', 0.65, 126_000)])
+    assert [r.id for r in rows] == ['llama:pltr'] and rows[0].fee == 0.65
+
+
+def test_taxas_diferentes_sao_pools_diferentes():
+    # 0,08% e 0,25% do mesmo par com TVL parecido: duas pools de verdade
+    rows = reconciliar_diretas([_par_solana('llama:a', 'defillama', 0.08, 500_000),
+                                _par_solana('gecko:solana:b', 'orca', 0.25, 510_000)])
+    assert len(rows) == 2
+
+
+def test_mesmo_par_com_varias_taxas_casa_cada_uma_pelo_tvl():
+    # SOL/USDC na Orca: tiers 0,01 / 0,02 / 0,04, DefiLlama sem taxa
+    t = dict(a='sol', b='usdc')
+    rows = reconciliar_diretas([
+        _par_solana('llama:1', 'defillama', 0, 216_000, **t), _par_solana('llama:2', 'defillama', 0, 152_000, **t),
+        _par_solana('llama:4', 'defillama', 0, 28_957_000, **t),
+        _par_solana('gecko:solana:1', 'orca', 0.01, 213_000, **t), _par_solana('gecko:solana:2', 'orca', 0.02, 152_000, **t),
+        _par_solana('gecko:solana:4', 'orca', 0.04, 28_690_000, **t)])
+    assert sorted((r.id, r.fee) for r in rows) == [('llama:1', 0.01), ('llama:2', 0.02), ('llama:4', 0.04)]
+
+
+def test_casamento_ambiguo_ou_tvl_distante_nao_junta():
+    # duas diretas cabem no mesmo TVL da DefiLlama sem taxa: não adivinha
+    rows = reconciliar_diretas([_par_solana('llama:x', 'defillama', 0, 200_000),
+                                _par_solana('gecko:solana:p', 'orca', 0.05, 200_000),
+                                _par_solana('gecko:solana:q', 'orca', 0.30, 205_000)])
+    assert len(rows) == 3
+    # TVL 28% diferente: não é a mesma pool
+    rows = reconciliar_diretas([_par_solana('llama:y', 'defillama', 0.2, 224_000),
+                                _par_solana('gecko:solana:y', 'raydium', 0.2, 161_000, dex='Orca')])
+    assert len(rows) == 2
+
 # ---- Task 8: comando ----
 import json
 

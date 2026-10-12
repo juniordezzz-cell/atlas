@@ -25,15 +25,24 @@ def normalizar_endereco(rede: str, endereco: str) -> str:
 def reconciliar_diretas(todas: list[Candidata]) -> list[Candidata]:
     """Mantém o ID histórico da DefiLlama ao enriquecer a mesma pool nativa.
 
-    Pares com mais de uma pool compatível ficam separados; símbolo sozinho
-    nunca é usado como identidade.
+    Mesma pool = mesma rede e DEX, os mesmos dois contratos, TVL até 15%
+    diferente e taxa compatível: igual, ou não informada por um dos lados (a
+    DefiLlama manda 0 — PLTRx/USDC aparecia duas vezes, 12/10/2026). Taxas
+    informadas e diferentes (0,08% × 0,25%) são pools diferentes. Só junta
+    quando o casamento é único nos dois sentidos; símbolo sozinho nunca é
+    usado como identidade.
     """
     def chave(c: Candidata):
         a, b = c.token_a.endereco, c.token_b.endereco
         if not a or not b:
             return None
         return (c.rede, c.dex, frozenset((normalizar_endereco(c.rede, a),
-                                         normalizar_endereco(c.rede, b))), round(c.fee, 6))
+                                         normalizar_endereco(c.rede, b))))
+
+    def casam(antiga: Candidata, direta: Candidata) -> bool:
+        if antiga.tvl <= 0 or abs(antiga.tvl-direta.tvl)/antiga.tvl > 0.15:
+            return False
+        return antiga.fee <= 0 or direta.fee <= 0 or abs(antiga.fee-direta.fee) < 1e-6
 
     grupos: dict[tuple, list[Candidata]] = {}
     for c in todas:
@@ -41,14 +50,15 @@ def reconciliar_diretas(todas: list[Candidata]) -> list[Candidata]:
         if k:
             grupos.setdefault(k, []).append(c)
     removidas: set[str] = set()
+    pares: list[tuple[Candidata, Candidata]] = []
     for grupo in grupos.values():
         antigas = [c for c in grupo if c.fonte == 'defillama']
         diretas = [c for c in grupo if c.fonte in {'orca', 'raydium'}]
-        if len(antigas) != 1 or len(diretas) != 1:
-            continue
-        antiga, direta = antigas[0], diretas[0]
-        if antiga.tvl <= 0 or abs(antiga.tvl-direta.tvl)/antiga.tvl > 0.15:
-            continue
+        for direta in diretas:
+            opcoes = [a for a in antigas if casam(a, direta)]
+            if len(opcoes) == 1 and sum(casam(opcoes[0], d) for d in diretas) == 1:
+                pares.append((opcoes[0], direta))
+    for antiga, direta in pares:
         antiga.tvl = direta.tvl
         if direta.vol_24h > 0:
             antiga.vol_24h = direta.vol_24h
