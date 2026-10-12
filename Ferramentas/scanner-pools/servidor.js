@@ -320,6 +320,15 @@
       return Number(p.tvl) > 0 && Number(p.fee) * Number(p.vol24h) / Number(p.tvl) >= 0.01;
     return Number(p.tvl) >= 250000 && Number(p.vol24h) >= 250000;
   }
+  /* altcoins preferidas do dono (config.py ALTCOINS_PREFERIDAS): par delas
+     com major ou outra preferida não precisa do rendimento mínimo. Pool com
+     motivo só de rendimento já passou por cadastro e token fraco no coletor. */
+  var PREFERIDAS = ["PYTH", "RAY", "ONDO", "NEAR", "AAVE", "JUP", "ENA", "ZRO", "SKY", "AERO", "UNI", "ETHFI", "ARB", "LDO"];
+  function parDePreferida(p) {
+    var t = tokensDoPar(p.pool);
+    return t.length === 2 && t.some(function (x) { return PREFERIDAS.indexOf(x) !== -1; }) &&
+      t.every(function (x) { return PREFERIDAS.indexOf(x) !== -1 || MAJORS.indexOf(x) !== -1; });
+  }
   function soPorRendimento(p) {
     return Array.isArray(p.motivos) && p.motivos.length > 0 &&
       p.motivos.every(function (m) { return /^rende .*abaixo do mínimo/.test(String(m)); });
@@ -348,7 +357,7 @@
     /* sem classe_par = classificada antes das regras de 07/10 (a pool não
        foi lida desde então): não pode ficar nas Sólidas com a regra velha */
     var regraVelha = !(p.sinais || {}).classe_par;
-    if (comMotivo && !meme && !naoVerificada && soPorRendimento(p) && majorsComLiquidez(p)) return 'solida';
+    if (comMotivo && !meme && !naoVerificada && soPorRendimento(p) && (majorsComLiquidez(p) || parDePreferida(p))) return 'solida';
     return (meme || naoVerificada || comMotivo || regraVelha) ? 'caca' : 'solida';
   }
 

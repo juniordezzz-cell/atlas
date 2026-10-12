@@ -324,3 +324,13 @@ def test_eurc_e_stable():
     from central_rwa.pools.classificacao import categoria_token, classe_par
     assert categoria_token("EURC") == "stable"
     assert classe_par(cand("EURC/USDC")) == "stable"
+
+
+def test_altcoins_boas_do_print_de_12_10_sao_solidas():
+    # 12/10/2026: rendiam 0,16–0,24%/dia e ficavam em Pendentes (mínimo 0,3%)
+    for par, tok, cg in [("ENA/WETH", "ENA", "ethena"), ("ZRO/WETH", "ZRO", "layerzero"), ("SKY/USDC", "SKY", "sky"),
+                         ("AERO/CBBTC", "AERO", "aerodrome-finance"), ("USDC/UNI", "UNI", "uniswap"),
+                         ("WETH/ETHFI", "ETHFI", "ether-fi"), ("WETH/ARB", "ARB", "arbitrum"), ("LDO/WETH", "LDO", "lido-dao")]:
+        i = info(simbolo=tok, cg=cg)
+        infos = [i, None] if par.startswith(tok) else [None, i]
+        assert trilho(cand(par, fee=0.3, tvl=500_000, vol=300_000), infos, [], AGORA) == ("solida", []), par

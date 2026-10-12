@@ -186,3 +186,15 @@ test('par de majors com liquidez sai de Pendentes mesmo rendendo pouco (12/10/20
   assert.equal(S.trilhoEfetivo(q('USDC/USDT', 5e6, 6e6, rend, 0.005),{}), 'caca');      // stable/stable: piso vale
   assert.equal(S.trilhoEfetivo(q('WETH/USDC', 5e6, 5e6, ['token fraco: WETH usa o símbolo de um token grande']),{}), 'caca');
 });
+
+test('altcoin preferida com major sai de Pendentes por rendimento (12/10/2026)', () => {
+  const S=load();
+  const q=(pool, motivos) => ({sid:'gecko:eth:'+pool, servidor:true, network:'Ethereum', pool, tvl:500000, vol24h:300000, fee:0.3,
+    trilho:'caca', motivos, sinais:{memecoin:{detectada:false}, classe_par:'cauda'}});
+  const rend=['rende 0.194%/dia, abaixo do mínimo de 0.3%/dia para par com altcoin ou meme'];
+  for (const par of ['ENA/WETH','ZRO/WETH','SKY/USDC','AERO/CBBTC','USDC/UNI','WETH/ETHFI','WETH/ARB','LDO/WETH'])
+    assert.equal(S.trilhoEfetivo(q(par, rend),{}), 'solida', par);
+  assert.equal(S.trilhoEfetivo(q('FOO/WETH', rend),{}), 'caca');                       // fora da lista
+  assert.equal(S.trilhoEfetivo(q('ENA/FOO', rend),{}), 'caca');                        // com altcoin fora da lista
+  assert.equal(S.trilhoEfetivo(q('ENA/WETH', ['token fraco: ENA sem dados de segurança']),{}), 'caca');
+});

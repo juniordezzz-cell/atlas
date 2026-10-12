@@ -104,7 +104,10 @@ MIN_EFIC_DIA: dict[str, float] = {"stable": 0.01, "grande_stable": 0.05, "grande
 # Altcoins que o dono usa: par delas com major/stable (ou entre si) é Sólida
 # rendendo quanto for (10/10/2026). Vale só com o contrato confirmado
 # (cadastro na CoinGecko, bridged conferida ou contrato reconhecido).
-ALTCOINS_PREFERIDAS: set[str] = {"PYTH", "RAY", "ONDO", "NEAR", "AAVE", "JUP"}
+# ENA, ZRO, SKY, AERO, UNI, ETHFI, ARB e LDO entraram em 12/10/2026 (rendiam
+# 0,16–0,24%/dia com US$ 115 mil a 3,1 mi de TVL). Mesma lista em servidor.js.
+ALTCOINS_PREFERIDAS: set[str] = {"PYTH", "RAY", "ONDO", "NEAR", "AAVE", "JUP",
+                                 "ENA", "ZRO", "SKY", "AERO", "UNI", "ETHFI", "ARB", "LDO"}
 # Pool com 30 dias ou mais não precisa do rendimento mínimo (11/10/2026):
 # CAKE/WBNB, 333 dias, a 0,085%/dia ficava em Pendentes. Sem data de criação
 # (a DefiLlama não informa), a régua continua valendo.
