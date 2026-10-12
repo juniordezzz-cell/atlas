@@ -73,6 +73,15 @@
     return {intro:blocos.slice(0,i).join('\n\n'),rodape:blocos.slice(j).join('\n\n')};
   }
 
+  /* "Mais no Guia: tópico 7 · Impermanent Loss." no fim da resposta vira
+     botão que abre o Guia nesse tópico (12/10/2026). Vale para conversas
+     salvas, que guardam só o texto. */
+  const REF_GUIA=/\n*Mais no Guia: tópico (\d+) · ([^\n]+?)\.?\s*$/;
+  function refGuia(texto){
+    const m=REF_GUIA.exec(String(texto||''));
+    return m?{texto:String(texto).slice(0,m.index),num:Number(m[1]),titulo:m[2]}:null;
+  }
+
   function montar(contexto){
     const aba=document.getElementById('tab-assistente');
     const orb=el('button','sp-chat-orb','✦');orb.type='button';orb.title='Abrir Oráculo';orb.setAttribute('aria-label','Abrir Oráculo');orb.setAttribute('aria-expanded','false');
@@ -151,9 +160,16 @@
       const body=el('div','sp-msg-corpo');
       const items=(m.items||[]).filter(x=>x&&x.pool);
       const local=partes(m.local||'');
-      if(m.ia){body.append(el('p','sp-texto',m.text));}
+      const ref=refGuia(m.text)||(m.ia?refGuia(m.local):null);
+      const texto=ref&&refGuia(m.text)?ref.texto:m.text;
+      if(m.ia){body.append(el('p','sp-texto',texto));}
       else if(items.length){if(local.intro)body.append(el('p','sp-texto',local.intro));}
-      else body.append(el('p','sp-texto',m.text));
+      else body.append(el('p','sp-texto',texto));
+      if(ref&&typeof contexto().abrirGuia==='function'){
+        const b=el('button','sp-guia-link','📖 Abrir no Guia · tópico '+ref.num+' — '+ref.titulo+' →');b.type='button';
+        b.onclick=()=>{panel.hidden=true;orb.setAttribute('aria-expanded','false');contexto().abrirGuia(ref.num);};
+        body.append(b);
+      }
       if(items.length){const grade=el('div','sp-cards');items.slice(0,10).forEach(x=>grade.append(cartao(x)));body.append(grade);}
       if(!m.ia&&items.length&&local.rodape)body.append(el('p','sp-rodape',local.rodape));
       if(m.ia&&m.local){const d=el('details','sp-calc'),s=el('summary',null,'Ver dados e cálculos do Scanner');d.append(s,el('p',null,m.local));body.append(d);}

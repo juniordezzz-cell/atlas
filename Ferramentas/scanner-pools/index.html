@@ -719,7 +719,7 @@
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
   <script src="../../core/atlas-secure.js"></script>
-<link rel="stylesheet" href="assistente.css?v=oraculo-17">
+<link rel="stylesheet" href="assistente.css?v=oraculo-18">
 <link rel="stylesheet" href="battle-pools.css?v=btl-1">
 </head>
 <body>
@@ -1359,7 +1359,7 @@
 <script src="assistente-conversa.js?v=oraculo-17"></script>
 <script src="assistente-memoria.js?v=oraculo-17"></script>
 <script src="assistente-conversas.js?v=oraculo-17"></script>
-<script src="assistente-ui.js?v=oraculo-17"></script>
+<script src="assistente-ui.js?v=oraculo-18"></script>
 <script>
 /* ============ estado + persistência ============ */
 const KEY  = "estudo_pools_liquidez_v1";
@@ -3172,7 +3172,13 @@ function guiaChat(){
   })).filter(s=>s.titulo);
   return _guiaChat;
 }
-function contextoChat(){return {pools:state.pools,trilho:trilhoDe,identidade:ScannerServidor.chaveDecisao,historico:historicoChat,status:srv,guia:guiaChat};}
+/* botão "Abrir no Guia" do Oráculo: troca para a aba Guia e desce até o tópico */
+function abrirGuia(n){
+  switchTab("learn");                          /* rola suave para o topo: interrompe com uma rolagem direta */
+  const sec=document.getElementById("sec"+Number(n));
+  if(sec) window.scrollTo({top: sec.getBoundingClientRect().top + window.scrollY - 80, behavior:"instant"});
+}
+function contextoChat(){return {pools:state.pools,trilho:trilhoDe,identidade:ScannerServidor.chaveDecisao,historico:historicoChat,status:srv,guia:guiaChat,abrirGuia};}
 /* ============ abas ============ */
 function switchTab(t){
   if(t==="scan") t = "dash";   // a antiga aba Scanner vive dentro de Descobrir
