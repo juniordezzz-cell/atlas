@@ -239,7 +239,13 @@ def trilho(c: Candidata, infos: list[TokenInfo | None], leituras: list[Leitura],
     pref = [preferida(t.simbolo, i, c.rede) for t, i in pares]
     if any(pref) and all(p or (t.simbolo or "").upper() in config.MAJORS for p, (t, _) in zip(pref, pares)):
         return "solida", []
+    # par só de majors com TVL e volume de verdade: sem mínimo (12/10/2026).
+    # Cópia com símbolo de major já saiu acima (sem cadastro ou token fraco).
+    # Stable/stable fica de fora: o piso de 0,01%/dia já é mínimo.
     classe = classe_par(c, infos)
+    if (classe != "stable" and all((t.simbolo or "").upper() in config.MAJORS for t, _ in pares)
+            and c.tvl >= config.MAJORS_TVL_MIN and c.vol_24h >= config.MAJORS_VOL_MIN):
+        return "solida", []
     minimo = config.MIN_EFIC_DIA[classe]
     efic = eficiencia(c)
     if efic < minimo:

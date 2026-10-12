@@ -86,13 +86,14 @@ GECKO_SOURCES: dict[str, list[dict]] = {
 
 # Tokens que contam como sólidos sem consulta (stables, majors e embrulhados).
 MAJORS: set[str] = {
-    "USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC",
+    "USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC", "EURC",
     "BTC", "WBTC", "CBBTC", "BTCB", "TBTC",
     "ETH", "WETH", "WSTETH", "STETH", "CBETH", "RETH", "WEETH",
     "SOL", "WSOL", "JITOSOL", "MSOL", "BSOL", "JUPSOL", "INF",
     "BNB", "WBNB", "AVAX", "WAVAX", "POL", "MATIC", "WPOL", "SUI", "HYPE", "WHYPE",
 }
-STABLES: set[str] = {"USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC"}
+# EURC (euro da Circle) é stable desde 12/10/2026: EURC/USDC ia para a régua de altcoin.
+STABLES: set[str] = {"USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC", "EURC"}
 
 # Rendimento mínimo por dia (fee × razão, em %) para a pool ficar nas Sólidas,
 # pela classe do par: quanto mais arriscados os ativos, mais a pool tem de
@@ -108,6 +109,13 @@ ALTCOINS_PREFERIDAS: set[str] = {"PYTH", "RAY", "ONDO", "NEAR", "AAVE", "JUP"}
 # CAKE/WBNB, 333 dias, a 0,085%/dia ficava em Pendentes. Sem data de criação
 # (a DefiLlama não informa), a régua continua valendo.
 IDADE_SOLIDA_DIAS = 30
+# Par só de tokens grandes (stable, blue chip, BNB, AVAX… — a lista MAJORS)
+# com liquidez funda não precisa do rendimento mínimo (12/10/2026): ETH/USDC,
+# WBTC/WETH e BNB/USDT rendem 0,02–0,06%/dia e são pools de primeira linha.
+# A régua de 0,3%/dia de quem tem altcoin continua igual, e stable/stable
+# segue com o piso de 0,01%/dia.
+MAJORS_TVL_MIN = 250_000.0
+MAJORS_VOL_MIN = 250_000.0
 CLASSE_ROTULO: dict[str, str] = {"stable": "stable/stable", "grande_stable": "blue chip ou RWA com stable",
                                  "grande": "blue chip ou RWA com blue chip ou RWA", "cauda": "par com altcoin ou meme"}
 # Volume suspeito: pool nova girando demais vai para Pendentes antes dos 3 dias

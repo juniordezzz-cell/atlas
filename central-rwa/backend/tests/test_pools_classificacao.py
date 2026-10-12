@@ -289,3 +289,38 @@ def test_pool_com_30_dias_e_solida_rendendo_pouco():
     assert trilho(velha, [info(simbolo="CAKE", cg="pancakeswap-token", mcap=1e6), None], [], AGORA)[0] == "caca"
     velha.sinais["memecoin"] = {"detectada": True, "ids": ["pancakeswap-token"]}
     assert trilho(velha, [cake, None], [], AGORA)[0] == "caca"
+
+
+def test_par_de_tokens_grandes_com_liquidez_e_solido_rendendo_pouco():
+    # 12/10/2026, print do dono: todas iam para Pendentes pela régua de rendimento
+    print_do_dono = [
+        ("EURC/USDC", 0.0073, 1_610_000, 3_720_000),    # Aerodrome, 0,063%/dia
+        ("ETH/CBBTC", 0.06, 2_150_000, 1_550_000),      # 0,043%/dia
+        ("WETH/USDC", 0.05, 359_400, 310_900),          # 0,043%/dia
+        ("USDC/CBBTC", 0.06, 4_150_000, 2_830_000),     # 0,040%/dia
+        ("EURC/USDC", 0.03, 3_190_000, 2_640_000),      # 0,024%/dia
+        ("ETH/USDC", 0.06, 979_600, 490_300),           # 0,030%/dia
+        ("USDT/WBNB", 0.05, 4_350_000, 4_810_000),      # 0,055%/dia
+        ("WBTC/WETH", 0.05, 34_460_000, 21_100_000),    # 0,030%/dia
+        ("BNB/USDT", 0.04, 1_260_000, 713_300),         # 0,022%/dia
+    ]
+    for par, fee, tvl, vol in print_do_dono:
+        assert trilho(cand(par, fee=fee, tvl=tvl, vol=vol), [None, None], [], AGORA) == ("solida", []), par
+    # liquidez rasa: a régua vale
+    t, m = trilho(cand("WETH/USDC", fee=0.05, tvl=200_000, vol=150_000), [None, None], [], AGORA)
+    assert t == "caca" and "abaixo do mínimo" in m[0]
+    # com altcoin a régua de 0,3%/dia continua, por maior que seja a pool
+    t, m = trilho(cand("CAKE/WBNB", fee=0.05, tvl=5_000_000, vol=5_000_000),
+                  [info(simbolo="CAKE", cg="pancakeswap-token"), None], [], AGORA)
+    assert t == "caca" and "abaixo do mínimo de 0.3%/dia" in m[0]
+    # stable/stable mantém o piso de 0,01%/dia mesmo com liquidez
+    assert trilho(cand("USDC/USDT", fee=0.005, tvl=5_000_000, vol=6_000_000), [None, None], [], AGORA)[0] == "caca"
+    # cópia com símbolo de major não ganha a isenção
+    assert trilho(cand("WETH/USDC", fee=0.05, tvl=5_000_000, vol=5_000_000),
+                  [info(simbolo="WETH", cg=None), None], [], AGORA)[0] != "solida"
+
+
+def test_eurc_e_stable():
+    from central_rwa.pools.classificacao import categoria_token, classe_par
+    assert categoria_token("EURC") == "stable"
+    assert classe_par(cand("EURC/USDC")) == "stable"

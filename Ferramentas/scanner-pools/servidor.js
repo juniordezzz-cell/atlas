@@ -28,7 +28,7 @@
   var EMBRULHADOS = { WETH: "ETH", WBNB: "BNB", WSOL: "SOL", WAVAX: "AVAX", WHYPE: "HYPE", WPOL: "POL" };
   /* mesma lista do coletor (central_rwa/pools/config.py MAJORS): esses
      tokens nunca são "o token" de uma pool — aprovar/bloquear mira o outro */
-  var MAJORS = ["USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC",
+  var MAJORS = ["USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC", "EURC",
     "BTC", "WBTC", "CBBTC", "BTCB", "TBTC", "ETH", "WETH", "WSTETH", "STETH", "CBETH", "RETH", "WEETH",
     "SOL", "WSOL", "JITOSOL", "MSOL", "BSOL", "JUPSOL", "INF", "BNB", "WBNB", "AVAX", "WAVAX", "POL",
     "MATIC", "WPOL", "SUI", "HYPE", "WHYPE"];
@@ -136,7 +136,7 @@
      As MESMAS listas de central_rwa/pools/config.py. A categoria gravada pelo
      coletor (sinais.categoria, que sabe quem é meme pelo ID CoinGecko) vale
      primeiro; esta conta cobre pools manuais e as lidas antes da regra. */
-  var CAT_STABLES = ["USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC"];
+  var CAT_STABLES = ["USDC", "USDT", "USDG", "USD1", "DAI", "FDUSD", "PYUSD", "USDE", "USDS", "USDC.E", "USDBC", "EURC"];
   var CAT_BLUECHIPS = ["BTC", "WBTC", "CBBTC", "BTCB", "TBTC", "ETH", "WETH", "WSTETH", "STETH", "CBETH", "RETH", "WEETH",
     "SOL", "WSOL", "JITOSOL", "MSOL", "BSOL", "JUPSOL", "INF"];
   var CAT_ACOES = ["AAPL", "AMZN", "GOOGL", "GOOG", "MSFT", "NVDA", "TSLA", "META", "NFLX", "AMD", "INTC", "AVGO",
@@ -307,6 +307,24 @@
     });
   }
 
+  /* Par só de majors com TVL e volume de US$ 250 mil ou mais não precisa do
+     rendimento mínimo (12/10/2026, MAJORS_TVL_MIN/VOL_MIN do config.py);
+     stable/stable segue com o piso. O coletor já aplica; isto solta na hora
+     as pools que ele mandou para Pendentes só por rendimento antes da regra. */
+  function majorsComLiquidez(p) {
+    var t = tokensDoPar(p.pool);
+    if (t.length !== 2 || !t.every(function (x) { return MAJORS.indexOf(x) !== -1; })) return false;
+    /* stable/stable (EURC/USDC, motivo gravado quando o EURC era altcoin):
+       vale o piso de 0,01%/dia de taxa × giro */
+    if (t.every(function (x) { return CAT_STABLES.indexOf(x) !== -1; }))
+      return Number(p.tvl) > 0 && Number(p.fee) * Number(p.vol24h) / Number(p.tvl) >= 0.01;
+    return Number(p.tvl) >= 250000 && Number(p.vol24h) >= 250000;
+  }
+  function soPorRendimento(p) {
+    return Array.isArray(p.motivos) && p.motivos.length > 0 &&
+      p.motivos.every(function (m) { return /^rende .*abaixo do mínimo/.test(String(m)); });
+  }
+
   function trilhoEfetivo(p, lista, decisoes) {
     var r = Number(p.tvl) > 0 ? Number(p.vol24h) / Number(p.tvl) : 0;
     if (!Number.isFinite(Number(p.tvl)) || Number(p.tvl) < 100000 || !Number.isFinite(r) || r <= 0.50 || p.trilho === 'barrada') return 'oculta';
@@ -330,6 +348,7 @@
     /* sem classe_par = classificada antes das regras de 07/10 (a pool não
        foi lida desde então): não pode ficar nas Sólidas com a regra velha */
     var regraVelha = !(p.sinais || {}).classe_par;
+    if (comMotivo && !meme && !naoVerificada && soPorRendimento(p) && majorsComLiquidez(p)) return 'solida';
     return (meme || naoVerificada || comMotivo || regraVelha) ? 'caca' : 'solida';
   }
 

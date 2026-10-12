@@ -172,3 +172,17 @@ test('trava de domínio: só sites oficiais e só https', () => {
   const L=S.linkPool({servidor:true,sid:'gecko:solana:x',platform:'Raydium',network:'Solana',sinais:{endereco_pool:'@evil.com/'}});
   assert.equal(L.dominio,'raydium.io'); assert.ok(L.url.startsWith('https://raydium.io/'));
 });
+
+test('par de majors com liquidez sai de Pendentes mesmo rendendo pouco (12/10/2026)', () => {
+  const S=load();
+  const q=(pool, tvl, vol, motivos, fee=0.0073) => ({sid:'gecko:base:'+pool, servidor:true, network:'Base', pool, tvl, vol24h:vol, fee,
+    trilho:'caca', motivos, sinais:{memecoin:{detectada:false}, classe_par:'grande_stable'}});
+  const rend=['rende 0.043%/dia, abaixo do mínimo de 0.05%/dia para blue chip ou RWA com stable'];
+  assert.equal(S.trilhoEfetivo(q('WETH/USDC', 359400, 310900, rend),{}), 'solida');
+  assert.equal(S.trilhoEfetivo(q('EURC/USDC', 1610000, 3720000, ['rende 0.063%/dia, abaixo do mínimo de 0.3%/dia para par com altcoin ou meme']),{}), 'solida');
+  assert.equal(S.trilhoEfetivo(q('BNB/USDT', 1260000, 713300, rend),{}), 'solida');
+  assert.equal(S.trilhoEfetivo(q('WETH/USDC', 200000, 150000, rend),{}), 'caca');        // liquidez rasa
+  assert.equal(S.trilhoEfetivo(q('CAKE/WBNB', 5e6, 5e6, rend),{}), 'caca');             // altcoin: régua vale
+  assert.equal(S.trilhoEfetivo(q('USDC/USDT', 5e6, 6e6, rend, 0.005),{}), 'caca');      // stable/stable: piso vale
+  assert.equal(S.trilhoEfetivo(q('WETH/USDC', 5e6, 5e6, ['token fraco: WETH usa o símbolo de um token grande']),{}), 'caca');
+});
