@@ -71,9 +71,28 @@
     return String(par || "").split(/([\/\-])/).map(function (t) { return t.trim().toUpperCase() === "WSOL" ? "SOL" : t; }).join("");
   }
 
+  /* Pool ve(3,3) que paga em emissão (AERO, VELO…) perde até metade da nota,
+     na proporção da renda em emissão (nota.py parte_emissao, 12/10/2026). A
+     nota gravada antes da regra não tem "emissao": a tela aplica a perda. */
+  var VE33 = ["Aerodrome", "Velodrome", "THENA", "Pharaoh", "Ramses"];
+  var PERDA_EMISSAO = 0.5;
+  function parteEmissao(dex, apr, reward) {
+    if (VE33.indexOf(dex) === -1 || !(Number(reward) > 0)) return 0;
+    return Number(reward) / (Number(reward) + Math.max(Number(apr) || 0, 0));
+  }
+  function notaComEmissao(row) {
+    var nota = Number(row.nota) || 0, comp = row.componentes || {};
+    if (comp.emissao != null) return { nota: nota, componentes: comp };
+    var parte = parteEmissao(row.dex, row.apr, row.apr_reward);
+    var c = {}; for (var k in comp) c[k] = comp[k];
+    c.emissao = Math.round(parte * 10000) / 10000;
+    return { nota: Math.round(nota * (1 - PERDA_EMISSAO * parte) * 10) / 10, componentes: c };
+  }
+
   /* Linha de scanner_pools → objeto de pool do Scanner. */
   function paraPool(row, marca) {
     marca = marca || {};
+    var nc = notaComEmissao(row);
     var p = {
       id: idNumerico(row.id),
       sid: row.id,
@@ -90,8 +109,8 @@
       aprReward: row.apr_reward == null ? null : Number(row.apr_reward),
       updatedAt: row.visto_em ? Date.parse(row.visto_em) : null,
       trilho: row.trilho,
-      nota: Number(row.nota) || 0,
-      componentes: row.componentes || {},
+      nota: nc.nota,
+      componentes: nc.componentes,
       motivos: row.motivos || [],
       sinais: row.sinais || {},
       criadaEm: row.criada_em ? Date.parse(row.criada_em) : null,

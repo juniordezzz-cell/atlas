@@ -37,6 +37,12 @@ def motivos_barrada(c: Candidata, infos: list[TokenInfo | None], leituras: list[
         emi = config.emissor(i.simbolo, i.coingecko_id) if i.coingecko_id else None
         if config.eh_rwa(i.simbolo, i.rede) or (emi and not emi["provavel"]):
             continue
+        # Stable e major oficiais também: o USDC da Circle na Solana tem mint
+        # e freeze ativos, e isso barrava 67 de 117 pools da Orca/Raydium
+        # (12/10/2026). Só com o contrato confirmado — cópia segue travada.
+        if (i.simbolo or "").upper() in config.MAJORS and (
+                i.coingecko_id or config.contrato_reconhecido(i.rede, i.endereco)):
+            continue
         if i.mint_ativo:
             m.append("mint ativo")
         if i.freeze_ativo:

@@ -25,7 +25,7 @@ def test_nota_ordena_e_fica_entre_0_e_100():
     rasa = c("rasa", fee=0.3, tvl=150_000, vol=60_000)
     notas = calcular_notas([boa, rasa], {})
     assert 0 <= notas["rasa"][0] < notas["boa"][0] <= 100
-    assert set(notas["boa"][1]) == {"taxa", "giro", "rendimento", "consistencia", "profundidade", "tendencia"}
+    assert set(notas["boa"][1]) == {"taxa", "giro", "rendimento", "consistencia", "profundidade", "tendencia", "emissao"}
 
 
 def test_consistencia_premia_razao_estavel_e_sem_historico_vale_meio():
@@ -108,3 +108,24 @@ def test_nota_ve33_conta_so_a_taxa():
     n = calcular_notas([p, so_taxa], {})
     assert n["a"][1]["rendimento"] == n["b"][1]["rendimento"]       # a emissão não pontua
     assert round(eficiencia(p), 3) == round(424 / 365, 3)          # mas a régua das Sólidas ainda a vê
+
+
+def test_pool_que_paga_em_aero_perde_nota():
+    # 12/10/2026, pedido do dono: quer receber no par, não em AERO. Só cai a
+    # pool com emissão; a da Aerodrome que paga a taxa no par fica igual.
+    em_aero = _par("a", "WETH", "CBBTC", ["bluechip", "bluechip"], fee=0.0085, tvl=2.3e6, vol=40e6,
+                   apr=67, reward=3376, dex="Aerodrome")                # 98% da renda em AERO
+    no_par = _par("b", "WETH", "CBBTC", ["bluechip", "bluechip"], fee=0.0085, tvl=2.3e6, vol=40e6,
+                  apr=67, dex="Aerodrome")                              # sem emissão
+    metade = _par("c", "WETH", "ZRO", ["bluechip", "altcoin"], fee=0.15, tvl=2e5, vol=1.2e6,
+                  apr=163, reward=163, dex="Aerodrome")                 # metade em AERO
+    metade_sem = _par("d", "WETH", "ZRO", ["bluechip", "altcoin"], fee=0.15, tvl=2e5, vol=1.2e6,
+                      apr=163, dex="Aerodrome")
+    n = calcular_notas([em_aero, no_par, metade, metade_sem], {})
+    assert n["b"][1]["emissao"] == 0
+    assert round(n["a"][1]["emissao"], 2) == 0.98
+    assert n["a"][0] < n["b"][0] * 0.55                             # quase toda em AERO: perde perto da metade
+    assert abs(n["c"][0] - n["d"][0] * 0.75) < 0.2                  # metade em AERO: perde um quarto
+    # fora das ve(3,3) o APR de reward não pesa (incentivo pago à parte)
+    pk = _par("p", "WETH", "CBBTC", ["bluechip", "bluechip"], fee=0.0085, tvl=2.3e6, vol=40e6, apr=67, reward=3376)
+    assert calcular_notas([pk], {})["p"][1]["emissao"] == 0

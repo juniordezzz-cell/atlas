@@ -334,3 +334,17 @@ def test_altcoins_boas_do_print_de_12_10_sao_solidas():
         i = info(simbolo=tok, cg=cg)
         infos = [i, None] if par.startswith(tok) else [None, i]
         assert trilho(cand(par, fee=0.3, tvl=500_000, vol=300_000), infos, [], AGORA) == ("solida", []), par
+
+
+def test_stable_oficial_com_mint_e_freeze_nao_barra_a_pool():
+    # 12/10/2026: na Solana o USDC (Circle) tem mint e freeze ativos por desenho;
+    # isso barrava 67 de 117 pools da Orca/Raydium, PLTRx/USDC inclusive
+    pltr = info(simbolo="PLTRx", cg="palantir-xstock", mcap=None)
+    usdc = info(simbolo="USDC", cg="usd-coin", mint=True, freeze=True)
+    assert motivos_barrada(cand("PLTRx/USDC"), [pltr, usdc], []) == []
+    assert trilho(cand("PLTRx/USDC", fee=0.65, tvl=126_000, vol=191_000), [pltr, usdc], [], AGORA) == ("solida", [])
+    assert motivos_barrada(cand("SOL/USDT"), [None, info(simbolo="USDT", cg="tether", mint=True, freeze=True)], []) == []
+    # cópia com o símbolo, sem cadastro na CoinGecko: a trava continua
+    assert "mint ativo" in motivos_barrada(cand("FOO/USDC"), [info(), info(simbolo="USDC", cg=None, mint=True)], [])
+    # honeypot vale para qualquer um
+    assert "honeypot" in motivos_barrada(cand("FOO/USDC"), [None, info(simbolo="USDC", cg="usd-coin", honeypot=True)], [])

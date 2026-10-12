@@ -198,3 +198,14 @@ test('altcoin preferida com major sai de Pendentes por rendimento (12/10/2026)',
   assert.equal(S.trilhoEfetivo(q('ENA/FOO', rend),{}), 'caca');                        // com altcoin fora da lista
   assert.equal(S.trilhoEfetivo(q('ENA/WETH', ['token fraco: ENA sem dados de segurança']),{}), 'caca');
 });
+
+test('pool ve(3,3) que paga em AERO perde nota; sem emissão não muda (12/10/2026)', () => {
+  const S=load();
+  const row=(dex, apr, reward, comp) => ({id:'llama:'+dex+reward, par:'WETH/CBBTC', dex, rede:'Base', fee:0.0085, tvl:2e6, vol_24h:4e7,
+    apr, apr_reward:reward, nota:89.3, componentes:comp||{taxa:1}, trilho:'solida', motivos:[], sinais:{}});
+  const a=S.paraPool(row('Aerodrome', 67, 3376));
+  assert.ok(a.nota < 46 && a.nota > 44, String(a.nota));
+  assert.equal(S.paraPool(row('Aerodrome', 67, null)).nota, 89.3);                 // paga no par
+  assert.equal(S.paraPool(row('PancakeSwap', 67, 3376)).nota, 89.3);               // reward é extra
+  assert.equal(S.paraPool(row('Aerodrome', 67, 3376, {taxa:1, emissao:0.98})).nota, 89.3);   // coletor já aplicou
+});

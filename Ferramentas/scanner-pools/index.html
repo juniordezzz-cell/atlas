@@ -1234,7 +1234,7 @@
           <tbody>
             <tr><td class="tk">Taxa</td><td>30%</td><td>O fee tier da pool — o que ela cobra em cada troca. Não é o APR</td><td>Depende da classe do par. <b>Com altcoin ou meme:</b> 0,001% = 0 · 0,01% = 29 · 0,05% = 50 · 0,1% = 72 · <b>0,25% a 0,8% = 100</b> · 1% = 40 · 2% ou mais = 20. <b>Blue chip, RWA ou major (BNB, AVAX…) com stable ou entre si:</b> 0,001% = 0 · <b>0,01% a 0,3% = 100</b>. <b>Stable / Stable:</b> 0,0001% = 0 · <b>0,005% a 0,1% = 100</b>. Sem taxa informada = 30</td></tr>
             <tr><td class="tk">Giro</td><td>30%</td><td>A Razão: volume das últimas 24h ÷ TVL. O volume do dia tem que passar o TVL</td><td>abaixo de 1× = até 30 · 1× = 30 · 3× = 70 · 10× ou mais = 100</td></tr>
-            <tr><td class="tk">Rendimento</td><td>20%</td><td>A Eficiência: taxa × razão, o que a pool paga por dia em % do capital. Nas ve(3,3) (Aerodrome, Velodrome…) conta só a taxa: a emissão de AERO/VELO aparece no APR, mas não pontua</td><td>Depende da classe do par. Com altcoin ou meme: 0,01%/dia = 0 · 1%/dia = 100. Blue chip ou RWA entre si: 0,01% = 0 · 0,3%/dia = 100. Com stable: 0,005% = 0 · 0,2%/dia = 100. Stable / Stable: 0,001% = 0 · 0,05%/dia = 100</td></tr>
+            <tr><td class="tk">Rendimento</td><td>20%</td><td>A Eficiência: taxa × razão, o que a pool paga por dia em % do capital. Nas ve(3,3) (Aerodrome, Velodrome…) conta só a taxa: a emissão de AERO/VELO aparece no APR, mas não pontua — e a pool que paga em emissão ainda <b>perde até metade da nota</b>, na proporção da renda que vem em AERO/VELO em vez dos tokens do par (pool 98% em AERO: nota × 0,51; sem emissão: igual)</td><td>Depende da classe do par. Com altcoin ou meme: 0,01%/dia = 0 · 1%/dia = 100. Blue chip ou RWA entre si: 0,01% = 0 · 0,3%/dia = 100. Com stable: 0,005% = 0 · 0,2%/dia = 100. Stable / Stable: 0,001% = 0 · 0,05%/dia = 100</td></tr>
             <tr><td class="tk">Consistência</td><td>10%</td><td>Se a razão se repete nas leituras diárias dos últimos 7 dias</td><td>razão igual todo dia = 100 · muito oscilante = 0 · menos de 3 leituras = 50</td></tr>
             <tr><td class="tk">Profundidade</td><td>5%</td><td>O TVL: liquidez real para entrar e sair</td><td>US$ 100 mil = 0 · US$ 1 mi = 33 · US$ 10 mi = 67 · US$ 100 mi = 100</td></tr>
             <tr><td class="tk">Tendência</td><td>5%</td><td>O TVL subindo ou caindo na semana</td><td>−30% = 0 · estável = 50 · +30% = 100</td></tr>
@@ -1978,7 +1978,10 @@ function notaHTML(p){
   const c = p.componentes || {}, pc = v => Math.round((Number(v)||0)*100);
   const cls = p.nota>=70 ? "r-g" : p.nota>=45 ? "r-y" : "r-r";
   const dica = NOTA_PARTES.filter(([k])=>c[k]!=null).map(([k,rot,peso])=>`${rot} ${pc(c[k])} (peso ${peso}%)`).join(" · ");
-  return `<span class="nota ${cls}" title="${dica} — cada parte de 0 a 100">${Math.round(p.nota)}</span>`;
+  /* ve(3,3) que paga em emissão perde até metade da nota (12/10/2026) */
+  const em = Number(c.emissao)||0;
+  const perda = em>0 ? ` — paga ${pc(em)}% da renda em ${VE33[p.platform]||"emissão"}, não no par: nota × ${(1-0.5*em).toLocaleString("pt-BR",{maximumFractionDigits:2})}` : "";
+  return `<span class="nota ${cls}" title="${dica} — cada parte de 0 a 100${perda}">${Math.round(p.nota)}</span>`;
 }
 /* Trilho Pendentes de análise: os sinais para entrar e sair rápido. */
 function sinaisHTML(p){

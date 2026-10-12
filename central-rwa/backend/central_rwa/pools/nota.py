@@ -15,7 +15,12 @@ fica gravado, para o Guia e a dica da tela explicarem a nota.
 Desde 11/10/2026 taxa e rendimento são medidos contra a CLASSE do par:
 stable/stable a 0,01% com giro alto é ótima, e antes tirava 41 (USDT/WBNB
 da PancakeSwap) porque a régua única pedia 0,25–0,8%. E nas ve(3,3) a nota
-conta só a taxa: a emissão (AERO/VELO impresso) aparece no APR, não pontua."""
+conta só a taxa: a emissão (AERO/VELO impresso) aparece no APR, não pontua.
+
+Desde 12/10/2026 a pool ve(3,3) que paga em emissão PERDE nota: quem deixa
+a liquidez em stake recebe AERO/VELO no lugar da taxa, e o dono quer a renda
+nos tokens do par. Perde até metade da nota, na proporção da renda que vem
+em emissão (componente "emissao", de 0 a 1). Pool sem emissão não muda."""
 
 from __future__ import annotations
 
@@ -27,7 +32,8 @@ from .modelos import Candidata, Leitura
 
 VE33 = {"Aerodrome", "Velodrome", "THENA", "Pharaoh", "Ramses"}
 PESOS = {"taxa": 0.30, "giro": 0.30, "rendimento": 0.20, "consistencia": 0.10, "profundidade": 0.05, "tendencia": 0.05}
-TAXA_DESCONHECIDA = 0.3   # fee 0 = a fonte não informou (ou taxa dinâmica): não é "taxa boa"
+TAXA_DESCONHECIDA = 0.3
+PERDA_EMISSAO = 0.5       # pool 100% paga em emissão fica com metade da nota   # fee 0 = a fonte não informou (ou taxa dinâmica): não é "taxa boa"
 
 
 def razao(c: Candidata) -> float:
@@ -49,6 +55,15 @@ def eficiencia(c: Candidata) -> float:
 def eficiencia_nota(c: Candidata) -> float:
     """Rendimento que pontua: nas ve(3,3) só a taxa × giro, sem a emissão."""
     return c.fee * razao(c) if c.dex in VE33 else eficiencia(c)
+
+
+def parte_emissao(c: Candidata) -> float:
+    """Que parte da renda da pool vem em emissão (AERO, VELO, THE…), de 0 a 1.
+    Só nas ve(3,3), onde o LP em stake troca a taxa pela emissão; nas outras
+    DEXs o reward é um extra pago junto com a taxa."""
+    if c.dex not in VE33 or not c.apr_reward or c.apr_reward <= 0:
+        return 0.0
+    return c.apr_reward / (c.apr_reward + max(c.apr or 0, 0))
 
 
 def classe_nota(c: Candidata) -> str:
@@ -173,5 +188,8 @@ def calcular_notas(cands: list[Candidata], leituras_por_pool: dict[str, list[Lei
             "profundidade": round(_profundidade(c.tvl), 4),
             "tendencia": round(_tendencia(ls), 4),
         }
-        out[c.id] = (round(100 * sum(PESOS[k] * v for k, v in comp.items()), 1), comp)
+        base = 100 * sum(PESOS[k] * v for k, v in comp.items())
+        emissao = parte_emissao(c)
+        comp["emissao"] = round(emissao, 4)
+        out[c.id] = (round(base * (1 - PERDA_EMISSAO * emissao), 1), comp)
     return out
