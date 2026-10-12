@@ -111,8 +111,11 @@ def unir_mesma_pool(cands: list[Candidata]) -> list[Candidata]:
     duas vezes ("SOL/SPCXx" com taxa e "SOL/SPCXX" sem, Orca, 08/10/2026).
     Fica o ID da DefiLlama (é o que tem histórico); a taxa e a data de
     criação da GeckoTerminal completam o que a DefiLlama não informou."""
+    # Orca e Raydium diretas também têm o endereço no ID (12/10/2026: SOL/USDC
+    # 0,01% ficava duplicada quando o TVL não bastava para casar).
     gecko = {(c.rede, normalizar_endereco(c.rede, c.id.split(":", 2)[2])): c
-             for c in cands if c.fonte == "geckoterminal" and c.id.count(":") >= 2}
+             for c in cands if c.fonte in {"geckoterminal", "orca", "raydium"}
+             and c.id.startswith("gecko:") and c.id.count(":") >= 2}
     remover: set[str] = set()
     for c in cands:
         end = (c.sinais.get("conferencia") or {}).get("endereco") if c.fonte == "defillama" else None

@@ -220,3 +220,19 @@ def test_conferencia_traz_a_idade_da_pool():
     c = llama("uniswap-v3", 0.05, 1_000_000, 900_000, par="WETH/ARB", dex="Uniswap")
     cf.aplicar(c, g)
     assert c.criada_em == g.criada_em and c.sinais["conferencia"]["criada_em"].startswith("2024-03-01")
+
+
+def test_pool_direta_da_orca_com_o_endereco_conferido_vira_uma():
+    from central_rwa.pools.coleta import unir_mesma_pool
+    # 12/10/2026: SOL/USDC 0,01% da Orca ficou duplicada — a DefiLlama tem três
+    # SOL/USDC da Orca sem taxa entre US$ 203 e 223 mil (TVL não decide), mas
+    # a conferência já sabia o endereço 83v8. Endereço igual é a mesma pool.
+    lla = Candidata(id="llama:0a1f", fonte="defillama", rede="Solana", dex="Orca", par="SOL/USDC",
+                    token_a=TokenRef("So111", "SOL"), token_b=TokenRef("EPj", "USDC"),
+                    fee=0, tvl=212_000, vol_24h=2_390_000, vol_7d=None, apr=None, apr_reward=None)
+    lla.sinais["conferencia"] = {"estado": "memoria", "endereco": "83v8"}
+    orca = Candidata(id="gecko:solana:83v8", fonte="orca", rede="Solana", dex="Orca", par="SOL/USDC",
+                     token_a=TokenRef("So111", "SOL"), token_b=TokenRef("EPj", "USDC"),
+                     fee=0.01, tvl=211_000, vol_24h=2_380_000, vol_7d=None, apr=None, apr_reward=None)
+    r = unir_mesma_pool([lla, orca])
+    assert [c.id for c in r] == ["llama:0a1f"] and r[0].fee == 0.01
