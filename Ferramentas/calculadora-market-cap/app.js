@@ -42,11 +42,13 @@
 
   function iniciais(simbolo) { return esc(String(simbolo || "?").slice(0, 4).toUpperCase()); }
 
-  /* Ícone sempre: imagem da CoinGecko; sem imagem, as iniciais. */
+  /* Ícone sempre: as iniciais ficam por baixo e a imagem por cima. Se a
+     imagem falhar, ela some e as iniciais aparecem (antes ficava um
+     círculo vazio). */
   function iconeHTML(nome, simbolo, img, classe) {
     var src = C.linkSeguro(img);
-    return '<span class="tk ' + (classe || "") + '" data-atlas-token="' + esc(simbolo) + '">' +
-      (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" onerror="this.remove()">' : iniciais(simbolo)) +
+    return '<span class="tk ' + (classe || "") + '" data-atlas-token="' + esc(simbolo) + '">' + iniciais(simbolo) +
+      (src ? '<img src="' + esc(src) + '" alt="" loading="lazy" onerror="this.remove()">' : "") +
       "</span>";
   }
 
@@ -544,6 +546,13 @@
       '<h2 class="dic__titulo">Dicionário</h2><p class="nota">Os termos sublinhados na página levam até aqui.</p>' +
       '<dl class="dic">' + dic + "</dl>";
   }
+
+  /* O que a batalha (batalha.js) reaproveita daqui: a mesma busca com
+     fonte reserva, a mesma ficha com cache enxuto e o mesmo ranking. */
+  window.AtlasMcapApp = {
+    esc: esc, iconeHTML: iconeHTML, hora: hora,
+    buscaComReserva: buscaComReserva, carregarFicha: carregarFicha, carregarMercado: carregarMercado
+  };
 
   /* ---------- início ---------- */
   function iniciar() {

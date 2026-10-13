@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
 <link rel="stylesheet" href="../../core/ui/atlas-shell.css">
-<link rel="stylesheet" href="estilo.css?v=mcap-4">
+<link rel="stylesheet" href="estilo.css?v=mcap-6">
 <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
 <script src="../../core/atlas-auth.js"></script>
 <script src="../../core/atlas-secure.js"></script>
@@ -23,6 +23,13 @@
     <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
   </header>
 
+  <!-- Dois modos: um token só (a tela original) ou a batalha de 2 a 4. -->
+  <div class="modos" role="tablist" aria-label="Modo">
+    <button type="button" role="tab" data-modo="um" aria-selected="true">Um token</button>
+    <button type="button" role="tab" data-modo="batalha" aria-selected="false">Batalha</button>
+  </div>
+
+  <div id="modo-um">
   <section class="busca" aria-label="Escolher token">
     <label for="mc-busca">Escolha um token</label>
     <div class="busca__campo">
@@ -39,12 +46,39 @@
   <section id="mc-calc" class="calc" hidden>
     <div class="abas" role="tablist" aria-label="Modo da calculadora">
       <button type="button" role="tab" data-aba="preco" aria-selected="true">Preço sonhado</button>
-      <button type="button" role="tab" data-aba="dinheiro" aria-selected="false">Meu dinheiro</button>
+      <button type="button" role="tab" data-aba="dinheiro" aria-selected="false">Simular investimento</button>
     </div>
     <div id="mc-painel" class="painel" role="tabpanel"></div>
   </section>
 
   <section id="mc-explica" class="explica" aria-label="Como ler estes números"></section>
+  </div>
+
+  <!-- ===== Batalha: de 2 a 4 tokens no mesmo alvo (batalha.js) ===== -->
+  <div id="modo-batalha" hidden>
+    <section class="busca" aria-label="Escolher tokens da batalha">
+      <label for="bt-busca">Escolha de 2 a 4 tokens</label>
+      <div class="busca__campo">
+        <input id="bt-busca" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Ex.: JUP, ONDO, MET"
+               role="combobox" aria-expanded="false" aria-controls="bt-sugestoes" aria-autocomplete="list">
+        <ul id="bt-sugestoes" class="sugestoes" role="listbox" hidden></ul>
+      </div>
+      <div id="bt-fichas" class="bt-fichas" aria-live="polite"></div>
+      <p id="bt-aviso" class="aviso" role="status" hidden></p>
+    </section>
+
+    <section class="bt-alvo">
+      <div class="campo">
+        <label for="bt-alvo">Todos chegam a (US$)</label>
+        <input id="bt-alvo" type="text" inputmode="decimal" autocomplete="off" value="1">
+        <p class="dica">Para mudar o alvo de um token só, use o ✎ na coluna dele.</p>
+      </div>
+    </section>
+
+    <section id="bt-resultado" class="bt-resultado" aria-live="polite"></section>
+    <section id="bt-dicionario" class="explica" aria-label="Dicionário"></section>
+  </div>
 
 </div>
 
@@ -52,8 +86,9 @@
 <script src="../../core/providers/registry.js"></script>
 <script src="../../core/providers/coingecko.js"></script>
 <script src="../../core/providers/coinpaprika.js"></script>
-<script src="calculo.js?v=mcap-4"></script>
-<script src="app.js?v=mcap-4"></script>
+<script src="calculo.js?v=mcap-6"></script>
+<script src="app.js?v=mcap-6"></script>
+<script src="batalha.js?v=mcap-6"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

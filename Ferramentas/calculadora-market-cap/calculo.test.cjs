@@ -391,3 +391,86 @@ test("enxugarFicha deduz a circulação do valor de mercado quando a fonte não 
   const comDado = C.enxugarFicha({ id: "y", usd: 1, marketCap: 5, supply: { circulating: 3, total: 9, max: null } });
   assert.equal(comDado.supply.circulating, 3);
 });
+
+/* ===== Batalha de tokens (13/10/2026) =====
+   Gabarito: o exemplo do dono, JUP × ONDO × MET, todos a US$ 1.
+   MET de propósito o mais barato e o que mais precisa crescer. */
+const JUP = { id: "jupiter-exchange-solana", symbol: "JUP", name: "Jupiter", usd: 0.3309, marketCap: 1.0986e9,
+  supply: { circulating: 3.32e9, total: 6.86e9, max: 10e9 }, ath: 2.0, athDate: "2024-01-31T00:00:00.000Z" };
+const ONDO = { id: "ondo-finance", symbol: "ONDO", name: "Ondo", usd: 0.467, marketCap: 2.274e9,
+  supply: { circulating: 4.87e9, total: 10e9, max: 10e9 }, ath: 2.14, athDate: "2024-12-16T00:00:00.000Z" };
+const MET = { id: "meteora", symbol: "MET", name: "Meteora", usd: 0.30, marketCap: 0.09e9,
+  supply: { circulating: 0.3e9, total: 1e9, max: 1e9 }, ath: 0.8, athDate: "2025-10-24T00:00:00.000Z" };
+const MERC = [
+  { id: "bitcoin", symbol: "BTC", name: "Bitcoin", marketCap: 2e12 },
+  { id: "solana", symbol: "SOL", name: "Solana", marketCap: 63e9 },
+  { id: "x", symbol: "X", name: "Xis", marketCap: 4e9 },
+  { id: "ondo-finance", symbol: "ONDO", name: "Ondo", marketCap: 2.274e9 },
+  { id: "y", symbol: "Y", name: "Ypsilon", marketCap: 2e9 }
+];
+
+test("linhaBatalha monta os números de um token no alvo", () => {
+  const l = C.linhaBatalha(ONDO, 1, MERC);
+  perto(l.mult, 2.1413, 0.0001);
+  perto(l.mcapAlvo, 4.87e9, 1);
+  perto(l.mcapAlvoCheio, 10e9, 1);
+  perto(l.pctCirculando, 0.487, 0.0001);
+  assert.equal(l.posicao, 3);           // acima de Xis (4 bi) e abaixo de Solana; ONDO não compete consigo
+  assert.equal(l.jaPassou, true);
+  assert.equal(l.mcapHoje, 2.274e9);
+  assert.equal(C.linhaBatalha(MET, 1, MERC).jaPassou, false);
+  assert.equal(C.linhaBatalha(Object.assign({}, MET, { ath: null }), 1, MERC).jaPassou, null);
+  assert.equal(C.linhaBatalha(MET, null, MERC).mult, null);
+});
+
+test("maisPerto é quem menos precisa crescer", () => {
+  const ls = [JUP, ONDO, MET].map(c => C.linhaBatalha(c, 1, MERC));
+  assert.equal(C.maisPerto(ls), "ondo-finance");
+  assert.equal(C.maisPerto([ls[0]]), null);
+});
+
+test("vereditoBatalha JUP × ONDO × MET a US$ 1", () => {
+  const ls = [JUP, ONDO, MET].map(c => C.linhaBatalha(c, 1, MERC));
+  assert.deepEqual(C.vereditoBatalha(ls), [
+    "Mais perto do alvo: ONDO, precisa crescer 2,1 vezes. Mais longe: MET, precisa crescer 3,3 vezes.",
+    "Mais tokens para entrar: MET (70%). Com eles no mercado, o alvo exige um projeto de US$ 1,00 bi.",
+    "Já passaram desse preço: JUP e ONDO. Nunca chegou: MET.",
+    "O mais barato não é o mais perto: MET custa menos (US$ 0,30), mas precisa crescer 3,3 vezes, mais que ONDO (2,1 vezes)."
+  ]);
+});
+
+test("vereditoBatalha: casos de borda", () => {
+  assert.deepEqual(C.vereditoBatalha([C.linhaBatalha(ONDO, 1, MERC)]), []);
+  // alvo próprio abaixo do preço: o mais perto já passou do alvo
+  const acima = [C.linhaBatalha(ONDO, 0.4, MERC), C.linhaBatalha(JUP, 1, MERC)];
+  assert.equal(C.vereditoBatalha(acima)[0], "Mais perto do alvo: ONDO, que já está acima dele. Mais longe: JUP, precisa crescer 3 vezes.");
+  // todos iguais: frase única, sem "mais longe"
+  const iguais = [C.linhaBatalha(Object.assign({}, JUP, { usd: 0.5 }), 1, MERC),
+                  C.linhaBatalha(Object.assign({}, ONDO, { usd: 0.5 }), 1, MERC)];
+  assert.equal(C.vereditoBatalha(iguais)[0], "Todos precisam crescer praticamente o mesmo: 2 vezes.");
+  // o mais barato é o mais perto (só acontece com alvo próprio): sem a frase da lição
+  const ok = [C.linhaBatalha(JUP, 0.5, MERC), C.linhaBatalha(ONDO, 1, MERC)];
+  assert.ok(C.vereditoBatalha(ok).every(f => !/mais barato/.test(f)));
+  // sem recorde de ninguém: sem a frase do recorde
+  const sem = [JUP, ONDO].map(c => C.linhaBatalha(Object.assign({}, c, { ath: null }), 1, MERC));
+  assert.ok(C.vereditoBatalha(sem).every(f => !/Já passaram|Nunca chegaram/.test(f)));
+});
+
+test("endereço da batalha vai e volta", () => {
+  const b = { alvo: "1", itens: [
+    { id: "jupiter-exchange-solana", symbol: "JUP", fonte: "coingecko", alvoProprio: "" },
+    { id: "ondo-ondo", symbol: "ONDO", fonte: "coinpaprika", alvoProprio: "2,5" } ] };
+  const u = C.batalhaParaUrl(b);
+  assert.equal(u.alvo, "1");
+  assert.equal(u.b, "jupiter-exchange-solana~JUP~cg~,ondo-ondo~ONDO~cp~2,5".replace("2,5", encodeURIComponent("2,5")));
+  const volta = C.batalhaDaUrl(u.alvo, u.b);
+  assert.deepEqual(volta, b);
+});
+
+test("batalhaDaUrl limpa entrada ruim: no máximo 4, sem repetidos, sem vazios", () => {
+  const v = C.batalhaDaUrl(null, "a~A~cg~,a~A~cg~,,b~B~xx~,c~C~cg~,d~D~cg~,e~E~cg~");
+  assert.deepEqual(v.itens.map(i => i.id), ["a", "b", "c", "d"]);
+  assert.equal(v.itens[1].fonte, "coingecko");
+  assert.equal(v.alvo, "1");
+  assert.deepEqual(C.batalhaDaUrl("2", null), { alvo: "2", itens: [] });
+});

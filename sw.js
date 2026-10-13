@@ -149,7 +149,9 @@
 /* v93 = a central de mercado saiu do Academy para mercado/ (item
    "Mercado" no menu); o Academy ficou limpo, à espera dos cursos. */
 /* v94 = Calculadora de Market Cap sem a aba "Valer como" (pedido do dono). */
-var VERSAO = "atlas-v94";
+/* v95 = Calculadora de Market Cap ganha o modo Batalha (2 a 4 tokens no
+   mesmo alvo, com veredito) e a aba "Simular investimento". */
+var VERSAO = "atlas-v95";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

@@ -446,8 +446,119 @@
     ];
   }
 
+  /* ============================================================
+     BATALHA DE TOKENS (13/10/2026)
+     De 2 a 4 tokens, um preço-alvo comum (ou próprio de cada um), lado a
+     lado. A lição que a batalha ensina: com o mesmo alvo, o token mais
+     barato é o que mais precisa crescer.
+     ============================================================ */
+  function nomesEmLista(xs) {
+    if (xs.length <= 1) return xs.join("");
+    return xs.slice(0, -1).join(", ") + " e " + xs[xs.length - 1];
+  }
+
+  /* Os números de um token no alvo. lista: o top do mercado, para a
+     posição no ranking (o próprio token sai dela). */
+  function linhaBatalha(coin, alvo, lista) {
+    coin = coin || {};
+    var of = oferta(coin.supply);
+    var mcapHoje = positivo(coin.marketCap) || mcapNoPreco(coin.usd, of.circulante);
+    var mcapAlvo = mcapNoPreco(alvo, of.circulante);
+    var r = posicaoNoRanking(mcapAlvo, semOToken(lista, coin.id, coin.symbol));
+    return {
+      id: coin.id, symbol: coin.symbol, name: coin.name, image: coin.image, usd: coin.usd,
+      alvo: positivo(alvo), mult: multiplicador(alvo, coin.usd),
+      mcapHoje: mcapHoje, mcapAlvo: mcapAlvo, mcapAlvoCheio: mcapNoPreco(alvo, of.cheia),
+      pctCirculando: of.pctCirculando, faltaEntrar: of.faltaEntrar,
+      posicao: r && !r.foraDaLista ? r.posicao : null, foraDaLista: !!(r && r.foraDaLista),
+      tamanhoLista: r ? r.tamanhoLista : null,
+      ath: positivo(coin.ath), athDate: coin.athDate || null,
+      jaPassou: positivo(coin.ath) != null && positivo(alvo) != null ? alvo <= coin.ath : null
+    };
+  }
+
+  function comMult(linhas) {
+    return (linhas || []).filter(function (l) { return l && l.mult != null; })
+      .slice().sort(function (a, b) { return a.mult - b.mult; });
+  }
+
+  function maisPerto(linhas) {
+    var ls = comMult(linhas);
+    return ls.length >= 2 ? ls[0].id : null;
+  }
+
+  function quantoCresce(l) {
+    return l.mult < 1 ? "que já está acima dele" : "precisa crescer " + vezesTexto(l.mult);
+  }
+
+  /* O veredito em frases, só com os números da tela. */
+  function vereditoBatalha(linhas) {
+    var ls = comMult(linhas), out = [];
+    if (ls.length < 2) return out;
+    var perto = ls[0], longe = ls[ls.length - 1];
+    if (perto.mult >= 1 && longe.mult / perto.mult < 1.01) {
+      out.push("Todos precisam crescer praticamente o mesmo: " + vezesTexto(perto.mult) + ".");
+    } else {
+      out.push("Mais perto do alvo: " + perto.symbol + ", " + quantoCresce(perto) + ". Mais longe: " +
+        longe.symbol + ", " + quantoCresce(longe) + ".");
+    }
+    var comFalta = ls.filter(function (l) {
+      return finito(l.pctCirculando) && l.pctCirculando < 0.999 && positivo(l.mcapAlvoCheio) != null;
+    }).sort(function (a, b) { return a.pctCirculando - b.pctCirculando; });
+    if (comFalta.length) {
+      var f = comFalta[0];
+      out.push("Mais tokens para entrar: " + f.symbol + " (" + fmtPct(1 - f.pctCirculando) + "). Com eles no mercado, o alvo exige um projeto de " +
+        fmtUSD(f.mcapAlvoCheio) + ".");
+    }
+    /* nomes na ordem em que a pessoa escolheu, não na de crescimento */
+    var naOrdem = (linhas || []).filter(function (l) { return l && l.mult != null; });
+    var ja = naOrdem.filter(function (l) { return l.jaPassou === true; }).map(function (l) { return l.symbol; });
+    var nunca = naOrdem.filter(function (l) { return l.jaPassou === false; }).map(function (l) { return l.symbol; });
+    if (ja.length || nunca.length) {
+      var partes = [];
+      if (ja.length) partes.push((ja.length === 1 ? "Já passou desse preço: " : "Já passaram desse preço: ") + nomesEmLista(ja) + ".");
+      if (nunca.length) partes.push((nunca.length === 1 ? "Nunca chegou: " : "Nunca chegaram: ") + nomesEmLista(nunca) + ".");
+      out.push(partes.join(" "));
+    }
+    var barato = ls.filter(function (l) { return positivo(l.usd) != null; })
+      .sort(function (a, b) { return a.usd - b.usd; })[0];
+    if (barato && barato.id !== perto.id && barato.mult > perto.mult) {
+      out.push("O mais barato não é o mais perto: " + barato.symbol + " custa menos (" + fmtUSD(barato.usd) +
+        "), mas precisa crescer " + vezesTexto(barato.mult) + ", mais que " + perto.symbol + " (" + vezesTexto(perto.mult) + ").");
+    }
+    return out;
+  }
+
+  /* Endereço compartilhável: alvo comum + "id~SÍMBOLO~cg|cp~alvoPróprio",
+     separados por vírgula. No máximo 4, sem repetidos. */
+  function batalhaParaUrl(b) {
+    b = b || {};
+    return {
+      alvo: b.alvo || "",
+      b: (b.itens || []).map(function (i) {
+        return [i.id, i.symbol || "", i.fonte === "coinpaprika" ? "cp" : "cg", encodeURIComponent(i.alvoProprio || "")].join("~");
+      }).join(",")
+    };
+  }
+
+  function batalhaDaUrl(alvo, b) {
+    var vistos = {}, itens = [];
+    String(b || "").split(",").forEach(function (parte) {
+      var p = parte.split("~");
+      var id = (p[0] || "").trim();
+      if (!id || vistos[id] || itens.length >= 4) return;
+      vistos[id] = true;
+      var proprio = "";
+      try { proprio = decodeURIComponent(p[3] || ""); } catch (e) { proprio = ""; }
+      itens.push({ id: id, symbol: p[1] || "", fonte: p[2] === "cp" ? "coinpaprika" : "coingecko", alvoProprio: proprio });
+    });
+    return { alvo: alvo || "1", itens: itens };
+  }
+
   var api = {
     REGUA: REGUA,
+    linhaBatalha: linhaBatalha, maisPerto: maisPerto, vereditoBatalha: vereditoBatalha,
+    batalhaParaUrl: batalhaParaUrl, batalhaDaUrl: batalhaDaUrl,
     acharNaRegua: acharNaRegua, semOToken: semOToken, idPeloSimbolo: idPeloSimbolo,
     mesAno: mesAno, descreverRegua: descreverRegua, alvoExemplo: alvoExemplo,
     resumoSimples: resumoSimples, perguntaComum: perguntaComum, glossario: glossario,
