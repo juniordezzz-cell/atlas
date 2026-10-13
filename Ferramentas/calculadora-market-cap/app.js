@@ -383,7 +383,41 @@
       renderPainel(); /* "Outro valor…" mostra/esconde o campo de US$ */
     });
   }
-  function renderExplica() { $("mc-explica").textContent = ""; }
+  /* ---------- explicação ----------
+     Curta e com os números do token da tela. Sem token, fala em geral. */
+  function renderExplica() {
+    var c = estado.coin, el = $("mc-explica");
+    var of = c ? C.oferta(c.supply) : null;
+    var exemplo = "";
+    if (c && of && of.circulante != null && c.usd) {
+      exemplo = "<p>No " + esc(c.symbol) + ": " + C.fmtUSD(c.usd) + " × " + C.fmtQtd(of.circulante) +
+        " tokens = " + C.fmtUSD(C.mcapNoPreco(c.usd, of.circulante)) + " de valor de mercado.</p>";
+    }
+    var fdv = "";
+    if (c && of && of.pctCirculando != null && of.pctCirculando < 0.999) {
+      fdv = "<p>Hoje circulam " + C.fmtPct(of.pctCirculando) + " dos tokens de " + esc(c.symbol) +
+        ". Os outros " + C.fmtPct(1 - of.pctCirculando) + " ainda vão entrar no mercado. Para o preço ficar parado, " +
+        "o projeto precisa crescer na mesma proporção.</p>";
+    }
+    el.innerHTML =
+      "<h2>Como ler estes números</h2>" +
+      "<h3>O tamanho da pizza, não o preço da fatia</h3>" +
+      "<p>O preço de um token, sozinho, não diz se ele está barato ou caro. O que diz é o valor de mercado: " +
+      "<b>preço × quantidade de tokens</b>. Um token de centavos pode valer mais que um de centenas de dólares, " +
+      "porque cada projeto fatia a sua pizza em um número diferente de pedaços.</p>" + exemplo +
+      "<h3>Os tokens que ainda vão entrar (FDV)</h3>" +
+      "<p>Muitos projetos ainda vão liberar tokens para equipe, investidores e comunidade. O FDV é o valor de mercado " +
+      "se todos os tokens já existissem. Quando a coluna \"quando tudo desbloquear\" é bem maior que a de hoje, há " +
+      "pressão de venda no caminho.</p>" + fdv +
+      "<h3>Ter mais unidades não é vantagem</h3>" +
+      "<p>Com US$ 100 você compra milhares de um token barato ou uma fração de um caro. Se os dois projetos " +
+      "dobrarem de tamanho, os dois US$ 100 viram US$ 200. O lucro vem de quanto o valor de mercado cresce, " +
+      "não da quantidade de tokens.</p>" +
+      "<h3>Token pequeno sobe mais fácil e cai mais fácil</h3>" +
+      "<p>Um projeto pequeno precisa de menos dinheiro para dobrar, e por isso mesmo pode cair ou sumir com " +
+      "pouco dinheiro saindo. O que manda é a liquidez: quanto dinheiro existe de verdade para comprar e vender.</p>" +
+      '<p class="nota">Antes de sonhar com um preço, multiplique pela quantidade de tokens e pergunte: esse projeto vale isso?</p>';
+  }
 
   /* ---------- início ---------- */
   function iniciar() {

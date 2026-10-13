@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Ferramentas do ATLAS: a bancada de utilidades que rodam ao lado do sistema. Financas (entradas e saidas) e Scanner Pools (pools de liquidez).">
+  <meta name="description" content="Ferramentas do ATLAS: a bancada de utilidades que rodam ao lado do sistema. Financas (entradas e saidas), Scanner Pools (pools de liquidez) e Calculadora de Market Cap.">
   <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
@@ -220,6 +220,75 @@
           <p class="tool-card__desc">Espaço reservado para a próxima ideia da bancada. Quando você definir, viramos este card num link de verdade.</p>
           <span class="tool-card__cta">Em construção</span>
         </div>
+
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO · Estudar o mercado ============
+         Ferramentas de estudo: simulam e explicam, sem ler nem gravar
+         nada da carteira. -->
+    <section class="tools-sec">
+      <div class="tools-sec__head">
+        <span class="tools-sec__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/>
+            <path d="M7 15l4-4 3 3 5-6"/>
+          </svg>
+        </span>
+        <h2 class="tools-sec__title">Estudar o mercado</h2>
+        <span class="tools-sec__sub">Simulações para entender, sem mexer na carteira</span>
+        <span class="tools-sec__count">1</span>
+      </div>
+
+      <div class="tools-grid">
+
+        <!-- FERRAMENTA · Calculadora de Market Cap
+             Mora em Ferramentas/calculadora-market-cap/ (HTML + calculo.js
+             testado no Node). Ensina que o preço da unidade não diz se o
+             token é barato: valor de mercado, FDV e desbloqueio.
+             Prefixo "mcap-" nos ids do SVG. -->
+        <a class="tool-card" href="../Ferramentas/calculadora-market-cap/index.html">
+          <span class="tool-card__badge tool-card__badge--free">Grátis</span>
+          <!-- Ícone em volume: pizza com uma fatia saindo. -->
+          <span class="tool-card__icon tool-card__icon--mcap" aria-hidden="true">
+            <svg viewBox="0 0 56 56">
+              <defs>
+                <radialGradient id="mcap-massa" cx=".4" cy=".35" r=".9">
+                  <stop offset="0" stop-color="#FDE68A"/><stop offset=".6" stop-color="#F59E0B"/><stop offset="1" stop-color="#B45309"/>
+                </radialGradient>
+                <linearGradient id="mcap-fatia" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#FCA5A5"/><stop offset="1" stop-color="#DC2626"/>
+                </linearGradient>
+              </defs>
+              <ellipse cx="27" cy="50" rx="18" ry="2.6" fill="#000" opacity=".28"/>
+              <!-- pizza sem a fatia -->
+              <path d="M26 28 L26 8 A20 20 0 1 0 43.3 38 Z" fill="url(#mcap-massa)"/>
+              <circle cx="18" cy="22" r="2.6" fill="#B91C1C" opacity=".85"/>
+              <circle cx="15" cy="33" r="2.4" fill="#B91C1C" opacity=".85"/>
+              <circle cx="25" cy="39" r="2.6" fill="#B91C1C" opacity=".85"/>
+              <circle cx="33" cy="34" r="2.2" fill="#B91C1C" opacity=".85"/>
+              <!-- a fatia, deslocada para fora -->
+              <path d="M31 25 L31 5 A20 20 0 0 1 48.3 35 Z" fill="url(#mcap-fatia)"/>
+              <path d="M31 5 A20 20 0 0 1 48.3 35" fill="none" stroke="#FEF3C7" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
+              <circle cx="38" cy="17" r="2.2" fill="#FEF3C7" opacity=".85"/>
+            </svg>
+          </span>
+          <h3 class="tool-card__title">Calculadora de Market Cap</h3>
+          <p class="tool-card__desc">Barato ou caro é o tamanho da pizza, não o preço da fatia. Veja o valor de mercado, quanto ainda vai ser desbloqueado e o tamanho que um preço sonhado exige.</p>
+          <div class="tool-card__chips">
+            <span class="tool-card__chip">Preço sonhado</span>
+            <span class="tool-card__chip">Valer como</span>
+            <span class="tool-card__chip">Meu dinheiro</span>
+          </div>
+          <span class="tool-card__cta">
+            Abrir ferramenta
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </span>
+        </a>
 
       </div>
     </section>

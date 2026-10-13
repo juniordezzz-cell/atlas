@@ -139,7 +139,10 @@
 /* v78 = ícone do token em todo lugar (core/atlas-token-icons.js):
    DeFi, Hold, RWA, Carteiras e Dashboard marcam a bolinha com
    data-atlas-token e a imagem entra por cima das iniciais. */
-var VERSAO = "atlas-v89";
+/* v90 = entrou a Calculadora de Market Cap (Ferramentas/calculadora-
+   market-cap/), ferramenta de estudo na seção nova "Estudar o mercado"
+   da bancada. */
+var VERSAO = "atlas-v90";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

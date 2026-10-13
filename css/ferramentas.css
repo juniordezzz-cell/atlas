@@ -126,6 +126,7 @@
 /* um toque da cor da ferramenta no fundo do ladrilho */
 .tool-card__icon--fin  { background-color: color-mix(in srgb, #F59E0B 7%, var(--atlas-bg-raise, #0E1526)); }
 .tool-card__icon--scan { background-color: color-mix(in srgb, #22D3EE 7%, var(--atlas-bg-raise, #0E1526)); }
+.tool-card__icon--mcap { background-color: color-mix(in srgb, #DC2626 7%, var(--atlas-bg-raise, #0E1526)); }
 .tool-card:hover .tool-card__icon { transform: translateY(-3px) rotate(-2deg); }
 
 @media (prefers-reduced-motion: reduce) {
