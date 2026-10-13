@@ -194,8 +194,10 @@
       var url = BASE + "/coins/markets?vs_currency=usd&order=" + order +
         "&per_page=" + (o.perPage || 20) + "&page=1&price_change_percentage=24h&sparkline=false" +
         (o.category ? "&category=" + encodeURIComponent(o.category) : "");
+      /* ttl opcional: a Calculadora de Market Cap usa o top 250 como
+         régua e ranking e pede 10 min; os outros usos seguem com 90 s. */
       return AtlasHttp.getJSON(url, {
-        ttl: 90000, headers: headers(),
+        ttl: o.ttl != null ? o.ttl : 90000, headers: headers(),
         cacheKey: "cg.mkts." + order + "." + (o.category || "") + "." + (o.perPage || 20)
       }).then(function (arr) {
         return (arr || []).map(function (c) {
