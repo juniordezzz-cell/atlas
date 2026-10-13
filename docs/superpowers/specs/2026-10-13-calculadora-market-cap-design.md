@@ -19,6 +19,8 @@ Frase-guia: "Barato ou caro é o tamanho da pizza, não o preço da fatia."
 - Comparação: **régua fixa** de projetos conhecidos **e** posição no ranking.
 - Modos da calculadora: **preço sonhado → tamanho**, **valer como → preço** e
   **meu dinheiro**. Comparar dois tokens lado a lado fica para uma versão futura.
+  **Atualização (13/10/2026):** o dono achou "Valer como" desnecessária e ela
+  saiu. Ficam só "Preço sonhado" e "Meu dinheiro".
 - **Ferramenta de estudo, sem ligação com o portfólio.** Não lê nem grava
   carteiras, posições ou caixa. "Meu dinheiro" é só uma simulação com valor
   digitado. O topo da página diz: "Simulação para estudo. Não é recomendação
