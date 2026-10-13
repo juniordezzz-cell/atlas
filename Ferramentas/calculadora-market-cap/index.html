@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Calculadora de Market Cap do ATLAS: o preço da unidade não diz se um token é barato. Veja o valor de mercado, quanto ainda vai ser desbloqueado e o tamanho que um preço sonhado exige.">
+<title>Calculadora de Market Cap — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="estilo.css?v=mcap-1">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>Calculadora de <span>Market Cap</span></h1>
+    <p class="sub">Barato ou caro é o tamanho da pizza, não o preço da fatia.</p>
+    <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
+  </header>
+
+  <section class="busca" aria-label="Escolher token">
+    <label for="mc-busca">Escolha um token</label>
+    <div class="busca__campo">
+      <input id="mc-busca" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Ex.: JUP, Solana, AAVE"
+             role="combobox" aria-expanded="false" aria-controls="mc-sugestoes" aria-autocomplete="list">
+      <ul id="mc-sugestoes" class="sugestoes" role="listbox" hidden></ul>
+    </div>
+    <p id="mc-aviso" class="aviso" role="status" hidden></p>
+  </section>
+
+  <section id="mc-ficha" class="ficha" aria-live="polite" hidden></section>
+
+  <section id="mc-calc" class="calc" hidden>
+    <div class="abas" role="tablist" aria-label="Modo da calculadora">
+      <button type="button" role="tab" data-aba="preco" aria-selected="true">Preço sonhado</button>
+      <button type="button" role="tab" data-aba="valer" aria-selected="false">Valer como</button>
+      <button type="button" role="tab" data-aba="dinheiro" aria-selected="false">Meu dinheiro</button>
+    </div>
+    <div id="mc-painel" class="painel" role="tabpanel"></div>
+  </section>
+
+  <section id="mc-explica" class="explica" aria-label="Como ler estes números"></section>
+
+</div>
+
+<script src="../../core/http.js"></script>
+<script src="../../core/providers/registry.js"></script>
+<script src="../../core/providers/coingecko.js"></script>
+<script src="calculo.js?v=mcap-1"></script>
+<script src="app.js?v=mcap-1"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>

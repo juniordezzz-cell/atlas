@@ -1,0 +1,88 @@
+/* ATLAS · Calculadora de Market Cap — visual sereno: seções abertas,
+   sem grade, brilho ou HUD. Paleta igual à do Scanner Pools. */
+:root{
+  --bg:#0a0e17; --panel:#111723; --line:#1e2735;
+  --txt:#e6ecf5; --mut:#7d8aa0; --mut2:#556074;
+  --accent:#5b8cff; --green:#2ec785; --amber:#f5b942; --red:#f0556a;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:Inter,'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 16px 72px}
+a{color:var(--accent)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.top{margin-bottom:22px}
+.voltar{display:inline-block;color:var(--mut);text-decoration:none;font-size:13px;margin-bottom:10px}
+.voltar:hover{color:var(--txt)}
+.top h1{font-size:24px;margin:0;font-weight:700}
+.top h1 span{color:var(--accent)}
+.sub{color:var(--mut);margin:4px 0 0}
+.estudo{color:var(--mut2);font-size:12.5px;margin:6px 0 0}
+
+/* busca */
+.busca label{display:block;font-size:12.5px;color:var(--mut);margin-bottom:6px}
+.busca__campo{position:relative;max-width:520px}
+#mc-busca{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--txt);font-size:15px;padding:11px 14px}
+#mc-busca:focus{outline:2px solid var(--accent);outline-offset:1px}
+.sugestoes{position:absolute;z-index:5;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;background:#0d1320;border:1px solid var(--line);border-radius:10px;max-height:340px;overflow:auto}
+.sugestoes li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer}
+.sugestoes li[aria-selected="true"],.sugestoes li:hover{background:#18213a}
+.sugestoes .rank{margin-left:auto;color:var(--mut2);font-size:12px}
+.aviso{margin:10px 0 0;color:var(--amber);font-size:13px}
+
+/* ícone do token */
+.tk{display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;border-radius:50%;background:#1b2436;color:var(--mut);font-size:10px;font-weight:700;overflow:hidden}
+.tk img{width:100%;height:100%;object-fit:cover}
+.tk--g{width:44px;height:44px;font-size:13px}
+
+/* ficha */
+.ficha{margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}
+.ficha__cab{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ficha__cab h2{margin:0;font-size:20px}
+.ficha__cab .sim{color:var(--mut);font-weight:500}
+.faixa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin:20px 0}
+.faixa dt{color:var(--mut);font-size:12px}
+.faixa dd{margin:2px 0 0;font-size:18px;font-weight:600}
+.oferta__barra{height:12px;border-radius:6px;background:#2a2f3d;overflow:hidden;display:flex}
+.oferta__barra span{background:var(--green)}
+.oferta__leg{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--mut)}
+.oferta__leg b{color:var(--txt)}
+.nota{color:var(--mut);font-size:12.5px;margin:8px 0 0}
+.links{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;font-size:13.5px}
+
+/* calculadora */
+.calc{margin-top:30px;padding-top:22px;border-top:1px solid var(--line)}
+.abas{display:flex;gap:6px;flex-wrap:wrap}
+.abas button{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:999px;padding:7px 14px;font:inherit;cursor:pointer}
+.abas button[aria-selected="true"]{background:#18213a;color:var(--txt);border-color:#2c3a5c}
+.painel{margin-top:18px}
+.campos{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.campo label{display:block;font-size:12.5px;color:var(--mut);margin-bottom:5px}
+.campo input,.campo select{background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--txt);font:inherit;padding:9px 12px;min-width:180px}
+.campo input:focus,.campo select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.dica{color:var(--mut2);font-size:12px;margin:6px 0 0}
+.res{margin-top:20px}
+.colunas{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.col h3{margin:0 0 4px;font-size:13px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.col .grande{font-size:26px;font-weight:700;margin:2px 0}
+.col .linha{margin:4px 0;color:#c3ccdb}
+.col ul{list-style:none;padding:0;margin:10px 0 0}
+.col li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px solid #161d2b;font-size:13.5px}
+.indisp{color:var(--mut)}
+.dinheiro{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:22px}
+.pos{color:var(--green)} .neg{color:var(--red)}
+
+/* explicação */
+.explica{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);color:#c3ccdb;max-width:760px}
+.explica h2{color:var(--txt);font-size:18px;margin:0 0 10px}
+.explica h3{color:var(--txt);font-size:15px;margin:22px 0 6px}
+.explica p{margin:6px 0}
+
+@media (max-width:700px){
+  .faixa{grid-template-columns:1fr 1fr}
+  .colunas,.dinheiro{grid-template-columns:1fr}
+  .campo input,.campo select{min-width:0;width:100%}
+  .campos .campo{flex:1 1 100%}
+}

@@ -39,20 +39,33 @@ test("precoNoMcap: valer como a Solana", () => {
   assert.equal(C.precoNoMcap(63e9, 0), null);
 });
 
-test("oferta com teto", () => {
-  const o = C.oferta({ circulating: 3e9, total: 7e9, max: 10e9 });
+/* Critério da CoinGecko, conferido no JUP em 13/10/2026: FDV = preço ×
+   oferta TOTAL (6,86 bi), não a máxima (10 bi, desatualizada depois da
+   queima). A máxima só entra quando não há total. */
+test("oferta usa a total quando existe (JUP: total 6,86 bi, máx. 10 bi)", () => {
+  const o = C.oferta({ circulating: 3.32e9, total: 6.86e9, max: 10e9 });
+  assert.equal(o.cheia, 6.86e9);
+  assert.equal(o.base, "total");
+  perto(o.faltaEntrar, 3.54e9, 1);
+  perto(o.pctCirculando, 0.48397, 0.00001);
+  assert.equal(o.semTeto, false);
+  assert.equal(o.teto, 10e9);
+  assert.equal(o.inconsistente, false);
+});
+
+test("oferta sem total usa a máxima", () => {
+  const o = C.oferta({ circulating: 3e9, total: null, max: 10e9 });
   assert.equal(o.cheia, 10e9);
   assert.equal(o.base, "max");
   assert.equal(o.faltaEntrar, 7e9);
   perto(o.pctCirculando, 0.3);
-  assert.equal(o.semTeto, false);
-  assert.equal(o.inconsistente, false);
 });
 
 test("oferta sem teto usa a total (ETH)", () => {
   const o = C.oferta({ circulating: 120e6, total: 120e6, max: null });
   assert.equal(o.base, "total");
   assert.equal(o.semTeto, true);
+  assert.equal(o.teto, null);
   assert.equal(o.faltaEntrar, 0);
   perto(o.pctCirculando, 1);
 });

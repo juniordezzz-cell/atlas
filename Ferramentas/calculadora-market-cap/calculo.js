@@ -7,7 +7,7 @@
    A ideia que tudo aqui serve: o preço da unidade não diz se um
    token é barato. Valor de mercado = preço × quantidade de tokens.
    "Hoje" usa os tokens em circulação; "quando tudo desbloquear" usa
-   a oferta máxima (ou a total, se não houver máxima), o mesmo
+   a oferta total (ou a máxima, se não houver total), o mesmo
    critério do FDV da CoinGecko.
 
    Regra da casa: faltou dado, devolve null. Nunca NaN nem Infinity —
@@ -30,8 +30,12 @@
     var circ = positivo(s.circulating);
     var total = positivo(s.total);
     var max = positivo(s.max);
-    var cheia = max != null ? max : total;
-    var base = max != null ? "max" : (total != null ? "total" : null);
+    /* Mesmo critério do FDV da CoinGecko (conferido no JUP em 13/10/2026):
+       a oferta TOTAL primeiro. A máxima fica desatualizada quando o
+       projeto queima tokens (JUP: máx. 10 bi, total 6,86 bi), então só
+       entra quando a fonte não informa o total. */
+    var cheia = total != null ? total : max;
+    var base = total != null ? "total" : (max != null ? "max" : null);
     var inconsistente = false;
     /* Fonte às vezes informa mais tokens circulando do que o total.
        Tratamos como 100% circulando e a tela avisa. */
@@ -47,6 +51,7 @@
       faltaEntrar: temAmbos ? cheia - circ : null,
       pctCirculando: temAmbos ? circ / cheia : null,
       semTeto: max == null,
+      teto: max,
       inconsistente: inconsistente
     };
   }
