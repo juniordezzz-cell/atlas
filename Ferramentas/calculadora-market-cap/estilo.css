@@ -74,6 +74,36 @@ a{color:var(--accent)}
 .dinheiro{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:22px}
 .pos{color:var(--green)} .neg{color:var(--red)}
 
+/* termo difícil: sublinhado com pontinhos, leva ao dicionário */
+.termo{color:inherit;text-decoration:underline dotted;text-decoration-color:var(--mut);text-underline-offset:3px;cursor:help}
+.termo:hover{color:var(--accent);text-decoration-color:var(--accent)}
+
+/* resposta direta, antes das colunas */
+.resumo{border-left:3px solid var(--accent);padding:4px 0 4px 16px;margin:0 0 24px;max-width:760px}
+.resumo p{margin:6px 0;color:#c3ccdb}
+.resumo__titulo{font-size:12px;color:var(--mut)!important;text-transform:uppercase;letter-spacing:.04em}
+.resumo__forte{font-size:16px;color:var(--txt)!important;font-weight:600}
+
+/* régua em frase com barrinha */
+.col ul.regua li{display:grid;grid-template-columns:90px 1fr auto;align-items:center;gap:10px}
+.regua__barra{height:6px;border-radius:3px;background:#1b2232;overflow:hidden}
+.regua__barra span{display:block;height:100%;background:var(--accent);border-radius:3px}
+.regua__txt{color:#c3ccdb;font-size:13px;text-align:right;white-space:nowrap}
+
+/* pergunta comum */
+.pergunta{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:10px 0 26px}
+.pergunta p{margin:6px 0}
+.pergunta__q{color:var(--txt);font-weight:600;font-size:15px}
+
+/* dicionário */
+.dic__titulo{margin-top:34px!important}
+.dic{margin:12px 0 0}
+.dic__item{padding:12px 0;border-bottom:1px solid #161d2b;scroll-margin-top:16px}
+.dic__item:target{background:#141c2e;border-radius:8px;padding-left:10px}
+.dic dt{color:var(--txt);font-weight:600}
+.dic dd{margin:4px 0 0}
+.dic__ex{display:block;margin-top:4px;color:var(--mut);font-size:13px;font-family:var(--mono)}
+
 /* explicação */
 .explica{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);color:#c3ccdb;max-width:760px}
 .explica h2{color:var(--txt);font-size:18px;margin:0 0 10px}

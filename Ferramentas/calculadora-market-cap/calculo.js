@@ -178,7 +178,10 @@
     var a = Math.abs(n);
     if (a >= 1) return "US$ " + br(n, 2, 2);
     if (a === 0) return "US$ 0,00";
-    return "US$ " + n.toLocaleString("pt-BR", { maximumSignificantDigits: 4 });
+    var s = n.toLocaleString("pt-BR", { maximumSignificantDigits: 4 });
+    /* centavos sempre com duas casas: "US$ 0,10", não "US$ 0,1" */
+    if (!/,[0-9]{2}/.test(s)) s = s.indexOf(",") >= 0 ? s + "0" : s + ",00";
+    return "US$ " + s;
   }
 
   function fmtQtd(n) {
@@ -204,7 +207,9 @@
   function fmtPct(f) {
     if (!finito(f)) return "—";
     var p = f * 100;
-    return (Math.abs(p) >= 10 ? br(p, 0, 0) : br(p, 0, 1)) + "%";
+    /* 99,6% não vira "100%" ao lado de "0,4% ainda vai entrar" */
+    var umaCasa = Math.abs(p) < 10 || (p >= 99.5 && p < 100);
+    return (umaCasa ? br(p, 0, 1) : br(p, 0, 0)) + "%";
   }
 
   /* ---------- links ---------- */
@@ -252,6 +257,7 @@
     return {
       id: c.id, symbol: c.symbol, name: c.name, image: c.image, usd: c.usd,
       marketCap: c.marketCap, fdv: c.fdv, rank: c.rank,
+      ath: c.ath || null, athDate: c.athDate || null,
       supply: c.supply || null,
       links: { whitepaper: l.whitepaper || null, homepage: l.homepage || null }
     };
@@ -270,8 +276,146 @@
     return out;
   }
 
+  /* ============================================================
+     TEXTOS PARA INICIANTE (13/10/2026)
+     Quem chega pensando "a ENA está a 0,20, se chegar a 1 dólar eu faço
+     5×" precisa ler a resposta em frases, com os números do token. Tudo
+     aqui devolve texto puro; a tela escapa antes de pôr no HTML.
+     ============================================================ */
+  var MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+  function mesAno(iso) {
+    if (!iso) return null;
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return MESES[d.getUTCMonth()] + "/" + d.getUTCFullYear();
+  }
+
+  /* "4,8 vezes" a partir do mesmo arredondamento do fmtVezes */
+  function vezesTexto(n) { return fmtVezes(n).replace("×", "") + " vezes"; }
+
+  /* A régua em frase: "21% do tamanho", "5,4 vezes o tamanho". A barra
+     vai de 0 a 1 (cheia quando o projeto simulado é maior). */
+  function descreverRegua(v) {
+    if (positivo(v) == null) return null;
+    if (v >= 1) {
+      return { texto: fmtVezes(v) === "1×" ? "do mesmo tamanho" : vezesTexto(v) + " o tamanho", barra: 1 };
+    }
+    return { texto: v < 0.01 ? "menos de 1% do tamanho" : fmtPct(v) + " do tamanho", barra: v };
+  }
+
+  /* Um preço-alvo de exemplo quando a pessoa ainda não digitou nada:
+     o "1 dólar" clássico para quem custa centavos; o dobro para o resto. */
+  function alvoExemplo(preco) {
+    preco = positivo(preco);
+    if (preco == null) return null;
+    return preco < 1 ? 1 : preco * 2;
+  }
+
+  /* A resposta direta, em frases. d: { simbolo, precoAtual, precoAlvo,
+     mcapHoje, mcapAlvo, mcapAlvoCheio, faltaEntrar, pctCirculando,
+     acimaNoRanking, maiorQueTodos, ath, athDate } */
+  function resumoSimples(d) {
+    d = d || {};
+    var s = d.simbolo, out = [];
+    var razaoPreco = multiplicador(d.precoAlvo, d.precoAtual);
+    if (razaoPreco == null || positivo(d.mcapAlvo) == null || positivo(d.mcapHoje) == null) return out;
+    if (Math.abs(razaoPreco - 1) < 0.005) return ["Esse é praticamente o preço de hoje."];
+    if (razaoPreco < 1) {
+      return ["Para o preço de " + s + " cair para " + fmtUSD(d.precoAlvo) + ", o valor de mercado encolheria de " +
+        fmtUSD(d.mcapHoje) + " para " + fmtUSD(d.mcapAlvo) + "."];
+    }
+    out.push("Para o preço de " + s + " chegar a " + fmtUSD(d.precoAlvo) + ", o projeto inteiro precisa ficar " +
+      vezesTexto(multiplicador(d.mcapAlvo, d.mcapHoje)) + " maior: de " + fmtUSD(d.mcapHoje) + " para " + fmtUSD(d.mcapAlvo) + ".");
+    if (d.maiorQueTodos) {
+      out.push("Nenhuma criptomoeda vale isso hoje: seria a maior do mundo.");
+    } else if (finito(d.acimaNoRanking) && d.acimaNoRanking > 0) {
+      var n = d.acimaNoRanking, so = n <= 20 ? "só " : "";
+      out.push("Hoje " + so + n + (n === 1 ? " criptomoeda vale" : " criptomoedas valem") + " isso ou mais.");
+    }
+    if (positivo(d.faltaEntrar) != null && finito(d.pctCirculando) && d.pctCirculando < 0.999 && positivo(d.mcapAlvoCheio) != null) {
+      out.push("E ainda faltam entrar " + fmtQtd(d.faltaEntrar) + " de tokens. Com eles no mercado, o mesmo preço exige um projeto de " +
+        fmtUSD(d.mcapAlvoCheio) + ".");
+    }
+    var quando = mesAno(d.athDate);
+    if (positivo(d.ath) != null && quando) {
+      out.push(d.precoAlvo > d.ath
+        ? s + " nunca chegou a esse preço: o recorde foi " + fmtUSD(d.ath) + ", em " + quando + "."
+        : s + " já passou desse preço: o recorde foi " + fmtUSD(d.ath) + ", em " + quando + ".");
+    }
+    return out;
+  }
+
+  /* A dúvida clássica do iniciante, respondida com os números da tela.
+     Só faz sentido para alvo acima do preço de hoje. */
+  function perguntaComum(d) {
+    d = d || {};
+    var m = multiplicador(d.precoAlvo, d.precoAtual);
+    var mp = multiplicador(d.mcapAlvo, d.mcapHoje);
+    if (m == null || m <= 1 || mp == null) return null;
+    var s = d.simbolo;
+    var resposta = "O seu dinheiro ficaria " + vezesTexto(m) + " maior (US$ 100 virariam " + fmtUSD(100 * m) + "). " +
+      "Mas isso só acontece se o projeto inteiro ficar " + vezesTexto(mp) + " maior: de " + fmtUSD(d.mcapHoje) +
+      " para " + fmtUSD(d.mcapAlvo) + ". ";
+    if (d.precoAtual < 1 && positivo(d.circulante) != null) {
+      resposta += "Preço baixo não é desconto: " + s + " custa menos de US$ 1 porque existem " + fmtQtd(d.circulante) + " de tokens. ";
+    }
+    resposta += "A pergunta certa é se alguém vai pagar " + fmtUSD(d.mcapAlvo) + " por esse projeto.";
+    return {
+      pergunta: s + " custa " + fmtUSD(d.precoAtual) + ". Se chegar a " + fmtUSD(d.precoAlvo) + ", eu ganho " + vezesTexto(m) + "?",
+      resposta: resposta
+    };
+  }
+
+  /* O dicionário do fim da página. ctx (opcional): { simbolo, preco,
+     circulante, total, teto, mcap, fdv, rank, faltaEntrar } — vira o
+     exemplo de cada termo quando o dado existe. */
+  function glossario(ctx) {
+    var c = ctx || {}, s = c.simbolo;
+    function ex(cond, txt) { return ctx && s && cond ? s + ": " + txt : null; }
+    return [
+      { id: "valor-de-mercado", termo: "Valor de mercado (market cap)",
+        texto: "Quanto o projeto inteiro vale hoje: o preço de um token vezes a quantidade de tokens em circulação. É o tamanho da pizza.",
+        exemplo: ex(positivo(c.preco) && positivo(c.circulante),
+          fmtUSD(c.preco) + " × " + fmtQtd(c.circulante) + " tokens = " + fmtUSD(mcapNoPreco(c.preco, c.circulante)) + ".") },
+      { id: "circulacao", termo: "Tokens em circulação",
+        texto: "Os tokens que já estão no mercado, nas mãos de quem pode comprar e vender. São as fatias que já foram servidas.",
+        exemplo: ex(positivo(c.circulante), fmtQtd(c.circulante) + " tokens circulando.") },
+      { id: "oferta-total", termo: "Oferta total",
+        texto: "Todos os tokens que já existem, incluindo os que ainda estão travados com a equipe, investidores ou o tesouro do projeto.",
+        exemplo: ex(positivo(c.total), fmtQtd(c.total) + " tokens existem hoje.") },
+      { id: "teto", termo: "Teto (oferta máxima)",
+        texto: "O limite de tokens que o contrato permite criar. Nem todo projeto tem teto; sem teto, sempre podem surgir tokens novos.",
+        exemplo: ex(true, positivo(c.teto) ? "teto de " + fmtQtd(c.teto) + " tokens." : "sem teto informado.") },
+      { id: "fdv", termo: "FDV (fully diluted valuation)",
+        texto: "\"Valor totalmente diluído\": quanto o projeto valeria se todos os tokens já estivessem no mercado, pelo preço de hoje. Mostra o tamanho que o projeto vai precisar ter quando tudo for liberado.",
+        exemplo: ex(positivo(c.preco) && positivo(c.total),
+          fmtUSD(c.preco) + " × " + fmtQtd(c.total) + " tokens = " + fmtUSD(mcapNoPreco(c.preco, c.total)) + ".") },
+      { id: "desbloqueio", termo: "Desbloqueio (unlock)",
+        texto: "Quando tokens travados são liberados para a equipe, investidores ou comunidade. Quem recebe pode vender, e isso pressiona o preço para baixo.",
+        exemplo: ex(positivo(c.faltaEntrar), fmtQtd(c.faltaEntrar) + " tokens ainda vão ser liberados.") },
+      { id: "queima", termo: "Queima (burn)",
+        texto: "Quando o projeto destrói tokens de propósito. Menos tokens existindo faz cada um representar uma fatia maior do projeto.",
+        exemplo: null },
+      { id: "emissao", termo: "Emissão",
+        texto: "A criação de tokens novos ao longo do tempo, por exemplo como recompensa para quem participa da rede. Aumenta a quantidade de tokens.",
+        exemplo: null },
+      { id: "diluicao", termo: "Diluição",
+        texto: "Quando entram tokens novos no mercado e cada token passa a representar uma fatia menor do projeto. Se o projeto não crescer junto, o preço cai.",
+        exemplo: null },
+      { id: "ranking", termo: "Ranking",
+        texto: "A posição do projeto na lista de todas as criptomoedas, ordenada pelo valor de mercado. O 1º lugar é o maior.",
+        exemplo: ex(positivo(c.rank), c.rank + "º lugar hoje.") },
+      { id: "liquidez", termo: "Liquidez",
+        texto: "Quanto dinheiro existe de verdade para comprar e vender o token. Com pouca liquidez, pouco dinheiro já mexe muito no preço, para cima e para baixo.",
+        exemplo: null }
+    ];
+  }
+
   var api = {
     REGUA: REGUA,
+    mesAno: mesAno, descreverRegua: descreverRegua, alvoExemplo: alvoExemplo,
+    resumoSimples: resumoSimples, perguntaComum: perguntaComum, glossario: glossario,
     opcaoValer: opcaoValer, enxugarFicha: enxugarFicha, enxugarMercado: enxugarMercado,
     podarFichas: podarFichas,
     oferta: oferta, mcapNoPreco: mcapNoPreco, precoNoMcap: precoNoMcap,

@@ -209,14 +209,15 @@ test("opcaoValer nunca aponta para projeto que não está na régua", () => {
 test("enxugarFicha guarda só os campos da tela", () => {
   const cru = {
     id: "jupiter", symbol: "JUP", name: "Jupiter", image: "https://i/j.png", usd: 0.33,
-    marketCap: 1.1e9, fdv: 2.28e9, rank: 73,
+    marketCap: 1.1e9, fdv: 2.28e9, rank: 73, ath: 2.0, athDate: "2024-01-31T00:00:00.000Z",
     supply: { circulating: 3.3e9, total: 6.86e9, max: 10e9 },
     links: { whitepaper: null, homepage: "https://jup.ag", twitter: "https://x.com/j" },
     description: "x".repeat(20000), exchanges: [{ name: "a" }], change: { h24: 1 }
   };
   const e = C.enxugarFicha(cru);
   assert.deepEqual(Object.keys(e).sort(),
-    ["fdv", "id", "image", "links", "marketCap", "name", "rank", "supply", "symbol", "usd"]);
+    ["ath", "athDate", "fdv", "id", "image", "links", "marketCap", "name", "rank", "supply", "symbol", "usd"]);
+  assert.equal(e.ath, 2.0);
   assert.deepEqual(e.links, { whitepaper: null, homepage: "https://jup.ag" });
   assert.deepEqual(e.supply, cru.supply);
   assert.ok(JSON.stringify(e).length < 600);
@@ -253,4 +254,104 @@ test("linksDoToken: oficial primeiro, Tokenomist depois", () => {
   const c = C.linksDoToken({ id: "y y", links: { whitepaper: "javascript:1", homepage: null } });
   assert.deepEqual(c.map(l => l.tipo), ["tokenomist"]);
   assert.equal(c[0].url, "https://tokenomist.ai/y%20y");
+});
+
+/* ===== Versão para iniciante (13/10/2026) =====
+   Gabarito: ENA no print do dono — US$ 0,2098, 13,41 bi circulando,
+   valor de mercado US$ 2,81 bi, 1,59 bi ainda a entrar, recorde US$ 1,52. */
+const ENA = {
+  simbolo: "ENA", precoAtual: 0.2098, precoAlvo: 1, circulante: 13.41e9,
+  mcapHoje: 2.8134e9, mcapAlvo: 13.41e9, mcapAlvoCheio: 15e9,
+  faltaEntrar: 1.59e9, pctCirculando: 0.894, acimaNoRanking: 11, maiorQueTodos: false,
+  ath: 1.52, athDate: "2024-04-11T00:00:00.000Z"
+};
+
+test("descreverRegua fala em tamanho, não em ×", () => {
+  assert.deepEqual(C.descreverRegua(5.4), { texto: "5,4 vezes o tamanho", barra: 1 });
+  assert.deepEqual(C.descreverRegua(13.2), { texto: "13 vezes o tamanho", barra: 1 });
+  assert.deepEqual(C.descreverRegua(1.02), { texto: "do mesmo tamanho", barra: 1 });
+  assert.deepEqual(C.descreverRegua(0.21), { texto: "21% do tamanho", barra: 0.21 });
+  assert.deepEqual(C.descreverRegua(0.008), { texto: "menos de 1% do tamanho", barra: 0.008 });
+  assert.equal(C.descreverRegua(null), null);
+  assert.equal(C.descreverRegua(0), null);
+});
+
+test("fmtPct perto de 100% não arredonda para 100", () => {
+  assert.equal(C.fmtPct(0.996), "99,6%");
+  assert.equal(C.fmtPct(0.004), "0,4%");
+  assert.equal(C.fmtPct(0.89), "89%");
+  assert.equal(C.fmtPct(1), "100%");
+});
+
+test("mesAno", () => {
+  assert.equal(C.mesAno("2024-04-11T00:00:00.000Z"), "abr/2024");
+  assert.equal(C.mesAno("2021-12-31T23:00:00.000Z"), "dez/2021");
+  assert.equal(C.mesAno(null), null);
+  assert.equal(C.mesAno("lixo"), null);
+});
+
+test("alvoExemplo: US$ 1 para quem custa centavos, o dobro para o resto", () => {
+  assert.equal(C.alvoExemplo(0.2098), 1);
+  assert.equal(C.alvoExemplo(160), 320);
+  assert.equal(C.alvoExemplo(0), null);
+});
+
+test("resumoSimples da ENA a US$ 1", () => {
+  assert.deepEqual(C.resumoSimples(ENA), [
+    "Para o preço de ENA chegar a US$ 1,00, o projeto inteiro precisa ficar 4,8 vezes maior: de US$ 2,81 bi para US$ 13,41 bi.",
+    "Hoje só 11 criptomoedas valem isso ou mais.",
+    "E ainda faltam entrar 1,59 bi de tokens. Com eles no mercado, o mesmo preço exige um projeto de US$ 15,00 bi.",
+    "ENA já passou desse preço: o recorde foi US$ 1,52, em abr/2024."
+  ]);
+});
+
+test("resumoSimples: alvo acima do recorde, maior do mundo, sem desbloqueio", () => {
+  const r = C.resumoSimples(Object.assign({}, ENA, {
+    precoAlvo: 1000, mcapAlvo: 13.41e12, mcapAlvoCheio: 15e12,
+    acimaNoRanking: 0, maiorQueTodos: true, pctCirculando: 1, faltaEntrar: 0
+  }));
+  assert.equal(r[1], "Nenhuma criptomoeda vale isso hoje: seria a maior do mundo.");
+  assert.equal(r[2], "ENA nunca chegou a esse preço: o recorde foi US$ 1,52, em abr/2024.");
+  assert.equal(r.length, 3);
+});
+
+test("resumoSimples: ranking grande sem 'só', 1 no singular, fora da lista omitido", () => {
+  assert.equal(C.resumoSimples(Object.assign({}, ENA, { acimaNoRanking: 120 }))[1], "Hoje 120 criptomoedas valem isso ou mais.");
+  assert.equal(C.resumoSimples(Object.assign({}, ENA, { acimaNoRanking: 1 }))[1], "Hoje só 1 criptomoeda vale isso ou mais.");
+  const sem = C.resumoSimples(Object.assign({}, ENA, { acimaNoRanking: null, ath: null }));
+  assert.deepEqual(sem.map(s => s.slice(0, 6)), ["Para o", "E aind"]);
+});
+
+test("resumoSimples: alvo abaixo do preço e igual ao preço", () => {
+  assert.deepEqual(C.resumoSimples(Object.assign({}, ENA, { precoAlvo: 0.1, mcapAlvo: 1.341e9 })),
+    ["Para o preço de ENA cair para US$ 0,10, o valor de mercado encolheria de US$ 2,81 bi para US$ 1,34 bi."]);
+  assert.deepEqual(C.resumoSimples(Object.assign({}, ENA, { precoAlvo: 0.21, mcapAlvo: 2.816e9 })),
+    ["Esse é praticamente o preço de hoje."]);
+  assert.deepEqual(C.resumoSimples(Object.assign({}, ENA, { mcapAlvo: null })), []);
+});
+
+test("perguntaComum da ENA", () => {
+  const p = C.perguntaComum(ENA);
+  assert.equal(p.pergunta, "ENA custa US$ 0,2098. Se chegar a US$ 1,00, eu ganho 4,8 vezes?");
+  assert.equal(p.resposta,
+    "O seu dinheiro ficaria 4,8 vezes maior (US$ 100 virariam US$ 476,64). " +
+    "Mas isso só acontece se o projeto inteiro ficar 4,8 vezes maior: de US$ 2,81 bi para US$ 13,41 bi. " +
+    "Preço baixo não é desconto: ENA custa menos de US$ 1 porque existem 13,41 bi de tokens. " +
+    "A pergunta certa é se alguém vai pagar US$ 13,41 bi por esse projeto.");
+  assert.equal(C.perguntaComum(Object.assign({}, ENA, { precoAlvo: 0.1 })), null);
+  const caro = C.perguntaComum(Object.assign({}, ENA, { precoAtual: 160, precoAlvo: 320, mcapHoje: 2e9, mcapAlvo: 4e9 }));
+  assert.ok(!/desconto/.test(caro.resposta));
+});
+
+test("glossario: termos na ordem, com exemplo do token quando há dado", () => {
+  const g = C.glossario({ simbolo: "ENA", preco: 0.2098, circulante: 13.41e9, total: 15e9, teto: 15e9,
+    mcap: 2.81e9, fdv: 3.15e9, rank: 41, faltaEntrar: 1.59e9 });
+  assert.deepEqual(g.map(t => t.id), ["valor-de-mercado", "circulacao", "oferta-total", "teto", "fdv",
+    "desbloqueio", "queima", "emissao", "diluicao", "ranking", "liquidez"]);
+  g.forEach(t => { assert.ok(t.termo && t.texto.length > 40, t.id); });
+  assert.equal(g.find(t => t.id === "fdv").exemplo, "ENA: US$ 0,2098 × 15 bi tokens = US$ 3,15 bi.");
+  assert.equal(g.find(t => t.id === "valor-de-mercado").exemplo, "ENA: US$ 0,2098 × 13,41 bi tokens = US$ 2,81 bi.");
+  const vazio = C.glossario(null);
+  assert.equal(vazio.length, 11);
+  assert.ok(vazio.every(t => t.exemplo === null));
 });

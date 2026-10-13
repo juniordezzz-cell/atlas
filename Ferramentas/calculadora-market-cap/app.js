@@ -51,6 +51,12 @@
      busca é passageiro. Uma busca bem-sucedida devolve o da carga em vez
      de apagá-lo — senão número velho ficaria na tela sem aviso. */
   var avisoCarga = "";
+  /* Termo difícil sublinhado com pontinhos: o clique desce até o
+     dicionário no fim da página. rotulo já vem escapado ou é fixo. */
+  function termo(id, rotulo) {
+    return '<a class="termo" href="#g-' + id + '" title="O que é isso? Ver no dicionário">' + rotulo + "</a>";
+  }
+
   function aviso(texto) {
     var el = $("mc-aviso");
     el.textContent = texto || "";
@@ -140,6 +146,8 @@
     if (!s) return;
     fecharSugestoes();
     $("mc-busca").value = s.name + " (" + s.symbol + ")";
+    /* o preço sonhado do JUP não vale para o BTC */
+    estado.entradas.preco = ""; estado.entradas.alvo = ""; estado.entradas.valerUsd = "";
     var url = new URL(location.href);
     url.searchParams.set("token", s.id);
     history.replaceState(null, "", url);
@@ -228,8 +236,8 @@
         '<div class="oferta__barra" role="img" aria-label="' + esc(C.fmtPct(of.pctCirculando)) + ' circulando">' +
           '<span style="width:' + (of.pctCirculando * 100).toFixed(2) + '%"></span></div>' +
         '<div class="oferta__leg">' +
-          "<span><b>" + C.fmtPct(of.pctCirculando) + " circulando</b> · " + C.fmtQtd(of.circulante) + " tokens</span>" +
-          "<span><b>" + C.fmtPct(1 - of.pctCirculando) + " ainda vai entrar</b> · " + C.fmtQtd(of.faltaEntrar) + " tokens</span>" +
+          "<span><b>" + C.fmtPct(of.pctCirculando) + " " + termo("circulacao", "circulando") + "</b> · " + C.fmtQtd(of.circulante) + " tokens</span>" +
+          "<span><b>" + C.fmtPct(1 - of.pctCirculando) + " " + termo("desbloqueio", "ainda vai entrar") + "</b> · " + C.fmtQtd(of.faltaEntrar) + " tokens</span>" +
         "</div>";
     } else if (of.circulante == null) {
       barra = '<p class="nota">A CoinGecko não informa quantos tokens estão em circulação.</p>';
@@ -254,16 +262,15 @@
         "<h2>" + esc(c.name) + ' <span class="sim">' + esc(c.symbol) + "</span></h2></div>" +
       '<dl class="faixa">' +
         '<div><dt>Preço</dt><dd class="num">' + C.fmtUSD(c.usd) + "</dd></div>" +
-        '<div><dt>Valor de mercado</dt><dd class="num">' + C.fmtUSD(mcapHoje) + "</dd></div>" +
-        '<div><dt>FDV (tudo desbloqueado)</dt><dd class="num">' + C.fmtUSD(fdv) + "</dd></div>" +
-        '<div><dt>Ranking</dt><dd class="num">' + (c.rank ? esc(c.rank) + "º" : "—") + "</dd></div>" +
+        '<div><dt>' + termo("valor-de-mercado", "Valor de mercado") + '</dt><dd class="num">' + C.fmtUSD(mcapHoje) + "</dd></div>" +
+        '<div><dt>' + termo("fdv", "FDV") + ' (tudo desbloqueado)</dt><dd class="num">' + C.fmtUSD(fdv) + "</dd></div>" +
+        '<div><dt>' + termo("ranking", "Ranking") + '</dt><dd class="num">' + (c.rank ? esc(c.rank) + "º" : "—") + "</dd></div>" +
       "</dl>" + barra +
       notas.map(function (n) { return '<p class="nota">' + esc(n) + "</p>"; }).join("") +
       (links ? '<p class="nota">Para ver quando e para quem os tokens entram:</p><div class="links">' + links + "</div>" : "");
     el.hidden = false;
   }
 
-  /* As próximas duas funções ganham corpo nas Tasks 4 e 5. */
   /* ---------- calculadora ---------- */
   function regua() {
     var porId = {};
@@ -299,35 +306,73 @@
     return "Ficaria em " + r.posicao + "º lugar, entre " + esc(r.acima.name) + " e " + esc(r.abaixo.name) + ".";
   }
 
+  /* A régua em frase ("21% do tamanho", "5,4 vezes o tamanho") com uma
+     barrinha: "0,008×" não dizia nada para quem está começando. */
   function blocoTamanho(mcap) {
     var linhas = C.regua(mcap, regua()).map(function (p) {
-      return "<li><span>" + esc(p.name) + '</span><span class="num">' + C.fmtVezes(p.vezes) + "</span></li>";
+      var d = C.descreverRegua(p.vezes);
+      if (!d) return "";
+      var larg = Math.max(d.barra * 100, 1.5).toFixed(1);
+      return '<li><span class="regua__nome">' + esc(p.name) + "</span>" +
+        '<span class="regua__barra" aria-hidden="true"><span style="width:' + larg + '%"></span></span>' +
+        '<span class="regua__txt">' + d.texto + "</span></li>";
     }).join("");
     var rk = textoRanking(mcap);
     return (rk ? '<p class="linha">' + rk + "</p>" : "") +
-      (linhas ? '<p class="linha">Esse tamanho equivale a:</p><ul>' + linhas + "</ul>" : "");
+      (linhas ? '<p class="linha">Comparado com projetos que você conhece, esse valor seria:</p><ul class="regua">' + linhas + "</ul>" : "");
   }
 
   function colunaMcap(col, preco) {
     var mcap = C.mcapNoPreco(preco, col.qtd);
     if (mcap == null) return colunaVazia(col);
+    var mult = C.multiplicador(mcap, mcapHoje());
     return '<div class="col"><h3>' + col.titulo + "</h3>" +
       '<p class="grande num">' + C.fmtUSD(mcap) + "</p>" +
-      '<p class="linha">' + C.fmtVezes(C.multiplicador(mcap, mcapHoje())) + " o valor de mercado de hoje</p>" +
+      (mult != null ? '<p class="linha">' + C.fmtVezes(mult) + " o " + termo("valor-de-mercado", "valor de mercado") + " de hoje</p>" : "") +
       blocoTamanho(mcap) + "</div>";
+  }
+
+  /* Os números que a resposta direta e a pergunta comum usam. */
+  function dadosResumo(precoAlvo) {
+    var c = estado.coin, of = C.oferta(c.supply);
+    var mcapAlvo = C.mcapNoPreco(precoAlvo, of.circulante);
+    var r = C.posicaoNoRanking(mcapAlvo, estado.mercado, c.id);
+    return {
+      simbolo: c.symbol, precoAtual: c.usd, precoAlvo: precoAlvo, circulante: of.circulante,
+      mcapHoje: mcapHoje(), mcapAlvo: mcapAlvo, mcapAlvoCheio: C.mcapNoPreco(precoAlvo, of.cheia),
+      faltaEntrar: of.faltaEntrar, pctCirculando: of.pctCirculando,
+      acimaNoRanking: r && !r.foraDaLista ? r.posicao - 1 : null, maiorQueTodos: !!(r && r.maiorQueTodos),
+      ath: c.ath, athDate: c.athDate
+    };
+  }
+
+  /* A resposta direta, em frases, antes das colunas de números. */
+  function blocoResumo(precoAlvo) {
+    var frases = C.resumoSimples(dadosResumo(precoAlvo));
+    if (!frases.length) return "";
+    return '<div class="resumo"><p class="resumo__titulo">Em poucas palavras</p>' +
+      frases.map(function (f, i) { return "<p" + (i === 0 ? ' class="resumo__forte"' : "") + ">" + esc(f) + "</p>"; }).join("") +
+      "</div>";
   }
 
   function resultadoPreco() {
     var preco = C.lerNumero(estado.entradas.preco);
     if (preco == null) return "";
-    return '<div class="colunas">' + colunas().map(function (col) { return colunaMcap(col, preco); }).join("") + "</div>";
+    return blocoResumo(preco) +
+      '<div class="colunas">' + colunas().map(function (col) { return colunaMcap(col, preco); }).join("") + "</div>";
   }
 
   function mcapEscolhido() {
     var e = estado.entradas;
     if (e.valer === "outro") return C.lerNumero(e.valerUsd);
-    var p = regua().filter(function (x) { return x.id === e.valer; })[0];
+    var p = reguaValer().filter(function (x) { return x.id === e.valer; })[0];
     return p ? p.marketCap : null;
+  }
+
+  /* "Valer como a Solana" estudando a própria Solana daria sempre 1×. */
+  function reguaValer() {
+    var id = estado.coin && estado.coin.id;
+    return regua().filter(function (p) { return p.id !== id; });
   }
 
   function resultadoValer() {
@@ -337,9 +382,11 @@
     return '<div class="colunas">' + colunas().map(function (col) {
       var preco = C.precoNoMcap(mcap, col.qtd);
       if (preco == null) return colunaVazia(col);
+      var mult = C.multiplicador(preco, usd);
       return '<div class="col"><h3>' + col.titulo + "</h3>" +
         '<p class="grande num">' + C.fmtUSD(preco) + "</p>" +
-        '<p class="linha">' + C.fmtVezes(C.multiplicador(preco, usd)) + " o preço de hoje (" + C.fmtUSD(usd) + ")</p></div>";
+        (mult != null ? '<p class="linha">' + C.fmtVezes(mult) + " o preço de hoje (" + C.fmtUSD(usd) + ")</p>" : "") +
+        "</div>";
     }).join("") + "</div>";
   }
 
@@ -355,7 +402,7 @@
       '<div class="col"><h3>Valeria</h3><p class="grande num">' + C.fmtUSD(r.valorFinal) + "</p></div>" +
       '<div class="col"><h3>Resultado</h3><p class="grande num ' + cls + '">' + sinal + C.fmtUSD(Math.abs(r.lucro)) +
         '</p><p class="linha num ' + cls + '">' + sinal + C.fmtPct(Math.abs(r.lucroPct) / 100) + "</p></div>" +
-      "</div>" +
+      "</div>" + blocoResumo(alvo) +
       '<p class="linha">Para ' + esc(c.symbol) + " chegar a " + C.fmtUSD(alvo) + ", o projeto precisa valer:</p>" +
       '<div class="colunas">' + colunas().map(function (col) { return colunaMcap(col, alvo); }).join("") + "</div>";
   }
@@ -376,12 +423,12 @@
 
   function renderPainel() {
     var e = estado.entradas, c = estado.coin, html;
-    e.valer = C.opcaoValer(e.valer, regua().map(function (p) { return p.id; }));
+    e.valer = C.opcaoValer(e.valer, reguaValer().map(function (p) { return p.id; }));
     if (estado.aba === "preco") {
       html = '<div class="campos">' + campo("mc-in-preco", "Se " + esc(c.symbol) + " chegar a (US$)", e.preco,
         "Hoje: " + C.fmtUSD(c.usd) + ". Aceita 0,5 · 1 · 2.500") + "</div>";
     } else if (estado.aba === "valer") {
-      var ops = regua().map(function (p) {
+      var ops = reguaValer().map(function (p) {
         return '<option value="' + esc(p.id) + '"' + (e.valer === p.id ? " selected" : "") + ">" +
           esc(p.name) + " (" + C.fmtUSD(p.marketCap) + ")</option>";
       }).join("");
@@ -415,6 +462,8 @@
       if (!k) return;
       estado.entradas[k] = ev.target.value;
       renderResultado();
+      /* a pergunta comum lá embaixo usa o preço digitado */
+      if (k === "preco" || k === "alvo") renderExplica();
     });
     $("mc-painel").addEventListener("change", function (ev) {
       if (ev.target.id !== "mc-in-valer") return;
@@ -438,7 +487,26 @@
         ". Os outros " + C.fmtPct(1 - of.pctCirculando) + " ainda vão entrar no mercado. Para o preço ficar parado, " +
         "o projeto precisa crescer na mesma proporção.</p>";
     }
+    /* A dúvida clássica, com o preço que a pessoa digitou (ou o "1 dólar"
+       de exemplo, para quem ainda não digitou nada). */
+    var pergunta = "";
+    if (c) {
+      var alvo = C.lerNumero(estado.aba === "dinheiro" ? estado.entradas.alvo : estado.entradas.preco) || C.alvoExemplo(c.usd);
+      var pc = alvo != null ? C.perguntaComum(dadosResumo(alvo)) : null;
+      if (pc) {
+        pergunta = '<div class="pergunta"><p class="pergunta__q">“' + esc(pc.pergunta) + "”</p>" +
+          "<p>" + esc(pc.resposta) + "</p></div>";
+      }
+    }
+    var dic = C.glossario(c && of ? {
+      simbolo: c.symbol, preco: c.usd, circulante: of.circulante, total: of.cheia, teto: of.teto,
+      mcap: mcapHoje(), fdv: C.mcapNoPreco(c.usd, of.cheia), rank: c.rank, faltaEntrar: of.faltaEntrar
+    } : null).map(function (t) {
+      return '<div class="dic__item" id="g-' + t.id + '"><dt>' + esc(t.termo) + "</dt><dd>" + esc(t.texto) +
+        (t.exemplo ? '<span class="dic__ex">' + esc(t.exemplo) + "</span>" : "") + "</dd></div>";
+    }).join("");
     el.innerHTML =
+      (pergunta ? "<h2>A pergunta que todo mundo faz</h2>" + pergunta : "") +
       "<h2>Como ler estes números</h2>" +
       "<h3>O tamanho da pizza, não o preço da fatia</h3>" +
       "<p>O preço de um token, sozinho, não diz se ele está barato ou caro. O que diz é o valor de mercado: " +
@@ -455,7 +523,9 @@
       "<h3>Token pequeno sobe mais fácil e cai mais fácil</h3>" +
       "<p>Um projeto pequeno precisa de menos dinheiro para dobrar, e por isso mesmo pode cair ou sumir com " +
       "pouco dinheiro saindo. O que manda é a liquidez: quanto dinheiro existe de verdade para comprar e vender.</p>" +
-      '<p class="nota">Antes de sonhar com um preço, multiplique pela quantidade de tokens e pergunte: esse projeto vale isso?</p>';
+      '<p class="nota">Antes de sonhar com um preço, multiplique pela quantidade de tokens e pergunte: esse projeto vale isso?</p>' +
+      '<h2 class="dic__titulo">Dicionário</h2><p class="nota">Os termos sublinhados na página levam até aqui.</p>' +
+      '<dl class="dic">' + dic + "</dl>";
   }
 
   /* ---------- início ---------- */

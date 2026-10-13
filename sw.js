@@ -142,7 +142,9 @@
 /* v90 = entrou a Calculadora de Market Cap (Ferramentas/calculadora-
    market-cap/), ferramenta de estudo na seção nova "Estudar o mercado"
    da bancada. */
-var VERSAO = "atlas-v90";
+/* v91 = Calculadora de Market Cap para iniciante: resposta direta em
+   frases, régua em "% do tamanho" com barra, pergunta comum e dicionário. */
+var VERSAO = "atlas-v91";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
