@@ -44,7 +44,7 @@
 - Create `Ferramentas/calculadora-market-cap/estilo.css`: visual da ferramenta.
 - Create `Ferramentas/calculadora-market-cap/app.js`: busca, ficha, calculadora em abas, explicação e cache do último resultado bom.
 - Modify `core/providers/coingecko.js` (`topMovers`): aceitar `o.ttl` opcional. O padrão continua 90000, para não mudar os outros usos.
-- Modify `pages/ferramentas.html`: card novo no lugar do "Em breve", contador 2 → 3.
+- Modify `pages/ferramentas.html`: seção nova "Estudar o mercado" (contador 1) com o card, logo depois da seção "Gerir o dinheiro". O "Em breve" fica onde está.
 - Modify `sw.js`: `VERSAO` `atlas-v89` → `atlas-v90`, com comentário.
 
 ---
@@ -619,6 +619,7 @@ git commit -m "CoinGecko: topMovers aceita ttl opcional (padrao 90 s mantido)"
     <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
     <h1>Calculadora de <span>Market Cap</span></h1>
     <p class="sub">Barato ou caro é o tamanho da pizza, não o preço da fatia.</p>
+    <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
   </header>
 
   <section class="busca" aria-label="Escolher token">
@@ -681,6 +682,7 @@ a{color:var(--accent)}
 .top h1{font-size:24px;margin:0;font-weight:700}
 .top h1 span{color:var(--accent)}
 .sub{color:var(--mut);margin:4px 0 0}
+.estudo{color:var(--mut2);font-size:12.5px;margin:6px 0 0}
 
 /* busca */
 .busca label{display:block;font-size:12.5px;color:var(--mut);margin-bottom:6px}
@@ -1221,7 +1223,7 @@ git commit -m "Calculadora de Market Cap: abas preco sonhado, valer como e meu d
 
 **Files:**
 - Modify: `Ferramentas/calculadora-market-cap/app.js` (replace the `renderExplica` stub)
-- Modify: `pages/ferramentas.html` (`.tool-card--soon` block, and `.tools-sec__count` from 2 to 3)
+- Modify: `pages/ferramentas.html` (new `<section class="tools-sec">` "Estudar o mercado" after the "Gerir o dinheiro" section; the "Em breve" card stays untouched)
 - Modify: `sw.js` (`VERSAO`)
 
 **Interfaces:**
@@ -1278,9 +1280,41 @@ with:
 
 `desenharTudo()` already calls `renderExplica()` after a token loads, so nothing else changes there.
 
-- [ ] **Step 2: Replace the "Em breve" card in `pages/ferramentas.html`**
+- [ ] **Step 2: Add the "Estudar o mercado" section to `pages/ferramentas.html`**
 
-Replace the whole block that starts with `<!-- Marcador honesto: a bancada vai crescer.` and ends at the `</div>` closing `tool-card tool-card--soon` with:
+The calculator is a study tool with no link to the portfolio, so it does not belong under "Gerir o dinheiro / Para onde vai o seu caixa?". Leave that section, including its "Em breve" card and its counter `2`, untouched.
+
+Right after the `</section>` that closes the "Gerir o dinheiro" section (just before `</main>`), insert:
+
+```html
+    <!-- ============ SEÇÃO · Estudar o mercado ============
+         Ferramentas de estudo: simulam e explicam, sem ler nem gravar
+         nada da carteira. -->
+    <section class="tools-sec">
+      <div class="tools-sec__head">
+        <span class="tools-sec__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/>
+            <path d="M7 15l4-4 3 3 5-6"/>
+          </svg>
+        </span>
+        <h2 class="tools-sec__title">Estudar o mercado</h2>
+        <span class="tools-sec__sub">Simulações para entender, sem mexer na carteira</span>
+        <span class="tools-sec__count">1</span>
+      </div>
+
+      <div class="tools-grid">
+```
+
+then the card below, and then close the section with:
+
+```html
+      </div>
+    </section>
+```
+
+The card:
 
 ```html
         <!-- FERRAMENTA · Calculadora de Market Cap
@@ -1331,7 +1365,7 @@ Replace the whole block that starts with `<!-- Marcador honesto: a bancada vai c
         </a>
 ```
 
-Then change `<span class="tools-sec__count">2</span>` to `<span class="tools-sec__count">3</span>`, and in the page's `<meta name="description">` replace `Financas (entradas e saidas) e Scanner Pools (pools de liquidez).` with `Financas (entradas e saidas), Scanner Pools (pools de liquidez) e Calculadora de Market Cap.`
+Finally, in the page's `<meta name="description">` replace `Financas (entradas e saidas) e Scanner Pools (pools de liquidez).` with `Financas (entradas e saidas), Scanner Pools (pools de liquidez) e Calculadora de Market Cap.`
 
 - [ ] **Step 3: Check that `.tool-card__icon--mcap` needs no extra CSS**
 
@@ -1350,7 +1384,8 @@ with:
 
 ```js
 /* v90 = entrou a Calculadora de Market Cap (Ferramentas/calculadora-
-   market-cap/) com card na bancada, no lugar do "Em breve". */
+   market-cap/), ferramenta de estudo na seção nova "Estudar o mercado"
+   da bancada. */
 var VERSAO = "atlas-v90";
 ```
 
@@ -1361,7 +1396,7 @@ Expected: both PASS (the Scanner test proves the `coingecko.js` change broke not
 
 - [ ] **Step 6: Final verification in the browser**
 
-1. `http://localhost:8777/pages/ferramentas.html?atlas-dev=1`: the third card "Calculadora de Market Cap" shows the pizza icon and the counter says 3. Click it to open the tool.
+1. `http://localhost:8777/pages/ferramentas.html?atlas-dev=1`: "Gerir o dinheiro" is unchanged (Finanças, Scanner Pools, "Em breve", counter 2). Below it, the new section "Estudar o mercado" (counter 1) shows the "Calculadora de Market Cap" card with the pizza icon. Click it to open the tool. The top of the tool shows the line "Simulação para estudo…".
 2. Without `?token`, the tool shows only the search and the explanation in general terms.
 3. Load JUP. The explanation now shows "No JUP: …" and the "Hoje circulam X%" paragraph.
 4. `resize_window {preset:"mobile"}` and reload: no horizontal scroll (`javascript_tool`: `document.documentElement.scrollWidth <= innerWidth` → `true`), the columns stack and the tabs wrap. Then `resize_window {preset:"desktop"}`.
