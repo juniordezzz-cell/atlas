@@ -19,6 +19,10 @@
   "use strict";
   var C = window.AtlasMcapCalc;
   var cg = window.AtlasProviders && window.AtlasProviders.get("coingecko");
+  /* Fonte reserva, gratuita e sem chave: entra quando a CoinGecko dá
+     limite (429). O limite sem chave da CoinGecko é por IP, e o ATLAS
+     inteiro (Academy, carteiras, ícones, Scanner) gasta do mesmo. */
+  var cp = window.AtlasProviders && window.AtlasProviders.get("coinpaprika");
   var $ = function (id) { return document.getElementById(id); };
   var LS_CACHE = "atlas.mcap.cache.v1";
   var TTL_FICHA = 180000, TTL_MERCADO = 600000, MAX_FICHAS = 10;
@@ -104,9 +108,25 @@
     $("mc-busca").setAttribute("aria-activedescendant", ativa >= 0 ? "mc-sug-" + ativa : "");
   }
 
+  /* Busca: CoinGecko primeiro; se ela der limite (429) ou vier vazia, a
+     CoinPaprika. Cada sugestão leva a fonte, porque o id muda de uma
+     para outra ("ondo-finance" × "ondo-ondo-finance"). */
+  function buscaComReserva(q) {
+    function marcar(lista, fonte) {
+      return (lista || []).map(function (s) { s.fonte = fonte; return s; });
+    }
+    return cg.search(q).then(function (l) {
+      if (l && l.length) return marcar(l, "coingecko");
+      throw new Error("vazio");
+    }).catch(function (err) {
+      if (!cp) throw err;
+      return cp.search(q).then(function (l) { return marcar(l, "coinpaprika"); });
+    });
+  }
+
   function buscar(q) {
     var minha = ++seqBusca;
-    cg.search(q).then(function (lista) {
+    buscaComReserva(q).then(function (lista) {
       if (minha !== seqBusca) return;
       sugestoes = (lista || []).slice(0, 8); ativa = sugestoes.length ? 0 : -1;
       desenharSugestoes();
@@ -148,10 +168,15 @@
     $("mc-busca").value = s.name + " (" + s.symbol + ")";
     /* o preço sonhado do JUP não vale para o BTC */
     estado.entradas.preco = ""; estado.entradas.alvo = ""; estado.entradas.valerUsd = "";
+    /* o símbolo vai junto no endereço: é com ele que a ficha acha o
+       token na fonte reserva se a CoinGecko der limite ao abrir o link */
     var url = new URL(location.href);
+    url.hash = "";
     url.searchParams.set("token", s.id);
+    url.searchParams.set("s", s.symbol || "");
+    if (s.fonte === "coinpaprika") url.searchParams.set("f", "cp"); else url.searchParams.delete("f");
     history.replaceState(null, "", url);
-    carregar(s.id);
+    carregar(s.id, s.symbol, s.fonte);
   }
 
   /* ---------- carga ---------- */
@@ -160,7 +185,12 @@
   function carregarMercado() {
     var m = lerCache().mercado;
     if (m && Date.now() - m.t < TTL_MERCADO) return Promise.resolve({ lista: m.lista, t: m.t, velho: false });
-    return cg.topMovers({ order: "market_cap_desc", perPage: 250, ttl: 0 }).then(function (cru) {
+    var pedido = { order: "market_cap_desc", perPage: 250, ttl: 0 };
+    /* CoinGecko primeiro; no limite (429), o top 250 da CoinPaprika */
+    return cg.topMovers(pedido).catch(function (err) {
+      if (!cp) throw err;
+      return cp.topMovers(pedido);
+    }).then(function (cru) {
       var lista = C.enxugarMercado(cru);
       if (lista.length) {
         var c = lerCache();
@@ -173,13 +203,37 @@
     });
   }
 
-  /* Ficha: cache enxuto de 3 min; sem rede, a última ficha guardada. */
-  function carregarFicha(id) {
-    var f = lerCache().fichas[id];
-    if (f && Date.now() - f.t < TTL_FICHA) return Promise.resolve({ coin: f.coin, t: f.t, velho: false });
+  /* A ficha crua: da CoinGecko ou, no limite dela, da CoinPaprika. Na
+     reserva o id é outro, então a CoinPaprika acha o token pelo símbolo
+     na busca dela (resposta pequena — o catálogo inteiro dela pesaria
+     no localStorage). Devolve { cru, fonte }. */
+  function fichaComReserva(id, simbolo, fonte) {
+    if (fonte === "coinpaprika" && cp) {
+      return cp.assetFull(id, { ttl: 0 }).then(function (cru) { return { cru: cru, fonte: "coinpaprika" }; });
+    }
     return cg.assetFull(id, { ttl: 0 }).then(function (cru) {
       if (!cru) throw new Error("A CoinGecko não devolveu dados deste token.");
-      var coin = C.enxugarFicha(cru);
+      return { cru: cru, fonte: "coingecko" };
+    }).catch(function (err) {
+      if (!cp || !simbolo) throw err;
+      return cp.search(simbolo).then(function (res) {
+        var pid = C.idPeloSimbolo(res, simbolo);
+        if (!pid) throw err;
+        return cp.assetFull(pid, { ttl: 0 });
+      }).then(function (cru) {
+        if (!cru) throw err;
+        return { cru: cru, fonte: "coinpaprika" };
+      }, function () { throw err; });
+    });
+  }
+
+  /* Ficha: cache enxuto de 3 min; sem rede, a última ficha guardada. */
+  function carregarFicha(id, simbolo, fonte) {
+    var f = lerCache().fichas[id];
+    if (f && Date.now() - f.t < TTL_FICHA) return Promise.resolve({ coin: f.coin, t: f.t, velho: false });
+    return fichaComReserva(id, simbolo, fonte).then(function (r) {
+      if (!r.cru) throw new Error("Nenhuma fonte devolveu dados deste token.");
+      var coin = C.enxugarFicha(r.cru, r.fonte);
       var c = lerCache();
       c.fichas[id] = { t: Date.now(), coin: coin };
       gravarCache(c);
@@ -191,10 +245,10 @@
   }
 
   var seqCarga = 0;
-  function carregar(id) {
+  function carregar(id, simbolo, fonte) {
     var minha = ++seqCarga;
     avisarCarga("Carregando…");
-    Promise.all([carregarFicha(id), carregarMercado()]).then(function (r) {
+    Promise.all([carregarFicha(id, simbolo, fonte), carregarMercado()]).then(function (r) {
       if (minha !== seqCarga) return;
       var ficha = r[0], merc = r[1];
       estado.coin = ficha.coin;
@@ -205,7 +259,7 @@
           " Mostrando os dados de " + hora(ficha.t) + ".");
       }
       if (merc.velho) avisos.push("Régua e ranking de " + hora(merc.t) + ".");
-      else if (!estado.mercado.length) avisos.push("Régua e ranking indisponíveis agora (limite da CoinGecko). Tente em instantes.");
+      else if (!estado.mercado.length) avisos.push("Régua e ranking indisponíveis agora (limite das fontes de dados). Tente em instantes.");
       avisarCarga(avisos.join(" "));
       desenharTudo();
     }).catch(function (err) {
@@ -267,15 +321,16 @@
         '<div><dt>' + termo("ranking", "Ranking") + '</dt><dd class="num">' + (c.rank ? esc(c.rank) + "º" : "—") + "</dd></div>" +
       "</dl>" + barra +
       notas.map(function (n) { return '<p class="nota">' + esc(n) + "</p>"; }).join("") +
-      (links ? '<p class="nota">Para ver quando e para quem os tokens entram:</p><div class="links">' + links + "</div>" : "");
+      (links ? '<p class="nota">Para ver quando e para quem os tokens entram:</p><div class="links">' + links + "</div>" : "") +
+      '<p class="nota fonte">' + (c.fonte === "coinpaprika"
+        ? "Dados: CoinPaprika (fonte reserva — a CoinGecko atingiu o limite de consultas agora)."
+        : "Dados: CoinGecko.") + "</p>";
     el.hidden = false;
   }
 
   /* ---------- calculadora ---------- */
   function regua() {
-    var porId = {};
-    estado.mercado.forEach(function (m) { porId[m.id] = m; });
-    return C.REGUA.map(function (id) { return porId[id]; }).filter(Boolean);
+    return C.acharNaRegua(estado.mercado);
   }
 
   function mcapHoje() {
@@ -299,7 +354,7 @@
   }
 
   function textoRanking(mcap) {
-    var r = C.posicaoNoRanking(mcap, estado.mercado, estado.coin.id);
+    var r = C.posicaoNoRanking(mcap, rankingSemOToken());
     if (!r) return "";
     if (r.maiorQueTodos) return "Ficaria em 1º lugar do ranking, acima de " + esc(r.abaixo.name) + ".";
     if (r.foraDaLista) return "Abaixo do " + r.tamanhoLista + "º lugar do ranking.";
@@ -336,7 +391,7 @@
   function dadosResumo(precoAlvo) {
     var c = estado.coin, of = C.oferta(c.supply);
     var mcapAlvo = C.mcapNoPreco(precoAlvo, of.circulante);
-    var r = C.posicaoNoRanking(mcapAlvo, estado.mercado, c.id);
+    var r = C.posicaoNoRanking(mcapAlvo, rankingSemOToken());
     return {
       simbolo: c.symbol, precoAtual: c.usd, precoAlvo: precoAlvo, circulante: of.circulante,
       mcapHoje: mcapHoje(), mcapAlvo: mcapAlvo, mcapAlvoCheio: C.mcapNoPreco(precoAlvo, of.cheia),
@@ -371,8 +426,15 @@
 
   /* "Valer como a Solana" estudando a própria Solana daria sempre 1×. */
   function reguaValer() {
-    var id = estado.coin && estado.coin.id;
-    return regua().filter(function (p) { return p.id !== id; });
+    var c = estado.coin || {};
+    return C.semOToken(regua(), c.id, c.symbol);
+  }
+
+  /* O token não compete consigo mesmo no ranking — nem quando a ficha
+     veio de uma fonte e o ranking de outra (ids diferentes). */
+  function rankingSemOToken() {
+    var c = estado.coin || {};
+    return C.semOToken(estado.mercado, c.id, c.symbol);
   }
 
   function resultadoValer() {
@@ -534,8 +596,9 @@
     ligarBusca();
     ligarCalculadora();
     renderExplica();
-    var id = new URLSearchParams(location.search).get("token");
-    if (id) carregar(id);
+    var qs = new URLSearchParams(location.search);
+    var id = qs.get("token");
+    if (id) carregar(id, qs.get("s"), qs.get("f") === "cp" ? "coinpaprika" : "coingecko");
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar);

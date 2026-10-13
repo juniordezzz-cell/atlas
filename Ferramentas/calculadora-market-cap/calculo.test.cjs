@@ -216,7 +216,7 @@ test("enxugarFicha guarda só os campos da tela", () => {
   };
   const e = C.enxugarFicha(cru);
   assert.deepEqual(Object.keys(e).sort(),
-    ["ath", "athDate", "fdv", "id", "image", "links", "marketCap", "name", "rank", "supply", "symbol", "usd"]);
+    ["ath", "athDate", "fdv", "fonte", "id", "image", "links", "marketCap", "name", "rank", "supply", "symbol", "usd"]);
   assert.equal(e.ath, 2.0);
   assert.deepEqual(e.links, { whitepaper: null, homepage: "https://jup.ag" });
   assert.deepEqual(e.supply, cru.supply);
@@ -354,4 +354,50 @@ test("glossario: termos na ordem, com exemplo do token quando há dado", () => {
   const vazio = C.glossario(null);
   assert.equal(vazio.length, 11);
   assert.ok(vazio.every(t => t.exemplo === null));
+});
+
+/* ===== Fonte reserva (CoinPaprika) quando a CoinGecko dá 429 =====
+   Os ids mudam de fonte para fonte ("bitcoin" × "btc-bitcoin"), então
+   régua, ranking e tradução de id se apoiam também no SÍMBOLO. */
+test("acharNaRegua reconhece os projetos pelo id da CoinGecko ou pelo símbolo", () => {
+  const cg = [{ id: "solana", symbol: "SOL", marketCap: 63e9 }, { id: "bitcoin", symbol: "BTC", marketCap: 2e12 }];
+  assert.deepEqual(C.acharNaRegua(cg).map(p => p.id), ["bitcoin", "solana"]);
+  const cp = [{ id: "btc-bitcoin", symbol: "BTC", marketCap: 2e12 }, { id: "hype-hyperliquid", symbol: "HYPE", marketCap: 18e9 },
+              { id: "uni-uniswap", symbol: "UNI", marketCap: 4e9 }, { id: "x-sol-falso", symbol: "SOL", marketCap: 1 },
+              { id: "sol-solana", symbol: "SOL", marketCap: 63e9 }];
+  assert.deepEqual(C.acharNaRegua(cp).map(p => p.id), ["btc-bitcoin", "sol-solana", "uni-uniswap", "hype-hyperliquid"]);
+  assert.deepEqual(C.acharNaRegua(null), []);
+});
+
+test("semOToken tira o próprio token da lista pelo id ou pelo símbolo", () => {
+  const l = [{ id: "ondo-ondo-finance", symbol: "ONDO" }, { id: "btc-bitcoin", symbol: "BTC" }, { id: "ondo-finance", symbol: "ONDO" }];
+  assert.deepEqual(C.semOToken(l, "ondo-finance", "ONDO").map(x => x.id), ["btc-bitcoin"]);
+  assert.deepEqual(C.semOToken(l, "zzz", null).length, 3);
+});
+
+test("idPeloSimbolo escolhe o símbolo exato de melhor ranking", () => {
+  const busca = [{ id: "ondo-ondo-us-dollar", symbol: "USDY", rank: 300 },
+                 { id: "ondo-ondo-finance-fake", symbol: "ONDO", rank: 2000 },
+                 { id: "ondo-ondo-finance", symbol: "ONDO", rank: 60 }];
+  assert.equal(C.idPeloSimbolo(busca, "ondo"), "ondo-ondo-finance");
+  assert.equal(C.idPeloSimbolo(busca, "XYZ"), null);
+  assert.equal(C.idPeloSimbolo(null, "ONDO"), null);
+});
+
+test("enxugarFicha guarda a fonte", () => {
+  assert.equal(C.enxugarFicha({ id: "a" }, "coinpaprika").fonte, "coinpaprika");
+  assert.equal(C.enxugarFicha({ id: "a" }).fonte, "coingecko");
+});
+
+/* A CoinPaprika não manda mais circulating_supply (conferido na ONDO em
+   13/10/2026): só total e máximo. Circulação = valor de mercado ÷ preço. */
+test("enxugarFicha deduz a circulação do valor de mercado quando a fonte não manda", () => {
+  const e = C.enxugarFicha({ id: "ondo-ondo", usd: 0.4667, marketCap: 2.27e9,
+    supply: { circulating: null, total: 10e9, max: 10e9 } }, "coinpaprika");
+  perto(e.supply.circulating, 4.864e9, 1e6);
+  assert.equal(e.supply.total, 10e9);
+  const semNada = C.enxugarFicha({ id: "x", usd: null, marketCap: 2e9, supply: { circulating: null, total: 1e9, max: null } });
+  assert.equal(semNada.supply.circulating, null);
+  const comDado = C.enxugarFicha({ id: "y", usd: 1, marketCap: 5, supply: { circulating: 3, total: 9, max: null } });
+  assert.equal(comDado.supply.circulating, 3);
 });

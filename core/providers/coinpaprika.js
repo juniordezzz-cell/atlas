@@ -56,8 +56,10 @@
     topMovers: function (o) {
       o = o || {};
       var limit = o.perPage || 20;
+      /* o.ttl opcional: a Calculadora de Market Cap passa 0 e guarda a
+         versão enxuta por conta própria (ver coingecko.js). */
       return AtlasHttp.getJSON(BASE + "/tickers?limit=250",
-        { ttl: 90000, cacheKey: "cp.tickers.250" }
+        { ttl: o.ttl != null ? o.ttl : 90000, cacheKey: "cp.tickers.250" }
       ).then(function (arr) {
         var rows = (arr || []).map(toRow);
         var order = o.order || "market_cap_desc";
@@ -84,12 +86,13 @@
 
     /* Detalhe: /coins/<id> (descrição, links, tags) + /tickers/<id>
        (preço, market cap, variações). Duas chamadas combinadas. */
-    assetFull: function (id) {
+    assetFull: function (id, o) {
       if (!id) return Promise.resolve(null);
+      var semCache = o && o.ttl === 0;
       var meta = AtlasHttp.getJSON(BASE + "/coins/" + encodeURIComponent(id),
-        { ttl: 180000, cacheKey: "cp.coin." + id }).catch(function () { return null; });
+        { ttl: semCache ? 0 : 180000, cacheKey: "cp.coin." + id }).catch(function () { return null; });
       var tick = AtlasHttp.getJSON(BASE + "/tickers/" + encodeURIComponent(id),
-        { ttl: 120000, cacheKey: "cp.tick." + id }).catch(function () { return null; });
+        { ttl: semCache ? 0 : 120000, cacheKey: "cp.tick." + id }).catch(function () { return null; });
       return Promise.all([meta, tick]).then(function (r) {
         var c = r[0], t = r[1];
         if (!c && !t) return null;

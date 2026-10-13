@@ -144,7 +144,9 @@
    da bancada. */
 /* v91 = Calculadora de Market Cap para iniciante: resposta direta em
    frases, régua em "% do tamanho" com barra, pergunta comum e dicionário. */
-var VERSAO = "atlas-v91";
+/* v92 = Calculadora de Market Cap cai para a CoinPaprika quando a
+   CoinGecko dá limite (busca, ficha e ranking). */
+var VERSAO = "atlas-v92";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

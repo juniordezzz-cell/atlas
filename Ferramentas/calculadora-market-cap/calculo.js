@@ -20,6 +20,9 @@
   "use strict";
 
   var REGUA = ["bitcoin", "ethereum", "solana", "aave", "uniswap", "hyperliquid"];
+  /* Símbolo de cada projeto da régua: na fonte reserva (CoinPaprika) o
+     Bitcoin é "btc-bitcoin", então o id da CoinGecko não basta. */
+  var REGUA_SIMBOLOS = { bitcoin: "BTC", ethereum: "ETH", solana: "SOL", aave: "AAVE", uniswap: "UNI", hyperliquid: "HYPE" };
 
   function finito(x) { return typeof x === "number" && isFinite(x); }
   function positivo(x) { return finito(x) && x > 0 ? x : null; }
@@ -251,14 +254,22 @@
      O localStorage é dividido com as carteiras do ATLAS. A resposta crua
      da CoinGecko tem ~97 KB por token (tickers, descrição) e o top 250
      ~212 KB; a tela usa uma fração disso. */
-  function enxugarFicha(c) {
+  function enxugarFicha(c, fonte) {
     if (!c) return null;
     var l = c.links || {};
+    /* A CoinPaprika não manda mais a circulação (só total e máximo).
+       Ela sai de valor de mercado ÷ preço, a mesma conta ao contrário. */
+    var sup = c.supply ? { circulating: c.supply.circulating, total: c.supply.total, max: c.supply.max } : null;
+    if (sup && positivo(sup.circulating) == null) {
+      var deduzida = precoNoMcap(c.marketCap, c.usd);
+      if (deduzida != null) sup.circulating = deduzida;
+    }
     return {
+      fonte: fonte || "coingecko",
       id: c.id, symbol: c.symbol, name: c.name, image: c.image, usd: c.usd,
       marketCap: c.marketCap, fdv: c.fdv, rank: c.rank,
       ath: c.ath || null, athDate: c.athDate || null,
-      supply: c.supply || null,
+      supply: sup,
       links: { whitepaper: l.whitepaper || null, homepage: l.homepage || null }
     };
   }
@@ -267,6 +278,41 @@
     return (lista || []).map(function (m) {
       return { id: m.id, name: m.name, symbol: m.symbol, marketCap: m.marketCap };
     });
+  }
+
+  /* ---------- várias fontes, ids diferentes ---------- */
+  function simb(x) { return String(x || "").toUpperCase(); }
+
+  /* Os projetos da régua, na ordem da régua: pelo id da CoinGecko ou,
+     na fonte reserva, pelo símbolo (o de maior valor de mercado, para
+     um token homônimo pequeno não tomar o lugar). */
+  function acharNaRegua(mercado) {
+    var l = mercado || [];
+    return REGUA.map(function (id) {
+      var porId = l.filter(function (m) { return m && m.id === id; })[0];
+      if (porId) return porId;
+      var s = REGUA_SIMBOLOS[id];
+      return l.filter(function (m) { return m && simb(m.symbol) === s; })
+        .sort(function (a, b) { return (b.marketCap || 0) - (a.marketCap || 0); })[0] || null;
+    }).filter(Boolean);
+  }
+
+  /* O próprio token sai da lista do ranking, pelo id ou pelo símbolo
+     (o token pode ter vindo de uma fonte e o ranking de outra). */
+  function semOToken(lista, id, simbolo) {
+    var s = simbolo ? simb(simbolo) : null;
+    return (lista || []).filter(function (m) {
+      return m && m.id !== id && !(s && simb(m.symbol) === s);
+    });
+  }
+
+  /* Traduz para o id da fonte reserva usando a busca dela: símbolo
+     exato, o de melhor ranking. */
+  function idPeloSimbolo(resultados, simbolo) {
+    var s = simb(simbolo);
+    var achados = (resultados || []).filter(function (r) { return r && simb(r.symbol) === s; })
+      .sort(function (a, b) { return (a.rank || 1e9) - (b.rank || 1e9); });
+    return achados.length ? achados[0].id : null;
   }
 
   function podarFichas(fichas, max) {
@@ -414,6 +460,7 @@
 
   var api = {
     REGUA: REGUA,
+    acharNaRegua: acharNaRegua, semOToken: semOToken, idPeloSimbolo: idPeloSimbolo,
     mesAno: mesAno, descreverRegua: descreverRegua, alvoExemplo: alvoExemplo,
     resumoSimples: resumoSimples, perguntaComum: perguntaComum, glossario: glossario,
     opcaoValer: opcaoValer, enxugarFicha: enxugarFicha, enxugarMercado: enxugarMercado,
