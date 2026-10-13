@@ -75,7 +75,7 @@ Sem token na URL, a tela abre com a busca e a explicação, sem token padrão.
 ### 3. Calculadora (três abas)
 
 Todo resultado sai em duas colunas: **com os tokens de hoje** (circulação) e
-**quando tudo desbloquear** (oferta máxima, ou total).
+**quando tudo desbloquear** (oferta total, ou máxima se não houver total).
 
 - **Preço sonhado:** entrada = preço em US$. Saídas por coluna: valor de
   mercado exigido; multiplicador sobre o tamanho atual; régua (quantos BTC,
@@ -117,7 +117,10 @@ de comportamento.
 
 ## As contas (`calculo.js`)
 
-- `ofertaCheia = max ?? total`
+- `ofertaCheia = total ?? max`. Mudou na implementação (13/10/2026): o FDV
+  da CoinGecko usa a oferta total. No JUP, o máximo de 10 bi ficou velho
+  depois da queima, e o total é 6,86 bi. A ficha avisa quando o teto do
+  contrato é maior que o total.
 - `faltaEntrar = ofertaCheia − circulante` (mínimo 0)
 - `pctCirculando = circulante ÷ ofertaCheia`
 - `mcapNoPreco(preco, oferta) = preco × oferta`

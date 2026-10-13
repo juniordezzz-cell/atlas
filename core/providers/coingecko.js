@@ -227,11 +227,15 @@
        chamada só: preço, variações por janela, ATH/ATL, supply,
        contratos por rede, categorias, descrição, links e exchanges.
        Campo ausente = null (a tela mostra "indisponível"). */
-    assetFull: function (id) {
+    /* o.ttl opcional: a Calculadora de Market Cap passa 0 (não grava a
+       resposta crua de ~97 KB no cache compartilhado; guarda a versão
+       enxuta por conta própria). Os outros usos seguem com 3 min. */
+    assetFull: function (id, o) {
       if (!id) return Promise.resolve(null);
+      var ttl = o && o.ttl != null ? o.ttl : 180000;
       return AtlasHttp.getJSON(BASE + "/coins/" + encodeURIComponent(id) +
         "?localization=false&tickers=true&market_data=true&community_data=false&developer_data=false",
-        { ttl: 180000, headers: headers(), cacheKey: "cg.coin." + id }
+        { ttl: ttl, headers: headers(), cacheKey: "cg.coin." + id }
       ).then(function (c) {
         if (!c) return null;
         var m = c.market_data || {};

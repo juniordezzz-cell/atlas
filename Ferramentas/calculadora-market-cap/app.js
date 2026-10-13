@@ -6,9 +6,11 @@
    Spec: docs/superpowers/specs/2026-10-13-calculadora-market-cap-design.md
 
    Dados: provedor CoinGecko do ATLAS (core/providers/coingecko.js),
-   que já tem cache e retry. O AtlasHttp não devolve dado vencido
-   quando a rede falha, então guardamos o último resultado bom aqui
-   (atlas.mcap.ultimo.v1) para mostrar "dados de HH:MM" sem rede.
+   chamado com ttl 0. O cache do AtlasHttp guardaria a resposta crua
+   (~97 KB por token, ~212 KB o top 250) no localStorage que as
+   carteiras também usam. Guardamos aqui só a versão enxuta
+   (atlas.mcap.cache.v1, no máximo 10 fichas): ela serve de cache
+   (ficha 3 min, ranking 10 min) e de reserva sem rede, com o horário.
 
    Segurança: todo texto vindo da API passa por esc() antes de virar
    HTML, e toda URL passa por C.linkSeguro() (só http/https).
@@ -18,7 +20,8 @@
   var C = window.AtlasMcapCalc;
   var cg = window.AtlasProviders && window.AtlasProviders.get("coingecko");
   var $ = function (id) { return document.getElementById(id); };
-  var LS_ULTIMO = "atlas.mcap.ultimo.v1";
+  var LS_CACHE = "atlas.mcap.cache.v1";
+  var TTL_FICHA = 180000, TTL_MERCADO = 600000, MAX_FICHAS = 10;
 
   var estado = {
     coin: null,
@@ -43,21 +46,28 @@
       "</span>";
   }
 
+  /* Dois avisos na mesma linha: o da carga ("dados de HH:MM", "régua
+     indisponível") vale enquanto aqueles números estão na tela; o da
+     busca é passageiro. Uma busca bem-sucedida devolve o da carga em vez
+     de apagá-lo — senão número velho ficaria na tela sem aviso. */
+  var avisoCarga = "";
   function aviso(texto) {
     var el = $("mc-aviso");
     el.textContent = texto || "";
     el.hidden = !texto;
   }
+  function avisarCarga(texto) { avisoCarga = texto || ""; aviso(avisoCarga); }
 
-  /* ---------- cache do último resultado bom ---------- */
-  function guardarUltimo(coin, mercado) {
-    try { localStorage.setItem(LS_ULTIMO, JSON.stringify({ t: Date.now(), coin: coin, mercado: mercado })); } catch (e) {}
-  }
-  function lerUltimo(id) {
+  /* ---------- cache enxuto ---------- */
+  function lerCache() {
     try {
-      var u = JSON.parse(localStorage.getItem(LS_ULTIMO) || "null");
-      return u && u.coin && u.coin.id === id ? u : null;
-    } catch (e) { return null; }
+      var c = JSON.parse(localStorage.getItem(LS_CACHE) || "null");
+      return c && typeof c === "object" ? { mercado: c.mercado || null, fichas: c.fichas || {} } : { mercado: null, fichas: {} };
+    } catch (e) { return { mercado: null, fichas: {} }; }
+  }
+  function gravarCache(c) {
+    c.fichas = C.podarFichas(c.fichas, MAX_FICHAS);
+    try { localStorage.setItem(LS_CACHE, JSON.stringify(c)); } catch (e) {}
   }
   function hora(t) {
     var d = new Date(t);
@@ -94,7 +104,7 @@
       if (minha !== seqBusca) return;
       sugestoes = (lista || []).slice(0, 8); ativa = sugestoes.length ? 0 : -1;
       desenharSugestoes();
-      aviso("");
+      aviso(avisoCarga);
     }).catch(function (err) {
       if (minha !== seqBusca) return;
       fecharSugestoes();
@@ -137,34 +147,62 @@
   }
 
   /* ---------- carga ---------- */
+  /* Ranking e régua: cache enxuto de 10 min; sem rede, a última lista
+     guardada (com o horário no aviso). Devolve { lista, t, velho }. */
   function carregarMercado() {
-    return cg.topMovers({ order: "market_cap_desc", perPage: 250, ttl: 600000 })
-      .catch(function () { return []; });
+    var m = lerCache().mercado;
+    if (m && Date.now() - m.t < TTL_MERCADO) return Promise.resolve({ lista: m.lista, t: m.t, velho: false });
+    return cg.topMovers({ order: "market_cap_desc", perPage: 250, ttl: 0 }).then(function (cru) {
+      var lista = C.enxugarMercado(cru);
+      if (lista.length) {
+        var c = lerCache();
+        c.mercado = { t: Date.now(), lista: lista };
+        gravarCache(c);
+      }
+      return { lista: lista, t: Date.now(), velho: false };
+    }).catch(function () {
+      return m ? { lista: m.lista, t: m.t, velho: true } : { lista: [], t: 0, velho: false };
+    });
+  }
+
+  /* Ficha: cache enxuto de 3 min; sem rede, a última ficha guardada. */
+  function carregarFicha(id) {
+    var f = lerCache().fichas[id];
+    if (f && Date.now() - f.t < TTL_FICHA) return Promise.resolve({ coin: f.coin, t: f.t, velho: false });
+    return cg.assetFull(id, { ttl: 0 }).then(function (cru) {
+      if (!cru) throw new Error("A CoinGecko não devolveu dados deste token.");
+      var coin = C.enxugarFicha(cru);
+      var c = lerCache();
+      c.fichas[id] = { t: Date.now(), coin: coin };
+      gravarCache(c);
+      return { coin: coin, t: Date.now(), velho: false };
+    }).catch(function (err) {
+      if (f) return { coin: f.coin, t: f.t, velho: true, erro: err };
+      throw err;
+    });
   }
 
   var seqCarga = 0;
   function carregar(id) {
     var minha = ++seqCarga;
-    aviso("Carregando…");
-    Promise.all([cg.assetFull(id), carregarMercado()]).then(function (r) {
+    avisarCarga("Carregando…");
+    Promise.all([carregarFicha(id), carregarMercado()]).then(function (r) {
       if (minha !== seqCarga) return;
-      if (!r[0]) throw new Error("A CoinGecko não devolveu dados deste token.");
-      estado.coin = r[0];
-      estado.mercado = r[1] || [];
-      if (estado.mercado.length) guardarUltimo(estado.coin, estado.mercado);
-      aviso(estado.mercado.length ? "" : "Régua e ranking indisponíveis agora (limite da CoinGecko). Tente em instantes.");
+      var ficha = r[0], merc = r[1];
+      estado.coin = ficha.coin;
+      estado.mercado = merc.lista || [];
+      var avisos = [];
+      if (ficha.velho) {
+        avisos.push(((ficha.erro && ficha.erro.message) || "Sem conexão com a CoinGecko.") +
+          " Mostrando os dados de " + hora(ficha.t) + ".");
+      }
+      if (merc.velho) avisos.push("Régua e ranking de " + hora(merc.t) + ".");
+      else if (!estado.mercado.length) avisos.push("Régua e ranking indisponíveis agora (limite da CoinGecko). Tente em instantes.");
+      avisarCarga(avisos.join(" "));
       desenharTudo();
     }).catch(function (err) {
       if (minha !== seqCarga) return;
-      var msg = (err && err.message) || "Não consegui carregar este token.";
-      var u = lerUltimo(id);
-      if (u) {
-        estado.coin = u.coin; estado.mercado = u.mercado || [];
-        aviso(msg + " Mostrando os dados de " + hora(u.t) + ".");
-        desenharTudo();
-      } else {
-        aviso(msg);
-      }
+      avisarCarga((err && err.message) || "Não consegui carregar este token.");
     });
   }
 
@@ -338,6 +376,7 @@
 
   function renderPainel() {
     var e = estado.entradas, c = estado.coin, html;
+    e.valer = C.opcaoValer(e.valer, regua().map(function (p) { return p.id; }));
     if (estado.aba === "preco") {
       html = '<div class="campos">' + campo("mc-in-preco", "Se " + esc(c.symbol) + " chegar a (US$)", e.preco,
         "Hoje: " + C.fmtUSD(c.usd) + ". Aceita 0,5 · 1 · 2.500") + "</div>";

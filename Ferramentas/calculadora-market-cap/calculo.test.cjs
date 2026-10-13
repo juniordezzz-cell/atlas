@@ -194,6 +194,47 @@ test("formatos", () => {
   assert.equal(C.fmtPct(null), "—");
 });
 
+/* Revisão final, Important 1: sem a régua (CoinGecko 429) o select só
+   tinha "Outro valor…" mas o estado seguia "solana" — tela travada. */
+test("opcaoValer nunca aponta para projeto que não está na régua", () => {
+  assert.equal(C.opcaoValer("solana", ["bitcoin", "solana"]), "solana");
+  assert.equal(C.opcaoValer("outro", ["bitcoin"]), "outro");
+  assert.equal(C.opcaoValer("solana", ["bitcoin", "aave"]), "bitcoin");
+  assert.equal(C.opcaoValer("solana", []), "outro");
+  assert.equal(C.opcaoValer(undefined, null), "outro");
+});
+
+/* Revisão final, Important 2: guardar só o que a tela usa. A resposta
+   crua tem ~97 KB por token (tickers, descrição) e o top 250 ~212 KB. */
+test("enxugarFicha guarda só os campos da tela", () => {
+  const cru = {
+    id: "jupiter", symbol: "JUP", name: "Jupiter", image: "https://i/j.png", usd: 0.33,
+    marketCap: 1.1e9, fdv: 2.28e9, rank: 73,
+    supply: { circulating: 3.3e9, total: 6.86e9, max: 10e9 },
+    links: { whitepaper: null, homepage: "https://jup.ag", twitter: "https://x.com/j" },
+    description: "x".repeat(20000), exchanges: [{ name: "a" }], change: { h24: 1 }
+  };
+  const e = C.enxugarFicha(cru);
+  assert.deepEqual(Object.keys(e).sort(),
+    ["fdv", "id", "image", "links", "marketCap", "name", "rank", "supply", "symbol", "usd"]);
+  assert.deepEqual(e.links, { whitepaper: null, homepage: "https://jup.ag" });
+  assert.deepEqual(e.supply, cru.supply);
+  assert.ok(JSON.stringify(e).length < 600);
+  assert.equal(C.enxugarFicha(null), null);
+});
+
+test("enxugarMercado guarda id, nome, símbolo e valor de mercado", () => {
+  const l = C.enxugarMercado([{ id: "a", name: "A", symbol: "A", marketCap: 5, usd: 1, image: "x", volume24h: 9 }]);
+  assert.deepEqual(l, [{ id: "a", name: "A", symbol: "A", marketCap: 5 }]);
+  assert.deepEqual(C.enxugarMercado(null), []);
+});
+
+test("podarFichas mantém só as mais recentes", () => {
+  const f = { a: { t: 1 }, b: { t: 5 }, c: { t: 3 }, d: { t: 4 } };
+  assert.deepEqual(Object.keys(C.podarFichas(f, 2)).sort(), ["b", "d"]);
+  assert.deepEqual(C.podarFichas(null, 2), {});
+});
+
 test("linkSeguro só aceita http(s)", () => {
   assert.equal(C.linkSeguro("https://docs.jup.ag"), "https://docs.jup.ag");
   assert.equal(C.linkSeguro("http://x.io/a"), "http://x.io/a");

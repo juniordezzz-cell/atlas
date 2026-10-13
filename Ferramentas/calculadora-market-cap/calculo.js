@@ -230,8 +230,50 @@
     return out;
   }
 
+  /* ---------- escolha da aba "Valer como" ----------
+     Sem a régua (CoinGecko 429) ou sem o projeto escolhido nela, o
+     select só mostraria "Outro valor…" enquanto o estado apontava para
+     um projeto ausente — tela travada. Cai no primeiro da régua, ou em
+     "outro" se a régua estiver vazia. */
+  function opcaoValer(valer, ids) {
+    ids = ids || [];
+    if (valer === "outro") return "outro";
+    if (ids.indexOf(valer) >= 0) return valer;
+    return ids.length ? ids[0] : "outro";
+  }
+
+  /* ---------- o que fica guardado no navegador ----------
+     O localStorage é dividido com as carteiras do ATLAS. A resposta crua
+     da CoinGecko tem ~97 KB por token (tickers, descrição) e o top 250
+     ~212 KB; a tela usa uma fração disso. */
+  function enxugarFicha(c) {
+    if (!c) return null;
+    var l = c.links || {};
+    return {
+      id: c.id, symbol: c.symbol, name: c.name, image: c.image, usd: c.usd,
+      marketCap: c.marketCap, fdv: c.fdv, rank: c.rank,
+      supply: c.supply || null,
+      links: { whitepaper: l.whitepaper || null, homepage: l.homepage || null }
+    };
+  }
+
+  function enxugarMercado(lista) {
+    return (lista || []).map(function (m) {
+      return { id: m.id, name: m.name, symbol: m.symbol, marketCap: m.marketCap };
+    });
+  }
+
+  function podarFichas(fichas, max) {
+    var ids = Object.keys(fichas || {}).sort(function (a, b) { return fichas[b].t - fichas[a].t; });
+    var out = {};
+    ids.slice(0, max).forEach(function (id) { out[id] = fichas[id]; });
+    return out;
+  }
+
   var api = {
     REGUA: REGUA,
+    opcaoValer: opcaoValer, enxugarFicha: enxugarFicha, enxugarMercado: enxugarMercado,
+    podarFichas: podarFichas,
     oferta: oferta, mcapNoPreco: mcapNoPreco, precoNoMcap: precoNoMcap,
     multiplicador: multiplicador, regua: regua, posicaoNoRanking: posicaoNoRanking,
     meuDinheiro: meuDinheiro, lerNumero: lerNumero,
