@@ -226,13 +226,170 @@
   }
 
   /* As próximas duas funções ganham corpo nas Tasks 4 e 5. */
-  function renderPainel() { $("mc-painel").textContent = ""; }
+  /* ---------- calculadora ---------- */
+  function regua() {
+    var porId = {};
+    estado.mercado.forEach(function (m) { porId[m.id] = m; });
+    return C.REGUA.map(function (id) { return porId[id]; }).filter(Boolean);
+  }
+
+  function mcapHoje() {
+    var c = estado.coin, of = C.oferta(c.supply);
+    return c.marketCap || C.mcapNoPreco(c.usd, of.circulante);
+  }
+
+  /* As duas colunas de todo resultado: tokens de hoje × tudo desbloqueado. */
+  function colunas() {
+    var of = C.oferta(estado.coin.supply);
+    return [
+      { titulo: "Com os tokens de hoje", qtd: of.circulante,
+        semDado: "A CoinGecko não informa a circulação deste token." },
+      { titulo: "Quando tudo desbloquear", qtd: of.cheia,
+        semDado: "A CoinGecko não informa a oferta total deste token." }
+    ];
+  }
+
+  function colunaVazia(col) {
+    return '<div class="col"><h3>' + col.titulo + '</h3><p class="indisp">' + esc(col.semDado) + "</p></div>";
+  }
+
+  function textoRanking(mcap) {
+    var r = C.posicaoNoRanking(mcap, estado.mercado, estado.coin.id);
+    if (!r) return "";
+    if (r.maiorQueTodos) return "Ficaria em 1º lugar do ranking, acima de " + esc(r.abaixo.name) + ".";
+    if (r.foraDaLista) return "Abaixo do " + r.tamanhoLista + "º lugar do ranking.";
+    return "Ficaria em " + r.posicao + "º lugar, entre " + esc(r.acima.name) + " e " + esc(r.abaixo.name) + ".";
+  }
+
+  function blocoTamanho(mcap) {
+    var linhas = C.regua(mcap, regua()).map(function (p) {
+      return "<li><span>" + esc(p.name) + '</span><span class="num">' + C.fmtVezes(p.vezes) + "</span></li>";
+    }).join("");
+    var rk = textoRanking(mcap);
+    return (rk ? '<p class="linha">' + rk + "</p>" : "") +
+      (linhas ? '<p class="linha">Esse tamanho equivale a:</p><ul>' + linhas + "</ul>" : "");
+  }
+
+  function colunaMcap(col, preco) {
+    var mcap = C.mcapNoPreco(preco, col.qtd);
+    if (mcap == null) return colunaVazia(col);
+    return '<div class="col"><h3>' + col.titulo + "</h3>" +
+      '<p class="grande num">' + C.fmtUSD(mcap) + "</p>" +
+      '<p class="linha">' + C.fmtVezes(C.multiplicador(mcap, mcapHoje())) + " o valor de mercado de hoje</p>" +
+      blocoTamanho(mcap) + "</div>";
+  }
+
+  function resultadoPreco() {
+    var preco = C.lerNumero(estado.entradas.preco);
+    if (preco == null) return "";
+    return '<div class="colunas">' + colunas().map(function (col) { return colunaMcap(col, preco); }).join("") + "</div>";
+  }
+
+  function mcapEscolhido() {
+    var e = estado.entradas;
+    if (e.valer === "outro") return C.lerNumero(e.valerUsd);
+    var p = regua().filter(function (x) { return x.id === e.valer; })[0];
+    return p ? p.marketCap : null;
+  }
+
+  function resultadoValer() {
+    var mcap = mcapEscolhido();
+    if (mcap == null) return "";
+    var usd = estado.coin.usd;
+    return '<div class="colunas">' + colunas().map(function (col) {
+      var preco = C.precoNoMcap(mcap, col.qtd);
+      if (preco == null) return colunaVazia(col);
+      return '<div class="col"><h3>' + col.titulo + "</h3>" +
+        '<p class="grande num">' + C.fmtUSD(preco) + "</p>" +
+        '<p class="linha">' + C.fmtVezes(C.multiplicador(preco, usd)) + " o preço de hoje (" + C.fmtUSD(usd) + ")</p></div>";
+    }).join("") + "</div>";
+  }
+
+  function resultadoDinheiro() {
+    var e = estado.entradas, c = estado.coin;
+    var valor = C.lerNumero(e.investido), alvo = C.lerNumero(e.alvo);
+    var r = C.meuDinheiro(valor, c.usd, alvo);
+    if (!r) return "";
+    var cls = r.lucro >= 0 ? "pos" : "neg";
+    var sinal = r.lucro >= 0 ? "+" : "−";
+    return '<div class="dinheiro">' +
+      '<div class="col"><h3>Você compra</h3><p class="grande num">' + C.fmtQtd(r.tokens) + " " + esc(c.symbol) + "</p></div>" +
+      '<div class="col"><h3>Valeria</h3><p class="grande num">' + C.fmtUSD(r.valorFinal) + "</p></div>" +
+      '<div class="col"><h3>Resultado</h3><p class="grande num ' + cls + '">' + sinal + C.fmtUSD(Math.abs(r.lucro)) +
+        '</p><p class="linha num ' + cls + '">' + sinal + C.fmtPct(Math.abs(r.lucroPct) / 100) + "</p></div>" +
+      "</div>" +
+      '<p class="linha">Para ' + esc(c.symbol) + " chegar a " + C.fmtUSD(alvo) + ", o projeto precisa valer:</p>" +
+      '<div class="colunas">' + colunas().map(function (col) { return colunaMcap(col, alvo); }).join("") + "</div>";
+  }
+
+  function renderResultado() {
+    var html = estado.aba === "preco" ? resultadoPreco()
+      : estado.aba === "valer" ? resultadoValer()
+      : resultadoDinheiro();
+    var el = $("mc-res");
+    if (el) el.innerHTML = html;
+  }
+
+  function campo(id, rotulo, valor, dica) {
+    return '<div class="campo"><label for="' + id + '">' + rotulo + "</label>" +
+      '<input id="' + id + '" type="text" inputmode="decimal" autocomplete="off" value="' + esc(valor) + '">' +
+      (dica ? '<p class="dica">' + dica + "</p>" : "") + "</div>";
+  }
+
+  function renderPainel() {
+    var e = estado.entradas, c = estado.coin, html;
+    if (estado.aba === "preco") {
+      html = '<div class="campos">' + campo("mc-in-preco", "Se " + esc(c.symbol) + " chegar a (US$)", e.preco,
+        "Hoje: " + C.fmtUSD(c.usd) + ". Aceita 0,5 · 1 · 2.500") + "</div>";
+    } else if (estado.aba === "valer") {
+      var ops = regua().map(function (p) {
+        return '<option value="' + esc(p.id) + '"' + (e.valer === p.id ? " selected" : "") + ">" +
+          esc(p.name) + " (" + C.fmtUSD(p.marketCap) + ")</option>";
+      }).join("");
+      html = '<div class="campos"><div class="campo"><label for="mc-in-valer">Se ' + esc(c.symbol) + " valesse o mesmo que</label>" +
+        '<select id="mc-in-valer">' + ops + '<option value="outro"' + (e.valer === "outro" ? " selected" : "") + ">Outro valor…</option></select></div>" +
+        (e.valer === "outro" ? campo("mc-in-valerusd", "Valor de mercado (US$)", e.valerUsd, "Ex.: 10 bi · 500 mi") : "") +
+        "</div>";
+    } else {
+      html = '<div class="campos">' +
+        campo("mc-in-investido", "Quanto você investe (US$)", e.investido, "") +
+        campo("mc-in-alvo", "Se " + esc(c.symbol) + " chegar a (US$)", e.alvo, "Hoje: " + C.fmtUSD(c.usd)) +
+        "</div>";
+    }
+    $("mc-painel").innerHTML = html + '<div id="mc-res" class="res"></div>';
+    renderResultado();
+  }
+
+  function ligarCalculadora() {
+    document.querySelector(".abas").addEventListener("click", function (ev) {
+      var b = ev.target.closest("button[data-aba]");
+      if (!b || !estado.coin) return;
+      estado.aba = b.getAttribute("data-aba");
+      document.querySelectorAll(".abas button").forEach(function (x) {
+        x.setAttribute("aria-selected", String(x === b));
+      });
+      renderPainel();
+    });
+    var mapa = { "mc-in-preco": "preco", "mc-in-valerusd": "valerUsd", "mc-in-investido": "investido", "mc-in-alvo": "alvo" };
+    $("mc-painel").addEventListener("input", function (ev) {
+      var k = mapa[ev.target.id];
+      if (!k) return;
+      estado.entradas[k] = ev.target.value;
+      renderResultado();
+    });
+    $("mc-painel").addEventListener("change", function (ev) {
+      if (ev.target.id !== "mc-in-valer") return;
+      estado.entradas.valer = ev.target.value;
+      renderPainel(); /* "Outro valor…" mostra/esconde o campo de US$ */
+    });
+  }
   function renderExplica() { $("mc-explica").textContent = ""; }
 
   /* ---------- início ---------- */
   function iniciar() {
     if (!C || !cg) { aviso("Falta um arquivo do ATLAS para buscar preços. Recarregue a página."); return; }
     ligarBusca();
+    ligarCalculadora();
     renderExplica();
     var id = new URLSearchParams(location.search).get("token");
     if (id) carregar(id);

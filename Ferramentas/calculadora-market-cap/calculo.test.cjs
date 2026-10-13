@@ -185,6 +185,10 @@ test("formatos", () => {
   assert.equal(C.fmtVezes(0.3712), "0,37×");
   assert.equal(C.fmtVezes(4000), "4.000×");
   assert.equal(C.fmtVezes(null), "—");
+  /* fração pequena nunca vira "0×" (JUP a US$ 1 = 0,0016 Bitcoin) */
+  assert.equal(C.fmtVezes(0.0015821), "0,0016×");
+  assert.equal(C.fmtVezes(0.0123), "0,012×");
+  assert.equal(C.fmtVezes(0.00000042), "0,00000042×");
   assert.equal(C.fmtPct(0.62), "62%");
   assert.equal(C.fmtPct(0.0734), "7,3%");
   assert.equal(C.fmtPct(null), "—");

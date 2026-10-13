@@ -195,7 +195,10 @@
     if (!finito(n)) return "—";
     if (n >= 10) return br(n, 0, 0) + "×";
     if (n >= 1) return br(n, 0, 1) + "×";
-    return br(n, 0, 2) + "×";
+    if (n >= 0.1) return br(n, 0, 2) + "×";
+    /* Fração pequena com 2 algarismos significativos: "0,0016×", nunca
+       "0×" — arredondar um tamanho real para zero seria mentir. */
+    return n.toLocaleString("pt-BR", { maximumSignificantDigits: 2, maximumFractionDigits: 20 }) + "×";
   }
 
   function fmtPct(f) {
