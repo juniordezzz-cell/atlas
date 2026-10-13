@@ -37,8 +37,8 @@
   // A FAIXA superior (item 2) é só para os MÓDULOS — o Dashboard raiz
   // tem sidebar/topbar próprios. O ORÁCULO (item 1), porém, é onipresente:
   // existe em TODOS os módulos E no Dashboard, sempre o mesmo componente.
-  var STRIP_ENABLED   = ["hold", "trade", "defi", "rwa", "academy"];
-  var ORACULO_ENABLED = ["atlas", "hold", "trade", "defi", "rwa", "academy", "tools"];
+  var STRIP_ENABLED   = ["hold", "trade", "defi", "rwa", "academy", "mercado"];
+  var ORACULO_ENABLED = ["atlas", "hold", "trade", "defi", "rwa", "academy", "mercado", "tools"];
   if (ORACULO_ENABLED.indexOf(MODULE) === -1) return;
 
   var WANT_STRIP = STRIP_ENABLED.indexOf(MODULE) !== -1;
@@ -46,7 +46,7 @@
   var LABEL = {
     atlas: "ATLAS",
     hold: "HOLD", trade: "TRADE", defi: "DEFI",
-    rwa: "RWA", academy: "ACADEMY", tools: "FERRAMENTAS"
+    rwa: "RWA", academy: "ACADEMY", mercado: "MERCADO", tools: "FERRAMENTAS"
   }[MODULE] || MODULE.toUpperCase();
 
   // Profundidade da página → caminho correto para a raiz do projeto.
@@ -191,6 +191,10 @@
        Relatórios são leitura, não operação. */
     { id: "carteiras", label: "Carteiras", href: "pages/carteiras.html",
       icon: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><path d="M3 8.5h15"/><circle cx="17" cy="13.5" r="1.4"/>' },
+    /* Mercado: a central de cripto + RWA em tempo real. Morava dentro do
+       Academy até 13/10/2026; saiu para o Academy ficar só com cursos. */
+    { id: "mercado", label: "Mercado", href: "mercado/index.html",
+      icon: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><path d="M15 8h4v4"/>' },
     { id: "academy", label: "Academy", href: "academy/index.html",
       icon: '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.7 3 6 3s6-2 6-3v-5"/>' },
     /* Ferramentas: a bancada do ATLAS. Não é módulo de patrimônio nem

@@ -51,7 +51,7 @@
   function raiz() {
     if (RAIZ_SCRIPT !== null) return RAIZ_SCRIPT;
     if (window.AtlasShell && AtlasShell.raiz) return AtlasShell.raiz();
-    return /\/(hold|trade|defi|RWA|academy|pages)\//i.test(location.pathname) ? "../" : "";
+    return /\/(hold|trade|defi|RWA|academy|mercado|pages)\//i.test(location.pathname) ? "../" : "";
   }
 
   function registrar() {

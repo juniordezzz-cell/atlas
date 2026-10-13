@@ -43,6 +43,7 @@
     if (path.indexOf("/defi/") !== -1)    return "defi";
     if (path.indexOf("/rwa/") !== -1)     return "rwa";
     if (path.indexOf("/academy/") !== -1) return "academy";
+    if (path.indexOf("/mercado/") !== -1) return "mercado";
     return "atlas"; // dashboard, login, boas-vindas, boot
   }
 
@@ -57,6 +58,7 @@
     defi: "DEFI",
     rwa: "RWA",
     academy: "ACADEMY",
+    mercado: "MERCADO",
     atlas: "ATLAS"
   };
 

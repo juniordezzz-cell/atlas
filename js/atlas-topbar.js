@@ -122,7 +122,7 @@
      1. APLICATIVOS — atalho para os módulos
      ============================================================ */
 
-  var MODULOS = /^(hold|trade|defi|rwa|academy)\//i;
+  var MODULOS = /^(hold|trade|defi|rwa|academy|mercado)\//i;
 
   /* As 9 bolinhas abrem um LAUNCHER em modal (card por módulo), no lugar
      do dropdown antigo. A lista vem de AtlasShell.destinos() — uma
@@ -131,12 +131,13 @@
     dashboard: "Visão geral do patrimônio", hold: "Carteira de longo prazo",
     trade: "Operações e processo", defi: "Pools, staking e lending",
     rwa: "Ativos do mundo real", carteiras: "Carteiras e movimentações",
-    academy: "Pesquisa de mercado (cripto + RWA)", ferramentas: "A bancada de utilidades",
+    mercado: "Cripto e RWA em tempo real", academy: "Cursos e aulas", ferramentas: "A bancada de utilidades",
     relatorios: "Relatórios do patrimônio", configuracoes: "Preferências e dados"
   };
   var APP_GRUPOS = [
     { nome: "Módulos", ids: ["hold", "trade", "defi", "rwa"] },
-    { nome: "Painéis", ids: ["dashboard", "carteiras", "academy"] },
+    { nome: "Painéis", ids: ["dashboard", "carteiras", "mercado"] },
+    { nome: "Aprender", ids: ["academy"] },
     { nome: "Sistema", ids: ["ferramentas", "relatorios", "configuracoes"] }
   ];
 

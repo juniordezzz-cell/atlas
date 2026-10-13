@@ -146,7 +146,9 @@
    frases, régua em "% do tamanho" com barra, pergunta comum e dicionário. */
 /* v92 = Calculadora de Market Cap cai para a CoinPaprika quando a
    CoinGecko dá limite (busca, ficha e ranking). */
-var VERSAO = "atlas-v92";
+/* v93 = a central de mercado saiu do Academy para mercado/ (item
+   "Mercado" no menu); o Academy ficou limpo, à espera dos cursos. */
+var VERSAO = "atlas-v93";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

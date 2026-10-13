@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Academy do ATLAS — central de pesquisa de mercado: cripto e RWA em tempo real, com pagina dedicada por ativo.">
+  <meta name="description" content="Academy do ATLAS: cursos e aulas.">
   <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
@@ -13,18 +13,19 @@
   <link rel="stylesheet" href="../themes/atlas-fonts.css">
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/global.css">
-  <link rel="stylesheet" href="css/academy.css?v=academy-19">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/ferramentas.css">
 
-  <!-- ===== ATLAS · camada global (Fase 0) ===================================
-       Identidade visual, tema, idioma e moeda centralizados.
-       ============================================================ -->
+  <!-- ===== ATLAS · camada global ===== -->
   <link rel="stylesheet" href="../themes/atlas-theme.css">
   <link rel="stylesheet" href="../themes/atlas-effects.css">
-  <!-- Efeitos do Magic UI (a fita de cotações usa .atlas-marquee). O Academy
-       não tem o atlas-shell.js, que carrega isto nas outras telas. -->
-  <link rel="stylesheet" href="../core/ui/atlas-magic.css">
   <link rel="stylesheet" href="../themes/atlas-print.css" media="print">
+  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
+  <link rel="stylesheet" href="../core/ui/atlas-palette.css">
+
   <script src="../core/atlas-storage.js"></script>
+  <script src="../core/atlas-contabilidade.js"></script>
+  <script src="../core/atlas-supervisor.js"></script>
   <script src="../core/settings.js"></script>
   <script src="../core/atlas-demo.js"></script>
   <script src="../core/i18n.js"></script>
@@ -33,56 +34,76 @@
   <script src="../core/atlas-auth.js"></script>
   <script src="../core/atlas-secure.js"></script>
   <script src="../core/atlas-pwa.js"></script>
-  <link rel="stylesheet" href="../core/ui/atlas-shell.css">
-  <script src="../core/ui/atlas-icons.js"></script>
   <link rel="stylesheet" href="../themes/atlas-sereno.css">
 </head>
 <body>
-<div class="app app--full">
+<div class="app">
 
-  <!-- ============ MAIN (sem sidebar) ============ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-mark">
+        <img src="../assets/iconeatlas.png" alt="ATLAS">
+      </span>
+      <span class="logo-text">ATLAS <span class="logo-section">ACADEMY</span></span>
+    </div>
+    <!-- O menu é injetado por js/atlas-nav.js a partir de AtlasShell.destinos(). -->
+    <nav class="nav" data-atlas-nav="academy"></nav>
+  </aside>
+
   <main class="main">
     <header class="topbar">
-      <a class="ac-back" href="../pages/dashboard.html" title="Voltar ao ATLAS">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        <span class="ac-back-logo"><img src="../assets/iconeatlas.png" alt="ATLAS"></span>
-        <span class="ac-back-text">ATLAS <b>ACADEMY</b></span>
-      </a>
+      <div class="greet">
+        <h1>Academy</h1>
+        <p>Cursos e aulas do ATLAS</p>
+      </div>
       <div class="topbar-right">
-        <div class="searchbox">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.5-3.5"/></svg>
-          <input type="text" id="globalSearch" placeholder="Pesquisar ativo (ex.: SOL, AAVE)…" autocomplete="off" />
-          <div class="search-results" id="searchResults" hidden></div>
-        </div>
+        <div class="avatar" aria-hidden="true"></div>
       </div>
     </header>
 
-    <div id="view"></div>
+    <!-- ============================================================
+         ACADEMY LIMPA (13/10/2026)
+         A central de mercado que morava aqui foi para mercado/ (item
+         "Mercado" do menu). Esta página espera os módulos do curso:
+         o dono tem uma pasta pronta com 10 módulos para entrar aqui.
+         ============================================================ -->
+    <div class="tools-intro">
+      <p>Os módulos do curso estão chegando. Em breve, cada um aparece aqui com as suas aulas.</p>
+    </div>
+
   </main>
 </div>
 
-<!-- ===== Camada de dados do Academy =====
-     Os includes abaixo levam ?v= (versão do Academy). Motivo: o dev
-     server (python http.server) responde 304 por falso-positivo de
-     timestamp e o navegador serve JS velho — o clássico "a correção
-     não pega". URL versionada é a única forma à prova de 304. Suba o
-     número ao mudar estes arquivos. -->
-<script src="../core/http.js?v=academy-19"></script>
-<script src="../core/providers/registry.js?v=academy-19"></script>
-<script src="../core/providers/feargreed.js?v=academy-19"></script>
-<script src="../core/providers/coingecko.js?v=academy-19"></script>
-<script src="../core/providers/coinpaprika.js?v=academy-19"></script>
-<script src="../core/providers/binance.js?v=academy-19"></script>
-<script src="../core/providers/coinlore.js?v=academy-19"></script>
-<script src="../core/providers/defillama.js?v=academy-19"></script>
-<script src="../core/providers/id-map.js?v=academy-19"></script>
-<script src="js/market-data.js?v=academy-19"></script>
+<div id="toasts"></div>
 
-<!-- ===== UI ===== -->
-<script src="js/academy-chart.js?v=academy-19"></script>
-<script src="js/academy-globe.js?v=academy-19"></script>
-<script src="js/dashboard.js?v=academy-19"></script>
-<script src="js/asset-page.js?v=academy-19"></script>
-<script src="js/academy.js?v=academy-19"></script>
+<!-- Stores dos módulos: o Oráculo e a paleta (Ctrl+K) do shell somam os
+     módulos e o caixa — o mesmo conjunto que as telas de pages/ carregam. -->
+<script src="../wallets/walletStore.js"></script>
+<script src="../wallets/walletTypes.js"></script>
+<script src="../wallets/walletLedger.js"></script>
+<script src="../wallets/walletCaixa.js"></script>
+<script src="../wallets/walletManager.js"></script>
+<script src="../wallets/walletMenus.js"></script>
+<script src="../js/atlas-nav.js"></script>
+<script src="../js/atlas-topbar.js"></script>
+<script src="../core/ui/atlas-flash.js"></script>
+<script src="../core/ui/atlas-icons.js"></script>
+<script src="../core/ui/atlas-ui.js"></script>
+
+<script src="../RWA/js/store.js"></script>
+<script src="../defi/js/tokens.js"></script>
+<script src="../defi/js/performance.js"></script>
+<script src="../defi/js/data.js"></script>
+<script src="../hold/data/seed.js"></script>
+<script src="../hold/js/state.js"></script>
+<script src="../trade/assets/js/core/util.js"></script>
+<script src="../trade/assets/js/core/store.js"></script>
+<script src="../trade/assets/js/core/seed.js"></script>
+<script src="../trade/assets/js/core/state.js"></script>
+<script src="../js/atlas-consolidation.js"></script>
+<script src="../core/atlas-notifications.js"></script>
+<script src="../core/ui/atlas-palette.js"></script>
+<script src="../core/atlas-vocabulario.js"></script>
+<script src="../core/ui/atlas-shell.js"></script>
 </body>
 </html>
