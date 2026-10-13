@@ -238,18 +238,6 @@
     return out;
   }
 
-  /* ---------- escolha da aba "Valer como" ----------
-     Sem a régua (CoinGecko 429) ou sem o projeto escolhido nela, o
-     select só mostraria "Outro valor…" enquanto o estado apontava para
-     um projeto ausente — tela travada. Cai no primeiro da régua, ou em
-     "outro" se a régua estiver vazia. */
-  function opcaoValer(valer, ids) {
-    ids = ids || [];
-    if (valer === "outro") return "outro";
-    if (ids.indexOf(valer) >= 0) return valer;
-    return ids.length ? ids[0] : "outro";
-  }
-
   /* ---------- o que fica guardado no navegador ----------
      O localStorage é dividido com as carteiras do ATLAS. A resposta crua
      da CoinGecko tem ~97 KB por token (tickers, descrição) e o top 250
@@ -463,7 +451,7 @@
     acharNaRegua: acharNaRegua, semOToken: semOToken, idPeloSimbolo: idPeloSimbolo,
     mesAno: mesAno, descreverRegua: descreverRegua, alvoExemplo: alvoExemplo,
     resumoSimples: resumoSimples, perguntaComum: perguntaComum, glossario: glossario,
-    opcaoValer: opcaoValer, enxugarFicha: enxugarFicha, enxugarMercado: enxugarMercado,
+    enxugarFicha: enxugarFicha, enxugarMercado: enxugarMercado,
     podarFichas: podarFichas,
     oferta: oferta, mcapNoPreco: mcapNoPreco, precoNoMcap: precoNoMcap,
     multiplicador: multiplicador, regua: regua, posicaoNoRanking: posicaoNoRanking,

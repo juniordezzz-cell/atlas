@@ -31,7 +31,7 @@
     coin: null,
     mercado: [],
     aba: "preco",
-    entradas: { preco: "", valer: "solana", valerUsd: "", investido: "100", alvo: "" }
+    entradas: { preco: "", investido: "100", alvo: "" }
   };
 
   function esc(s) {
@@ -167,7 +167,7 @@
     fecharSugestoes();
     $("mc-busca").value = s.name + " (" + s.symbol + ")";
     /* o preço sonhado do JUP não vale para o BTC */
-    estado.entradas.preco = ""; estado.entradas.alvo = ""; estado.entradas.valerUsd = "";
+    estado.entradas.preco = ""; estado.entradas.alvo = "";
     /* o símbolo vai junto no endereço: é com ele que a ficha acha o
        token na fonte reserva se a CoinGecko der limite ao abrir o link */
     var url = new URL(location.href);
@@ -417,39 +417,11 @@
       '<div class="colunas">' + colunas().map(function (col) { return colunaMcap(col, preco); }).join("") + "</div>";
   }
 
-  function mcapEscolhido() {
-    var e = estado.entradas;
-    if (e.valer === "outro") return C.lerNumero(e.valerUsd);
-    var p = reguaValer().filter(function (x) { return x.id === e.valer; })[0];
-    return p ? p.marketCap : null;
-  }
-
-  /* "Valer como a Solana" estudando a própria Solana daria sempre 1×. */
-  function reguaValer() {
-    var c = estado.coin || {};
-    return C.semOToken(regua(), c.id, c.symbol);
-  }
-
   /* O token não compete consigo mesmo no ranking — nem quando a ficha
      veio de uma fonte e o ranking de outra (ids diferentes). */
   function rankingSemOToken() {
     var c = estado.coin || {};
     return C.semOToken(estado.mercado, c.id, c.symbol);
-  }
-
-  function resultadoValer() {
-    var mcap = mcapEscolhido();
-    if (mcap == null) return "";
-    var usd = estado.coin.usd;
-    return '<div class="colunas">' + colunas().map(function (col) {
-      var preco = C.precoNoMcap(mcap, col.qtd);
-      if (preco == null) return colunaVazia(col);
-      var mult = C.multiplicador(preco, usd);
-      return '<div class="col"><h3>' + col.titulo + "</h3>" +
-        '<p class="grande num">' + C.fmtUSD(preco) + "</p>" +
-        (mult != null ? '<p class="linha">' + C.fmtVezes(mult) + " o preço de hoje (" + C.fmtUSD(usd) + ")</p>" : "") +
-        "</div>";
-    }).join("") + "</div>";
   }
 
   function resultadoDinheiro() {
@@ -470,9 +442,7 @@
   }
 
   function renderResultado() {
-    var html = estado.aba === "preco" ? resultadoPreco()
-      : estado.aba === "valer" ? resultadoValer()
-      : resultadoDinheiro();
+    var html = estado.aba === "preco" ? resultadoPreco() : resultadoDinheiro();
     var el = $("mc-res");
     if (el) el.innerHTML = html;
   }
@@ -485,19 +455,9 @@
 
   function renderPainel() {
     var e = estado.entradas, c = estado.coin, html;
-    e.valer = C.opcaoValer(e.valer, reguaValer().map(function (p) { return p.id; }));
     if (estado.aba === "preco") {
       html = '<div class="campos">' + campo("mc-in-preco", "Se " + esc(c.symbol) + " chegar a (US$)", e.preco,
         "Hoje: " + C.fmtUSD(c.usd) + ". Aceita 0,5 · 1 · 2.500") + "</div>";
-    } else if (estado.aba === "valer") {
-      var ops = reguaValer().map(function (p) {
-        return '<option value="' + esc(p.id) + '"' + (e.valer === p.id ? " selected" : "") + ">" +
-          esc(p.name) + " (" + C.fmtUSD(p.marketCap) + ")</option>";
-      }).join("");
-      html = '<div class="campos"><div class="campo"><label for="mc-in-valer">Se ' + esc(c.symbol) + " valesse o mesmo que</label>" +
-        '<select id="mc-in-valer">' + ops + '<option value="outro"' + (e.valer === "outro" ? " selected" : "") + ">Outro valor…</option></select></div>" +
-        (e.valer === "outro" ? campo("mc-in-valerusd", "Valor de mercado (US$)", e.valerUsd, "Ex.: 10 bi · 500 mi") : "") +
-        "</div>";
     } else {
       html = '<div class="campos">' +
         campo("mc-in-investido", "Quanto você investe (US$)", e.investido, "") +
@@ -518,7 +478,7 @@
       });
       renderPainel();
     });
-    var mapa = { "mc-in-preco": "preco", "mc-in-valerusd": "valerUsd", "mc-in-investido": "investido", "mc-in-alvo": "alvo" };
+    var mapa = { "mc-in-preco": "preco", "mc-in-investido": "investido", "mc-in-alvo": "alvo" };
     $("mc-painel").addEventListener("input", function (ev) {
       var k = mapa[ev.target.id];
       if (!k) return;
@@ -526,11 +486,6 @@
       renderResultado();
       /* a pergunta comum lá embaixo usa o preço digitado */
       if (k === "preco" || k === "alvo") renderExplica();
-    });
-    $("mc-painel").addEventListener("change", function (ev) {
-      if (ev.target.id !== "mc-in-valer") return;
-      estado.entradas.valer = ev.target.value;
-      renderPainel(); /* "Outro valor…" mostra/esconde o campo de US$ */
     });
   }
   /* ---------- explicação ----------

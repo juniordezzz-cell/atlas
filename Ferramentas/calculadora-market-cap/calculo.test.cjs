@@ -34,7 +34,7 @@ test("régua: SKY a US$ 1 cabe ~9,45 AAVEs", () => {
   assert.deepEqual(C.regua(null, [{ id: "a", marketCap: 1 }]), []);
 });
 
-test("precoNoMcap: valer como a Solana", () => {
+test("precoNoMcap: preço com o tamanho da Solana", () => {
   perto(C.precoNoMcap(63e9, 23.4e9), 2.6923, 0.0001);
   assert.equal(C.precoNoMcap(63e9, 0), null);
 });
@@ -192,16 +192,6 @@ test("formatos", () => {
   assert.equal(C.fmtPct(0.62), "62%");
   assert.equal(C.fmtPct(0.0734), "7,3%");
   assert.equal(C.fmtPct(null), "—");
-});
-
-/* Revisão final, Important 1: sem a régua (CoinGecko 429) o select só
-   tinha "Outro valor…" mas o estado seguia "solana" — tela travada. */
-test("opcaoValer nunca aponta para projeto que não está na régua", () => {
-  assert.equal(C.opcaoValer("solana", ["bitcoin", "solana"]), "solana");
-  assert.equal(C.opcaoValer("outro", ["bitcoin"]), "outro");
-  assert.equal(C.opcaoValer("solana", ["bitcoin", "aave"]), "bitcoin");
-  assert.equal(C.opcaoValer("solana", []), "outro");
-  assert.equal(C.opcaoValer(undefined, null), "outro");
 });
 
 /* Revisão final, Important 2: guardar só o que a tela usa. A resposta
