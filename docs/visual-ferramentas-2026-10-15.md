@@ -142,6 +142,28 @@ em `css/ferramentas.css` passou de 68% para **80%** da altura do card, e
 o enquadramento ficou `object-position` 50% 6% no Finanças (a nota
 inteira aparece), 50% 18% no Scanner e 50% 12% na Calculadora.
 
+## Bug corrigido: card não abria a ferramenta (15/10/2026)
+
+**Sintoma (relatado pelo dono):** o efeito 3D funcionava, mas clicar no
+card não abria a ferramenta.
+
+**Duas causas, as duas por causa do card que gira junto com o mouse:**
+1. **Arraste nativo da imagem.** Apertar sobre a `<img>` e mexer uns
+   pixels fazia o navegador iniciar o arraste da imagem (`dragstart`) e
+   cancelar o clique. Correção: `pointer-events: none` e
+   `-webkit-user-drag: none` na `.tool-card__art` e no card
+   (`css/ferramentas.css`), além de `draggable="false"` no card e nas
+   imagens (`core/ui/atlas-cards3d.js`).
+2. **Clique entregue ao embrulho.** O botão desce sobre o link e sobe
+   num ponto que, com o giro, já é o `.atropos-scale`. O navegador
+   entrega o `click` ao ancestral comum, que fica fora do `<a>`.
+   Correção: `repassarClique()` em `atlas-cards3d.js` lembra se o
+   `pointerdown` começou no card e, se o `click` cair fora do link,
+   navega para o `href` (Ctrl/Cmd/Shift/botão do meio abrem em outra aba).
+
+**Conferido:** apertar na imagem do Finanças e arrastar 6 px abre o
+Finanças; clique simples abre o Scanner e a Calculadora.
+
 ## Próximo passo (decisão do dono)
 
 Se aprovar, levar o cenário para o restante do site. O caminho mais

@@ -37,6 +37,29 @@
     return raiz;
   }
 
+  // O card gira enquanto o botão está apertado: o botão desce sobre o
+  // link e sobe num ponto que, com o giro, já é o embrulho da Atropos.
+  // O navegador entrega o clique ao ancestral comum (fora do <a>) e a
+  // ferramenta não abria. Aqui o embrulho devolve esse clique ao link,
+  // respeitando Ctrl/Cmd/Shift/botão do meio (abrir em outra aba).
+  function repassarClique(raiz, card) {
+    if (!card.href) return;
+    var apertouNoCard = false;
+    raiz.addEventListener('pointerdown', function (e) {
+      apertouNoCard = card.contains(e.target);
+    });
+    raiz.addEventListener('click', function (e) {
+      var foraDoLink = !card.contains(e.target);
+      if (!apertouNoCard || !foraDoLink) return;
+      apertouNoCard = false;
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
+        window.open(card.href, '_blank', 'noopener');
+      } else {
+        window.location.href = card.href;
+      }
+    });
+  }
+
   function iniciar() {
     if (typeof window.Atropos !== 'function') return;
     // quem pediu menos movimento fica com o card parado
@@ -44,7 +67,15 @@
 
     document.querySelectorAll('[data-atlas-3d]').forEach(function (card) {
       if (card.closest('.atropos')) return; // já embrulhado
+      // Sem arraste nativo: apertar na imagem (ou no link) e mexer uns
+      // pixels — natural com o card inclinando — fazia o navegador
+      // "arrastar" a imagem e o clique nunca chegava (bug de 15/10/2026).
+      card.setAttribute('draggable', 'false');
+      card.querySelectorAll('img').forEach(function (img) {
+        img.setAttribute('draggable', 'false');
+      });
       var raiz = embrulhar(card);
+      repassarClique(raiz, card);
       window.Atropos({
         el: raiz,
         activeOffset: 24,   // quanto o card "sobe" ao ser tocado
