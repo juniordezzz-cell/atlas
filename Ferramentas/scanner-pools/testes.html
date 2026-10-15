@@ -45,7 +45,8 @@
     /* mapeamento */
     var p = S.paraPool(ROW, { fav: true, level: "segura", notes: "boa" });
     caso("linha do servidor vira pool do Scanner", p.pool === "UNI/WBNB" && p.platform === "PancakeSwap" && p.network === "BNB Chain" && p.servidor === true);
-    caso("marcas voltam para a pool", p.fav === true && p.level === "segura" && p.notes === "boa");
+    caso("marcas voltam para a pool (nível antigo \"segura\" vira \"conservadora\")", p.fav === true && p.level === "conservadora" && p.notes === "boa");
+    caso("nível novo passa direto", S.paraPool(ROW, { level: "crossover" }).level === "crossover");
     caso("variação de 7 dias e nota chegam", p.varTvl7d === 0.12 && p.nota === 72.5);
     caso("WSOL aparece como SOL (e WETH continua WETH)", S.nomePar("WSOL/USDC") === "SOL/USDC" && S.nomePar("JUP-WSOL") === "JUP-SOL" && S.nomePar("WETH/USDC") === "WETH/USDC");
 

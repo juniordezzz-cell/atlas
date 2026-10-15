@@ -127,7 +127,8 @@
       fav: !!marca.fav,
       notes: marca.notes || ""
     };
-    if (marca.level) p.level = marca.level;
+    /* "segura" é o nome antigo de "conservadora" */
+    if (marca.level) p.level = marca.level === "segura" ? "conservadora" : marca.level;
     return p;
   }
 

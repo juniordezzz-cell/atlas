@@ -825,7 +825,7 @@
     <div class="radar-toolbar" id="radarToolbar"></div>
     <div id="radarList"></div>
     <!-- o que é o Radar: desceu do topo para o rodapé a pedido do dono (11/10/2026) -->
-    <div class="foot-info radar-nota"><p class="trilho-dica"><b>Radar</b> — Aqui você organiza as pools em <b>níveis</b>: ★ Favoritas, 🟢 Segura, 🟡 Mediana, 🔴 Agressiva e 👁 Observação (pool que você está testando antes de decidir). Classifica pelo seletor em cada pool — ou busca qualquer pool no campo de busca e classifica direto do resultado. Clique numa pool pra abrir a evolução: cartões antes→agora, gráfico de TVL, Volume do dia e Razão, e o histórico de cada atualização.</p></div>
+    <div class="foot-info radar-nota"><p class="trilho-dica"><b>Radar</b> — Aqui você organiza as pools em <b>níveis</b>: ★ Favoritas, 🟢 Conservadora, 🟡 Mediana, 🔴 Agressiva, 👁 Observação (pool que você está testando antes de decidir), 💵 Stables (stable com stable, ex.: USDC/USDT, USDC/USDe) e 🔀 Crossover (ativo de um mundo com o de outro, ex.: SpaceX/SOL, AAPL/WETH). Você escolhe o nível de cada pool — nada é marcado sozinho, e a pool não precisa ser favorita. Classifica pelo seletor em cada pool — ou busca qualquer pool no campo de busca e classifica direto do resultado. Clique numa pool pra abrir a evolução: cartões antes→agora, gráfico de TVL, Volume do dia e Razão, e o histórico de cada atualização.</p></div>
   </section>
 
   <!-- Battle Pools: duas pools lado a lado; desenhada por battle-pools.js (11/10/2026) -->
@@ -1437,6 +1437,7 @@ function normalizePool(p){
   ["vol30d","vol7d","apr","aprReward"].forEach(k=>{ if(o[k]==null || o[k]===""){ o[k]=null; return; } const v=Number(o[k]); o[k] = Number.isFinite(v) ? v : null; });
   if(o.updatedAt!=null){ const t=Number(o.updatedAt); o.updatedAt = Number.isFinite(t) ? t : null; }
   ["pool","platform","network","notes","level","cat","srcId"].forEach(k=>{ if(o[k]!=null) o[k]=String(o[k]); });
+  if(o.level!=null) o.level = nivelRadar(o.level);
   o.fav = !!o.fav;
   if(Array.isArray(o.history)){
     o.history = o.history.filter(h=>h && typeof h==="object").map(h=>({
@@ -1545,7 +1546,7 @@ async function carregarServidor(){
       m.casadas.forEach(c=>{ c.local.migrada = c.servidor.sid; });
       marcas = m.marcas;
       S.gravarMarcas(marcas);
-      doServidor.forEach(p=>{ const mk = marcas[p.sid]; if(mk){ p.fav = !!mk.fav; if(mk.level) p.level = mk.level; p.notes = mk.notes || ""; } });
+      doServidor.forEach(p=>{ const mk = marcas[p.sid]; if(mk){ p.fav = !!mk.fav; if(mk.level) p.level = nivelRadar(mk.level); p.notes = mk.notes || ""; } });
       S.marcarMigrado({ em:Date.now(), casadas:m.casadas.length, manuais:m.manuais.length });
       srv.migracao = { casadas:m.casadas.length, manuais:m.manuais.length };
     }
@@ -2219,11 +2220,15 @@ function radarMatch(p,q){
 /* ---- níveis do Radar (só vivem aqui — o dashboard não mostra, pra não poluir) ----
    p.level guarda a chave; favorita continua sendo p.fav (uma pool pode ser as duas coisas). */
 const RADAR_LEVELS = [
-  {key:"segura",     label:"Segura",     icon:"🟢", color:"#2ec785"},
-  {key:"mediana",    label:"Mediana",    icon:"🟡", color:"#f5b942"},
-  {key:"agressiva",  label:"Agressiva",  icon:"🔴", color:"#f0556a"},
-  {key:"observacao", label:"Observação", icon:"👁", color:"#8ab4ff"}
+  {key:"conservadora", label:"Conservadora", icon:"🟢", color:"#2ec785"},
+  {key:"mediana",      label:"Mediana",      icon:"🟡", color:"#f5b942"},
+  {key:"agressiva",    label:"Agressiva",    icon:"🔴", color:"#f0556a"},
+  {key:"observacao",   label:"Observação",   icon:"👁", color:"#8ab4ff"},
+  {key:"stables",      label:"Stables",      icon:"💵", color:"#4fd1c5"},
+  {key:"crossover",    label:"Crossover",    icon:"🔀", color:"#b38cff"}
 ];
+/* "Segura" virou "Conservadora" (não existe pool segura); marcas antigas migram na leitura. */
+function nivelRadar(v){ return v==="segura" ? "conservadora" : v; }
 const RADAR_LEVEL_BY_KEY = Object.fromEntries(RADAR_LEVELS.map(l=>[l.key, l]));
 const RADAR_PREFS_STORAGE = "estudo_pools_liquidez_radar";
 
@@ -3041,7 +3046,7 @@ function importJSON(ev){
         const S = window.ScannerServidor;
         if(S && !Array.isArray(bruto)){
           const m = {};
-          Object.keys(bruto.marcas||{}).forEach(k=>{ const v=bruto.marcas[k]||{}; m[String(k)] = {fav:!!v.fav, level: v.level?String(v.level):null, notes:String(v.notes||"")}; });
+          Object.keys(bruto.marcas||{}).forEach(k=>{ const v=bruto.marcas[k]||{}; m[String(k)] = {fav:!!v.fav, level: v.level?nivelRadar(String(v.level)):null, notes:String(v.notes||"")}; });
           S.gravarMarcas(m);
           const t = bruto.tokens||{};
           tokensLista = { aprovados:(t.aprovados||[]).map(String), bloqueados:(t.bloqueados||[]).map(String), bloqueadosEnd:(Array.isArray(t.bloqueadosEnd)?t.bloqueadosEnd:[]).filter(b=>b&&b.endereco&&b.rede).map(b=>({simbolo:String(b.simbolo||''),rede:String(b.rede),endereco:String(b.endereco),cg:b.cg?String(b.cg):null})) };
