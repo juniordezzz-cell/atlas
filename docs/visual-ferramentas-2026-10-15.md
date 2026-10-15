@@ -181,6 +181,31 @@ correção. A causa era **página antiga em cache**:
   `.claude/launch.json` passaram a usá-lo. Se já houver uma janela do
   servidor antigo aberta, feche-a uma vez para o `.bat` subir o novo.
 
+### Causa raiz de verdade (depuração sistemática, 15/10/2026)
+
+As duas correções acima trataram sintomas. Os testes automáticos clicavam
+**sem passar o mouse antes** (card reto) e sempre funcionavam. Medindo o
+**clique real do dono** no Chrome dele, quase todo `pointerdown` caía em
+`DIV.atropos-scale`, até parado no centro do card. Com o card
+**inclinado pelo hover** (`preserve-3d`), o Chrome trata as camadas-embrulho
+da Atropos (`.atropos-scale`, `.atropos-rotate`) como "na frente" do
+conteúdo e entrega o clique a elas, fora do `<a>`.
+
+Reprodução automática: hover em dois pontos, depois
+`elementFromPoint(ponteiro)` devolve `DIV.atropos-scale` (falha).
+
+**Correção (uma linha de regra):** `pointer-events: none` em
+`.atlas-3d .atropos-scale` e `.atlas-3d .atropos-rotate`, e `auto` em
+`.atropos-inner` (`css/ferramentas.css`). Com o card inclinado, o mesmo
+ponto devolve `A.tool-card` e o clique abre a ferramenta; topo, título,
+botão e canto também acertam o link. O `repassarClique()` de
+`atlas-cards3d.js` fica como rede de segurança (botão solto já fora do
+link por causa do giro).
+
+**Lição:** para qualquer efeito com hover/3D, testar o clique **depois**
+de passar o mouse, e de preferência com a mão do dono e um registro de
+eventos.
+
 ## Próximo passo (decisão do dono)
 
 Se aprovar, levar o cenário para o restante do site. O caminho mais
