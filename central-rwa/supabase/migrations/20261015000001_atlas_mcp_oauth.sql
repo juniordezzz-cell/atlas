@@ -1,7 +1,9 @@
 -- Conector MCP do Atlas: códigos de autorização e tokens OAuth, guardados só com hash.
 -- Só a Edge Function atlas-mcp (papel de serviço) usa as RPCs abaixo. Sem políticas RLS.
+-- O Supabase concede EXECUTE a anon/authenticated por default privileges: revogar também deles
+-- (mesmo cuidado de 20260927000002_scanner_chat_privileges.sql).
 create schema if not exists atlas_mcp;
-revoke all on schema atlas_mcp from public;
+revoke all on schema atlas_mcp from public, anon, authenticated;
 
 create table if not exists atlas_mcp.codigos (
   hash text primary key,
@@ -29,7 +31,7 @@ create index if not exists tokens_familia on atlas_mcp.tokens (familia);
 
 alter table atlas_mcp.codigos enable row level security;
 alter table atlas_mcp.tokens enable row level security;
-revoke all on all tables in schema atlas_mcp from public;
+revoke all on all tables in schema atlas_mcp from public, anon, authenticated;
 
 create or replace function public.atlas_mcp_salvar_codigo(p_hash text, p_uid text, p_client text, p_redirect text, p_challenge text, p_segundos integer)
 returns boolean language sql security definer set search_path = pg_catalog, atlas_mcp as $$
@@ -117,7 +119,7 @@ begin
     'atlas_mcp_usar_renovacao(text)',
     'atlas_mcp_revogar_uid(text)'
   ] loop
-    execute format('revoke all on function public.%s from public', f);
+    execute format('revoke all on function public.%s from public, anon, authenticated', f);
     if exists (select 1 from pg_roles where rolname = 'service_role') then
       execute format('grant execute on function public.%s to service_role', f);
     end if;

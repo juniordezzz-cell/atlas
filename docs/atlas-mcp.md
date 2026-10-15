@@ -18,7 +18,7 @@ Código: `central-rwa/supabase/functions/atlas-mcp/`. Testes: `node --test centr
 GitHub Pages publica a página `conectar-claude.html`, mas não publica a função.
 
 1. **Conta de serviço do Firebase.** Console do Firebase → projeto `cryptotrack-br` → Configurações do projeto → Contas de serviço → Gerar nova chave privada. Guarde o JSON; ele não entra no repositório.
-2. **Banco.** Supabase (mesmo projeto do Scanner) → SQL Editor → colar e rodar `central-rwa/supabase/migrations/20261015000001_atlas_mcp_oauth.sql`. Conferir: `select count(*) from atlas_mcp.tokens;` devolve 0.
+2. **Banco.** Supabase (mesmo projeto do Scanner) → SQL Editor → colar e rodar `central-rwa/supabase/migrations/20261015000001_atlas_mcp_oauth.sql`. Conferir: `select count(*) from atlas_mcp.tokens;` devolve 0, e `select has_function_privilege('anon', 'public.atlas_mcp_salvar_token(text,text,text,text,text,integer)', 'execute');` devolve **false** (se devolver true, a chave pública do site conseguiria criar tokens; não siga adiante).
 3. **Secrets.** Supabase → Edge Functions → Secrets:
    - `ATLAS_MCP_SECRET`: gerar com `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`.
    - `ATLAS_FIREBASE_SERVICE_ACCOUNT`: colar o JSON inteiro do passo 1.
