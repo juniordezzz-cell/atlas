@@ -164,6 +164,23 @@ card não abria a ferramenta.
 **Conferido:** apertar na imagem do Finanças e arrastar 6 px abre o
 Finanças; clique simples abre o Scanner e a Calculadora.
 
+### Depois da correção: "continua não abrindo" era cache
+
+O dono relatou que continuava sem abrir (console com erros só de uma
+extensão de carteira, `evmAsk.js`, que não é do ATLAS). Testado no Chrome
+real dele, no site publicado, logado: os três cards abriram pela imagem e
+pelo botão. A versão publicada (build `c9a4bb6`, 18:35 UTC) já tinha a
+correção. A causa era **página antiga em cache**:
+- GitHub Pages manda `Cache-Control: max-age=600` (10 min). Uma aba aberta
+  logo antes da publicação segue com o HTML velho, que aponta para o JS
+  velho. Basta Ctrl+Shift+R.
+- No localhost, `python -m http.server` não manda cabeçalho de cache e o
+  Chrome guardava HTML e JS (inclusive com 304 falso). **Correção
+  definitiva:** `servidor-local.py` na raiz (o mesmo servidor com
+  `Cache-Control: no-store` e sem 304). O `Abrir ATLAS.bat` e o
+  `.claude/launch.json` passaram a usá-lo. Se já houver uma janela do
+  servidor antigo aberta, feche-a uma vez para o `.bat` subir o novo.
+
 ## Próximo passo (decisão do dono)
 
 Se aprovar, levar o cenário para o restante do site. O caminho mais

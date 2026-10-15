@@ -25,7 +25,9 @@ netstat -ano | findstr ":%PORTA% " | findstr /i "LISTENING" >nul 2>&1
 if errorlevel 1 (
   echo Subindo o servidor local na porta %PORTA%...
   rem Janela dedicada ao servidor. Fechar essa janela desliga o ATLAS.
-  start "ATLAS - servidor local (NAO FECHE esta janela)" cmd /k "%PYCMD% -m http.server %PORTA%"
+  rem servidor-local.py = http.server SEM CACHE (o navegador sempre pega a
+  rem versao nova dos arquivos; antes, correcoes "nao pegavam").
+  start "ATLAS - servidor local (NAO FECHE esta janela)" cmd /k "%PYCMD% servidor-local.py %PORTA%"
   rem Da um instante para o servidor ficar de pe antes de abrir o navegador.
   timeout /t 2 >nul
 ) else (

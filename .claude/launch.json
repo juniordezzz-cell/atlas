@@ -6,8 +6,7 @@
       "runtimeExecutable": "py",
       "runtimeArgs": [
         "-3",
-        "-m",
-        "http.server",
+        "servidor-local.py",
         "8777"
       ],
       "port": 8777
@@ -17,8 +16,7 @@
       "runtimeExecutable": "py",
       "runtimeArgs": [
         "-3",
-        "-m",
-        "http.server",
+        "servidor-local.py",
         "8778"
       ],
       "port": 8778
