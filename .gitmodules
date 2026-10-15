@@ -2,3 +2,7 @@
 	path = referencias/magicui
 	url = https://github.com/magicuidesign/magicui.git
 	shallow = true
+[submodule "referencias/uiverse-galaxy"]
+	path = referencias/uiverse-galaxy
+	url = https://github.com/uiverse-io/galaxy.git
+	shallow = true

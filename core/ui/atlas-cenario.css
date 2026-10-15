@@ -1,0 +1,52 @@
+/* ============================================================
+   ATLAS · core/ui/atlas-cenario.css
+   Camada do cenário de fundo (ver core/ui/atlas-cenario.js).
+   Fica fixa atrás de tudo, não recebe clique e não rola.
+   Registro: docs/visual-ferramentas-2026-10-15.md
+   ============================================================ */
+/* O body das páginas tem fundo opaco (css/global.css, dashboard.css);
+   com o cenário ligado ele fica transparente e o html segura a cor
+   de base enquanto o WebGL não pinta. */
+html.atlas-com-cenario:not([data-theme="light"]) { background: #070B15; }
+html.atlas-com-cenario:not([data-theme="light"]) body { background: transparent; }
+/* cascas de módulos que pintam o próprio fundo por cima do body:
+   .fx-app = app Finanças (Ferramentas/entradas-saidas/financas) */
+html.atlas-com-cenario:not([data-theme="light"]) .fx-app { background: transparent; }
+
+/* trocou para o tema claro com a página aberta (botão do Finanças):
+   o cenário escuro sai e cada página volta ao próprio fundo */
+html[data-theme="light"] .atlas-cenario { display: none; }
+
+.atlas-cenario {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+/* o canvas da Paper Shaders preenche a caixa */
+.atlas-cenario canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.atlas-cenario--vivo { opacity: 1; }
+
+/* sem WebGL: o mesmo clima em degradê CSS estático */
+.atlas-cenario--css {
+  opacity: 1;
+  background:
+    radial-gradient(60% 50% at 85% 10%, rgba(12, 59, 76, 0.55), transparent 70%),
+    radial-gradient(50% 45% at 10% 90%, rgba(30, 27, 75, 0.55), transparent 70%),
+    #070B15;
+}
+
+/* Véu por cima do cenário: escurece de leve a área de leitura para o
+   texto não competir com as manchas de cor. */
+.atlas-cenario::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 11, 21, 0), rgba(7, 11, 21, 0.35));
+}

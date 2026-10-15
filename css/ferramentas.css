@@ -123,10 +123,6 @@
   transition: transform 0.2s ease;
 }
 .tool-card__icon svg { width: 54px; height: 54px; overflow: visible; }
-/* um toque da cor da ferramenta no fundo do ladrilho */
-.tool-card__icon--fin  { background-color: color-mix(in srgb, #F59E0B 7%, var(--atlas-bg-raise, #0E1526)); }
-.tool-card__icon--scan { background-color: color-mix(in srgb, #22D3EE 7%, var(--atlas-bg-raise, #0E1526)); }
-.tool-card__icon--mcap { background-color: color-mix(in srgb, #DC2626 7%, var(--atlas-bg-raise, #0E1526)); }
 .tool-card:hover .tool-card__icon { transform: translateY(-3px) rotate(-2deg); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -197,12 +193,33 @@
   font-weight: 700;
   color: var(--atlas-accent-text, #00BFFF);
 }
-.tool-card__cta svg {
-  width: 16px;
-  height: 16px;
-  transition: transform 0.16s ease;
+
+/* A seta do "Abrir ferramenta" — portada do Uiverse
+   (uiverse-io/galaxy, Buttons/satyamchaudharydev_modern-sheep-10, MIT):
+   parada é só a ponta (>); no hover nasce a haste e a ponta anda,
+   virando uma seta inteira (→). Modelo em referencias/uiverse-galaxy/. */
+.tool-card__arrow {
+  position: relative;
+  width: 10px;
+  height: 2px;
+  margin-top: 1px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background 0.2s ease;
 }
-.tool-card:hover .tool-card__cta svg { transform: translateX(4px); }
+.tool-card__arrow::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: 3px;
+  padding: 3px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(-45deg);
+  transition: right 0.2s ease;
+}
+.tool-card:hover .tool-card__arrow { background: currentColor; }
+.tool-card:hover .tool-card__arrow::before { right: 0; }
 
 /* ---------- Card "Em breve" ----------
    Anuncia que a bancada vai crescer, sem fingir ser clicável. */
@@ -236,4 +253,128 @@
 
 @media (max-width: 560px) {
   .tools-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   CARD COM ARTE PRÓPRIA (.tool-card--art) — piloto de 15/10/2026
+   Pedido do dono: cada card com uma imagem própria preenchendo o
+   fundo todo, e efeito no card. Camadas, de trás para a frente:
+     1. .tool-card__art   imagem (assets/ferramentas/card-*.webp)
+     2. .tool-card__veil  véu escuro que sobe de baixo (leitura)
+     3. .tool-card__body  título, texto, chips e "Abrir ferramenta"
+     4. .tool-card__badge selo "Grátis"
+   O 3D (inclinação + parallax) vem de core/ui/atlas-cards3d.js
+   (Atropos), que embrulha o card em .atropos.atlas-3d; cada camada
+   diz a profundidade em data-atropos-offset no HTML.
+   Os seletores começam com "html .tools-grid" para vencer a regra
+   de card clicável do atlas-sereno.css (carregado depois).
+   Registro: docs/visual-ferramentas-2026-10-15.md
+   ============================================================ */
+
+/* o embrulho da Atropos ocupa a célula da grade inteira */
+.tools-grid > .atlas-3d { display: block; height: 100%; }
+.atlas-3d .atropos-inner { border-radius: 20px; }
+
+html .tools-grid .tool-card--art {
+  height: 100%;
+  min-height: 540px;
+  padding: 0;
+  gap: 0;
+  justify-content: flex-end;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 20px;
+  background: #0A1122;
+  /* um fio de luz no alto e sombra embaixo: volume sem halo */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 24px 48px -28px rgba(0, 0, 0, 0.9);
+}
+html .tools-grid .tool-card--art:hover {
+  background: #0A1122;
+  transform: none;           /* quem mexe é a Atropos */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 30px 60px -28px rgba(0, 0, 0, 0.95);
+}
+
+/* 1. a imagem: ocupa o alto do card (o desenho fica acima do texto) e
+   sobra 6% em cada lado para o parallax não mostrar borda. Embaixo, o
+   fundo do card (#0A1122) e o véu continuam o escuro da própria arte. */
+.tool-card__art {
+  position: absolute;
+  top: -4%;
+  left: -6%;
+  width: 112%;
+  height: 68%;
+  object-fit: cover;
+  z-index: 0;
+  filter: saturate(0.95) brightness(0.92);
+  transition: filter 0.5s ease;
+}
+.tool-card--art:hover .tool-card__art { filter: saturate(1.08) brightness(1); }
+
+/* 2. o véu: transparente em cima, quase sólido onde o texto mora */
+.tool-card__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg,
+    rgba(10, 17, 34, 0) 36%,
+    rgba(10, 17, 34, 0.7) 52%,
+    rgba(10, 17, 34, 0.97) 62%,
+    #0A1122 100%);
+}
+
+/* 3. o conteúdo, colado na base */
+.tool-card__body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 22px 22px;
+}
+.tool-card--art .tool-card__title { font-size: 21px; }
+.tool-card--art .tool-card__desc { color: rgba(230, 241, 255, 0.74); }
+.tool-card--art .tool-card__chip {
+  background: rgba(7, 11, 21, 0.55);
+  border-color: rgba(160, 185, 230, 0.16);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+/* "Abrir ferramenta" vira uma pílula: alvo de toque maior */
+.tool-card--art .tool-card__cta {
+  margin-top: 6px;
+  align-self: flex-start;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: rgba(0, 191, 255, 0.12);
+  transition: background 0.2s ease;
+}
+.tool-card--art:hover .tool-card__cta { background: rgba(0, 191, 255, 0.2); }
+
+/* 4. o selo por cima da imagem precisa de fundo próprio */
+.tool-card--art .tool-card__badge {
+  z-index: 3;
+  background: rgba(7, 11, 21, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* teclado: o foco aparece no card inteiro */
+.tool-card--art:focus-visible {
+  outline: 2px solid var(--atlas-accent-text, #00BFFF);
+  outline-offset: 3px;
+}
+
+/* o "Em breve" acompanha a altura dos cards com arte */
+.tools-grid .tool-card--soon { min-height: 540px; justify-content: center; }
+.tools-grid .tool-card--soon .tool-card__cta { margin-top: 8px; }
+
+@media (max-width: 560px) {
+  html .tools-grid .tool-card--art,
+  .tools-grid .tool-card--soon { min-height: 500px; }
 }

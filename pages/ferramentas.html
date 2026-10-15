@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="../css/dashboard.css">
-  <link rel="stylesheet" href="../css/ferramentas.css">
+  <link rel="stylesheet" href="../css/ferramentas.css?v=3">
 
   <!-- ===== ATLAS · camada global ===== -->
   <link rel="stylesheet" href="../themes/atlas-theme.css">
@@ -36,6 +36,15 @@
   <script src="../core/atlas-secure.js"></script>
   <script src="../core/atlas-pwa.js"></script>
   <link rel="stylesheet" href="../themes/atlas-sereno.css">
+
+  <!-- ===== Visual novo das Ferramentas (piloto 15/10/2026) =====
+       Cenário de fundo (Paper Shaders) + cards 3D (Atropos).
+       Registro: docs/visual-ferramentas-2026-10-15.md -->
+  <link rel="stylesheet" href="../assets/vendor/atropos-2.0.2.min.css">
+  <link rel="stylesheet" href="../core/ui/atlas-cenario.css?v=4">
+  <script src="../assets/vendor/atropos-2.0.2.min.js" defer></script>
+  <script src="../core/ui/atlas-cards3d.js?v=2" defer></script>
+  <script type="module" src="../core/ui/atlas-cenario.js?v=2"></script>
 </head>
 <body>
 <div class="app">
@@ -99,58 +108,26 @@
              Mora em Ferramentas/entradas-saidas/financas/ e é um app
              próprio, com manifest e service worker dele — por isso o
              link sai da casca do ATLAS e entra no index.html da tool. -->
-        <a class="tool-card" href="../Ferramentas/entradas-saidas/financas/index.html">
-          <span class="tool-card__badge tool-card__badge--free">Grátis</span>
-          <!-- Ícone em volume: cédula ao fundo e pilha de moedas. Os ids
-               dos gradientes levam o prefixo "fin-": ids de SVG são
-               globais na página e colidiriam com os do outro ícone. -->
-          <span class="tool-card__icon tool-card__icon--fin" aria-hidden="true">
-            <svg viewBox="0 0 56 56">
-              <defs>
-                <linearGradient id="fin-nota" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#6EE7B7"/><stop offset="1" stop-color="#059669"/>
-                </linearGradient>
-                <linearGradient id="fin-lado" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0" stop-color="#B45309"/><stop offset=".45" stop-color="#F59E0B"/><stop offset="1" stop-color="#92400E"/>
-                </linearGradient>
-                <radialGradient id="fin-face" cx=".35" cy=".3" r=".9">
-                  <stop offset="0" stop-color="#FEF3C7"/><stop offset=".55" stop-color="#FCD34D"/><stop offset="1" stop-color="#D97706"/>
-                </radialGradient>
-              </defs>
-              <ellipse cx="28" cy="50" rx="18" ry="2.6" fill="#000" opacity=".28"/>
-              <!-- cédula inclinada, atrás -->
-              <path d="M8 21 L33 11 L44 24 L19 34 Z" fill="url(#fin-nota)"/>
-              <path d="M8 21 L33 11 L33.6 12.4 L9 22.3 Z" fill="#fff" opacity=".35"/>
-              <ellipse cx="26" cy="22.5" rx="4.2" ry="2.6" transform="rotate(-22 26 22.5)" fill="none" stroke="#ECFDF5" stroke-width="1.4" opacity=".75"/>
-              <!-- moeda de baixo -->
-              <path d="M13 41 v5 a15 5.5 0 0 0 30 0 v-5 Z" fill="url(#fin-lado)"/>
-              <ellipse cx="28" cy="41" rx="15" ry="5.5" fill="url(#fin-face)"/>
-              <!-- moeda do meio -->
-              <path d="M14 34.5 v5 a15 5.5 0 0 0 30 0 v-5 Z" fill="url(#fin-lado)"/>
-              <ellipse cx="29" cy="34.5" rx="15" ry="5.5" fill="url(#fin-face)"/>
-              <!-- moeda de cima, com o cifrão gravado -->
-              <path d="M12 28 v5 a15 5.5 0 0 0 30 0 v-5 Z" fill="url(#fin-lado)"/>
-              <ellipse cx="27" cy="28" rx="15" ry="5.5" fill="url(#fin-face)"/>
-              <ellipse cx="27" cy="28" rx="10.5" ry="3.7" fill="none" stroke="#B45309" stroke-width="1" opacity=".45"/>
-              <text x="27" y="28" transform="translate(27 28) scale(1 .5) translate(-27 -28)" text-anchor="middle"
-                    dominant-baseline="central" font-family="Inter, system-ui, sans-serif" font-weight="800"
-                    font-size="13" fill="#92400E" opacity=".75">$</text>
-            </svg>
-          </span>
-          <h3 class="tool-card__title">Finanças</h3>
-          <p class="tool-card__desc">Controle de fluxo de caixa pessoal: registre entradas e despesas, planeje o mês e acompanhe investimentos, com relatórios e análises.</p>
-          <div class="tool-card__chips">
-            <span class="tool-card__chip">Entradas e saídas</span>
-            <span class="tool-card__chip">Planejamento</span>
-            <span class="tool-card__chip">Relatórios</span>
+        <a class="tool-card tool-card--art" href="../Ferramentas/entradas-saidas/financas/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <!-- Arte de fundo própria (moedas e cédula): camada mais funda do 3D.
+               Imagem em assets/ferramentas/ (ver docs/visual-ferramentas-2026-10-15.md). -->
+          <img class="tool-card__art" src="../assets/ferramentas/card-fin.webp" alt="" decoding="async"
+               style="object-position: 50% 30%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Finanças</h3>
+            <p class="tool-card__desc">Controle de fluxo de caixa pessoal: registre entradas e despesas, planeje o mês e acompanhe investimentos, com relatórios e análises.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Entradas e saídas</span>
+              <span class="tool-card__chip">Planejamento</span>
+              <span class="tool-card__chip">Relatórios</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
           </div>
-          <span class="tool-card__cta">
-            Abrir ferramenta
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6"/>
-            </svg>
-          </span>
         </a>
 
         <!-- FERRAMENTA · Scanner Pools (pools de liquidez)
@@ -158,51 +135,27 @@
              de login do ATLAS (core/atlas-secure.js) como todo o resto.
              As chaves de IA do Scanner ficam só no navegador (keys.json
              é ignorado pelo git — ver Ferramentas/scanner-pools/.gitignore). -->
-        <a class="tool-card" href="../Ferramentas/scanner-pools/index.html">
-          <span class="tool-card__badge tool-card__badge--free">Grátis</span>
-          <!-- Ícone em volume: gota de liquidez com a onda por dentro e a
-               lupa do scanner na frente. Prefixo "scan-" nos ids. -->
-          <span class="tool-card__icon tool-card__icon--scan" aria-hidden="true">
-            <svg viewBox="0 0 56 56">
-              <defs>
-                <radialGradient id="scan-gota" cx=".35" cy=".35" r=".85">
-                  <stop offset="0" stop-color="#A5F3FC"/><stop offset=".5" stop-color="#22D3EE"/><stop offset="1" stop-color="#1D4ED8"/>
-                </radialGradient>
-                <linearGradient id="scan-aro" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#E9D5FF"/><stop offset=".5" stop-color="#A78BFA"/><stop offset="1" stop-color="#5B21B6"/>
-                </linearGradient>
-                <linearGradient id="scan-cabo" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#6D28D9"/><stop offset="1" stop-color="#2E1065"/>
-                </linearGradient>
-              </defs>
-              <ellipse cx="27" cy="50" rx="17" ry="2.6" fill="#000" opacity=".28"/>
-              <!-- a gota -->
-              <path d="M24 6 C24 6 9 22.5 9 32 a15 15 0 0 0 30 0 C39 22.5 24 6 24 6 Z" fill="url(#scan-gota)"/>
-              <path d="M11.5 34 q6.25 -4.5 12.5 0 t12.5 0" fill="none" stroke="#ECFEFF" stroke-width="1.8" stroke-linecap="round" opacity=".6"/>
-              <path d="M11.5 39.5 q6.25 -4 12.5 0 t12.5 0" fill="none" stroke="#ECFEFF" stroke-width="1.4" stroke-linecap="round" opacity=".35"/>
-              <path d="M16.5 28 q1.2 -6.5 6.5 -12.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".6"/>
-              <!-- a lupa -->
-              <path d="M44.2 44.2 L50 50" stroke="url(#scan-cabo)" stroke-width="5.5" stroke-linecap="round"/>
-              <circle cx="38" cy="38" r="8.5" fill="#fff" fill-opacity=".2"/>
-              <circle cx="38" cy="38" r="8.5" fill="none" stroke="url(#scan-aro)" stroke-width="3.6"/>
-              <path d="M33.6 35.6 a5 5 0 0 1 4.4 -2.8" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".8"/>
-            </svg>
-          </span>
-          <h3 class="tool-card__title">Scanner Pools</h3>
-          <p class="tool-card__desc">Descubra pools de liquidez pelo giro real (média de 7 dias), acompanhe as melhores no radar e compare com o que as suas pools do DeFi estão rendendo.</p>
-          <div class="tool-card__chips">
-            <span class="tool-card__chip">Descobrir</span>
-            <span class="tool-card__chip">Radar</span>
-            <span class="tool-card__chip">Minhas pools</span>
-            <span class="tool-card__chip">Guia</span>
+        <a class="tool-card tool-card--art" href="../Ferramentas/scanner-pools/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <!-- Arte de fundo própria (pool de vidro com a lupa): camada mais funda do 3D.
+               Imagem em assets/ferramentas/ (ver docs/visual-ferramentas-2026-10-15.md). -->
+          <img class="tool-card__art" src="../assets/ferramentas/card-scan.webp" alt="" decoding="async"
+               style="object-position: 50% 25%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Scanner Pools</h3>
+            <p class="tool-card__desc">Descubra pools de liquidez pelo giro real (média de 7 dias), acompanhe as melhores no radar e compare com o que as suas pools do DeFi estão rendendo.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Descobrir</span>
+              <span class="tool-card__chip">Radar</span>
+              <span class="tool-card__chip">Minhas pools</span>
+              <span class="tool-card__chip">Guia</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
           </div>
-          <span class="tool-card__cta">
-            Abrir ferramenta
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6"/>
-            </svg>
-          </span>
         </a>
 
         <!-- Marcador honesto: a bancada vai crescer. Não finge ser
@@ -246,48 +199,27 @@
         <!-- FERRAMENTA · Calculadora de Market Cap
              Mora em Ferramentas/calculadora-market-cap/ (HTML + calculo.js
              testado no Node). Ensina que o preço da unidade não diz se o
-             token é barato: valor de mercado, FDV e desbloqueio.
-             Prefixo "mcap-" nos ids do SVG. -->
-        <a class="tool-card" href="../Ferramentas/calculadora-market-cap/index.html">
-          <span class="tool-card__badge tool-card__badge--free">Grátis</span>
-          <!-- Ícone em volume: pizza com uma fatia saindo. -->
-          <span class="tool-card__icon tool-card__icon--mcap" aria-hidden="true">
-            <svg viewBox="0 0 56 56">
-              <defs>
-                <radialGradient id="mcap-massa" cx=".4" cy=".35" r=".9">
-                  <stop offset="0" stop-color="#FDE68A"/><stop offset=".6" stop-color="#F59E0B"/><stop offset="1" stop-color="#B45309"/>
-                </radialGradient>
-                <linearGradient id="mcap-fatia" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#FCA5A5"/><stop offset="1" stop-color="#DC2626"/>
-                </linearGradient>
-              </defs>
-              <ellipse cx="27" cy="50" rx="18" ry="2.6" fill="#000" opacity=".28"/>
-              <!-- pizza sem a fatia -->
-              <path d="M26 28 L26 8 A20 20 0 1 0 43.3 38 Z" fill="url(#mcap-massa)"/>
-              <circle cx="18" cy="22" r="2.6" fill="#B91C1C" opacity=".85"/>
-              <circle cx="15" cy="33" r="2.4" fill="#B91C1C" opacity=".85"/>
-              <circle cx="25" cy="39" r="2.6" fill="#B91C1C" opacity=".85"/>
-              <circle cx="33" cy="34" r="2.2" fill="#B91C1C" opacity=".85"/>
-              <!-- a fatia, deslocada para fora -->
-              <path d="M31 25 L31 5 A20 20 0 0 1 48.3 35 Z" fill="url(#mcap-fatia)"/>
-              <path d="M31 5 A20 20 0 0 1 48.3 35" fill="none" stroke="#FEF3C7" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
-              <circle cx="38" cy="17" r="2.2" fill="#FEF3C7" opacity=".85"/>
-            </svg>
-          </span>
-          <h3 class="tool-card__title">Calculadora de Market Cap</h3>
-          <p class="tool-card__desc">Barato ou caro é o tamanho da pizza, não o preço da fatia. Veja o valor de mercado, quanto ainda vai ser desbloqueado e o tamanho que um preço sonhado exige — ou ponha até 4 tokens para batalhar no mesmo alvo.</p>
-          <div class="tool-card__chips">
-            <span class="tool-card__chip">Preço sonhado</span>
-            <span class="tool-card__chip">Batalha</span>
-            <span class="tool-card__chip">Dicionário</span>
+             token é barato: valor de mercado, FDV e desbloqueio. -->
+        <a class="tool-card tool-card--art" href="../Ferramentas/calculadora-market-cap/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <!-- Arte de fundo própria (a pizza do market cap): camada mais funda do 3D.
+               Imagem em assets/ferramentas/ (ver docs/visual-ferramentas-2026-10-15.md). -->
+          <img class="tool-card__art" src="../assets/ferramentas/card-mcap.webp" alt="" loading="lazy" decoding="async"
+               style="object-position: 50% 45%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Calculadora de Market Cap</h3>
+            <p class="tool-card__desc">Barato ou caro é o tamanho da pizza, não o preço da fatia. Veja o valor de mercado, quanto ainda vai ser desbloqueado e o tamanho que um preço sonhado exige — ou ponha até 4 tokens para batalhar no mesmo alvo.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Preço sonhado</span>
+              <span class="tool-card__chip">Batalha</span>
+              <span class="tool-card__chip">Dicionário</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
           </div>
-          <span class="tool-card__cta">
-            Abrir ferramenta
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6"/>
-            </svg>
-          </span>
         </a>
 
       </div>

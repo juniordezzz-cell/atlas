@@ -5,3 +5,7 @@ Leia [AGENTS.md](AGENTS.md). Para Scanner Pools, a referência vigente é
 Histórico, decisões, arquivos, testes e limitações estão no
 [registro de implementação](docs/scanner-pools-2026-09-26.md).
 Documentos anteriores descrevem comportamento já substituído.
+
+Repositórios de terceiros (o que cada um faz e onde está):
+[referencias/REPOSITORIOS.md](referencias/REPOSITORIOS.md). Visual novo das
+Ferramentas (cenário + cards 3D): [registro de 15/10](docs/visual-ferramentas-2026-10-15.md).
