@@ -298,7 +298,7 @@ html .tools-grid .tool-card--art:hover {
     0 30px 60px -28px rgba(0, 0, 0, 0.95);
 }
 
-/* 1. a imagem: ocupa o alto do card (o desenho fica acima do texto) e
+/* 1. a imagem (fotos 2:3, rodada 2): ocupa o alto do card e
    sobra 6% em cada lado para o parallax não mostrar borda. Embaixo, o
    fundo do card (#0A1122) e o véu continuam o escuro da própria arte. */
 .tool-card__art {
@@ -306,7 +306,7 @@ html .tools-grid .tool-card--art:hover {
   top: -4%;
   left: -6%;
   width: 112%;
-  height: 68%;
+  height: 80%;
   object-fit: cover;
   z-index: 0;
   filter: saturate(0.95) brightness(0.92);
