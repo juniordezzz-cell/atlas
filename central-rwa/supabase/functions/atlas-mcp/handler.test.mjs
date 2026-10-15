@@ -67,6 +67,16 @@ test('metadados públicos', async () => {
   assert.equal((await h(new Request(u('/nada')))).status, 404);
 });
 
+test('openid-configuration traz os campos que o esquema OIDC exige, com jwks vazio', async () => {
+  const { h } = montar();
+  const oidc = await (await h(new Request(u('/.well-known/openid-configuration')))).json();
+  assert.equal(oidc.jwks_uri, BASE + '/jwks');
+  assert.deepEqual(oidc.subject_types_supported, ['public']);
+  assert.deepEqual(oidc.id_token_signing_alg_values_supported, ['RS256']);
+  assert.equal(oidc.token_endpoint, BASE + '/token');
+  assert.deepEqual(await (await h(new Request(u('/jwks')))).json(), { keys: [] });
+});
+
 test('MCP sem token pede autorização com WWW-Authenticate', async () => {
   const { h } = montar();
   const r = await rpc(h, 'token-inventado-com-mais-de-vinte', { jsonrpc: '2.0', id: 1, method: 'tools/list' });

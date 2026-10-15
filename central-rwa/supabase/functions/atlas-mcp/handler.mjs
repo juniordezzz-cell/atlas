@@ -2,7 +2,7 @@ import { atenderMcp } from './mcp.mjs';
 import { criarStore } from './store.mjs';
 import { criarFirestore } from './firestore.mjs';
 import { FERRAMENTAS } from './ferramentas.mjs';
-import { metadadosRecurso, metadadosServidor, registrar, autorizar, concluir, trocarToken, autenticar } from './oauth.mjs';
+import { metadadosRecurso, metadadosServidor, metadadosOidc, registrar, autorizar, concluir, trocarToken, autenticar } from './oauth.mjs';
 
 const ORIGEM_SITE = 'https://juniordezzz-cell.github.io';
 const PAGINA_PADRAO = ORIGEM_SITE + '/atlas/pages/conectar-claude.html';
@@ -63,7 +63,9 @@ export function createHandler({ env, fetcher, store: storeInjetado = null, fires
     const url = new URL(req.url), rota = rotaDe(url.pathname), metodo = req.method;
     try {
       if (metodo === 'GET' && (rota === '/.well-known/oauth-protected-resource' || rota === '/.well-known/oauth-protected-resource/mcp')) return respostaJson(metadadosRecurso(c.base));
-      if (metodo === 'GET' && (rota === '/.well-known/oauth-authorization-server' || rota === '/.well-known/openid-configuration')) return respostaJson(metadadosServidor(c.base));
+      if (metodo === 'GET' && rota === '/.well-known/oauth-authorization-server') return respostaJson(metadadosServidor(c.base));
+      if (metodo === 'GET' && rota === '/.well-known/openid-configuration') return respostaJson(metadadosOidc(c.base));
+      if (metodo === 'GET' && rota === '/jwks') return respostaJson({ keys: [] });
       if (metodo === 'POST' && rota === '/register') { const r = await registrar(await lerJson(req), { segredo: c.segredo }); return respostaJson(r.corpo, r.status); }
       if (metodo === 'GET' && rota === '/authorize') {
         const r = await autorizar(url.searchParams, { segredo: c.segredo, pagina: c.pagina, agora });

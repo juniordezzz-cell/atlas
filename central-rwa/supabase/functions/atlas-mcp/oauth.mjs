@@ -21,6 +21,12 @@ export function metadadosServidor(base) {
   };
 }
 
+// Clientes MCP validam /.well-known/openid-configuration com o esquema OIDC, que exige estes
+// campos. O conector não emite id_token; o jwks é vazio e só existe para o documento ser válido.
+export function metadadosOidc(base) {
+  return { ...metadadosServidor(base), jwks_uri: base + '/jwks', subject_types_supported: ['public'], id_token_signing_alg_values_supported: ['RS256'] };
+}
+
 export async function registrar(corpo, { segredo }) {
   const uris = corpo?.redirect_uris;
   if (!Array.isArray(uris) || !uris.length || uris.length > 4 || !uris.every((u) => REDIRECTS.includes(u))) {
