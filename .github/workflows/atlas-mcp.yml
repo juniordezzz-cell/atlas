@@ -1,0 +1,16 @@
+name: Atlas MCP
+on:
+  push:
+    paths: ['central-rwa/supabase/functions/atlas-mcp/**', 'js/conectar-claude*', 'pages/conectar-claude.html', '.github/workflows/atlas-mcp.yml']
+  pull_request:
+    paths: ['central-rwa/supabase/functions/atlas-mcp/**', 'js/conectar-claude*', 'pages/conectar-claude.html', '.github/workflows/atlas-mcp.yml']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test central-rwa/supabase/functions/atlas-mcp/*.test.mjs js/conectar-claude.test.cjs
+      - run: node central-rwa/supabase/functions/atlas-mcp/build.mjs
