@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.oraculo-imagem]
 verify_jwt = false
+
+[functions.atlas-mcp]
+verify_jwt = false
