@@ -114,3 +114,12 @@ test('listar_carteiras resume caixa e Hold por carteira', () => {
   assert.match(r.texto, /Binance \(id w_bin\): caixa \$ 75,00 · Hold \$ 10,00 em 1 posição\(ões\)/);
   assert.equal(listarCarteiras({ carteiras: null, hold: null, caixa: null }).dados.carteiras[0].id, 'principal');
 });
+
+test('listar_carteiras avisa quando há posição sem preço em vez de contar como zero', () => {
+  const r = listarCarteiras({ carteiras, hold, caixa });
+  const jrb = r.dados.carteiras.find((w) => w.id === 'w_jrb');
+  assert.deepEqual(jrb.semPreco, ['MET']);
+  assert.match(r.texto, /JRB1 \(id w_jrb\): caixa \$ 20,00 · Hold \$ 2,00 em 2 posição\(ões\) \(sem preço: MET\)/);
+  assert.deepEqual(r.dados.carteiras.find((w) => w.id === 'w_bin').semPreco, []);
+  assert.doesNotMatch(r.texto, /Binance[^\n]*sem preço/);
+});

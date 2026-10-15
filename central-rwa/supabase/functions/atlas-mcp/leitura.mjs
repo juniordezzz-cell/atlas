@@ -133,9 +133,12 @@ export function listarCarteiras({ carteiras, hold, caixa }) {
   const saldos = saldosCaixa(caixa), pos = posicoes(hold);
   const lista = listaCarteiras(carteiras).map((w) => {
     const ps = pos.filter((p) => p.walletId === w.id);
-    return { id: w.id, nome: w.name, tipo: w.type || null, modulo: w.module || null, caixa: saldos[w.id] || 0, hold: ps.reduce((s, p) => s + (p.valor ?? 0), 0), posicoes: ps.length };
+    const semPreco = ps.filter((p) => p.valor === null).map((p) => p.ticker);
+    return { id: w.id, nome: w.name, tipo: w.type || null, modulo: w.module || null, caixa: saldos[w.id] || 0, hold: ps.reduce((s, p) => s + (p.valor ?? 0), 0), posicoes: ps.length, semPreco };
   });
-  return { texto: lista.map((w) => `${w.nome} (id ${w.id}): caixa ${usd(w.caixa)} · Hold ${usd(w.hold)} em ${w.posicoes} posição(ões)`).join('\n'), dados: { carteiras: lista } };
+  const texto = lista.map((w) => `${w.nome} (id ${w.id}): caixa ${usd(w.caixa)} · Hold ${usd(w.hold)} em ${w.posicoes} posição(ões)`
+    + (w.semPreco.length ? ` (sem preço: ${w.semPreco.join(', ')})` : '')).join('\n');
+  return { texto, dados: { carteiras: lista } };
 }
 
 export function historico({ carteiras, hold, caixa }, { carteira, token, desde, limite } = {}) {
