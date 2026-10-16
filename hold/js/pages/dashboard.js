@@ -175,49 +175,85 @@
         f.color = window.AtlasSetores ? C.tom(window.AtlasSetores.cor(f.label)) : C.pieColor(0, "Outros");
       });
 
-      function cartaoPizza(dados, o) {
-        var lista = dados.fatias;
-        var semTudo = !lista.length && (dados.semPreco.length || (dados.semPrecoNomes || []).length);
-        var corpo = U.el("div", { class: "pizza-corpo" });
-        var g = C.pie3d(lista, {
-          vazio: semTudo ? "sem preço" : "sem posições",
-          ariaLabel: o.title + ": " + (lista.length
-            ? lista.map(function (f) { return f.label + " " + Math.round(f.frac * 100) + "%"; }).join(", ")
-            : (semTudo ? "posições sem preço" : "sem posições"))
-        });
-        corpo.appendChild(g);
-        var legenda = U.el("div", { class: "legend-list" });
-        lista.forEach(function (f, i) {
-          var pctv = f.frac * 100;
-          var li = U.el("button", { class: "ll-item" + (o.alerta && S.get.concentrada(pctv) ? " alto" : ""), type: "button" });
-          li.appendChild(U.el("span", { class: "sw", style: "background:" + f.color }));
-          var nome = U.el("span", { class: "ll-nome" }, [U.el("span", { class: "ll-tick", text: f.label })]);
-          if (f.sub) nome.appendChild(U.el("span", { class: "ll-sub", text: f.sub }));
-          li.appendChild(nome);
-          li.appendChild(U.el("span", { class: "ll-val num", text: U.money(f.value, 0) }));
-          li.appendChild(U.el("span", { class: "ll-pct num", text: pctv.toFixed(1).replace(".", ",") + "%" }));
-          li.addEventListener("click", f.onClick || function () { location.hash = "#/ativos"; });
-          li.addEventListener("mouseenter", function () { if (g.destacar) g.destacar(i); });
-          li.addEventListener("mouseleave", function () { if (g.destacar) g.destacar(-1); });
-          legenda.appendChild(li);
-        });
-        if (dados.semPreco.length) {
-          legenda.appendChild(U.el("div", { class: "ll-sem-preco small dim",
-            text: "sem preço: " + dados.semPreco.join(", ") }));
+      /* 16/10/2026: as pizzas 3D foram reprovadas como "infantis".
+         Token = anel plano com o total no centro e uma lista com ícone,
+         barra de peso, valor e %. Setor = barras horizontais em ordem,
+         que comparam melhor do que fatias. */
+      function pctTxt(f) { return (f.frac * 100).toFixed(1).replace(".", ",") + "%"; }
+      function linhaPeso(f, o, extra) {
+        var li = U.el("button", { class: "aloc-linha" + (o.alerta && S.get.concentrada(f.frac * 100) ? " alto" : ""), type: "button" });
+        li.appendChild(extra);
+        var nome = U.el("span", { class: "aloc-nome" }, [U.el("span", { class: "aloc-tick", text: f.label })]);
+        if (f.sub) nome.appendChild(U.el("span", { class: "aloc-sub", text: f.sub }));
+        li.appendChild(nome);
+        li.appendChild(U.el("span", { class: "aloc-val num", text: U.money(f.value, 0) }));
+        li.appendChild(U.el("span", { class: "aloc-pct num", text: pctTxt(f) }));
+        var barra = U.el("span", { class: "aloc-barra" }, [U.el("span", {
+          style: "width:" + Math.max(0.8, f.frac * 100).toFixed(2) + "%;background:" + f.color })]);
+        li.appendChild(barra);
+        li.addEventListener("click", f.onClick || function () { location.hash = "#/ativos"; });
+        return li;
+      }
+      function semPrecoNota(dados, pai) {
+        if (dados.semPreco.length) pai.appendChild(U.el("div", { class: "aloc-nota small dim",
+          text: "sem preço: " + dados.semPreco.join(", ") }));
+      }
+      function vazio(dados) {
+        var semTudo = dados.semPreco.length || (dados.semPrecoNomes || []).length;
+        return U.el("div", { class: "aloc-vazio small dim", text: semTudo ? "Posições sem preço" : "Sem posições" });
+      }
+
+      function cartaoToken(dados, o) {
+        var lista = dados.fatias, corpo;
+        if (!lista.length) corpo = vazio(dados);
+        else {
+          corpo = U.el("div", { class: "aloc-corpo" });
+          var g = C.anel(lista, {
+            centro: U.money(dados.total, 0), rotuloSup: "Patrimônio",
+            rotulo: lista.length + (lista.length === 1 ? " posição" : " posições"),
+            fmt: function (v) { return U.money(v, 0); },
+            ariaLabel: o.title + ": " + lista.map(function (f) { return f.label + " " + Math.round(f.frac * 100) + "%"; }).join(", ")
+          });
+          corpo.appendChild(U.el("div", { class: "aloc-anel" }, [g]));
+          var lst = U.el("div", { class: "aloc-lista" });
+          lista.forEach(function (f, i) {
+            var marca = f.id
+              ? U.el("span", { class: "ticker-badge sm", "data-atlas-token": f.label, text: f.label.slice(0, 3) })
+              : U.el("span", { class: "aloc-sw", style: "background:" + f.color });
+            var li = linhaPeso(f, o, marca);
+            li.addEventListener("mouseenter", function () { g.destacar(i); });
+            li.addEventListener("mouseleave", function () { g.destacar(-1); });
+            lst.appendChild(li);
+          });
+          semPrecoNota(dados, lst);
+          corpo.appendChild(lst);
         }
-        corpo.appendChild(legenda);
+        var card = U.card({ eyebrow: o.eyebrow, title: o.title, action: o.action, body: [corpo] });
+        card.classList.add("col-6");
+        return card;
+      }
+
+      function cartaoSetor(dados, o) {
+        var lista = dados.fatias, corpo;
+        if (!lista.length) corpo = vazio(dados);
+        else {
+          corpo = U.el("div", { class: "aloc-lista aloc-setores" });
+          lista.forEach(function (f) {
+            corpo.appendChild(linhaPeso(f, o, U.el("span", { class: "aloc-sw", style: "background:" + f.color })));
+          });
+        }
         var card = U.card({ eyebrow: o.eyebrow, title: o.title, action: o.action, body: [corpo] });
         card.classList.add("col-6");
         return card;
       }
 
       var nSetores = dadosSetor.fatias.length;
-      pizzas.appendChild(cartaoPizza(dadosToken, {
+      pizzas.appendChild(cartaoToken(dadosToken, {
         eyebrow: "Carteira · " + (carteira ? carteira.name : "—"), title: "Alocação por token", alerta: true,
         action: U.button("Ver posições", { variant: "ghost", size: "sm",
           onClick: function () { location.hash = "#/ativos"; } })
       }));
-      pizzas.appendChild(cartaoPizza(dadosSetor, {
+      pizzas.appendChild(cartaoSetor(dadosSetor, {
         eyebrow: "Exposição", title: "Alocação por setor",
         action: U.el("span", { class: "small dim", title: "O setor é automático. Para trocar, edite o ativo em Ativos.",
           text: nSetores + (nSetores === 1 ? " setor" : " setores") })
