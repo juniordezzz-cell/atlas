@@ -361,7 +361,7 @@
         if (!entryEl || entryEl.value) return;
 
         var pedir = window.AtlasPrecos
-          ? AtlasPrecos.de(coin.symbol)
+          ? AtlasPrecos.de(coin.symbol, { id: coin.id })
           : (AtlasAssets.priceFull ? AtlasAssets.priceFull(coin.id) : Promise.resolve(null));
 
         pedir.then(function (r) {

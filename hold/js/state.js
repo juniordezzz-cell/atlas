@@ -770,25 +770,16 @@
 
       /* Quem foi cadastrado pelo autocompletar tem o id exato da
          CoinGecko. Buscar pelo id evita o casamento por símbolo, que
-         é ambíguo (há dezenas de "UNI", "PEPE"...). Preço manual
-         continua vencendo — ele nem entra nesta lista. */
-      var prov = window.AtlasProviders && window.AtlasProviders.get && window.AtlasProviders.get("coingecko");
-      var porId = comTicker.filter(function (a) {
-        return a.cg_id && prov && prov.pricesRaw && !window.AtlasPrecos.manual(a.ticker);
-      });
-      var porSimbolo = comTicker.filter(function (a) { return porId.indexOf(a) < 0; });
+         é ambíguo (há dezenas de "UNI", "PEPE"...). Vai tudo pela
+         cadeia numa passada só (DefiLlama em lote, CoinGecko de
+         reserva); o preço manual continua vencendo o id. */
+      var ids = {};
+      comTicker.forEach(function (a) { if (a.cg_id) ids[String(a.ticker).toUpperCase()] = a.cg_id; });
 
-      var pIds = porId.length
-        ? prov.pricesRaw(porId.map(function (a) { return a.cg_id; })).catch(function (e) { return { __erro: e }; })
-        : Promise.resolve({});
-      var pSim = porSimbolo.length
-        ? window.AtlasPrecos.deVarios(porSimbolo.map(function (a) { return a.ticker; }))
-        : Promise.resolve({ valores: {}, fonte: {}, faltando: [], divergentes: [], erro: null });
-
-      return Promise.all([pIds, pSim]).then(function (rs) {
-        var mapaId = rs[0] || {}, d = rs[1];
+      return window.AtlasPrecos.deVarios(comTicker.map(function (a) { return a.ticker; }), { ids: ids })
+      .then(function (d) {
         var n = 0, faltando = (d.faltando || []).slice();
-        var erro = mapaId.__erro || d.erro || null;
+        var erro = d.erro || null;
         function aplicar(a, p, fonte) {
           if (p == null || !(p > 0)) return false;
           if (a.preco_atual !== p) {
@@ -801,17 +792,15 @@
           }
           return true;
         }
-        porId.forEach(function (a) {
-          if (!aplicar(a, mapaId[a.cg_id], "coingecko")) faltando.push(a.ticker);
-        });
-        porSimbolo.forEach(function (a) {
+        comTicker.forEach(function (a) {
           var k = String(a.ticker).toUpperCase();
           /* Com a fonte principal fora do ar, TODO ativo cai na DEX,
              que casa pelo símbolo — inclusive BTC e ETH, que ganhariam
              o preço de qualquer token homônimo. Melhor manter o preço
              anterior e tentar de novo. */
           if (erro && d.fonte[k] === "dex") return;
-          aplicar(a, d.valores[k], d.fonte[k] || null);
+          /* id cotado: a origem é quem respondeu (defillama|coingecko) */
+          aplicar(a, d.valores[k], (d.provedor && d.provedor[k]) || d.fonte[k] || null);
         });
         persist();
         if (n) emit(EVENTS.STATE_CHANGED, { evt: "prices_refreshed" });

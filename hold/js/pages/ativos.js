@@ -6,7 +6,7 @@
   /* Ordenação e busca vivem FORA da função de render: a página se
      redesenha inteira a cada ação (rerender), e um estado guardado
      dentro dela voltaria ao padrão toda vez que você comprasse algo. */
-  var sortKey = "Valor", sortDesc = true, termoBusca = "";
+  var termoBusca = "";
 
   window.Pages = window.Pages || {};
   window.Pages.ativos = function (ctx) {
@@ -69,8 +69,11 @@
   function atualizarUm(a) {
     if (!window.AtlasPrecos) return U.toast("Preços", "Camada de preços não carregada nesta página.", "warning");
     U.toast("Buscando preço", "Consultando as fontes para " + a.ticker + "…");
-    window.AtlasPrecos.deVarios([a.ticker]).then(function (d) {
-      var p = d.valores[String(a.ticker).toUpperCase()];
+    var ids = {};
+    if (a.cg_id) ids[String(a.ticker).toUpperCase()] = a.cg_id;
+    window.AtlasPrecos.deVarios([a.ticker], { ids: ids }).then(function (d) {
+      var k = String(a.ticker).toUpperCase();
+      var p = d.valores[k];
       if (p == null || !(p > 0)) {
         return U.toast("Nenhuma fonte reconheceu " + a.ticker,
           "Informe o preço na mão em Editar — ele passa a valer sobre a API.", "warning");
@@ -78,7 +81,7 @@
       if (p === a.preco_atual) return U.toast("Preço", a.ticker + " já estava em " + U.money(p) + ".");
       S.actions.updateAsset(a.id, {
         preco_atual: p,
-        precoFonte: d.fonte[String(a.ticker).toUpperCase()] || null,
+        precoFonte: (d.provedor && d.provedor[k]) || d.fonte[k] || null,
         precoEm: new Date().toISOString()
       });
       U.toast("Preço atualizado", a.ticker + " marcado a " + U.money(p) + ".", "success");
@@ -100,12 +103,6 @@
     var dias = Math.floor((Date.now() - new Date(a.precoEm).getTime()) / 86400000);
     var quando = dias <= 0 ? "hoje" : dias === 1 ? "ontem" : "há " + dias + " dias";
     return fonte + " · " + quando;
-  }
-  function celulaPreco(a) {
-    var wrap = U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" });
-    wrap.appendChild(U.el("span", { class: "num", text: a.preco_atual > 0 ? U.money(a.preco_atual) : "—" }));
-    wrap.appendChild(U.el("span", { class: "small dim", text: origemPreco(a) }));
-    return wrap;
   }
 
   /* ============================================================
@@ -183,72 +180,188 @@
     });
   }
 
-  function acoesDoAtivo(a, opts) {
-    opts = opts || {};
-    var pos = S.get.positionOf(a.id);
-    return [
-      U.actionBtn("arrowUp", "Comprar " + a.ticker, function () { F.trade(a.id, "buy"); }, { primary: true }),
-      U.actionBtn("arrowDown", "Vender " + a.ticker, pos ? function () { F.trade(a.id, "sell"); } : null,
-        { disabled: !pos, disabledHint: "Sem posição de " + a.ticker + " nesta carteira" }),
-      U.menuBtn(function () {
-        return [
-          { icon: "edit", label: "Editar ativo", onClick: function () { F.editAsset(a.id); } },
-          opts.semAbrir ? null : { icon: "eye", label: "Abrir ativo", onClick: function () { location.hash = "#/ativos?id=" + a.id; } },
-          { icon: "refresh", label: "Desfazer última operação",
-            disabled: !S.get.ultimaOperacao(a.id),
-            hint: "Nenhuma operação desfazível nesta carteira",
-            onClick: function () { desfazerUltima(a); } },
-          { sep: true },
-          { icon: "trash", label: "Excluir ativo", danger: true,
-            disabled: !!S.get.anyPositionOf(a.id),
-            hint: "Venda a posição antes de excluir",
-            onClick: function () { excluirAtivo(a); } }
-        ];
-      }, "Mais ações em " + a.ticker)
-    ];
+
+  /* ============================================================
+     MESA + FICHAS (16/10/2026)
+
+     O dono mandou dois esboços e pediu "exatamente assim", os dois na
+     tela: à esquerda a mesa "Posições e watchlist" (Ativo · Preço ·
+     24h · 7d · Result. · Trade), à direita "Uma ficha por ativo" com o
+     preço de 30 dias. A faixa de quatro números saiu: repetia o Painel.
+     Quantidade, preço médio, editar e excluir continuam na página do
+     ativo. Spec: docs/superpowers/specs/2026-10-16-ativos-metricas-design.md
+
+     Variações (24h/7d) e séries chegam da CoinGecko depois que a tela
+     já está desenhada; quando chegam, só os dois cartões se redesenham.
+     ============================================================ */
+  var variacoes = {}, variacoesEm = 0, variacoesErro = false, buscandoVar = false;
+  var seriesFalhas = {}, buscandoSeries = false, reagendado = null, seriesLimite = false, tentativas = 0;
+  /* A resposta da CoinGecko chega depois; se a página foi redesenhada
+     no meio (atualização de preços, troca de carteira), ela tem de ir
+     para a grade que está na tela, não para a da primeira chamada. */
+  var redesenharAtual = function () {};
+  function redesenhar() { if (aindaNaLista()) redesenharAtual(); }
+
+  function fmtPreco(v) {
+    if (!(v > 0)) return "—";
+    var dec = v >= 1000 ? 0 : v >= 0.01 ? 2 : 6;
+    return v.toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+  function fmtVar(x) {
+    if (x == null || !isFinite(x)) return null;
+    var dec = Math.abs(x) >= 10 ? 0 : 1;
+    return (x > 0 ? "+" : x < 0 ? "-" : "") + Math.abs(x).toFixed(dec).replace(".", ",") + "%";
+  }
+  function varSpan(x) {
+    var t = fmtVar(x);
+    return t ? U.el("span", { class: "num " + U.signClass(x), text: t }) : U.el("span", { class: "dim", text: "—" });
+  }
+  function limpar(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+
+  function botaoTrade(a) {
+    var b = U.button("Trade", { variant: "secondary", size: "sm" });
+    b.setAttribute("aria-label", "Comprar ou vender " + a.ticker);
+    b.addEventListener("click", function (e) { e.stopPropagation(); F.trade(a.id, "buy"); });
+    return b;
   }
 
-  /* Faixa de leitura da tela: quatro números que respondem "como está
-     a carteira" antes de a pessoa ler uma linha da tabela. */
-  function faixaResumo() {
-    var c = S.get.counts();
-    var val = S.get.portfolioValue(), custo = S.get.portfolioCost();
-    var pnl = val - custo, pnlPct = custo ? (pnl / custo) * 100 : 0;
-    var carteira = S.wallets.active();
-    var caixa = S.wallets.caixa();   // a carteira em uso, ou a soma de todas
+  function linhaMesa(a) {
+    var st = S.get.statusDe(a), p = S.get.positionOf(a.id);
+    var id = window.AtlasSeries ? window.AtlasSeries.idDe(a) : null;
+    var v = id && variacoes[id];
+    var tr = U.el("tr", { class: "mesa-linha" + (st === "watchlist" ? " watch" : ""), tabindex: "0",
+      title: "Abrir " + a.ticker });
+    var c1 = U.el("td", { class: "m-ativo" });
+    c1.appendChild(U.el("span", { class: "ticker-badge sm", "data-atlas-token": a.ticker,
+      "data-atlas-token-busca": (a.tipo && a.tipo !== "Cripto") ? "nao" : null, text: a.ticker.slice(0, 3) }));
+    c1.appendChild(U.el("span", { class: "m-tick", text: a.ticker }));
+    tr.appendChild(c1);
+    var c2 = U.el("td", { class: "m-preco num" });
+    c2.appendChild(U.el("span", { text: fmtPreco(a.preco_atual) }));
+    if (st === "watchlist") {
+      c2.appendChild(U.el("span", { class: "dim", text: " · watchlist" }));
+    } else if (!id) {
+      c2.appendChild(U.el("span", { class: "dim", text: " · preço informado" }));
+    } else {
+      c2.appendChild(document.createTextNode(" "));
+      c2.appendChild(varSpan(v ? v.h24 : null));
+      c2.appendChild(document.createTextNode(" "));
+      c2.appendChild(varSpan(v ? v.d7 : null));
+    }
+    tr.appendChild(c2);
+    var c3 = U.el("td", { class: "m-res num" });
+    if (p) {
+      var r = S.get.positionPnLPct(p);
+      c3.appendChild(U.el("span", { class: U.signClass(r), text: fmtVar(r) || "—" }));
+    } else c3.appendChild(U.el("span", { class: "dim", text: "—" }));
+    tr.appendChild(c3);
+    var c4 = U.el("td", { class: "m-acao" });
+    c4.appendChild(botaoTrade(a));
+    tr.appendChild(c4);
+    function abrir() { location.hash = "#/ativos?id=" + a.id; }
+    tr.addEventListener("click", abrir);
+    tr.addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target === tr) abrir(); });
+    return tr;
+  }
 
-    var strip = U.el("div", { class: "grid g-4" });
-    strip.appendChild(U.kpi({ icon: "wallet", label: "Valor investido", value: Math.abs(val) >= 1e6 ? U.compact(val) : U.money(val, 0),
-      sub: c.posicoes + (c.posicoes === 1 ? " posição" : " posições") }));
-    strip.appendChild(U.kpi({ icon: "trendUp", label: "Resultado em aberto", value: U.money(pnl, 0),
-      delta: pnl, deltaText: U.pct(pnlPct) }));
-    /* O caixa aparece aqui porque é ele que decide se a próxima compra
-       acontece — e esta é a tela de onde as compras partem. */
-    strip.appendChild(U.kpi({ icon: "coins", label: "Caixa disponível",
-      value: caixa == null ? "—" : U.money(caixa, 0),
-      sub: carteira ? "em " + carteira.name : "sem carteira" }));
-    strip.appendChild(U.kpi({ icon: "eye", label: "Na watchlist",
-      value: String(c.watchlist),
-      sub: c.watchlist === 1 ? "ativo cadastrado sem posição" : "ativos cadastrados sem posição" }));
-    return strip;
+  function linha30(pts) {
+    var ps = pts.slice(-30).map(function (x) { return x.p; });
+    var min = Math.min.apply(null, ps), max = Math.max.apply(null, ps), amp = max - min || 1;
+    var subiu = ps[ps.length - 1] >= ps[0];
+    var pontos = ps.map(function (y, i) {
+      return (i * 100 / (ps.length - 1)).toFixed(1) + "," + (22 - (y - min) / amp * 18).toFixed(1);
+    }).join(" ");
+    var svgNS = "http://www.w3.org/2000/svg";
+    var s = document.createElementNS(svgNS, "svg");
+    s.setAttribute("viewBox", "0 0 100 24"); s.setAttribute("preserveAspectRatio", "none");
+    s.setAttribute("class", "f-linha");
+    s.setAttribute("role", "img");
+    s.setAttribute("aria-label", "Preço de 30 dias: " + (fmtVar((ps[ps.length - 1] / ps[0] - 1) * 100) || "—"));
+    var pl = document.createElementNS(svgNS, "polyline");
+    pl.setAttribute("points", pontos);
+    pl.setAttribute("class", subiu ? "pos" : "neg");
+    s.appendChild(pl);
+    return s;
+  }
+
+  function ficha(p) {
+    var a = S.get.asset(p.ativo_id); if (!a) return null;
+    var r = S.get.positionPnLPct(p);
+    var b = U.el("button", { class: "ficha", type: "button", title: "Abrir " + a.ticker });
+    var topo = U.el("span", { class: "f-topo" });
+    topo.appendChild(U.el("span", { class: "f-tick", text: a.ticker }));
+    topo.appendChild(U.el("span", { class: "num " + U.signClass(r), text: fmtVar(r) || "—" }));
+    b.appendChild(topo);
+    var id = window.AtlasSeries ? window.AtlasSeries.idDe(a) : null;
+    var pts = id && window.AtlasSeries.doCache(id);
+    if (pts && pts.length >= 2) b.appendChild(linha30(pts));
+    else b.appendChild(U.el("span", { class: "f-sem small dim",
+      text: !id ? "preço informado" : seriesFalhas[id] ? "sem histórico agora" : "carregando…" }));
+    b.appendChild(U.el("span", { class: "f-val small dim",
+      text: U.money(S.get.positionValue(p), 0) + " · " + S.get.positionWeight(p).toFixed(0) + "%" }));
+    b.addEventListener("click", function () { location.hash = "#/ativos?id=" + a.id; });
+    return b;
+  }
+
+  function aindaNaLista() {
+    var h = (location.hash || "").replace(/^#\/?/, "");
+    return h.split("?")[0] === "ativos" && h.indexOf("id=") < 0;
+  }
+
+  /* Pede à CoinGecko o que falta e redesenha os cartões quando chega.
+     Uma busca de cada tipo por vez; falha não repete em laço. */
+  function buscarDados(ativos) {
+    if (!window.AtlasSeries) return;
+    var ids = [];
+    ativos.forEach(function (a) { var id = window.AtlasSeries.idDe(a); if (id && ids.indexOf(id) < 0) ids.push(id); });
+    if (!ids.length) return;
+    var faltaVar = ids.some(function (id) { return !variacoes[id]; });
+    if (!buscandoVar && !variacoesErro && (faltaVar || Date.now() - variacoesEm > 120000) &&
+        Date.now() - variacoesEm > 5000) {
+      buscandoVar = true;
+      window.AtlasSeries.variacoes(ids).then(function (r) {
+        Object.keys(r).forEach(function (k) { variacoes[k] = r[k]; });
+      }, function () { variacoesErro = true; }).then(function () {
+        variacoesEm = Date.now();
+        buscandoVar = false;
+        redesenhar();
+      });
+    }
+    var abertos = ativos.filter(function (a) { return S.get.positionOf(a.id); })
+      .sort(function (x, y) { return S.get.positionValue(S.get.positionOf(y.id)) - S.get.positionValue(S.get.positionOf(x.id)); });
+    var semSerie = [];
+    abertos.forEach(function (a) {
+      var id = window.AtlasSeries.idDe(a);
+      if (id && !window.AtlasSeries.doCache(id) && !seriesFalhas[id] && semSerie.indexOf(id) < 0) semSerie.push(id);
+    });
+    if (semSerie.length && !buscandoSeries) {
+      buscandoSeries = true;
+      window.AtlasSeries.carregar(semSerie, redesenhar)
+        .then(function (r) {
+          r.falhas.forEach(function (id) { seriesFalhas[id] = true; });
+          buscandoSeries = false;
+          seriesLimite = !!r.limite;
+          /* limite passa em ~1 minuto: tenta sozinho, no máximo 3 vezes */
+          if (r.limite && !reagendado && tentativas < 3) {
+            tentativas++;
+            reagendado = setTimeout(function () { reagendado = null; seriesFalhas = {}; redesenhar(); }, 65000);
+          }
+          redesenhar();
+        });
+    }
   }
 
   function listView() {
     var view = U.el("div");
     view.appendChild(U.el("div", { class: "view-head" }, [
       U.el("div", { class: "row" }, [
-        U.el("div", { class: "grow" }, [U.el("h1", { text: "Ativos" }), U.el("p", { text: "Universo completo de ativos do sistema, de watchlist a investidos." })]),
-        /* O Hold nunca teve como atualizar preço: a ação existia no
-           store e não era chamada por tela nenhuma. Sem ela, todo
-           valor de posição do módulo era calculado com o preço
-           digitado no dia do cadastro. */
+        U.el("div", { class: "grow" }, [U.el("h1", { text: "Ativos" }),
+          U.el("p", { text: "Posições e watchlist para operar, e uma ficha por ativo." })]),
         botaoPrecos(),
         U.button("Watchlist", { variant: "ghost", icon: "eye", onClick: F.newAsset }),
         U.button("Registrar compra", { variant: "primary", icon: "plus", onClick: function () { F.novaCompra(); } })
       ])
     ]));
-
-    view.appendChild(faixaResumo());
 
     /* Contagem em cada filtro: sem ela, "Vendidos" é uma aposta — a
        pessoa clica para descobrir se há algo do outro lado. */
@@ -265,122 +378,103 @@
     });
 
     var searchWrap = U.el("div", { class: "search" });
-    searchWrap.innerHTML = U.icon("search");
+    searchWrap.appendChild(U.iconEl("search"));
     var searchInput = U.input({ placeholder: "Buscar por nome ou ticker…", value: termoBusca });
     searchWrap.appendChild(searchInput);
+    view.appendChild(U.el("div", { class: "between mt-16", style: "margin-bottom:16px" }, [seg, searchWrap]));
 
-    var toolbar = U.el("div", { class: "between mt-16", style: "margin-bottom:16px" }, [seg, searchWrap]);
-    view.appendChild(toolbar);
+    var grade = U.el("div", { class: "grid g-12" });
+    view.appendChild(grade);
 
-    var tableHolder = U.el("div");
-    view.appendChild(tableHolder);
-
+    var ORDEM = { invested: 0, watchlist: 1, sold: 2 };
     function render(term) {
       termoBusca = term || "";
       var t = termoBusca.toLowerCase();
-      var list = S.state.ativos.filter(function (a) {
-        return (filterState === "all" || S.get.statusDe(a) === filterState) &&
-          (!t || a.nome.toLowerCase().indexOf(t) >= 0 || a.ticker.toLowerCase().indexOf(t) >= 0);
+      var busca = S.state.ativos.filter(function (a) {
+        return !t || a.nome.toLowerCase().indexOf(t) >= 0 || a.ticker.toLowerCase().indexOf(t) >= 0;
       });
-
-      function valorDe(a) { var p = S.get.positionOf(a.id); return p ? S.get.positionValue(p) : 0; }
-      /* Ordena pelo resultado TOTAL (aberto + realizado): um ativo já
-         vendido com lucro não pode ir para o fim da lista como zero. */
-      function pnlDe(a)   {
-        var p = S.get.positionOf(a.id);
-        return (p ? S.get.positionPnL(p) : 0) + S.get.realizadoDoAtivo(a.id).resultado;
-      }
-
-      var cols = [
-        { key: "Ativo", head: "Ativo", sort: function (a) { return a.ticker || ""; },
-          render: function (a) { return U.assetCell(a); } },
-        /* O preço vinha sozinho na coluna, sem dizer de onde veio nem
-           de quando é. Um valor buscado há um minuto e um digitado há
-           seis meses tinham exatamente a mesma aparência — e é a
-           carteira inteira que se calcula em cima dele. */
-        { key: "Preço", head: "Preço", right: true, sort: function (a) { return +a.preco_atual || 0; },
-          render: function (a) { return celulaPreco(a); } },
-        /* Posição, valor e resultado NÃO existiam nesta tabela. Para
-           saber quanto valia cada ativo era preciso abrir um por um —
-           numa tela chamada "Ativos". */
-        { key: "Posição", head: "Posição", right: true,
-          sort: function (a) { var p = S.get.positionOf(a.id); return p ? p.quantidade : 0; },
-          render: function (a) {
-            var p = S.get.positionOf(a.id);
-            if (!p) return U.el("span", { class: "dim", text: "—" });
-            return U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
-              U.el("span", { class: "num", text: U.qty(p.quantidade) }),
-              U.el("span", { class: "small dim", text: "PM " + U.money(p.preco_medio) })
-            ]);
-          } },
-        { key: "Valor", head: "Valor", right: true, sort: valorDe,
-          render: function (a) {
-            var p = S.get.positionOf(a.id);
-            if (!p) return U.el("span", { class: "dim", text: "—" });
-            return U.el("div", { class: "stack", style: "align-items:flex-end;gap:3px" }, [
-              U.el("span", { class: "num", text: U.money(valorDe(a), 0) }),
-              pesoMini(S.get.positionWeight(p))
-            ]);
-          } },
-        { key: "Resultado", head: "Resultado", right: true, sort: pnlDe,
-          render: function (a) {
-            var p = S.get.positionOf(a.id);
-            var real = S.get.realizadoDoAtivo(a.id);
-            if (!p && !real.vendas) return U.el("span", { class: "dim", text: "—" });
-            if (!p) {
-              /* encerrada: o que sobrou foi o realizado */
-              return U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
-                U.el("span", { class: "num " + U.signClass(real.resultado), text: U.money(real.resultado, 0) }),
-                U.el("span", { class: "small dim", text: "realizado" })
-              ]);
-            }
-            var v = S.get.positionPnL(p);
-            var wrap = U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
-              U.el("span", { class: "num " + U.signClass(v), text: U.money(v, 0) }),
-              U.el("span", { class: "small " + U.signClass(v), text: U.pct(S.get.positionPnLPct(p), 1) })
-            ]);
-            if (real.vendas) {
-              wrap.appendChild(U.el("span", { class: "small " + U.signClass(real.resultado),
-                text: "+ realizado " + U.money(real.resultado, 0) }));
-            }
-            return wrap;
-          } },
-        { key: "Status", head: "Status", sort: function (a) { return S.get.statusDe(a); },
-          render: function (a) { return U.badge(S.get.statusDe(a)); } },
-        { key: "acoes", head: "", actions: true,
-          render: function (a) { return U.rowActions(acoesDoAtivo(a)); } }
-      ].filter(Boolean);
-
-      tableHolder.innerHTML = "";
-      var body;
-      if (list.length) {
-        body = U.table(cols, list, {
-          onRow: function (a) { location.hash = "#/ativos?id=" + a.id; },
-          sortKey: sortKey, sortDesc: sortDesc,
-          onSort: function (k, d) { sortKey = k; sortDesc = d; render(termoBusca); }
+      var lista = busca.filter(function (a) { return filterState === "all" || S.get.statusDe(a) === filterState; })
+        .sort(function (x, y) {
+          var dx = ORDEM[S.get.statusDe(x)], dy = ORDEM[S.get.statusDe(y)];
+          if (dx !== dy) return dx - dy;
+          var px = S.get.positionOf(x.id), py = S.get.positionOf(y.id);
+          return (py ? S.get.positionValue(py) : 0) - (px ? S.get.positionValue(px) : 0) || x.ticker.localeCompare(y.ticker);
         });
+
+      /* ---- mesa ---- */
+      var corpoMesa;
+      if (lista.length) {
+        var tab = U.el("table", { class: "mesa" });
+        var cab = U.el("tr");
+        ["Ativo", "Preço · 24h · 7d", "Result.", ""].forEach(function (h, i) {
+          cab.appendChild(U.el("th", { class: ["m-ativo", "m-preco", "m-res", "m-acao"][i], text: h }));
+        });
+        tab.appendChild(U.el("thead", {}, [cab]));
+        var tb = U.el("tbody");
+        lista.forEach(function (a) { tb.appendChild(linhaMesa(a)); });
+        tab.appendChild(tb);
+        corpoMesa = U.el("div", { class: "mesa-wrap" }, [tab]);
       } else if (termoBusca) {
-        body = U.empty("search", "Nada encontrado para “" + termoBusca + "”",
+        corpoMesa = U.empty("search", "Nada encontrado para “" + termoBusca + "”",
           "Nenhum ativo com esse nome ou ticker no filtro atual.",
           U.button("Limpar busca", { variant: "secondary", icon: "x",
             onClick: function () { searchInput.value = ""; render(""); } }));
       } else if (S.state.ativos.length) {
-        body = U.empty("layers", "Nenhum ativo neste filtro",
-          "Existem ativos cadastrados, mas nenhum com este status.",
+        corpoMesa = U.empty("layers", "Nenhum ativo neste filtro", "Existem ativos cadastrados, mas nenhum com este status.",
           U.button("Ver todos", { variant: "secondary", icon: "layers",
             onClick: function () { filterState = "all"; window.Router.rerender(); } }));
       } else {
-        /* Primeiro uso: o estado vazio ensina o caminho inteiro em vez
-           de só constatar que não há nada. */
-        /* tabela no lugar, vazia — sem passo a passo (pedido do dono) */
-        body = U.table(cols, [], { empty: "Nenhum ativo ainda — use \"Registrar compra\" para o primeiro." });
+        corpoMesa = U.el("div", { class: "small dim", style: "padding:8px 0",
+          text: "Nenhum ativo ainda — use \"Registrar compra\" para o primeiro." });
       }
-      tableHolder.appendChild(U.card({ tight: true, body: [body] }));
+      if (variacoesErro && lista.length) {
+        var deNovo = U.el("button", { class: "link-btn", type: "button", text: "Tentar de novo" });
+        deNovo.addEventListener("click", function () { variacoesErro = false; variacoesEm = 0; render(termoBusca); });
+        corpoMesa = U.el("div", {}, [corpoMesa, U.el("div", { class: "small dim mesa-aviso" }, [
+          document.createTextNode("Variações de 24h e 7d indisponíveis agora. "), deNovo])]);
+      }
+      var mesa = U.card({ eyebrow: "Ativos", title: "Posições e watchlist", body: [corpoMesa] });
+      mesa.classList.add("col-7");
+
+      /* ---- fichas: só posições abertas, seguindo a busca ---- */
+      var corpoFichas;
+      if (filterState === "watchlist" || filterState === "sold") {
+        corpoFichas = U.el("div", { class: "small dim",
+          text: filterState === "watchlist" ? "Watchlist não tem ficha: ainda não há posição." : "Ativos vendidos não têm posição aberta." });
+      } else {
+        var abertas = S.get.walletPositions().filter(function (p) {
+          return busca.some(function (a) { return a.id === p.ativo_id; });
+        }).sort(function (x, y) { return S.get.positionValue(y) - S.get.positionValue(x); });
+        if (abertas.length) {
+          corpoFichas = U.el("div", { class: "fichas" });
+          abertas.forEach(function (p) { var f = ficha(p); if (f) corpoFichas.appendChild(f); });
+        } else {
+          corpoFichas = U.el("div", { class: "small dim",
+            text: termoBusca ? "Nenhuma posição aberta nesta busca." : "Nenhuma posição aberta nesta carteira." });
+        }
+      }
+      if (seriesLimite && corpoFichas.classList.contains("fichas")) {
+        var outraVez = U.el("button", { class: "link-btn", type: "button", text: "Tentar de novo" });
+        outraVez.addEventListener("click", function () {
+          if (reagendado) { clearTimeout(reagendado); reagendado = null; }
+          seriesFalhas = {}; seriesLimite = false; tentativas = 0; render(termoBusca);
+        });
+        corpoFichas = U.el("div", {}, [corpoFichas, U.el("div", { class: "small dim mesa-aviso" }, [
+          document.createTextNode("A fonte de preços limitou as consultas; o resto dos gráficos vem em 1 minuto. "), outraVez])]);
+      }
+      var fichas = U.card({ eyebrow: "Ativos", title: "Uma ficha por ativo", body: [corpoFichas] });
+      fichas.classList.add("col-5");
+
+      limpar(grade);
+      grade.appendChild(mesa);
+      grade.appendChild(fichas);
+      redesenharAtual = function () { render(termoBusca); };
+      buscarDados(busca);
     }
     searchInput.addEventListener("input", function () { render(searchInput.value); });
     render(termoBusca);
 
-    return { title: "Ativos", crumb: "Universo de ativos", node: view };
+    return { title: "Ativos", crumb: "Posições e watchlist", node: view };
   }
 
   /* Barra de peso na carteira dentro da célula de valor: "US$ 4.000" não

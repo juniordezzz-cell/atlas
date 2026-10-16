@@ -1,27 +1,118 @@
 /* HOLD · pages/metricas.js
-   Leitura quantitativa do portfólio. Nenhum número aqui é digitado:
-   todos saem das posições e dos preços. */
+   LABORATÓRIO DE RISCO (16/10/2026)
+
+   A tela antiga repetia o Painel (alocação por setor, peso por posição)
+   e Ativos (o universo). Agora responde uma pergunta só: quanto risco a
+   carteira de hoje corre? Volatilidade, pior queda, pior dia, quem cai
+   junto e de onde vem o risco — com os últimos 90 dias de preço de cada
+   ativo aplicados às quantidades de hoje. As contas moram em
+   core/atlas-risco.js (testadas: node hold/testes/risco.test.js); as
+   séries, em core/atlas-series.js.
+   Spec: docs/superpowers/specs/2026-10-16-ativos-metricas-design.md */
 (function () {
   "use strict";
-  var U = window.UI, S = window.Store, C = window.Charts;
+  var U = window.UI, S = window.Store;
+
+  /* Estado entre redesenhos: a tela se redesenha a cada série que chega. */
+  var falhas = {}, limite = false, buscando = false, reagendado = null, tentativas = 0;
+
+  function pct(x, dec) {
+    var t = Math.abs(x * 100).toFixed(dec || 0);
+    return (x < 0 && +t !== 0 ? "-" : "") + t.replace(".", ",") + "%";   // sem "-0%"
+  }
+  function data(d) { var p = String(d || "").split("-"); return p.length === 3 ? p[2] + "/" + p[1] : "—"; }
+  function naTela() { return (location.hash || "").replace(/^#\/?/, "").split("?")[0] === "metricas"; }
+
+  function itensDaCarteira() {
+    var Sr = window.AtlasSeries, St = window.AtlasSetores;
+    return S.get.walletPositions().slice().sort(function (x, y) {
+      return S.get.positionValue(y) - S.get.positionValue(x);
+    }).map(function (p) {
+      var a = S.get.asset(p.ativo_id) || {};
+      var id = Sr ? Sr.idDe(a) : null;
+      return {
+        label: a.ticker || "?", qtd: p.quantidade, id: id,
+        serie: id ? (Sr.doCache(id) || []) : [],
+        motivo: !id ? "não é cripto" : falhas[id] ? "sem histórico agora" : null,
+        stable: !!(St && St.de(a).setor === "Stablecoin")
+      };
+    });
+  }
+
+  function buscar(itens) {
+    var Sr = window.AtlasSeries;
+    if (!Sr || buscando) return;
+    var ids = itens.filter(function (it) { return it.id && !it.serie.length && !falhas[it.id]; })
+      .map(function (it) { return it.id; });
+    if (!ids.length) return;
+    buscando = true;
+    Sr.carregar(ids, function () { if (naTela()) window.Router.rerender(); }).then(function (r) {
+      r.falhas.forEach(function (id) { falhas[id] = true; });
+      limite = !!r.limite;
+      buscando = false;
+      /* limite da CoinGecko passa em cerca de um minuto: tenta de novo sozinho */
+      if (limite && !reagendado && tentativas < 3) {
+        tentativas++;
+        reagendado = setTimeout(function () {
+          reagendado = null; falhas = {}; limite = false;
+          if (naTela()) window.Router.rerender();
+        }, 65000);
+      }
+      if (naTela()) window.Router.rerender();
+    });
+  }
+
+  function numero(rotulo, valor, frase, classe) {
+    var c = U.el("div", { class: "risco-num" });
+    c.appendChild(U.el("div", { class: "rn-rot", text: rotulo }));
+    c.appendChild(U.el("div", { class: "rn-val num" + (classe ? " " + classe : ""), text: valor }));
+    c.appendChild(U.el("div", { class: "rn-frase", text: frase }));
+    return c;
+  }
+
+  function mapaCorrelacao(cor) {
+    var n = Math.min(cor.labels.length, 8);
+    var g = U.el("div", { class: "corr", style: "grid-template-columns: 64px repeat(" + n + ", minmax(0, 1fr))" });
+    g.appendChild(U.el("span"));
+    for (var j = 0; j < n; j++) g.appendChild(U.el("span", { class: "corr-cab", text: cor.labels[j] }));
+    for (var i = 0; i < n; i++) {
+      g.appendChild(U.el("span", { class: "corr-lin", text: cor.labels[i] }));
+      for (j = 0; j < n; j++) {
+        var v = cor.m[i][j];
+        var alfa = Math.max(0, v);   // abaixo de zero: andam em sentidos opostos, sem cor
+        var cel = U.el("span", { class: "corr-cel" + (i === j ? " diag" : ""),
+          style: "--a:" + alfa.toFixed(2),
+          title: cor.labels[i] + " × " + cor.labels[j] + ": " + v.toFixed(2).replace(".", ",") });
+        cel.setAttribute("aria-label", cel.title);
+        g.appendChild(cel);
+      }
+    }
+    return g;
+  }
+
+  function barrasRisco(lista) {
+    var box = U.el("div", { class: "risco-barras" });
+    lista.slice().sort(function (a, b) { return b.risco - a.risco; }).forEach(function (c) {
+      var l = U.el("div", { class: "rb-linha" });
+      l.appendChild(U.el("span", { class: "rb-tick", text: c.label }));
+      var trilho = U.el("span", { class: "rb-trilho" });
+      trilho.appendChild(U.el("i", { style: "width:" + Math.max(0, Math.min(100, c.risco * 100)).toFixed(1) + "%" }));
+      l.appendChild(trilho);
+      l.appendChild(U.el("span", { class: "rb-val num", text: "risco " + pct(Math.max(0, c.risco)) + " · dinheiro " + pct(c.peso) }));
+      box.appendChild(l);
+    });
+    return box;
+  }
 
   window.Pages = window.Pages || {};
   window.Pages.metricas = function () {
     var view = U.el("div");
-    var val = S.get.portfolioValue();
-    var carteira = S.wallets.active();
-    var posicoes = S.get.walletPositions();
-
     view.appendChild(U.el("div", { class: "view-head" }, [
       U.el("div", { class: "row" }, [
         U.el("div", { class: "grow" }, [
           U.el("h1", { text: "Métricas" }),
-          U.el("p", { text: "Leitura quantitativa do portfólio: exposição, concentração e peso de cada posição." })
+          U.el("p", { text: "Quanto risco a carteira de hoje corre: oscilação, pior queda, quem cai junto e de onde vem o risco." })
         ]),
-        /* A tela não tinha controle nenhum — nem um botão. Era a única
-           do módulo que só se podia olhar. As duas saídas daqui são as
-           duas coisas que se faz depois de ler uma métrica ruim: mexer
-           na carteira ou ler o relatório completo. */
         U.button("Ver ativos", { variant: "secondary", icon: "layers",
           onClick: function () { location.hash = "#/ativos"; } }),
         U.button("Relatório completo", { variant: "secondary", icon: "report",
@@ -29,173 +120,86 @@
       ])
     ]));
 
-    /* ------------------------------------------------------------
-       CARTEIRA VAZIA NÃO PRODUZ MÉTRICA
+    var itens = itensDaCarteira();
+    buscar(itens);
+    var comSerie = itens.filter(function (it) { return it.serie.length >= 2; });
+    var esperando = itens.filter(function (it) { return it.id && !it.serie.length && !falhas[it.id]; });
+    var r = comSerie.length ? window.AtlasRisco.calcular(comSerie) : null;
 
-       Sem posição, a tela desenhava tudo com zeros: concentração 0%,
-       índice 0,00 (que a própria legenda lê como "diverso"). Zero não
-       é diversificação — é ausência de
-       carteira, e apresentar isso como leitura quantitativa é dar nota
-       a uma prova em branco.
-       ------------------------------------------------------------ */
-    /* Carteira vazia: a tela fica no lugar, zerada (pedido do dono,
-       08/10/2026). O índice diz "sem posições" em vez de dar nota. */
+    /* ---- linha de base: de onde vêm os números ---- */
+    var base;
+    if (!itens.length) base = "Sem posições nesta carteira — os números aparecem com a primeira compra.";
+    else if (r) base = "Últimos " + r.dias + " dias de preço (" + data(r.inicio) + " a " + data(r.fim) +
+      "), com as quantidades de hoje — como esta carteira teria se comportado.";
+    else base = "Buscando o histórico de preço dos ativos…";
+    if (esperando.length && itens.length) {
+      base += " Ainda chegando: " + esperando.map(function (it) { return it.label; }).join(", ") + ".";
+    }
+    view.appendChild(U.el("p", { class: "risco-base small dim", text: base }));
 
-    /* ---- exposição por setor ---- */
-    var porSetor = {};
-    posicoes.forEach(function (p) {
-      var a = S.get.asset(p.ativo_id); if (!a) return;
-      var k = a.setor || "Sem setor";
-      if (!porSetor[k]) porSetor[k] = { valor: 0, ativos: [] };
-      porSetor[k].valor += S.get.positionValue(p);
-      porSetor[k].ativos.push(a.ticker);
-    });
-    var setores = Object.keys(porSetor).map(function (k) {
-      return { label: k, value: porSetor[k].valor, ativos: porSetor[k].ativos };
-    }).sort(function (a, b) { return b.value - a.value; });
+    if (limite) {
+      var outra = U.el("button", { class: "link-btn", type: "button", text: "Tentar de novo" });
+      outra.addEventListener("click", function () {
+        if (reagendado) { clearTimeout(reagendado); reagendado = null; }
+        falhas = {}; limite = false; tentativas = 0; window.Router.rerender();
+      });
+      view.appendChild(U.el("p", { class: "risco-base small" }, [
+        document.createTextNode("A fonte de preços (CoinGecko) limitou as consultas — parte da carteira ficou fora da conta; tento de novo em 1 minuto. "),
+        outra]));
+    }
 
-    /* ---- concentração ---- */
-    var pesos = posicoes.map(function (p) { return S.get.positionWeight(p); })
-      .sort(function (a, b) { return b - a; });
-    var top1 = pesos[0] || 0;
-    var top3 = pesos.slice(0, 3).reduce(function (s, w) { return s + w; }, 0);
-    var hhi = pesos.reduce(function (s, w) { return s + (w / 100) * (w / 100); }, 0);
+    /* ---- três números ---- */
+    var faixa = U.el("div", { class: "risco-faixa" });
+    faixa.appendChild(numero("Volatilidade", r ? pct(r.volatilidade) + " ao ano" : "—",
+      r ? "Num ano típico, o valor da carteira oscila perto de " + pct(r.volatilidade) + " para cima ou para baixo."
+        : "Quanto o valor da carteira costuma oscilar num ano."));
+    faixa.appendChild(numero("Pior queda", r ? pct(r.piorQueda.pct) : "—",
+      r ? (r.piorQueda.pct < 0 ? "Do pico em " + data(r.piorQueda.pico) + " ao fundo em " + data(r.piorQueda.fundo) +
+            " — o quanto perderia quem entrasse no pior momento." : "Não houve queda a partir de um pico no período.")
+        : "A maior perda do pico ao fundo no período.", r && r.piorQueda.pct < 0 ? "neg" : ""));
+    faixa.appendChild(numero("Pior dia", r ? pct(r.piorDia.pct, 1) : "—",
+      r ? (r.piorDia.pct < 0 ? "Em " + data(r.piorDia.d) + " — a maior queda num dia só." : "Nenhum dia de queda no período.")
+        : "A maior queda num dia só.", r && r.piorDia.pct < 0 ? "neg" : ""));
+    view.appendChild(faixa);
 
-    /* ---- faixa de KPIs ---- */
-    var strip = U.el("div", { class: "grid g-4" });
-    strip.appendChild(U.kpi({ icon: "target", label: "Posições",
-      value: String(posicoes.length),
-      sub: U.compact(val) + " investidos" + (carteira ? " em " + carteira.name : "") }));
-    /* "as 3 maiores somam 100%" com exatamente 3 posições é verdade
-       trivial ocupando espaço de leitura. Só aparece quando há mais de
-       três e a soma diz alguma coisa. */
-    strip.appendChild(U.kpi({ icon: "zap", label: "Maior posição", value: top1.toFixed(0) + "%",
-      sub: posicoes.length > 3
-        ? "as 3 maiores somam " + top3.toFixed(0) + "%"
-        : posicoes.length + (posicoes.length === 1 ? " posição na carteira" : " posições na carteira") }));
-    strip.appendChild(U.kpi({ icon: "layers", label: "Índice de concentração",
-      value: hhi.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }), sub: leituraHHI(hhi, posicoes.length) }));
-    strip.appendChild(U.kpi({ icon: "shield", label: "Setores", value: String(setores.length),
-      sub: setores.length ? "maior: " + setores[0].label : "—" }));
-    view.appendChild(strip);
+    var grade = U.el("div", { class: "grid g-12 mt-16" });
 
-    var mid = U.el("div", { class: "grid g-12 mt-16" });
+    /* ---- quem cai junto ---- */
+    var corpoCorr;
+    if (r && r.correlacao.labels.length >= 2) {
+      corpoCorr = U.el("div", {}, [mapaCorrelacao(r.correlacao),
+        U.el("p", { class: "small dim", style: "margin-top:10px",
+          text: "Quanto mais forte o azul, mais os dois sobem e caem juntos. Dois ativos que andam juntos protegem pouco um ao outro." +
+                (r.correlacao.labels.length > 8 ? " Mostrando as 8 maiores posições." : "") })]);
+    } else {
+      corpoCorr = U.el("p", { class: "small dim",
+        text: "A correlação precisa de pelo menos dois ativos voláteis com histórico (stablecoin não entra)." });
+    }
+    var cCorr = U.card({ eyebrow: "Correlação", title: "Quem cai junto", body: [corpoCorr] });
+    cCorr.classList.add("col-6");
+    grade.appendChild(cCorr);
 
-    /* ---- alocação por setor ---- */
-    var medidorSetor = U.el("div", { class: "meter" });
-    setores.forEach(function (s) {
-      var pctv = val ? (s.value / val) * 100 : 0;
-      var row = U.el("div", { class: "m-row" });
-      row.appendChild(U.el("span", { class: "m-label", title: s.ativos.join(", "),
-        text: s.label }));
-      var track = U.el("div", { class: "m-track" });
-      track.appendChild(U.el("i", { style: "width:" + pctv.toFixed(0) + "%" }));
-      row.appendChild(track);
-      /* O medidor mostrava só a porcentagem. Numa tela cujo assunto é
-         exposição, quanto isso vale em dólar é metade da resposta. */
-      row.appendChild(U.el("span", { class: "m-val", text: U.compact(s.value) }));
-      row.appendChild(U.el("span", { class: "m-val", text: pctv.toFixed(0) + "%" }));
-      medidorSetor.appendChild(row);
-    });
-    var cardSetor = U.card({ eyebrow: "Exposição", title: "Alocação por setor",
-      action: U.el("span", { class: "small dim",
-        text: setores.length + (setores.length === 1 ? " setor" : " setores") }),
-      body: [medidorSetor] });
-    cardSetor.classList.add("col-6");
-    mid.appendChild(cardSetor);
+    /* ---- de onde vem o risco ---- */
+    var corpoRisco;
+    if (r && r.contribuicao.length >= 2) {
+      corpoRisco = U.el("div", {}, [barrasRisco(r.contribuicao),
+        U.el("p", { class: "small dim", style: "margin-top:10px",
+          text: "Quanto da oscilação da carteira vem de cada ativo, ao lado de quanto do dinheiro ele é. Risco maior que o dinheiro: o ativo pesa mais do que parece." })]);
+    } else if (r) {
+      corpoRisco = U.el("p", { class: "small dim", text: "Todo o risco calculado vem de " + r.contribuicao[0].label + " — é o único ativo com histórico." });
+    } else {
+      corpoRisco = U.el("p", { class: "small dim", text: "Aparece quando o histórico de preço chegar." });
+    }
+    var cRisco = U.card({ eyebrow: "Contribuição", title: "De onde vem o risco", body: [corpoRisco] });
+    cRisco.classList.add("col-6");
+    grade.appendChild(cRisco);
+    view.appendChild(grade);
 
-    /* ---- peso por posição, clicável ---- */
-    var medidorPeso = U.el("div", { class: "meter" });
-    var ordenadas = posicoes.slice().sort(function (x, y) {
-      return S.get.positionValue(y) - S.get.positionValue(x);
-    });
-    var acima = 0;
-    ordenadas.forEach(function (p) {
-      var a = S.get.asset(p.ativo_id); if (!a) return;
-      var w = S.get.positionWeight(p);
-      if (S.get.concentrada(w)) acima++;
-      /* Linha clicável: ler "esta posição pesa demais" só vale alguma
-         coisa se der para ir resolver dali. */
-      var row = U.el("button", { class: "m-row clicavel", type: "button",
-        title: "Abrir " + a.ticker });
-      row.addEventListener("click", function () { location.hash = "#/ativos?id=" + a.id; });
-      row.appendChild(U.el("span", { class: "m-label", text: a.ticker }));
-      var track = U.el("div", { class: "m-track" });
-      track.appendChild(U.el("i", { style: "width:" + Math.max(0, Math.min(100, w)).toFixed(0) + "%" }));
-      row.appendChild(track);
-      row.appendChild(U.el("span", { class: "m-val", text: U.compact(S.get.positionValue(p)) }));
-      row.appendChild(U.el("span", { class: "m-val", text: w.toFixed(0) + "%" }));
-      medidorPeso.appendChild(row);
-    });
-    var cardPeso = U.card({ eyebrow: "Concentração", title: "Peso por posição",
-      action: acima
-        ? U.el("span", { class: "badge review" }, [U.el("span", { class: "dot" }),
-            acima + " acima de " + S.get.config("limite_concentracao") + "%"])
-        : U.el("span", { class: "badge invested" }, [U.el("span", { class: "dot" }),
-            "nenhuma acima de " + S.get.config("limite_concentracao") + "%"]),
-      body: [medidorPeso] });
-    cardPeso.classList.add("col-6");
-    mid.appendChild(cardPeso);
-    view.appendChild(mid);
+    /* ---- quem ficou de fora, e por quê ---- */
+    var fora = itens.filter(function (it) { return it.motivo; }).map(function (it) { return it.label + " (" + it.motivo + ")"; });
+    if (r) r.fora.forEach(function (l) { fora.push(l + " (histórico curto)"); });
+    if (fora.length) view.appendChild(U.el("p", { class: "risco-base small dim mt-16", text: "Fora do cálculo: " + fora.join(", ") + "." }));
 
-    /* ------------------------------------------------------------
-       COMPOSIÇÃO DO UNIVERSO — três leituras, não um funil
-
-       Watchlist, com posição e vendidos são estados de um mesmo
-       ativo, contados contra o mesmo universo. Somam o universo, e
-       nenhuma é etapa da outra — por isso barras independentes, não
-       um funil normalizado pelo maior valor.
-       ------------------------------------------------------------ */
-    var universo = S.state.ativos.length;
-    var contagem = { watchlist: 0, invested: 0, sold: 0 };
-    S.state.ativos.forEach(function (a) { contagem[S.get.statusDe(a)] = (contagem[S.get.statusDe(a)] || 0) + 1; });
-
-    var comp = U.el("div", { class: "funil" });
-    [
-      { rot: "Ativos no universo", n: universo, pct: 100,
-        dica: "tudo que está cadastrado no módulo — a base das linhas abaixo" },
-      { rot: "Com posição aberta", n: contagem.invested, destaque: true,
-        dica: "têm dinheiro alocado hoje, em alguma carteira" },
-      { rot: "Na watchlist", n: contagem.watchlist,
-        dica: "cadastrados e ainda não comprados" },
-      { rot: "Vendidos", n: contagem.sold,
-        dica: "já tiveram posição e hoje não têm mais" }
-    ].forEach(function (linhaDado, i) {
-      var pctv = linhaDado.pct != null ? linhaDado.pct : (universo ? (linhaDado.n / universo) * 100 : 0);
-      var linha = U.el("div", { class: "fn-linha" + (linhaDado.destaque ? " destaque" : "") });
-      linha.appendChild(U.el("div", { class: "fn-topo" }, [
-        U.el("span", { class: "fn-rot", text: linhaDado.rot }),
-        U.el("span", { class: "fn-n num", text: String(linhaDado.n) }),
-        U.el("span", { class: "fn-pct num", text: i === 0 ? "" : pctv.toFixed(0) + "%" })
-      ]));
-      var barra = U.el("div", { class: "fn-barra" });
-      barra.appendChild(U.el("i", { style: "width:" + (linhaDado.n ? Math.max(2, pctv) : 0).toFixed(0) + "%" }));
-      linha.appendChild(barra);
-      linha.appendChild(U.el("div", { class: "fn-dica", text: linhaDado.dica }));
-      comp.appendChild(linha);
-    });
-    var cardFunil = U.card({ eyebrow: "Composição", title: "O universo e a carteira",
-      action: U.el("span", { class: "small dim", text: "% sobre " + universo + " ativos" }),
-      body: [comp] });
-    cardFunil.classList.add("col-12", "mt-16");
-
-    var bottom = U.el("div", { class: "grid g-12" });
-    bottom.appendChild(cardFunil);
-    view.appendChild(bottom);
-
-    return { title: "Métricas", crumb: "Análise quantitativa", node: view };
+    return { title: "Métricas", crumb: "Laboratório de risco", node: view };
   };
-
-  /* O índice sozinho não diz nada a quem não conhece HHI. A legenda
-     antiga ("0 = diverso, 1 = concentrado") explicava a escala e não o
-     RESULTADO — e sugeria que zero é o ideal, quando zero só acontece
-     sem carteira. O piso real é 1/n. */
-  function leituraHHI(hhi, n) {
-    if (!n) return "sem posições";
-    var piso = 1 / n;
-    if (hhi >= 0.5) return "muito concentrado (piso possível: " + piso.toFixed(2) + ")";
-    if (hhi >= 0.25) return "concentrado (piso possível: " + piso.toFixed(2) + ")";
-    if (hhi - piso < 0.05) return "quase perfeitamente distribuído entre " + n;
-    return "distribuição saudável (piso possível: " + piso.toFixed(2) + ")";
-  }
 })();

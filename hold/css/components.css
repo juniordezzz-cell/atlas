@@ -387,6 +387,20 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .ll-item .ll-pct { width: 38px; text-align: right; font-size: 12px; }
 .ll-item.alto .ll-pct { color: var(--warning); }
 
+/* ---- pizzas 3D do Painel (por token e por setor) ----
+   Pizza em cima, legenda embaixo: no notebook cada cartão tem metade
+   da largura, e a legenda ao lado espremeria os nomes. */
+.pizza-corpo { display: grid; gap: 4px; }
+.pizza-corpo .pie3d { width: 100%; height: auto; }
+.ll-item .ll-nome { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.legend-list .ll-sem-preco { padding: 6px 8px 0; }
+.pizza-corpo .ll-item .ll-pct { width: 46px; }
+.ll-item .ll-sub { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 1280px) {
+  .pizza-corpo { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: 18px; }
+  .pizza-corpo .legend-list { margin-top: 0; }
+}
+
 /* alerts row */
 .alert-row { display: flex; align-items: flex-start; gap: 11px; padding: 12px 0; border-bottom: 1px solid rgba(31,42,58,0.5); width: 100%; text-align: left; }
 .alert-row:last-child { border-bottom: none; }
@@ -642,3 +656,66 @@ html:root body .modal [aria-invalid="true"] { box-shadow: 0 0 0 2px var(--danger
 
 /* busca do ativo no topo do "Registrar compra" */
 .ativo-busca { padding-bottom: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+
+/* ---- Ativos: mesa + fichas (16/10/2026) ----
+   Os dois esboços do dono, lado a lado; empilham abaixo de 1080 px. */
+.col-7 { grid-column: span 7; }
+.col-5 { grid-column: span 5; }
+@media (max-width: 1080px) { .col-7, .col-5 { grid-column: span 12; } }
+.mesa-wrap { overflow-x: auto; }
+.mesa { width: 100%; border-collapse: collapse; font-size: 13px; }
+.mesa th { font-size: 12px; font-weight: 500; color: var(--text-dim); text-align: left; padding: 0 8px 8px; }
+.mesa td { padding: 9px 8px; border-top: 1px solid var(--border); white-space: nowrap; }
+.mesa .m-res, .mesa .m-acao { text-align: right; }
+.mesa .m-acao { width: 1%; }
+.mesa-linha { cursor: pointer; transition: background .12s var(--ease); }
+.mesa-linha:hover, .mesa-linha:focus-visible { background: var(--surface-alt); outline: none; }
+.mesa-linha.watch .m-tick, .mesa-linha.watch .m-preco > span:first-child { color: var(--text-dim); }
+.mesa .ticker-badge.sm { display: inline-grid; vertical-align: middle; margin-right: 8px; }
+.mesa .m-tick { font-weight: 600; font-family: var(--mono); font-size: 12.5px; }
+.mesa .m-preco .num + .num, .mesa .m-preco > .num { margin-left: 2px; }
+.ticker-badge.sm { width: 22px; height: 22px; border-radius: 50%; font-size: 8.5px; }
+.mesa-aviso { margin-top: 10px; }
+.fichas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ficha {
+  display: block; width: 100%; text-align: left; cursor: pointer;
+  background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; color: var(--text); transition: border-color .12s var(--ease);
+}
+.ficha:hover, .ficha:focus-visible { border-color: var(--primary); outline: none; }
+.ficha .f-topo { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; }
+.ficha .f-tick { font-weight: 600; font-family: var(--mono); }
+.ficha .f-linha { display: block; width: 100%; height: 34px; margin: 8px 0 6px; overflow: visible; }
+.ficha .f-linha polyline { fill: none; stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.ficha .f-linha .pos { stroke: var(--success); }
+.ficha .f-linha .neg { stroke: var(--danger); }
+.ficha .f-val { display: block; }
+.ficha .f-sem { height: 34px; margin: 8px 0 6px; display: flex; align-items: center; }
+@media (max-width: 420px) { .fichas { gap: 8px; } .ficha { padding: 9px 10px; } }
+
+/* ---- Métricas: laboratório de risco (16/10/2026) ---- */
+.risco-base { margin: 0 0 14px; max-width: 72ch; }
+.risco-faixa { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.risco-num { padding: 16px 20px 18px 0; }
+.risco-num + .risco-num { padding-left: 20px; border-left: 1px solid var(--border); }
+.risco-num .rn-rot { font-size: 12.5px; color: var(--text-dim); }
+.risco-num .rn-val { font-size: 28px; font-weight: 650; margin: 4px 0 6px; letter-spacing: -0.01em; }
+.risco-num .rn-val.neg { color: var(--danger); }
+.risco-num .rn-frase { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+@media (max-width: 760px) {
+  .risco-faixa { grid-template-columns: 1fr; }
+  .risco-num, .risco-num + .risco-num { padding: 14px 0; border-left: 0; }
+  .risco-num + .risco-num { border-top: 1px solid var(--border); }
+}
+.corr { display: grid; gap: 3px; align-items: center; }
+.corr-cab { font-size: 10.5px; font-family: var(--mono); color: var(--text-dim); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.corr-lin { font-size: 11.5px; font-family: var(--mono); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.corr-cel { aspect-ratio: 1.6; border-radius: 4px; background: var(--surface-alt);
+  background-image: linear-gradient(rgba(76, 123, 217, var(--a)), rgba(76, 123, 217, var(--a))); }
+.corr-cel.diag { opacity: .45; }
+.risco-barras { display: grid; gap: 10px; }
+.rb-linha { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 12.5px; }
+.rb-tick { font-family: var(--mono); font-weight: 600; }
+.rb-trilho { height: 8px; border-radius: 4px; background: var(--surface-alt); overflow: hidden; }
+.rb-trilho > i { display: block; height: 100%; background: #4C7BD9; border-radius: 4px; }
+.rb-val { color: var(--text-dim); font-size: 12px; white-space: nowrap; }
