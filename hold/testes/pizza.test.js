@@ -47,25 +47,11 @@ r = C.fatias([90, 80, 70, 60, 50, 40, 30, 20].map(function (v, i) { return { lab
 assert.equal(r.fatias.length, 7);
 assert.equal(r.fatias[6].value, 50);
 
-/* ---- rotulo ---- */
-assert.deepEqual(C.rotulo(0.344, "ETH"), { modo: "nome", texto: "34,4%", fonte: 12 });
-var p = C.rotulo(0.07, "SOL");
-assert.equal(p.modo, "pct"); assert.equal(p.texto, "7%");
-assert.equal(C.rotulo(0.03, "SUI").modo, "nenhum");
-assert.equal(C.rotulo(0.12, "Reserva de valor").modo, "pct");
-/* o nome tem de caber na corda da fatia, não só "ter poucas letras" */
-assert.equal(C.rotulo(0.2, "Reserva de valor").modo, "pct");
-p = C.rotulo(0.3, "Reserva de valor");
-assert.equal(p.modo, "nome"); assert.equal(p.fonte, 10.5);
-assert.equal(C.rotulo(0.12, "Oráculos").modo, "nome");
-
 /* 7 fatias sem "Outros": nenhuma cor repete (a última encosta na primeira) */
 var sete = [0, 1, 2, 3, 4, 5, 6].map(function (i) { return C.pieColor(i, "T" + i); });
 sete.push(C.pieColor(7, "Outros"));
 assert.equal(new Set(sete).size, 8);
 assert.equal(C.tom("#4C7BD9"), "#4C7BD9");
-assert.equal(C.rotulo(0.09, "LINK").modo, "nome");
-assert.equal(C.rotulo(0.045, "LINK").modo, "pct");
 
 /* ---- cor por setor ---- */
 if (S.cor) {

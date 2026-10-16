@@ -33,6 +33,30 @@
     if (i >= 0) root = s.slice(0, i + 1);
   } catch (e) {}
 
+  /* TROCA DE PÁGINA SEM TELA PRETA (16/10/2026, queixa do dono: "pisca
+     duas vezes uma tela preta"). O navegador segura a página anterior na
+     tela até a nova pintar e faz um cruzamento curto, em vez de mostrar
+     o vazio entre as duas. Precisa estar nas duas pontas da navegação,
+     por isso entra aqui, que é o único include de todas as páginas.
+     Navegador sem suporte ignora a regra. */
+  try {
+    var vt = document.createElement("style");
+    vt.id = "atlas-view-transition";
+    vt.textContent = "@view-transition{navigation:auto}" +
+      "::view-transition-old(root),::view-transition-new(root){animation-duration:.18s}" +
+      "@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}";
+    (document.head || document.documentElement).appendChild(vt);
+    /* Quando a trava manda para o login no meio da troca, o navegador
+       pula a transição e rejeita as promessas dela; sem isto, cada
+       redirecionamento sujava o console com "Transition was skipped". */
+    var calar = function (ev) {
+      var t = ev && ev.viewTransition; if (!t) return;
+      [t.ready, t.finished, t.updateCallbackDone].forEach(function (p) { if (p && p.catch) p.catch(function () {}); });
+    };
+    global.addEventListener("pageswap", calar);
+    global.addEventListener("pagereveal", calar);
+  } catch (e) {}
+
   var path = String(location.pathname || "").toLowerCase();
   if (/(login|offline|landing|boas-vindas)\.html$/.test(path)) return; // públicas
 
@@ -66,14 +90,30 @@
     } catch (e) {}
   }
 
-  // esconde o conteúdo até resolver (evita flash de tela protegida)
-  var style = document.createElement("style");
-  style.id = "atlas-gate-style";
-  style.textContent = "body{visibility:hidden!important}";
-  (document.head || document.documentElement).appendChild(style);
+  /* Esconde o conteúdo até o Firebase resolver — MAS só na primeira
+     página depois do login. Esconder em toda troca de página deixava a
+     tela preta ~1 s a cada clique (são cinco arquivos do Firebase em
+     cadeia). Quem já passou pela trava NESTE navegador ganha a marca
+     GATE_KEY e a página aparece na hora; a cadeia roda igual por trás e,
+     se a sessão não valer mais, apaga a marca e manda para o login. Os
+     dados da Fase 1 são os locais deste navegador; a proteção de
+     verdade é a regra do Firestore (Fase 2). */
+  var GATE_KEY = "atlas.gate.ok";
+  var jaPassou = false;
+  try { jaPassou = localStorage.getItem(GATE_KEY) === "1"; } catch (e) {}
+  if (!jaPassou) {
+    var style = document.createElement("style");
+    style.id = "atlas-gate-style";
+    style.textContent = "body{visibility:hidden!important}";
+    (document.head || document.documentElement).appendChild(style);
+  }
 
   function reveal() { var el = document.getElementById("atlas-gate-style"); if (el && el.parentNode) el.parentNode.removeChild(el); }
-  function toLogin() { try { location.replace(root + "pages/login.html"); } catch (e) { location.href = root + "pages/login.html"; } }
+  function toLogin() {
+    try { localStorage.removeItem(GATE_KEY); } catch (e) {}
+    try { location.replace(root + "pages/login.html"); } catch (e) { location.href = root + "pages/login.html"; }
+  }
+  function liberar() { try { localStorage.setItem(GATE_KEY, "1"); } catch (e) {} reveal(); }
 
   function load(src, cb) {
     var el = document.createElement("script");
@@ -83,7 +123,7 @@
 
   function decide() {
     if (!global.AtlasAuth || !AtlasAuth.real()) { reveal(); return; } // sem provedor real → não barra
-    var go = function () { if (AtlasAuth.autenticado()) reveal(); else toLogin(); };
+    var go = function () { if (AtlasAuth.autenticado()) liberar(); else toLogin(); };
     if (global.AtlasFirebase && AtlasFirebase.whenReady) AtlasFirebase.whenReady(go); else go();
   }
 
