@@ -26,10 +26,16 @@ const brutosDe = (docs, chaves) => Object.fromEntries(chaves.map((k) => [k, docs
 let sequenciaOp = 0;
 const novoOpId = (ctx) => String(ctx.agora()).padStart(15, '0') + '-' + String(++sequenciaOp % 10000).padStart(4, '0') + aleatorio(4);
 
+// Uma resposta perdida (timeout, 5xx) não prova que nada foi gravado: o backup vai no
+// mesmo commit, então a existência dele decide. Nunca responder "nada mudou" sem saber.
 async function gravarComTratamento(ctx, args) {
   try { await ctx.firestore.gravar(ctx.uid, args); } catch (e) {
     if (e instanceof ConflitoGravacao) throw new ErroUsuario(MUDOU);
-    throw e;
+    let gravou = false;
+    try { gravou = !!(await ctx.firestore.lerBackup(ctx.uid, args.opId)); } catch { gravou = false; }
+    if (gravou) return;
+    console.error('atlas-mcp gravar', String(e?.message || e).slice(0, 120));
+    throw new ErroUsuario('Não consegui confirmar se a gravação aconteceu. Confira com ver_posicoes ou ver_caixa antes de repetir, para não lançar em dobro.');
   }
 }
 
@@ -37,7 +43,9 @@ export async function preparar(ctx, op, args = {}) {
   if (!EXECUTORES[op]) throw new ErroUsuario(`Operação desconhecida: ${op}.`);
   const { docs, r, mudancas } = await simular(ctx, op, args);
   if (!Object.keys(mudancas).length) throw new ErroUsuario('Essa operação não mudaria nada no Atlas.');
-  const id = await assinar({ t: 'previa', u: ctx.uid, op, a: args, b: basesDe(docs, CHAVES_GRAVAVEIS), exp: ctx.agora() + VALIDADE_PREVIA_MS }, ctx.segredo);
+  // A data resolvida ("hoje" em Brasília) vai assinada: confirmar depois da meia-noite grava a data mostrada.
+  const assinados = r.dados?.data && !args.data ? { ...args, data: r.dados.data } : args;
+  const id = await assinar({ t: 'previa', u: ctx.uid, op, a: assinados, b: basesDe(docs, CHAVES_GRAVAVEIS), exp: ctx.agora() + VALIDADE_PREVIA_MS }, ctx.segredo);
   return {
     texto: `PRÉVIA — nada foi gravado ainda.\n${r.resumo}\n\nMostre esta prévia ao dono. Só chame confirmar com o id_previa depois de um "sim" explícito. Vale 10 minutos.`,
     dados: { id_previa: id, operacao: op, ...r.dados },

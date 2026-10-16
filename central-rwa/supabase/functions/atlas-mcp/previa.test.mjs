@@ -103,3 +103,32 @@ test('desfazer restaura o estado anterior e recusa se o site gravou por cima', a
 test('sem operações do Claude não há o que desfazer', async () => {
   await assert.rejects(() => prepararDesfazer(ctxCom(firestoreFalso())), /Não há operação feita pelo Claude/);
 });
+
+test('se a gravação cair depois de aplicada, confirmar confere o backup e responde gravado', async () => {
+  const fs = firestoreFalso();
+  const ctx = ctxCom(fs);
+  const p = await preparar(ctx, 'carteira', { nome: 'Binance' });
+  const gravarReal = fs.gravar;
+  fs.gravar = async (...a) => { await gravarReal(...a); throw new Error('timeout'); };
+  const c = await confirmar(ctx, p.dados.id_previa);
+  assert.match(c.texto, /^Gravado no Atlas\./);
+});
+
+test('se a gravação falhar sem aplicar, confirmar não diz que nada mudou e pede conferência', async () => {
+  const fs = firestoreFalso();
+  const ctx = ctxCom(fs);
+  const p = await preparar(ctx, 'carteira', { nome: 'Binance' });
+  fs.gravar = async () => { throw new Error('rede caiu'); };
+  await assert.rejects(() => confirmar(ctx, p.dados.id_previa), (e) => e instanceof ErroUsuario && /Não consegui confirmar se a gravação aconteceu/.test(e.message));
+});
+
+test('a data mostrada na prévia é a gravada, mesmo confirmando depois da meia-noite', async () => {
+  const fs = firestoreFalso();
+  const antes = { ...ctxCom(fs), agora: () => Date.parse('2026-10-16T02:58:00Z') }; // 23:58 de 15/10 em SP
+  await confirmar(antes, (await preparar(antes, 'carteira', { nome: 'Binance' })).dados.id_previa);
+  const p = await preparar(antes, 'deposito', { carteira: 'Binance', token: 'USDT', quantidade: 5 });
+  assert.equal(p.dados.data, '2026-10-15');
+  const depois = { ...antes, agora: () => Date.parse('2026-10-16T03:02:00Z') }; // 00:02 de 16/10 em SP
+  const c = await confirmar(depois, p.dados.id_previa);
+  assert.equal(c.dados.data, '2026-10-15');
+});
