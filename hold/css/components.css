@@ -387,6 +387,20 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .ll-item .ll-pct { width: 38px; text-align: right; font-size: 12px; }
 .ll-item.alto .ll-pct { color: var(--warning); }
 
+/* ---- pizzas 3D do Painel (por token e por setor) ----
+   Pizza em cima, legenda embaixo: no notebook cada cartão tem metade
+   da largura, e a legenda ao lado espremeria os nomes. */
+.pizza-corpo { display: grid; gap: 4px; }
+.pizza-corpo .pie3d { width: 100%; height: auto; }
+.ll-item .ll-nome { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.legend-list .ll-sem-preco { padding: 6px 8px 0; }
+.pizza-corpo .ll-item .ll-pct { width: 46px; }
+.ll-item .ll-sub { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 1280px) {
+  .pizza-corpo { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: 18px; }
+  .pizza-corpo .legend-list { margin-top: 0; }
+}
+
 /* alerts row */
 .alert-row { display: flex; align-items: flex-start; gap: 11px; padding: 12px 0; border-bottom: 1px solid rgba(31,42,58,0.5); width: 100%; text-align: left; }
 .alert-row:last-child { border-bottom: none; }

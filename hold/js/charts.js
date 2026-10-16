@@ -147,8 +147,200 @@
     return s;
   }
 
-  var PALETTE = ["--primary", "--secondary", "--accent", "--success", "--warning", "--danger"];
-  function color(i) { return serie(cssVar(PALETTE[i % PALETTE.length])); }
+  /* ---- pizza 3D sólida (Painel: por token e por setor) ----
+     Opção A aprovada pelo dono em 16/10/2026, no lugar da primeira
+     versão, reprovada como "infantil". O que dá o ar de objeto real:
+       · topo com véu vertical (luz vinda de cima);
+       · parede só na metade da frente (sen θ > 0 — o SVG cresce para
+         baixo), escurecida nas pontas por um degradê horizontal, como
+         um cilindro iluminado de frente;
+       · sombra suave no chão;
+       · separação fina na cor do cartão, sem contorno nem brilho.
+     Nome e % ficam DENTRO da fatia; quanto cabe decide rotulo().
+     Paredes da frente nunca se cruzam: paredes, depois topos, depois
+     rótulos. Spec: docs/superpowers/specs/2026-10-16-painel-pizzas-3d-design.md */
+  function pie3d(lista, opts) {
+    opts = opts || {};
+    var W = 300, H = 215, cx = 150, cy = 92, RX = 128, RY = 64, D = 24;
+    var TAU = Math.PI * 2;
+    var claro = document.documentElement.getAttribute("data-theme") === "light";
+    var calmo = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var s = svg(W, H);
+    s.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    s.setAttribute("role", "img");
+    if (opts.ariaLabel) s.setAttribute("aria-label", opts.ariaLabel);
+    s.classList.add("pie3d");
+    s.style.display = "block"; s.style.margin = "0 auto"; s.style.maxWidth = "340px";
 
-  window.Charts = { sparkline: sparkline, lineChart: lineChart, donut: donut, color: color };
+    var uid = "p3" + Math.random().toString(36).slice(2, 8);
+    var defs = node("defs");
+    function grad(tipo, id, attrs, stops) {
+      var g = node(tipo, Object.assign({ id: uid + id }, attrs));
+      stops.forEach(function (st) {
+        g.appendChild(node("stop", { offset: st[0], "stop-color": st[1], "stop-opacity": st[2] }));
+      });
+      defs.appendChild(g);
+      return "url(#" + uid + id + ")";
+    }
+    var PAREDE = grad("linearGradient", "w", { gradientUnits: "userSpaceOnUse", x1: cx - RX, y1: 0, x2: cx + RX, y2: 0 },
+      [[0, "#000", 0.62], [0.42, "#000", 0.12], [0.6, "#000", 0.18], [1, "#000", 0.66]]);
+    var VEU = grad("linearGradient", "t", { x1: 0, y1: 0, x2: 0, y2: 1 },
+      [[0, "#fff", 0.2], [0.55, "#fff", 0], [1, "#000", 0.12]]);
+    var CHAO = grad("radialGradient", "g", {}, [[0, "#000", claro ? 0.22 : 0.55], [1, "#000", 0]]);
+    s.appendChild(defs);
+    s.appendChild(node("ellipse", { cx: cx, cy: cy + D + 10, rx: RX * 1.05, ry: RY * 0.85, fill: CHAO }));
+
+    function P(t, dy) {
+      return (cx + RX * Math.cos(t)).toFixed(1) + " " + (cy + RY * Math.sin(t) + (dy || 0)).toFixed(1);
+    }
+    function parede(a0, a1) {
+      return "M" + P(a0) + " A" + RX + " " + RY + " 0 0 1 " + P(a1) + " L" + P(a1, D) +
+             " A" + RX + " " + RY + " 0 0 0 " + P(a0, D) + "Z";
+    }
+    function texto(x, y, txt, attrs, pai) {
+      var t = node("text", Object.assign({ x: x.toFixed(1), y: y.toFixed(1), fill: "#fff", "text-anchor": "middle",
+        style: "paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:2.5px;pointer-events:none" }, attrs));
+      t.textContent = txt; pai.appendChild(t); return t;
+    }
+    function pct(f) { return (f * 100).toFixed(1).replace(".", ",") + "%"; }
+    function dinheiro(v) { return window.UI && window.UI.money ? window.UI.money(v, 0) : "US$ " + Math.round(v); }
+
+    var paredes = node("g"), topos = node("g"), rotulos = node("g");
+    s.appendChild(paredes); s.appendChild(topos); s.appendChild(rotulos);
+
+    if (!lista || !lista.length) {
+      var cinza = cssVar("--surface-alt") || "#1c2533";
+      paredes.appendChild(node("path", { d: parede(0, Math.PI), fill: cinza }));
+      paredes.appendChild(node("path", { d: parede(0, Math.PI), fill: PAREDE }));
+      topos.appendChild(node("ellipse", { cx: cx, cy: cy, rx: RX, ry: RY, fill: cinza }));
+      topos.appendChild(node("ellipse", { cx: cx, cy: cy, rx: RX, ry: RY, fill: VEU }));
+      texto(cx, cy + 4, opts.vazio || "sem posições", { fill: cssVar("--text-dim") || "#8b97a8", style: "", "font-size": 12 }, rotulos);
+      return s;
+    }
+
+    var sep = cssVar("--surface") || "#0d131e";
+    var grupos = [];
+    var a = -Math.PI / 2;
+    lista.forEach(function (f, i) {
+      var a0 = a, a1 = a + f.frac * TAU; a = a1;
+      var meio = (a0 + a1) / 2, cheia = f.frac > 0.9999;
+      var gw = node("g"), gt = node("g", { class: "fatia", "data-i": i }), gr = node("g");
+      if (!calmo) gw.style.transition = gt.style.transition = gr.style.transition = "transform .18s ease";
+      for (var k = -1; k <= 1; k++) {
+        var ini = Math.max(a0, k * TAU), fim = Math.min(a1, k * TAU + Math.PI);
+        if (fim - ini > 1e-4) {
+          gw.appendChild(node("path", { d: parede(ini, fim), fill: f.color }));
+          gw.appendChild(node("path", { d: parede(ini, fim), fill: PAREDE }));
+        }
+      }
+      var forma = cheia
+        ? "M" + (cx - RX) + " " + cy + " A" + RX + " " + RY + " 0 1 1 " + (cx + RX) + " " + cy +
+          " A" + RX + " " + RY + " 0 1 1 " + (cx - RX) + " " + cy + "Z"
+        : "M" + cx + " " + cy + " L" + P(a0) + " A" + RX + " " + RY + " 0 " + (a1 - a0 > Math.PI ? 1 : 0) + " 1 " + P(a1) + "Z";
+      var topo = node("path", { d: forma, fill: f.color, stroke: sep, "stroke-width": lista.length > 1 ? 1.2 : 0, "stroke-linejoin": "round" });
+      var dica = node("title"); dica.textContent = f.label + " · " + dinheiro(f.value) + " · " + pct(f.frac);
+      topo.appendChild(dica);
+      gt.appendChild(topo);
+      var veu = node("path", { d: forma, fill: VEU }); veu.style.pointerEvents = "none";
+      gt.appendChild(veu);
+      if (f.onClick) { gt.style.cursor = "pointer"; gt.addEventListener("click", f.onClick); }
+
+      var r = rotulo(f.frac, f.label);
+      var x = cheia ? cx : cx + 0.6 * RX * Math.cos(meio), y = cheia ? cy : cy + 0.6 * RY * Math.sin(meio);
+      if (r.modo === "nome") {
+        texto(x, y - 1, f.label, { "font-size": r.fonte, "font-weight": 500 }, gr);
+        texto(x, y + 12, r.texto, { "font-size": 11, "fill-opacity": 0.85 }, gr);
+      } else if (r.modo === "pct") {
+        texto(x, y + 4, r.texto, { "font-size": 11, "font-weight": 500 }, gr);
+      }
+      paredes.appendChild(gw); topos.appendChild(gt); rotulos.appendChild(gr);
+      var dx = Math.cos(meio) * 8, dy = Math.sin(meio) * 4;
+      grupos.push({ els: [gw, gt, gr], d: "translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px)" });
+      gt.addEventListener("mouseenter", function () { destacar(i); });
+      gt.addEventListener("mouseleave", function () { destacar(-1); });
+    });
+
+    function destacar(i) {
+      grupos.forEach(function (g, j) {
+        var t = j === i && lista.length > 1 ? g.d : "";
+        g.els.forEach(function (e) { e.style.transform = t; });
+      });
+    }
+    s.destacar = destacar;
+    return s;
+  }
+
+  /* ---- dados das pizzas (puro: testado em hold/testes/pizza.test.js) ----
+     Ordem de valor, no máximo `max` fatias contando o "Outros", que é
+     um só — o resto agrupado mais o que já chegou com esse nome (setor
+     não classificado) — e fica sempre por último. Valor ≤ 0 é posição
+     sem preço: sai da pizza e volta em `semPreco`. O % é sobre a soma
+     das fatias, para a pizza fechar 100% e bater com a legenda. */
+  function fatias(itens, opts) {
+    var max = (opts && opts.max) || 7;
+    var semPreco = [], vivos = [], outros = null;
+    (itens || []).forEach(function (it) {
+      if (!(it.value > 0)) { semPreco.push(it.label); return; }
+      if (it.label === "Outros") {
+        outros = outros || { label: "Outros", value: 0, partes: [], ids: [] };
+        outros.value += it.value;
+        if (it.sub) outros.partes.push(it.sub);
+        return;
+      }
+      vivos.push(it);
+    });
+    vivos.sort(function (a, b) { return b.value - a.value; });
+    var lugares = outros || vivos.length > max ? max - 1 : max;
+    var ficam = vivos.slice(0, lugares), sobra = vivos.slice(lugares);
+    if (sobra.length) {
+      outros = outros || { label: "Outros", value: 0, partes: [], ids: [] };
+      sobra.forEach(function (it) {
+        outros.value += it.value; outros.partes.push(it.label);
+        if (it.id) outros.ids.push(it.id);
+      });
+    }
+    var lista = ficam.map(function (it) {
+      return { label: it.label, value: it.value, sub: it.sub || "", id: it.id || null, ids: it.id ? [it.id] : [] };
+    });
+    if (outros) lista.push({ label: "Outros", value: outros.value, sub: outros.partes.join(", "), id: null, ids: outros.ids });
+    var total = lista.reduce(function (t, f) { return t + f.value; }, 0);
+    lista.forEach(function (f) { f.frac = total ? f.value / total : 0; });
+    return { fatias: lista, semPreco: semPreco, total: total };
+  }
+
+  /* O que cabe escrito dentro da fatia. O nome só entra se a largura
+     estimada dele (0,56 em por letra) couber na corda da fatia no raio
+     do rótulo (60% de 128 px) — contar letras deixava "Reserva de
+     valor" vazar de uma fatia de 20%. */
+  function rotulo(frac, label) {
+    var n = String(label || "").length, fonte = n > 9 ? 10.5 : 12;
+    var corda = 2 * 0.6 * 128 * Math.sin(Math.min(frac * Math.PI, Math.PI / 2));
+    if (frac >= 0.09 && n * fonte * 0.56 <= corda) {
+      return { modo: "nome", texto: (frac * 100).toFixed(1).replace(".", ",") + "%", fonte: fonte };
+    }
+    if (frac >= 0.045) return { modo: "pct", texto: Math.round(frac * 100) + "%", fonte: 11 };
+    return { modo: "nenhum", texto: "", fonte: 0 };
+  }
+
+  var PALETTE = ["--primary", "--secondary", "--accent", "--success", "--warning", "--danger"];
+  /* Da sétima cor em diante a paleta do tema acaba: matizes espaçados,
+     com a mesma luminosidade média, para fatia nenhuma repetir a vizinha. */
+  function color(i) {
+    if (i < PALETTE.length) return serie(cssVar(PALETTE[i]));
+    return "hsl(" + ((i * 53 + 20) % 360) + " 52% 58%)";
+  }
+
+  /* Pizza pede vizinhas bem diferentes: a paleta do tema tem três
+     cianos seguidos (secondary, accent, success), que lado a lado numa
+     pizza viram uma fatia só. Matizes espaçados, todos de tom médio,
+     legíveis no tema escuro e no claro; "Outros" é sempre cinza. */
+  /* sete cores: com 7 posições e nenhum "Outros", a 7ª encosta na 1ª */
+  var PIE = ["#4C7BD9", "#2FA58F", "#D4A23A", "#8A6AD1", "#C2566F", "#3E9BC0", "#B07A4F"];
+  function pieColor(i, label) {
+    if (label === "Outros") return serie("#66707F");
+    return serie(PIE[i % PIE.length]);
+  }
+
+  window.Charts = { sparkline: sparkline, lineChart: lineChart, donut: donut, pie3d: pie3d, color: color, pieColor: pieColor,
+    fatias: fatias, rotulo: rotulo, tom: serie };
 })();

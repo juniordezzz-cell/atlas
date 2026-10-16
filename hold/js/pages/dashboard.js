@@ -129,60 +129,107 @@
     view.appendChild(kpis);
 
     /* ------------------------------------------------------------
-       POSIÇÕES LOGO ABAIXO DOS NÚMEROS
+       DUAS PIZZAS NO LUGAR DA TABELA
 
-       A tabela das posições era o ÚLTIMO bloco da página. Num painel
-       de hold, é a leitura principal: o que eu tenho, quanto paguei,
-       quanto vale hoje. O preço atual fica ao lado do preço médio —
-       a valorização se lê na própria linha, sem fazer conta.
+       Pedido do dono (16/10/2026): o Painel é a tela de olhar, não de
+       ler linha a linha — a tabela de posições vive em Ativos. À
+       esquerda, quanto cada token pesa em dólar; à direita, quanto
+       cada setor (RWA, IA, DePIN, ZK…) pesa. O setor vem de
+       core/atlas-setores.js: o que a pessoa escreveu em Editar vence,
+       depois o catálogo, depois as categorias da CoinGecko.
        ------------------------------------------------------------ */
     {
-      var cols = [
-        { head: "Ativo", render: function (p) { return U.assetCell(S.get.asset(p.ativo_id)); } },
-        { head: "Quantidade", right: true, render: function (p) {
-          return U.el("span", { class: "num", text: U.qty(p.quantidade) }); } },
-        { head: "Preço médio → atual", right: true, render: function (p) {
-          var a = S.get.asset(p.ativo_id) || {};
-          var varp = p.preco_medio > 0 ? (a.preco_atual / p.preco_medio - 1) * 100 : 0;
-          return U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
-            U.el("span", { class: "num" }, [
-              U.el("span", { class: "dim", text: U.money(p.preco_medio) + " → " }),
-              document.createTextNode(a.preco_atual > 0 ? U.money(a.preco_atual) : "—")
-            ]),
-            U.el("span", { class: "small " + U.signClass(varp), text: U.pct(varp, 1) + " no preço" })
-          ]);
-        } },
-        { head: "Valor", right: true, render: function (p) {
-          var wrap = U.el("div", { class: "stack", style: "align-items:flex-end;gap:3px" }, [
-            U.el("span", { class: "num", text: U.money(S.get.positionValue(p), 0) })
-          ]);
-          var w = S.get.positionWeight(p);
-          var peso = U.el("span", { class: "peso-mini" + (S.get.concentrada(w) ? " alto" : "") });
-          var bar = U.el("span", { class: "bar" });
-          bar.appendChild(U.el("i", { style: "width:" + w.toFixed(0) + "%" }));
-          peso.appendChild(bar);
-          peso.appendChild(U.el("span", { class: "n", text: w.toFixed(0) + "%" }));
-          wrap.appendChild(peso);
-          return wrap;
-        } },
-        { head: "Resultado", right: true, render: function (p) {
-          var v = S.get.positionPnL(p);
-          return U.el("div", { class: "stack", style: "align-items:flex-end;gap:2px" }, [
-            U.el("span", { class: "num " + U.signClass(v), text: U.money(v, 0) }),
-            U.el("span", { class: "small " + U.signClass(v), text: U.pct(S.get.positionPnLPct(p), 1) })
-          ]);
-        } }
-      ];
-      var posCard = U.card({ eyebrow: "Carteira · " + (carteira ? carteira.name : "—"),
-        title: "Posições" + (posicoes.length > 8 ? " · 8 maiores" : ""), tight: true,
-        action: U.button("Ver todas", { variant: "ghost", size: "sm",
-          onClick: function () { location.hash = "#/ativos"; } }),
-        body: [U.table(cols, posicoes.slice(0, 8), {
-          empty: "Nenhuma posição ainda — registre uma compra e ela aparece aqui.",
-          onRow: function (p) { location.hash = "#/ativos?id=" + p.ativo_id; }
-        })] });
-      posCard.classList.add("mt-16");
-      view.appendChild(posCard);
+      var pizzas = U.el("div", { class: "grid g-12 mt-16" });
+
+      /* Os dados passam por Charts.fatias(): ordem de valor, no máximo
+         sete fatias com um "Outros" só no fim, % sobre a soma das
+         fatias, posição sem preço fora da pizza (testado em
+         hold/testes/pizza.test.js). */
+      var setorDe = function (a) {
+        return window.AtlasSetores ? window.AtlasSetores.de(a).setor : (a.setor || "Outros");
+      };
+      var itensToken = [], porSetorMapa = {};
+      posicoes.forEach(function (p) {
+        var a = S.get.asset(p.ativo_id); if (!a) return;
+        var v = S.get.positionValue(p);
+        itensToken.push({ label: a.ticker, sub: a.nome || "", id: p.ativo_id, value: v });
+        var k = setorDe(a);
+        if (!porSetorMapa[k]) porSetorMapa[k] = { label: k, value: 0, tickers: [] };
+        if (v > 0) { porSetorMapa[k].value += v; porSetorMapa[k].tickers.push(a.ticker); }
+      });
+      var dadosToken = C.fatias(itensToken);
+      dadosToken.fatias.forEach(function (f, i) {
+        f.color = C.pieColor(i, f.label);
+        f.onClick = f.id ? function () { location.hash = "#/ativos?id=" + f.id; }
+                         : function () { location.hash = "#/ativos"; };
+      });
+      var dadosSetor = C.fatias(Object.keys(porSetorMapa).map(function (k) {
+        var m = porSetorMapa[k];
+        return { label: k, value: m.value, sub: m.tickers.join(", ") };
+      }));
+      /* Quem está sem preço já é listado na pizza de token; aqui só a
+         marca, para o disco dizer "sem preço" e não "sem posições". */
+      dadosSetor.semPrecoNomes = dadosToken.semPreco;
+      dadosSetor.semPreco = [];
+      dadosSetor.fatias.forEach(function (f) {
+        f.color = window.AtlasSetores ? C.tom(window.AtlasSetores.cor(f.label)) : C.pieColor(0, "Outros");
+      });
+
+      function cartaoPizza(dados, o) {
+        var lista = dados.fatias;
+        var semTudo = !lista.length && (dados.semPreco.length || (dados.semPrecoNomes || []).length);
+        var corpo = U.el("div", { class: "pizza-corpo" });
+        var g = C.pie3d(lista, {
+          vazio: semTudo ? "sem preço" : "sem posições",
+          ariaLabel: o.title + ": " + (lista.length
+            ? lista.map(function (f) { return f.label + " " + Math.round(f.frac * 100) + "%"; }).join(", ")
+            : (semTudo ? "posições sem preço" : "sem posições"))
+        });
+        corpo.appendChild(g);
+        var legenda = U.el("div", { class: "legend-list" });
+        lista.forEach(function (f, i) {
+          var pctv = f.frac * 100;
+          var li = U.el("button", { class: "ll-item" + (o.alerta && S.get.concentrada(pctv) ? " alto" : ""), type: "button" });
+          li.appendChild(U.el("span", { class: "sw", style: "background:" + f.color }));
+          var nome = U.el("span", { class: "ll-nome" }, [U.el("span", { class: "ll-tick", text: f.label })]);
+          if (f.sub) nome.appendChild(U.el("span", { class: "ll-sub", text: f.sub }));
+          li.appendChild(nome);
+          li.appendChild(U.el("span", { class: "ll-val num", text: U.money(f.value, 0) }));
+          li.appendChild(U.el("span", { class: "ll-pct num", text: pctv.toFixed(1).replace(".", ",") + "%" }));
+          li.addEventListener("click", f.onClick || function () { location.hash = "#/ativos"; });
+          li.addEventListener("mouseenter", function () { if (g.destacar) g.destacar(i); });
+          li.addEventListener("mouseleave", function () { if (g.destacar) g.destacar(-1); });
+          legenda.appendChild(li);
+        });
+        if (dados.semPreco.length) {
+          legenda.appendChild(U.el("div", { class: "ll-sem-preco small dim",
+            text: "sem preço: " + dados.semPreco.join(", ") }));
+        }
+        corpo.appendChild(legenda);
+        var card = U.card({ eyebrow: o.eyebrow, title: o.title, action: o.action, body: [corpo] });
+        card.classList.add("col-6");
+        return card;
+      }
+
+      var nSetores = dadosSetor.fatias.length;
+      pizzas.appendChild(cartaoPizza(dadosToken, {
+        eyebrow: "Carteira · " + (carteira ? carteira.name : "—"), title: "Alocação por token", alerta: true,
+        action: U.button("Ver posições", { variant: "ghost", size: "sm",
+          onClick: function () { location.hash = "#/ativos"; } })
+      }));
+      pizzas.appendChild(cartaoPizza(dadosSetor, {
+        eyebrow: "Exposição", title: "Alocação por setor",
+        action: U.el("span", { class: "small dim", title: "O setor é automático. Para trocar, edite o ativo em Ativos.",
+          text: nSetores + (nSetores === 1 ? " setor" : " setores") })
+      }));
+      view.appendChild(pizzas);
+
+      /* Quem não está no catálogo vai à CoinGecko uma vez; se algum
+         ganhou setor, a tela redesenha com a fatia certa. */
+      if (window.AtlasSetores && porSetorMapa.Outros) {
+        window.AtlasSetores.completar(posicoes.map(function (p) { return S.get.asset(p.ativo_id); }))
+          .then(function (mudou) { if (mudou && location.hash.replace(/^#\/?/, "").split("?")[0] in { "": 1, dashboard: 1 }) window.Router.rerender(); });
+      }
     }
 
     /* ------------------------------------------------------------
@@ -225,31 +272,8 @@
       var ganhoCard = U.card({ eyebrow: "Valorização", title: "Ganho ou perda por ativo",
         action: U.el("span", { class: "small dim", text: "em aberto, sobre o preço médio" }),
         body: [lista] });
-      ganhoCard.classList.add("col-8");
+      ganhoCard.classList.add("col-12");
       mid.appendChild(ganhoCard);
-
-      var segs = posicoes.map(function (p, i) {
-        var a = S.get.asset(p.ativo_id);
-        return { label: a ? a.ticker : "?", id: p.ativo_id, value: S.get.positionValue(p), color: C.color(i) };
-      });
-      var allocBody = U.el("div");
-      allocBody.appendChild(C.donut(segs, { centerTop: String(segs.length), centerBottom: segs.length === 1 ? "ativo" : "ativos" }));
-      var legend = U.el("div", { class: "legend-list" });
-      segs.forEach(function (sg) {
-        var pctv = (sg.value / (val || 1)) * 100;
-        var li = U.el("button", { class: "ll-item" + (S.get.concentrada(pctv) ? " alto" : ""), type: "button",
-          title: "Abrir " + sg.label });
-        li.appendChild(U.el("span", { class: "sw", style: "background:" + sg.color }));
-        li.appendChild(U.el("span", { class: "ll-tick", text: sg.label }));
-        li.appendChild(U.el("span", { class: "ll-val num", text: U.money(sg.value, 0) }));
-        li.appendChild(U.el("span", { class: "ll-pct num", text: pctv.toFixed(0) + "%" }));
-        li.addEventListener("click", function () { location.hash = "#/ativos?id=" + sg.id; });
-        legend.appendChild(li);
-      });
-      allocBody.appendChild(legend);
-      var allocCard = U.card({ eyebrow: "Distribuição", title: "Alocação", body: [allocBody] });
-      allocCard.classList.add("col-4");
-      mid.appendChild(allocCard);
       view.appendChild(mid);
     }
 

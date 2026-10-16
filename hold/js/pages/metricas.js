@@ -45,7 +45,7 @@
     var porSetor = {};
     posicoes.forEach(function (p) {
       var a = S.get.asset(p.ativo_id); if (!a) return;
-      var k = a.setor || "Sem setor";
+      var k = window.AtlasSetores ? window.AtlasSetores.de(a).setor : (a.setor || "Sem setor");
       if (!porSetor[k]) porSetor[k] = { valor: 0, ativos: [] };
       porSetor[k].valor += S.get.positionValue(p);
       porSetor[k].ativos.push(a.ticker);
