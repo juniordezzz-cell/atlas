@@ -294,13 +294,16 @@
       });
     },
 
-    /* Série de preço para o gráfico. days: 1|7|30|90|180|365. */
-    chart: function (id, days) {
+    /* Série de preço para o gráfico. days: 1|7|30|90|180|365.
+       o.ttl opcional: core/atlas-series.js passa 0 — a resposta crua de
+       90 dias tem ~150 KB e ele guarda a versão diária por conta própria. */
+    chart: function (id, days, o) {
       if (!id) return Promise.resolve(null);
       days = days || 7;
+      var ttl = o && o.ttl != null ? o.ttl : (days <= 1 ? 60000 : 300000);
       return AtlasHttp.getJSON(BASE + "/coins/" + encodeURIComponent(id) +
         "/market_chart?vs_currency=usd&days=" + days,
-        { ttl: days <= 1 ? 60000 : 300000, headers: headers(),
+        { ttl: ttl, headers: headers(), retries: o && o.retries != null ? o.retries : undefined,
           cacheKey: "cg.chart." + id + "." + days }
       ).then(function (d) {
         var pts = d && d.prices;
@@ -308,6 +311,27 @@
         return { days: days, points: pts };
       });
     }
+  };
+
+  /* Variação de 24h e 7d de vários ids numa chamada só (aba Ativos do
+     Hold). Propaga o erro, como pricesRaw: quem chama diz o que houve. */
+  CoinGecko.variacoes = function (ids) {
+    var lista = (ids || []).filter(Boolean);
+    if (!lista.length) return Promise.resolve({});
+    var joined = lista.slice().sort().join(",");
+    return AtlasHttp.getJSON(BASE + "/coins/markets?vs_currency=usd&ids=" + encodeURIComponent(joined) +
+      "&per_page=250&page=1&sparkline=false&price_change_percentage=24h,7d",
+      { ttl: 120000, headers: headers(), cacheKey: "cg.var." + joined }
+    ).then(function (arr) {
+      var r = {};
+      (arr || []).forEach(function (c) {
+        r[c.id] = {
+          h24: c.price_change_percentage_24h_in_currency != null ? c.price_change_percentage_24h_in_currency : c.price_change_percentage_24h,
+          d7: c.price_change_percentage_7d_in_currency != null ? c.price_change_percentage_7d_in_currency : null
+        };
+      });
+      return r;
+    });
   };
 
   window.AtlasProviders.register("coingecko", CoinGecko);
