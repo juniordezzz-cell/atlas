@@ -1,0 +1,153 @@
+/* ============================================================
+   Scanner Pools · visual-cenario.css
+   Leitura sobre o cenário animado (pedido do dono em 15/10/2026).
+
+   O fundo azul que flui (core/ui/atlas-cenario.*) continua; por cima
+   dele, o conteúdo de cada aba fica num PAINEL de vidro escuro, para os
+   números não ficarem sobre uma cor que muda e borra. O cabeçalho vira
+   uma faixa de vidro de ponta a ponta, e as ações de cada pool viram
+   botões de ícone discretos (sem o bloco preto à direita).
+
+   Carregado depois do <style> do index.html e do atlas-cenario.css.
+   Tirar o <link> deste arquivo devolve o visual anterior.
+   Registro: docs/visual-ferramentas-2026-10-15.md
+   ============================================================ */
+
+:root {
+  --sc-vidro: rgba(6, 12, 24, 0.74);       /* painel do conteúdo */
+  --sc-vidro-topo: rgba(5, 10, 20, 0.72);  /* faixa do cabeçalho */
+  --sc-vidro-borda: rgba(140, 170, 225, 0.09);
+  --sc-desfoque: blur(18px) saturate(1.05);
+}
+
+/* a faixa do cabeçalho usa a largura da janela; isto evita a barra de
+   rolagem lateral de 100vw sem criar outro contêiner de rolagem
+   (o "clip" não quebra o position: sticky) */
+html.atlas-com-cenario body { overflow-x: clip; }
+
+/* ---------- 1. Painel de vidro em todas as abas ---------- */
+html.atlas-com-cenario section[id^="tab-"] {
+  background: var(--sc-vidro);
+  -webkit-backdrop-filter: var(--sc-desfoque);
+          backdrop-filter: var(--sc-desfoque);
+  border: 1px solid var(--sc-vidro-borda);
+  border-radius: 22px;
+  padding: 22px 22px 18px;
+}
+@media (max-width: 640px) {
+  html.atlas-com-cenario section[id^="tab-"] { padding: 14px 12px 12px; border-radius: 18px; }
+}
+/* o rodapé (atualização, links) fica fora das abas: ganha o mesmo vidro,
+   mais discreto, para não ficar sobre a cor que se mexe */
+html.atlas-com-cenario .wrap > footer {
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: rgba(6, 12, 24, 0.6);
+  -webkit-backdrop-filter: var(--sc-desfoque);
+          backdrop-filter: var(--sc-desfoque);
+  border: 1px solid var(--sc-vidro-borda);
+  border-radius: 18px;
+}
+/* o Oráculo já tem grade própria; o painel só ganha o respiro */
+html.atlas-com-cenario #tab-assistente.sp-oraculo { padding: 22px 22px 0; }
+/* a barra de rodapé fixa usava o fundo opaco da página (--bg) e virava
+   uma faixa escura dentro do painel */
+html.atlas-com-cenario .scan-footbar {
+  background: linear-gradient(0deg, rgba(6, 12, 24, 0.96) 70%, transparent);
+}
+
+/* ---------- 2. Cabeçalho de ponta a ponta ----------
+   Antes ele morava dentro da caixa de largura máxima (.wrap): terminava
+   antes da borda direita e mudava de largura entre as abas (Descobrir é
+   mais largo). Agora ocupa a janela inteira e o conteúdo dele continua
+   alinhado com o conteúdo da página. */
+html.atlas-com-cenario .topbar {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-left: calc(50vw - 50%);
+  padding-right: calc(50vw - 50%);
+  min-height: 58px;
+  background: var(--sc-vidro-topo);
+  -webkit-backdrop-filter: var(--sc-desfoque);
+          backdrop-filter: var(--sc-desfoque);
+  border-bottom: 1px solid var(--sc-vidro-borda);
+}
+html.atlas-com-cenario .topbar .back-atlas {
+  background: rgba(148, 170, 215, 0.08);
+  border-color: transparent;
+  margin-right: 0;
+}
+html.atlas-com-cenario .topbar .back-atlas:hover { background: rgba(148, 170, 215, 0.14); }
+/* abas: a ativa ganha um fundo leve além do sublinhado */
+html.atlas-com-cenario nav.tabs { gap: 2px; margin-left: auto; margin-right: auto; }
+html.atlas-com-cenario nav.tabs .tab {
+  padding: 18px 14px 16px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+html.atlas-com-cenario nav.tabs .tab:hover { background: rgba(148, 170, 215, 0.05); }
+html.atlas-com-cenario nav.tabs .tab.on {
+  color: #cfe0ff;
+  background: linear-gradient(180deg, transparent 40%, rgba(91, 140, 255, 0.10));
+  border-bottom-color: #5b8cff;
+}
+/* espaço à direita do mesmo tamanho da marca, para as abas ficarem no
+   centro da faixa (a marca fica à esquerda) */
+@media (min-width: 1100px) {
+  html.atlas-com-cenario .topbar::after { content: ""; flex: 0 0 236px; }
+}
+@media (max-width: 1099px) {
+  html.atlas-com-cenario nav.tabs { margin-left: 0; }
+}
+
+/* ---------- 3. Ações de cada pool (histórico, comparar, ✓, ✕) ----------
+   Eram texto + um bloco preto fixo na borda direita (#080c18) em toda
+   linha. Agora: ícones discretos na própria linha, que acendem no hover.
+   O bloco fixo só volta quando a tabela é mais larga que a área e rola
+   de lado (classe .rola, posta por visual-cenario.js) — aí ele é o
+   próprio vidro do painel, sem preto. */
+html.atlas-com-cenario .tablewrap thead th:last-child,
+html.atlas-com-cenario .tablewrap td.actcell {
+  position: static;
+  background: transparent;
+  box-shadow: none;
+}
+html.atlas-com-cenario .tablewrap tbody tr:hover td.actcell { background: transparent; }
+@media (min-width: 701px) {
+  html.atlas-com-cenario .tablewrap.rola thead th:last-child,
+  html.atlas-com-cenario .tablewrap.rola td.actcell {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: rgba(8, 15, 29, 0.97);
+    box-shadow: -12px 0 14px -10px rgba(0, 0, 0, 0.6);
+  }
+}
+html.atlas-com-cenario td.actcell { width: 1%; white-space: nowrap; }
+html.atlas-com-cenario .rowact { gap: 2px; opacity: 0.55; transition: opacity 0.15s ease; }
+html.atlas-com-cenario tbody tr:hover .rowact,
+html.atlas-com-cenario tbody tr:focus-within .rowact { opacity: 1; }
+html.atlas-com-cenario .rowact .iconbtn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--mut);
+  font-size: 13px;
+  line-height: 1;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+html.atlas-com-cenario .rowact .iconbtn svg { width: 16px; height: 16px; }
+html.atlas-com-cenario .rowact .iconbtn:hover { background: rgba(148, 170, 215, 0.12); color: var(--txt); }
+html.atlas-com-cenario .rowact .pool-aprovar { color: #2ec785; }
+html.atlas-com-cenario .rowact .pool-aprovar:hover { background: rgba(46, 199, 133, 0.14); color: #2ec785; }
+html.atlas-com-cenario .rowact .pool-rejeitar:hover { background: rgba(240, 85, 106, 0.14); color: #f0556a; }
+html.atlas-com-cenario .rowact .iconbtn:focus-visible { outline: 2px solid #85b9ff; outline-offset: 1px; }
+/* no celular a tabela vira cartões: os botões ficam acesos e maiores */
+@media (max-width: 700px) {
+  html.atlas-com-cenario .rowact { opacity: 1; gap: 6px; }
+  html.atlas-com-cenario .rowact .iconbtn { width: 38px; height: 38px; background: rgba(148, 170, 215, 0.08); }
+}

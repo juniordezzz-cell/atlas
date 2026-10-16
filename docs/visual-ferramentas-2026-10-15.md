@@ -222,6 +222,33 @@ Com tons vizinhos, `u_distortion` 1 e `u_swirl` 0,65 (antes 0,75 e
 0,12), elas se esticam em ondas. A velocidade baixou de 0,12 para 0,1.
 `atlas-cenario.js?v=3` em todas as páginas que usam o cenário.
 
+## Scanner legível sobre o cenário + Oráculo (15/10/2026)
+
+Pedido do dono, confirmado ponto a ponto antes de fazer:
+1. **Painel de vidro em todas as abas do Scanner.** O fundo continua se
+   mexendo, mas o conteúdo fica sobre `rgba(6,12,24,.74)` com desfoque, e
+   os números não borram. O rodapé também (`Ferramentas/scanner-pools/visual-cenario.css`).
+2. **Cabeçalho de ponta a ponta.** Antes ficava dentro da `.wrap` (parava
+   antes da borda e mudava de largura entre abas); agora é uma faixa de
+   vidro com as abas centralizadas e a ativa com fundo leve.
+3. **Ações de cada pool em ícone** (histórico, editar, comparar, ✓, ✕), na
+   própria linha, discretas até o hover. O bloco preto fixo (`#080c18`)
+   só volta, em vidro, quando a tabela rola de lado (`.rola`, posta por
+   `visual-cenario.js`). Mesmos `onclick`, com `title`/`aria-label`.
+4. **Oráculo (só o ícone grande da aba).** 232 px; boneco e aro flutuam
+   **só para cima e para baixo** (`sp-sobe`, 0 → -14 px, sem girar); o aro
+   vermelho/azul continua girando; em volta, os **três anéis de luz e o
+   halo da tela de abertura** (`css/atlas-celestial.css`), portados para
+   `assistente.css` (`.sp-palco`, `.sp-anel-a/b/c`, `.sp-halo`). O painel
+   flutuante e o ícone pequeno não mudam. Ver `docs/oraculo-ferramentas.md`.
+5. **Menu lateral** (pages/*) com cenário: vidro `rgba(6,12,24,.5)` com
+   desfoque, no lugar do degradê sólido; no celular (gaveta) fica 0,94.
+
+Conferido no navegador: Descobrir, Radar, Guia e Oráculo (1700 px e
+celular de 375 px sem rolagem lateral); movimento do Oráculo medido
+pelos quadros da animação; testes `regras`, `assistente` e
+`assistente-conversa` (48 passam).
+
 ## Próximo passo (decisão do dono)
 
 Se aprovar, levar o cenário para o restante do site. O caminho mais

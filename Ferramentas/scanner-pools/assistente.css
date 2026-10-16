@@ -46,6 +46,40 @@
 .sp-avatar-g{width:132px;height:132px;font-size:40px}
 .sp-avatar-g::before{padding:2.5px}
 @media (max-width:640px){.sp-avatar-g{width:104px;height:104px}}
+
+/* ---------- palco do ícone grande (15/10/2026, pedido do dono) ----------
+   Maior (232 px), o Oráculo inteiro (boneco + aro) flutua só para cima e
+   para baixo (sem o balanço de lado), e em volta giram os três anéis de
+   luz da tela de abertura (css/atlas-celestial.css), com um halo
+   pulsando. Só aqui: o ícone pequeno e o botão flutuante não mudam.
+   Registro: docs/visual-ferramentas-2026-10-15.md */
+.sp-palco{--sp-g:232px;position:relative;width:var(--sp-g);height:var(--sp-g);margin:0 auto 26px;perspective:1100px}
+.sp-palco-cena{position:absolute;inset:0;transform-style:preserve-3d;display:grid;place-items:center}
+.sp-palco .sp-avatar-g{width:100%;height:100%;font-size:64px;animation:sp-sobe 4.8s ease-in-out infinite;will-change:transform}
+.sp-palco .sp-avatar-g img{animation:none}
+.sp-palco .sp-avatar-g::before{padding:3px}
+@keyframes sp-sobe{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.sp-halo{position:absolute;inset:-16%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(0,150,255,.14) 42%,rgba(0,120,230,.06) 62%,transparent 74%);
+  filter:blur(10px);animation:sp-halo 5.6s ease-in-out infinite}
+@keyframes sp-halo{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+.sp-anel{position:absolute;left:50%;top:50%;border-radius:50%;border:1px solid transparent;pointer-events:none;will-change:transform}
+.sp-anel-a{width:148%;height:148%;border-color:rgba(0,180,255,.26);border-top-color:rgba(120,220,255,.75);
+  opacity:.95;animation:sp-anel-a 26s linear infinite}
+@keyframes sp-anel-a{from{transform:translate(-50%,-50%) rotateX(74deg) translateZ(-40px) rotateZ(0)}
+  to{transform:translate(-50%,-50%) rotateX(74deg) translateZ(-40px) rotateZ(360deg)}}
+.sp-anel-b{width:126%;height:126%;border-color:rgba(255,120,130,.18);border-bottom-color:rgba(255,150,160,.6);
+  opacity:.9;animation:sp-anel-b 15s linear infinite}
+@keyframes sp-anel-b{from{transform:translate(-50%,-50%) rotateX(78deg) rotateY(-8deg) translateZ(34px) rotateZ(360deg)}
+  to{transform:translate(-50%,-50%) rotateX(78deg) rotateY(-8deg) translateZ(34px) rotateZ(0)}}
+.sp-anel-c{width:160%;height:160%;border-color:rgba(150,200,255,.1);border-left-color:rgba(160,215,255,.45);
+  opacity:.75;animation:sp-anel-c 38s linear infinite reverse}
+@keyframes sp-anel-c{from{transform:translate(-50%,-50%) rotateX(64deg) rotateY(22deg) translateZ(-70px) rotateZ(0)}
+  to{transform:translate(-50%,-50%) rotateX(64deg) rotateY(22deg) translateZ(-70px) rotateZ(360deg)}}
+@media (max-width:640px){.sp-palco{--sp-g:168px}}
+@media (prefers-reduced-motion:reduce){.sp-palco .sp-avatar-g,.sp-halo,.sp-anel{animation:none}
+  .sp-anel-a{transform:translate(-50%,-50%) rotateX(74deg)}.sp-anel-b{transform:translate(-50%,-50%) rotateX(78deg)}
+  .sp-anel-c{transform:translate(-50%,-50%) rotateX(64deg) rotateY(22deg)}}
 .sp-modo{white-space:nowrap;font-size:12px;color:var(--mut);background:var(--sp-fundo);padding:6px 11px;border-radius:999px}
 .sp-modo.on{color:#8fe3bd;background:rgba(46,199,133,.12)}
 .sp-ghost{white-space:nowrap;border:0;background:transparent;color:var(--mut);font:inherit;font-size:13px;padding:7px 11px;border-radius:999px;cursor:pointer}
