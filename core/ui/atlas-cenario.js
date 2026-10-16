@@ -24,10 +24,19 @@ import {
   getShaderColorFromString,
 } from '../../assets/vendor/paper-shaders-0.0.81/index.js';
 
-// Cores escuras de propósito: o cenário é fundo, não protagonista.
-// A primeira domina; as outras são as manchas que passeiam.
+// Só os azuis do ATLAS (css/variables.css e themes/atlas-theme.css),
+// pedido do dono em 15/10/2026: nada de roxo nem verde-azulado (que
+// lembrava o Pendle). Tons vizinhos de propósito: cada cor é uma
+// mancha que passeia, e cores parecidas se fundem em ondas em vez de
+// "bolinhas" separadas.
 const PALETAS = {
-  atlas: ['#070B15', '#0D2142', '#0F4C5E', '#2B2470'],
+  atlas: [
+    '#05080F', // fundo do site
+    '#0A1A2F', // --azul-escuro
+    '#0E3E8A', // --atlas-accent-deep
+    '#07121F', // --azul-profundo
+    '#1E5FB4', // azul royal do tema
+  ],
   ambar: ['#070B15', '#221833', '#4A2E16', '#0D2142'],
 };
 
@@ -56,8 +65,9 @@ function montar() {
       {
         u_colors: cores,
         u_colorsCount: cores.length,
-        u_distortion: 0.75,
-        u_swirl: 0.12,
+        // distorção e giro altos esticam as manchas em ondas (mais fluido)
+        u_distortion: 1,
+        u_swirl: 0.65,
         u_grainMixer: 0,
         u_grainOverlay: 0.06, // grão leve: some com as faixas do degradê
         u_fit: 2,             // cobre a tela inteira
@@ -71,7 +81,7 @@ function montar() {
         u_worldHeight: 0,
       },
       undefined,
-      parado ? 0 : 0.12, // bem devagar
+      parado ? 0 : 0.1, // bem devagar
       0,
       1,              // densidade mínima 1x (o padrão 2x é desperdício num degradê)
       1280 * 720,     // teto de pixels: o degradê é macio, a GPU agradece

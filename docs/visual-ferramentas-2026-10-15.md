@@ -206,6 +206,22 @@ link por causa do giro).
 de passar o mouse, e de preferência com a mão do dono e um registro de
 eventos.
 
+## Cenário só em azul (15/10/2026)
+
+O dono gostou do movimento, mas não das cores: o roxo (`#2B2470`) e o
+verde-azulado (`#0F4C5E`) não são do ATLAS (o verde lembrava o Pendle) e
+as Ferramentas perderam a identidade. Também pediu um movimento mais
+fluido, sem "bolinhas". A referência que ele ia mandar (LayerZero) deixou
+de servir porque o site deles mudou.
+
+Paleta `atlas` em `core/ui/atlas-cenario.js`, só com azuis do próprio
+sistema: `#05080F` (fundo), `#0A1A2F` (`--azul-escuro`), `#0E3E8A`
+(`--atlas-accent-deep`), `#07121F` (`--azul-profundo`) e `#1E5FB4` (azul
+royal). As "bolinhas" vêm do shader: cada cor é uma mancha que passeia.
+Com tons vizinhos, `u_distortion` 1 e `u_swirl` 0,65 (antes 0,75 e
+0,12), elas se esticam em ondas. A velocidade baixou de 0,12 para 0,1.
+`atlas-cenario.js?v=3` em todas as páginas que usam o cenário.
+
 ## Próximo passo (decisão do dono)
 
 Se aprovar, levar o cenário para o restante do site. O caminho mais
