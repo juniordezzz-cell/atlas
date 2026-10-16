@@ -58,14 +58,25 @@
   function storeCol() { return db.collection("atlas_users").doc(uid).collection("store"); }
 
   // ---------- observador de escritas locais ----------
+  /* Escritas ANTES da conciliação de abertura (ex.: atualização automática de
+     preços do Hold) não contam como "edição mais recente". Marcá-las com a hora
+     atual fazia a cópia local antiga vencer uma gravação mais nova na nuvem
+     (outro aparelho, ou o conector do Claude). Elas ficam aqui até a conciliação:
+     se a nuvem vence, são descartadas; senão, viram edição local normal. */
+  var escritasNoInicio = {};
+  function anotarEscrita(k) { if (startupDone) markMod(k); else escritasNoInicio[k] = true; }
+  function assumirEscritasDoInicio(exceto) {
+    Object.keys(escritasNoInicio).forEach(function (k) { if (!exceto || !exceto[k]) markMod(k); });
+    escritasNoInicio = {};
+  }
   var origSet = Storage.prototype.setItem, origRemove = Storage.prototype.removeItem;
   Storage.prototype.setItem = function (k, v) {
     origSet.apply(this, arguments); // a escrita original SEMPRE acontece primeiro
-    try { if (this === LS && !applyingRemote && isData(k)) { markMod(k); if (uid && startupDone) schedulePush(k, false); } } catch (e) {}
+    try { if (this === LS && !applyingRemote && isData(k)) { anotarEscrita(k); if (uid && startupDone) schedulePush(k, false); } } catch (e) {}
   };
   Storage.prototype.removeItem = function (k) {
     origRemove.apply(this, arguments);
-    try { if (this === LS && !applyingRemote && isData(k)) { markMod(k); if (uid && startupDone) schedulePush(k, true); } } catch (e) {}
+    try { if (this === LS && !applyingRemote && isData(k)) { anotarEscrita(k); if (uid && startupDone) schedulePush(k, true); } } catch (e) {}
   };
 
   function schedulePush(k, removed) { clearTimeout(timers[k]); timers[k] = setTimeout(function () { pushKey(k, removed); }, 1500); }
@@ -108,13 +119,14 @@
         // primeira vez: semeia a nuvem com o que existe local
         var temLocal = keys.some(function (k) { var v = LS.getItem(k); return v !== null && v !== ""; });
         startupDone = true;
+        assumirEscritasDoInicio(null);
         if (temLocal) pushAll();
         listenOthers();
         return;
       }
 
       // nuvem tem dados: concilia por chave (last-write-wins por tempo)
-      var changed = false, didBackup = false, pushBack = [];
+      var changed = false, didBackup = false, pushBack = [], venceuNuvem = {};
       keys.forEach(function (k) {
         var c = cloud[k]; var localVal = null; try { localVal = LS.getItem(k); } catch (e) {}
         var localAt = mods[k] || 0;
@@ -127,9 +139,11 @@
         try { if (c.value === null) LS.removeItem(k); else LS.setItem(k, c.value); } catch (e) {}
         applyingRemote = false;
         changed = true;
+        venceuNuvem[k] = true;
       });
 
       startupDone = true;
+      assumirEscritasDoInicio(venceuNuvem);
       pushBack.forEach(function (k) { pushKey(k, false); });
 
       if (changed) {
@@ -140,7 +154,7 @@
       }
       try { sessionStorage.removeItem("atlas.cloud.reloaded." + uid); } catch (e) {}
       listenOthers();
-    }).catch(function () { startupDone = true; }); // falhou a nuvem → segue local, observador ativo
+    }).catch(function () { startupDone = true; assumirEscritasDoInicio(null); }); // falhou a nuvem → segue local, observador ativo
   }
 
   // ---------- aviso quando OUTRO aparelho muda algo ----------
