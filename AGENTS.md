@@ -20,3 +20,5 @@ Histórico da aba DeFi/Pools: consultar [contrato e validação](docs/pools-hist
 
 Visual das Ferramentas (piloto de 15/10/2026): antes de mexer no fundo ou nos cards de `pages/ferramentas.html` ou das ferramentas, leia [o registro](docs/visual-ferramentas-2026-10-15.md). O cenário (`core/ui/atlas-cenario.*`, Paper Shaders) e os cards 3D (`core/ui/atlas-cards3d.js`, Atropos) valem só nas Ferramentas até o dono aprovar levá-los ao resto do site. Continua proibido glow/halo.
 Repositórios de terceiros: o catálogo é [referencias/REPOSITORIOS.md](referencias/REPOSITORIOS.md). Trouxe, atualizou ou removeu um repositório? Atualize o catálogo no mesmo commit.
+
+Conector MCP do Atlas (Claude lendo e, em fases seguintes, registrando operações): consultar [o contrato e a implantação](docs/atlas-mcp.md) antes de alterar `central-rwa/supabase/functions/atlas-mcp/`, `pages/conectar-claude.html` ou `js/conectar-claude.js`. O conector só acessa `atlas_users/{uid do token}`; nunca aceitar `uid` como parâmetro. Validar com `node --test central-rwa/supabase/functions/atlas-mcp/*.test.mjs js/conectar-claude.test.cjs`.

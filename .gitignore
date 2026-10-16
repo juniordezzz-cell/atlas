@@ -30,3 +30,6 @@ atlas/
 # Auditoria local: SECRETS.local.md e o relatório de vulnerabilidades.
 # O repositório é PÚBLICO — esta pasta fica só no disco.
 analysis/
+
+# Bundle gerado do conector MCP (colar no editor do Supabase)
+central-rwa/supabase/functions/atlas-mcp/dist/

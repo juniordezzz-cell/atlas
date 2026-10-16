@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Conectar o Claude · Atlas</title>
+  <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
+  <link rel="stylesheet" href="../themes/atlas-fonts.css">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/global.css">
+  <style>
+    .conectar { max-width: 28rem; margin: 12vh auto 0; padding: 0 16px; display: grid; gap: 16px; }
+    .conectar h1 { font-size: 1.5rem; margin: 0; }
+    .conectar p { margin: 0; line-height: 1.5; }
+    .conectar .acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+    .conectar button { font: inherit; padding: 10px 16px; border-radius: 8px; cursor: pointer; }
+    .conectar ul { margin: 0; padding-left: 1.2rem; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <main class="conectar">
+    <h1>Conectar o Claude ao Atlas</h1>
+
+    <section id="estado-entrar" hidden>
+      <p>Entre com a conta Google do Atlas para continuar.</p>
+      <div class="acoes"><button id="btn-entrar" type="button">Entrar com Google</button></div>
+      <p id="msg-entrar"></p>
+    </section>
+
+    <section id="estado-permitir" hidden>
+      <p>Conta: <strong id="email"></strong></p>
+      <p>O Claude vai poder <strong>ler</strong>:</p>
+      <ul>
+        <li>suas carteiras e o caixa de cada uma;</li>
+        <li>as posições do Hold, com preço médio e resultado;</li>
+        <li>o histórico de operações.</li>
+      </ul>
+      <p>Nesta versão ele não registra nem altera nada.</p>
+      <div class="acoes">
+        <button id="btn-permitir" type="button">Permitir</button>
+        <button id="btn-cancelar" type="button">Cancelar</button>
+      </div>
+      <p id="msg-permitir"></p>
+    </section>
+
+    <section id="estado-feito" hidden>
+      <p id="msg-feito">Pronto. Voltando para o Claude…</p>
+    </section>
+
+    <section id="estado-erro" hidden>
+      <p id="msg-erro"></p>
+    </section>
+  </main>
+
+  <script src="../core/atlas-firebase-config.js"></script>
+  <script src="../core/atlas-supabase-config.js"></script>
+  <script src="../assets/vendor/firebase-app-compat-10.14.1.js"></script>
+  <script src="../assets/vendor/firebase-auth-compat-10.14.1.js"></script>
+  <script src="../js/conectar-claude.js"></script>
+</body>
+</html>
