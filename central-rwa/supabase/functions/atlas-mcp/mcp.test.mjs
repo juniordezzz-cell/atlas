@@ -7,6 +7,7 @@ const ferramentas = [
     executar: async (a, ctx) => ({ texto: 'oi ' + ctx.uid, dados: { a } }) },
   { nome: 'falha_usuario', titulo: 'F', descricao: 'F', schema: { type: 'object' }, executar: async () => { throw new ErroUsuario('Carteira não existe.'); } },
   { nome: 'falha_interna', titulo: 'F', descricao: 'F', schema: { type: 'object' }, executar: async () => { throw new Error('segredo vazou?'); } },
+  { nome: 'grava', titulo: 'G', descricao: 'G', schema: { type: 'object' }, escrita: true, destrutiva: true, executar: async () => ({ texto: 'ok', dados: {} }) },
 ];
 const ctx = { ferramentas, contexto: { uid: 'u1' } };
 const rpc = (method, params, id = 1) => atenderMcp({ jsonrpc: '2.0', id, method, params }, ctx);
@@ -56,4 +57,11 @@ test('lote e mensagem malformada são recusados', async () => {
   assert.equal((await atenderMcp([{ jsonrpc: '2.0', id: 1, method: 'ping' }], ctx)).status, 400);
   assert.equal((await atenderMcp({ id: 1, method: 'ping' }, ctx)).corpo.error.code, -32600);
   assert.equal((await atenderMcp(null, ctx)).status, 400);
+});
+
+test('ferramenta de escrita é anunciada como escrita', async () => {
+  const { corpo } = await rpc('tools/list');
+  const g = corpo.result.tools.find((t) => t.name === 'grava');
+  assert.deepEqual(g.annotations, { readOnlyHint: false, destructiveHint: true, openWorldHint: false });
+  assert.equal(corpo.result.tools.find((t) => t.name === 'eco').annotations.destructiveHint, false);
 });

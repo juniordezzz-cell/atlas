@@ -1,14 +1,19 @@
 # Conector MCP do Atlas
 
-Projeto: [spec de 15/10/2026](superpowers/specs/2026-10-15-conector-mcp-design.md). Plano da fase 1: [plano](superpowers/plans/2026-10-15-conector-mcp-fase1.md).
+Projeto: [spec de 15/10/2026](superpowers/specs/2026-10-15-conector-mcp-design.md). Planos: [fase 1](superpowers/plans/2026-10-15-conector-mcp-fase1.md) e [fases 2 e 3](superpowers/plans/2026-10-16-conector-mcp-fases-2-3.md).
 
-## Contrato vigente (fase 1)
+## Contrato vigente (fases 1 a 3)
 
-- Só leitura. Ferramentas: `listar_carteiras`, `ver_posicoes`, `ver_caixa`, `historico`.
+- Leitura: `listar_carteiras`, `ver_posicoes`, `ver_caixa`, `historico`.
+- Escrita (fases 2 e 3): `preparar_carteira`, `preparar_deposito`, `preparar_saque`, `preparar_compra`, `preparar_venda`, `preparar_desfazer`, `confirmar`, `cancelar`. Nada grava sem `confirmar` de uma prévia assinada, do mesmo uid, com menos de 10 minutos e com os documentos no mesmo `updateTime` da prévia.
+- As regras são as do próprio site: o conector executa `wallets/*.js` e `hold/js/state.js` (via `site-gerado.mjs`) sobre o estado lido do Firestore. Mudou um desses arquivos? Rode `node central-rwa/supabase/functions/atlas-mcp/gerar-site.mjs`, confira os testes e reimplante a função.
+- Gravação: um `documents:commit` com pré-condição por documento; campos `value`, `device: "claude-mcp"`, `mcpOp` e `updatedAt`. Backup no mesmo commit em `atlas_users/{uid}/mcp_backup/{op}` (50 mais recentes). `desfazer` só restaura se os documentos ainda tiverem o `mcpOp` da operação.
+- Compra sem caixa: recusada, a não ser com `cobrir_falta: true`, que lança o depósito automático na data da compra (mesmo comportamento do formulário do site). Carteira nova: só global nesta fase. Depósito de token não estável exige `valor_usd`.
+- Se o site estiver aberto em outro aparelho com edição local ainda não enviada, a regra do site continua sendo "a edição mais recente vence". Recarregue o Atlas depois de gravar pelo Claude.
 - Login: OAuth com PKCE S256. A identidade vem do login Google do Atlas em `pages/conectar-claude.html`. Só e-mails de `ATLAS_MCP_ALLOWED_EMAILS` (padrão `juniordezzz@gmail.com`) com e-mail verificado.
 - O `uid` vem do token. Leitura só em `atlas_users/{uid}/store/{atlas.wallets.v2|atlas.hold.state.v2|atlas.caixa.v1}`.
 - Tokens: acesso 1 h, renovação 30 dias com rotação; reuso de renovação revoga a família. 60 chamadas por minuto.
-- Valores do Hold usam o último `preco_atual` salvo pelo site. Ativo sem preço fica fora do total. Caixa é a soma dos eventos em dólar; saldo por token fica para a fase 2.
+- Valores do Hold usam o último `preco_atual` salvo pelo site. Ativo sem preço fica fora do total. Caixa é a soma dos eventos em dólar; saldo por token fica para depois.
 - Revogar tudo (até existir a tela da fase 5): no SQL Editor, `select public.atlas_mcp_revogar_uid('<uid>');`.
 
 Código: `central-rwa/supabase/functions/atlas-mcp/`. Testes: `node --test central-rwa/supabase/functions/atlas-mcp/*.test.mjs` e `node --test js/conectar-claude.test.cjs`.
@@ -29,6 +34,8 @@ GitHub Pages publica a página `conectar-claude.html`, mas não publica a funç�
 6. **Conferir.** `curl -s https://opaimjoimbndwuwkxuva.supabase.co/functions/v1/atlas-mcp/.well-known/oauth-authorization-server` devolve JSON com `issuer`.
 7. **Claude.** claude.ai → Configurações → Conectores → Adicionar conector personalizado → URL `https://opaimjoimbndwuwkxuva.supabase.co/functions/v1/atlas-mcp/mcp` → Conectar → entrar com Google → Permitir.
 8. **Teste.** No celular: "quais são minhas carteiras no Atlas?" e "quanto eu tenho de PYTH somando tudo?". Os números precisam bater com o site.
+
+9. **Atualização para as fases 2 e 3.** Rodar `node central-rwa/supabase/functions/atlas-mcp/build.mjs`, colar o `dist/index.ts` novo na função `atlas-mcp` e clicar em Deploy updates. Não precisa de secret nem migração novos. O conector já autorizado continua valendo; as ferramentas novas aparecem sozinhas no Claude.
 
 Para atualizar: repetir o passo 4 com o bundle novo e clicar em Deploy updates.
 

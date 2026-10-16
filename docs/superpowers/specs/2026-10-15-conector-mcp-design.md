@@ -166,6 +166,8 @@ em duas versões. O plano:
 3. O `index.ts` consolidado da função inclui os mesmos módulos.
 4. Os testes do domínio rodam nos dois lados (`node --test`).
 
+**Atualização de 16/10/2026 (fases 2 e 3).** Em vez de extrair funções para `core/dominio/`, o conector executa o próprio código do site (`wallets/walletStore.js`, `walletTypes.js`, `walletLedger.js`, `walletManager.js`, `walletCaixa.js`, `hold/js/state.js`), gerado em `site-gerado.mjs`, sobre um `localStorage` em memória. O site não muda, e não existe segunda versão das regras. Também ficou decidido: compra sem caixa aceita `cobrir_falta` (igual ao formulário do site); alocação para o Hold é uma compra no Hold; alocação para DeFi fica com pools na fase 4; carteira nova só global nesta fase. Plano: [fases 2 e 3](../plans/2026-10-16-conector-mcp-fases-2-3.md).
+
 ## Segurança
 
 - Só o e-mail em `allowedEmails` conecta. Qualquer outro recebe recusa no login.
