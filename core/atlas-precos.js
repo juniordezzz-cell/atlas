@@ -14,8 +14,11 @@
 
      1. preço MANUAL do usuário   se existe, MANDA (com data e origem)
      2. stablecoin conhecida      vale 1 por definição, não vai à rede
-     3. id curado -> API          o caminho normal (CoinGecko)
-     4. busca por símbolo         só com símbolo IDÊNTICO
+     3. id curado -> API          o caminho normal: DefiLlama em lote,
+                                  CoinGecko em lote para o que ela não
+                                  trouxer (ou se ela cair)
+     4. busca por símbolo         só com símbolo IDÊNTICO; a CoinGecko
+                                  acha o id e o preço vem no lote do 3
      5. fonte secundária (DEX)    GeckoTerminal, para o que não está
                                   listado em lugar nenhum mas é negociado
      6. nada                      "sem preço" — a tela PEDE o valor
@@ -129,6 +132,55 @@
   function provedor() {
     if (!global.AtlasProviders || !global.AtlasProviders.get) return null;
     return global.AtlasProviders.get("coingecko") || null;
+  }
+
+  function provedorLlama() {
+    if (!global.AtlasProviders || !global.AtlasProviders.get) return null;
+    var p = global.AtlasProviders.get("defillama");
+    return p && typeof p.precosAtuais === "function" ? p : null;
+  }
+
+  /* ------------------------------------------------------------
+     COTAR IDS — DefiLlama em lote primeiro, CoinGecko de reserva
+
+     O que a DefiLlama não trouxe (id desconhecido, pool rasa, preço
+     velho) vai à CoinGecko num lote só. Se a DefiLlama caiu, o lote
+     inteiro vai à CoinGecko — que é o que acontecia antes. `erro` só
+     sai preenchido quando sobrou id sem preço porque uma fonte FALHOU:
+     "não conheço esse ativo" e "a fonte está fora do ar" são coisas
+     diferentes, e só a primeira justifica pedir o preço ao usuário.
+
+     pricesRaw PROPAGA o erro; prices engole — por isso o primeiro.
+     Devolve Promise<{ mapa: {id: usd}, provedor: {id: nome}, erro }>.
+     ------------------------------------------------------------ */
+  function cotarIds(ids) {
+    var mapa = {}, prov = {}, erro = null, erroLlama = null;
+    if (!ids.length) return Promise.resolve({ mapa: mapa, provedor: prov, erro: null });
+    var llama = provedorLlama(), cg = provedor();
+    function valido(v) { return typeof v === "number" && isFinite(v) && v > 0; }
+
+    var pL = llama
+      ? llama.precosAtuais(ids).catch(function (e) { erroLlama = e; return {}; })
+      : Promise.resolve({});
+
+    return pL.then(function (m) {
+      ids.forEach(function (id) { if (valido(m[id])) { mapa[id] = m[id]; prov[id] = "defillama"; } });
+      var faltam = ids.filter(function (id) { return mapa[id] == null; });
+      if (!faltam.length) return;
+      var lote = cg && (cg.pricesRaw ? cg.pricesRaw(faltam) : cg.prices ? cg.prices(faltam) : null);
+      if (!lote) {
+        erro = erroLlama || (cg ? new Error("Provedor de preços sem capacidade de cotação nesta página.")
+                                : llama ? null : new Error("Provedor de preços não carregado nesta página."));
+        return;
+      }
+      return lote.then(function (m2) {
+        faltam.forEach(function (id) {
+          if (valido(m2[id])) { mapa[id] = m2[id]; prov[id] = "coingecko"; }
+        });
+      }, function (e) { erro = e; });
+    }).then(function () {
+      return { mapa: mapa, provedor: prov, erro: erro };
+    });
   }
 
   /* A fonte secundária é procurada pela MARCA `secundario`, não pelo
@@ -275,16 +327,20 @@
       });
     },
 
-    de: function (sim) {
-      return API.deVarios([sim]).then(function (d) {
-        var s = norm(sim);
+    /* opts.id: id exato da CoinGecko, quando quem chama já sabe (o
+       autocompletar sabe) — não depende da tabela nem da busca. */
+    de: function (sim, opts) {
+      var s = norm(sim), ids = {};
+      if (opts && opts.id) ids[s] = opts.id;
+      return API.deVarios([sim], { ids: ids }).then(function (d) {
         if (d.valores[s] == null) return null;
         return {
           usd: d.valores[s],
           fonte: d.fonte[s] || null,
           em: d.em[s] || null,
           vencido: d.vencidos.indexOf(s) !== -1,
-          id: idDe(s)
+          id: (opts && opts.id) || idDe(s),
+          provedor: d.provedor[s] || null
         };
       });
     },
@@ -292,9 +348,13 @@
     /* ------------------------------------------------------------
        Vários símbolos numa passada só.
 
+       opts.ids  { SIMBOLO: idCoinGecko } opcional — o id exato vence a
+                 tabela e a busca, mas não o preço manual.
+
        Devolve
          valores   { SIMBOLO: precoUSD }
-         fonte     { SIMBOLO: "manual"|"stable"|"registro"|"busca" }
+         fonte     { SIMBOLO: "manual"|"stable"|"registro"|"busca"|"dex" }
+         provedor  { SIMBOLO: "defillama"|"coingecko" }  quem cotou o id
          em        { SIMBOLO: ISO }   só para os manuais
          vencidos  [SIMBOLO...]       manuais mais velhos que a validade
          faltando  [SIMBOLO...]       nenhuma fonte respondeu
@@ -302,13 +362,18 @@
 
        `faltando` é o gatilho da regra: a tela PEDE o preço desses.
        ------------------------------------------------------------ */
-    deVarios: function (simbolos) {
+    deVarios: function (simbolos, opts) {
       var alvos = (simbolos || []).map(norm).filter(Boolean);
       var unicos = [], visto = {};
       alvos.forEach(function (s) { if (!visto[s]) { visto[s] = 1; unicos.push(s); } });
 
       var valores = {}, fonte = {}, em = {}, detalhe = {}, vencidos = [], erro = null;
-      var porId = {}, ids = [], desconhecidos = [];
+      var porId = {}, ids = [], desconhecidos = [], viaBusca = {}, provedorDe = {};
+      var idsDados = (opts && opts.ids) || {};
+      function enfileirar(id, s) {
+        if (!porId[id]) { porId[id] = []; ids.push(id); }
+        porId[id].push(s);
+      }
 
       unicos.forEach(function (s) {
         /* 1. manual manda */
@@ -320,57 +385,55 @@
         }
         /* 2. stablecoin não vai à rede */
         if (isStable(s)) { valores[s] = 1; fonte[s] = "stable"; return; }
-        /* 3. id curado -> lote na API */
-        var id = idDe(s);
-        if (id) {
-          if (!porId[id]) { porId[id] = []; ids.push(id); }
-          porId[id].push(s);
-        } else {
-          /* 4. busca por símbolo */
-          desconhecidos.push(s);
-        }
+        /* 3. id curado -> lote na API. Quem já sabe o id exato (o
+              autocompletar, o cg_id do Hold) passa em opts.ids e não
+              depende da tabela nem da busca. */
+        var id = idsDados[s] || idDe(s);
+        if (id) enfileirar(String(id), s);
+        else desconhecidos.push(s);   /* 4. busca por símbolo */
       });
 
-      var prov = provedor();
-      if ((ids.length || desconhecidos.length) && !prov && !global.AtlasPrice) {
+      if ((ids.length || desconhecidos.length) && !provedor() && !provedorLlama() && !global.AtlasPrice) {
         erro = new Error("Provedor de preços não carregado nesta página.");
       }
 
-      /* pricesRaw PROPAGA o erro; prices engole. Um 429 do CoinGecko
-         não pode virar "sem preço" silencioso — é a diferença entre
-         "não conheço esse ativo" e "a fonte está fora do ar", e só a
-         primeira justifica pedir o preço ao usuário. */
-      var lote = null;
-      if (ids.length && prov) {
-        if (prov.pricesRaw) lote = prov.pricesRaw(ids);
-        else if (prov.prices) lote = prov.prices(ids);
-      }
-      var pLote = lote
-        ? lote.then(function (mapa) {
-            ids.forEach(function (id) {
-              var v = mapa[id];
-              if (typeof v === "number" && isFinite(v) && v > 0) {
-                porId[id].forEach(function (s) { valores[s] = v; fonte[s] = "registro"; });
-              }
-            });
-          }).catch(function (e) { erro = erro || e; })
-        : Promise.resolve();
-      if (ids.length && !lote && prov) {
-        erro = erro || new Error("Provedor de preços sem capacidade de cotação nesta página.");
-      }
+      /* 4. A busca só ACHA O ID (CoinGecko, cache de 24 h). O preço
+         desses ids entra no mesmo lote do passo 3 — antes era um
+         simple/price por ativo. Falha na busca continua silenciosa,
+         como sempre foi: o ativo segue para a DEX. */
+      var pBusca = Promise.all(desconhecidos.map(function (s) {
+        var AP = global.AtlasPrice;
+        if (!AP) return Promise.resolve();
+        if (!AP.candidato) {
+          /* atlas-price.js antigo: preço já vem junto */
+          return AP.bySymbol(s).then(function (r) {
+            if (r && typeof r.usd === "number" && isFinite(r.usd) && r.usd > 0) {
+              valores[s] = r.usd; fonte[s] = "busca";
+            }
+          }).catch(function () {});
+        }
+        return AP.candidato(s).then(function (c) {
+          if (c && c.id) { viaBusca[s] = true; enfileirar(String(c.id), s); }
+        }).catch(function () {});
+      }));
 
-      var pSoltos = desconhecidos.map(function (s) {
-        if (!global.AtlasPrice) return Promise.resolve();
-        return global.AtlasPrice.bySymbol(s).then(function (r) {
-          if (r && typeof r.usd === "number" && isFinite(r.usd) && r.usd > 0) {
-            valores[s] = r.usd; fonte[s] = "busca";
+      var pLote = pBusca.then(function () { return cotarIds(ids); }).then(function (r) {
+        if (r.erro) erro = erro || r.erro;
+        ids.forEach(function (id) {
+          var v = r.mapa[id];
+          if (typeof v === "number" && isFinite(v) && v > 0) {
+            porId[id].forEach(function (s) {
+              valores[s] = v;
+              fonte[s] = viaBusca[s] ? "busca" : "registro";
+              provedorDe[s] = r.provedor[id];
+            });
           }
-        }).catch(function (e) { erro = erro || e; });
+        });
       });
 
       function resultado(divergentes) {
         return {
-          valores: valores, fonte: fonte, em: em, detalhe: detalhe,
+          valores: valores, fonte: fonte, provedor: provedorDe, em: em, detalhe: detalhe,
           vencidos: vencidos, divergentes: divergentes || [],
           faltando: unicos.filter(function (s) { return valores[s] == null; }),
           erro: erro,
@@ -378,7 +441,7 @@
         };
       }
 
-      return Promise.all([pLote].concat(pSoltos)).then(function () {
+      return pLote.then(function () {
         var sec = provedorSecundario();
         if (!sec) return resultado([]);
 

@@ -106,7 +106,9 @@
       return AtlasHttp.getJSON(
         BASE + "/coins/markets?vs_currency=usd&ids=" + encodeURIComponent(id) +
         "&order=market_cap_desc&per_page=1&page=1&sparkline=false",
-        { ttl: 120000, headers: headers(), cacheKey: "cg.markets." + id }
+        /* 1 h: o preço atual vem da cadeia (DefiLlama); daqui só se
+           usa market cap, imagem e nome, que não mudam de minuto a minuto */
+        { ttl: 3600000, headers: headers(), cacheKey: "cg.markets." + id }
       ).then(function (arr) {
         var c = arr && arr[0];
         if (!c) return null;

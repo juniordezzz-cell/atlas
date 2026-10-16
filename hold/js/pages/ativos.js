@@ -69,8 +69,11 @@
   function atualizarUm(a) {
     if (!window.AtlasPrecos) return U.toast("Preços", "Camada de preços não carregada nesta página.", "warning");
     U.toast("Buscando preço", "Consultando as fontes para " + a.ticker + "…");
-    window.AtlasPrecos.deVarios([a.ticker]).then(function (d) {
-      var p = d.valores[String(a.ticker).toUpperCase()];
+    var ids = {};
+    if (a.cg_id) ids[String(a.ticker).toUpperCase()] = a.cg_id;
+    window.AtlasPrecos.deVarios([a.ticker], { ids: ids }).then(function (d) {
+      var k = String(a.ticker).toUpperCase();
+      var p = d.valores[k];
       if (p == null || !(p > 0)) {
         return U.toast("Nenhuma fonte reconheceu " + a.ticker,
           "Informe o preço na mão em Editar — ele passa a valer sobre a API.", "warning");
@@ -78,7 +81,7 @@
       if (p === a.preco_atual) return U.toast("Preço", a.ticker + " já estava em " + U.money(p) + ".");
       S.actions.updateAsset(a.id, {
         preco_atual: p,
-        precoFonte: d.fonte[String(a.ticker).toUpperCase()] || null,
+        precoFonte: (d.provedor && d.provedor[k]) || d.fonte[k] || null,
         precoEm: new Date().toISOString()
       });
       U.toast("Preço atualizado", a.ticker + " marcado a " + U.money(p) + ".", "success");

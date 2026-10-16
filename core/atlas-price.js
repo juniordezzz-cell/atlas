@@ -3,9 +3,10 @@
    ------------------------------------------------------------
    PREÇO POR SÍMBOLO — arquivo único.
 
-   Traduz "SOL" em 130.42. Parece simples, mas envolve duas
-   chamadas ao CoinGecko (achar o id da moeda, depois buscar o
-   preço), e isso não pode ficar espalhado pelo código.
+   Traduz "SOL" em 130.42. Parece simples, mas envolve achar o id
+   da moeda (busca da CoinGecko, a única que tem) e depois o preço
+   (DefiLlama, com a CoinGecko de reserva — desde 16/10/2026), e
+   isso não pode ficar espalhado pelo código.
 
    Regras que este arquivo garante
    -------------------------------
@@ -83,6 +84,43 @@
     return lista[0];
   }
 
+  /* Só o id: a busca é a parte que só a CoinGecko tem (cache de 24 h
+     no provedor). O PREÇO não sai mais daqui um por um — a cadeia
+     (core/atlas-precos.js) junta esses ids no lote da DefiLlama.
+     Devolve { id, name } | null. */
+  var idCache = {}, idInflight = {};
+  function candidato(sym) {
+    sym = normalizar(sym);
+    if (!sym) return Promise.resolve(null);
+    if (Object.prototype.hasOwnProperty.call(idCache, sym)) return Promise.resolve(idCache[sym]);
+    if (idInflight[sym]) return idInflight[sym];
+    var prov = provider();
+    if (!prov || !prov.search) return Promise.resolve(null);
+    idInflight[sym] = Promise.resolve()
+      .then(function () { return prov.search(sym); })
+      .then(function (itens) {
+        var c = melhorCandidato(itens, sym);
+        return c && c.id ? { id: c.id, name: c.name || sym } : null;
+      })
+      .then(function (r) { idCache[sym] = r; delete idInflight[sym]; return r; },
+            function (e) { delete idInflight[sym]; throw e; });
+    return idInflight[sym];
+  }
+
+  /* Preço atual de um id: DefiLlama primeiro, CoinGecko de reserva
+     (só quando a DefiLlama não trouxe ou caiu). */
+  function precoDoId(id) {
+    var llama = window.AtlasProviders && AtlasProviders.get && AtlasProviders.get("defillama");
+    var prov = provider();
+    var p = llama && llama.precosAtuais
+      ? llama.precosAtuais([id]).catch(function () { return {}; })
+      : Promise.resolve({});
+    return p.then(function (m) {
+      if (typeof m[id] === "number") return m[id];
+      return prov && prov.price ? prov.price(id) : null;
+    });
+  }
+
   function bySymbol(sym) {
     sym = normalizar(sym);
     if (!sym) return Promise.resolve(null);
@@ -96,19 +134,17 @@
     if (inflight[sym]) return inflight[sym];
 
     var prov = provider();
-    if (!prov || !prov.search || !prov.price) {
+    if (!prov || !prov.search) {
       cache[sym] = null;
       return Promise.resolve(null);
     }
 
-    inflight[sym] = Promise.resolve()
-      .then(function () { return prov.search(sym); })
-      .then(function (itens) {
-        var c = melhorCandidato(itens, sym);
-        if (!c || !c.id) return null;
-        return prov.price(c.id).then(function (usd) {
+    inflight[sym] = candidato(sym)
+      .then(function (c) {
+        if (!c) return null;
+        return precoDoId(c.id).then(function (usd) {
           if (usd == null) return null;
-          return { usd: Number(usd), id: c.id, name: c.name || sym };
+          return { usd: Number(usd), id: c.id, name: c.name };
         });
       })
       .catch(function () { return null; })
@@ -123,10 +159,12 @@
 
   window.AtlasPrice = {
     bySymbol: bySymbol,
+    /* { id, name } | null — só a busca, sem preço */
+    candidato: candidato,
     /* limpa o cache — útil quando a pessoa quer reconsultar */
     forget: function (sym) {
-      if (sym) delete cache[normalizar(sym)];
-      else cache = {};
+      if (sym) { delete cache[normalizar(sym)]; delete idCache[normalizar(sym)]; }
+      else { cache = {}; idCache = {}; }
     },
     isStable: function (sym) { return STABLES[normalizar(sym)] != null; }
   };

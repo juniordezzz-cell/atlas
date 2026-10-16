@@ -443,7 +443,7 @@
         if (!precoEl || precoEl.value) return;
 
         var pedir = window.AtlasPrecos
-          ? AtlasPrecos.de(coin.symbol).then(function (r) { return r; })
+          ? AtlasPrecos.de(coin.symbol, { id: coin.id })
           : (AtlasAssets.priceFull ? AtlasAssets.priceFull(coin.id).then(function (i) {
               return i && i.usd != null ? { usd: i.usd, fonte: "registro" } : null;
             }) : Promise.resolve(null));
