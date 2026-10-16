@@ -37,7 +37,69 @@
   }
 
   var DefiLlama = {
-    capabilities: ["onchainPrice", "defiTvl", "defiChains", "defiYields", "rwaTvl", "protocolFlows", "stablecoins", "defiCategories"],
+    capabilities: ["onchainPrice", "seriesLote", "variacoes", "defiTvl", "defiChains", "defiYields", "rwaTvl", "protocolFlows", "stablecoins", "defiCategories"],
+
+    /* ------------------------------------------------------------
+       HISTÓRICO E VARIAÇÃO EM LOTE (16/10/2026)
+
+       Medido no navegador: as 12 séries de 90 dias da carteira de
+       teste vieram em ~1 s, em 3 pedidos paralelos e sem chave. Pela
+       CoinGecko, um pedido por ativo e o limite da versão grátis
+       levavam 1–2 minutos. A DefiLlama aceita o MESMO id da CoinGecko
+       ("coingecko:<id>"), então nada precisa ser traduzido.
+       O /chart recusa mais de 500 pontos por pedido: os ids vão em
+       lotes de até 450 pontos (5 ativos × 90 dias).
+       ------------------------------------------------------------ */
+    seriesLote: function (cgIds, dias) {
+      dias = dias || 90;
+      var ids = (cgIds || []).filter(Boolean);
+      if (!ids.length) return Promise.resolve({});
+      var porLote = Math.max(1, Math.floor(450 / dias)), lotes = [];
+      for (var i = 0; i < ids.length; i += porLote) lotes.push(ids.slice(i, i + porLote));
+      var falhou = 0;
+      return Promise.all(lotes.map(function (lote) {
+        var refs = lote.map(function (id) { return "coingecko:" + id; }).join(",");
+        /* ttl 0: quem guarda a versão diária enxuta é core/atlas-series.js */
+        return AtlasHttp.getJSON("https://coins.llama.fi/chart/" + encodeURIComponent(refs) +
+          "?span=" + dias + "&period=1d", { ttl: 0, retries: 1 })
+          .catch(function () { falhou++; return null; });
+      })).then(function (rs) {
+        if (falhou === lotes.length) throw new Error("DefiLlama não respondeu.");
+        var out = {};
+        rs.forEach(function (r) {
+          var coins = r && r.coins || {};
+          Object.keys(coins).forEach(function (k) {
+            var pts = (coins[k].prices || []).filter(function (x) { return x && x.price > 0; })
+              .map(function (x) { return [x.timestamp * 1000, x.price]; });
+            if (pts.length) out[k.replace(/^coingecko:/, "")] = pts;
+          });
+        });
+        return out;
+      });
+    },
+
+    /* { id: { h24, d7 } } — duas chamadas em lote (24h e 7d) */
+    variacoes: function (cgIds) {
+      var ids = (cgIds || []).filter(Boolean);
+      if (!ids.length) return Promise.resolve({});
+      var refs = ids.map(function (id) { return "coingecko:" + id; }).join(",");
+      function periodo(p) {
+        return AtlasHttp.getJSON("https://coins.llama.fi/percentage/" + encodeURIComponent(refs) + "?period=" + p,
+          { ttl: 120000, cacheKey: "llama.pct." + p + "." + refs })
+          .then(function (d) { return d && d.coins || {}; }, function () { return null; });
+      }
+      return Promise.all([periodo("24h"), periodo("7d")]).then(function (rs) {
+        if (!rs[0] && !rs[1]) throw new Error("DefiLlama não respondeu.");
+        var out = {};
+        ids.forEach(function (id) {
+          var a = rs[0] && rs[0]["coingecko:" + id], b = rs[1] && rs[1]["coingecko:" + id];
+          if (typeof a === "number" || typeof b === "number") {
+            out[id] = { h24: typeof a === "number" ? a : null, d7: typeof b === "number" ? b : null };
+          }
+        });
+        return out;
+      });
+    },
 
     onchainPrice: function (refs) {
       refs = (refs || []).filter(Boolean);

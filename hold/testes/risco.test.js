@@ -78,8 +78,29 @@ assert.equal(R.calcular([]), null);
 assert.equal(R.calcular([{ label: "Z", qtd: 1, serie: [{ d: dia(0), p: 1 }] }]), null);
 
 /* ---------------- séries ---------------- */
-var chamadas = [];
-global.AtlasProviders = { get: function () { return {
+var chamadas = [], chamadasLlama = [], llamaFora = false, varCg = [];
+/* DefiLlama falsa: só conhece "llama*"; responde em lote */
+var fakeLlama = {
+  seriesLote: function (ids, dias) {
+    chamadasLlama.push(ids.slice());
+    if (llamaFora) return Promise.reject({ status: 0 });
+    var r = {}, t0 = Date.UTC(2026, 6, 1);
+    ids.forEach(function (id) {
+      if (id.indexOf("llama") === 0) r[id] = [[t0, 1], [t0 + 86400000, 2], [t0 + 2 * 86400000, 3]];
+    });
+    return Promise.resolve(r);
+  },
+  variacoes: function (ids) {
+    if (llamaFora) return Promise.reject({ status: 0 });
+    var r = {};
+    ids.forEach(function (id) { if (id.indexOf("llama") === 0) r[id] = { h24: 1, d7: 7 }; });
+    return Promise.resolve(r);
+  }
+};
+var fakeCg;
+global.AtlasProviders = { get: function (nome) { return nome === "defillama" ? fakeLlama : fakeCg; } };
+fakeCg = {
+  variacoes: function (ids) { varCg.push(ids.slice()); var r = {}; ids.forEach(function (id) { r[id] = { h24: -1, d7: -7 }; }); return Promise.resolve(r); },
   chart: function (id, days, o) {
     chamadas.push(id);
     if (id === "ruim") return Promise.reject({ status: 429, message: "Limite" });
@@ -88,7 +109,7 @@ global.AtlasProviders = { get: function () { return {
     for (var h = 0; h < 72; h += 6) pts.push([t0 + h * 3600000, 10 + h]);
     return Promise.resolve({ days: days, points: pts });
   }
-}; } };
+};
 require(path.join(__dirname, "../../core/atlas-series.js"));
 var AS = window.AtlasSeries;
 AS._espera = 0;
@@ -120,7 +141,34 @@ AS.carregar(["bom", "ruim"], function () { parciais++; }).then(function (res) {
         assert.equal(chamadas.length, n1 + 1);
         assert.equal(rs[0].series.novo.length, 3);
         assert.equal(rs[1].series.novo.length, 3);
-        console.log("ok");
+        /* DefiLlama primeiro, em lote; a CoinGecko só para o que faltou */
+        var nCg = chamadas.length, nL = chamadasLlama.length;
+        return AS.carregar(["llama1", "llama2", "cg1"]).then(function (r4) {
+          assert.equal(chamadasLlama.length, nL + 1);
+          assert.deepEqual(chamadasLlama[nL], ["llama1", "llama2", "cg1"]);
+          assert.equal(r4.series.llama1.length, 3);
+          assert.equal(r4.series.llama2.length, 3);
+          assert.equal(r4.series.cg1.length, 3);
+          assert.deepEqual(chamadas.slice(nCg), ["cg1"]);
+          /* DefiLlama fora do ar: tudo pela CoinGecko */
+          llamaFora = true;
+          return AS.carregar(["llama3"]).then(function (r5) {
+            assert.equal(r5.series.llama3.length, 3);
+            assert.equal(chamadas[chamadas.length - 1], "llama3");
+            llamaFora = false;
+            /* variações: DefiLlama primeiro, CoinGecko completa o que faltou */
+            return AS.variacoes(["llamaA", "cgB"]).then(function (v) {
+              assert.deepEqual(v.llamaA, { h24: 1, d7: 7 });
+              assert.deepEqual(v.cgB, { h24: -1, d7: -7 });
+              assert.deepEqual(varCg[varCg.length - 1], ["cgB"]);
+              llamaFora = true;
+              return AS.variacoes(["llamaC"]).then(function (v2) {
+                assert.deepEqual(v2.llamaC, { h24: -1, d7: -7 });
+                console.log("ok");
+              });
+            });
+          });
+        });
       });
     });
   });

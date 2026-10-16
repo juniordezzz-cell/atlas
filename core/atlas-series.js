@@ -4,7 +4,12 @@
    SÉRIES DE PREÇO DIÁRIAS (90 dias) E VARIAÇÕES 24h/7d.
 
    Uma série serve às duas abas do Hold: a ficha de Ativos desenha os
-   últimos 30 dias, Métricas calcula o risco com os 90. A CoinGecko
+   últimos 30 dias, Métricas calcula o risco com os 90.
+
+   FONTE PRINCIPAL: DefiLlama (16/10/2026) — lote de até 5 ativos por
+   pedido, sem chave; a carteira inteira chega em ~1 s. A CoinGecko
+   ficou de RESERVA, só para o ativo que a DefiLlama não tiver, e é
+   dela que fala o resto deste bloco. A CoinGecko
    devolve um ponto por HORA em 90 dias (~2.160 pontos, ~150 KB com
    market cap e volume); guardar isso no cache compartilhado do
    AtlasHttp encheria o localStorage — o mesmo defeito que a
@@ -33,9 +38,11 @@
     try { global.localStorage.setItem(CHAVE, JSON.stringify(cache)); } catch (e) {}
   }
 
-  function prov() {
+  /* Fonte principal: DefiLlama (lote, sem chave, sem a fila lenta).
+     Reserva: CoinGecko, um ativo por vez, para o que a DefiLlama não tiver. */
+  function prov(nome) {
     var P = global.AtlasProviders;
-    return P && P.get ? P.get("coingecko") : null;
+    return P && P.get ? P.get(nome || "coingecko") : null;
   }
 
   /* [[ms, preço], …] → [{ d: "YYYY-MM-DD", p }] com o último ponto de cada dia UTC */
@@ -112,8 +119,25 @@
       var lista = [];
       (ids || []).forEach(function (id) { if (id && lista.indexOf(id) < 0) lista.push(id); });
       lista.forEach(function (id) { var c = doCache(id); if (c) series[id] = c; });
+      var faltam = lista.filter(function (id) { return !series[id]; });
+      var L = prov("defillama");
+      var lote = faltam.length && L && L.seriesLote
+        ? L.seriesLote(faltam, DIAS).catch(function () { return {}; })
+        : Promise.resolve({});
+      return lote.then(function (r) {
+        var veio = false;
+        faltam.forEach(function (id) {
+          var pts = diaria(r[id]);
+          if (pts.length >= 2) { series[id] = pts; cache[id] = { em: Date.now(), pts: pts }; veio = true; }
+        });
+        if (veio) { gravar(); if (onParcial) onParcial(series); }
+        return reserva(faltam.filter(function (id) { return !series[id]; }));
+      });
+
+      /* o que a DefiLlama não trouxe vai, um por um, para a CoinGecko */
+      function reserva(resto) {
       var cadeia = Promise.resolve();
-      lista.filter(function (id) { return !series[id]; }).forEach(function (id) {
+      resto.forEach(function (id) {
         cadeia = cadeia.then(function () {
           if (limite) { falhas.push(id); return; }
           return pedir(id).then(function (r) {
@@ -124,13 +148,28 @@
         });
       });
       return cadeia.then(function () { return { series: series, falhas: falhas, limite: limite }; });
+      }
     },
 
     /* { id: { h24, d7 } } em uma chamada; rejeita se a fonte falhar */
     variacoes: function (ids) {
-      var p = prov();
-      if (!p || !p.variacoes) return Promise.reject(new Error("Fonte de preços não carregada."));
-      return ids && ids.length ? p.variacoes(ids) : Promise.resolve({});
+      ids = (ids || []).filter(Boolean);
+      if (!ids.length) return Promise.resolve({});
+      var L = prov("defillama"), C = prov("coingecko");
+      var primeiro = L && L.variacoes ? L.variacoes(ids).catch(function () { return null; }) : Promise.resolve(null);
+      return primeiro.then(function (r) {
+        var out = r || {};
+        var resto = ids.filter(function (id) { return !out[id]; });
+        if (!resto.length) return out;
+        if (!C || !C.variacoes) {
+          if (r) return out;
+          throw new Error("Fonte de preços não carregada.");
+        }
+        return C.variacoes(resto).then(function (c) {
+          Object.keys(c || {}).forEach(function (k) { out[k] = c[k]; });
+          return out;
+        }, function (e) { if (r) return out; throw e; });
+      });
     }
   };
 
