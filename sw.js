@@ -151,7 +151,9 @@
 /* v94 = Calculadora de Market Cap sem a aba "Valer como" (pedido do dono). */
 /* v95 = Calculadora de Market Cap ganha o modo Batalha (2 a 4 tokens no
    mesmo alvo, com veredito) e a aba "Simular investimento". */
-var VERSAO = "atlas-v95";
+/* v96 = troca de página sem tela preta: a trava de login (core/atlas-secure.js)
+   só esconde a página antes do primeiro login e liga @view-transition. */
+var VERSAO = "atlas-v96";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

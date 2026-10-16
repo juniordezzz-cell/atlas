@@ -134,6 +134,8 @@
     },
 
     signOut: function () {
+      // sem a marca da trava, a próxima página volta a esperar o login (core/atlas-secure.js)
+      try { global.localStorage.removeItem("atlas.gate.ok"); } catch (e) {}
       var p = provedor ? Promise.resolve(provedor.signOut()) : Promise.resolve(gravarLocal(null));
       return p.then(function () {
         avisar();

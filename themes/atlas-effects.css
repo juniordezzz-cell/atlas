@@ -798,10 +798,13 @@ table td, table th { font-variant-numeric: tabular-nums; }
    animação do body seja só opacidade.
    =================================================================== */
 
-@keyframes atlas-body-in { from { opacity: 0; } to { opacity: 1; } }
-
+/* 16/10/2026: o body também NÃO anima opacidade. Cada página nascia
+   transparente e acendia sobre o fundo preto — com a trava de login,
+   eram as "duas piscadas de tela preta" a cada troca de página. A
+   passagem entre páginas agora é o @view-transition ligado em
+   core/atlas-secure.js. */
 body {
-  animation-name: atlas-body-in !important;
+  animation-name: none !important;
   /* nenhum transform/filter/perspective próprio no body, nunca */
   transform: none !important;
   filter: none !important;
