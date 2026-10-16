@@ -249,6 +249,13 @@ celular de 375 px sem rolagem lateral); movimento do Oráculo medido
 pelos quadros da animação; testes `regras`, `assistente` e
 `assistente-conversa` (48 passam).
 
+**Ajustes depois da publicação (15/10/2026):** a área de digitar do Oráculo
+(`.sp-pe`) tinha fundo sólido (`--bg`) e virava um retângulo preto no
+painel; agora é vidro com desfoque. O rodapé passou a ter a largura da
+aba aberta (Oráculo 1140 px, Guia 920 px) via `data-aba` na `.wrap`,
+posto pelo `switchTab`. O Guia ganhou `margin: 0 auto` (só com
+`max-width` ele grudava à esquerda).
+
 ## Próximo passo (decisão do dono)
 
 Se aprovar, levar o cenário para o restante do site. O caminho mais

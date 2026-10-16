@@ -236,7 +236,8 @@
   .tab.on{color:var(--accent); border-bottom-color:var(--accent)}
 
   /* ===== ABA COMO FUNCIONA ===== */
-  #tab-learn{max-width:920px}
+  /* centralizado: só com max-width ele grudava à esquerda da área (15/10/2026) */
+  #tab-learn{max-width:920px; margin-left:auto; margin-right:auto}
   .learn-hero{background:linear-gradient(135deg,#141c2c,#0d1320); border:1px solid var(--line); border-radius:16px; padding:28px 30px; margin-bottom:26px}
   .learn-hero .eyebrow{color:var(--accent); font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px}
   .learn-hero h2{margin:0 0 10px; font-size:27px; letter-spacing:.2px}
@@ -727,7 +728,7 @@
 <script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
 <!-- Leitura sobre o cenário: painel de vidro, cabeçalho de ponta a ponta,
      ações em ícone (15/10/2026). Tirar estas duas linhas desfaz. -->
-<link rel="stylesheet" href="visual-cenario.css?v=3">
+<link rel="stylesheet" href="visual-cenario.css?v=4">
 <script src="visual-cenario.js?v=1" defer></script>
 </head>
 <body>
@@ -3202,6 +3203,7 @@ function switchTab(t){
   document.getElementById("tab-learn").style.display = (t==="learn")? "" : "none";
   document.getElementById("tab-assistente").style.display = t==="assistente" ? "" : "none";
   document.querySelector(".wrap").classList.toggle("wrap-larga", t==="dash");
+  document.querySelector(".wrap").dataset.aba = t;   // o rodapé acompanha a largura da aba (visual-cenario.css)
   if(scannerChat) scannerChat.abaAtiva(t);
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===t));
   if(t==="hist") renderRadar();

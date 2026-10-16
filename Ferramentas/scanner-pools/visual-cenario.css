@@ -48,6 +48,24 @@ html.atlas-com-cenario .wrap > footer {
   border: 1px solid var(--sc-vidro-borda);
   border-radius: 18px;
 }
+/* o rodapé tem a largura da aba aberta: no Oráculo (1140 px) e no Guia
+   (920 px) ele passava para os dois lados do painel e virava uma faixa
+   solta. data-aba é posto pelo switchTab do index.html. */
+html.atlas-com-cenario .wrap[data-aba="assistente"] > footer { max-width: 1140px; margin-left: auto; margin-right: auto; }
+html.atlas-com-cenario .wrap[data-aba="learn"] > footer { max-width: 920px; margin-left: auto; margin-right: auto; }
+
+/* a área de digitar do Oráculo tinha fundo sólido (--bg) e virava um
+   retângulo preto dentro do painel: agora é o mesmo vidro, com desfoque
+   para a conversa que rola por baixo dela não aparecer nítida */
+html.atlas-com-cenario #tab-assistente .sp-pe {
+  background: rgba(6, 12, 24, 0.35);
+  -webkit-backdrop-filter: blur(14px);
+          backdrop-filter: blur(14px);
+}
+html.atlas-com-cenario #tab-assistente .sp-pe details input:not([type=checkbox]),
+html.atlas-com-cenario #tab-assistente .sp-pe details textarea {
+  background: rgba(148, 170, 215, 0.08);
+}
 /* o Oráculo já tem grade própria; o painel só ganha o respiro */
 html.atlas-com-cenario #tab-assistente.sp-oraculo { padding: 22px 22px 0; }
 /* a barra de rodapé fixa usava o fundo opaco da página (--bg) e virava
