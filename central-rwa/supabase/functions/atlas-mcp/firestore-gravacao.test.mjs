@@ -52,11 +52,12 @@ test('gravar manda um commit com pré-condições, campos do site e backup', asy
   assert.equal(log.queries[0].structuredQuery.offset, 50);
 });
 
-test('mudança para null apaga o documento; marcarDesfeito atualiza o backup antigo', async () => {
+test('mudança para null grava valor vazio (o site remove a chave) em vez de apagar; marcarDesfeito atualiza o backup antigo', async () => {
   const { fs, log } = servidor();
   await fs.gravar('uid1', { opId: '3-a', mudancas: { 'atlas.wallets.v2': null }, bases: { 'atlas.wallets.v2': 'T1' }, backup: { ferramenta: 'desfazer', resumo: 'r', antes: { 'atlas.wallets.v2': '{}' } }, marcarDesfeito: '1-b' });
   const w = log.commits[0].writes;
-  assert.deepEqual(w[0], { delete: `${DOCS}/store/atlas__wallets__v2`, currentDocument: { updateTime: 'T1' } });
+  // Apagar o documento faria o site, na abertura, reenviar a cópia local ('só local tem → sobe').
+  assert.deepEqual(w[0], { update: { name: `${DOCS}/store/atlas__wallets__v2`, fields: { value: { nullValue: null }, device: { stringValue: 'claude-mcp' }, mcpOp: { stringValue: '3-a' } } }, currentDocument: { updateTime: 'T1' }, updateTransforms: [{ fieldPath: 'updatedAt', setToServerValue: 'REQUEST_TIME' }] });
   assert.deepEqual(w[2], { update: { name: `${DOCS}/mcp_backup/1-b`, fields: { desfeito: { booleanValue: true } } }, updateMask: { fieldPaths: ['desfeito'] }, currentDocument: { exists: true } });
 });
 

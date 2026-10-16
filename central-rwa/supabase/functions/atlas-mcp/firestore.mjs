@@ -97,9 +97,10 @@ export function criarFirestore({ contaServico, fetcher, agora = () => Date.now()
     const writes = Object.entries(mudancas).map(([chave, valor]) => {
       const name = nomeChave(uid, chave);
       const currentDocument = bases[chave] ? { updateTime: bases[chave] } : { exists: false };
-      if (valor === null) return { delete: name, currentDocument };
+      // null vira `value: null`, não exclusão: o site trata valor nulo mais novo como "remover a chave";
+      // um documento apagado faria o site reenviar a cópia local na abertura.
       return {
-        update: { name, fields: { value: { stringValue: valor }, device: { stringValue: 'claude-mcp' }, mcpOp: { stringValue: opId } } },
+        update: { name, fields: { value: valorFirestore(valor), device: { stringValue: 'claude-mcp' }, mcpOp: { stringValue: opId } } },
         currentDocument,
         updateTransforms: [{ fieldPath: 'updatedAt', setToServerValue: 'REQUEST_TIME' }],
       };
