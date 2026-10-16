@@ -87,7 +87,7 @@ export function createHandler({ env, fetcher, store: storeInjetado = null, fires
         if (a.status !== 200) return respostaJson({ error: 'invalid_token' }, 401, { 'WWW-Authenticate': `Bearer resource_metadata="${c.base}/.well-known/oauth-protected-resource"` });
         const msg = await lerJson(req);
         if (msg === undefined) return respostaJson({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'JSON inválido.' } }, 400);
-        const contexto = { uid: a.uid, get firestore() { return obterFirestore(); } };
+        const contexto = { uid: a.uid, segredo: c.segredo, agora, get firestore() { return obterFirestore(); } };
         const r = await atenderMcp(msg, { ferramentas: FERRAMENTAS, contexto });
         return r.corpo === null ? new Response(null, { status: 202 }) : respostaJson(r.corpo, r.status);
       }
