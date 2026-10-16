@@ -132,3 +132,14 @@ test('a data mostrada na prévia é a gravada, mesmo confirmando depois da meia-
   const c = await confirmar(depois, p.dados.id_previa);
   assert.equal(c.dados.data, '2026-10-15');
 });
+
+// O Claude no app lê só o texto da resposta, não o structuredContent: sem o id no texto, não há como confirmar.
+test('o id_previa vem escrito no texto da prévia e da prévia de desfazer', async () => {
+  const fs = firestoreFalso();
+  const ctx = ctxCom(fs);
+  const p = await preparar(ctx, 'carteira', { nome: 'Binance' });
+  assert.ok(p.texto.includes(`id_previa: ${p.dados.id_previa}`));
+  await confirmar(ctx, p.dados.id_previa);
+  const d = await prepararDesfazer(ctx);
+  assert.ok(d.texto.includes(`id_previa: ${d.dados.id_previa}`));
+});

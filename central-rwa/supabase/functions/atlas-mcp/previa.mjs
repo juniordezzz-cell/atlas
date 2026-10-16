@@ -47,7 +47,8 @@ export async function preparar(ctx, op, args = {}) {
   const assinados = r.dados?.data && !args.data ? { ...args, data: r.dados.data } : args;
   const id = await assinar({ t: 'previa', u: ctx.uid, op, a: assinados, b: basesDe(docs, CHAVES_GRAVAVEIS), exp: ctx.agora() + VALIDADE_PREVIA_MS }, ctx.segredo);
   return {
-    texto: `PRÉVIA — nada foi gravado ainda.\n${r.resumo}\n\nMostre esta prévia ao dono. Só chame confirmar com o id_previa depois de um "sim" explícito. Vale 10 minutos.`,
+    // O id vai no texto: o Claude no app lê o texto da resposta, não o structuredContent.
+    texto: `PRÉVIA — nada foi gravado ainda.\n${r.resumo}\n\nMostre esta prévia ao dono. Só chame confirmar com o id_previa abaixo depois de um "sim" explícito. Vale 10 minutos.\nid_previa: ${id}`,
     dados: { id_previa: id, operacao: op, ...r.dados },
   };
 }
@@ -60,7 +61,7 @@ export async function prepararDesfazer(ctx) {
   const docs = await ctx.firestore.lerDocs(ctx.uid, chaves);
   if (chaves.some((k) => docs[k].mcpOp !== b.id)) throw new ErroUsuario('Os dados mudaram depois dessa operação (pelo site ou por outra operação). Desfaça pelo site.');
   const id = await assinar({ t: 'previa', u: ctx.uid, op: 'desfazer', a: { backup: b.id }, b: basesDe(docs, chaves), exp: ctx.agora() + VALIDADE_PREVIA_MS }, ctx.segredo);
-  return { texto: `PRÉVIA — desfazer a última operação do Claude:\n${b.resumo}\n\nMostre ao dono e só confirme depois de um "sim".`, dados: { id_previa: id, operacao: 'desfazer' } };
+  return { texto: `PRÉVIA — desfazer a última operação do Claude:\n${b.resumo}\n\nMostre ao dono e só confirme depois de um "sim".\nid_previa: ${id}`, dados: { id_previa: id, operacao: 'desfazer' } };
 }
 
 export async function confirmar(ctx, idPrevia) {
