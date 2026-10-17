@@ -207,6 +207,13 @@
     var dec = v >= 1000 ? 0 : v >= 0.01 ? 2 : 6;
     return v.toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
   }
+  /* Quantidade de tokens sem as oito casas: 4,0018 · 1.250,5 · 0,000412 */
+  function fmtQtd(q) {
+    q = +q || 0;
+    if (!(q > 0)) return "0";
+    var dec = q >= 1000 ? 0 : q >= 100 ? 2 : q >= 1 ? 4 : 6;
+    return q.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: dec });
+  }
   function fmtVar(x) {
     if (x == null || !isFinite(x)) return null;
     var dec = Math.abs(x) >= 10 ? 0 : 1;
@@ -236,19 +243,27 @@
       "data-atlas-token-busca": (a.tipo && a.tipo !== "Cripto") ? "nao" : null, text: a.ticker.slice(0, 3) }));
     c1.appendChild(U.el("span", { class: "m-tick", text: a.ticker }));
     tr.appendChild(c1);
+    /* Quantidade logo depois do ativo (pedido do dono, 17/10/2026): o
+       Painel só mostra dólar e %, e era aqui que ele procurava quantos
+       tokens tem. Preço, 24h e 7d viraram colunas próprias — juntos na
+       mesma célula os três números se confundiam. */
+    var cq = U.el("td", { class: "m-qtd num" });
+    if (p) cq.appendChild(U.el("span", { text: fmtQtd(p.quantidade) }));
+    else cq.appendChild(U.el("span", { class: "dim", text: st === "watchlist" ? "watchlist" : "—" }));
+    tr.appendChild(cq);
     var c2 = U.el("td", { class: "m-preco num" });
     c2.appendChild(U.el("span", { text: fmtPreco(a.preco_atual) }));
-    if (st === "watchlist") {
-      c2.appendChild(U.el("span", { class: "dim", text: " · watchlist" }));
-    } else if (!id) {
-      c2.appendChild(U.el("span", { class: "dim", text: " · preço informado" }));
-    } else {
-      c2.appendChild(document.createTextNode(" "));
-      c2.appendChild(varSpan(v ? v.h24 : null));
-      c2.appendChild(document.createTextNode(" "));
-      c2.appendChild(varSpan(v ? v.d7 : null));
-    }
     tr.appendChild(c2);
+    var c24 = U.el("td", { class: "m-var num" }), c7 = U.el("td", { class: "m-var num" });
+    if (id && st !== "watchlist") {
+      c24.appendChild(varSpan(v ? v.h24 : null));
+      c7.appendChild(varSpan(v ? v.d7 : null));
+    } else {
+      c24.appendChild(U.el("span", { class: "dim", text: !id ? "manual" : "—" }));
+      c7.appendChild(U.el("span", { class: "dim", text: "—" }));
+    }
+    tr.appendChild(c24);
+    tr.appendChild(c7);
     var c3 = U.el("td", { class: "m-res num" });
     if (p) {
       var r = S.get.positionPnLPct(p);
@@ -406,8 +421,8 @@
       if (lista.length) {
         var tab = U.el("table", { class: "mesa" });
         var cab = U.el("tr");
-        ["Ativo", "Preço · 24h · 7d", "Result.", ""].forEach(function (h, i) {
-          cab.appendChild(U.el("th", { class: ["m-ativo", "m-preco", "m-res", "m-acao"][i], text: h }));
+        ["Ativo", "Quantidade", "Preço", "24h", "7d", "Result.", ""].forEach(function (h, i) {
+          cab.appendChild(U.el("th", { class: ["m-ativo", "m-qtd", "m-preco", "m-var", "m-var", "m-res", "m-acao"][i], text: h }));
         });
         tab.appendChild(U.el("thead", {}, [cab]));
         var tb = U.el("tbody");
