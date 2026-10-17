@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 // Ordem de dependência. fakes.mjs e *.test.mjs ficam de fora de propósito.
-const ORDEM = ['crypto.mjs', 'mcp.mjs', 'store.mjs', 'firestore.mjs', 'leitura.mjs', 'ferramentas.mjs', 'oauth.mjs', 'handler.mjs'];
+const ORDEM = ['crypto.mjs', 'mcp.mjs', 'store.mjs', 'firestore.mjs', 'leitura.mjs', 'site-gerado.mjs', 'motor.mjs', 'operacoes.mjs', 'previa.mjs', 'ferramentas.mjs', 'oauth.mjs', 'handler.mjs'];
 
 export function montar() {
   const partes = ORDEM.map((nome) => {

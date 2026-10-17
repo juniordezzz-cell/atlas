@@ -236,7 +236,8 @@
   .tab.on{color:var(--accent); border-bottom-color:var(--accent)}
 
   /* ===== ABA COMO FUNCIONA ===== */
-  #tab-learn{max-width:920px}
+  /* centralizado: só com max-width ele grudava à esquerda da área (15/10/2026) */
+  #tab-learn{max-width:920px; margin-left:auto; margin-right:auto}
   .learn-hero{background:linear-gradient(135deg,#141c2c,#0d1320); border:1px solid var(--line); border-radius:16px; padding:28px 30px; margin-bottom:26px}
   .learn-hero .eyebrow{color:var(--accent); font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px}
   .learn-hero h2{margin:0 0 10px; font-size:27px; letter-spacing:.2px}
@@ -719,12 +720,16 @@
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
   <script src="../../core/atlas-secure.js"></script>
-<link rel="stylesheet" href="assistente.css?v=oraculo-18">
+<link rel="stylesheet" href="assistente.css?v=oraculo-20">
 <link rel="stylesheet" href="battle-pools.css?v=btl-1">
 <!-- Cenário de fundo do ATLAS (piloto 15/10/2026, Paper Shaders).
      Registro: docs/visual-ferramentas-2026-10-15.md -->
-<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=4">
-<script type="module" src="../../core/ui/atlas-cenario.js?v=2"></script>
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+<!-- Leitura sobre o cenário: painel de vidro, cabeçalho de ponta a ponta,
+     ações em ícone (15/10/2026). Tirar estas duas linhas desfaz. -->
+<link rel="stylesheet" href="visual-cenario.css?v=4">
+<script src="visual-cenario.js?v=1" defer></script>
 </head>
 <body>
 <div class="wrap wrap-larga">
@@ -1363,7 +1368,7 @@
 <script src="assistente-conversa.js?v=oraculo-17"></script>
 <script src="assistente-memoria.js?v=oraculo-17"></script>
 <script src="assistente-conversas.js?v=oraculo-17"></script>
-<script src="assistente-ui.js?v=oraculo-18"></script>
+<script src="assistente-ui.js?v=oraculo-20"></script>
 <script>
 /* ============ estado + persistência ============ */
 const KEY  = "estudo_pools_liquidez_v1";
@@ -1967,9 +1972,9 @@ function rowHTML(p, rank){
     <td class="plat" data-label="Atualizada"><span class="daterel ${dt.cls}" title="Última atualização: ${dt.full}">${dt.txt}</span></td>
     <td class="actcell">
       <span class="rowact">
-        ${p.servidor ? "" : `<button class="iconbtn" onclick="openForm(${idx})">editar</button>`}
-        <button class="iconbtn" onclick="goToHistory(${p.id})">histórico</button>
-        <button class="iconbtn" onclick="BattlePools.adicionar(${p.id})" title="Comparar esta pool com outra no Battle Pools">⚔</button>
+        ${p.servidor ? "" : `<button class="iconbtn" onclick="openForm(${idx})" title="Editar esta pool" aria-label="Editar esta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>`}
+        <button class="iconbtn" onclick="goToHistory(${p.id})" title="Ver o histórico desta pool" aria-label="Ver o histórico desta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg></button>
+        <button class="iconbtn" onclick="BattlePools.adicionar(${p.id})" title="Comparar esta pool com outra no Battle Pools" aria-label="Comparar esta pool com outra no Battle Pools">⚔</button>
         ${tokenBtns(p)}
       </span>
     </td>
@@ -3198,6 +3203,7 @@ function switchTab(t){
   document.getElementById("tab-learn").style.display = (t==="learn")? "" : "none";
   document.getElementById("tab-assistente").style.display = t==="assistente" ? "" : "none";
   document.querySelector(".wrap").classList.toggle("wrap-larga", t==="dash");
+  document.querySelector(".wrap").dataset.aba = t;   // o rodapé acompanha a largura da aba (visual-cenario.css)
   if(scannerChat) scannerChat.abaAtiva(t);
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===t));
   if(t==="hist") renderRadar();

@@ -2,7 +2,7 @@ export class ErroUsuario extends Error {}
 
 export const VERSOES = ['2025-11-25', '2025-06-18', '2025-03-26'];
 
-const INSTRUCOES = 'Atlas é o painel de portfólio cripto do dono. Nesta versão o conector só lê: carteiras, posições do Hold, caixa e histórico. Valores em dólar usam o último preço salvo pelo site. Não invente números que as ferramentas não devolveram.';
+const INSTRUCOES = 'Atlas é o painel de portfólio cripto do dono. Leitura: listar_carteiras, ver_posicoes, ver_caixa, historico. Escrita: sempre em dois passos — chame preparar_* (carteira, deposito, saque, compra, venda, desfazer), mostre a prévia ao dono e só chame confirmar com o id_previa depois de um "sim" explícito dele. Nunca confirme por conta própria. Datas no formato AAAA-MM-DD; "semana passada" vira uma data exata que você mostra na prévia. Em prints de corretora com taxa cobrada no token, lance a quantidade líquida e a taxa convertida em dólar (taxa em tokens × preço). Valores em dólar usam o último preço salvo pelo site. Não invente números que o dono ou as ferramentas não deram.';
 
 const rpcErro = (id, code, message) => ({ jsonrpc: '2.0', id, error: { code, message } });
 const rpcOk = (id, result) => ({ jsonrpc: '2.0', id, result });
@@ -27,7 +27,7 @@ export async function atenderMcp(msg, { ferramentas, contexto }) {
   if (method === 'tools/list') {
     return { status: 200, corpo: rpcOk(id, { tools: ferramentas.map((f) => ({
       name: f.nome, title: f.titulo, description: f.descricao, inputSchema: f.schema,
-      annotations: { readOnlyHint: true, openWorldHint: false },
+      annotations: { readOnlyHint: !f.escrita, destructiveHint: !!f.destrutiva, openWorldHint: false },
     })) }) };
   }
   if (method === 'tools/call') {
@@ -39,7 +39,7 @@ export async function atenderMcp(msg, { ferramentas, contexto }) {
       const r = await f.executar(args, contexto);
       return { status: 200, corpo: rpcOk(id, { content: [{ type: 'text', text: r.texto }], structuredContent: r.dados, isError: false }) };
     } catch (e) {
-      const texto = e instanceof ErroUsuario ? e.message : 'Falha interna ao ler o Atlas. Nada foi alterado.';
+      const texto = e instanceof ErroUsuario ? e.message : 'Falha interna no conector do Atlas. Nada foi alterado.';
       if (!(e instanceof ErroUsuario)) console.error('atlas-mcp ferramenta', f.nome, String(e?.message || e).slice(0, 120));
       return { status: 200, corpo: rpcOk(id, { content: [{ type: 'text', text: texto }], isError: true }) };
     }
