@@ -324,10 +324,39 @@
     /* preços velhos se remarcam sozinhos ao abrir; com modal aberto
        não redesenha (derrubaria o formulário) */
     if (S.actions.refreshIfStale) {
-      S.actions.refreshIfStale(15).then(function (r) {
-        if (r && r.atualizados && !document.querySelector(".modal-scrim")) render();
+      depoisDaNuvem(function () {
+        S.actions.refreshIfStale(15).then(function (r) {
+          if (r && r.atualizados && !document.querySelector(".modal-scrim")) render();
+        });
       });
     }
+  }
+
+  /* ------------------------------------------------------------
+     REMARCAR SÓ DEPOIS DA NUVEM (17/10/2026)
+
+     O Hold e o Dashboard mostravam resultados diferentes (−US$ 7 contra
+     −US$ 3) com as mesmas posições. A remarcação ao abrir gravava os
+     preços novos ANTES de core/atlas-cloud.js terminar de carregar: a
+     gravação não ficava marcada como edição local, e a conciliação de
+     abertura dava a vitória à cópia da nuvem — que voltava ao
+     localStorage com os preços de quase o dia da compra. O Hold seguia
+     exibindo os preços novos (em memória); o Dashboard lia os velhos.
+
+     Agora a remarcação espera o sinal "atlas:nuvem-pronta". Sem nuvem
+     na página, ou sem sessão (modo dev), segue depois de alguns
+     segundos.
+     ------------------------------------------------------------ */
+  function depoisDaNuvem(cb) {
+    var feito = false;
+    function vai() { if (!feito) { feito = true; cb(); } }
+    var C = window.AtlasCloud;
+    if (C && C.status && C.status().pronto) return vai();
+    window.addEventListener("atlas:nuvem-pronta", vai);
+    setTimeout(function () {
+      var c = window.AtlasCloud;
+      if (!c || !c.status || !c.status().uid) vai();
+    }, 6000);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

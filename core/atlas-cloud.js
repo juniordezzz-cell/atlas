@@ -55,6 +55,15 @@
 
   var uid = null, startupDone = false, applyingRemote = false, timers = {}, unsub = null, startedAt = 0;
 
+  /* A sincronização de abertura terminou: o localStorage agora é a cópia
+     conciliada. Quem grava dado ao abrir a página (o Hold remarcando
+     preços) espera este sinal — gravar antes fazia a nuvem "vencer" e
+     desfazer a gravação em silêncio (ver hold/js/router.js). */
+  function sinalizarPronto() {
+    startupDone = true;
+    try { global.dispatchEvent(new CustomEvent("atlas:nuvem-pronta")); } catch (e) {}
+  }
+
   function storeCol() { return db.collection("atlas_users").doc(uid).collection("store"); }
 
   // ---------- observador de escritas locais ----------
@@ -107,7 +116,7 @@
       if (cloudEmpty) {
         // primeira vez: semeia a nuvem com o que existe local
         var temLocal = keys.some(function (k) { var v = LS.getItem(k); return v !== null && v !== ""; });
-        startupDone = true;
+        sinalizarPronto();
         if (temLocal) pushAll();
         listenOthers();
         return;
@@ -139,8 +148,9 @@
         if (!already) { try { sessionStorage.setItem(flag, "1"); } catch (e) {} location.reload(); return; }
       }
       try { sessionStorage.removeItem("atlas.cloud.reloaded." + uid); } catch (e) {}
+      sinalizarPronto();
       listenOthers();
-    }).catch(function () { startupDone = true; }); // falhou a nuvem → segue local, observador ativo
+    }).catch(function () { sinalizarPronto(); }); // falhou a nuvem → segue local, observador ativo
   }
 
   // ---------- aviso quando OUTRO aparelho muda algo ----------
