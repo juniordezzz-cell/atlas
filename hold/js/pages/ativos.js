@@ -549,11 +549,20 @@
       U.el("span", { class: "small dim", text: origemPreco(a) })
     ]);
     stats.appendChild(miniStatNode("Preço atual", precoNode));
-    stats.appendChild(miniStat("Market cap", U.compact(a.market_cap)));
-    stats.appendChild(miniStat("Categoria", a.categoria || "—"));
-    stats.appendChild(miniStat("Setor", a.setor || "—"));
+    var mcapNode = U.el("span", { class: "num", text: a.market_cap > 0 ? U.compact(a.market_cap) : "—" });
+    var catNode = U.el("span", { class: "num", text: a.categoria || "—" });
+    var setorNode = U.el("span", { class: "num", text: setorTexto(a) });
+    stats.appendChild(miniStatNode("Market cap", mcapNode));
+    stats.appendChild(miniStatNode("Categoria", catNode));
+    stats.appendChild(miniStatNode("Setor", setorNode));
     header.appendChild(stats);
     view.appendChild(header);
+    enriquecer(a, function () {
+      var b = S.get.asset(a.id); if (!b) return;
+      mcapNode.textContent = b.market_cap > 0 ? U.compact(b.market_cap) : "—";
+      catNode.textContent = b.categoria || "—";
+      setorNode.textContent = setorTexto(b);
+    });
 
     /* ------------------------------------------------------------
        O CARTÃO DA POSIÇÃO, E O CARTÃO DE QUANDO NÃO HÁ POSIÇÃO
@@ -671,6 +680,72 @@
     view.appendChild(histCard);
 
     return { title: a.nome, crumb: "Ativos · " + a.ticker, node: view };
+  }
+
+  /* ------------------------------------------------------------
+     MARKET CAP, CATEGORIA E SETOR SOZINHOS
+
+     Os três eram texto do cadastro: market cap só vinha quando o ativo
+     nascia pelo autocompletar (e congelava ali), categoria e setor só
+     se a pessoa digitasse. Resultado: UNI aparecia com market cap
+     "US$ 0,00" e setor vazio — embora o próprio Painel já soubesse que
+     UNI é DeFi (core/atlas-setores.js).
+
+     Agora: setor pela mesma cadeia do Painel (digitado → catálogo →
+     CoinGecko); market cap e categoria buscados nos metadados da
+     CoinGecko ao abrir o ativo, regravados se tiverem mais de 6 h.
+     O que a pessoa digitou em Editar (categoria, setor) nunca é
+     sobrescrito.
+     ------------------------------------------------------------ */
+  var MCAP_VALIDADE = 6 * 3600 * 1000;
+  var enriquecendo = {};
+
+  function setorTexto(a) {
+    if (!window.AtlasSetores) return a.setor || "—";
+    var s = window.AtlasSetores.de(a);
+    return s.fonte ? s.setor : (a.setor || "—");
+  }
+
+  /* Categoria da CoinGecko: a primeira que diz o que o token É —
+     "Ethereum Ecosystem" ou "Coinbase 50 Index" não dizem nada. */
+  var CAT_RUIDO = /ecosystem|portfolio|index|holdings|launchpool|launchpad|alleged|made in|world liberty|binance|coinbase|fan token|tokens? \(|gmci|top 100|delisted|hackathon/i;
+  function categoriaDe(cats) {
+    for (var i = 0; i < (cats || []).length; i++) {
+      var c = String(cats[i] || "").trim();
+      if (c && !CAT_RUIDO.test(c)) return c;
+    }
+    return "";
+  }
+
+  function enriquecer(a, pronto) {
+    if (!a || (a.tipo && a.tipo !== "Cripto")) return;
+    var T = window.AtlasTokens;
+    var id = a.cg_id || (T && T.cgId ? T.cgId(a.ticker) : null);
+    var prov = window.AtlasProviders && window.AtlasProviders.get && window.AtlasProviders.get("coingecko");
+
+    /* setor: completa o cache do classificador se ainda está em "Outros" */
+    if (window.AtlasSetores && !window.AtlasSetores.de(a).fonte) {
+      window.AtlasSetores.completar([a]).then(function (mudou) { if (mudou) pronto(); });
+    }
+
+    var fresco = a.market_cap > 0 && a.market_cap_em && (Date.now() - a.market_cap_em) < MCAP_VALIDADE;
+    if (!id || !prov || !prov.assetFull || (fresco && a.categoria) || enriquecendo[a.id]) return;
+    enriquecendo[a.id] = true;
+    prov.assetFull(id).then(function (d) {
+      if (!d) return;
+      var atual = S.get.asset(a.id); if (!atual) return;
+      var patch = {};
+      if (d.marketCap > 0) { patch.market_cap = d.marketCap; patch.market_cap_em = Date.now(); }
+      if (!atual.categoria) {
+        var cat = categoriaDe(d.categories);
+        if (cat) patch.categoria = cat;
+      }
+      if (Object.keys(patch).length) {
+        S.actions.updateAsset(a.id, patch);
+        pronto();
+      }
+    }).catch(function () { /* metadados são acessórios: fica o que havia */ })
+      .then(function () { enriquecendo[a.id] = false; });
   }
 
   function miniStat(label, value) { return miniStatNode(label, U.el("span", { class: "num", text: value })); }
