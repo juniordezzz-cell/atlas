@@ -33,3 +33,6 @@ analysis/
 
 # Bundle gerado do conector MCP (colar no editor do Supabase)
 central-rwa/supabase/functions/atlas-mcp/dist/
+
+# rascunhos do brainstorm (companheiro visual)
+.superpowers/

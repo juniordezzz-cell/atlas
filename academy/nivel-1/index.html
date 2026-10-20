@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="academy">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Academy do ATLAS: cursos, artigos, links e papers.">
+  <link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta name="theme-color" content="#05080F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ATLAS">
+  <title>ATLAS — Academy · Nível 1</title>
+  <link rel="stylesheet" href="../../themes/atlas-fonts.css">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/global.css">
+  <link rel="stylesheet" href="../../css/dashboard.css">
+  <link rel="stylesheet" href="../../css/ferramentas.css">
+  <link rel="stylesheet" href="../css/academy.css">
+
+  <!-- ===== ATLAS · camada global ===== -->
+  <link rel="stylesheet" href="../../themes/atlas-theme.css">
+  <link rel="stylesheet" href="../../themes/atlas-effects.css">
+  <link rel="stylesheet" href="../../themes/atlas-print.css" media="print">
+  <link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+  <link rel="stylesheet" href="../../core/ui/atlas-palette.css">
+
+  <script src="../../core/atlas-storage.js"></script>
+  <script src="../../core/atlas-contabilidade.js"></script>
+  <script src="../../core/atlas-supervisor.js"></script>
+  <script src="../../core/settings.js"></script>
+  <script src="../../core/atlas-demo.js"></script>
+  <script src="../../core/i18n.js"></script>
+  <script src="../../core/currency.js"></script>
+  <script src="../../core/atlas-boot.js"></script>
+  <script src="../../core/atlas-auth.js"></script>
+  <script src="../../core/atlas-secure.js"></script>
+  <script src="../../core/atlas-pwa.js"></script>
+  <link rel="stylesheet" href="../../themes/atlas-sereno.css">
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="logo">
+      <span class="logo-mark">
+        <img src="../../assets/iconeatlas.png" alt="ATLAS">
+      </span>
+      <span class="logo-text">ATLAS <span class="logo-section">ACADEMY</span></span>
+    </div>
+    <!-- O menu é injetado por js/atlas-nav.js a partir de AtlasShell.destinos(). -->
+    <nav class="nav" data-atlas-nav="academy"></nav>
+  </aside>
+
+  <main class="main ac-course-main">
+    <header class="topbar">
+      <div class="greet">
+        <h1>Academy</h1>
+        <p>Nível 1 · Trilha de criptoeconomia</p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" aria-hidden="true"></div>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         ACADEMY · NÍVEL 1 (20/10/2026)
+         O curso (curso/) roda num iframe: o CSS dele (Tailwind com
+         preflight, body/.sidebar/.btn próprios) não pode vazar para o
+         shell do ATLAS. A rota do curso (#m6/labs) vem no endereço desta
+         página e o curso a mantém atualizada (academy.syncParent).
+         ============================================================ -->
+    <nav class="ac-tabs" aria-label="Seções do Academy">
+      <a class="ac-tab" href="../#inicio">Início</a>
+      <a class="ac-tab on" href="../#cursos" aria-current="page">Cursos</a>
+      <a class="ac-tab" href="../#artigos">Artigos</a>
+      <a class="ac-tab" href="../#links">Links</a>
+      <a class="ac-tab" href="../#papers">Papers</a>
+    </nav>
+    <iframe id="ac-frame" class="ac-frame" title="Nível 1 · Trilha de criptoeconomia"></iframe>
+    <script>
+      (function () {
+        var rota = /^#[a-z0-9]+(\/[a-z]+)?$/.test(location.hash) ? location.hash : "";
+        document.getElementById("ac-frame").src = "curso/index.html" + rota;
+      })();
+    </script>
+
+  </main>
+</div>
+
+<div id="toasts"></div>
+
+<!-- Stores dos módulos: o Oráculo e a paleta (Ctrl+K) do shell somam os
+     módulos e o caixa — o mesmo conjunto que as telas de pages/ carregam. -->
+<script src="../../wallets/walletStore.js"></script>
+<script src="../../wallets/walletTypes.js"></script>
+<script src="../../wallets/walletLedger.js"></script>
+<script src="../../wallets/walletCaixa.js"></script>
+<script src="../../wallets/walletManager.js"></script>
+<script src="../../wallets/walletMenus.js"></script>
+<script src="../../js/atlas-nav.js"></script>
+<script src="../../js/atlas-topbar.js"></script>
+<script src="../../core/ui/atlas-flash.js"></script>
+<script src="../../core/ui/atlas-icons.js"></script>
+<script src="../../core/ui/atlas-ui.js"></script>
+
+<script src="../../RWA/js/store.js"></script>
+<script src="../../defi/js/tokens.js"></script>
+<script src="../../defi/js/performance.js"></script>
+<script src="../../defi/js/data.js"></script>
+<script src="../../hold/data/seed.js"></script>
+<script src="../../hold/js/state.js"></script>
+<script src="../../trade/assets/js/core/util.js"></script>
+<script src="../../trade/assets/js/core/store.js"></script>
+<script src="../../trade/assets/js/core/seed.js"></script>
+<script src="../../trade/assets/js/core/state.js"></script>
+<script src="../../js/atlas-consolidation.js"></script>
+<script src="../../core/atlas-notifications.js"></script>
+<script src="../../core/ui/atlas-palette.js"></script>
+<script src="../../core/atlas-vocabulario.js"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>

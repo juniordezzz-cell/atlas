@@ -9,3 +9,4 @@ Documentos anteriores descrevem comportamento já substituído.
 Repositórios de terceiros (o que cada um faz e onde está):
 [referencias/REPOSITORIOS.md](referencias/REPOSITORIOS.md). Visual novo das
 Ferramentas (cenário + cards 3D): [registro de 15/10](docs/visual-ferramentas-2026-10-15.md).
+Academy (abas + curso Nível 1 em iframe): [registro de 20/10](docs/academy-2026-10-20.md).
