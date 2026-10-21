@@ -9,7 +9,7 @@ resposta está aqui.
 > novo, atualizou a versão de um ou tirou algum? Atualize este arquivo
 > no mesmo commit.
 
-Última revisão: **15/10/2026**.
+Última revisão: **21/10/2026**.
 
 ---
 
@@ -94,6 +94,35 @@ Registro completo: [docs/visual-ferramentas-2026-10-15.md](../docs/visual-ferram
   a ideia para o CSS do ATLAS com os nossos tokens de cor e citar o
   arquivo de origem num comentário.
 
+### 1.4 Three.js — cenas 3D do Academy (21/10/2026)
+
+- **Repositório:** <https://github.com/mrdoob/three.js> · site: <https://threejs.org>
+- **Licença:** MIT (`assets/vendor/three-0.170.0/LICENSE`).
+- **Versão no ATLAS:** 0.170.0 (pacote npm `three`, só `build/three.module.min.js`).
+- **Onde está:** `assets/vendor/three-0.170.0/`.
+- **O que é:** biblioteca de 3D em WebGL. Roda como módulo JS (`import`), sem build.
+- **O que faz no ATLAS:** no curso do Academy, desenha a trilha dos 10 módulos
+  como blocos encadeados (Visão geral) e a cadeia de 4 blocos que quebra quando
+  um bloco é alterado (Módulo 1, aula 12).
+- **Quem usa:** `academy/nivel-1/curso/assets/js/academy-3d.js`, carregado sob
+  demanda por `academy-visual.js` só quando há WebGL. Sem WebGL, ficam os SVGs.
+- **Cuidados:** o arquivo tem ~690 KB; por isso só baixa quando uma cena aparece.
+  Para atualizar: baixar `build/three.module.min.js` e `LICENSE` da versão nova
+  para uma pasta nova e trocar o caminho no `import` de `academy-3d.js`.
+
+### 1.5 GSAP + ScrollTrigger — animação com a rolagem (21/10/2026)
+
+- **Repositório:** <https://github.com/greensock/GSAP> · site: <https://gsap.com>
+- **Licença:** "Standard no charge license" da GSAP, uso gratuito, inclusive os
+  plugins (`assets/vendor/gsap-3.13.0/LICENSE.txt`).
+- **Versão no ATLAS:** 3.13.0 (`dist/gsap.min.js` e `dist/ScrollTrigger.min.js`).
+- **Onde está:** `assets/vendor/gsap-3.13.0/`.
+- **O que faz no ATLAS:** no curso do Academy, as aulas e o palco da direita
+  aparecem conforme a rolagem, o índice marca a aula que está na tela e a barra
+  de progresso do módulo enche.
+- **Quem usa:** `academy/nivel-1/curso/assets/js/academy-visual.js`. Com "menos
+  movimento" ligado, só a marcação do índice continua; nada se mexe.
+
 ---
 
 ## 2. Visual — referências anteriores
@@ -119,6 +148,8 @@ Registro completo: [docs/visual-ferramentas-2026-10-15.md](../docs/visual-ferram
 | Chart.js | <https://github.com/chartjs/Chart.js> | 4.4.1 | Gráficos do Dashboard, Carteiras e DeFi. |
 | Paper Shaders | ver 1.1 | 0.0.81 | Cenário do fundo. |
 | Atropos | ver 1.2 | 2.0.2 | Cards 3D. |
+| Three.js | ver 1.4 | 0.170.0 | Cenas 3D do Academy. |
+| GSAP + ScrollTrigger | ver 1.5 | 3.13.0 | Animação ligada à rolagem no Academy. |
 
 **Fontes** servidas pelo próprio ATLAS (`assets/fonts/`, via
 `themes/atlas-fonts.css`): **Inter** (<https://github.com/rsms/inter>) e

@@ -55,3 +55,204 @@
  .aula-figura{margin-left:-14px;margin-right:-14px;padding:10px 8px;border-radius:0;border-left:0;border-right:0}
  .lesson-toc{padding:12px}
 }
+
+/* ===== Piloto visual (21/10/2026): palco à direita, cenas 3D e interativos =====
+   Desktop (>= 1100px): a aula com figura vira duas colunas. O texto fica à
+   esquerda e o palco (figura, cena ou interativo) fica preso à direita
+   enquanto a aula rola. Abaixo disso, o palco volta para o meio do texto. */
+#view-container{max-width:1480px}
+.aula-visual{display:flex;flex-direction:column;gap:16px;margin:18px 0}
+.aula-visual>figure{margin:0}
+@media (min-width:1100px){
+ .lesson-layout{grid-template-columns:190px minmax(0,1fr);gap:32px}
+ .lesson.tem-visual{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,46%);column-gap:36px;align-items:start}
+ .lesson.tem-visual>*{grid-column:1}
+ .lesson.tem-visual>.aula-visual{grid-column:2;grid-row:1/span 40;position:sticky;top:84px;margin:4px 0 0}
+ .lesson.tem-visual>.lesson-foot{grid-column:1/-1}
+ .lesson.tem-visual>p,.lesson.tem-visual>.aula-analogia,.lesson.tem-visual>.aula-dado,.lesson.tem-visual>.aula-frase{max-width:none}
+}
+
+/* Índice: barra de progresso do módulo e a aula que está na tela. */
+.aula-progresso{height:3px;margin:4px 0 10px;background:#2a3b5566;border-radius:2px;overflow:hidden}
+.aula-progresso i{display:block;height:100%;background:linear-gradient(90deg,#60a5fa,#67e8f9);transform:scaleX(0);transform-origin:left}
+.lesson-toc a.ativo{color:#e2e8f0;border-left:2px solid #67e8f9;margin-left:-16px;padding-left:14px}
+
+/* Cena 3D (cadeia de blocos). Sem WebGL fica o SVG (.cena-plano). */
+.aula-cena,.aula-interativo{padding:18px;border:1px solid var(--atlas-border);border-radius:12px;background:radial-gradient(ellipse at 50% 0%,#2563eb1f,transparent 70%),#0b1120}
+.cena-3d{display:none;height:280px;margin:-6px -6px 6px;cursor:grab}
+.aula-cena.com-3d .cena-3d{display:block}
+.aula-cena.com-3d .cena-plano{display:none}
+.cena-plano svg{display:block;width:100%;height:auto}
+.cena-controles{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 6px}
+.cena-estado{font-size:14px;line-height:1.6;color:#d5deeb;min-height:3.2em;margin:6px 0}
+.aula-cena figcaption,.aula-interativo figcaption{font-size:13px;line-height:1.6;color:var(--atlas-muted);margin-top:8px}
+
+/* Interativo: SHA-256 ao vivo. */
+.interativo-rotulo{display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:600;color:#bfdbfe}
+.hash-entrada{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--atlas-border);border-radius:8px;background:#05080f;color:#e2e8f0;font-size:15px}
+.hash-entrada:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+.interativo-sub{margin:14px 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--atlas-muted)}
+.hash-saida{display:block;font-family:ui-monospace,monospace;font-size:15px;line-height:1.7;letter-spacing:.04em;word-break:break-all;color:#67e8f9;padding:12px 14px;border-radius:8px;background:#05080f;border:1px solid #2a3b5599}
+.hash-saida mark{background:#f8717133;color:#fecaca;border-radius:2px}
+.hash-mudou{font-size:14px;color:#d5deeb;margin:10px 0 0}
+
+/* Visão geral: cenário 3D da trilha ao lado do texto de abertura. */
+.hero-trilha{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;align-items:center}
+.trilha{min-width:0}
+.trilha-3d{display:none;height:340px;cursor:grab}
+.trilha.com-3d .trilha-3d{display:block}
+.trilha-nome{display:none;text-align:center;font-size:13px;color:var(--atlas-muted);margin:4px 0 10px;min-height:1.6em}
+.trilha.com-3d .trilha-nome{display:block}
+.trilha-lista{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;list-style:none;padding:0;margin:0}
+.trilha-bloco{width:44px;height:44px;border-radius:8px;border:1px solid #a78bfa66;background:#111c30;color:#c4b5fd;font-size:13px;font-weight:700}
+.trilha-bloco.feito{border-color:#67e8f9;background:#67e8f926;color:#cffafe}
+.trilha-bloco.atual{border-color:#60a5fa;background:#2563eb33;color:#dbeafe}
+.trilha-bloco:hover{border-color:#e2e8f0}
+.trilha-bloco:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+@media (max-width:900px){.hero-trilha{grid-template-columns:1fr}.trilha-3d{height:240px}}
+@media (max-width:600px){.cena-3d{height:200px}.hash-saida{font-size:13px}}
+/* O renderer desenha em resolução dobrada nas telas de alta densidade; o tamanho na página vem daqui. */
+.cena-3d canvas,.trilha-3d canvas{display:block;width:100%!important;height:100%!important}
+
+/* ===== Interativos do Módulo 2 (21/10/2026) ===== */
+.aula-interativo svg{display:block;width:100%;height:auto;margin:6px 0}
+.aula-interativo svg rect,.aula-interativo svg circle{transition:stroke .3s,fill .3s,width .4s,opacity .3s}
+.aula-interativo .aceso rect,.aula-interativo .seguido rect{stroke:#67e8f9}
+.aula-interativo .aceso rect{fill:#67e8f91f}
+/* Papéis: o pacote "tx" anda entre as caixas. */
+.p-pacote{transition:transform .7s cubic-bezier(.3,.8,.3,1)}
+/* Transação: etapa feita e atual. */
+.t-etapa.feito circle{stroke:#67e8f9;fill:#67e8f926}
+.t-etapa.atual circle{stroke:#60a5fa;fill:#2563eb55}
+.t-etapa.feito text:first-of-type,.t-etapa.atual text:first-of-type{fill:#e2e8f0}
+.t-status{font-size:14px;color:#d5deeb;margin:4px 0}
+.t-status-valor{color:#67e8f9}
+/* Mineração. */
+.m-grade{display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:12px}
+.aula-interativo select.hash-entrada{appearance:auto}
+.m-ok .m-hash{border-color:#67e8f9;color:#cffafe}
+.m-rodando .m-hash{opacity:.75}
+.m-tentativas{font-size:14px;color:#d5deeb;margin:10px 0 0}
+/* Validadores. */
+.v-linha.escolhido .v-barra{fill:#67e8f9}
+.v-linha.punido .v-barra{fill:#f87171;opacity:.6}
+/* Reorganização: blocos aparecem conforme são minerados. */
+.r-bloco{opacity:0;transition:opacity .4s}
+.r-bloco.visivel{opacity:1}
+.r-reorg .r-a-0 rect{stroke:#f87171;stroke-dasharray:5 5}
+/* UTXO × contas. */
+.u-lados{display:grid;grid-template-columns:1fr;gap:6px}
+.u-lados svg{max-width:420px}
+.u-nota.gasta rect{stroke:#f87171;fill:#f8717122}
+.aula-interativo input[type=range]{width:100%;accent-color:#60a5fa;min-height:32px}
+/* Taxas. */
+.x-vaga.minha rect{stroke:#67e8f9;fill:#67e8f926}
+/* Oráculo. */
+.o-info{font-size:14px;color:#d5deeb;margin:6px 0}
+.o-defasado .o-contrato rect{stroke:#fcd34d}
+@media (max-width:600px){.m-grade,.u-lados{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.p-pacote,.r-bloco,.aula-interativo svg rect,.aula-interativo svg circle{transition:none}}
+/* Celular: diagrama dos interativos com largura mínima e rolagem lateral, como as figuras. */
+@media (max-width:600px){.aula-interativo{overflow-x:auto}.aula-interativo>svg,.u-lado>svg{min-width:460px}}
+
+/* ===== Interativos do Módulo 3 (21/10/2026) ===== */
+.k-cartoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.k-cartao,.e-item,.g-dono{display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px;border:1px solid var(--atlas-border);border-radius:10px;background:#111c30;color:#e2e8f0;font-size:14px;min-height:44px;cursor:pointer}
+.k-cartao span,.k-cartao small,.e-item small,.g-dono small{font-size:12px;color:var(--atlas-muted)}
+.k-cartao code,.e-item code{font-family:ui-monospace,monospace;font-size:13px;color:#67e8f9;word-break:break-all}
+.k-cartao:hover,.e-item:hover,.g-dono:hover{border-color:#60a5fa}
+.k-cartao.escolhido,.e-item.escolhido{border-color:#67e8f9;background:#67e8f914}
+.k-cartao:focus-visible,.e-item:focus-visible,.g-dono:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+.c-cenarios{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
+.c-cenarios .btn[aria-pressed=true]{border-color:#67e8f9;color:#cffafe}
+.c-lados,.h-telas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.c-lado,.h-tela{padding:12px;border:1px solid var(--atlas-border);border-radius:10px;background:#0b1120}
+.c-quem{font-size:13px;color:var(--atlas-muted);margin:0 0 8px}
+.c-res,.h-msg{font-size:14px;line-height:1.6;color:#d5deeb;margin:0}
+.c-res.ruim{color:#fecaca}
+.h-aparelho{border-color:#a78bfa88}
+.h-msg{font-family:ui-monospace,monospace;font-size:13px}
+.h-certo .h-aparelho{border-color:#67e8f9}
+.h-errado .h-aparelho{border-color:#f87171}
+.e-lista{display:flex;flex-direction:column;gap:8px;margin:6px 0}
+.e-item mark{background:transparent;color:inherit}
+.e-revelado .e-item mark{background:#f8717140;color:#fecaca;border-radius:2px}
+.e-salvo{font-family:ui-monospace,monospace;color:#67e8f9;word-break:break-all;text-transform:none;letter-spacing:0}
+.a-perigo .a-caixa-perm{stroke:#f87171}
+.g-donos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0}
+.g-dono[aria-pressed=true]{border-color:#67e8f9;background:#67e8f914}
+.g-dono.roubado{border-color:#f87171;background:#f8717114}
+@media (max-width:600px){.k-cartoes,.c-lados,.h-telas{grid-template-columns:1fr}}
+
+/* ===== Interativos do Módulo 4 (21/10/2026) ===== */
+/* Gasto duplo: o que aparece em cada passo. */
+[data-interativo=gastoduplo] .gd-bloco,[data-interativo=gastoduplo] .gd-x{opacity:0;transition:opacity .4s}
+[data-interativo=gastoduplo].passo-2 .gd-bloco,[data-interativo=gastoduplo].passo-3 .gd-bloco,[data-interativo=gastoduplo].passo-3 .gd-x{opacity:1}
+[data-interativo=gastoduplo].passo-0 .gd-txa rect,[data-interativo=gastoduplo].passo-0 .gd-txb rect,[data-interativo=gastoduplo].passo-1 .gd-txa rect,[data-interativo=gastoduplo].passo-1 .gd-txb rect{stroke:#fcd34d}
+[data-interativo=gastoduplo].passo-2 .gd-txa rect,[data-interativo=gastoduplo].passo-3 .gd-txa rect,[data-interativo=gastoduplo] .gd-bloco rect{stroke:#67e8f9}
+[data-interativo=gastoduplo].passo-3 .gd-txb rect{stroke:#f87171;stroke-dasharray:6 5}
+/* Montar transação. */
+.mt-moedas{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.mt-moeda{display:flex;align-items:center;gap:8px;padding:10px 12px;min-height:44px;border:1px solid var(--atlas-border);border-radius:8px;background:#111c30;font-family:ui-monospace,monospace;font-size:13px;color:#e2e8f0;cursor:pointer}
+.mt-moeda:has(input:checked){border-color:#67e8f9;background:#67e8f914}
+.mt-moeda input{accent-color:#67e8f9;width:18px;height:18px}
+.mt-conta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+.mt-conta p{margin:0;padding:8px 10px;border-radius:8px;background:#0b1120;font-size:12px;color:var(--atlas-muted)}
+.mt-conta strong{display:block;font-family:ui-monospace,monospace;font-size:13px;color:#e2e8f0}
+.mt-falta .mt-troco{color:#fca5a5}
+/* Tipo de endereço. */
+.en-tipo{font-size:16px;font-weight:700;margin:8px 0 0;min-height:1.4em}
+.en-ok .en-tipo{color:#67e8f9}
+.en-ruim .en-tipo{color:#fca5a5}
+/* Halving. */
+.hv-era.feita rect{fill:#a78bfa}
+/* Regras: bloco recusado. */
+.rb-recusado .rb-no rect{stroke:#f87171}
+.rb-recusado .rb-res{fill:#fca5a5}
+.aula-interativo:not(.rb-recusado) .rb-res{fill:#67e8f9}
+/* Acelerar. */
+.ac-filho{opacity:0;transition:opacity .4s}
+.ac-com-filho .ac-filho{opacity:1}
+.ac-entra .ac-pai rect{stroke:#67e8f9}
+/* Canal Lightning. */
+.cn-ana{transition:width .5s}
+.cn-fechado .cn-ana{fill:#67e8f9}
+@media (prefers-reduced-motion:reduce){.cn-ana,.ac-filho,[data-interativo=gastoduplo] .gd-bloco,[data-interativo=gastoduplo] .gd-x{transition:none}}
+
+/* ===== Interativos do Módulo 5 (21/10/2026) ===== */
+.ch-op span{display:flex;align-items:center;gap:8px;font-weight:600;color:#d5deeb;min-height:32px}
+.ch-op input{width:18px;height:18px;accent-color:#67e8f9}
+.t-etapa.falhou circle{stroke:#f87171;fill:#f8717126}
+.cf-reverteu .cena-estado{color:#fecaca}
+.at-passo.feito rect{stroke:#67e8f9;fill:#67e8f914}
+.at-passo.falhou rect{stroke:#f87171;fill:#f8717122}
+.re-pilha{margin:8px 0;padding-left:22px;max-height:220px;overflow:auto;font-family:ui-monospace,monospace;font-size:12px;line-height:1.6;color:#d5deeb}
+.re-pilha li{margin:2px 0}
+.re-roubado .re-caixa-at{stroke:#f87171}
+.px-v2 .px-impl{stroke:#f87171}
+.c-cenarios .btn[aria-pressed=true]{border-color:#67e8f9;color:#cffafe}
+
+/* ===== Interativos do Módulo 6 (21/10/2026) ===== */
+.hf-perigo .hf-barra{fill:#fcd34d}
+.hf-perigo .hf-valor,.hf-perigo .lp-hf{color:#fde68a}
+.hf-liquidavel .hf-barra{fill:#f87171}
+.hf-liquidavel .hf-valor,.hf-liquidavel .lq-hf,.hf-liquidavel .dv-hf{color:#fecaca;fill:#fecaca}
+.hf-liquidavel .lq-caixa-div,.hf-liquidavel .dv-caixa{stroke:#f87171}
+.hf-barra,.il-barra-hold,.il-barra-lp,.f-barra-cap,.f-barra-fdv{transition:width .3s}
+@media (prefers-reduced-motion:reduce){.hf-barra,.il-barra-hold,.il-barra-lp,.f-barra-cap,.f-barra-fdv{transition:none}}
+
+/* ===== Interativos do Módulo 7 (21/10/2026) ===== */
+.pa-ponto{transition:cx .4s}
+.rs-faltou .rs-falta{color:#fecaca}
+.dp-barra{transition:width .3s}
+.hf-liquidavel .dp-barra{fill:#f87171}
+@media (prefers-reduced-motion:reduce){.pa-ponto,.dp-barra{transition:none}}
+
+/* ===== Interativos do Módulo 8 (21/10/2026) ===== */
+.pm-ok .k-cartao.escolhido{border-color:#67e8f9}
+.pm-bloq .k-cartao.escolhido{border-color:#f87171;background:#f8717114}
+.pm-bloq .cena-estado{color:#fecaca}
+
+/* Endereços e hashes longos (ex.: contrato do USDC no M3) quebram a linha em
+   vez de alargar a página no celular. */
+.lesson p,.aula-dado,.aula-analogia,.example,.aula-frase,.aula-termo-def{overflow-wrap:anywhere}

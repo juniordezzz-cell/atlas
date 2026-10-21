@@ -128,6 +128,24 @@ const figMerkle='<svg viewBox="0 0 640 270" xmlns="http://www.w3.org/2000/svg" '
 +no(80,200,'Item 1','#2a3b55')+no(240,200,'Item 2','#2a3b55')+no(400,200,'Item 3','#60a5fa')+no(560,200,'Item 4','#67e8f9')
 +'<text x="320" y="264" text-anchor="middle" font-size="16" fill="#a9b8cf">Para provar o Item 3 bastam os dois resumos em ciano.</text></svg>';
 
+/* Tamanho da chave: a barra mede quantos dígitos tem o número de chaves possíveis. */
+const barraChave=(y,nome,detalhe,digitos,cor)=>'<text x="10" y="'+(y+17)+'" font-size="15" font-weight="700" fill="#e2e8f0">'+nome+'</text>'
++'<rect x="130" y="'+y+'" width="'+Math.max(6,Math.round(digitos/39*440))+'" height="26" rx="4" fill="'+cor+'"/>'
++'<text x="'+(140+Math.max(6,Math.round(digitos/39*440)))+'" y="'+(y+17)+'" font-size="13" fill="#a9b8cf">'+detalhe+'</text>';
+const figChaves='<svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" '+F+'>'
++barraChave(24,'César','25 chaves',2,'#a9b8cf')
++barraChave(84,'DES (1977)','2⁵⁶: 17 dígitos',17,'#60a5fa')
++barraChave(144,'AES-128','2¹²⁸: 39 dígitos',39,'#67e8f9')
++'<text x="130" y="206" font-size="13" fill="#a9b8cf">comprimento da barra = quantidade de dígitos do número de chaves</text></svg>';
+
+/* Frase de recuperação: as palavras geram a semente, que gera todas as chaves e endereços. */
+const caixaS=(x,y,w,t,cor)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="40" rx="7" fill="#111c30" stroke="'+cor+'" stroke-width="2"/><text x="'+(x+w/2)+'" y="'+(y+25)+'" text-anchor="middle" font-size="13" fill="#e2e8f0">'+t+'</text>';
+const figSemente='<svg viewBox="0 0 640 230" xmlns="http://www.w3.org/2000/svg" '+F+'>'
++caixaS(10,95,130,'12 a 24 palavras','#60a5fa')+seta(140,190,115)
++caixaS(190,95,110,'semente','#67e8f9')
++[35,95,155].map((y,i)=>liga(300,115,350,y+20)+caixaS(350,y,130,'chave privada '+(i+1),'#2a3b55')+seta(480,520,y+20)+caixaS(520,y,110,'endereço '+(i+1),'#2a3b55')).join('')
++'<text x="320" y="222" text-anchor="middle" font-size="13" fill="#a9b8cf">As mesmas palavras sempre recriam as mesmas chaves, em qualquer aparelho.</text></svg>';
+
 AcademyContent.register({
  id:'m1',
  title:'Criptografia',
@@ -201,8 +219,9 @@ AcademyContent.register({
    {t:'summary',text:'Em Vigenère, uma palavra faz cada letra andar um tanto diferente, o que esconde as frequências, mas a repetição da chave acabou revelando o segredo.'},
    {t:'terms',terms:['Chave','Análise de frequência']}
   ]},
-  {id:'maquinas-e-computadores',title:'Máquinas e computadores: da Enigma ao DES',optional:false,sources:['m1.enigma','m1.des'],blocks:[
+  {id:'maquinas-e-computadores',title:'Máquinas e computadores: da Enigma ao DES',optional:false,sources:['m1.enigma','m1.des','m1.aes'],blocks:[
    {t:'p',text:'No começo do século XX, cifrar à mão ficou lento demais para exércitos que trocavam milhares de mensagens. Surgiram as máquinas de cifrar. A mais famosa é a **Enigma**, usada pela Alemanha.'},
+   {t:'figure',svg:figChaves,caption:'Quanto mais combinações a chave tem, mais tempo a força bruta leva. César tem 25. A chave do DES tem 56 bits e a do AES-128 tem 128 bits: cada bit a mais dobra o número de chaves.',alt:'Três barras. César: 25 chaves, barra mínima. DES de 1977: 2 elevado a 56, um número de 17 dígitos. AES-128: 2 elevado a 128, um número de 39 dígitos, a barra mais longa.'},
    {t:'p',text:'A Enigma parecia uma máquina de escrever. Por dentro tinha rodas giratórias, os rotores. A cada tecla apertada, os rotores giravam e a regra de troca mudava. Era como uma cifra de Vigenère com uma chave longuíssima, trocada todo dia.'},
    {t:'p',text:'Quem primeiro a quebrou foi um matemático. O polonês **Marian Rejewski** começou a estudar a Enigma em setembro de 1932. Com matemática e com documentos alemães obtidos pelo serviço secreto francês, no fim daquele ano ele descobriu como os rotores eram ligados por dentro. Em julho de 1939, pouco antes da guerra, os poloneses entregaram seus métodos a britânicos e franceses.'},
    {t:'p',text:'Na Inglaterra, em **Bletchley Park**, uma equipe que incluía **Alan Turing** continuou o trabalho. Eles construíram máquinas com motores e rodas elétricas, apelidadas de "bombes", que testavam combinações muito mais rápido que qualquer pessoa.'},
@@ -239,6 +258,7 @@ AcademyContent.register({
    {t:'p',text:'O hash mais famoso nas criptomoedas é o **SHA-256**, padronizado pelo NIST em agosto de 2002. Ele sempre gera 256 bits, que aparecem escritos como 64 caracteres de 0 a 9 e de a até f.'},
    {t:'analogy',text:'O hash é como a impressão digital de uma pessoa. Ela é pequena, mas identifica alguém. Olhando a digital você não reconstrói a pessoa inteira. E duas pessoas diferentes não deveriam ter a mesma digital.'},
    {t:'figure',svg:figHash,caption:'Entradas quase iguais geram resumos SHA-256 totalmente diferentes. Mostramos só os 12 primeiros caracteres de cada resumo. Valores gerados e conferidos com crypto.subtle.',alt:'Três textos entram numa caixa marcada SHA-256. Alice envia 1 gera d8cb797dbff3. Alice envia 2 gera a4ffc6189c0c. alice envia 1, com a minúsculo, gera 87162aeb4b80. Os resumos não se parecem.'},
+   {t:'interactive',kind:'hash',label:'Digite um texto',value:'Alice envia 1',caption:'O resumo é calculado de verdade, aqui no seu navegador. Os caracteres destacados são os que mudaram desde a última versão do texto.',alt:'Campo de texto e o SHA-256 dele, com 64 caracteres.'},
    {t:'example',text:'O SHA-256 de "Alice envia 1" começa com d8cb797d e termina com e65cc. O de "Alice envia 2" começa com a4ffc618 e termina com c12909. Trocou um único caractere e o resumo inteiro mudou. Isso permite detectar que um registro foi alterado.'},
    {t:'p',text:'Três propriedades tornam o hash útil. O mesmo dado gera sempre o mesmo resumo. Uma mudança pequena muda o resumo quase todo. E não existe chave que faça o caminho de volta, do resumo para o dado. Por isso o hash **não serve para esconder** uma mensagem e depois recuperá-la: ele só confere.'},
    {t:'p',text:'Duas entradas diferentes com o mesmo resumo, uma colisão, existem em teoria, porque há mais dados possíveis do que resumos. Uma boa função hash torna achar uma colisão tão difícil que, na prática, não acontece.'},
@@ -272,6 +292,7 @@ AcademyContent.register({
   {id:'frase-de-recuperacao',title:'Frase de recuperação: quem tem as palavras tem o dinheiro',optional:false,sources:['m1.bip39','safety'],blocks:[
    {t:'p',text:'Uma chave privada é um número enorme, impossível de decorar e fácil de copiar errado. Por isso as carteiras mostram, ao serem criadas, uma lista de palavras comuns: a **frase de recuperação**. Ela também é chamada de frase semente ou seed.'},
    {t:'p',text:'A frase não é uma senha de login. Ela é a **própria origem das chaves**. A partir dela a carteira recalcula todas as chaves privadas e todas as contas. Quem digita as mesmas palavras em qualquer aparelho do mundo tem acesso às mesmas contas, com o mesmo dinheiro. Algumas carteiras permitem uma senha extra junto com as palavras. Se você usou uma, ela também precisa ser guardada.'},
+   {t:'figure',svg:figSemente,caption:'As palavras geram uma semente, e a semente gera todas as chaves privadas e os endereços. Por isso quem tem as palavras tem tudo.',alt:'Uma caixa com 12 a 24 palavras aponta para a semente. A semente se divide em três chaves privadas, e cada uma aponta para um endereço.'},
    {t:'data',text:'O padrão BIP-39, adotado por muitas carteiras, tem uma lista de 2048 palavras. A frase tem 12, 15, 18, 21 ou 24 palavras. A última palavra carrega uma pequena verificação, que ajuda a perceber a maioria dos erros de digitação, mas não todos.',source:'m1.bip39',date:'2026-10-20'},
    {t:'analogy',text:'A senha do aplicativo é a chave da porta de um cofre que está no seu celular. A frase de recuperação é a planta para construir o cofre de novo, com tudo dentro, em qualquer lugar. Quem tem a planta não precisa da sua porta.'},
    {t:'example',text:'Você perde o celular. Se a frase está guardada, você instala a carteira em outro aparelho, digita as palavras e tudo volta. Agora o contrário: alguém fotografou sua frase. Essa pessoa leva tudo, mesmo que seu celular continue com você e com senha.'},
@@ -290,6 +311,7 @@ AcademyContent.register({
   {id:'o-que-faz-e-nao-faz',title:'O que a criptografia faz e não faz nas criptomoedas',optional:false,sources:['bitcoin','m1.anuncio','m1.btcdev'],blocks:[
    {t:'p',text:'Por causa do nome, muita gente acha que criptomoedas são secretas. Não são. Na maioria das redes, como Bitcoin e Ethereum, a blockchain é **pública**. Qualquer pessoa pode ver cada transferência: de qual endereço saiu, para qual endereço foi e quanto.'},
    {t:'p',text:'Então para que serve a criptografia ali? Principalmente para **provar autorização**. A assinatura mostra que o dono da chave privada aprovou aquela transferência. O hash amarra os registros uns aos outros, de modo que mudar algo antigo fica evidente. O próprio documento do Bitcoin, anunciado em 31 de outubro de 2008, descreve as moedas como uma corrente de assinaturas digitais.'},
+   {t:'scene',kind:'cadeia',caption:'Cada bloco guarda o hash do bloco anterior. Mude os dados de um bloco e o hash dele muda: o bloco seguinte deixa de bater, e a alteração fica evidente. Os hashes aqui são encurtados e ilustrativos.',alt:'Quatro blocos em fila, ligados. Cada um mostra o próprio hash e o hash do anterior. Ao alterar o bloco 2, o hash dele muda e a ligação com o bloco 3 se rompe.'},
    {t:'analogy',text:'A blockchain pública é como um mural de vidro numa praça. Todos veem o que está lá dentro. Mas só quem tem a chave de cada gaveta consegue mexer nela. A criptografia é a fechadura das gavetas, não a cortina do mural.'},
    {t:'table',caption:'O que a criptografia garante numa blockchain pública',headers:['Pergunta','Garante?','Por quê'],rows:[
     ['Só o dono da chave move o dinheiro','Sim','Cada transferência precisa de uma assinatura válida'],

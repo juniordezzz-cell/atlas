@@ -38,10 +38,10 @@ d.querySelector('#sim-qty').value='0';ev('academy.lendingCalc()');assert.equal(d
 ev("app.navigate('m2','labs');academy.transactionStep(1);");assert.equal(ev('academy.stage'),1);assertions++;
 ev("chainLab.editTx(1,0,'amount','99');");assert.equal(ev('chainLab.validate()'),false);assertions++;
 ev("app.navigate('m2');");assert.equal(ev('chainLab.validate()'),true);assertions++;
-ev("academy.query='colateral';app.navigate('search');");assert.ok(d.querySelectorAll('.source-card').length>=5);assertions++;
+ev("academy.query='garantia';app.navigate('search');");assert.ok(d.querySelectorAll('.source-card').length>=5);assertions++;
 ev("app.navigate('m9','labs');");const before=Object.keys(TestChart.instances).length;assert.ok(before>=2);ev("app.navigate('dashboard');");assert.equal(Object.keys(TestChart.instances).length,0);assertions+=2;
 ev("app.navigate('saved');");assert.equal(d.querySelectorAll('.source-card img').length,0);assertions++;
-ev("app.navigate('m5','infographics');");assert.match(d.querySelector('.chart-table').textContent,/0,00042/);assertions++;
+ev("app.navigate('m5','infographics');");assert.match(d.querySelector('#tab-infographics .chart-table').textContent,/0,00042/);assertions++;
 ev("app.navigate('m7','labs');document.getElementById('dp-panic').value='0';depegLab.run();");assert.equal(ev('depegLab.last.prices.at(-1)'),1);assertions++;
 ev("app.navigate('m7','labs');document.getElementById('vl-price').value='3000';document.getElementById('vl-eth').value='1';document.getElementById('vl-drop').value='0';document.getElementById('vl-debt').value='1000';vaultLab.calc();");const margin=d.getElementById('vl-margin').innerText;assert.ok(margin.includes('50.0%')||margin.includes('50,0%'));assertions++;
 assert.equal(errors.length,0,errors.join('\n'));assertions++;

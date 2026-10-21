@@ -1,0 +1,3 @@
+GSAP 3.13.0 — Standard "no charge" license
+https://gsap.com/standard-license
+Pacote npm gsap@3.13.0 (dist/gsap.min.js, dist/ScrollTrigger.min.js), baixado do jsDelivr em 2026-10-21.

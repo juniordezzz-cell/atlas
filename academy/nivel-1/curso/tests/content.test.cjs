@@ -13,7 +13,9 @@ for(const f of files)vm.runInContext(fs.readFileSync(root+'/'+f,'utf8'),ctx,{fil
 const data=JSON.parse(ev("JSON.stringify({course:COURSE.map(m=>({m:m,isNew:AcademyContent.isNew(m)})),sources:SOURCES,glossary:GLOSSARY})"));
 const SOURCES=data.sources,GLOSSARY=data.glossary;
 const slug=s=>String(s).normalize('NFD').replace(/[\u{300}-\u{36f}]/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-const TYPES=['p','analogy','example','figure','data','table','summary','terms'];
+const TYPES=['p','analogy','example','figure','data','table','summary','terms','scene','interactive'];
+// Blocos do piloto visual (21/10/2026): só os tipos que academy-visual.js sabe ligar.
+const KINDS={scene:['cadeia','camadas'],interactive:['hash','papeis','transacao','mineracao','validadores','reorg','utxo','taxas','oraculo','ticker','custodia','assinatura','envenenado','fdv','desbloqueio','allowance','multisig','gastoduplo','montartx','endereco','halving','regrasbtc','acelerar','canal','cofre','chamada','gascalc','atomico','reentrancia','proxy','utilizacao','hf','liquidacao','divida','amm','il','apy','loop','flash','paridade','reservas','cdp','espiral','depeg','papeisrwa','renda','permissao','navrwa','baldes','recuperacao','exposicao','tamanho','rebal','dca','balanco','remessa','dvp']};
 const errs=[];const bad=(where,msg)=>errs.push(where+': '+msg);
 const obj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const str=v=>typeof v==='string'&&v.trim().length>0;
@@ -80,6 +82,11 @@ for(const m of novos){
     if(!Array.isArray(b.headers)||!b.headers.length||!b.headers.every(h=>typeof h==='string'))bad(B,'headers deve ser uma lista de textos');
     if(!Array.isArray(b.rows)||!b.rows.every(Array.isArray))bad(B,'rows deve ser uma lista de listas');
     else if(Array.isArray(b.headers))b.rows.forEach((r,j)=>{if(r.length!==b.headers.length)bad(B,'linha '+(j+1)+' tem '+r.length+' células; headers tem '+b.headers.length)});
+   }
+   if(b.t==='scene'||b.t==='interactive'){
+    if(!KINDS[b.t].includes(b.kind))bad(B,'kind desconhecido: '+b.kind);
+    if(!str(b.caption))bad(B,'caption vazio');
+    if(!str(b.alt))bad(B,'alt vazio');
    }
    if(b.t==='figure'){
     if(!str(b.caption))bad(B,'caption vazio');

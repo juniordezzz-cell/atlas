@@ -29,9 +29,9 @@ const hostil={id:'m4',title:'Título '+X,icon:'x',summary:'Resumo '+X,minutes:5,
 ev(`AcademyContent.register(${JSON.stringify(hostil)})`);
 // inline
 assert.equal(ev("AcademyRender.inline('1 < 2 & **forte**')"),'1 &lt; 2 &amp; <strong>forte</strong>');n++;
-ev("localStorage.setItem('atlas-academy-v1',JSON.stringify({version:1,completed:['m3'],studied:[],scores:{},notes:{},bookmarks:['m3-0','m3:a','m3:zzz','m2-0','m2-99','lixo'],last:'m1',level:2}))");
+ev("localStorage.setItem('atlas-academy-v1',JSON.stringify({version:1,completed:['m3'],studied:[],scores:{},notes:{},bookmarks:['m3-0','m3:a','m3:zzz','m10-0','m10-99','lixo'],last:'m1',level:2}))");
 ev('academy.init()');
-assert.deepEqual(Array.from(ev('academy.state.bookmarks')),['m3:a','m2-0']);n++;
+assert.deepEqual(Array.from(ev('academy.state.bookmarks')),['m3:a']);n++;
 assert.ok(ev("academy.state.completed.includes('m3')"));n++;
 ev("app.navigate('m3')");
 assert.ok(d.getElementById('lesson-m3-a'));n++;
@@ -122,9 +122,9 @@ ev("app.navigate('glossary')");
  assert.match(dt.nextElementSibling.textContent,/Significado <b>& com ênfase/);k++;}
 ev("app.navigate('dashboard')");semB(d.querySelector('.dashboard-grid'),'mapa de estudos');
 assert.ok([...d.querySelectorAll('.module-card h3')].some(h=>h.textContent==='Título '+X));k++;
-// Texto do painel: só os módulos reescritos começam pela história.
-assert.ok(!/Cada módulo começa pela história/.test(d.getElementById('view-container').textContent));k++;
-assert.match(d.getElementById('view-container').textContent,/já reescritos começam pela história/);k++;
+// Texto do painel (21/10/2026): os dez módulos estão no formato novo.
+assert.match(d.getElementById('view-container').textContent,/Cada módulo começa pela história/);k++;
+assert.ok(!/já reescritos/.test(d.getElementById('view-container').textContent));k++;
 ev("academy.query='hostilx';app.navigate('search')");
 {const c=d.querySelector('.source-card');semB(c,'busca');assert.equal(c.querySelector('h2').textContent,'Aula '+X+' hostilx');k++;}
 ev("academy.state.bookmarks.push('m4:h');app.navigate('saved')");
