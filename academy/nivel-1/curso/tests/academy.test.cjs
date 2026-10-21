@@ -6,7 +6,7 @@ const dom=new JSDOM(fs.readFileSync(root+'/index.html','utf8'),{url:'https://atl
 const w=dom.window,d=w.document;w.TextEncoder=TextEncoder;Object.defineProperty(w,'crypto',{value:require('node:crypto').webcrypto});w.matchMedia=()=>({matches:false});w.scrollTo=()=>{};
 class TestChart{static instances={};static next=0;constructor(canvas,options){assert.ok(canvas,'Canvas necessário');this.id=++TestChart.next;this.canvas=canvas;this.data=options.data;TestChart.instances[this.id]=this;}update(){}resize(){}destroy(){delete TestChart.instances[this.id];}}
 w.Chart=TestChart;
-for(const file of ['assets/vendor/lucide.js','assets/js/course.js','assets/js/modules.js','assets/js/main.js','assets/js/academy.js'])vm.runInContext(fs.readFileSync(root+'/'+file,'utf8'),dom.getInternalVMContext(),{filename:file});
+for(const file of [...fs.readFileSync(root+'/index.html','utf8').matchAll(/<script[^>]*\ssrc="(assets\/[^"]+)"/g)].map(x=>x[1]).filter(f=>f!=='assets/vendor/chart.umd.js'))vm.runInContext(fs.readFileSync(root+'/'+file,'utf8'),dom.getInternalVMContext(),{filename:file});
 const ev=code=>vm.runInContext(code,dom.getInternalVMContext());
 ev('academy.init()');
 assert.equal(d.querySelectorAll('.module-card').length,10);
