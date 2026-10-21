@@ -44,6 +44,10 @@ for(const m of novos){
   else if(!Number.isInteger(q[2])||q[2]<0||q[2]>=q[1].length)bad(Q,'indiceCerto inválido: '+q[2]);
   if(!str(q[3]))bad(Q,'explicação vazia');
  });
+ {const idx=(m.quiz||[]).filter(q=>Array.isArray(q)&&Number.isInteger(q[2])).map(q=>q[2]);
+  if(idx.length){const cnt={};for(const i of idx)cnt[i]=(cnt[i]||0)+1;const vals=Object.keys(cnt);
+   if(vals.length<3)bad(M,'quiz: a resposta certa precisa variar entre pelo menos 3 posições (usa '+vals.length+': '+vals.join(', ')+')');
+   for(const [i,n] of Object.entries(cnt))if(n>idx.length/2)bad(M,'quiz: a posição '+i+' é a certa em '+n+' de '+idx.length+' questões (máximo: metade)');}}
  for(const [k,v] of Object.entries(m.sources||{})){
   if(!k.startsWith(m.id+'.'))bad(M,'fonte "'+k+'" sem prefixo '+m.id+'.');
   if(!Array.isArray(v)||!/^https:\/\//.test(v[1]||''))bad(M,'fonte "'+k+'" precisa de url https://');

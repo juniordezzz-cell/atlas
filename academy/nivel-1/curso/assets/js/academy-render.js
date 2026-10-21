@@ -22,7 +22,7 @@ const AcademyRender = {
  },
  history(m){
   const h=m.history||{intro:'',timeline:[]};
-  return `<section id="historia-${m.id}" class="aula-historia"><h2 tabindex="-1">Como tudo começou</h2><p>${this.inline(h.intro||'')}</p><ol class="timeline">${(h.timeline||[]).map(t=>`<li><span class="when">${this.esc(t.when)}</span><strong>${this.esc(t.title)}</strong><p>${this.inline(t.text)}</p></li>`).join('')}</ol></section>`;
+  return `<section id="historia-${m.id}" class="aula-historia"><h2 tabindex="-1">Como tudo começou</h2><p>${this.inline(h.intro||'')}</p><ol class="timeline">${(h.timeline||[]).map(t=>`<li><span class="when">${this.esc(t.when)}</span><strong class="timeline-titulo">${this.esc(t.title)}</strong><p>${this.inline(t.text)}</p></li>`).join('')}</ol></section>`;
  },
  figures(m){
   if(!AcademyContent.isNew(m))return '';

@@ -19,7 +19,7 @@
 .timeline li{position:relative;margin:0 0 20px;padding-left:14px}
 .timeline li::before{content:"";position:absolute;left:-26px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--atlas-primary);border:2px solid #0b1120}
 .timeline .when{display:block;font-size:12px;font-weight:700;letter-spacing:.05em;color:#67e8f9}
-.timeline strong{display:block;margin:2px 0;color:#e2e8f0}
+.timeline .timeline-titulo{display:block;margin:2px 0;color:#e2e8f0}
 .timeline li p{margin:0;font-size:14px;line-height:1.65;color:var(--atlas-muted)}
 @media(min-width:1100px){
  .timeline{display:flex;gap:18px;overflow-x:auto;padding:22px 0 12px;border-left:0;border-top:2px solid var(--atlas-border);scroll-snap-type:x proximity}

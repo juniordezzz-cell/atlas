@@ -12,7 +12,7 @@ const files=[...html.matchAll(/<script[^>]*\ssrc="(assets\/[^"]+)"/g)].map(x=>x[
 for(const f of files)vm.runInContext(fs.readFileSync(root+'/'+f,'utf8'),ctx,{filename:f});
 let n=0;
 const fixture={id:'m3',title:'Carteiras (fixture)',icon:'x',summary:'Resumo.',minutes:5,goals:['Meta um'],flow:['a','b','c'],
- history:{intro:'Introdução histórica.',timeline:[{when:'1976',title:'Chaves',text:'Texto um.'},{when:'2009',title:'Bitcoin',text:'Texto dois.'},{when:'2015',title:'Ethereum',text:'Texto três.'}]},
+ history:{intro:'Introdução histórica.',timeline:[{when:'1976',title:'Chaves',text:'Texto um.'},{when:'2009',title:'Bitcoin',text:'Texto **dois**.'},{when:'2015',title:'Ethereum',text:'Texto três.'}]},
  lessons:[
   {id:'a',title:'Primeira aula',optional:false,sources:['m3.x'],blocks:[{t:'p',text:'Uma palavraunica aqui, com **negrito**.'},{t:'analogy',text:'Como um cofre.'},{t:'example',text:'1 + 1 = 2'},{t:'figure',svg:'<svg viewBox="0 0 10 10"><rect width="10" height="10"/></svg>',caption:'Legenda da figura',alt:'x'},{t:'data',text:'Havia 21 milhões.',source:'m3.x',date:'2026-10-20'},{t:'table',caption:'Tabela',headers:['A','B'],rows:[['1','2']]},{t:'summary',text:'Resumo da aula.'},{t:'terms',terms:['Colateral','Chave privada']}]},
   {id:'b',title:'Segunda aula',optional:false,sources:['m3.x'],blocks:[{t:'p',text:'Texto b.'}]},
@@ -28,6 +28,10 @@ assert.ok(ev("academy.state.completed.includes('m3')"));n++;
 ev("app.navigate('m3')");
 assert.ok(d.getElementById('lesson-m3-a'));n++;
 assert.equal(d.querySelectorAll('.aula-historia .timeline li').length,3);n++;
+{const li=d.querySelectorAll('.aula-historia .timeline li')[1],tit=li.querySelector('.timeline-titulo'),b=li.querySelector('p strong');
+ assert.equal(tit&&tit.textContent,'Bitcoin');n++;
+ assert.ok(b&&b!==tit&&b.textContent==='dois'&&!b.classList.contains('timeline-titulo'));n++;}
+assert.match(d.querySelector('.module-header .reading-summary').textContent,/Cada dado real traz a fonte e a data/);n++;
 assert.equal(d.querySelectorAll('.lesson').length,3);n++;
 const heads=[...d.querySelectorAll('#tab-content h2')].map(h=>h.id||h.textContent);
 const iAlem=[...d.querySelectorAll('#tab-content h2')].findIndex(h=>/Indo além/.test(h.textContent)),iC=[...d.querySelectorAll('#tab-content h2')].findIndex(h=>h.closest('#lesson-m3-c'));
