@@ -319,6 +319,52 @@ const AcademyInterativos=(()=>{
   navrwa:()=>'<p class="interativo-sub">Você tem 10.000 tokens de um fundo de títulos curtos, com valor de US$ 1,00 cada e rendimento de 5% ao ano (exemplo). É sábado.</p>'
    +'<label class="interativo-rotulo">Desconto de quem compra no mercado agora <span class="nv-txt"></span><input class="nv-desc" type="range" min="0" max="5" step="0.25" value="1"></label>'
    +'<div class="mt-conta"><p>Vender agora no mercado <strong class="nv-agora"></strong></p><p>Resgatar no emissor na segunda <strong class="nv-segunda"></strong></p><p>Diferença <strong class="nv-dif"></strong></p></div>'+estado(''),
+  /* ===== Módulo 9 ===== */
+  /* Reserva de emergência × cripto num tombo. */
+  baldes:()=>'<p class="interativo-sub">Você tem R$ 100 mil. Cenário: a cripto cai 60% e você fica 6 meses sem renda.</p>'
+   +'<label class="interativo-rotulo">Quanto está em cripto <span class="bd-cr-txt"></span><input class="bd-cr" type="range" min="0" max="100" step="5" value="80"></label>'
+   +'<label class="interativo-rotulo">Seus gastos por mês (R$) <span class="bd-g-txt"></span><input class="bd-g" type="range" min="2000" max="10000" step="500" value="5000"></label>'
+   +'<div class="mt-conta"><p>Precisa para 6 meses <strong class="bd-prec"></strong></p><p>Em dinheiro <strong class="bd-caixa"></strong></p><p>Cripto vendida no fundo <strong class="bd-venda"></strong></p><p>Sobra depois <strong class="bd-sobra"></strong></p></div>'+estado(''),
+  /* Quanto é preciso subir para recuperar uma queda. */
+  recuperacao:()=>'<label class="interativo-rotulo">Queda a partir do topo <span class="rc-txt"></span><input class="rc-q" type="range" min="0" max="90" step="5" value="50"></label>'
+   +svg(640,120,'<text x="10" y="32" font-size="15" fill="'+C.mudo+'">Queda</text><rect class="rc-barra-q" x="170" y="14" height="26" rx="4" fill="'+C.verm+'" width="0"/><text class="rc-qv" x="180" y="33" font-size="15" fill="'+C.texto+'"></text>'
+    +'<text x="10" y="86" font-size="15" fill="'+C.mudo+'">Alta para voltar</text><rect class="rc-barra-a" x="170" y="68" height="26" rx="4" fill="'+C.ciano+'" width="0"/><text class="rc-av" x="180" y="87" font-size="15" fill="'+C.texto+'"></text>')
+   +estado(''),
+  /* Exposição escondida: várias posições, o mesmo risco. */
+  exposicao:()=>'<p class="interativo-sub">Marque o que está na sua carteira</p><div class="mt-moedas">'
+   +[['eth','ETH · R$ 4.000'],['lst','Token de staking de ETH · R$ 3.000'],['pool','Pool ETH/USDC · R$ 2.000'],['usdc','USDC · R$ 1.000'],['btc','BTC · R$ 2.000']].map(([k,t])=>'<label class="mt-moeda"><input type="checkbox" data-k="'+k+'" checked> <span>'+t+'</span></label>').join('')+'</div>'
+   +svg(640,130,['Preço do ETH','Emissor do USDC','Contratos de terceiros','Preço do BTC'].map((t,k)=>'<text x="10" y="'+(26+k*30)+'" font-size="14" fill="'+C.mudo+'">'+t+'</text><rect class="ex-barra ex-barra-'+k+'" x="190" y="'+(12+k*30)+'" height="20" rx="4" fill="'+[C.violeta,C.ciano,C.ambar,C.azul][k]+'" width="0"/><text class="ex-v ex-v-'+k+'" x="200" y="'+(27+k*30)+'" font-size="13" fill="'+C.texto+'"></text>').join(''))
+   +estado(''),
+  /* Tamanho da posição pela perda que você aceita. */
+  tamanho:()=>'<p class="interativo-sub">Carteira de R$ 50 mil</p>'
+   +'<label class="interativo-rotulo">Perda máxima que você aceita na carteira toda <span class="tm-p-txt"></span><input class="tm-p" type="range" min="1" max="20" step="1" value="5"></label>'
+   +'<label class="interativo-rotulo">Queda possível desse ativo num ano ruim <span class="tm-q-txt"></span><input class="tm-q" type="range" min="10" max="95" step="5" value="70"></label>'
+   +'<div class="mt-conta"><p>Tamanho máximo da posição <strong class="tm-max"></strong></p><p>Fatia da carteira <strong class="tm-pct"></strong></p></div>'+estado(''),
+  /* Rebalanceamento 50/50. */
+  rebal:()=>'<p class="interativo-sub">Alvo: metade em BTC, metade em dólar digital. Começou com R$ 10 mil.</p>'
+   +'<label class="interativo-rotulo">O BTC variou <span class="rb2-txt"></span><input class="rb2-var" type="range" min="-60" max="200" step="10" value="100"></label>'
+   +svg(640,80,'<rect x="10" y="20" width="620" height="34" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><rect class="rb2-btc" x="10" y="20" height="34" rx="8" fill="'+C.ambar+'" width="310"/><line x1="320" y1="12" x2="320" y2="62" stroke="'+C.texto+'" stroke-width="2" stroke-dasharray="4 4"/><text x="320" y="76" text-anchor="middle" font-size="12" fill="'+C.mudo+'">alvo 50%</text>')
+   +'<div class="mt-conta"><p>BTC agora <strong class="rb2-pbtc"></strong></p><p>Total <strong class="rb2-tot"></strong></p><p>Para voltar ao alvo <strong class="rb2-acao"></strong></p></div>'+estado(''),
+  /* Aporte mensal × tudo de uma vez. */
+  dca:()=>'<label class="interativo-rotulo">Cenário de preço em 6 meses<select class="hash-entrada dc-cen"><option value="0">Sobe sem parar</option><option value="1" selected>Cai e volta</option><option value="2">Só cai</option></select></label>'
+   +svg(640,140,linha(40,120,620,120)+'<polyline class="dc-linha" fill="none" stroke="'+C.violeta+'" stroke-width="3" points=""/>'+[0,1,2,3,4,5].map(k=>'<circle class="dc-p dc-p-'+k+'" r="6" fill="'+C.ciano+'"/><text x="'+(70+k*105)+'" y="136" text-anchor="middle" font-size="12" fill="'+C.mudo+'">mês '+(k+1)+'</text>').join(''))
+   +'<div class="mt-conta"><p>R$ 100 por mês: preço médio <strong class="dc-medio"></strong></p><p>Aportes no fim <strong class="dc-fim-dca"></strong></p><p>R$ 600 no mês 1 <strong class="dc-fim-tudo"></strong></p></div>'+estado(''),
+  /* ===== Módulo 10 ===== */
+  /* Balanço de um banco: empréstimo cria depósito. */
+  balanco:()=>svg(640,160,'<rect x="10" y="10" width="300" height="140" rx="10" fill="'+C.fundo+'" stroke="'+C.azul+'" stroke-width="2"/><text x="26" y="36" font-size="16" font-weight="700" fill="'+C.texto+'">O banco tem (ativos)</text>'
+    +'<text class="bl-res" x="26" y="70" font-size="15" fill="'+C.mudo+'"></text><text class="bl-emp" x="26" y="98" font-size="15" fill="'+C.mudo+'"></text>'
+    +'<rect x="330" y="10" width="300" height="140" rx="10" fill="'+C.fundo+'" stroke="'+C.violeta+'" stroke-width="2"/><text x="346" y="36" font-size="16" font-weight="700" fill="'+C.texto+'">O banco deve (passivos)</text>'
+    +'<text class="bl-dep" x="346" y="70" font-size="15" fill="'+C.mudo+'"></text><text class="bl-cap" x="346" y="98" font-size="15" fill="'+C.mudo+'"></text>')
+   +botoes([['emprestar','Banco empresta R$ 1.000 à Ana'],['corrida','30% dos clientes pedem saque'],['recomecar','Recomeçar']])+estado(''),
+  /* Remessa de US$ 500 por três caminhos. Custos de exemplo. */
+  remessa:()=>'<p class="interativo-sub">Mandar US$ 500 para outro país. Custos de exemplo.</p>'
+   +svg(640,150,[['Banco','tarifa fixa + câmbio caro'],['Empresa de remessa','tarifa menor + câmbio'],['Stablecoin','compra + rede + saque']].map(([t,s],k)=>'<text x="10" y="'+(30+k*46)+'" font-size="15" font-weight="700" fill="'+C.texto+'">'+t+'</text><text x="10" y="'+(48+k*46)+'" font-size="12" fill="'+C.mudo+'">'+s+'</text><rect class="rm-barra rm-barra-'+k+'" x="230" y="'+(16+k*46)+'" height="26" rx="4" fill="'+[C.azul,C.violeta,C.ciano][k]+'" width="0"/><text class="rm-v rm-v-'+k+'" x="240" y="'+(35+k*46)+'" font-size="14" fill="'+C.texto+'"></text>').join(''))
+   +'<label class="interativo-rotulo">Diferença de câmbio na saída da stablecoin (no país de destino) <span class="rm-txt"></span><input class="rm-saida" type="range" min="0" max="8" step="0.5" value="1.5"></label>'+estado(''),
+  /* Entrega contra pagamento. */
+  dvp:()=>'<div class="c-cenarios"><button class="btn small" type="button" data-acao="separado" aria-pressed="true">Entrega e pagamento separados</button><button class="btn small" type="button" data-acao="atomico" aria-pressed="false">Entrega contra pagamento (DvP)</button></div>'
+   +svg(640,110,'<rect x="10" y="10" width="300" height="90" rx="10" fill="'+C.fundo+'" stroke="'+C.azul+'" stroke-width="2"/><text x="26" y="38" font-size="16" font-weight="700" fill="'+C.texto+'">Ana (vende)</text><text class="dv2-ana" x="26" y="72" font-size="15" fill="'+C.mudo+'"></text>'
+    +'<rect x="330" y="10" width="300" height="90" rx="10" fill="'+C.fundo+'" stroke="'+C.violeta+'" stroke-width="2"/><text x="346" y="38" font-size="16" font-weight="700" fill="'+C.texto+'">Bruno (compra)</text><text class="dv2-bruno" x="346" y="72" font-size="15" fill="'+C.mudo+'"></text>')
+   +botoes([['ok','Fazer a operação'],['quebra','Fazer, mas Bruno quebra no meio']])+estado(''),
  };
 
  const ligar={
@@ -961,6 +1007,107 @@ const AcademyInterativos=(()=>{
     $(fig,'.cena-estado').textContent='O fundo só resgata em dia útil. Quem precisa sair no fim de semana vende para outra pessoa, que cobra um desconto por esperar. O token vale US$ 1 no papel, mas o preço de saída depende de quem compra. Valores de exemplo.';
    };
    r.addEventListener('input',atualizar);atualizar();
+  },
+  /* ===== Módulo 9 ===== */
+  baldes(fig){
+   const c=$(fig,'.bd-cr'),g=$(fig,'.bd-g'),R=v=>'R$ '+fmt(v,0);
+   const atualizar=()=>{
+    const cr=Number(c.value)/100*1e5,caixa=1e5-cr,gastos=Number(g.value),prec=gastos*6,crDepois=cr*0.4,falta=Math.max(0,prec-caixa),venda=Math.min(falta,crDepois),sobra=caixa+crDepois-prec;
+    $(fig,'.bd-cr-txt').textContent=fmt(Number(c.value),0)+'%';$(fig,'.bd-g-txt').textContent=R(gastos);
+    $(fig,'.bd-prec').textContent=R(prec);$(fig,'.bd-caixa').textContent=R(caixa);$(fig,'.bd-venda').textContent=venda?R(venda):'nada';$(fig,'.bd-sobra').textContent=R(Math.max(0,sobra));
+    fig.classList.toggle('hf-liquidavel',venda>0);
+    $(fig,'.cena-estado').textContent=venda?'Sem reserva suficiente, você vende '+R(venda)+' de cripto depois da queda de 60%, no pior preço. Essa perda vira definitiva.':'A reserva em dinheiro cobre os 6 meses. A cripto pode esperar a recuperação, se ela vier.';
+   };
+   [c,g].forEach(x=>x.addEventListener('input',atualizar));atualizar();
+  },
+  recuperacao(fig){
+   const r=$(fig,'.rc-q');
+   const atualizar=()=>{
+    const q=Number(r.value)/100,alta=q<1?(1/(1-q)-1):Infinity;
+    $(fig,'.rc-txt').textContent=fmt(q*100,0)+'%';$(fig,'.rc-qv').textContent='−'+fmt(q*100,0)+'%';$(fig,'.rc-av').textContent='+'+fmt(alta*100,0)+'%';
+    $(fig,'.rc-barra-q').setAttribute('width',String(Math.round(q*100*0.4)));$(fig,'.rc-barra-a').setAttribute('width',String(Math.round(Math.min(900,alta*100)*0.4)));
+    $(fig,'.rc-qv').setAttribute('x',String(180+Math.round(q*100*0.4)));$(fig,'.rc-av').setAttribute('x',String(180+Math.round(Math.min(900,alta*100)*0.4)));
+    $(fig,'.cena-estado').textContent=q===0?'Sem queda.':'Caiu '+fmt(q*100,0)+'%: R$ 1.000 viraram R$ '+fmt(1000*(1-q),0)+'. Para voltar a R$ 1.000, é preciso subir '+fmt(alta*100,0)+'%. Quanto mais funda a queda, mais desproporcional a volta.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  exposicao(fig){
+   /* Peso de cada risco em cada posição (R$). */
+   const pos={eth:{v:4000,r:[1,0,0,0]},lst:{v:3000,r:[1,0,1,0]},pool:{v:2000,r:[0.5,0.5,1,0]},usdc:{v:1000,r:[0,1,0,0]},btc:{v:2000,r:[0,0,0,1]}};
+   const atualizar=()=>{
+    const on=$$(fig,'.mt-moeda input').filter(i=>i.checked).map(i=>i.dataset.k),tot=on.reduce((s,k)=>s+pos[k].v,0)||1;
+    const exp=[0,1,2,3].map(j=>on.reduce((s,k)=>s+pos[k].v*pos[k].r[j],0)/tot);
+    exp.forEach((e,j)=>{$(fig,'.ex-barra-'+j).setAttribute('width',String(Math.round(e*400)));$(fig,'.ex-v-'+j).setAttribute('x',String(200+Math.round(e*400)));$(fig,'.ex-v-'+j).textContent=fmt(e*100,0)+'%';});
+    $(fig,'.cena-estado').textContent=on.length<2?'Marque mais de uma posição.':'São '+on.length+' posições, mas '+fmt(exp[0]*100,0)+'% da carteira depende do preço do ETH. Nomes diferentes podem esconder o mesmo risco.';
+   };
+   $$(fig,'.mt-moeda input').forEach(i=>i.addEventListener('change',atualizar));atualizar();
+  },
+  tamanho(fig){
+   const p=$(fig,'.tm-p'),q=$(fig,'.tm-q');
+   const atualizar=()=>{
+    const perda=Number(p.value)/100,queda=Number(q.value)/100,max=Math.min(1,perda/queda)*5e4;
+    $(fig,'.tm-p-txt').textContent=fmt(perda*100,0)+'% (R$ '+fmt(perda*5e4,0)+')';$(fig,'.tm-q-txt').textContent=fmt(queda*100,0)+'%';
+    $(fig,'.tm-max').textContent='R$ '+fmt(max,0);$(fig,'.tm-pct').textContent=fmt(max/5e4*100,1)+'%';
+    $(fig,'.cena-estado').textContent='Se o ativo pode cair '+fmt(queda*100,0)+'% e você aceita perder até R$ '+fmt(perda*5e4,0)+', a posição não deve passar de R$ '+fmt(max,0)+'. Tamanho = perda aceita ÷ queda possível.';
+   };
+   [p,q].forEach(x=>x.addEventListener('input',atualizar));atualizar();
+  },
+  rebal(fig){
+   const r=$(fig,'.rb2-var');
+   const atualizar=()=>{
+    const v=Number(r.value)/100,btc=5000*(1+v),tot=btc+5000,pct=btc/tot,acao=btc-tot/2;
+    $(fig,'.rb2-txt').textContent=(v>=0?'+':'')+fmt(v*100,0)+'%';$(fig,'.rb2-btc').setAttribute('width',String(Math.round(pct*620)));
+    $(fig,'.rb2-pbtc').textContent=fmt(pct*100,0)+'% (R$ '+fmt(btc,0)+')';$(fig,'.rb2-tot').textContent='R$ '+fmt(tot,0);
+    $(fig,'.rb2-acao').textContent=Math.abs(acao)<1?'nada':(acao>0?'vender R$ '+fmt(acao,0)+' de BTC':'comprar R$ '+fmt(-acao,0)+' de BTC');
+    $(fig,'.cena-estado').textContent=acao>0?'O BTC subiu e passou a pesar mais que o planejado. Rebalancear vende parte do que subiu: realiza ganho e reduz o risco.':acao<0?'O BTC caiu. Rebalancear compra mais dele com o dólar digital: disciplina para comprar na baixa, sem prever nada.':'No alvo.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  dca(fig){
+   const cen=[[100,120,140,160,180,200],[100,70,50,60,80,100],[100,85,70,60,50,40]],s=$(fig,'.dc-cen');
+   const atualizar=()=>{
+    const p=cen[Number(s.value)],un=p.reduce((a,x)=>a+100/x,0),medio=600/un,fim=p[5];
+    $(fig,'.dc-linha').setAttribute('points',p.map((x,k)=>(70+k*105)+','+(120-x/2*0.9).toFixed(1)).join(' '));
+    p.forEach((x,k)=>{$(fig,'.dc-p-'+k).setAttribute('cx',String(70+k*105));$(fig,'.dc-p-'+k).setAttribute('cy',(120-x/2*0.9).toFixed(1));});
+    $(fig,'.dc-medio').textContent='R$ '+fmt(medio);$(fig,'.dc-fim-dca').textContent='R$ '+fmt(un*fim);$(fig,'.dc-fim-tudo').textContent='R$ '+fmt(6*fim);
+    const melhor=un*fim>6*fim?'O aporte mensal ganhou':'Comprar tudo no mês 1 ganhou';
+    $(fig,'.cena-estado').textContent=melhor+' neste cenário. Aportar sempre o mesmo valor compra mais unidades quando está barato; mas, se o preço só sobe, entrar antes rende mais. Preços de exemplo.';
+   };
+   s.addEventListener('change',atualizar);atualizar();
+  },
+  /* ===== Módulo 10 ===== */
+  balanco(fig){
+   let res=200,emp=900,dep=1000,cap=100;const est=$(fig,'.cena-estado'),R=v=>'R$ '+fmt(v,0);
+   const mostrar=t=>{$(fig,'.bl-res').textContent='Reservas: '+R(res);$(fig,'.bl-emp').textContent='Empréstimos: '+R(emp);$(fig,'.bl-dep').textContent='Depósitos dos clientes: '+R(dep);$(fig,'.bl-cap').textContent='Capital dos donos: '+R(cap);est.textContent=t;};
+   acao(fig,'emprestar',()=>{emp+=1000;dep+=1000;fig.classList.remove('hf-liquidavel');mostrar('O banco não tirou dinheiro de ninguém: anotou um empréstimo de R$ 1.000 (ativo) e criou R$ 1.000 na conta da Ana (passivo). Dinheiro novo nasceu de um empréstimo.');});
+   acao(fig,'corrida',()=>{const saque=Math.round(dep*0.3);if(saque>res){fig.classList.add('hf-liquidavel');mostrar('Pedidos de '+R(saque)+', mas só há '+R(res)+' em reservas. Os empréstimos não viram dinheiro na hora. Sem ajuda do banco central, o banco não paga todos: é uma corrida bancária.');return;}res-=saque;dep-=saque;mostrar('O banco pagou os saques com as reservas.');});
+   acao(fig,'recomecar',()=>{res=200;emp=900;dep=1000;cap=100;fig.classList.remove('hf-liquidavel');mostrar('Um banco simples: R$ 1.100 em ativos, R$ 1.000 em depósitos e R$ 100 dos donos. Valores de exemplo.');});
+   mostrar('Um banco simples: R$ 1.100 em ativos, R$ 1.000 em depósitos e R$ 100 dos donos. Valores de exemplo.');
+  },
+  remessa(fig){
+   const r=$(fig,'.rm-saida'),V=500;
+   const atualizar=()=>{
+    const saida=Number(r.value)/100;
+    const chega=[V-25-(V-25)*0.04,V-5-(V-5)*0.015,V*(1-0.01)-0.5-(V*(1-0.01)-0.5)*saida];
+    chega.forEach((c,k)=>{const w=Math.round(c/V*380);$(fig,'.rm-barra-'+k).setAttribute('width',String(w));$(fig,'.rm-v-'+k).setAttribute('x',String(240+w));$(fig,'.rm-v-'+k).textContent='US$ '+fmt(c)+' ('+fmt((1-c/V)*100,1)+'%)';});
+    $(fig,'.rm-txt').textContent=fmt(saida*100,1)+'%';
+    const melhor=chega.indexOf(Math.max(...chega));
+    $(fig,'.cena-estado').textContent='Neste exemplo, chega mais pelo caminho "'+['banco','empresa de remessa','stablecoin'][melhor]+'". A stablecoin só ganha se a saída para a moeda local for barata: a taxa da rede é a menor parte do custo.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  dvp(fig){
+   let atomico=false;const est=$(fig,'.cena-estado');
+   const zerar=()=>{$(fig,'.dv2-ana').textContent='10 títulos · R$ 0';$(fig,'.dv2-bruno').textContent='0 títulos · R$ 10.000';fig.classList.remove('hf-liquidavel');
+    $$(fig,'.c-cenarios .btn').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.acao==='atomico')===atomico)));
+    est.textContent=atomico?'Os dois lados entram numa única operação: ou os títulos e o dinheiro trocam de mão juntos, ou nada acontece.':'Primeiro Ana entrega os títulos; depois Bruno paga. Entre um passo e outro, alguém fica exposto.';};
+   acao(fig,'separado',()=>{atomico=false;zerar();});acao(fig,'atomico',()=>{atomico=true;zerar();});
+   acao(fig,'ok',()=>{zerar();$(fig,'.dv2-ana').textContent='0 títulos · R$ 10.000';$(fig,'.dv2-bruno').textContent='10 títulos · R$ 0';est.textContent='Deu certo: títulos para Bruno, dinheiro para Ana.';});
+   acao(fig,'quebra',()=>{zerar();
+    if(atomico){est.textContent='Bruno quebrou, então a operação inteira não aconteceu. Ana continua com os títulos. Ninguém perdeu nada.';return;}
+    $(fig,'.dv2-ana').textContent='0 títulos · R$ 0';$(fig,'.dv2-bruno').textContent='10 títulos · R$ 10.000 (presos na falência)';fig.classList.add('hf-liquidavel');
+    est.textContent='Ana entregou os títulos, mas Bruno quebrou antes de pagar. Ela perdeu tudo e vira credora na fila. Foi o que aconteceu com bancos que negociavam com o Herstatt em 1974.';});
+   zerar();
   },
  };
  /* Desbloqueio de exemplo (milhões de um total de 1.000): 200 no lançamento,

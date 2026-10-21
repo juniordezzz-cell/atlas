@@ -257,6 +257,40 @@ const tick=ms=>new Promise(r=>setTimeout(r,ms));
  // Valor da cota: 1% de desconto custa 102,74 frente ao resgate de segunda.
  const nv=fig('navrwa');assert.equal(txt(nv,'.nv-agora'),'US$ 9.900,00');assert.equal(txt(nv,'.nv-dif'),'US$ 102,74');n+=2;
  }
+ { // ===== Módulo 9 =====
+ ev("app.navigate('m9')");
+ const pr=[...d.querySelectorAll('#tab-content > .lesson-layout > div > .lesson')];
+ assert.equal(pr.length,8);n++;
+ for(const a of pr){assert.ok(a.classList.contains('tem-visual'),a.id);n++;}
+ const txt=(f,s)=>f.querySelector(s).textContent;
+ // Baldes: 80% em cripto e R$ 5 mil de gastos → vende R$ 10 mil no fundo.
+ const bd=fig('baldes');assert.equal(txt(bd,'.bd-venda'),'R$ 10.000');muda(bd.querySelector('.bd-cr'),60);assert.equal(txt(bd,'.bd-venda'),'nada');n+=2;
+ // Recuperação: 50% → +100%; 80% → +400%.
+ const rc=fig('recuperacao');assert.equal(txt(rc,'.rc-av'),'+100%');muda(rc.querySelector('.rc-q'),80);assert.equal(txt(rc,'.rc-av'),'+400%');n+=2;
+ // Exposição: tudo marcado → 67% no preço do ETH (8.000 de 12.000).
+ const ex=fig('exposicao');assert.equal(txt(ex,'.ex-v-0'),'67%');n++;
+ // Tamanho: 5% ÷ 70% = R$ 3.571.
+ const tm=fig('tamanho');assert.equal(txt(tm,'.tm-max'),'R$ 3.571');n++;
+ // Rebalanceamento: BTC +100% → vender R$ 2.500.
+ const rb=fig('rebal');assert.equal(txt(rb,'.rb2-acao'),'vender R$ 2.500 de BTC');muda(rb.querySelector('.rb2-var'),-60);assert.equal(txt(rb,'.rb2-acao'),'comprar R$ 1.500 de BTC');n+=2;
+ // DCA: "cai e volta" → aportes valem mais que tudo de uma vez.
+ const dc=fig('dca');assert.equal(txt(dc,'.dc-fim-tudo'),'R$ 600,00');assert.equal(txt(dc,'.dc-fim-dca'),'R$ 834,52');assert.match(est(dc),/^O aporte mensal ganhou/);n+=3;
+ const sel=dc.querySelector('.dc-cen');sel.value='0';sel.dispatchEvent(new w.Event('change'));assert.match(est(dc),/^Comprar tudo/);n++;
+ }
+ { // ===== Módulo 10 =====
+ ev("app.navigate('m10')");
+ const pr=[...d.querySelectorAll('#tab-content > .lesson-layout > div > .lesson')];
+ assert.equal(pr.length,8);n++;
+ for(const a of pr){assert.ok(a.classList.contains('tem-visual'),a.id);n++;}
+ const txt=(f,s)=>f.querySelector(s).textContent;
+ // Balanço: empréstimo cria depósito; corrida de 30% quebra.
+ const bl=fig('balanco');clica(bl,'emprestar');assert.equal(txt(bl,'.bl-dep'),'Depósitos dos clientes: R$ 2.000');clica(bl,'corrida');assert.ok(bl.classList.contains('hf-liquidavel'));n+=2;
+ // Remessa: banco entrega US$ 456,00.
+ const rm=fig('remessa');assert.match(txt(rm,'.rm-v-0'),/^US\$ 456,00/);n++;
+ // DvP: separado com quebra → Ana perde; atômico → ninguém perde.
+ const dv=fig('dvp');clica(dv,'quebra');assert.equal(txt(dv,'.dv2-ana'),'0 títulos · R$ 0');n++;
+ clica(dv,'atomico');clica(dv,'quebra');assert.equal(txt(dv,'.dv2-ana'),'10 títulos · R$ 0');assert.match(est(dv),/Ninguém perdeu/);n+=2;
+ }
  assert.deepEqual(errors,[]);n++;
  console.log('visual ok: '+n+' verificações');
  process.exit(0);
