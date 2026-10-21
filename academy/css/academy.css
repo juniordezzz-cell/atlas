@@ -1,0 +1,102 @@
+/* ATLAS · Academy (20/10/2026)
+   Central de estudos: abas Início · Cursos · Artigos · Links · Papers.
+   O curso do Nível 1 abre em academy/nivel-1/ (iframe isolado). Visual
+   sereno: seções abertas, sem glow nem grade. */
+
+.ac-tabs {
+  display: flex; gap: 4px; overflow-x: auto; white-space: nowrap;
+  margin: 4px 0 28px; border-bottom: 1px solid var(--linha);
+}
+.ac-tab {
+  padding: 10px 14px; border: 0; background: none; cursor: pointer;
+  color: var(--texto-suave); font: inherit; font-size: 14px; font-weight: 500;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; text-decoration: none;
+}
+.ac-tab:hover { color: var(--texto); }
+.ac-tab[aria-selected="true"], .ac-tab.on { color: var(--texto); border-bottom-color: var(--azul-principal); }
+
+.ac-pane[hidden] { display: none; }
+.ac-pane h2 { font-size: 18px; font-weight: 600; margin: 0 0 6px; }
+.ac-sub { color: var(--texto-suave); margin: 0 0 22px; font-size: 14px; }
+
+/* Início */
+.ac-continue {
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  padding: 22px 24px; margin-bottom: 28px;
+  border: 1px solid var(--card-borda); border-radius: var(--raio); background: var(--card);
+}
+.ac-continue-txt { flex: 1; min-width: 220px; }
+.ac-eyebrow { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--texto-fraco); margin: 0 0 6px; }
+.ac-continue strong { display: block; font-size: 18px; font-weight: 600; color: var(--texto); }
+.ac-continue small { color: var(--texto-suave); font-size: 13px; }
+.ac-bar { height: 4px; border-radius: 4px; background: var(--linha); margin-top: 12px; overflow: hidden; max-width: 360px; }
+.ac-bar > span { display: block; height: 100%; background: var(--azul-principal); }
+.ac-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px;
+  background: var(--azul-principal); color: #04121f; font-weight: 600; font-size: 14px;
+  text-decoration: none; border: 0; cursor: pointer;
+}
+.ac-btn:hover { filter: brightness(1.08); }
+
+.ac-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ac-card {
+  display: block; padding: 20px 22px; text-align: left; cursor: pointer;
+  border: 1px solid var(--card-borda); border-radius: var(--raio); background: var(--card);
+  color: var(--texto); text-decoration: none; font: inherit;
+}
+.ac-card:hover { border-color: var(--card-borda-forte); }
+.ac-card b { display: block; font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.ac-card span { color: var(--texto-suave); font-size: 13px; }
+
+/* Cursos: escada de níveis */
+.ac-levels { display: flex; flex-direction: column; gap: 10px; max-width: 760px; }
+.ac-level {
+  display: flex; align-items: center; gap: 16px; padding: 18px 20px;
+  border: 1px solid var(--card-borda); border-radius: var(--raio); background: var(--card);
+  color: var(--texto); text-decoration: none;
+}
+a.ac-level:hover { border-color: var(--card-borda-forte); }
+.ac-level-n {
+  width: 38px; height: 38px; flex: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 191, 255, .10); color: var(--azul-principal); font-weight: 700;
+}
+.ac-level-txt { flex: 1; min-width: 0; }
+.ac-level-txt b { display: block; font-size: 15px; font-weight: 600; }
+.ac-level-txt span { color: var(--texto-suave); font-size: 13px; }
+.ac-level-go { color: var(--azul-principal); font-size: 13px; white-space: nowrap; }
+.ac-level.locked { opacity: .5; }
+.ac-level.locked .ac-level-n { background: var(--linha); color: var(--texto-suave); }
+
+/* Seções ainda vazias */
+.ac-empty {
+  padding: 48px 24px; text-align: center; color: var(--texto-suave);
+  border: 1px dashed var(--card-borda); border-radius: var(--raio);
+}
+.ac-empty b { display: block; color: var(--texto); font-size: 16px; margin-bottom: 6px; }
+
+/* Página do curso (academy/nivel-1/): o iframe ocupa o resto da tela */
+.ac-course-main { display: flex; flex-direction: column; }
+.ac-course-main .ac-tabs { margin-bottom: 0; }
+.ac-frame {
+  flex: 1; width: 100%; min-height: 0;
+  border: 0; display: block; background: transparent; color-scheme: dark;
+}
+/* A página de fora não rola: quem rola é o curso, dentro do iframe.
+   Sem isto apareciam duas barras de rolagem lado a lado. */
+@media (min-width: 768px) {
+  html:root body .ac-course-main { height: 100dvh; box-sizing: border-box; padding-bottom: 0; overflow: hidden; }
+}
+
+@media (max-width: 767px) {
+  .ac-grid { grid-template-columns: 1fr; }
+  .ac-frame { flex: none; height: calc(100dvh - 150px); }
+}
+
+/* Celular (21/10/2026): a página do curso devolve o recuo lateral ao iframe
+   e as abas encolhem para "Papers" caber em 375px. */
+@media (max-width: 767px) {
+  html:root body .ac-course-main { padding-left: 4px; padding-right: 4px; }
+  .ac-tab { padding: 10px 9px; font-size: 13px; }
+  .ac-course-main .ac-tabs { padding: 0 8px; }
+}

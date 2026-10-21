@@ -153,7 +153,10 @@
    mesmo alvo, com veredito) e a aba "Simular investimento". */
 /* v96 = troca de página sem tela preta: a trava de login (core/atlas-secure.js)
    só esconde a página antes do primeiro login e liga @view-transition. */
-var VERSAO = "atlas-v96";
+/* v97 = o Academy virou central com abas (Início, Cursos, Artigos, Links,
+   Papers) e recebeu o curso da pasta AtlasAcademy como Nível 1
+   (academy/nivel-1/, curso num iframe em academy/nivel-1/curso/). */
+var VERSAO = "atlas-v97";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

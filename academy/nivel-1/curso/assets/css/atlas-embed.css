@@ -1,0 +1,58 @@
+/* ATLAS · curso dentro do Academy (20/10/2026)
+   O menu lateral próprio do curso saiu: o menu da esquerda é o do ATLAS.
+   No lugar dele, uma linha no topo com "Nível 1 › módulo ▾" (lista dos
+   10 módulos), atalhos para Glossário/Fontes/Notas e a busca do curso.
+   Fundo transparente: o iframe deixa aparecer o fundo do ATLAS. */
+
+html, body { background: transparent !important; }
+main { background: transparent; }
+
+.course-bar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 12px 40px;
+  background: rgba(5, 8, 15, .88);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #2a3b5566;
+}
+.course-picker { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.course-level { font-size: 13px; color: var(--atlas-muted); white-space: nowrap; }
+.course-current {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px;
+  padding: 6px 14px; border-radius: 8px;
+  border: 1px solid var(--atlas-border); background: #111a30; color: #fff;
+  font-size: 14px; font-weight: 600; max-width: 60vw;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.course-current:hover { border-color: #60a5fa; }
+
+.course-menu {
+  display: none; position: absolute; top: calc(100% + 8px); left: 0;
+  width: 320px; max-height: min(70vh, 560px); overflow-y: auto; padding: 6px 0;
+  border: 1px solid var(--atlas-border); border-radius: 12px; background: #0d1526;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .55);
+}
+.course-bar.menu-open .course-menu { display: block; }
+.course-menu .nav-item { min-height: 40px; padding: 8px 16px; }
+.course-menu-foot { padding: 12px 16px 8px; border-top: 1px solid var(--atlas-border); margin-top: 6px; font-size: 12px; color: var(--atlas-muted); }
+.course-menu-foot progress { display: block; margin-top: 8px; }
+
+.course-links { display: flex; gap: 4px; margin-left: auto; }
+.course-links button {
+  border: 0; background: none; color: var(--atlas-muted);
+  font-size: 13px; padding: 6px 10px; border-radius: 6px; min-height: 36px;
+}
+.course-links button:hover { color: #fff; background: #ffffff0d; }
+.course-bar #search-form { max-width: 260px; }
+
+@media (max-width: 1100px) {
+  .course-bar { padding: 10px 20px; }
+}
+@media (max-width: 767px) {
+  /* No celular a linha ocupa três andares; presa no topo, comeria a tela. */
+  .course-bar { position: static; gap: 10px; }
+  .course-links { margin-left: 0; order: 3; width: 100%; }
+  .course-bar #search-form { max-width: none; order: 4; }
+  .course-menu { width: min(320px, calc(100vw - 40px)); }
+}
+@media print { .course-bar { display: none !important; } }
