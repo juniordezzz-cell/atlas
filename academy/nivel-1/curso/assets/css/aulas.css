@@ -1,0 +1,29 @@
+/* Formato novo de aula (blocos). Mesmo estilo do curso: fundo escuro, azul, borda fina. */
+.lesson>p{max-width:76ch;font-size:16px;line-height:1.75;color:#d5deeb}
+.aula-analogia{max-width:76ch;margin:18px 0;padding:14px 18px;border:1px solid var(--atlas-border);border-left:3px solid #67e8f9;border-radius:0 8px 8px 0;background:#67e8f90a;font-size:15px;line-height:1.7;color:#d5deeb}
+.aula-analogia strong{display:block;margin-bottom:4px;color:#67e8f9;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.aula-figura{margin:22px 0;padding:16px;border:1px solid var(--atlas-border);border-radius:12px;background:#0d1729}
+.aula-figura svg{display:block;width:100%;max-width:640px;height:auto;margin:0 auto}
+.aula-figura figcaption{margin-top:12px;font-size:13px;line-height:1.6;color:var(--atlas-muted);text-align:center}
+.aula-dado{max-width:76ch;margin:16px 0;padding:10px 14px;border:1px dashed var(--atlas-border);border-radius:8px;font-size:14px;line-height:1.65;color:#d5deeb}
+.aula-dado a{color:var(--atlas-primary);overflow-wrap:anywhere}
+.aula-data{display:inline-block;font-size:12px;color:var(--atlas-muted)}
+.aula-frase{max-width:76ch;margin:20px 0 8px;padding:12px 16px;border-radius:8px;background:#3b82f614;font-size:15px;line-height:1.65;color:#e2e8f0}
+.aula-frase strong{margin-right:6px;color:var(--atlas-primary)}
+.aula-termos{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;font-size:13px;color:var(--atlas-muted)}
+.aula-historia{margin-bottom:28px;padding:24px;border:1px solid var(--atlas-border);border-radius:12px;background:#151e32;scroll-margin-top:24px}
+.aula-historia>p{max-width:76ch;font-size:16px;line-height:1.75;color:#d5deeb}
+.aula-alem{margin-top:34px}
+.aula-alem>h2{scroll-margin-top:24px}
+.timeline{list-style:none;margin:20px 0 0;padding:0 0 0 18px;border-left:2px solid var(--atlas-border)}
+.timeline li{position:relative;margin:0 0 20px;padding-left:14px}
+.timeline li::before{content:"";position:absolute;left:-26px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--atlas-primary);border:2px solid #0b1120}
+.timeline .when{display:block;font-size:12px;font-weight:700;letter-spacing:.05em;color:#67e8f9}
+.timeline strong{display:block;margin:2px 0;color:#e2e8f0}
+.timeline li p{margin:0;font-size:14px;line-height:1.65;color:var(--atlas-muted)}
+@media(min-width:1100px){
+ .timeline{display:flex;gap:18px;overflow-x:auto;padding:22px 0 12px;border-left:0;border-top:2px solid var(--atlas-border);scroll-snap-type:x proximity}
+ .timeline li{flex:0 0 220px;margin:0;padding:0;scroll-snap-align:start}
+ .timeline li::before{left:0;top:-28px}
+}
+@media print{.aula-analogia,.aula-figura,.aula-historia,.aula-frase,.aula-dado{background:white;color:#111;border-color:#bbb}}

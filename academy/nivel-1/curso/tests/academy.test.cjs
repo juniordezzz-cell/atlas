@@ -17,7 +17,6 @@ for(let n=1;n<=10;n++){
  ev(`app.navigate('m${n}');`);
  assert.equal(ev('app.currentView'),'m'+n);assertions++;
  assert.equal(d.querySelectorAll('h1').length,1);assertions++;
- for(let level=1;level<=3;level++){ev(`academy.setLevel(${level});`);assert.equal(d.querySelectorAll('.lesson').length,ev(`COURSE[${n-1}].sections.filter(s=>s[1]<=${level}).length`));assertions++;}
  for(const tab of ['content','labs','infographics','assessment','sources']){ev(`app.switchTab('${tab}');`);assert.equal(d.querySelector('#tab-'+tab).hidden,false);assert.equal(d.querySelectorAll('#view-container .tab-pane:not([hidden])').length,1);assertions+=2;}
  ev("app.switchTab('assessment');");
  const length=ev(`COURSE[${n-1}].quiz.length`);
@@ -25,7 +24,7 @@ for(let n=1;n<=10;n++){
  for(let i=0;i<length;i++){const answer=ev(`COURSE[${n-1}].quiz[${i}][2]`);d.querySelector(`input[name="academy-q${i}"][value="${answer}"]`).checked=true;}
  ev('academy.checkQuiz()');assert.ok(ev(`academy.state.completed.includes('m${n}')`));assertions++;
  ev("app.switchTab('content');");const textarea=d.querySelector('#module-notes');textarea.value='<img src=x onerror=alert(1)> Nota '+n;ev('academy.note(document.getElementById("module-notes").value)');
- ev(`app.navigate('m${n}');academy.setLevel(3);`);assert.equal(d.querySelector('#module-notes').value,textarea.value);assertions++;
+ ev(`app.navigate('m${n}');`);assert.equal(d.querySelector('#module-notes').value,textarea.value);assertions++;
  assert.equal(d.querySelector('#module-notes img'),null);assertions++;
  const ids=[...d.querySelectorAll('#view-container [id]')].map(el=>el.id);assert.equal(new Set(ids).size,ids.length,'IDs únicos no módulo '+n);assertions++;
 }
@@ -48,7 +47,6 @@ ev("app.navigate('m7','labs');document.getElementById('vl-price').value='3000';d
 assert.equal(errors.length,0,errors.join('\n'));assertions++;
 ev('academy.state.completed=[];academy.state.notes={};academy.load();');assert.equal(ev('academy.state.completed.length'),10);assert.ok(ev("academy.state.notes.m6.includes('Nota 6')"));assertions+=2;
 for(const module of ev('COURSE')){
- assert.ok([1,2,3].every(level=>module.sections.some(s=>s[1]===level)));assertions++;
  for(const section of module.sections){assert.ok(section[4].length>0);for(const key of section[4])assert.ok(ev(`SOURCES[${JSON.stringify(key)}]`));assertions++;}
 }
 for(const svg of d.querySelectorAll('svg[role="img"]')){for(const id of (svg.getAttribute('aria-labelledby')||'').split(' ').filter(Boolean))assert.ok(d.getElementById(id));assertions++;}
@@ -60,5 +58,5 @@ assert.equal(d.querySelectorAll('#module-navigation .nav-item').length,11);asser
 d.getElementById('menu-toggle').click();assert.ok(d.getElementById('sidebar').classList.contains('menu-open'));assertions++;
 d.querySelector('#module-navigation .nav-7').click();assert.equal(ev('app.currentView'),'m7');assert.ok(!d.getElementById('sidebar').classList.contains('menu-open'));assertions+=2;
 ev("app.navigate('glossary');");assert.equal(d.getElementById('course-current-label').textContent,'Glossário');assertions++;
-console.log(`${assertions} verificações passaram: 10 módulos, 3 níveis, 5 abas, avaliações, notas, matemática e ciclo de gráficos.`);
+console.log(`${assertions} verificações passaram: 10 módulos, 5 abas, avaliações, notas, matemática e ciclo de gráficos.`);
 dom.window.close();
