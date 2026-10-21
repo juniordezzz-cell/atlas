@@ -15,7 +15,7 @@ AcademyLabs.m1=(function(){
   const s=desloc(),t=$('cesar-texto').value,k=decifrar?-s:s;
   $('cesar-saida').textContent=caesar(t,k);
   const baixo=A.slice((26+k)%26)+A.slice(0,(26+k)%26);
-  $('cesar-alfabeto').innerHTML='<div style="white-space:pre"><span class="cesar-rotulo muted" style="display:inline-block;width:9ch">'+(decifrar?'Cifrado':'Original')+'</span><b>'+A+'</b></div><div style="white-space:pre"><span class="cesar-rotulo muted" style="display:inline-block;width:9ch">'+(decifrar?'Original':'Cifrado')+'</span><b>'+baixo+'</b></div>';
+  $('cesar-alfabeto').innerHTML='<div style="white-space:pre"><span class="cesar-rotulo muted" style="display:inline-block;width:11ch">'+(decifrar?'Cifrado':'Original')+'</span><b>'+A+'</b></div><div style="white-space:pre"><span class="cesar-rotulo muted" style="display:inline-block;width:11ch">'+(decifrar?'Original':'Cifrado')+'</span><b>'+baixo+'</b></div>';
   $('cesar-modo').textContent=decifrar?'Modo: decifrar. Trocar para cifrar':'Modo: cifrar. Trocar para decifrar';
   $('cesar-modo').setAttribute('aria-pressed',String(decifrar));
  }

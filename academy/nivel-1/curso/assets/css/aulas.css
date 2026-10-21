@@ -43,3 +43,5 @@
  .aula-figura{background:linear-gradient(to right,#0d1729 40%,#0d172900) left/32px 100% no-repeat local,linear-gradient(to left,#0d1729 40%,#0d172900) right/32px 100% no-repeat local,radial-gradient(farthest-side at 0 50%,#67e8f955,#67e8f900) left/14px 100% no-repeat scroll,radial-gradient(farthest-side at 100% 50%,#67e8f955,#67e8f900) right/14px 100% no-repeat scroll,#0d1729}
  .aula-figura figcaption::before{content:"deslize para ver a figura inteira →";content:"deslize para ver a figura inteira →"/"";display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:#67e8f9}
 }
+
+.sim-field textarea{display:block;background:#0b1120;border:1px solid #2a3b55;border-radius:7px;color:#e2e8f0;width:100%;box-sizing:border-box;padding:10px 12px;margin-top:6px;min-height:110px;resize:vertical;font:inherit;font-size:14px;line-height:1.5}
