@@ -92,7 +92,49 @@ const AcademyInterativos=(()=>{
     +caixa(240,30,160,70,'Oráculo','o-portao','vários nós votam')+linha(400,65,480,65)
     +'<g class="o-contrato"><rect x="480" y="30" width="150" height="70" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="555" y="58" text-anchor="middle" font-size="17" font-weight="700" fill="'+C.texto+'">Contrato</text><text class="o-dentro" x="555" y="84" text-anchor="middle" font-size="18" fill="'+C.ciano+'">100,00</text></g>')
    +'<p class="o-info">Diferença: <strong class="o-dif">0,00%</strong> · última atualização há <strong class="o-horas">0 h</strong></p>'
-   +botoes([['hora','Passar 1 hora'],['recomecar','Recomeçar']])+estado('')
+   +botoes([['hora','Passar 1 hora'],['recomecar','Recomeçar']])+estado(''),
+  /* ===== Módulo 3 ===== */
+  /* Qual é o token de verdade? Endereços reais do USDC conferidos na Circle em 21/10/2026. */
+  ticker:()=>'<p class="interativo-sub">Quatro tokens chamados USDC. Clique em cada um.</p><div class="k-cartoes">'
+   +[['USDC','Ethereum','0xA0b8…eB48','emitido pela Circle'],['USDC','Ethereum','0xA0b8…eB49','criado ontem · 3 donos'],['USDC.e','Arbitrum','0xFF97…5CC8','veio por uma ponte'],['USDC','Base','0x8335…2913','emitido pela Circle']]
+    .map(([n,r,a,s],k)=>'<button type="button" class="k-cartao" data-k="'+k+'"><strong>'+n+'</strong><span>rede: '+r+'</span><code>'+a+'</code><small>'+s+'</small></button>').join('')
+   +'</div>'+estado('Nome e símbolo qualquer um copia. O que identifica o token é a rede mais o endereço do contrato.'),
+  /* Custódia: a mesma situação nos dois modelos. */
+  custodia:()=>'<div class="c-cenarios">'+[['quebra','A empresa quebra'],['celular','Você perde o celular'],['frase','Alguém copia sua frase'],['senha','Você esquece a senha do app']].map(([a,t])=>'<button class="btn small" type="button" data-acao="'+a+'">'+t+'</button>').join('')+'</div>'
+   +'<div class="c-lados"><div class="c-lado"><p class="interativo-sub">Corretora (custodial)</p><p class="c-quem">Quem tem a chave: <strong>a empresa</strong></p><p class="c-res c-res-corretora">Escolha uma situação.</p></div>'
+   +'<div class="c-lado"><p class="interativo-sub">Autocustódia</p><p class="c-quem">Quem tem a chave: <strong>você</strong></p><p class="c-res c-res-auto">Escolha uma situação.</p></div></div>',
+  /* Hardware wallet: o que o computador mostra × o que o aparelho mostra. */
+  assinatura:()=>'<div class="h-telas"><div class="h-tela h-pc"><p class="interativo-sub">Tela do computador</p><p class="h-msg h-msg-pc"></p></div>'
+   +'<div class="h-tela h-aparelho"><p class="interativo-sub">Tela da hardware wallet</p><p class="h-msg h-msg-dev"></p></div></div>'
+   +botoes([['confirmar','Confirmar no aparelho'],['recusar','Recusar'],['outra','Próxima situação']])+estado(''),
+  /* Envenenamento de endereço: escolher o endereço certo no histórico. */
+  envenenado:()=>'<p class="interativo-sub">Seu contato salvo: Bruno · <code class="e-salvo"></code></p><p class="interativo-sub">Histórico recente. Qual é o Bruno de verdade?</p><div class="e-lista"></div>'+estado('Olhe também o meio do endereço, não só o começo e o fim.'),
+  /* Capitalização × FDV. */
+  fdv:()=>'<label class="interativo-rotulo">Preço (US$) <span class="f-preco-txt"></span><input class="f-preco" type="range" min="0.1" max="10" step="0.1" value="2"></label>'
+   +'<label class="interativo-rotulo">Em circulação (milhões) <span class="f-circ-txt"></span><input class="f-circ" type="range" min="10" max="1000" step="10" value="100"></label>'
+   +'<label class="interativo-rotulo">Oferta total (milhões) <span class="f-total-txt"></span><input class="f-total" type="range" min="10" max="1000" step="10" value="1000"></label>'
+   +svg(640,120,'<text x="10" y="30" font-size="16" fill="'+C.mudo+'">Capitalização</text><rect class="f-barra-cap" x="170" y="12" height="28" rx="4" fill="'+C.ciano+'" width="0"/><text class="f-cap" x="180" y="32" font-size="16" fill="'+C.texto+'"></text>'
+    +'<text x="10" y="84" font-size="16" fill="'+C.mudo+'">FDV</text><rect class="f-barra-fdv" x="170" y="66" height="28" rx="4" fill="'+C.violeta+'" width="0"/><text class="f-fdv" x="180" y="86" font-size="16" fill="'+C.texto+'"></text>')
+   +estado(''),
+  /* Calendário de desbloqueio e diluição. */
+  desbloqueio:()=>{
+   let pts=[];for(let m=0;m<=48;m++)pts.push((40+m*12)+','+(200-AcademyInterativos.circulante(m)/1000*170).toFixed(1));
+   return '<label class="interativo-rotulo">Meses desde o lançamento <span class="d-mes-txt">0</span><input class="d-mes" type="range" min="0" max="48" step="1" value="0"></label>'
+    +svg(640,230,linha(40,200,620,200)+linha(40,30,40,200)
+     +'<text x="34" y="34" text-anchor="end" font-size="13" fill="'+C.mudo+'">1.000</text><text x="34" y="204" text-anchor="end" font-size="13" fill="'+C.mudo+'">0</text>'
+     +[0,12,24,36,48].map(m=>'<text x="'+(40+m*12)+'" y="222" text-anchor="middle" font-size="13" fill="'+C.mudo+'">'+m+'</text>').join('')
+     +'<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+C.violeta+'" stroke-width="3"/>'
+     +'<line class="d-guia" x1="40" y1="30" x2="40" y2="200" stroke="'+C.ciano+'" stroke-width="1.5" stroke-dasharray="4 4"/><circle class="d-ponto" cx="40" cy="166" r="7" fill="'+C.ciano+'"/>')
+    +'<p class="o-info">Em circulação: <strong class="d-circ"></strong> milhões · diluição desde o lançamento: <strong class="d-dil"></strong></p>'+estado('');
+  },
+  /* Aprovação (allowance) e revogação. */
+  allowance:()=>svg(640,120,'<rect x="10" y="10" width="300" height="100" rx="10" fill="'+C.fundo+'" stroke="'+C.azul+'" stroke-width="2"/><text x="26" y="40" font-size="15" fill="'+C.mudo+'">Seu saldo</text><text class="a-saldo" x="26" y="80" font-size="28" font-weight="700" fill="'+C.texto+'"></text>'
+    +'<rect class="a-caixa-perm" x="330" y="10" width="300" height="100" rx="10" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="346" y="40" font-size="15" fill="'+C.mudo+'">O contrato pode gastar</text><text class="a-perm" x="346" y="80" font-size="28" font-weight="700" fill="'+C.texto+'"></text>')
+   +botoes([['aprovar100','Aprovar 100'],['aprovarTudo','Aprovar ilimitado'],['trocar','Fazer a troca (usa 100)'],['invadido','O contrato é invadido'],['revogar','Revogar'],['recomecar','Recomeçar']])+estado(''),
+  /* Multisig 2 de 3. */
+  multisig:()=>'<label class="interativo-rotulo">Assinaturas exigidas (limite) <select class="hash-entrada g-limite"><option value="1">1 de 3</option><option value="2" selected>2 de 3</option><option value="3">3 de 3</option></select></label>'
+   +'<p class="interativo-sub">Transação pendente: enviar 5 ETH para a conta da empresa</p><div class="g-donos">'+['Ana','Bia','Caio'].map((n,k)=>'<button type="button" class="g-dono" data-k="'+k+'" aria-pressed="false">'+n+'<small>não assinou</small></button>').join('')+'</div>'
+   +botoes([['executar','Executar'],['roubo','A chave da Bia é roubada'],['recomecar','Recomeçar']])+estado(''),
  };
 
  const ligar={
@@ -230,7 +272,106 @@ const AcademyInterativos=(()=>{
    r.addEventListener('input',()=>atualizar());acao(fig,'hora',()=>atualizar(true));
    acao(fig,'recomecar',()=>{r.value='100';dentro=100;horas=0;motivo='valor inicial';atualizar();});
    atualizar();
-  }
+  },
+  /* ===== Módulo 3 ===== */
+  ticker(fig){
+   const txt=['Este é o USDC oficial na rede Ethereum: o endereço bate com a lista publicada pela Circle, a emissora.',
+    'Golpe: mesmo nome, mesmo símbolo e endereço parecido, mas é outro contrato. Ele não vale nada e pode nem deixar você vender.',
+    'Representação: um USDC que atravessou uma ponte. Vale enquanto a ponte funcionar e honrar o resgate; tem riscos que o oficial não tem.',
+    'Oficial também, mas na rede Base. Mesmo nome, outra rede, outro endereço. Mandar para a rede errada pode fazer o dinheiro sumir da sua vista.'];
+   $$(fig,'.k-cartao').forEach(b=>b.addEventListener('click',()=>{const k=Number(b.dataset.k);$$(fig,'.k-cartao').forEach(x=>x.classList.toggle('escolhido',x===b));$(fig,'.cena-estado').textContent=txt[k];}));
+  },
+  custodia(fig){
+   const r={quebra:['Você vira credor na fila da falência. Em 2014 (Mt. Gox) e 2022 (FTX), clientes ficaram sem acesso aos fundos por anos.','Nada muda: a empresa da carteira não guarda seu dinheiro. Você instala outro app e usa a mesma frase.'],
+    celular:['Sem problema: você entra na conta por outro aparelho, com senha e verificação.','Sem problema, se a frase está guardada: você recria a carteira em outro aparelho. Sem a frase, o dinheiro fica preso para sempre.'],
+    frase:['Não se aplica: quem guarda as chaves é a empresa.','A pessoa leva tudo, e ninguém pode desfazer. É o maior risco da autocustódia.'],
+    senha:['A empresa recupera seu acesso depois de confirmar sua identidade.','A senha só tranca o app no aparelho. Com a frase, você recria a carteira e escolhe outra senha.']};
+   const ruim={quebra:[1,0],celular:[0,0],frase:[0,1],senha:[0,0]};
+   Object.keys(r).forEach(a=>acao(fig,a,()=>{$(fig,'.c-res-corretora').textContent=r[a][0];$(fig,'.c-res-auto').textContent=r[a][1];
+    $(fig,'.c-res-corretora').classList.toggle('ruim',!!ruim[a][0]);$(fig,'.c-res-auto').classList.toggle('ruim',!!ruim[a][1]);
+    $$(fig,'.c-cenarios .btn').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.acao===a)));}));
+  },
+  assinatura(fig){
+   const casos=[{pc:'Enviar 100 USDC para 0x7a3f…c9d2',dev:'Enviar 100 USDC para 0x7a3f…c9d2',bom:true},
+    {pc:'Enviar 100 USDC para 0xB0b5…9F21',dev:'Enviar 100 USDC para 0x5e1d…0aa7',bom:false},
+    {pc:'Entrar no site (assinatura de login)',dev:'Aprovar: gastar USDC ilimitado para 0x5e1d…0aa7',bom:false}];
+   let i=0;const est=$(fig,'.cena-estado');
+   const mostrar=()=>{$(fig,'.h-msg-pc').textContent=casos[i].pc;$(fig,'.h-msg-dev').textContent=casos[i].dev;fig.classList.remove('h-certo','h-errado');est.textContent='Situação '+(i+1)+' de '+casos.length+'. Compare as duas telas e decida.';};
+   const decidir=conf=>{const ok=conf===casos[i].bom;fig.classList.toggle('h-certo',ok);fig.classList.toggle('h-errado',!ok);
+    est.textContent=(ok?'Boa decisão. ':'Cuidado. ')+(casos[i].bom?'As duas telas dizem a mesma coisa; pode confirmar.':'O computador foi invadido e mostra uma coisa, mas o aparelho mostra o que você está assinando de verdade. Vale o que está na tela do aparelho.');};
+   acao(fig,'confirmar',()=>decidir(true));acao(fig,'recusar',()=>decidir(false));
+   acao(fig,'outra',()=>{i=(i+1)%casos.length;mostrar();});
+   mostrar();
+  },
+  envenenado(fig){
+   const certo='0x9C4e2a7B5d81F03c6E1a4b2D7f9083Ac5E21d7F3';
+   const lista=[['0x9C4e8f1A3b60C27d9E5f0a4B6c1D8e7F3a90d7F3','há 2 horas · 0 USDC'],[certo,'há 3 dias · 250 USDC'],['0x9C4e2a7B5d81F03c6E1a4b2D7f9083Ac5E21d7F8','há 1 hora · 0 USDC']];
+   $(fig,'.e-salvo').textContent=certo;
+   const caixa=$(fig,'.e-lista'),doc=fig.ownerDocument,est=$(fig,'.cena-estado');
+   lista.forEach(([end,info])=>{
+    const b=doc.createElement('button');b.type='button';b.className='e-item';
+    const c=doc.createElement('code');[...end].forEach((ch,k)=>{if(ch!==certo[k]){const m=doc.createElement('mark');m.textContent=ch;c.append(m);}else c.append(doc.createTextNode(ch));});
+    const s=doc.createElement('small');s.textContent=info;b.append(c,s);
+    b.addEventListener('click',()=>{fig.classList.add('e-revelado');$$(fig,'.e-item').forEach(x=>x.classList.toggle('escolhido',x===b));
+     est.textContent=end===certo?'Certo. Os outros dois copiam o começo e o fim do endereço do Bruno e chegaram com 0 USDC só para aparecer no seu histórico. As diferenças agora estão marcadas.':'Golpe! Esse endereço imita o começo e o fim do Bruno. Ele mandou 0 USDC só para entrar no seu histórico. Copie sempre dos contatos salvos e confira o endereço inteiro.';});
+    caixa.append(b);
+   });
+  },
+  fdv(fig){
+   const p=$(fig,'.f-preco'),c=$(fig,'.f-circ'),t=$(fig,'.f-total');
+   const mi=v=>v>=1000?'US$ '+fmt(v/1000,2)+' bi':'US$ '+fmt(v,0)+' mi';
+   const atualizar=()=>{
+    if(Number(t.value)<Number(c.value))t.value=c.value;
+    const preco=Number(p.value),circ=Number(c.value),total=Number(t.value),cap=preco*circ,fdv=preco*total,max=10*1000;
+    $(fig,'.f-preco-txt').textContent=fmt(preco);$(fig,'.f-circ-txt').textContent=fmt(circ,0);$(fig,'.f-total-txt').textContent=fmt(total,0);
+    $(fig,'.f-barra-cap').setAttribute('width',String(Math.max(2,Math.round(cap/max*300))));$(fig,'.f-barra-fdv').setAttribute('width',String(Math.max(2,Math.round(fdv/max*300))));
+    $(fig,'.f-cap').setAttribute('x',String(180+Math.max(2,Math.round(cap/max*300))));$(fig,'.f-fdv').setAttribute('x',String(180+Math.max(2,Math.round(fdv/max*300))));
+    $(fig,'.f-cap').textContent=mi(cap);$(fig,'.f-fdv').textContent=mi(fdv);
+    const pct=circ/total*100;
+    $(fig,'.cena-estado').textContent='Só '+fmt(pct,0)+'% dos tokens circulam. '+(pct<50?'Ainda vão entrar '+fmt(total-circ,0)+' milhões no mercado: se a demanda não acompanhar, o preço sofre.':'A maior parte já circula, então a diluição futura é menor.');
+   };
+   [p,c,t].forEach(x=>x.addEventListener('input',atualizar));atualizar();
+  },
+  desbloqueio(fig){
+   const r=$(fig,'.d-mes');
+   const atualizar=()=>{
+    const m=Number(r.value),c=AcademyInterativos.circulante(m),x=40+m*12,y=200-c/1000*170;
+    $(fig,'.d-mes-txt').textContent=String(m);$(fig,'.d-circ').textContent=fmt(c,0);$(fig,'.d-dil').textContent=fmt((c/200-1)*100,0)+'%';
+    $(fig,'.d-guia').setAttribute('x1',String(x));$(fig,'.d-guia').setAttribute('x2',String(x));$(fig,'.d-ponto').setAttribute('cx',String(x));$(fig,'.d-ponto').setAttribute('cy',y.toFixed(1));
+    $(fig,'.cena-estado').textContent=m<12?'Antes do mês 12, só o lote da comunidade vai sendo liberado aos poucos. Equipe e investidores ainda estão travados (período de carência).':m===12?'Mês 12: acaba a carência. A partir daqui, a parte da equipe e dos investidores começa a sair todo mês.':'Cada token de quem comprou no lançamento agora é uma fatia menor do total em circulação. Valores de exemplo.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  allowance(fig){
+   let saldo=1000,perm=0;const est=$(fig,'.cena-estado');
+   const mostrar=t=>{$(fig,'.a-saldo').textContent=fmt(saldo,0)+' USDC';$(fig,'.a-perm').textContent=perm===Infinity?'ilimitado':fmt(perm,0)+' USDC';fig.classList.toggle('a-perigo',perm===Infinity);est.textContent=t;};
+   acao(fig,'aprovar100',()=>{perm=100;mostrar('Aprovado só o que a troca precisa. Aprovar não move nada: só dá permissão.');});
+   acao(fig,'aprovarTudo',()=>{perm=Infinity;mostrar('Permissão ilimitada: o contrato pode tirar qualquer quantia, quando quiser, sem pedir de novo.');});
+   acao(fig,'trocar',()=>{if(perm<100){mostrar('A troca falha: o contrato não tem permissão para gastar 100 USDC.');return;}saldo-=100;if(perm!==Infinity)perm-=100;mostrar('O contrato usou 100 USDC na troca.'+(perm===Infinity?' A permissão continua ilimitada depois disso.':' A permissão acabou junto.'));});
+   acao(fig,'invadido',()=>{const leva=Math.min(saldo,perm);saldo-=leva;if(perm!==Infinity)perm-=leva;mostrar(leva?'O invasor usa a permissão que você deu e leva '+fmt(leva,0)+' USDC.':'O invasor não leva nada: não há permissão sobrando.');});
+   acao(fig,'revogar',()=>{perm=0;mostrar('Permissão revogada (é uma transação, com taxa). Agora o contrato não pode gastar nada.');});
+   acao(fig,'recomecar',()=>{saldo=1000;perm=0;mostrar('Você tem 1.000 USDC e quer trocar 100 numa corretora descentralizada.');});
+   mostrar('Você tem 1.000 USDC e quer trocar 100 numa corretora descentralizada.');
+  },
+  multisig(fig){
+   let ass=[false,false,false],roubada=false,feito=false;const lim=$(fig,'.g-limite'),est=$(fig,'.cena-estado'),nomes=['Ana','Bia','Caio'];
+   const mostrar=t=>{
+    const n=ass.filter(Boolean).length,need=Number(lim.value);
+    $$(fig,'.g-dono').forEach((b,k)=>{b.setAttribute('aria-pressed',String(ass[k]));b.querySelector('small').textContent=ass[k]?(roubada&&k===1?'assinou (ladrão)':'assinou'):'não assinou';b.classList.toggle('roubado',roubada&&k===1);});
+    $(fig,'[data-acao="executar"]').disabled=feito||n<need;
+    est.textContent=t||(feito?'Executada.':n+' de '+need+' assinaturas exigidas.');
+   };
+   $$(fig,'.g-dono').forEach((b,k)=>b.addEventListener('click',()=>{if(feito)return;ass[k]=!ass[k];mostrar();}));
+   lim.addEventListener('change',()=>mostrar());
+   acao(fig,'executar',()=>{feito=true;mostrar(roubada&&ass.filter(Boolean).length===1?'Executada só com a chave roubada: com limite 1 de 3, um ladrão basta.':'Executada: '+ass.map((a,k)=>a?nomes[k]:null).filter(Boolean).join(' e ')+' assinaram. Cada dono confere a transação no próprio aparelho.');});
+   acao(fig,'roubo',()=>{ass=[false,true,false];roubada=true;feito=false;const need=Number(lim.value);mostrar(need>1?'O ladrão assina como Bia, mas sozinho não alcança '+need+' assinaturas. Ana e Caio recusam e o dinheiro fica parado.':'Com limite 1 de 3, a assinatura do ladrão já basta para executar.');});
+   acao(fig,'recomecar',()=>{ass=[false,false,false];roubada=false;feito=false;mostrar();});
+   mostrar();
+  },
  };
- return {html,ligar,KINDS:Object.keys(html)};
+ /* Desbloqueio de exemplo (milhões de um total de 1.000): 200 no lançamento,
+    400 da comunidade liberados em 48 meses e 400 de equipe e investidores
+    travados por 12 meses e liberados nos 24 seguintes. */
+ const circulante=m=>200+400*Math.min(m,48)/48+(m<12?0:400*Math.min(m-12,24)/24);
+ return {html,ligar,circulante,KINDS:Object.keys(html)};
 })();

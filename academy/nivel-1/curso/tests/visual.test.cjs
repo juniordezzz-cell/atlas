@@ -99,6 +99,46 @@ const tick=ms=>new Promise(r=>setTimeout(r,ms));
  const ca=d.querySelector('.aula-cena[data-cena="camadas"]');assert.ok(ca&&ca.querySelector('.cena-plano svg'));assert.ok(!ca.classList.contains('com-3d'));n+=2;
  // Laboratórios antigos do M2 continuam abrindo.
  ev("app.switchTab('labs')");assert.ok(d.querySelector('#tab-labs .legacy-labs'));n++;
+ // ===== Módulo 3 =====
+ ev("app.navigate('m3')");
+ const p3=[...d.querySelectorAll('#tab-content > .lesson-layout > div > .lesson')];
+ assert.equal(p3.length,11);n++;
+ for(const a of p3){assert.ok(a.classList.contains('tem-visual'),a.id);n++;}
+ const est=f=>f.querySelector('.cena-estado').textContent;
+ // Ticker: o cartão falso explica o golpe.
+ const tk=fig('ticker');tk.querySelectorAll('.k-cartao')[1].click();assert.match(est(tk),/^Golpe/);n++;
+ tk.querySelectorAll('.k-cartao')[0].click();assert.match(est(tk),/oficial/);assert.ok(tk.querySelectorAll('.k-cartao')[0].classList.contains('escolhido'));n+=2;
+ // Custódia: a quebra é ruim só na corretora; a frase copiada, só na autocustódia.
+ const cu=fig('custodia');clica(cu,'quebra');
+ assert.ok(cu.querySelector('.c-res-corretora').classList.contains('ruim')&&!cu.querySelector('.c-res-auto').classList.contains('ruim'));n++;
+ clica(cu,'frase');assert.ok(!cu.querySelector('.c-res-corretora').classList.contains('ruim')&&cu.querySelector('.c-res-auto').classList.contains('ruim'));n++;
+ // Hardware wallet: confirmar no caso honesto acerta; no invadido, recusar acerta.
+ const hw=fig('assinatura');clica(hw,'confirmar');assert.ok(hw.classList.contains('h-certo'));n++;
+ clica(hw,'outra');assert.notEqual(hw.querySelector('.h-msg-pc').textContent,hw.querySelector('.h-msg-dev').textContent);clica(hw,'confirmar');assert.ok(hw.classList.contains('h-errado'));clica(hw,'recusar');assert.ok(hw.classList.contains('h-certo'));n+=3;
+ // Envenenamento: o certo não tem diferença marcada; os falsos têm.
+ const en=fig('envenenado'),itens=[...en.querySelectorAll('.e-item')];assert.equal(itens.length,3);n++;
+ const marcas=itens.map(b=>b.querySelectorAll('mark').length);assert.equal(marcas.filter(x=>x===0).length,1);assert.ok(marcas.every(x=>x<=40));n+=2;
+ itens[marcas.indexOf(0)].click();assert.match(est(en),/^Certo/);itens[0===marcas.indexOf(0)?1:0].click();assert.match(est(en),/^Golpe/);n+=2;
+ assert.ok(en.classList.contains('e-revelado'));n++;
+ // FDV: 2 × 100 mi = 200 mi; 2 × 1.000 mi = 2 bi; total nunca abaixo do circulante.
+ const fd=fig('fdv');assert.equal(fd.querySelector('.f-cap').textContent,'US$ 200 mi');assert.equal(fd.querySelector('.f-fdv').textContent,'US$ 2,00 bi');n+=2;
+ muda(fd.querySelector('.f-total'),50);assert.equal(fd.querySelector('.f-total').value,'100');n++;
+ // Desbloqueio: mês 0 = 200, mês 24 = 600 (200% de diluição), mês 48 = 1.000.
+ const db=fig('desbloqueio'),dm=db.querySelector('.d-mes');
+ assert.equal(db.querySelector('.d-circ').textContent,'200');n++;
+ muda(dm,24);assert.equal(db.querySelector('.d-circ').textContent,'600');assert.equal(db.querySelector('.d-dil').textContent,'200%');n+=2;
+ muda(dm,48);assert.equal(db.querySelector('.d-circ').textContent,'1.000');n++;
+ // Allowance: com 100 aprovados, a invasão não leva nada depois da troca; com ilimitado, leva tudo.
+ const al=fig('allowance'),sal=()=>al.querySelector('.a-saldo').textContent;
+ clica(al,'aprovar100');clica(al,'trocar');clica(al,'invadido');assert.equal(sal(),'900 USDC');n++;
+ clica(al,'recomecar');clica(al,'aprovarTudo');clica(al,'trocar');clica(al,'invadido');assert.equal(sal(),'0 USDC');n++;
+ clica(al,'recomecar');clica(al,'aprovarTudo');clica(al,'revogar');clica(al,'invadido');assert.equal(sal(),'1.000 USDC');n++;
+ clica(al,'recomecar');clica(al,'trocar');assert.equal(sal(),'1.000 USDC');assert.match(est(al),/falha/);n+=2;
+ // Multisig 2 de 3: roubo sozinho não executa; com Ana, executa.
+ const ms=fig('multisig'),ex=ms.querySelector('[data-acao="executar"]');
+ assert.ok(ex.disabled);clica(ms,'roubo');assert.ok(ex.disabled);n+=2;
+ ms.querySelectorAll('.g-dono')[0].click();assert.ok(!ex.disabled);ex.click();assert.match(est(ms),/Ana e Bia/);n+=2;
+ const lim=ms.querySelector('.g-limite');clica(ms,'recomecar');lim.value='1';lim.dispatchEvent(new w.Event('change'));clica(ms,'roubo');assert.ok(!ex.disabled);n++;
  assert.deepEqual(errors,[]);n++;
  console.log('visual ok: '+n+' verificações');
  process.exit(0);

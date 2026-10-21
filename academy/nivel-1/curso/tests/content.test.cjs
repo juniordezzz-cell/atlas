@@ -15,7 +15,7 @@ const SOURCES=data.sources,GLOSSARY=data.glossary;
 const slug=s=>String(s).normalize('NFD').replace(/[\u{300}-\u{36f}]/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
 const TYPES=['p','analogy','example','figure','data','table','summary','terms','scene','interactive'];
 // Blocos do piloto visual (21/10/2026): só os tipos que academy-visual.js sabe ligar.
-const KINDS={scene:['cadeia','camadas'],interactive:['hash','papeis','transacao','mineracao','validadores','reorg','utxo','taxas','oraculo']};
+const KINDS={scene:['cadeia','camadas'],interactive:['hash','papeis','transacao','mineracao','validadores','reorg','utxo','taxas','oraculo','ticker','custodia','assinatura','envenenado','fdv','desbloqueio','allowance','multisig']};
 const errs=[];const bad=(where,msg)=>errs.push(where+': '+msg);
 const obj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const str=v=>typeof v==='string'&&v.trim().length>0;

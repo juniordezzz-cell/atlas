@@ -154,3 +154,32 @@
 @media (prefers-reduced-motion:reduce){.p-pacote,.r-bloco,.aula-interativo svg rect,.aula-interativo svg circle{transition:none}}
 /* Celular: diagrama dos interativos com largura mínima e rolagem lateral, como as figuras. */
 @media (max-width:600px){.aula-interativo{overflow-x:auto}.aula-interativo>svg,.u-lado>svg{min-width:460px}}
+
+/* ===== Interativos do Módulo 3 (21/10/2026) ===== */
+.k-cartoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.k-cartao,.e-item,.g-dono{display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px;border:1px solid var(--atlas-border);border-radius:10px;background:#111c30;color:#e2e8f0;font-size:14px;min-height:44px;cursor:pointer}
+.k-cartao span,.k-cartao small,.e-item small,.g-dono small{font-size:12px;color:var(--atlas-muted)}
+.k-cartao code,.e-item code{font-family:ui-monospace,monospace;font-size:13px;color:#67e8f9;word-break:break-all}
+.k-cartao:hover,.e-item:hover,.g-dono:hover{border-color:#60a5fa}
+.k-cartao.escolhido,.e-item.escolhido{border-color:#67e8f9;background:#67e8f914}
+.k-cartao:focus-visible,.e-item:focus-visible,.g-dono:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+.c-cenarios{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
+.c-cenarios .btn[aria-pressed=true]{border-color:#67e8f9;color:#cffafe}
+.c-lados,.h-telas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.c-lado,.h-tela{padding:12px;border:1px solid var(--atlas-border);border-radius:10px;background:#0b1120}
+.c-quem{font-size:13px;color:var(--atlas-muted);margin:0 0 8px}
+.c-res,.h-msg{font-size:14px;line-height:1.6;color:#d5deeb;margin:0}
+.c-res.ruim{color:#fecaca}
+.h-aparelho{border-color:#a78bfa88}
+.h-msg{font-family:ui-monospace,monospace;font-size:13px}
+.h-certo .h-aparelho{border-color:#67e8f9}
+.h-errado .h-aparelho{border-color:#f87171}
+.e-lista{display:flex;flex-direction:column;gap:8px;margin:6px 0}
+.e-item mark{background:transparent;color:inherit}
+.e-revelado .e-item mark{background:#f8717140;color:#fecaca;border-radius:2px}
+.e-salvo{font-family:ui-monospace,monospace;color:#67e8f9;word-break:break-all;text-transform:none;letter-spacing:0}
+.a-perigo .a-caixa-perm{stroke:#f87171}
+.g-donos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0}
+.g-dono[aria-pressed=true]{border-color:#67e8f9;background:#67e8f914}
+.g-dono.roubado{border-color:#f87171;background:#f8717114}
+@media (max-width:600px){.k-cartoes,.c-lados,.h-telas{grid-template-columns:1fr}}
