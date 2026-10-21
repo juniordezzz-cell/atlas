@@ -3,6 +3,17 @@ const AcademyRender = {
  VISUAL:['figure','scene','interactive'],
  /* Cadeia de 4 blocos em SVG: plano B da cena 3D (sem WebGL) e versão do celular.
     quebrada=true pinta de vermelho o bloco 2 em diante e corta as ligações. */
+ /* L1, rollup e sidechain em SVG: plano B da cena 3D "camadas". */
+ camadasSvg(){
+  const t=(x,y,txt,tam,cor,peso)=>'<text x="'+x+'" y="'+y+'" text-anchor="middle" font-size="'+tam+'" font-weight="'+(peso||400)+'" fill="'+cor+'">'+txt+'</text>';
+  return '<svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" font-family="inherit">'
+   +'<rect x="20" y="190" width="600" height="54" rx="10" fill="#111c30" stroke="#60a5fa" stroke-width="2"/>'+t(320,214,'L1 · rede base',15,'#e2e8f0',700)+t(320,234,'consenso e dados finais',12,'#a9b8cf')
+   +'<rect x="60" y="40" width="260" height="70" rx="10" fill="#111c30" stroke="#67e8f9" stroke-width="2"/>'+t(190,68,'Rollup',15,'#e2e8f0',700)+t(190,90,'executa muitas transações fora da L1',12,'#a9b8cf')
+   +'<line x1="190" y1="110" x2="190" y2="186" stroke="#67e8f9" stroke-width="3"/><polygon points="183,178 197,178 190,190" fill="#67e8f9"/>'+t(270,152,'lote + dados ou prova',12,'#67e8f9')
+   +'<rect x="400" y="40" width="200" height="70" rx="10" fill="#111c30" stroke="#a78bfa" stroke-width="2"/>'+t(500,68,'Sidechain',15,'#e2e8f0',700)+t(500,90,'consenso próprio',12,'#a9b8cf')
+   +'<line x1="500" y1="110" x2="500" y2="186" stroke="#a78bfa" stroke-width="3" stroke-dasharray="6 6"/>'+t(560,152,'ponte',12,'#a78bfa')
+   +'</svg>';
+ },
  cadeiaSvg(quebrada){
   const hash=['3fa9','c71e','58d2','a40b'];if(quebrada)hash[1]='9b04';
   let s='<svg viewBox="0 0 640 170" xmlns="http://www.w3.org/2000/svg" font-family="inherit">';
@@ -29,8 +40,10 @@ const AcademyRender = {
    case 'data':{const s=(typeof SOURCES!=='undefined'&&SOURCES[b.source])||null;return `<p class="aula-dado">${this.inline(b.text)} ${s?`<a href="${this.esc(s[1])}" target="_blank" rel="noopener noreferrer">${this.esc(s[0])} ↗</a>`:''} <span class="aula-data">consultado em ${this.date(b.date)}</span></p>`;}
    case 'table':return `<div class="table-scroll"><table class="chart-table comparison"><caption>${this.inline(b.caption||'')}</caption><thead><tr>${b.headers.map(h=>'<th scope="col">'+this.inline(h)+'</th>').join('')}</tr></thead><tbody>${b.rows.map(r=>'<tr>'+r.map((c,i)=>i===0?'<th scope="row">'+this.inline(c)+'</th>':'<td>'+this.inline(c)+'</td>').join('')+'</tr>').join('')}</tbody></table></div>`;
    case 'summary':return `<p class="aula-frase"><strong>Em uma frase</strong> ${this.inline(b.text)}</p>`;
-   case 'scene':return `<figure class="aula-cena" data-cena="${this.esc(b.kind)}"><div class="cena-3d" aria-hidden="true"></div><div class="cena-plano" role="img" aria-label="${this.esc(b.alt||'')}"><div class="plano-inteira">${this.cadeiaSvg(false)}</div><div class="plano-quebrada" hidden>${this.cadeiaSvg(true)}</div></div><div class="cena-controles"><button class="btn small" type="button" data-acao="alterar">Alterar o bloco 2</button><button class="btn small" type="button" data-acao="restaurar" disabled>Restaurar</button></div><p class="cena-estado" aria-live="polite">Cadeia íntegra: cada bloco guarda o hash do anterior.</p><figcaption>${this.inline(b.caption||'')}</figcaption></figure>`;
-   case 'interactive':return `<figure class="aula-interativo" data-interativo="${this.esc(b.kind)}"><label class="interativo-rotulo">${this.inline(b.label||'Digite um texto')}<input class="hash-entrada" type="text" maxlength="200" value="${this.esc(b.value||'')}" autocomplete="off" spellcheck="false"></label><p class="interativo-sub">SHA-256 desse texto</p><output class="hash-saida" aria-live="polite">…</output><p class="hash-mudou">Troque uma letra e veja quantos caracteres do resumo mudam.</p><figcaption>${this.inline(b.caption||'')}</figcaption></figure>`;
+   case 'scene':return b.kind==='cadeia'?`<figure class="aula-cena" data-cena="cadeia"><div class="cena-3d" aria-hidden="true"></div><div class="cena-plano" role="img" aria-label="${this.esc(b.alt||'')}"><div class="plano-inteira">${this.cadeiaSvg(false)}</div><div class="plano-quebrada" hidden>${this.cadeiaSvg(true)}</div></div><div class="cena-controles"><button class="btn small" type="button" data-acao="alterar">Alterar o bloco 2</button><button class="btn small" type="button" data-acao="restaurar" disabled>Restaurar</button></div><p class="cena-estado" aria-live="polite">Cadeia íntegra: cada bloco guarda o hash do anterior.</p><figcaption>${this.inline(b.caption||'')}</figcaption></figure>`
+    :`<figure class="aula-cena" data-cena="${this.esc(b.kind)}"><div class="cena-3d" aria-hidden="true"></div><div class="cena-plano" role="img" aria-label="${this.esc(b.alt||'')}">${b.kind==='camadas'?this.camadasSvg():''}</div><figcaption>${this.inline(b.caption||'')}</figcaption></figure>`;
+   case 'interactive':if(b.kind!=='hash')return `<figure class="aula-interativo" data-interativo="${this.esc(b.kind)}" role="group" aria-label="${this.esc(b.alt||'')}">${typeof AcademyInterativos!=='undefined'&&AcademyInterativos.html[b.kind]?AcademyInterativos.html[b.kind]():''}<figcaption>${this.inline(b.caption||'')}</figcaption></figure>`;
+    return `<figure class="aula-interativo" data-interativo="${this.esc(b.kind)}"><label class="interativo-rotulo">${this.inline(b.label||'Digite um texto')}<input class="hash-entrada" type="text" maxlength="200" value="${this.esc(b.value||'')}" autocomplete="off" spellcheck="false"></label><p class="interativo-sub">SHA-256 desse texto</p><output class="hash-saida" aria-live="polite">…</output><p class="hash-mudou">Troque uma letra e veja quantos caracteres do resumo mudam.</p><figcaption>${this.inline(b.caption||'')}</figcaption></figure>`;
    case 'terms':return `<p class="aula-termos"><span>Termos desta aula:</span> ${b.terms.map(t=>`<button class="btn small" type="button" data-term="${this.esc(t)}" aria-expanded="false" onclick="academy.term(this.dataset.term,this)">${this.esc(t)}</button>`).join(' ')}</p>`;
    default:return '';
   }

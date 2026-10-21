@@ -139,3 +139,27 @@ export function cadeia(el){
   destruir:s.destruir
  };
 }
+
+/* L1 embaixo, rollup em cima juntando transações em lotes que descem para a
+   L1, e sidechain ao lado, com consenso próprio, ligada por uma ponte. */
+export function camadas(el){
+ const s=palco(el,{distancia:7.2,altura:2.6,encaixe:1.7});
+ const placa=(w,d,cor,y,x=0)=>{const g=new THREE.BoxGeometry(w,0.25,d);const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:COR.fundo,transparent:true,opacity:0.6,roughness:0.6}));m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g),new THREE.LineBasicMaterial({color:cor})));m.position.set(x,y,0);s.grupo.add(m);return m;};
+ const rotulo=(txt,sub,x,y,z,cor)=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(3.2,1.6),new THREE.MeshBasicMaterial({map:etiqueta([txt,sub],{w:512,h:256,tamanho:64,cores:[cor,COR.mudo]}),transparent:true,depthWrite:false}));p.position.set(x,y,z);s.grupo.add(p);return p;};
+ placa(8,3.2,COR.azul,-1.4);rotulo('L1','rede base',-2.6,-0.75,1.7,'#93c5fd');
+ placa(3.6,2.2,COR.ciano,1.2,-1.6);rotulo('Rollup','executa fora',-1.6,2.35,1.2,'#67e8f9');
+ placa(2.6,2.2,COR.violeta,1.2,2.6);rotulo('Sidechain','consenso próprio',2.6,2.35,1.2,'#c4b5fd');
+ const ponte=ligacao(new THREE.Vector3(2.6,1.05,0),new THREE.Vector3(2.6,-1.25,0),COR.violeta);s.grupo.add(ponte);
+ /* Transações pequenas no rollup; de tempos em tempos viram um lote que desce. */
+ const txs=[];for(let k=0;k<6;k++){const c=cubo(0.22,COR.ciano,true);c.position.set(-2.9+(k%3)*0.55,1.5,-0.5+Math.floor(k/3)*0.6);s.grupo.add(c);txs.push(c);}
+ const lote=cubo(0.5,COR.ciano,true);lote.position.set(-1.6,1.2,0);lote.visible=false;s.grupo.add(lote);
+ const blocosL1=[];for(let k=0;k<5;k++){const b=cubo(0.42,COR.azul,false);b.position.set(-1.6+k*0.7,-1.05,-0.8);s.grupo.add(b);blocosL1.push(b);}
+ s.tick=(t,mover)=>{
+  const fase=mover?(t%4)/4:0.99;
+  txs.forEach((c,k)=>{c.visible=fase<0.45;c.position.y=1.5+(mover?Math.sin(t*2+k)*0.05:0);});
+  lote.visible=fase>=0.45;lote.position.y=1.2-(Math.max(0,fase-0.5)/0.5)*2.2;
+  blocosL1.forEach((b,k)=>{b.material.color.setHex(fase>0.95&&k===0?COR.ciano:COR.fundo);});
+ };
+ s.laco();
+ return {destruir:s.destruir};
+}

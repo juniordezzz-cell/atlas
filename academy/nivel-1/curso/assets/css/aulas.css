@@ -79,7 +79,7 @@
 
 /* Cena 3D (cadeia de blocos). Sem WebGL fica o SVG (.cena-plano). */
 .aula-cena,.aula-interativo{padding:18px;border:1px solid var(--atlas-border);border-radius:12px;background:radial-gradient(ellipse at 50% 0%,#2563eb1f,transparent 70%),#0b1120}
-.cena-3d{display:none;height:260px;margin:-6px -6px 6px;cursor:grab}
+.cena-3d{display:none;height:280px;margin:-6px -6px 6px;cursor:grab}
 .aula-cena.com-3d .cena-3d{display:block}
 .aula-cena.com-3d .cena-plano{display:none}
 .cena-plano svg{display:block;width:100%;height:auto}
@@ -113,3 +113,44 @@
 @media (max-width:600px){.cena-3d{height:200px}.hash-saida{font-size:13px}}
 /* O renderer desenha em resolução dobrada nas telas de alta densidade; o tamanho na página vem daqui. */
 .cena-3d canvas,.trilha-3d canvas{display:block;width:100%!important;height:100%!important}
+
+/* ===== Interativos do Módulo 2 (21/10/2026) ===== */
+.aula-interativo svg{display:block;width:100%;height:auto;margin:6px 0}
+.aula-interativo svg rect,.aula-interativo svg circle{transition:stroke .3s,fill .3s,width .4s,opacity .3s}
+.aula-interativo .aceso rect,.aula-interativo .seguido rect{stroke:#67e8f9}
+.aula-interativo .aceso rect{fill:#67e8f91f}
+/* Papéis: o pacote "tx" anda entre as caixas. */
+.p-pacote{transition:transform .7s cubic-bezier(.3,.8,.3,1)}
+/* Transação: etapa feita e atual. */
+.t-etapa.feito circle{stroke:#67e8f9;fill:#67e8f926}
+.t-etapa.atual circle{stroke:#60a5fa;fill:#2563eb55}
+.t-etapa.feito text:first-of-type,.t-etapa.atual text:first-of-type{fill:#e2e8f0}
+.t-status{font-size:14px;color:#d5deeb;margin:4px 0}
+.t-status-valor{color:#67e8f9}
+/* Mineração. */
+.m-grade{display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:12px}
+.aula-interativo select.hash-entrada{appearance:auto}
+.m-ok .m-hash{border-color:#67e8f9;color:#cffafe}
+.m-rodando .m-hash{opacity:.75}
+.m-tentativas{font-size:14px;color:#d5deeb;margin:10px 0 0}
+/* Validadores. */
+.v-linha.escolhido .v-barra{fill:#67e8f9}
+.v-linha.punido .v-barra{fill:#f87171;opacity:.6}
+/* Reorganização: blocos aparecem conforme são minerados. */
+.r-bloco{opacity:0;transition:opacity .4s}
+.r-bloco.visivel{opacity:1}
+.r-reorg .r-a-0 rect{stroke:#f87171;stroke-dasharray:5 5}
+/* UTXO × contas. */
+.u-lados{display:grid;grid-template-columns:1fr;gap:6px}
+.u-lados svg{max-width:420px}
+.u-nota.gasta rect{stroke:#f87171;fill:#f8717122}
+.aula-interativo input[type=range]{width:100%;accent-color:#60a5fa;min-height:32px}
+/* Taxas. */
+.x-vaga.minha rect{stroke:#67e8f9;fill:#67e8f926}
+/* Oráculo. */
+.o-info{font-size:14px;color:#d5deeb;margin:6px 0}
+.o-defasado .o-contrato rect{stroke:#fcd34d}
+@media (max-width:600px){.m-grade,.u-lados{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.p-pacote,.r-bloco,.aula-interativo svg rect,.aula-interativo svg circle{transition:none}}
+/* Celular: diagrama dos interativos com largura mínima e rolagem lateral, como as figuras. */
+@media (max-width:600px){.aula-interativo{overflow-x:auto}.aula-interativo>svg,.u-lado>svg{min-width:460px}}

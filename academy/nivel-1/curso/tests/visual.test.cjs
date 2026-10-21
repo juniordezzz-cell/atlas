@@ -53,6 +53,52 @@ const tick=ms=>new Promise(r=>setTimeout(r,ms));
  assert.ok(!ev(`AcademyRender.block({t:'scene',kind:'"><b>x',caption:'c',alt:'a'})`).includes('"><b>'));n++;
  // Índice ganhou a barra de progresso.
  assert.ok(d.querySelector('.lesson-toc .aula-progresso i'));n++;
+ // ===== Módulo 2: toda aula principal tem visual, e cada interativo responde. =====
+ ev("app.navigate('m2')");
+ const principais=[...d.querySelectorAll('#tab-content > .lesson-layout > div > .lesson')];
+ assert.equal(principais.length,12);n++;
+ for(const a of principais){assert.ok(a.classList.contains('tem-visual'),a.id);n++;}
+ const fig=k=>d.querySelector('.aula-interativo[data-interativo="'+k+'"]');
+ const clica=(f,a)=>f.querySelector('[data-acao="'+a+'"]').click();
+ const muda=(el,v)=>{el.value=String(v);el.dispatchEvent(new w.Event('input'));};
+ // Papéis e transação: passo a passo.
+ assert.match(fig('papeis').querySelector('.cena-estado').textContent,/^1 de 4/);clica(fig('papeis'),'proximo');
+ assert.match(fig('papeis').querySelector('.cena-estado').textContent,/^2 de 4/);assert.ok(fig('papeis').querySelector('.p-no').classList.contains('aceso'));n+=2;
+ clica(fig('transacao'),'proximo');clica(fig('transacao'),'proximo');
+ assert.equal(fig('transacao').querySelector('.t-status-valor').textContent,'enviada');n++;
+ assert.ok(fig('transacao').querySelector('[data-acao="anterior"]').disabled===false);n++;
+ // Mineração: com 1 zero, acha rápido e o hash confere.
+ const mi=fig('mineracao');mi.querySelector('.m-dif').value='1';mi.querySelector('.m-dif').dispatchEvent(new w.Event('change'));
+ clica(mi,'minerar');for(let k=0;k<40&&!mi.classList.contains('m-ok');k++)await tick(50);
+ assert.ok(mi.classList.contains('m-ok'));assert.match(mi.querySelector('.m-hash').textContent,/^0[0-9a-f]{63}$/);n+=2;
+ const crypto=require('node:crypto');
+ assert.equal(crypto.createHash('sha256').update(mi.querySelector('.m-dados').value+mi.querySelector('.m-nonce').textContent).digest('hex'),mi.querySelector('.m-hash').textContent);n++;
+ // Validadores: 100 sorteios somam 100; trapaça expulsa Caio.
+ const va=fig('validadores');clica(va,'sortear100');
+ assert.equal([...va.querySelectorAll('.v-sorteios')].reduce((s,t)=>s+parseInt(t.textContent,10),0),100);n++;
+ clica(va,'trapaca');assert.ok(va.querySelector('.v-2').classList.contains('punido'));assert.match(va.querySelector('.v-2 .v-valor').textContent,/expulso/);n+=2;
+ // Reorganização: B passa A.
+ const re=fig('reorg');assert.ok(!re.classList.contains('r-reorg'));clica(re,'b');clica(re,'b');
+ assert.ok(re.classList.contains('r-reorg'));assert.match(re.querySelector('.cena-estado').textContent,/volta para a fila/);n+=2;
+ clica(re,'recomecar');assert.ok(!re.classList.contains('r-reorg'));n++;
+ // UTXO: pagar 0,6 gasta 0,5 + 0,3 e devolve 0,1999.
+ const ut=fig('utxo');muda(ut.querySelector('.u-valor'),0.6);
+ assert.equal(ut.querySelector('.u-troco').textContent,'troco: 0,1999');assert.equal(ut.querySelector('.u-conta').textContent,'saldo depois: 0,3999');n+=2;
+ assert.deepEqual([...ut.querySelectorAll('.u-nota')].map(g=>g.classList.contains('gasta')),[true,true,false]);n++;
+ // Taxas: 20 entra, 1 fica na fila; na hora de pico, 5 não basta.
+ const tx=fig('taxas'),tr=tx.querySelector('.x-taxa');
+ muda(tr,20);assert.ok(tx.querySelector('.x-vaga.minha'));n++;
+ muda(tr,1);assert.equal(tx.querySelector('.x-vaga.minha'),null);assert.match(tx.querySelector('.x-fila').textContent,/você \(1\)/);n+=2;
+ muda(tr,7);assert.ok(tx.querySelector('.x-vaga.minha'));clica(tx,'pico');assert.equal(tx.querySelector('.x-vaga.minha'),null);n+=2;
+ // Oráculo: 0,5% não atualiza; 2% atualiza; 24 h atualiza.
+ const or=fig('oraculo'),ofo=or.querySelector('.o-fora');
+ muda(ofo,100.5);assert.equal(or.querySelector('.o-dentro').textContent,'100,00');n++;
+ muda(ofo,102);assert.equal(or.querySelector('.o-dentro').textContent,'102,00');n++;
+ muda(ofo,102.5);for(let k=0;k<24;k++)clica(or,'hora');assert.equal(or.querySelector('.o-dentro').textContent,'102,50');assert.match(or.querySelector('.cena-estado').textContent,/24 h/);n+=2;
+ // Cena camadas sem WebGL: fica o SVG.
+ const ca=d.querySelector('.aula-cena[data-cena="camadas"]');assert.ok(ca&&ca.querySelector('.cena-plano svg'));assert.ok(!ca.classList.contains('com-3d'));n+=2;
+ // Laboratórios antigos do M2 continuam abrindo.
+ ev("app.switchTab('labs')");assert.ok(d.querySelector('#tab-labs .legacy-labs'));n++;
  assert.deepEqual(errors,[]);n++;
  console.log('visual ok: '+n+' verificações');
  process.exit(0);

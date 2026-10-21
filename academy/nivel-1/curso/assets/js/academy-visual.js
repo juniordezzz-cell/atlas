@@ -26,7 +26,9 @@ const AcademyVisual={
   this.limpar();
   const raiz=document.getElementById('view-container');if(!raiz)return;
   raiz.querySelectorAll('.aula-interativo[data-interativo="hash"]').forEach(f=>this.hash(f));
+  raiz.querySelectorAll('.aula-interativo[data-interativo]').forEach(f=>{const k=f.dataset.interativo;if(k!=='hash'&&typeof AcademyInterativos!=='undefined'&&AcademyInterativos.ligar[k])AcademyInterativos.ligar[k](f);});
   raiz.querySelectorAll('.aula-cena[data-cena="cadeia"]').forEach(f=>this.cadeia(f));
+  raiz.querySelectorAll('.aula-cena[data-cena="camadas"]').forEach(f=>this.camadas(f));
   const trilha=raiz.querySelector('[data-trilha]');if(trilha)this.trilha(trilha);
   this.rolar(raiz);
  },
@@ -73,6 +75,17 @@ const AcademyVisual={
    cena=m.cadeia(caixa);this.cenas.push(cena);
    caixa.setAttribute('role','img');caixa.setAttribute('aria-label',plano?.getAttribute('aria-label')||'');caixa.removeAttribute('aria-hidden');
    if(q)cena.quebrar(true);
+  }).catch(()=>fig.classList.remove('com-3d'));
+ },
+ /* L1, rollup e sidechain: só olhar e girar; sem WebGL fica o SVG. */
+ camadas(fig){
+  const caixa=fig.querySelector('.cena-3d'),plano=fig.querySelector('.cena-plano');
+  if(!this.webgl()||!caixa)return;
+  this.tres().then(m=>{
+   if(!fig.isConnected)return;
+   fig.classList.add('com-3d');
+   this.cenas.push(m.camadas(caixa));
+   caixa.setAttribute('role','img');caixa.setAttribute('aria-label',plano?.getAttribute('aria-label')||'');caixa.removeAttribute('aria-hidden');
   }).catch(()=>fig.classList.remove('com-3d'));
  },
  trilha(el){
