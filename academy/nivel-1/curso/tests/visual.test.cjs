@@ -139,6 +139,34 @@ const tick=ms=>new Promise(r=>setTimeout(r,ms));
  assert.ok(ex.disabled);clica(ms,'roubo');assert.ok(ex.disabled);n+=2;
  ms.querySelectorAll('.g-dono')[0].click();assert.ok(!ex.disabled);ex.click();assert.match(est(ms),/Ana e Bia/);n+=2;
  const lim=ms.querySelector('.g-limite');clica(ms,'recomecar');lim.value='1';lim.dispatchEvent(new w.Event('change'));clica(ms,'roubo');assert.ok(!ex.disabled);n++;
+ // ===== Módulo 4 =====
+ ev("app.navigate('m4')");
+ const p4=[...d.querySelectorAll('#tab-content > .lesson-layout > div > .lesson')];
+ assert.equal(p4.length,10);n++;
+ for(const a of p4){assert.ok(a.classList.contains('tem-visual'),a.id);n++;}
+ // Gasto duplo: 4 passos.
+ const gd=fig('gastoduplo');for(let k=0;k<3;k++)clica(gd,'proximo');assert.ok(gd.classList.contains('passo-3'));assert.match(est(gd),/^4 de 4/);n+=2;
+ // Montar transação: 0,35 a 10 sat/vB → 141 vB, 1.410 sat, troco 0,04998590.
+ const mt=fig('montartx');
+ assert.equal(mt.querySelector('.mt-vb').textContent,'≈ 141 vB');assert.equal(mt.querySelector('.mt-fee').textContent,'1.410 sat');assert.equal(mt.querySelector('.mt-troco').textContent,'0,04998590');n+=3;
+ const moedas=[...mt.querySelectorAll('.mt-moeda input')];moedas[3].checked=false;moedas[3].dispatchEvent(new w.Event('change'));moedas[0].checked=true;moedas[0].dispatchEvent(new w.Event('change'));
+ assert.ok(mt.classList.contains('mt-falta'));assert.match(est(mt),/Não fecha/);n+=2;
+ // Endereços: cada exemplo cai no tipo certo.
+ const ed=fig('endereco'),tipos=[];for(const b of ed.querySelectorAll('[data-exemplo]')){b.click();tipos.push(ed.querySelector('.en-tipo').textContent.split(' ')[0]);}
+ assert.deepEqual(tipos,['Legado','Script','SegWit','Taproot','Isto']);n++;
+ const et=ed.querySelector('.en-texto');et.value='bc1qxyz';et.dispatchEvent(new w.Event('input'));assert.equal(ed.querySelector('.en-tipo').textContent,'Formato não reconhecido');n++;
+ // Halving: era 5 (índice 4) = 3,125 BTC; era 1 = 50.
+ const hv=fig('halving');assert.equal(hv.querySelector('.hv-sub').textContent,'3,125 BTC');assert.match(hv.querySelector('.hv-tot').textContent,/^20,34 milhões/);n+=2;
+ muda(hv.querySelector('.hv-era-in'),0);assert.equal(hv.querySelector('.hv-sub').textContent,'50 BTC');assert.equal(hv.querySelector('.hv-tot').textContent,'10,50 milhões (50,0%)');n+=2;
+ // Regras: 3,325 aceita; 3,5 recusa.
+ const rb=fig('regrasbtc');assert.ok(!rb.classList.contains('rb-recusado'));muda(rb.querySelector('.rb-valor'),3.5);assert.ok(rb.classList.contains('rb-recusado'));n+=2;
+ // Acelerar: RBF e CPFP fazem entrar; esperar três vezes baixa o corte.
+ const ac=fig('acelerar');assert.ok(!ac.classList.contains('ac-entra'));clica(ac,'rbf');assert.ok(ac.classList.contains('ac-entra'));n+=2;
+ clica(ac,'recomecar');clica(ac,'cpfp');assert.ok(ac.classList.contains('ac-entra')&&ac.classList.contains('ac-com-filho'));n++;
+ clica(ac,'recomecar');clica(ac,'esperar');clica(ac,'esperar');clica(ac,'esperar');assert.ok(ac.classList.contains('ac-entra'));n++;
+ // Canal: 3 pagamentos e fechamento = 2 transações na blockchain.
+ const cn=fig('canal');clica(cn,'ana');clica(cn,'ana');clica(cn,'bruno');assert.equal(cn.querySelector('.cn-ana-txt').textContent,'85.000 sat');n++;
+ clica(cn,'fechar');assert.match(cn.querySelector('.cn-cont').textContent,/2 transações · fora dela: 3 pagamentos/);assert.ok(cn.querySelector('[data-acao="ana"]').disabled);n+=2;
  assert.deepEqual(errors,[]);n++;
  console.log('visual ok: '+n+' verificações');
  process.exit(0);

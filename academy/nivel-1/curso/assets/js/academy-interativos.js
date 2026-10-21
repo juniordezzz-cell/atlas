@@ -135,6 +135,47 @@ const AcademyInterativos=(()=>{
   multisig:()=>'<label class="interativo-rotulo">Assinaturas exigidas (limite) <select class="hash-entrada g-limite"><option value="1">1 de 3</option><option value="2" selected>2 de 3</option><option value="3">3 de 3</option></select></label>'
    +'<p class="interativo-sub">Transação pendente: enviar 5 ETH para a conta da empresa</p><div class="g-donos">'+['Ana','Bia','Caio'].map((n,k)=>'<button type="button" class="g-dono" data-k="'+k+'" aria-pressed="false">'+n+'<small>não assinou</small></button>').join('')+'</div>'
    +botoes([['executar','Executar'],['roubo','A chave da Bia é roubada'],['recomecar','Recomeçar']])+estado(''),
+  /* ===== Módulo 4 ===== */
+  /* Gasto duplo: duas transações gastando a mesma moeda. */
+  gastoduplo:()=>svg(640,250,
+    caixa(10,95,120,60,'Alice','gd-alice','moeda #7 · 1 BTC')
+   +linha(130,110,190,60)+linha(130,140,190,190)
+   +caixa(190,30,190,60,'tx A → Bruno','gd-txa','gasta a moeda #7')+caixa(190,160,190,60,'tx B → Caio','gd-txb','gasta a moeda #7')
+   +linha(380,60,450,125)+'<g class="gd-bloco">'+caixa(450,95,170,60,'Bloco 840.001','gd-bloco-c','inclui a tx A')+'</g>'
+   +'<text class="gd-x" x="285" y="245" text-anchor="middle" font-size="15" font-weight="700" fill="'+C.verm+'">tx B inválida: a moeda #7 já foi gasta</text>')
+   +botoes([['anterior','← Anterior'],['proximo','Próximo passo →'],['recomecar','Recomeçar']])+estado(''),
+  /* Montar uma transação: escolher moedas, ver taxa e troco. */
+  montartx:()=>'<p class="interativo-sub">Pagar 0,30000000 BTC a Bruno. Escolha as moedas (UTXOs) que entram.</p><div class="mt-moedas">'
+   +[5e6,12e6,2e7,35e6,8e7].map((s,k)=>'<label class="mt-moeda"><input type="checkbox" data-sats="'+s+'"'+(k===3?' checked':'')+'> <span>'+fmt(s/1e8,8)+' BTC</span></label>').join('')+'</div>'
+   +'<label class="interativo-rotulo">Taxa da rede agora (sat/vB) <span class="mt-taxa-txt"></span><input class="mt-taxa" type="range" min="1" max="60" step="1" value="10"></label>'
+   +'<div class="mt-conta"><p>Entradas <strong class="mt-ent"></strong></p><p>Pagamento <strong>0,30000000</strong></p><p>Tamanho <strong class="mt-vb"></strong></p><p>Taxa <strong class="mt-fee"></strong></p><p>Troco <strong class="mt-troco"></strong></p></div>'+estado(''),
+  /* Que tipo de endereço é este? */
+  endereco:()=>'<label class="interativo-rotulo">Cole ou escolha um endereço<input class="hash-entrada en-texto" type="text" maxlength="100" autocomplete="off" spellcheck="false"></label>'
+   +'<div class="cena-controles">'+[['1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa','Legado'],['3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy','Script'],['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4','SegWit'],['bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0','Taproot'],['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48','Outro']].map(([a,t])=>'<button class="btn small" type="button" data-exemplo="'+a+'">'+t+'</button>').join('')+'</div>'
+   +'<p class="en-tipo"></p>'+estado(''),
+  /* Halving: a recompensa cai à metade a cada 210 mil blocos. */
+  halving:()=>{
+   let barras='';for(let k=0;k<8;k++){const tot=21*(1-Math.pow(2,-(k+1))),h=tot/21*150;barras+='<g class="hv-era hv-era-'+k+'"><rect x="'+(50+k*72)+'" y="'+(180-h).toFixed(1)+'" width="56" height="'+h.toFixed(1)+'" rx="4" fill="'+C.linha+'"/><text x="'+(78+k*72)+'" y="200" text-anchor="middle" font-size="13" fill="'+C.mudo+'">'+(k+1)+'ª</text></g>';}
+   return '<label class="interativo-rotulo">Era (cada uma dura 210.000 blocos, cerca de 4 anos) <span class="hv-txt"></span><input class="hv-era-in" type="range" min="0" max="7" step="1" value="4"></label>'
+    +svg(640,220,linha(40,180,630,180)+'<line x1="40" y1="30" x2="630" y2="30" stroke="'+C.ciano+'" stroke-width="1.5" stroke-dasharray="5 5"/><text x="630" y="22" text-anchor="end" font-size="13" fill="'+C.ciano+'">limite de 21 milhões</text>'+barras+'<text x="40" y="216" font-size="12" fill="'+C.mudo+'">barras: total emitido ao fim de cada era</text>')
+    +'<p class="o-info">Recompensa por bloco: <strong class="hv-sub"></strong> · emitido ao fim da era: <strong class="hv-tot"></strong></p>'+estado('');
+  },
+  /* Nós conferem: o minerador não escolhe quanto ganha. */
+  regrasbtc:()=>'<label class="interativo-rotulo">O minerador escreve no bloco que ganha <span class="rb-txt"></span><input class="rb-valor" type="range" min="0" max="10" step="0.125" value="3.325"></label>'
+   +'<p class="o-info">Regra hoje: subsídio de 3,125 + taxas do bloco (0,2 neste exemplo) = <strong>3,325 BTC</strong> no máximo</p>'
+   +svg(640,90,['A','B','C'].map((l,k)=>'<g class="rb-no"><rect x="'+(10+k*212)+'" y="10" width="196" height="64" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="'+(108+k*212)+'" y="36" text-anchor="middle" font-size="16" font-weight="700" fill="'+C.texto+'">Nó '+l+'</text><text class="rb-res" x="'+(108+k*212)+'" y="60" text-anchor="middle" font-size="15" fill="'+C.mudo+'"></text></g>').join(''))+estado(''),
+  /* Transação presa: esperar, RBF ou CPFP. */
+  acelerar:()=>svg(640,150,'<text x="10" y="22" font-size="15" fill="'+C.mudo+'">Para entrar no próximo bloco hoje: acima de 12 sat/vB</text>'
+    +'<line x1="10" y1="40" x2="630" y2="40" stroke="'+C.linha+'" stroke-width="2"/>'
+    +'<g class="ac-pai"><rect x="10" y="60" width="270" height="70" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="145" y="88" text-anchor="middle" font-size="16" font-weight="700" fill="'+C.texto+'">Sua transação</text><text class="ac-pai-txt" x="145" y="114" text-anchor="middle" font-size="14" fill="'+C.mudo+'"></text></g>'
+    +'<g class="ac-filho"><line x1="280" y1="95" x2="350" y2="95" stroke="'+C.ciano+'" stroke-width="2"/><rect x="350" y="60" width="280" height="70" rx="8" fill="'+C.fundo+'" stroke="'+C.ciano+'" stroke-width="2"/><text x="490" y="88" text-anchor="middle" font-size="16" font-weight="700" fill="'+C.texto+'">Filha (gasta o troco)</text><text class="ac-filho-txt" x="490" y="114" text-anchor="middle" font-size="14" fill="'+C.mudo+'"></text></g>')
+   +botoes([['esperar','Esperar'],['rbf','Substituir com taxa maior (RBF)'],['cpfp','Filha paga pela mãe (CPFP)'],['recomecar','Recomeçar']])+estado(''),
+  /* Canal Lightning entre Ana e Bruno. */
+  canal:()=>svg(640,150,'<text x="10" y="24" font-size="16" font-weight="700" fill="'+C.texto+'">Ana</text><text x="630" y="24" text-anchor="end" font-size="16" font-weight="700" fill="'+C.texto+'">Bruno</text>'
+    +'<rect x="10" y="40" width="620" height="44" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><rect class="cn-ana" x="10" y="40" width="620" height="44" rx="8" fill="'+C.azul+'"/><line class="cn-div" x1="630" y1="34" x2="630" y2="90" stroke="'+C.texto+'" stroke-width="3"/>'
+    +'<text class="cn-ana-txt" x="20" y="112" font-size="15" fill="'+C.texto+'"></text><text class="cn-bruno-txt" x="630" y="112" text-anchor="end" font-size="15" fill="'+C.texto+'"></text>'
+    +'<text class="cn-cont" x="320" y="140" text-anchor="middle" font-size="14" fill="'+C.ciano+'"></text>')
+   +botoes([['ana','Ana paga 10.000 sat'],['bruno','Bruno paga 5.000 sat'],['fechar','Fechar o canal'],['recomecar','Recomeçar']])+estado(''),
  };
 
  const ligar={
@@ -367,6 +408,102 @@ const AcademyInterativos=(()=>{
    acao(fig,'roubo',()=>{ass=[false,true,false];roubada=true;feito=false;const need=Number(lim.value);mostrar(need>1?'O ladrão assina como Bia, mas sozinho não alcança '+need+' assinaturas. Ana e Caio recusam e o dinheiro fica parado.':'Com limite 1 de 3, a assinatura do ladrão já basta para executar.');});
    acao(fig,'recomecar',()=>{ass=[false,false,false];roubada=false;feito=false;mostrar();});
    mostrar();
+  },
+  /* ===== Módulo 4 ===== */
+  gastoduplo(fig){
+   passos(fig,[
+    'Alice tem uma moeda (UTXO #7) de 1 BTC e assina duas transações que gastam essa mesma moeda: uma para Bruno, outra para Caio.',
+    'As duas chegam à rede. Cada nó guarda na fila só a primeira que viu e recusa a outra, porque gasta uma moeda que já tem dono na fila.',
+    'Um minerador inclui a tx A num bloco, e os nós conferem e aceitam o bloco.',
+    'Agora a moeda #7 está gasta na história. A tx B ficou inválida para todos os nós: não existe mais moeda para gastar. Bruno, que esperou a confirmação, está seguro.'
+   ]);
+  },
+  montartx(fig){
+   const r=$(fig,'.mt-taxa'),pag=3e7,sat=v=>fmt(v/1e8,8);
+   const atualizar=()=>{
+    const ent=$$(fig,'.mt-moeda input').filter(i=>i.checked).map(i=>Number(i.dataset.sats));
+    const soma=ent.reduce((a,b)=>a+b,0),taxa=Number(r.value),vb=11+68*ent.length+31*2,fee=vb*taxa,troco=soma-pag-fee;
+    $(fig,'.mt-taxa-txt').textContent=String(taxa);
+    $(fig,'.mt-ent').textContent=sat(soma)+' ('+ent.length+' moeda'+(ent.length===1?'':'s')+')';
+    $(fig,'.mt-vb').textContent='≈ '+vb+' vB';$(fig,'.mt-fee').textContent=fee.toLocaleString('pt-BR')+' sat';
+    $(fig,'.mt-troco').textContent=troco>=0?sat(troco):'—';
+    fig.classList.toggle('mt-falta',troco<0);
+    $(fig,'.cena-estado').textContent=!ent.length?'Escolha ao menos uma moeda.':troco<0?'Não fecha: as moedas escolhidas não cobrem o pagamento mais a taxa.':'Fecha. Cada moeda a mais aumenta o tamanho da transação, e a taxa é cobrada por tamanho, não por valor. Tamanhos aproximados de exemplo.';
+   };
+   $$(fig,'.mt-moeda input').forEach(i=>i.addEventListener('change',atualizar));r.addEventListener('input',atualizar);atualizar();
+  },
+  endereco(fig){
+   const ent=$(fig,'.en-texto'),tipo=$(fig,'.en-tipo'),est=$(fig,'.cena-estado');
+   const tipos=[
+    [/^1[1-9A-HJ-NP-Za-km-z]{25,34}$/,'Legado (P2PKH), começa com 1','O formato original. Funciona, mas costuma pagar mais taxa por ocupar mais espaço.'],
+    [/^3[1-9A-HJ-NP-Za-km-z]{25,34}$/,'Script (P2SH), começa com 3','Muito usado para multisig e para carteiras de transição.'],
+    [/^bc1q[02-9ac-hj-np-z]{38,58}$/i,'SegWit (P2WPKH), começa com bc1q','Mais eficiente, geralmente com taxa menor.'],
+    [/^bc1p[02-9ac-hj-np-z]{58}$/i,'Taproot (P2TR), começa com bc1p','O formato mais novo, de 2021, com mais privacidade para scripts complexos.'],
+    [/^(tb1|[mn2])/,'Endereço de rede de teste','Moedas de teste não valem nada. Não envie bitcoin de verdade para cá.'],
+    [/^0x[0-9a-fA-F]{40}$/,'Isto não é um endereço de Bitcoin','É um endereço de Ethereum e redes parecidas. Enviar bitcoin para cá não funciona.']];
+   const ver=()=>{
+    const v=ent.value.trim();
+    if(!v){tipo.textContent='';est.textContent='Escolha um exemplo ou cole um endereço. A conferência aqui é só pelo formato; a carteira também confere a soma de verificação.';fig.classList.remove('en-ok','en-ruim');return;}
+    const t=tipos.find(([re])=>re.test(v));
+    tipo.textContent=t?t[1]:'Formato não reconhecido';est.textContent=t?t[2]:'Confira se copiou o endereço inteiro, sem espaços.';
+    fig.classList.toggle('en-ok',!!t&&tipos.indexOf(t)<4);fig.classList.toggle('en-ruim',!t||tipos.indexOf(t)>=4);
+   };
+   $$(fig,'[data-exemplo]').forEach(b=>b.addEventListener('click',()=>{ent.value=b.dataset.exemplo;ver();}));
+   ent.addEventListener('input',ver);ver();
+  },
+  halving(fig){
+   const r=$(fig,'.hv-era-in');
+   const atualizar=()=>{
+    const k=Number(r.value),sub=50/Math.pow(2,k),tot=21e6*(1-Math.pow(2,-(k+1)));
+    $(fig,'.hv-txt').textContent=(k+1)+'ª';$(fig,'.hv-sub').textContent=fmt(sub,sub<1?8:3).replace(/,?0+$/,'')+' BTC';
+    $(fig,'.hv-tot').textContent=fmt(tot/1e6,2)+' milhões ('+fmt(tot/21e6*100,1)+'%)';
+    $$(fig,'.hv-era').forEach((g,j)=>g.classList.toggle('feita',j<=k));
+    $(fig,'.cena-estado').textContent=k===4?'É a era atual: desde abril de 2024, cada bloco cria 3,125 BTC novos.':k<4?'Era já encerrada. A recompensa era maior, e boa parte dos 21 milhões saiu nessas primeiras eras.':'Era futura. A recompensa continua caindo à metade; as últimas frações de bitcoin saem por volta de 2140.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  regrasbtc(fig){
+   const r=$(fig,'.rb-valor'),LIM=3.325;
+   const atualizar=()=>{
+    const v=Number(r.value),ok=v<=LIM+1e-9;
+    $(fig,'.rb-txt').textContent=fmt(v,3)+' BTC';
+    $$(fig,'.rb-res').forEach(t=>{t.textContent=ok?'✓ aceita':'✗ recusa';});
+    fig.classList.toggle('rb-recusado',!ok);
+    $(fig,'.cena-estado').textContent=ok?'Dentro da regra: os nós aceitam o bloco e o minerador recebe. (Pegar menos que o permitido também é válido.)':'Acima da regra: todo nó honesto recusa o bloco. O minerador gastou energia e não ganha nada.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  acelerar(fig){
+   const VB=140;let pai=2,filho=0,corte=12,est=$(fig,'.cena-estado');
+   const mostrar=t=>{
+    $(fig,'.ac-pai-txt').textContent=pai+' sat/vB · '+(pai*VB).toLocaleString('pt-BR')+' sat';
+    fig.classList.toggle('ac-com-filho',filho>0);
+    $(fig,'.ac-filho-txt').textContent=filho?filho.toLocaleString('pt-BR')+' sat de taxa':'';
+    const media=filho?(pai*VB+filho)/(VB+110):pai,entra=media>corte;
+    fig.classList.toggle('ac-entra',entra);
+    est.textContent=t+(entra?' Agora entra no próximo bloco.':' Ainda fica na fila.');
+   };
+   acao(fig,'esperar',()=>{corte=Math.max(1,corte-5);$(fig,'svg text').textContent='Para entrar no próximo bloco hoje: acima de '+corte+' sat/vB';mostrar('A demanda caiu e o corte baixou para '+corte+' sat/vB.');});
+   acao(fig,'rbf',()=>{pai=15;filho=0;mostrar('A carteira manda uma nova versão da mesma transação, gastando as mesmas moedas, com taxa maior (15 sat/vB). A substituta precisa pagar mais taxa total que a original.');});
+   acao(fig,'cpfp',()=>{filho=Math.ceil((corte+1)*(VB+110)-pai*VB);mostrar('Você gasta o troco numa transação filha com taxa alta. O minerador só leva a filha se levar a mãe junto, então avalia a taxa média das duas.');});
+   acao(fig,'recomecar',()=>{pai=2;filho=0;corte=12;$(fig,'svg text').textContent='Para entrar no próximo bloco hoje: acima de 12 sat/vB';mostrar('Sua transação pagou 2 sat/vB e travou.');});
+   mostrar('Sua transação pagou 2 sat/vB e travou.');
+  },
+  canal(fig){
+   const CAP=100000;let ana=CAP,pags=0,fechado=false,est=$(fig,'.cena-estado');
+   const mostrar=t=>{
+    const w=Math.round(ana/CAP*620);
+    $(fig,'.cn-ana').setAttribute('width',String(Math.max(0,w)));$(fig,'.cn-div').setAttribute('x1',String(10+w));$(fig,'.cn-div').setAttribute('x2',String(10+w));
+    $(fig,'.cn-ana-txt').textContent=ana.toLocaleString('pt-BR')+' sat';$(fig,'.cn-bruno-txt').textContent=(CAP-ana).toLocaleString('pt-BR')+' sat';
+    $(fig,'.cn-cont').textContent='Na blockchain: '+(fechado?'2 transações':'1 transação')+' · fora dela: '+pags+' pagamento'+(pags===1?'':'s');
+    ['ana','bruno','fechar'].forEach(a=>{$(fig,'[data-acao="'+a+'"]').disabled=fechado;});
+    fig.classList.toggle('cn-fechado',fechado);est.textContent=t;
+   };
+   acao(fig,'ana',()=>{if(ana<10000){mostrar('Ana não tem saldo suficiente do lado dela do canal.');return;}ana-=10000;pags++;mostrar('Pagamento instantâneo: os dois assinam um novo retrato do saldo. Nada vai para a blockchain.');});
+   acao(fig,'bruno',()=>{if(CAP-ana<5000){mostrar('Bruno ainda não tem saldo do lado dele.');return;}ana+=5000;pags++;mostrar('O dinheiro volta pelo mesmo canal. Só o retrato mais recente vale.');});
+   acao(fig,'fechar',()=>{fechado=true;mostrar('Canal fechado: uma transação na blockchain registra o saldo final. '+pags+' pagamentos custaram só 2 transações na rede.');});
+   acao(fig,'recomecar',()=>{ana=CAP;pags=0;fechado=false;mostrar('Ana abriu um canal com Bruno travando 100.000 sat numa transação na blockchain.');});
+   mostrar('Ana abriu um canal com Bruno travando 100.000 sat numa transação na blockchain.');
   },
  };
  /* Desbloqueio de exemplo (milhões de um total de 1.000): 200 no lançamento,

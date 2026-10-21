@@ -183,3 +183,38 @@
 .g-dono[aria-pressed=true]{border-color:#67e8f9;background:#67e8f914}
 .g-dono.roubado{border-color:#f87171;background:#f8717114}
 @media (max-width:600px){.k-cartoes,.c-lados,.h-telas{grid-template-columns:1fr}}
+
+/* ===== Interativos do Módulo 4 (21/10/2026) ===== */
+/* Gasto duplo: o que aparece em cada passo. */
+[data-interativo=gastoduplo] .gd-bloco,[data-interativo=gastoduplo] .gd-x{opacity:0;transition:opacity .4s}
+[data-interativo=gastoduplo].passo-2 .gd-bloco,[data-interativo=gastoduplo].passo-3 .gd-bloco,[data-interativo=gastoduplo].passo-3 .gd-x{opacity:1}
+[data-interativo=gastoduplo].passo-0 .gd-txa rect,[data-interativo=gastoduplo].passo-0 .gd-txb rect,[data-interativo=gastoduplo].passo-1 .gd-txa rect,[data-interativo=gastoduplo].passo-1 .gd-txb rect{stroke:#fcd34d}
+[data-interativo=gastoduplo].passo-2 .gd-txa rect,[data-interativo=gastoduplo].passo-3 .gd-txa rect,[data-interativo=gastoduplo] .gd-bloco rect{stroke:#67e8f9}
+[data-interativo=gastoduplo].passo-3 .gd-txb rect{stroke:#f87171;stroke-dasharray:6 5}
+/* Montar transação. */
+.mt-moedas{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.mt-moeda{display:flex;align-items:center;gap:8px;padding:10px 12px;min-height:44px;border:1px solid var(--atlas-border);border-radius:8px;background:#111c30;font-family:ui-monospace,monospace;font-size:13px;color:#e2e8f0;cursor:pointer}
+.mt-moeda:has(input:checked){border-color:#67e8f9;background:#67e8f914}
+.mt-moeda input{accent-color:#67e8f9;width:18px;height:18px}
+.mt-conta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+.mt-conta p{margin:0;padding:8px 10px;border-radius:8px;background:#0b1120;font-size:12px;color:var(--atlas-muted)}
+.mt-conta strong{display:block;font-family:ui-monospace,monospace;font-size:13px;color:#e2e8f0}
+.mt-falta .mt-troco{color:#fca5a5}
+/* Tipo de endereço. */
+.en-tipo{font-size:16px;font-weight:700;margin:8px 0 0;min-height:1.4em}
+.en-ok .en-tipo{color:#67e8f9}
+.en-ruim .en-tipo{color:#fca5a5}
+/* Halving. */
+.hv-era.feita rect{fill:#a78bfa}
+/* Regras: bloco recusado. */
+.rb-recusado .rb-no rect{stroke:#f87171}
+.rb-recusado .rb-res{fill:#fca5a5}
+.aula-interativo:not(.rb-recusado) .rb-res{fill:#67e8f9}
+/* Acelerar. */
+.ac-filho{opacity:0;transition:opacity .4s}
+.ac-com-filho .ac-filho{opacity:1}
+.ac-entra .ac-pai rect{stroke:#67e8f9}
+/* Canal Lightning. */
+.cn-ana{transition:width .5s}
+.cn-fechado .cn-ana{fill:#67e8f9}
+@media (prefers-reduced-motion:reduce){.cn-ana,.ac-filho,[data-interativo=gastoduplo] .gd-bloco,[data-interativo=gastoduplo] .gd-x{transition:none}}
