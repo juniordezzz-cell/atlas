@@ -77,21 +77,52 @@
       <button id="ac-tab-papers" class="ac-tab" role="tab" aria-controls="ac-pane-papers" aria-selected="false" tabindex="-1">Papers</button>
     </div>
 
+    <!-- Início (21/10/2026): vitrine do Academy. Trilha 3D dos 10 módulos
+         (o mesmo academy-3d.js do curso), faixa de números, mapa dos módulos
+         e como se aprende. Os números são contados do conteúdo do curso e
+         ficam em academy-hub.js (NUMEROS). -->
     <section id="ac-pane-inicio" class="ac-pane" role="tabpanel" aria-labelledby="ac-tab-inicio">
-      <div class="ac-continue">
-        <div class="ac-continue-txt">
-          <p class="ac-eyebrow">Continue de onde parou</p>
-          <strong id="ac-continue-title">Comece pelo Nível 1</strong>
-          <small id="ac-continue-detail">Trilha de criptoeconomia · 10 módulos</small>
-          <div class="ac-bar"><span id="ac-continue-bar" style="width:0"></span></div>
+      <div class="ac-hero">
+        <div class="ac-hero-txt">
+          <p class="ac-eyebrow">ATLAS Academy · Nível 1 · Trilha de criptoeconomia</p>
+          <h2 class="ac-hero-h">Entenda cripto por dentro.</h2>
+          <p class="ac-hero-p">Do hash ao sistema financeiro global, em 10 módulos. Aulas curtas com a figura ao lado, simulações que você mexe e cada número com a fonte e a data em que foi conferido.</p>
+          <div class="ac-hero-cta">
+            <a id="ac-continue-btn" class="ac-btn" href="nivel-1/">Começar a trilha →</a>
+            <a class="ac-btn ac-btn-sec" href="#cursos" data-ac-ir="cursos">Ver os níveis</a>
+          </div>
+          <div class="ac-continue">
+            <p class="ac-eyebrow">Seu progresso</p>
+            <strong id="ac-continue-title">Comece pelo Nível 1</strong>
+            <small id="ac-continue-detail">Trilha de criptoeconomia · 10 módulos</small>
+            <div class="ac-bar"><span id="ac-continue-bar" style="width:0"></span></div>
+          </div>
         </div>
-        <a id="ac-continue-btn" class="ac-btn" href="nivel-1/">Começar →</a>
+        <div class="ac-hero-3d" id="ac-trilha">
+          <div class="ac-trilha-canvas" aria-hidden="true"></div>
+          <p class="ac-trilha-nome">Arraste para girar. Clique num bloco para abrir o módulo.</p>
+          <ol class="ac-trilha-plano" aria-label="Módulos do Nível 1"></ol>
+        </div>
       </div>
+
+      <ul class="ac-numeros" aria-label="O Nível 1 em números"></ul>
+
+      <h2 class="ac-titulo">O que você vai aprender</h2>
+      <p class="ac-sub">Cada módulo parte do anterior. Você pode seguir a ordem ou abrir o que precisa agora.</p>
+      <div class="ac-mapa"></div>
+
+      <h2 class="ac-titulo">Como você aprende</h2>
+      <div class="ac-como">
+        <div class="ac-como-item"><b>Ver</b><span>Cada aula tem uma figura, uma cena 3D ou uma simulação presa ao lado do texto, que acompanha a leitura.</span></div>
+        <div class="ac-como-item"><b>Mexer</b><span>Minere um bloco com SHA-256 de verdade, liquide uma posição, quebre uma stablecoin, rebalanceie uma carteira.</span></div>
+        <div class="ac-como-item"><b>Conferir</b><span>Todo dado real vem com a fonte e a data. Os números de exemplo vêm marcados como exemplo.</span></div>
+      </div>
+
       <div class="ac-grid">
         <button class="ac-card" data-ac-ir="cursos"><b>Cursos</b><span>Níveis do básico ao avançado</span></button>
         <button class="ac-card" data-ac-ir="artigos"><b>Artigos</b><span>Textos para ler com calma</span></button>
         <button class="ac-card" data-ac-ir="links"><b>Links</b><span>Sites e ferramentas de referência</span></button>
-        <button class="ac-card" data-ac-ir="papers"><b>Papers</b><span>Whitepapers e estudos</span></button>
+        <button class="ac-card" data-ac-ir="papers"><b>Papers</b><span>Os documentos que criaram as redes</span></button>
       </div>
     </section>
 
@@ -112,13 +143,57 @@
     </section>
 
     <section id="ac-pane-artigos" class="ac-pane" role="tabpanel" aria-labelledby="ac-tab-artigos" hidden>
-      <div class="ac-empty"><b>Artigos em breve</b>Os textos entram aqui conforme forem escritos.</div>
+      <div class="ac-empty"><b>Artigos em breve</b>Textos para ler com calma, sobre o que está acontecendo no mercado. Enquanto isso, a trilha do Nível 1 está completa.<br><a class="ac-btn" href="nivel-1/" style="margin-top:16px">Abrir o Nível 1 →</a></div>
     </section>
+
+    <!-- Links e Papers (21/10/2026): referências que o próprio curso cita,
+         conferidas em 21/10/2026. O dono acrescenta as dele aqui. -->
     <section id="ac-pane-links" class="ac-pane" role="tabpanel" aria-labelledby="ac-tab-links" hidden>
-      <div class="ac-empty"><b>Links em breve</b>Sites e ferramentas de referência entram aqui.</div>
+      <h2>Links</h2>
+      <p class="ac-sub">Os sites que o curso usa como fonte, separados por para que servem.</p>
+      <h3 class="ac-ref-grupo">Para aprender</h3>
+      <div class="ac-refs">
+        <a class="ac-ref" href="https://ethereum.org/" target="_blank" rel="noopener noreferrer"><b>ethereum.org</b><span>Documentação oficial do Ethereum: contas, gas, staking, segurança.</span></a>
+        <a class="ac-ref" href="https://developer.bitcoin.org/devguide/" target="_blank" rel="noopener noreferrer"><b>Bitcoin Developer Guide</b><span>Blocos, transações e UTXOs explicados por dentro.</span></a>
+        <a class="ac-ref" href="https://bitcoin.design/guide/" target="_blank" rel="noopener noreferrer"><b>Bitcoin Design Guide</b><span>Tipos de endereço, carteiras e boas práticas de uso.</span></a>
+      </div>
+      <h3 class="ac-ref-grupo">Para ver a rede ao vivo</h3>
+      <div class="ac-refs">
+        <a class="ac-ref" href="https://mempool.space/" target="_blank" rel="noopener noreferrer"><b>mempool.space</b><span>Explorador do Bitcoin: blocos, fila de transações e taxas em sat/vB.</span></a>
+        <a class="ac-ref" href="https://etherscan.io/" target="_blank" rel="noopener noreferrer"><b>Etherscan</b><span>Explorador do Ethereum: contratos verificados, transações e eventos.</span></a>
+      </div>
+      <h3 class="ac-ref-grupo">Documentação de protocolos</h3>
+      <div class="ac-refs">
+        <a class="ac-ref" href="https://aave.com/docs" target="_blank" rel="noopener noreferrer"><b>Aave</b><span>Empréstimos, health factor, liquidações e flash loans.</span></a>
+        <a class="ac-ref" href="https://docs.compound.xyz/" target="_blank" rel="noopener noreferrer"><b>Compound III</b><span>Mercados com ativo base e garantias.</span></a>
+        <a class="ac-ref" href="https://docs.uniswap.org/" target="_blank" rel="noopener noreferrer"><b>Uniswap</b><span>AMMs, liquidez e impermanent loss.</span></a>
+        <a class="ac-ref" href="https://docs.chain.link/" target="_blank" rel="noopener noreferrer"><b>Chainlink</b><span>Oráculos e feeds de preço.</span></a>
+      </div>
+      <h3 class="ac-ref-grupo">Segurança</h3>
+      <div class="ac-refs">
+        <a class="ac-ref" href="https://ethereum.org/security/" target="_blank" rel="noopener noreferrer"><b>Segurança no ethereum.org</b><span>Golpes comuns, frase de recuperação e aprovações.</span></a>
+        <a class="ac-ref" href="https://support.metamask.io/stay-safe/protect-yourself/wallet-and-hardware/address-poisoning-scams/" target="_blank" rel="noopener noreferrer"><b>Envenenamento de endereço</b><span>Como o golpe funciona e como se proteger (MetaMask).</span></a>
+      </div>
+      <h3 class="ac-ref-grupo">No ATLAS</h3>
+      <div class="ac-refs">
+        <a class="ac-ref" href="../pages/ferramentas.html"><b>Ferramentas do ATLAS</b><span>Scanner de pools, Calculadora de Market Cap e mais, para aplicar o que você aprendeu.</span></a>
+      </div>
     </section>
+
     <section id="ac-pane-papers" class="ac-pane" role="tabpanel" aria-labelledby="ac-tab-papers" hidden>
-      <div class="ac-empty"><b>Papers em breve</b>Whitepapers e estudos entram aqui.</div>
+      <h2>Papers</h2>
+      <p class="ac-sub">Os documentos originais por trás das redes e dos padrões que o curso explica.</p>
+      <div class="ac-refs">
+        <a class="ac-ref" href="https://bitcoin.org/bitcoin.pdf" target="_blank" rel="noopener noreferrer"><b>Bitcoin: A Peer-to-Peer Electronic Cash System</b><span>Satoshi Nakamoto, 2008. O documento que criou o Bitcoin. Módulos 1, 2 e 4.</span></a>
+        <a class="ac-ref" href="https://ethereum.org/whitepaper/" target="_blank" rel="noopener noreferrer"><b>Ethereum Whitepaper</b><span>Vitalik Buterin, 2014. A plataforma de contratos inteligentes. Módulo 5.</span></a>
+        <a class="ac-ref" href="https://lightning.network/lightning-network-paper.pdf" target="_blank" rel="noopener noreferrer"><b>The Bitcoin Lightning Network</b><span>Rascunho do paper que propõe os canais de pagamento. Módulo 4.</span></a>
+        <a class="ac-ref" href="https://eips.ethereum.org/EIPS/eip-20" target="_blank" rel="noopener noreferrer"><b>EIP-20 · Padrão de tokens</b><span>Fabian Vogelsteller e Vitalik Buterin, 2015. A base de quase todo token. Módulos 3 e 5.</span></a>
+        <a class="ac-ref" href="https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki" target="_blank" rel="noopener noreferrer"><b>BIP-32 · Carteiras HD</b><span>2012. Uma semente gera uma árvore de chaves. Módulo 3.</span></a>
+        <a class="ac-ref" href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki" target="_blank" rel="noopener noreferrer"><b>BIP-39 · Frase de recuperação</b><span>A lista de 2048 palavras. Módulo 1.</span></a>
+        <a class="ac-ref" href="https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki" target="_blank" rel="noopener noreferrer"><b>BIP-350 · Endereços bech32m</b><span>O formato dos endereços Taproot (bc1p). Módulo 4.</span></a>
+        <a class="ac-ref" href="https://eips.ethereum.org/EIPS/eip-3643" target="_blank" rel="noopener noreferrer"><b>ERC-3643 · Tokens regulados</b><span>Identidade, lista de permitidos e congelamento. Módulo 8.</span></a>
+        <a class="ac-ref" href="https://www.bankofengland.co.uk/quarterly-bulletin/2014/q1/money-creation-in-the-modern-economy" target="_blank" rel="noopener noreferrer"><b>Money creation in the modern economy</b><span>Banco da Inglaterra, 2014. Como os bancos criam dinheiro. Módulo 10.</span></a>
+      </div>
     </section>
 
   </main>

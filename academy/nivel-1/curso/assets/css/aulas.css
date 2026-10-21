@@ -252,3 +252,7 @@
 .pm-ok .k-cartao.escolhido{border-color:#67e8f9}
 .pm-bloq .k-cartao.escolhido{border-color:#f87171;background:#f8717114}
 .pm-bloq .cena-estado{color:#fecaca}
+
+/* Endereços e hashes longos (ex.: contrato do USDC no M3) quebram a linha em
+   vez de alargar a página no celular. */
+.lesson p,.aula-dado,.aula-analogia,.example,.aula-frase,.aula-termo-def{overflow-wrap:anywhere}

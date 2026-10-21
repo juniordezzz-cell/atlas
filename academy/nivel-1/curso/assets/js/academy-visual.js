@@ -104,7 +104,7 @@ const AcademyVisual={
  rolar(raiz){
   if(!window.gsap||!window.ScrollTrigger)return;
   gsap.registerPlugin(ScrollTrigger);
-  const scroller=this.rolagem(),calmo=this.calmo();
+  const scroller=this.rolagem(),calmo=this.calmo(),largo=!!window.matchMedia?.('(min-width:1100px)').matches;
   /* O índice começa por "Como tudo começou" e segue as aulas na mesma ordem. */
   const aulas=[...raiz.querySelectorAll('#tab-content .aula-historia, #tab-content .lesson')];
   const links=[...raiz.querySelectorAll('.lesson-toc a')].filter(l=>!/Indo além/.test(l.textContent));
@@ -113,7 +113,9 @@ const AcademyVisual={
    if(calmo)return;
    const vis=a.querySelector('.aula-visual');
    gsap.from(a,{opacity:0,y:24,duration:0.6,ease:'power2.out',scrollTrigger:{trigger:a,scroller,start:'top 90%',once:true}});
-   if(vis)gsap.from(vis,{opacity:0,x:28,duration:0.8,delay:0.12,ease:'power3.out',scrollTrigger:{trigger:a,scroller,start:'top 82%',once:true}});
+   /* O palco entra da direita só quando é coluna própria (>= 1100px); no celular,
+      o deslocamento alargaria a página durante a animação. */
+   if(vis)gsap.from(vis,{opacity:0,x:largo?28:0,y:largo?0:16,duration:0.8,delay:0.12,ease:'power3.out',scrollTrigger:{trigger:a,scroller,start:'top 82%',once:true}});
   });
   const barra=raiz.querySelector('.aula-progresso i'),cont=raiz.querySelector('#tab-content');
   if(barra&&cont)ScrollTrigger.create({trigger:cont,scroller,start:'top top',end:'bottom bottom',onUpdate:s=>{barra.style.transform='scaleX('+s.progress.toFixed(3)+')';}});
