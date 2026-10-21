@@ -8,11 +8,11 @@ const AcademyRender = {
    case 'p':return `<p>${this.inline(b.text)}</p>`;
    case 'analogy':return `<div class="aula-analogia"><strong>Pense assim</strong>${this.inline(b.text)}</div>`;
    case 'example':return `<div class="example"><strong>Exemplo com números</strong>${this.inline(b.text)}</div>`;
-   case 'figure':return `<figure class="aula-figura" role="group">${String(b.svg).replace(/^\s*<svg/,'<svg role="img" aria-label="'+this.esc(b.alt||'')+'"')}<figcaption>${this.inline(b.caption||'')}</figcaption></figure>`;
+   case 'figure':return `<figure class="aula-figura">${String(b.svg).replace(/^\s*<svg/,'<svg role="img" aria-label="'+this.esc(b.alt||'')+'"')}<figcaption>${this.inline(b.caption||'')}</figcaption></figure>`;
    case 'data':{const s=(typeof SOURCES!=='undefined'&&SOURCES[b.source])||null;return `<p class="aula-dado">${this.inline(b.text)} ${s?`<a href="${this.esc(s[1])}" target="_blank" rel="noopener noreferrer">${this.esc(s[0])} ↗</a>`:''} <span class="aula-data">consultado em ${this.date(b.date)}</span></p>`;}
    case 'table':return `<div class="table-scroll"><table class="chart-table comparison"><caption>${this.inline(b.caption||'')}</caption><thead><tr>${b.headers.map(h=>'<th scope="col">'+this.inline(h)+'</th>').join('')}</tr></thead><tbody>${b.rows.map(r=>'<tr>'+r.map((c,i)=>i===0?'<th scope="row">'+this.inline(c)+'</th>':'<td>'+this.inline(c)+'</td>').join('')+'</tr>').join('')}</tbody></table></div>`;
    case 'summary':return `<p class="aula-frase"><strong>Em uma frase</strong> ${this.inline(b.text)}</p>`;
-   case 'terms':return `<p class="aula-termos"><span>Termos desta aula:</span> ${b.terms.map(t=>`<button class="btn small" type="button" data-term="${this.esc(t)}" onclick="academy.term(this.dataset.term)">${this.esc(t)}</button>`).join(' ')}</p>`;
+   case 'terms':return `<p class="aula-termos"><span>Termos desta aula:</span> ${b.terms.map(t=>`<button class="btn small" type="button" data-term="${this.esc(t)}" aria-expanded="false" onclick="academy.term(this.dataset.term,this)">${this.esc(t)}</button>`).join(' ')}</p>`;
    default:return '';
   }
  },
@@ -26,6 +26,7 @@ const AcademyRender = {
  },
  figures(m){
   if(!AcademyContent.isNew(m))return '';
-  return m.lessons.map(l=>l.blocks.filter(b=>b.t==='figure').map(b=>`<section class="panel aula-infografico"><h3>${this.esc(l.title)}</h3>${this.block(b,m)}</section>`).join('')).join('');
+  const html=m.lessons.map(l=>l.blocks.filter(b=>b.t==='figure').map(b=>`<section class="panel aula-infografico"><h3>${this.esc(l.title)}</h3>${this.block(b,m)}</section>`).join('')).join('');
+  return html?'<h2>Figuras das aulas</h2>'+html:'';
  }
 };

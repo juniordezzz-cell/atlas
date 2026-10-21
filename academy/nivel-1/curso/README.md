@@ -7,7 +7,8 @@ Desde 20/10/2026, o menu lateral próprio do curso deu lugar a uma linha no topo
 ## Estudar
 
 - Cada módulo mostra todos os tópicos. Os assuntos mais difíceis ficam no fim, em "Indo além (opcional)". O filtro Iniciante, Intermediário e Avançado foi removido em 20/10/2026.
-- Use Aulas, Laboratórios, Diagramas e gráficos, Avaliação e Fontes em qualquer módulo.
+- Use Aulas, Laboratórios, Infográficos, Avaliação e Fontes em qualquer módulo.
+- Nas aulas do formato novo, os botões de "Termos desta aula" abrem a definição logo abaixo, sem sair da aula; "ver no Glossário →" leva à página do glossário.
 - Blockchain tem 19 tópicos; DeFi tem 32. A comparação de crédito se refere explicitamente a Aave V3 e Compound III, com menções à diferença de Compound v2. Não representa cobertura de todas as versões de Aave.
 - Os exemplos usam números hipotéticos e não são cotações. Cada gráfico novo inclui descrição e tabela. Os laboratórios originais foram preservados com rótulos de simulação.
 - Notas, favoritos, avaliações e última posição ficam no armazenamento deste navegador. A conclusão exige uma tentativa perfeita na avaliação; leitura revisada é registrada separadamente.

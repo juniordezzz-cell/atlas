@@ -19,6 +19,14 @@ const fixture={id:'m3',title:'Carteiras (fixture)',icon:'x',summary:'Resumo.',mi
   {id:'c',title:'Aula opcional',optional:true,sources:['m3.x'],blocks:[{t:'p',text:'Texto c.'}]}],
  quiz:[['Q?',['a','b'],0,'ok']],sources:{'m3.x':['Fonte X','https://example.org/x','desc']},glossary:[['TermoFixture','def']]};
 ev(`AcademyContent.register(${JSON.stringify(fixture)})`);
+// Fixture com marcação no texto: tudo deve aparecer como texto, nunca como HTML.
+const X='<b>&';
+const hostil={id:'m4',title:'Título '+X,icon:'x',summary:'Resumo '+X,minutes:5,goals:['Meta '+X],flow:['Passo '+X,'b','c'],
+ history:{intro:'Intro.',timeline:[{when:'1',title:'t',text:'x'},{when:'2',title:'t',text:'x'},{when:'3',title:'t',text:'x'}]},
+ lessons:[{id:'h',title:'Aula '+X+' hostilx',optional:false,sources:['m4.y'],blocks:[{t:'p',text:'Texto hostilx.'},{t:'summary',text:'Resumo.'},{t:'terms',terms:['Termo '+X]}]}],
+ quiz:[['Pergunta '+X+'?',['Opção '+X,'Outra **forte**'],0,'Explicação '+X+' com **negrito**.']],
+ sources:{'m4.y':['Fonte Y','https://example.org/y','desc']},glossary:[['Termo '+X,'Significado '+X+' com **ênfase**.']]};
+ev(`AcademyContent.register(${JSON.stringify(hostil)})`);
 // inline
 assert.equal(ev("AcademyRender.inline('1 < 2 & **forte**')"),'1 &lt; 2 &amp; <strong>forte</strong>');n++;
 ev("localStorage.setItem('atlas-academy-v1',JSON.stringify({version:1,completed:['m3'],studied:[],scores:{},notes:{},bookmarks:['m3-0','m3:a','m3:zzz','m2-0','m2-99','lixo'],last:'m1',level:2}))");
@@ -51,7 +59,8 @@ assert.match(d.querySelector('#lesson-m3-a .aula-dado').textContent,/consultado 
 assert.ok(d.querySelector('#lesson-m3-a .table-scroll table.chart-table.comparison caption'));n++;
 assert.ok(d.querySelector('#lesson-m3-a .aula-frase strong'));n++;
 assert.equal(d.querySelectorAll('#lesson-m3-a .aula-termos button').length,2);n++;
-assert.ok(d.querySelector('#lesson-m3-a figure.aula-figura[role=group] svg[role=img][aria-label="x"]'));n++;
+assert.ok(d.querySelector('#lesson-m3-a figure.aula-figura svg[role=img][aria-label="x"]'));n++;
+assert.equal(d.querySelectorAll('figure.aula-figura[role]').length,0);n++;
 assert.ok(d.querySelector('#lesson-m3-a .source-inline a'));n++;
 // favoritos
 d.querySelector('#lesson-m3-b .lesson-foot button').click();
@@ -61,6 +70,8 @@ ev("app.switchTab('infographics')");
 assert.equal(d.querySelector('#btn-infographics').textContent,'Infográficos');n++;
 assert.ok(d.querySelector('#tab-infographics .aula-figura'));n++;
 assert.match(d.querySelector('#tab-infographics').textContent,/Primeira aula/);n++;
+{const h=d.querySelector('#tab-infographics h2');assert.equal(h&&h.textContent,'Figuras das aulas');n++;
+ assert.ok(h.compareDocumentPosition(d.querySelector('#tab-infographics .aula-figura'))&4);n++;}
 // termos
 ev("academy.term('Colateral')");
 assert.equal(ev('app.currentView'),'glossary');n++;
@@ -84,3 +95,62 @@ console.log('render ok: '+n+' verificações');
 ev("app.navigate('m6');academy.jump('m6','alem')");
 assert.equal(d.activeElement&&d.activeElement.id,'alem-m6');
 console.log('jump alem ok');
+// Campos de módulo novo com "<b>&" aparecem como texto (nenhum <b> criado).
+let k=0;
+const semB=(el,msg)=>{assert.ok(el,msg+': elemento ausente');assert.equal(el.querySelectorAll('b').length,0,msg+': virou HTML');k++;};
+ev("app.navigate('m4')");
+{const h=d.querySelector('.module-header');semB(h,'cabeçalho');
+ assert.equal(h.querySelector('h1').textContent,'Título '+X);k++;
+ assert.equal(h.querySelector('h1 + p').textContent,'Resumo '+X);k++;
+ assert.equal(h.querySelector('.objective-list li').textContent,'Meta '+X);k++;}
+assert.match(d.getElementById('course-current-label').textContent,/Título <b>&/);k++;
+semB(d.getElementById('module-navigation'),'menu de módulos');
+ev("app.switchTab('infographics')");
+{const f=d.querySelector('#tab-infographics .flow-diagram');semB(f,'fluxo');assert.match(f.textContent,/Passo <b>&/);k++;}
+ev("app.switchTab('assessment')");
+{const q=d.querySelector('#academy-quiz');semB(q,'avaliação');
+ assert.equal(q.querySelector('legend').textContent,'1. Pergunta '+X+'?');k++;
+ assert.equal(q.querySelector('.quiz-answer span').textContent,'Opção '+X);k++;
+ assert.equal(q.querySelectorAll('.quiz-answer span')[1].querySelector('strong').textContent,'forte');k++;
+ d.querySelector('input[name="academy-q0"][value="1"]').checked=true;ev('academy.checkQuiz()');
+ const fb=d.getElementById('feedback-0');semB(fb,'explicação');
+ assert.ok(fb.textContent.includes('Opção '+X)&&fb.textContent.includes('Explicação '+X));k++;
+ assert.ok(!fb.textContent.includes('**'));assert.equal(fb.querySelector('strong').textContent,'negrito');k++;}
+ev("app.navigate('glossary')");
+{const dl=d.querySelector('.glossary-list');semB(dl,'glossário');
+ const dt=[...dl.querySelectorAll('dt')].find(x=>x.textContent==='Termo '+X);assert.ok(dt);k++;
+ assert.match(dt.nextElementSibling.textContent,/Significado <b>& com ênfase/);k++;}
+ev("app.navigate('dashboard')");semB(d.querySelector('.dashboard-grid'),'mapa de estudos');
+assert.ok([...d.querySelectorAll('.module-card h3')].some(h=>h.textContent==='Título '+X));k++;
+// Texto do painel: só os módulos reescritos começam pela história.
+assert.ok(!/Cada módulo começa pela história/.test(d.getElementById('view-container').textContent));k++;
+assert.match(d.getElementById('view-container').textContent,/já reescritos começam pela história/);k++;
+ev("academy.query='hostilx';app.navigate('search')");
+{const c=d.querySelector('.source-card');semB(c,'busca');assert.equal(c.querySelector('h2').textContent,'Aula '+X+' hostilx');k++;}
+ev("academy.state.bookmarks.push('m4:h');app.navigate('saved')");
+{semB(d.getElementById('view-container'),'favoritos');assert.ok([...d.querySelectorAll('#view-container .source-card h3')].some(h=>h.textContent==='Aula '+X+' hostilx'));k++;}
+// Termo da aula: a definição abre no lugar, sem trocar de página nem rolar.
+ev("app.navigate('m4')");
+{const main=d.querySelector('main');let writes=0,scrolls=0;const real=Object.getOwnPropertyDescriptor(w.Element.prototype,'scrollTop');
+ Object.defineProperty(main,'scrollTop',{configurable:true,get(){return 321},set(){writes++}});
+ const oldScrollTo=w.scrollTo;w.scrollTo=()=>{scrolls++};const hash=w.location.hash;
+ const btn=d.querySelector('#lesson-m4-h .aula-termos button');btn.click();
+ assert.equal(ev('app.currentView'),'m4');k++;
+ assert.equal(w.location.hash,hash);k++;
+ assert.equal(writes,0,'scrollTop foi zerado');assert.equal(scrolls,0,'a janela rolou');assert.equal(main.scrollTop,321);k++;
+ const box=d.querySelector('#lesson-m4-h .aula-termos').nextElementSibling;
+ assert.ok(box&&box.classList.contains('aula-termo-def'),'caixa de definição logo após a linha de termos');k++;
+ semB(box,'definição');assert.match(box.textContent,/Significado <b>& com ênfase/);k++;
+ assert.equal(btn.getAttribute('aria-expanded'),'true');k++;
+ const link=[...box.querySelectorAll('a,button')].find(a=>/ver no Glossário →/.test(a.textContent));assert.ok(link,'link para o Glossário');k++;
+ btn.click();assert.equal(d.querySelectorAll('#lesson-m4-h .aula-termo-def').length,0,'segundo clique fecha');assert.equal(btn.getAttribute('aria-expanded'),'false');k++;
+ btn.click();d.querySelector('#lesson-m4-h .aula-termo-def a, #lesson-m4-h .aula-termo-def button').click();
+ assert.equal(ev('app.currentView'),'glossary');k++;
+ delete main.scrollTop;w.scrollTo=oldScrollTo;void real;}
+// navigating volta a false mesmo se a montagem do módulo falhar.
+ev("academy._enh=academy.enhance;academy.enhance=()=>{throw new Error('falha de teste')}");
+assert.throws(()=>ev("app.navigate('m4')"));
+ev("academy.enhance=academy._enh");
+assert.equal(ev('academy.navigating'),false);k++;
+assert.equal(errors.length,0,errors.join('\n'));k++;
+console.log('escape/termos ok: '+k+' verificações');

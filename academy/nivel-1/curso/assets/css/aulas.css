@@ -11,6 +11,11 @@
 .aula-frase{max-width:76ch;margin:20px 0 8px;padding:12px 16px;border-radius:8px;background:#3b82f614;font-size:15px;line-height:1.65;color:#e2e8f0}
 .aula-frase strong{margin-right:6px;color:var(--atlas-primary)}
 .aula-termos{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;font-size:13px;color:var(--atlas-muted)}
+.aula-termos button[aria-expanded="true"]{border-color:#67e8f9;color:#67e8f9}
+.aula-termo-def{max-width:76ch;margin:-4px 0 14px;padding:12px 16px;border:1px solid var(--atlas-border);border-left:3px solid #67e8f9;border-radius:0 8px 8px 0;background:#67e8f90a;font-size:14px;line-height:1.65;color:#d5deeb}
+.aula-termo-def p{margin:0 0 6px}
+.aula-termo-def strong:first-child{margin-right:4px;color:#67e8f9}
+.aula-termo-def a{font-size:13px;color:var(--atlas-primary)}
 .aula-historia{margin-bottom:28px;padding:24px;border:1px solid var(--atlas-border);border-radius:12px;background:#151e32;scroll-margin-top:24px}
 .aula-historia>p{max-width:76ch;font-size:16px;line-height:1.75;color:#d5deeb}
 .aula-alem{margin-top:34px}
@@ -31,3 +36,10 @@
 .lesson-layout>*{min-width:0}
 /* No celular a figura mantém pelo menos 480px (texto de 16 no viewBox de 640 fica com 12px) e rola de lado. */
 @media (max-width:600px){.aula-figura{overflow-x:auto;padding:12px}.aula-figura svg{min-width:480px}}
+/* Aviso de rolagem no celular: a legenda ganha "deslize…" e a borda esmaece onde ainda há figura.
+   A sombra usa capas com background-attachment local: só aparece quando a figura de fato transborda,
+   e a capa do lado já visto cobre a sombra daquele lado. */
+@media (max-width:600px){
+ .aula-figura{background:linear-gradient(to right,#0d1729 40%,#0d172900) left/32px 100% no-repeat local,linear-gradient(to left,#0d1729 40%,#0d172900) right/32px 100% no-repeat local,radial-gradient(farthest-side at 0 50%,#67e8f955,#67e8f900) left/14px 100% no-repeat scroll,radial-gradient(farthest-side at 100% 50%,#67e8f955,#67e8f900) right/14px 100% no-repeat scroll,#0d1729}
+ .aula-figura figcaption::before{content:"deslize para ver a figura inteira →";content:"deslize para ver a figura inteira →"/"";display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:#67e8f9}
+}
