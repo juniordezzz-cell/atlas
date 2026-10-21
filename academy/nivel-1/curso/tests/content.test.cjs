@@ -15,6 +15,7 @@ const SOURCES=data.sources,GLOSSARY=data.glossary;
 const slug=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
 const TYPES=['p','analogy','example','figure','data','table','summary','terms'];
 const errs=[];const bad=(where,msg)=>errs.push(where+': '+msg);
+const obj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const str=v=>typeof v==='string'&&v.trim().length>0;
 const novos=data.course.filter(c=>c.isNew).map(c=>c.m);
 const novosIds=new Set(novos.map(m=>m.id));
@@ -27,13 +28,17 @@ for(const m of novos){
  const M='módulo '+m.id;
  if(!m.history||!str(m.history.intro))bad(M,'history.intro vazio');
  if(!m.history||!Array.isArray(m.history.timeline)||m.history.timeline.length<3)bad(M,'history.timeline precisa de pelo menos 3 itens');
- const principais=m.lessons.filter(l=>!l.optional);
+ if(!Array.isArray(m.lessons))m.lessons=[];
+ m.lessons.forEach((l,i)=>{if(!obj(l))bad(M+' aula #'+(i+1),'aula inválida (não é um objeto)')});
+ const lessons=m.lessons.filter(obj);
+ const principais=lessons.filter(l=>!l.optional);
  if(principais.length<8||principais.length>15)bad(M,'aulas principais devem ser entre 8 e 15 (há '+principais.length+')');
  const ids=new Set();
- for(const l of m.lessons){if(ids.has(l.id))bad(M,'id de aula repetido: '+l.id);ids.add(l.id)}
+ for(const l of lessons){if(ids.has(l.id))bad(M,'id de aula repetido: '+l.id);ids.add(l.id)}
  if(!Array.isArray(m.quiz)||m.quiz.length<8||m.quiz.length>12)bad(M,'quiz deve ter entre 8 e 12 questões (há '+(m.quiz||[]).length+')');
  (m.quiz||[]).forEach((q,i)=>{
   const Q=M+' questão '+(i+1);
+  if(!Array.isArray(q)){bad(Q,'questão inválida (não é uma lista)');return}
   if(!str(q[0]))bad(Q,'enunciado vazio');
   if(!Array.isArray(q[1])||q[1].length<2)bad(Q,'precisa de pelo menos 2 alternativas');
   else if(!Number.isInteger(q[2])||q[2]<0||q[2]>=q[1].length)bad(Q,'indiceCerto inválido: '+q[2]);
@@ -43,14 +48,17 @@ for(const m of novos){
   if(!k.startsWith(m.id+'.'))bad(M,'fonte "'+k+'" sem prefixo '+m.id+'.');
   if(!Array.isArray(v)||!/^https:\/\//.test(v[1]||''))bad(M,'fonte "'+k+'" precisa de url https://');
  }
- for(const l of m.lessons){
+ for(const l of lessons){
   const L=M+' aula "'+l.id+'"';
   if(!/^[a-z0-9-]+$/.test(l.id||''))bad(L,'id de aula inválido (use a-z, 0-9 e hífen)');
   if(!Array.isArray(l.sources)||l.sources.length<1)bad(L,'precisa de pelo menos 1 fonte');
-  for(const k of l.sources||[])if(!Object.prototype.hasOwnProperty.call(SOURCES,k))bad(L,'fonte inexistente: '+k);
-  const blocks=l.blocks||[];
-  if(!blocks.some(b=>b.t==='summary'))bad(L,'falta bloco summary');
+  for(const k of Array.isArray(l.sources)?l.sources:[])if(!Object.prototype.hasOwnProperty.call(SOURCES,k))bad(L,'fonte inexistente: '+k);
+  if(!Array.isArray(l.blocks))bad(L,'blocks deve ser uma lista');
+  const blocks=Array.isArray(l.blocks)?l.blocks:[];
+  blocks.forEach((b,i)=>{if(!obj(b))bad(L+' bloco '+(i+1),'bloco inválido (não é um objeto)')});
+  if(!blocks.some(b=>obj(b)&&b.t==='summary'))bad(L,'falta bloco summary');
   blocks.forEach((b,i)=>{
+   if(!obj(b))return;
    const B=L+' bloco '+(i+1)+' ('+b.t+')';
    if(!TYPES.includes(b.t)){bad(B,'tipo de bloco desconhecido');return}
    if(b.t==='figure'){
@@ -67,7 +75,7 @@ for(const m of novos){
     if(!Object.prototype.hasOwnProperty.call(SOURCES,b.source))bad(B,'source inexistente: '+b.source);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(b.date||''))bad(B,'date deve ser AAAA-MM-DD');
    }
-   if(b.t==='terms')for(const t of b.terms||[])if(!termSet.has(String(t).toLowerCase()))bad(B,'termo fora do glossário: '+t);
+   if(b.t==='terms'){if(!Array.isArray(b.terms))bad(B,'terms deve ser uma lista');else for(const t of b.terms)if(!termSet.has(String(t).toLowerCase()))bad(B,'termo fora do glossário: '+t)}
   });
  }
 }
