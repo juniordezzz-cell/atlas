@@ -176,6 +176,41 @@ const AcademyInterativos=(()=>{
     +'<text class="cn-ana-txt" x="20" y="112" font-size="15" fill="'+C.texto+'"></text><text class="cn-bruno-txt" x="630" y="112" text-anchor="end" font-size="15" fill="'+C.texto+'"></text>'
     +'<text class="cn-cont" x="320" y="140" text-anchor="middle" font-size="14" fill="'+C.ciano+'"></text>')
    +botoes([['ana','Ana paga 10.000 sat'],['bruno','Bruno paga 5.000 sat'],['fechar','Fechar o canal'],['recomecar','Recomeçar']])+estado(''),
+  /* ===== Módulo 5 ===== */
+  /* Um contrato-cofre com regras: estado, chamadas e eventos. */
+  cofre:()=>svg(640,150,'<rect x="10" y="10" width="300" height="130" rx="10" fill="'+C.fundo+'" stroke="'+C.azul+'" stroke-width="2"/><text x="26" y="38" font-size="16" font-weight="700" fill="'+C.texto+'">Estado do contrato</text>'
+    +'<text class="cf-ana" x="26" y="68" font-size="15" fill="'+C.mudo+'"></text><text class="cf-bruno" x="26" y="94" font-size="15" fill="'+C.mudo+'"></text><text class="cf-total" x="26" y="124" font-size="15" font-weight="700" fill="'+C.ciano+'"></text>'
+    +'<rect x="330" y="10" width="300" height="130" rx="10" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="346" y="38" font-size="16" font-weight="700" fill="'+C.texto+'">Eventos (registro)</text>'
+    +[0,1,2,3].map(k=>'<text class="cf-ev cf-ev-'+k+'" x="346" y="'+(64+k*22)+'" font-size="13" fill="'+C.mudo+'"></text>').join(''))
+   +botoes([['depAna','Ana deposita 1 ETH'],['saqAna','Ana saca 0,5 ETH'],['saqBruno','Bruno tenta sacar 1 ETH'],['recomecar','Recomeçar']])+estado(''),
+  /* O caminho de uma chamada, com ou sem saldo. */
+  chamada:()=>'<label class="interativo-rotulo ch-op"><span><input type="checkbox" class="ch-saldo" checked> Você tem saldo suficiente</span></label>'
+   +svg(640,110,linha(60,45,580,45)+['Site','Carteira','Contrato','Estado','Evento'].map((t,k)=>{const x=60+k*130;return '<g class="t-etapa t-etapa-'+k+'"><circle cx="'+x+'" cy="45" r="18" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="3"/><text x="'+x+'" y="51" text-anchor="middle" font-size="14" font-weight="700" fill="'+C.mudo+'">'+(k+1)+'</text><text class="ch-rot ch-rot-'+k+'" x="'+x+'" y="96" text-anchor="middle" font-size="15" fill="'+C.texto+'">'+t+'</text></g>';}).join(''))
+   +botoes([['anterior','← Anterior'],['proximo','Próximo passo →'],['recomecar','Recomeçar']])+estado(''),
+  /* Calculadora de gas. */
+  gascalc:()=>'<label class="interativo-rotulo">Operação<select class="hash-entrada gc-op"><option value="21000">Enviar ETH (21.000 gas)</option><option value="50000">Enviar um token (≈ 50.000, exemplo)</option><option value="150000">Troca numa DEX (≈ 150.000, exemplo)</option></select></label>'
+   +'<label class="interativo-rotulo">Taxa base (gwei) <span class="gc-base-txt"></span><input class="gc-base" type="range" min="1" max="100" step="1" value="10"></label>'
+   +'<label class="interativo-rotulo">Gorjeta ao validador (gwei) <span class="gc-tip-txt"></span><input class="gc-tip" type="range" min="0" max="5" step="0.5" value="1"></label>'
+   +'<label class="interativo-rotulo">Preço do ETH (US$, exemplo) <span class="gc-eth-txt"></span><input class="gc-eth" type="range" min="1000" max="6000" step="100" value="3000"></label>'
+   +'<div class="mt-conta"><p>Custo em ETH <strong class="gc-total"></strong></p><p>Em dólar <strong class="gc-usd"></strong></p><p>Queimado (base) <strong class="gc-queima"></strong></p><p>Para o validador <strong class="gc-val"></strong></p></div>'+estado(''),
+  /* Tudo ou nada: uma troca que confere o mínimo no fim. */
+  atomico:()=>'<label class="interativo-rotulo">O preço andou contra você durante a espera <span class="at-mov-txt"></span><input class="at-mov" type="range" min="0" max="5" step="0.5" value="0.5"></label>'
+   +'<label class="interativo-rotulo">Diferença máxima que você aceita (slippage) <span class="at-tol-txt"></span><input class="at-tol" type="range" min="0.5" max="5" step="0.5" value="1"></label>'
+   +svg(640,90,['Tira 100 USDC','Calcula o ETH','Confere o mínimo','Entrega o ETH'].map((t,k)=>{const x=10+k*158;return '<g class="at-passo at-passo-'+k+'"><rect x="'+x+'" y="10" width="146" height="60" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="'+(x+73)+'" y="46" text-anchor="middle" font-size="15" fill="'+C.texto+'">'+t+'</text></g>';}).join(''))
+   +'<p class="o-info">Seu saldo depois: <strong class="at-saldo"></strong></p>'
+   +botoes([['executar','Enviar a troca'],['recomecar','Recomeçar']])+estado(''),
+  /* Reentrância: o cofre com falha e o corrigido. */
+  reentrancia:()=>'<div class="c-cenarios"><button class="btn small" type="button" data-acao="falha" aria-pressed="true">Versão com falha: envia, depois zera</button><button class="btn small" type="button" data-acao="corrigida" aria-pressed="false">Versão corrigida: zera, depois envia</button></div>'
+   +svg(640,90,'<rect x="10" y="10" width="300" height="70" rx="10" fill="'+C.fundo+'" stroke="'+C.azul+'" stroke-width="2"/><text x="26" y="38" font-size="15" fill="'+C.mudo+'">No cofre</text><text class="re-cofre" x="26" y="66" font-size="22" font-weight="700" fill="'+C.texto+'"></text>'
+    +'<rect class="re-caixa-at" x="330" y="10" width="300" height="70" rx="10" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="346" y="38" font-size="15" fill="'+C.mudo+'">Com o atacante</text><text class="re-at" x="346" y="66" font-size="22" font-weight="700" fill="'+C.texto+'"></text>')
+   +'<ol class="re-pilha"></ol>'+botoes([['atacar','O atacante pede o saque de 1 ETH'],['recomecar','Recomeçar']])+estado(''),
+  /* Proxy atualizável e prazo de espera (timelock). */
+  proxy:()=>'<label class="interativo-rotulo ch-op"><span><input type="checkbox" class="px-timelock" checked> Atualização com prazo de espera de 48 h (timelock)</span></label>'
+   +svg(640,120,'<rect x="10" y="20" width="230" height="80" rx="10" fill="'+C.fundo+'" stroke="'+C.ciano+'" stroke-width="2"/><text x="125" y="52" text-anchor="middle" font-size="16" font-weight="700" fill="'+C.texto+'">Proxy</text><text x="125" y="76" text-anchor="middle" font-size="13" fill="'+C.mudo+'">endereço fixo 0xC0FE…</text>'
+    +'<line x1="240" y1="60" x2="330" y2="60" stroke="'+C.mudo+'" stroke-width="2"/><text x="285" y="52" text-anchor="middle" font-size="12" fill="'+C.mudo+'">executa</text>'
+    +'<rect class="px-impl" x="330" y="20" width="300" height="80" rx="10" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text class="px-versao" x="480" y="52" text-anchor="middle" font-size="16" font-weight="700" fill="'+C.texto+'"></text><text class="px-regra" x="480" y="76" text-anchor="middle" font-size="13" fill="'+C.mudo+'"></text>')
+   +'<p class="o-info">Seus fundos: <strong class="px-fundos"></strong> · <span class="px-relogio"></span></p>'
+   +botoes([['propor','Admin propõe a versão 2'],['passar','Passar 24 h'],['sacar','Sacar tudo agora'],['recomecar','Recomeçar']])+estado(''),
  };
 
  const ligar={
@@ -504,6 +539,101 @@ const AcademyInterativos=(()=>{
    acao(fig,'fechar',()=>{fechado=true;mostrar('Canal fechado: uma transação na blockchain registra o saldo final. '+pags+' pagamentos custaram só 2 transações na rede.');});
    acao(fig,'recomecar',()=>{ana=CAP;pags=0;fechado=false;mostrar('Ana abriu um canal com Bruno travando 100.000 sat numa transação na blockchain.');});
    mostrar('Ana abriu um canal com Bruno travando 100.000 sat numa transação na blockchain.');
+  },
+  /* ===== Módulo 5 ===== */
+  cofre(fig){
+   let ana=0,bruno=2,ev=[];const est=$(fig,'.cena-estado');
+   const eth=v=>fmt(v,1)+' ETH';
+   const mostrar=t=>{
+    $(fig,'.cf-ana').textContent='saldo[Ana] = '+eth(ana);$(fig,'.cf-bruno').textContent='saldo[Bruno] = '+eth(bruno);$(fig,'.cf-total').textContent='total guardado = '+eth(ana+bruno);
+    $$(fig,'.cf-ev').forEach((e,k)=>{e.textContent=ev[k]||'';});est.textContent=t;
+   };
+   const log=t=>{ev=[t,...ev].slice(0,4);};
+   acao(fig,'depAna',()=>{ana+=1;log('Depósito(Ana, 1 ETH)');mostrar('A regra "depositar" somou 1 ETH ao saldo da Ana e registrou um evento.');});
+   acao(fig,'saqAna',()=>{if(ana<0.5){fig.classList.add('cf-reverteu');mostrar('Revertido: a regra exige saldo[Ana] ≥ 0,5. Nada mudou no estado, e a taxa da tentativa foi paga.');return;}fig.classList.remove('cf-reverteu');ana-=0.5;log('Saque(Ana, 0,5 ETH)');mostrar('A regra conferiu o saldo, descontou 0,5 e enviou o ETH à Ana.');});
+   acao(fig,'saqBruno',()=>{if(bruno>=1){bruno-=1;log('Saque(Bruno, 1 ETH)');fig.classList.remove('cf-reverteu');mostrar('Bruno tinha saldo: o contrato descontou e enviou.');return;}fig.classList.add('cf-reverteu');mostrar('Revertido: saldo[Bruno] é menor que 1 ETH. Ninguém, nem o criador do contrato, consegue furar essa regra.');});
+   acao(fig,'recomecar',()=>{ana=0;bruno=2;ev=[];fig.classList.remove('cf-reverteu');mostrar('Um cofre simples: cada um só saca o que depositou. Bruno já tem 2 ETH lá.');});
+   mostrar('Um cofre simples: cada um só saca o que depositou. Bruno já tem 2 ETH lá.');
+  },
+  chamada(fig){
+   const ok=$(fig,'.ch-saldo');let i=0;const est=$(fig,'.cena-estado');
+   const T=[
+    ['O site monta a chamada: contrato, função "depositar" e valor. Ele só prepara; não tem poder sobre seu dinheiro.','O site monta a chamada: contrato, função "depositar" e valor.'],
+    ['A carteira mostra o que será assinado. Você confere rede, contrato e valor, e assina.','A carteira mostra o que será assinado. Você assina e paga a taxa.'],
+    ['O contrato roda na rede e confere as regras: tem saldo? o valor é válido? Tudo certo.','O contrato confere as regras e encontra um problema: falta saldo. Ele reverte.'],
+    ['O estado muda: o saldo registrado no contrato aumenta. Isso fica gravado na blockchain.','Nada muda no estado: o revert desfaz tudo. Mas a taxa foi paga, porque a rede trabalhou.'],
+    ['O contrato emite um evento. É assim que o site e o explorador ficam sabendo do que aconteceu.','Sem evento de sucesso. A carteira mostra "falhou" e o explorador marca a transação como revertida.']];
+   const mostrar=()=>{const b=ok.checked?0:1;
+    $$(fig,'.t-etapa').forEach((g,k)=>{g.classList.toggle('feito',k<i);g.classList.toggle('atual',k===i);g.classList.toggle('falhou',!ok.checked&&k>=2&&k<=i);});
+    $(fig,'.ch-rot-3').textContent=ok.checked?'Estado':'Reverte';
+    est.textContent=(i+1)+' de 5 · '+T[i][b];$(fig,'[data-acao="anterior"]').disabled=i===0;$(fig,'[data-acao="proximo"]').disabled=i===4;};
+   acao(fig,'anterior',()=>{i=Math.max(0,i-1);mostrar();});acao(fig,'proximo',()=>{i=Math.min(4,i+1);mostrar();});acao(fig,'recomecar',()=>{i=0;mostrar();});
+   ok.addEventListener('change',mostrar);mostrar();
+  },
+  gascalc(fig){
+   const op=$(fig,'.gc-op'),b=$(fig,'.gc-base'),t=$(fig,'.gc-tip'),e=$(fig,'.gc-eth');
+   const atualizar=()=>{
+    const gas=Number(op.value),base=Number(b.value),tip=Number(t.value),preco=Number(e.value);
+    const total=gas*(base+tip)/1e9,queima=gas*base/1e9,val=gas*tip/1e9;
+    $(fig,'.gc-base-txt').textContent=String(base);$(fig,'.gc-tip-txt').textContent=fmt(tip,1);$(fig,'.gc-eth-txt').textContent=fmt(preco,0);
+    $(fig,'.gc-total').textContent=fmt(total,6)+' ETH';$(fig,'.gc-usd').textContent='US$ '+fmt(total*preco);
+    $(fig,'.gc-queima').textContent=fmt(queima,6)+' ETH';$(fig,'.gc-val').textContent=fmt(val,6)+' ETH';
+    $(fig,'.cena-estado').textContent='Custo = gas usado × (taxa base + gorjeta). 1 gwei = 0,000000001 ETH. O valor enviado não entra na conta.';
+   };
+   [op,b,t,e].forEach(x=>x.addEventListener(x===op?'change':'input',atualizar));atualizar();
+  },
+  atomico(fig){
+   const mov=$(fig,'.at-mov'),tol=$(fig,'.at-tol');let feito=false;
+   const atualizar=(rodar=false)=>{
+    const m=Number(mov.value),tl=Number(tol.value);$(fig,'.at-mov-txt').textContent=fmt(m,1)+'%';$(fig,'.at-tol-txt').textContent=fmt(tl,1)+'%';
+    if(!rodar){feito=false;$$(fig,'.at-passo').forEach(g=>g.classList.remove('feito','falhou'));$(fig,'.at-saldo').textContent='100 USDC e 0 ETH';$(fig,'.cena-estado').textContent='Você troca 100 USDC por ETH. A troca roda em passos, mas a rede trata tudo como uma coisa só.';return;}
+    const ok=m<=tl,eth=0.0333*(1-m/100);feito=true;
+    $$(fig,'.at-passo').forEach((g,k)=>{g.classList.toggle('feito',ok||k<2);g.classList.toggle('falhou',!ok&&k===2);});
+    $(fig,'.at-saldo').textContent=ok?'0 USDC e '+fmt(eth,4)+' ETH':'100 USDC e 0 ETH (menos a taxa da rede)';
+    $(fig,'.cena-estado').textContent=ok?'Deu certo: o preço andou '+fmt(m,1)+'%, dentro do que você aceitou.':'Revertida: o preço andou '+fmt(m,1)+'%, mais que os '+fmt(tl,1)+'% aceitos. O passo 3 falhou e a rede desfez também o passo 1: seus USDC voltaram. Só a taxa foi paga.';
+   };
+   [mov,tol].forEach(x=>x.addEventListener('input',()=>atualizar()));
+   acao(fig,'executar',()=>atualizar(true));acao(fig,'recomecar',()=>{mov.value='0.5';tol.value='1';atualizar();});
+   atualizar();
+  },
+  reentrancia(fig){
+   let falha=true,cofre=11,at=0;const pilha=$(fig,'.re-pilha'),doc=fig.ownerDocument,est=$(fig,'.cena-estado');
+   const mostrar=()=>{$(fig,'.re-cofre').textContent=cofre+' ETH';$(fig,'.re-at').textContent=at+' ETH';
+    $$(fig,'.c-cenarios .btn').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.acao==='falha')===falha)));fig.classList.toggle('re-roubado',at>1);};
+   const linha=t=>{const li=doc.createElement('li');li.textContent=t;pilha.append(li);};
+   const zerar=t=>{cofre=11;at=0;pilha.replaceChildren();mostrar();est.textContent=t||'O cofre tem 11 ETH: 10 de outras pessoas e 1 do atacante, que é um contrato.';};
+   acao(fig,'falha',()=>{falha=true;zerar();});acao(fig,'corrigida',()=>{falha=false;zerar();});
+   acao(fig,'atacar',()=>{
+    zerar('');let rodada=0;
+    if(falha){
+     while(cofre>0&&rodada<11){rodada++;linha('saque() confere: saldo do atacante = 1 ETH ✓ → envia 1 ETH'+(cofre>1?' → o atacante chama saque() de novo antes do saldo zerar':''));cofre--;at++;}
+     linha('só agora o cofre zera o saldo do atacante… tarde demais');
+     est.textContent='O cofre envia o ETH antes de anotar o saque. O atacante, ao receber, chama saque() de novo, e o saldo dele ainda aparece como 1. Assim levou os 11 ETH.';
+    }else{
+     linha('saque() confere: saldo = 1 ETH ✓ → zera o saldo → envia 1 ETH');cofre--;at++;
+     linha('o atacante chama saque() de novo → confere: saldo = 0 ✗ → reverte');
+     est.textContent='Na versão corrigida, o cofre anota antes de enviar (conferir, atualizar, interagir). A segunda chamada encontra saldo zero e falha.';
+    }
+    mostrar();
+   });
+   acao(fig,'recomecar',()=>zerar());zerar();
+  },
+  proxy(fig){
+   let horas=null,v=1,fundos=100,fora=false;const tl=$(fig,'.px-timelock'),est=$(fig,'.cena-estado');
+   const mostrar=t=>{
+    $(fig,'.px-versao').textContent='Versão '+v;$(fig,'.px-regra').textContent=v===1?'saque livre':'saque cobra 50% de taxa';fig.classList.toggle('px-v2',v===2);
+    $(fig,'.px-fundos').textContent=fora?fundos+' USDC na sua carteira':fundos+' USDC no protocolo';
+    $(fig,'.px-relogio').textContent=horas===null?'nenhuma atualização pendente':v===2?'versão 2 em vigor':'versão 2 entra em '+(48-horas)+' h';
+    $(fig,'[data-acao="sacar"]').disabled=fora;$(fig,'[data-acao="propor"]').disabled=horas!==null;$(fig,'[data-acao="passar"]').disabled=horas===null||v===2;
+    est.textContent=t;
+   };
+   const ativar=()=>{v=2;};
+   acao(fig,'propor',()=>{horas=0;if(!tl.checked){ativar();mostrar('Sem prazo de espera: a versão 2 entrou na hora. O endereço é o mesmo, mas as regras mudaram antes que você pudesse reagir.');return;}mostrar('O admin propôs a versão 2. Com o timelock, ela só entra em 48 h, e todo mundo pode ver a proposta.');});
+   acao(fig,'passar',()=>{horas=Math.min(48,horas+24);if(horas>=48){ativar();mostrar(fora?'A versão 2 entrou, mas você já tinha saído.':'A versão 2 entrou. Quem ficou paga 50% para sacar.');return;}mostrar('Faltam '+(48-horas)+' h. Ainda dá para sair pelas regras da versão 1.');});
+   acao(fig,'sacar',()=>{fora=true;if(v===2){fundos=fundos/2;mostrar('Você sacou pelas regras novas e recebeu metade.');return;}mostrar('Você saiu antes da mudança, com tudo.');});
+   acao(fig,'recomecar',()=>{horas=null;v=1;fundos=100;fora=false;mostrar('Você depositou 100 USDC num protocolo atualizável.');});
+   tl.addEventListener('change',()=>{horas=null;v=1;fundos=100;fora=false;mostrar(tl.checked?'Com timelock: mudanças esperam 48 h.':'Sem timelock: o admin troca as regras na hora.');});
+   mostrar('Você depositou 100 USDC num protocolo atualizável.');
   },
  };
  /* Desbloqueio de exemplo (milhões de um total de 1.000): 200 no lançamento,

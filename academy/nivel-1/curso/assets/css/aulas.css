@@ -218,3 +218,16 @@
 .cn-ana{transition:width .5s}
 .cn-fechado .cn-ana{fill:#67e8f9}
 @media (prefers-reduced-motion:reduce){.cn-ana,.ac-filho,[data-interativo=gastoduplo] .gd-bloco,[data-interativo=gastoduplo] .gd-x{transition:none}}
+
+/* ===== Interativos do Módulo 5 (21/10/2026) ===== */
+.ch-op span{display:flex;align-items:center;gap:8px;font-weight:600;color:#d5deeb;min-height:32px}
+.ch-op input{width:18px;height:18px;accent-color:#67e8f9}
+.t-etapa.falhou circle{stroke:#f87171;fill:#f8717126}
+.cf-reverteu .cena-estado{color:#fecaca}
+.at-passo.feito rect{stroke:#67e8f9;fill:#67e8f914}
+.at-passo.falhou rect{stroke:#f87171;fill:#f8717122}
+.re-pilha{margin:8px 0;padding-left:22px;max-height:220px;overflow:auto;font-family:ui-monospace,monospace;font-size:12px;line-height:1.6;color:#d5deeb}
+.re-pilha li{margin:2px 0}
+.re-roubado .re-caixa-at{stroke:#f87171}
+.px-v2 .px-impl{stroke:#f87171}
+.c-cenarios .btn[aria-pressed=true]{border-color:#67e8f9;color:#cffafe}

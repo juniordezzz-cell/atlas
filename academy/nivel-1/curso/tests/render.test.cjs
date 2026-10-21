@@ -29,9 +29,9 @@ const hostil={id:'m4',title:'Título '+X,icon:'x',summary:'Resumo '+X,minutes:5,
 ev(`AcademyContent.register(${JSON.stringify(hostil)})`);
 // inline
 assert.equal(ev("AcademyRender.inline('1 < 2 & **forte**')"),'1 &lt; 2 &amp; <strong>forte</strong>');n++;
-ev("localStorage.setItem('atlas-academy-v1',JSON.stringify({version:1,completed:['m3'],studied:[],scores:{},notes:{},bookmarks:['m3-0','m3:a','m3:zzz','m5-0','m5-99','lixo'],last:'m1',level:2}))");
+ev("localStorage.setItem('atlas-academy-v1',JSON.stringify({version:1,completed:['m3'],studied:[],scores:{},notes:{},bookmarks:['m3-0','m3:a','m3:zzz','m10-0','m10-99','lixo'],last:'m1',level:2}))");
 ev('academy.init()');
-assert.deepEqual(Array.from(ev('academy.state.bookmarks')),['m3:a','m5-0']);n++;
+assert.deepEqual(Array.from(ev('academy.state.bookmarks')),['m3:a','m10-0']);n++;
 assert.ok(ev("academy.state.completed.includes('m3')"));n++;
 ev("app.navigate('m3')");
 assert.ok(d.getElementById('lesson-m3-a'));n++;

@@ -167,6 +167,31 @@ const tick=ms=>new Promise(r=>setTimeout(r,ms));
  // Canal: 3 pagamentos e fechamento = 2 transações na blockchain.
  const cn=fig('canal');clica(cn,'ana');clica(cn,'ana');clica(cn,'bruno');assert.equal(cn.querySelector('.cn-ana-txt').textContent,'85.000 sat');n++;
  clica(cn,'fechar');assert.match(cn.querySelector('.cn-cont').textContent,/2 transações · fora dela: 3 pagamentos/);assert.ok(cn.querySelector('[data-acao="ana"]').disabled);n+=2;
+ { // ===== Módulo 5 =====
+ ev("app.navigate('m5')");
+ const p5=[...d.querySelectorAll('#tab-content > .lesson-layout > div > .lesson')];
+ assert.equal(p5.length,10);n++;
+ for(const a of p5){assert.ok(a.classList.contains('tem-visual'),a.id);n++;}
+ // Cofre: Ana sem saldo reverte; depositando, saca.
+ const cf=fig('cofre');clica(cf,'saqAna');assert.ok(cf.classList.contains('cf-reverteu'));n++;
+ clica(cf,'depAna');clica(cf,'saqAna');assert.equal(cf.querySelector('.cf-ana').textContent,'saldo[Ana] = 0,5 ETH');assert.equal(cf.querySelector('.cf-ev-0').textContent,'Saque(Ana, 0,5 ETH)');n+=2;
+ clica(cf,'saqBruno');clica(cf,'saqBruno');clica(cf,'saqBruno');assert.equal(cf.querySelector('.cf-bruno').textContent,'saldo[Bruno] = 0,0 ETH');assert.ok(cf.classList.contains('cf-reverteu'));n+=2;
+ // Chamada: sem saldo, a etapa 3 vira "Reverte".
+ const ch=fig('chamada');ch.querySelector('.ch-saldo').checked=false;ch.querySelector('.ch-saldo').dispatchEvent(new w.Event('change'));
+ for(let k=0;k<3;k++)clica(ch,'proximo');assert.equal(ch.querySelector('.ch-rot-3').textContent,'Reverte');assert.match(est(ch),/taxa foi paga/);n+=2;
+ // Gas: 21.000 × 11 gwei = 0,000231 ETH; base queimada = 0,00021.
+ const gc=fig('gascalc');assert.equal(gc.querySelector('.gc-total').textContent,'0,000231 ETH');assert.equal(gc.querySelector('.gc-queima').textContent,'0,000210 ETH');assert.equal(gc.querySelector('.gc-usd').textContent,'US$ 0,69');n+=3;
+ // Atômico: dentro do limite dá certo; fora, reverte e devolve.
+ const at=fig('atomico');clica(at,'executar');assert.match(at.querySelector('.at-saldo').textContent,/^0 USDC/);n++;
+ muda(at.querySelector('.at-mov'),3);clica(at,'executar');assert.match(at.querySelector('.at-saldo').textContent,/^100 USDC/);assert.ok(at.querySelector('.at-passo-2').classList.contains('falhou'));n+=2;
+ // Reentrância: com falha leva 11; corrigida leva 1.
+ const re=fig('reentrancia');clica(re,'atacar');assert.equal(re.querySelector('.re-at').textContent,'11 ETH');assert.equal(re.querySelector('.re-cofre').textContent,'0 ETH');n+=2;
+ clica(re,'corrigida');clica(re,'atacar');assert.equal(re.querySelector('.re-at').textContent,'1 ETH');assert.equal(re.querySelector('.re-cofre').textContent,'10 ETH');n+=2;
+ // Proxy: com timelock dá para sair; sem timelock, não.
+ const px=fig('proxy');clica(px,'propor');clica(px,'passar');clica(px,'sacar');assert.equal(px.querySelector('.px-fundos').textContent,'100 USDC na sua carteira');n++;
+ clica(px,'passar');assert.equal(px.querySelector('.px-versao').textContent,'Versão 2');n++;
+ const tl=px.querySelector('.px-timelock');tl.checked=false;tl.dispatchEvent(new w.Event('change'));clica(px,'propor');clica(px,'sacar');assert.equal(px.querySelector('.px-fundos').textContent,'50 USDC na sua carteira');n++;
+ }
  assert.deepEqual(errors,[]);n++;
  console.log('visual ok: '+n+' verificações');
  process.exit(0);
