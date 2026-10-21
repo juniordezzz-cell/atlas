@@ -76,3 +76,7 @@ assert.equal(d.querySelectorAll('.level-select').length,0);n++;
 assert.equal(typeof ev('academy.setLevel'),'undefined');n++;
 assert.equal(errors.length,0,errors.join('\n'));n++;
 console.log('render ok: '+n+' verificações');
+// regressão: link "Indo além" do índice em módulo antigo
+ev("app.navigate('m6');academy.jump('m6','alem')");
+assert.equal(d.activeElement&&d.activeElement.id,'alem-m6');
+console.log('jump alem ok');
