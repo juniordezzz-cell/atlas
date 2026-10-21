@@ -52,5 +52,16 @@ assert.ok(q('sha-message')&&q('sha-result'));n++;
 assert.ok(q('cesar-saida').compareDocumentPosition(q('sha-message'))&4);n++;
 // reabrir a aba não duplica
 ev("academy.initExtraLabs()");assert.equal(d.querySelectorAll('#cesar-saida').length,1);n++;
+// alinhamento: rótulos com largura fixa nas duas linhas, nos dois modos
+for(const modo of [0,1]){
+ if(modo)q('cesar-modo').click();
+ const r=[...d.querySelectorAll('#cesar-alfabeto .cesar-rotulo')];
+ assert.equal(r.length,2);assert.equal(r[0].style.width,r[1].style.width);assert.ok(r[0].style.width);
+ assert.ok(r.every(x=>x.parentElement.style.whiteSpace==='pre'));n+=3;
+}
+// gancho genérico para qualquer módulo
+ev("AcademyLabs.m4={html:()=>'<p id=\"lab-teste-m4\">x</p>',init(){this.ok=true}}");
+ev("app.navigate('m4','labs')");
+assert.ok(q('lab-teste-m4'));assert.equal(ev('AcademyLabs.m4.ok'),true);n+=2;
 assert.deepEqual(errors,[]);n++;
 console.log('labs-m1 ok: '+n+' verificações');
