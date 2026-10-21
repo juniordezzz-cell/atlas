@@ -266,6 +266,37 @@ const AcademyInterativos=(()=>{
   flash:()=>'<label class="interativo-rotulo">Diferença de preço entre duas corretoras <span class="fl-txt"></span><input class="fl-dif" type="range" min="0" max="0.3" step="0.01" value="0.1"></label>'
    +svg(640,90,['Toma 1 milhão','Compra barato','Vende caro','Devolve + 0,05%'].map((t,k)=>{const x=10+k*158;return '<g class="at-passo fl-passo-'+k+'"><rect x="'+x+'" y="10" width="146" height="60" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="'+(x+73)+'" y="46" text-anchor="middle" font-size="15" fill="'+C.texto+'">'+t+'</text></g>';}).join(''))
    +'<p class="o-info">Resultado: <strong class="fl-res"></strong></p>'+botoes([['executar','Executar na mesma transação']])+estado(''),
+  /* ===== Módulo 7 ===== */
+  /* Arbitragem que segura a paridade. */
+  paridade:()=>'<label class="interativo-rotulo">Preço da stablecoin no mercado (US$) <span class="pa-txt"></span><input class="pa-preco" type="range" min="0.95" max="1.05" step="0.005" value="0.98"></label>'
+   +'<label class="interativo-rotulo ch-op"><span><input type="checkbox" class="pa-resgate" checked> Você tem conta no emissor e pode resgatar a US$ 1</span></label>'
+   +svg(640,90,'<line x1="20" y1="45" x2="620" y2="45" stroke="'+C.linha+'" stroke-width="2"/><line x1="320" y1="15" x2="320" y2="75" stroke="'+C.ciano+'" stroke-width="2" stroke-dasharray="4 4"/><text x="320" y="88" text-anchor="middle" font-size="12" fill="'+C.ciano+'">US$ 1,00</text>'
+    +'<text x="20" y="88" font-size="12" fill="'+C.mudo+'">0,95</text><text x="620" y="88" text-anchor="end" font-size="12" fill="'+C.mudo+'">1,05</text><circle class="pa-ponto" cy="45" r="10" fill="'+C.ambar+'"/>')
+   +'<p class="o-info">Arbitragem com 10.000 tokens: <strong class="pa-lucro"></strong></p>'
+   +botoes([['arbitrar','Fazer a arbitragem']])+estado(''),
+  /* Reservas sob corrida de resgates. */
+  reservas:()=>'<label class="interativo-rotulo">Onde estão as reservas<select class="hash-entrada rs-mix"><option value="0">Dinheiro e títulos curtos do governo</option><option value="1">Metade em empréstimos a empresas</option><option value="2">Um terço em cripto</option></select></label>'
+   +'<label class="interativo-rotulo">Pedidos de resgate em um dia (% de todas as moedas) <span class="rs-txt"></span><input class="rs-pedido" type="range" min="0" max="60" step="5" value="20"></label>'
+   +svg(640,90,'<rect x="10" y="20" width="620" height="40" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><rect class="rs-barra-ok" x="10" y="20" height="40" rx="8" fill="'+C.ciano+'" width="0"/><rect class="rs-barra-falta" y="20" height="40" fill="'+C.verm+'" width="0"/>'
+    +'<text x="10" y="80" font-size="12" fill="'+C.mudo+'">pedidos pagos no mesmo dia (ciano) e não pagos (vermelho)</text>')
+   +'<div class="mt-conta"><p>Disponível em 1 dia <strong class="rs-disp"></strong></p><p>Pedidos <strong class="rs-ped"></strong></p><p>Falta <strong class="rs-falta"></strong></p></div>'+estado(''),
+  /* Stablecoin com garantia em cripto. */
+  cdp:()=>'<label class="interativo-rotulo">Stablecoins emitidas contra 2 ETH <span class="cd-div-txt"></span><input class="cd-div" type="range" min="0" max="5000" step="100" value="2000"></label>'
+   +'<label class="interativo-rotulo">Preço do ETH (US$) <span class="cd-preco-txt"></span><input class="cd-preco" type="range" min="500" max="5000" step="50" value="3000"></label>'
+   +'<div class="mt-conta"><p>Garantia <strong class="cd-gar"></strong></p><p>Garantia ÷ dívida <strong class="cd-razao"></strong></p><p>Liquida se o ETH cair a <strong class="cd-liq"></strong></p></div>'+estado(''),
+  /* Espiral de uma stablecoin algorítmica. */
+  espiral:()=>svg(640,190,linha(50,160,610,160)+linha(50,20,50,160)
+    +'<polyline class="es-linha-st" fill="none" stroke="'+C.ciano+'" stroke-width="3" points=""/><polyline class="es-linha-tk" fill="none" stroke="'+C.verm+'" stroke-width="3" points=""/>'
+    +'<text x="58" y="34" font-size="13" fill="'+C.ciano+'">preço da stablecoin</text><text x="58" y="52" font-size="13" fill="'+C.verm+'">quantidade do token irmão</text>'
+    +[0,1,2,3,4,5,6].map(k=>'<text x="'+(50+k*93)+'" y="180" text-anchor="middle" font-size="12" fill="'+C.mudo+'">dia '+k+'</text>').join(''))
+   +'<div class="mt-conta"><p>Stablecoin <strong class="es-st"></strong></p><p>Token irmão emitido <strong class="es-tk"></strong></p><p>Preço do token irmão <strong class="es-tkp"></strong></p></div>'
+   +botoes([['dia','Próximo dia'],['recomecar','Recomeçar']])+estado(''),
+  /* Depeg numa pool rasa. */
+  depeg:()=>'<label class="interativo-rotulo">Vendas da stablecoin na pool (milhões) <span class="dp-txt"></span><input class="dp-venda" type="range" min="0" max="8" step="0.5" value="0"></label>'
+   +'<label class="interativo-rotulo ch-op"><span><input type="checkbox" class="dp-duvida"> Surge dúvida sobre as reservas</span></label>'
+   +svg(640,80,'<rect x="10" y="15" width="620" height="34" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><rect class="dp-barra" x="10" y="15" height="34" rx="8" fill="'+C.ciano+'" width="620"/><text class="dp-preco" x="320" y="38" text-anchor="middle" font-size="16" font-weight="700" fill="#05080f"></text>'
+    +'<text x="10" y="70" font-size="12" fill="'+C.mudo+'">pool com 10 milhões de cada lado</text>')
+   +estado(''),
  };
 
  const ligar={
@@ -800,6 +831,73 @@ const AcademyInterativos=(()=>{
     $(fig,'.cena-estado').textContent=devolve?'O empréstimo voltou com a taxa de US$ '+fmt(EMP*FEE,0)+' dentro da mesma transação.':'A arbitragem rendeu menos que a taxa do empréstimo. Sem dinheiro para devolver, a transação inteira reverte: é como se o empréstimo nunca tivesse existido.';
    });
    limpar();
+  },
+  /* ===== Módulo 7 ===== */
+  paridade(fig){
+   const r=$(fig,'.pa-preco'),res=$(fig,'.pa-resgate');
+   const atualizar=(texto)=>{
+    const p=Number(r.value);$(fig,'.pa-txt').textContent=fmt(p,3);
+    $(fig,'.pa-ponto').setAttribute('cx',(20+(p-0.95)/0.1*600).toFixed(1));
+    const lucro=Math.abs(1-p)*10000;
+    $(fig,'.pa-lucro').textContent=Math.abs(p-1)<0.0005?'sem diferença, sem lucro':res.checked?'US$ '+fmt(lucro):'só quem tem conta no emissor consegue';
+    $(fig,'.cena-estado').textContent=texto||(p<1?'Abaixo de US$ 1: quem pode resgatar compra barato no mercado e troca por US$ 1 no emissor. Essa compra empurra o preço de volta.':p>1?'Acima de US$ 1: quem pode emitir deposita US$ 1 no emissor, recebe a moeda e vende mais caro. Essa venda empurra o preço de volta.':'Na paridade.');
+   };
+   r.addEventListener('input',()=>atualizar());res.addEventListener('change',()=>atualizar());
+   acao(fig,'arbitrar',()=>{
+    const p=Number(r.value);
+    if(!res.checked){atualizar('Sem acesso ao emissor, você só pode comprar e torcer. A paridade depende de outros, com conta no emissor, fazerem a arbitragem.');return;}
+    if(Math.abs(p-1)<0.0005){atualizar('Já está em US$ 1: não há o que arbitrar.');return;}
+    const novo=Math.round((p+(1-p)*0.7)*1000)/1000;r.value=String(novo);atualizar((p<1?'Você comprou a '+fmt(p,3)+' e resgatou a 1,00.':'Você emitiu a 1,00 e vendeu a '+fmt(p,3)+'.')+' Lucro de US$ '+fmt(Math.abs(1-p)*10000)+', e sua operação aproximou o preço de US$ 1.');
+   });
+   atualizar();
+  },
+  reservas(fig){
+   const mix=$(fig,'.rs-mix'),r=$(fig,'.rs-pedido');
+   /* Quanto de cada US$ 1 de reserva vira dinheiro em 1 dia, em cada cenário (exemplo). */
+   const liq=[0.98,0.5,0.6],nomes=['Dinheiro e títulos curtos vendem no mesmo dia, com pouca perda.','Empréstimos a empresas não viram dinheiro em um dia.','Cripto vende no mesmo dia, mas numa corrida o preço cai: aqui, 40% de perda.'];
+   const atualizar=()=>{
+    const ped=Number(r.value)/100,disp=liq[Number(mix.value)],pago=Math.min(ped,disp),falta=Math.max(0,ped-disp);
+    $(fig,'.rs-txt').textContent=fmt(ped*100,0)+'%';$(fig,'.rs-disp').textContent=fmt(disp*100,0)+'% das moedas';$(fig,'.rs-ped').textContent=fmt(ped*100,0)+'%';$(fig,'.rs-falta').textContent=falta?fmt(falta*100,0)+'%':'nada';
+    $(fig,'.rs-barra-ok').setAttribute('width',String(Math.round(pago*620/0.6)));$(fig,'.rs-barra-falta').setAttribute('x',String(10+Math.round(pago*620/0.6)));$(fig,'.rs-barra-falta').setAttribute('width',String(Math.round(falta*620/0.6)));
+    fig.classList.toggle('rs-faltou',falta>0);
+    $(fig,'.cena-estado').textContent=nomes[Number(mix.value)]+(falta?' Faltou dinheiro para parte dos pedidos: quem não conseguiu resgatar vende no mercado, e o preço cai abaixo de US$ 1.':' Todos os pedidos foram pagos.')+' Valores de exemplo.';
+   };
+   mix.addEventListener('change',atualizar);r.addEventListener('input',atualizar);atualizar();
+  },
+  cdp(fig){
+   const d=$(fig,'.cd-div'),p=$(fig,'.cd-preco'),MIN=1.5;
+   const atualizar=()=>{
+    const div=Number(d.value),preco=Number(p.value),gar=2*preco,razao=div?gar/div:Infinity;
+    $(fig,'.cd-div-txt').textContent=fmt(div,0);$(fig,'.cd-preco-txt').textContent='US$ '+fmt(preco,0);
+    $(fig,'.cd-gar').textContent='US$ '+fmt(gar,0);$(fig,'.cd-razao').textContent=div?fmt(razao*100,0)+'%':'sem dívida';$(fig,'.cd-liq').textContent=div?'US$ '+fmt(div*MIN/2,0):'—';
+    fig.classList.toggle('hf-liquidavel',razao<MIN);fig.classList.toggle('hf-perigo',razao<MIN*1.2);
+    $(fig,'.cena-estado').textContent=!div?'Nenhuma moeda emitida.':razao<MIN?'Abaixo do mínimo de 150%: a garantia é vendida para recolher as moedas emitidas. É assim que cada moeda continua com mais de US$ 1 por trás.':'Cada moeda emitida tem mais de US$ 1 em ETH por trás. O mínimo de exemplo é 150%: a folga absorve a volatilidade do ETH.';
+   };
+   [d,p].forEach(x=>x.addEventListener('input',atualizar));atualizar();
+  },
+  espiral(fig){
+   /* Modelo de exemplo, sem relação com números reais. */
+   const st=[1,0.97,0.9,0.7,0.4,0.2,0.1],tk=[1,1.2,2,6,40,300,2000],tkp=[80,70,40,9,0.8,0.05,0.002];let dia=0;
+   const pt=(k,v)=>(50+k*93)+','+v;
+   const mostrar=()=>{
+    $(fig,'.es-linha-st').setAttribute('points',st.slice(0,dia+1).map((v,k)=>pt(k,(160-v*130).toFixed(1))).join(' '));
+    $(fig,'.es-linha-tk').setAttribute('points',tk.slice(0,dia+1).map((v,k)=>pt(k,(160-Math.log10(v)/Math.log10(2000)*130).toFixed(1))).join(' '));
+    $(fig,'.es-st').textContent='US$ '+fmt(st[dia],2);$(fig,'.es-tk').textContent=fmt(tk[dia],1)+'×';$(fig,'.es-tkp').textContent='US$ '+fmt(tkp[dia],tkp[dia]<1?3:0);
+    $(fig,'[data-acao="dia"]').disabled=dia===6;
+    const t=['A stablecoin vale US$ 1 porque pode ser trocada por US$ 1 em token irmão, que o sistema cria na hora.','Saques grandes derrubam a stablecoin um pouco. Quem quer sair troca por token irmão novo.','Mais token irmão no mercado derruba o preço dele. Para pagar US$ 1, o sistema precisa criar ainda mais.','O pânico cresce: cada troca cria token irmão em quantidade cada vez maior.','A emissão explode e o token irmão quase não vale nada. Já não há o que dar em troca.','A stablecoin deixa de ser estável. Sem reservas fora do sistema, não há chão.','Fim da espiral: as duas moedas perderam quase todo o valor. Números de exemplo.'];
+    $(fig,'.cena-estado').textContent='Dia '+dia+' · '+t[dia];
+   };
+   acao(fig,'dia',()=>{dia=Math.min(6,dia+1);mostrar();});acao(fig,'recomecar',()=>{dia=0;mostrar();});mostrar();
+  },
+  depeg(fig){
+   const r=$(fig,'.dp-venda'),du=$(fig,'.dp-duvida'),L=10;
+   const atualizar=()=>{
+    const v=Number(r.value)*(du.checked?1.8:1),x=L+v,y=L*L/x,preco=y/x;
+    $(fig,'.dp-txt').textContent=fmt(Number(r.value),1);$(fig,'.dp-preco').textContent='US$ '+fmt(preco,3);
+    $(fig,'.dp-barra').setAttribute('width',String(Math.round(preco*620)));fig.classList.toggle('hf-liquidavel',preco<0.97);
+    $(fig,'.cena-estado').textContent=v===0?'Pool equilibrada: 1 por 1.':(du.checked?'Com dúvida sobre as reservas, cada vendedor puxa outros: o volume de venda quase dobra. ':'')+'A pool vende a stablecoin cada vez mais barato. Quem confia nas reservas compra barato para resgatar a US$ 1, se puder resgatar; sem essa confiança, o desconto fica.';
+   };
+   r.addEventListener('input',atualizar);du.addEventListener('change',atualizar);atualizar();
   },
  };
  /* Desbloqueio de exemplo (milhões de um total de 1.000): 200 no lançamento,

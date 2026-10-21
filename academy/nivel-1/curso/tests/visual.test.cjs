@@ -221,6 +221,26 @@ const tick=ms=>new Promise(r=>setTimeout(r,ms));
  const fl=fig('flash');clica(fl,'executar');assert.equal(txt(fl,'.fl-res'),'lucro de US$ 450');n++;
  muda(fl.querySelector('.fl-dif'),0.03);clica(fl,'executar');assert.match(txt(fl,'.fl-res'),/^revertida/);n++;
  }
+ { // ===== Módulo 7 =====
+ ev("app.navigate('m7')");
+ const pr=[...d.querySelectorAll('#tab-content > .lesson-layout > div > .lesson')];
+ assert.equal(pr.length,9);n++;
+ for(const a of pr){assert.ok(a.classList.contains('tem-visual'),a.id);n++;}
+ const txt=(f,s)=>f.querySelector(s).textContent;
+ // Paridade: a 0,98 lucra 200 e o preço volta para perto de 1.
+ const pa=fig('paridade');assert.equal(txt(pa,'.pa-lucro'),'US$ 200,00');clica(pa,'arbitrar');assert.equal(pa.querySelector('.pa-preco').value,'0.994');n+=2;
+ const rs0=pa.querySelector('.pa-resgate');rs0.checked=false;rs0.dispatchEvent(new w.Event('change'));clica(pa,'arbitrar');assert.match(est(pa),/Sem acesso/);n++;
+ // Reservas: 20% com dinheiro e títulos paga tudo; 60% com empréstimos falta 10%.
+ const rs=fig('reservas');assert.equal(txt(rs,'.rs-falta'),'nada');n++;
+ rs.querySelector('.rs-mix').value='1';rs.querySelector('.rs-mix').dispatchEvent(new w.Event('change'));muda(rs.querySelector('.rs-pedido'),60);assert.equal(txt(rs,'.rs-falta'),'10%');assert.ok(rs.classList.contains('rs-faltou'));n+=2;
+ // CDP: 2 ETH a 3.000 e 2.000 emitidas = 300%; liquida a 1.500.
+ const cd=fig('cdp');assert.equal(txt(cd,'.cd-razao'),'300%');assert.equal(txt(cd,'.cd-liq'),'US$ 1.500');muda(cd.querySelector('.cd-preco'),1400);assert.ok(cd.classList.contains('hf-liquidavel'));n+=3;
+ // Espiral: 6 dias e o botão trava.
+ const es=fig('espiral');for(let k=0;k<6;k++)clica(es,'dia');assert.equal(txt(es,'.es-st'),'US$ 0,10');assert.ok(es.querySelector('[data-acao="dia"]').disabled);n+=2;
+ // Depeg: sem venda 1,000; vender 2 milhões → 0,694; com dúvida, pior.
+ const dp=fig('depeg');assert.equal(txt(dp,'.dp-preco'),'US$ 1,000');muda(dp.querySelector('.dp-venda'),2);assert.equal(txt(dp,'.dp-preco'),'US$ 0,694');n+=2;
+ const du=dp.querySelector('.dp-duvida');du.checked=true;du.dispatchEvent(new w.Event('change'));assert.equal(txt(dp,'.dp-preco'),'US$ 0,541');n++;
+ }
  assert.deepEqual(errors,[]);n++;
  console.log('visual ok: '+n+' verificações');
  process.exit(0);

@@ -240,3 +240,10 @@
 .hf-liquidavel .lq-caixa-div,.hf-liquidavel .dv-caixa{stroke:#f87171}
 .hf-barra,.il-barra-hold,.il-barra-lp,.f-barra-cap,.f-barra-fdv{transition:width .3s}
 @media (prefers-reduced-motion:reduce){.hf-barra,.il-barra-hold,.il-barra-lp,.f-barra-cap,.f-barra-fdv{transition:none}}
+
+/* ===== Interativos do Módulo 7 (21/10/2026) ===== */
+.pa-ponto{transition:cx .4s}
+.rs-faltou .rs-falta{color:#fecaca}
+.dp-barra{transition:width .3s}
+.hf-liquidavel .dp-barra{fill:#f87171}
+@media (prefers-reduced-motion:reduce){.pa-ponto,.dp-barra{transition:none}}
