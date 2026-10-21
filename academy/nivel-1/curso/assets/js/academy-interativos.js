@@ -211,6 +211,61 @@ const AcademyInterativos=(()=>{
     +'<rect class="px-impl" x="330" y="20" width="300" height="80" rx="10" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text class="px-versao" x="480" y="52" text-anchor="middle" font-size="16" font-weight="700" fill="'+C.texto+'"></text><text class="px-regra" x="480" y="76" text-anchor="middle" font-size="13" fill="'+C.mudo+'"></text>')
    +'<p class="o-info">Seus fundos: <strong class="px-fundos"></strong> · <span class="px-relogio"></span></p>'
    +botoes([['propor','Admin propõe a versão 2'],['passar','Passar 24 h'],['sacar','Sacar tudo agora'],['recomecar','Recomeçar']])+estado(''),
+  /* ===== Módulo 6 ===== */
+  /* Juros pela utilização, com a "curva de joelho". Parâmetros de exemplo. */
+  utilizacao:()=>{
+   let pts=[];for(let u=0;u<=100;u+=2)pts.push((50+u*5.6).toFixed(1)+','+(190-AcademyInterativos.juros(u/100).tomar*170/0.79).toFixed(1));
+   return '<label class="interativo-rotulo">Quanto do pool está emprestado (utilização) <span class="ut-txt"></span><input class="ut-u" type="range" min="0" max="100" step="1" value="60"></label>'
+    +svg(640,220,linha(50,190,610,190)+linha(50,20,50,190)
+     +'<line x1="498" y1="20" x2="498" y2="190" stroke="'+C.ambar+'" stroke-width="1.5" stroke-dasharray="5 5"/><text x="498" y="16" text-anchor="middle" font-size="12" fill="'+C.ambar+'">80%</text>'
+     +'<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+C.violeta+'" stroke-width="3"/>'
+     +'<circle class="ut-ponto" cx="50" cy="190" r="7" fill="'+C.ciano+'"/>'
+     +'<text x="50" y="210" font-size="12" fill="'+C.mudo+'">0%</text><text x="610" y="210" text-anchor="end" font-size="12" fill="'+C.mudo+'">100% emprestado</text><text x="58" y="34" font-size="12" fill="'+C.mudo+'">juros de quem toma</text>')
+    +'<div class="mt-conta"><p>Quem toma paga <strong class="ut-tomar"></strong></p><p>Quem fornece ganha <strong class="ut-fornecer"></strong></p><p>Livre para saque <strong class="ut-livre"></strong></p></div>'+estado('');
+  },
+  /* Health factor. */
+  hf:()=>'<label class="interativo-rotulo">ETH depositado como garantia <span class="hf-qtd-txt"></span><input class="hf-qtd" type="range" min="0.5" max="10" step="0.5" value="2"></label>'
+   +'<label class="interativo-rotulo">Preço do ETH (US$) <span class="hf-preco-txt"></span><input class="hf-preco" type="range" min="500" max="6000" step="50" value="3000"></label>'
+   +'<label class="interativo-rotulo">Dívida em USDC <span class="hf-div-txt"></span><input class="hf-div" type="range" min="0" max="12000" step="100" value="3000"></label>'
+   +svg(640,70,'<rect x="10" y="20" width="620" height="22" rx="11" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><rect class="hf-barra" x="10" y="20" height="22" rx="11" width="0" fill="'+C.ciano+'"/>'
+    +'<line x1="217" y1="12" x2="217" y2="50" stroke="'+C.verm+'" stroke-width="2"/><text x="217" y="66" text-anchor="middle" font-size="12" fill="'+C.verm+'">HF 1</text><text x="630" y="66" text-anchor="end" font-size="12" fill="'+C.mudo+'">HF 3+</text>')
+   +'<div class="mt-conta"><p>Health factor <strong class="hf-valor"></strong></p><p>Pode tomar até <strong class="hf-cap"></strong></p><p>Liquidação se o ETH cair a <strong class="hf-liq"></strong></p></div>'+estado(''),
+  /* Liquidação passo a passo. */
+  liquidacao:()=>svg(640,110,'<rect x="10" y="10" width="300" height="90" rx="10" fill="'+C.fundo+'" stroke="'+C.azul+'" stroke-width="2"/><text x="26" y="36" font-size="15" fill="'+C.mudo+'">Garantia</text><text class="lq-gar" x="26" y="66" font-size="20" font-weight="700" fill="'+C.texto+'"></text><text class="lq-gar-usd" x="26" y="88" font-size="13" fill="'+C.mudo+'"></text>'
+    +'<rect class="lq-caixa-div" x="330" y="10" width="300" height="90" rx="10" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="346" y="36" font-size="15" fill="'+C.mudo+'">Dívida e HF</text><text class="lq-div" x="346" y="66" font-size="20" font-weight="700" fill="'+C.texto+'"></text><text class="lq-hf" x="346" y="88" font-size="13" fill="'+C.mudo+'"></text>')
+   +botoes([['cair','O ETH cai 5%'],['pagar','Pagar 1.000 USDC da dívida'],['recomecar','Recomeçar']])+estado(''),
+  /* Dívida em ativo volátil. */
+  divida:()=>'<label class="interativo-rotulo">Preço do ETH hoje (US$) <span class="dv-txt"></span><input class="dv-preco" type="range" min="1000" max="4000" step="50" value="2000"></label>'
+   +svg(640,90,'<rect x="10" y="10" width="300" height="70" rx="10" fill="'+C.fundo+'" stroke="'+C.azul+'" stroke-width="2"/><text x="26" y="36" font-size="15" fill="'+C.mudo+'">Garantia (estável)</text><text x="26" y="64" font-size="20" font-weight="700" fill="'+C.texto+'">4.000 USDC</text>'
+    +'<rect class="dv-caixa" x="330" y="10" width="300" height="70" rx="10" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="346" y="36" font-size="15" fill="'+C.mudo+'">Dívida: 1 ETH, que vale</text><text class="dv-valor" x="346" y="64" font-size="20" font-weight="700" fill="'+C.texto+'"></text>')
+   +'<p class="o-info">Health factor: <strong class="dv-hf"></strong></p>'+estado(''),
+  /* AMM x·y=k. */
+  amm:()=>{
+   let pts=[];for(let x=4;x<=20;x+=0.25)pts.push((40+(x-4)*35).toFixed(1)+','+(200-(300000/x-15000)/60000*170).toFixed(1));
+   return '<label class="interativo-rotulo">Comprar ETH do pool <span class="am-txt"></span><input class="am-dx" type="range" min="0.1" max="5" step="0.1" value="1"></label>'
+    +svg(640,230,linha(40,200,620,200)+linha(40,20,40,200)+'<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+C.violeta+'" stroke-width="3"/>'
+     +'<circle class="am-antes" r="7" fill="'+C.mudo+'"/><circle class="am-depois" r="7" fill="'+C.ciano+'"/>'
+     +'<text x="620" y="218" text-anchor="end" font-size="12" fill="'+C.mudo+'">ETH no pool →</text><text x="48" y="32" font-size="12" fill="'+C.mudo+'">USDC no pool</text>')
+    +'<div class="mt-conta"><p>Você paga <strong class="am-paga"></strong></p><p>Preço médio <strong class="am-medio"></strong></p><p>Impacto no preço <strong class="am-imp"></strong></p><p>Pool depois <strong class="am-pool"></strong></p></div>'+estado('');
+  },
+  /* Impermanent loss. */
+  il:()=>'<label class="interativo-rotulo">O preço do ETH mudou (× do preço de entrada) <span class="il-txt"></span><input class="il-r" type="range" min="0" max="20" step="1" value="10"></label>'
+   +svg(640,110,'<text x="10" y="30" font-size="15" fill="'+C.mudo+'">Só guardar</text><rect class="il-barra-hold" x="150" y="12" height="26" rx="4" fill="'+C.azul+'" width="0"/><text class="il-hold" x="160" y="31" font-size="15" fill="'+C.texto+'"></text>'
+    +'<text x="10" y="80" font-size="15" fill="'+C.mudo+'">No pool</text><rect class="il-barra-lp" x="150" y="62" height="26" rx="4" fill="'+C.violeta+'" width="0"/><text class="il-lp" x="160" y="81" font-size="15" fill="'+C.texto+'"></text>')
+   +'<p class="o-info">Perda em relação a só guardar: <strong class="il-perda"></strong></p>'+estado(''),
+  /* APR, APY e o token de recompensa. */
+  apy:()=>'<label class="interativo-rotulo">APR anunciado <span class="ap-apr-txt"></span><input class="ap-apr" type="range" min="1" max="100" step="1" value="20"></label>'
+   +'<label class="interativo-rotulo">Reinvestimento<select class="hash-entrada ap-n"><option value="1">uma vez por ano</option><option value="12" selected>todo mês</option><option value="365">todo dia</option></select></label>'
+   +'<label class="interativo-rotulo">O token da recompensa cai no ano <span class="ap-queda-txt"></span><input class="ap-queda" type="range" min="0" max="90" step="5" value="0"></label>'
+   +'<div class="mt-conta"><p>APY (com reinvestimento) <strong class="ap-apy"></strong></p><p>US$ 1.000 viram <strong class="ap-fim"></strong></p><p>Rendimento real <strong class="ap-real"></strong></p></div>'+estado(''),
+  /* Loop de alavancagem. */
+  loop:()=>'<label class="interativo-rotulo">Quanto do limite você usa a cada volta (LTV) <span class="lp-ltv-txt"></span><input class="lp-ltv" type="range" min="0" max="75" step="5" value="50"></label>'
+   +'<label class="interativo-rotulo">Voltas <span class="lp-n-txt"></span><input class="lp-n" type="range" min="0" max="6" step="1" value="3"></label>'
+   +'<div class="mt-conta"><p>Exposição em ETH <strong class="lp-exp"></strong></p><p>Dívida <strong class="lp-div"></strong></p><p>Health factor <strong class="lp-hf"></strong></p><p>Liquida se o ETH cair <strong class="lp-queda"></strong></p></div>'+estado(''),
+  /* Flash loan. */
+  flash:()=>'<label class="interativo-rotulo">Diferença de preço entre duas corretoras <span class="fl-txt"></span><input class="fl-dif" type="range" min="0" max="0.3" step="0.01" value="0.1"></label>'
+   +svg(640,90,['Toma 1 milhão','Compra barato','Vende caro','Devolve + 0,05%'].map((t,k)=>{const x=10+k*158;return '<g class="at-passo fl-passo-'+k+'"><rect x="'+x+'" y="10" width="146" height="60" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><text x="'+(x+73)+'" y="46" text-anchor="middle" font-size="15" fill="'+C.texto+'">'+t+'</text></g>';}).join(''))
+   +'<p class="o-info">Resultado: <strong class="fl-res"></strong></p>'+botoes([['executar','Executar na mesma transação']])+estado(''),
  };
 
  const ligar={
@@ -635,10 +690,125 @@ const AcademyInterativos=(()=>{
    tl.addEventListener('change',()=>{horas=null;v=1;fundos=100;fora=false;mostrar(tl.checked?'Com timelock: mudanças esperam 48 h.':'Sem timelock: o admin troca as regras na hora.');});
    mostrar('Você depositou 100 USDC num protocolo atualizável.');
   },
+  /* ===== Módulo 6 ===== */
+  utilizacao(fig){
+   const r=$(fig,'.ut-u');
+   const atualizar=()=>{
+    const u=Number(r.value)/100,j=AcademyInterativos.juros(u);
+    $(fig,'.ut-txt').textContent=fmt(u*100,0)+'%';$(fig,'.ut-tomar').textContent=fmt(j.tomar*100,1)+'% ao ano';$(fig,'.ut-fornecer').textContent=fmt(j.fornecer*100,1)+'% ao ano';
+    $(fig,'.ut-livre').textContent=fmt((1-u)*1e6,0)+' USDC';
+    $(fig,'.ut-ponto').setAttribute('cx',(50+u*560).toFixed(1));$(fig,'.ut-ponto').setAttribute('cy',(190-j.tomar*170/0.79).toFixed(1));
+    $(fig,'.cena-estado').textContent=u>0.8?'Acima de 80% os juros disparam: o pool quer atrair depósitos e frear empréstimos, porque está faltando dinheiro para saque.':'Abaixo do "joelho", os juros sobem devagar. Quem fornece ganha menos que quem toma paga: parte fica de reserva e só o dinheiro emprestado rende. Parâmetros de exemplo, num pool de 1 milhão de USDC.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  hf(fig){
+   const q=$(fig,'.hf-qtd'),p=$(fig,'.hf-preco'),dv=$(fig,'.hf-div'),LT=0.8,LTV=0.75;
+   const atualizar=()=>{
+    const qtd=Number(q.value),preco=Number(p.value),div=Number(dv.value),gar=qtd*preco,hf=div?gar*LT/div:Infinity;
+    $(fig,'.hf-qtd-txt').textContent=fmt(qtd,1)+' ETH';$(fig,'.hf-preco-txt').textContent='US$ '+fmt(preco,0);$(fig,'.hf-div-txt').textContent=fmt(div,0);
+    $(fig,'.hf-valor').textContent=div?fmt(hf,2):'sem dívida';$(fig,'.hf-cap').textContent=fmt(gar*LTV,0)+' USDC';
+    $(fig,'.hf-liq').textContent=div?'US$ '+fmt(div/(qtd*LT),0):'—';
+    $(fig,'.hf-barra').setAttribute('width',String(Math.round(Math.min(3,div?hf:3)/3*620)));
+    fig.classList.toggle('hf-perigo',hf<1.2);fig.classList.toggle('hf-liquidavel',hf<1);
+    $(fig,'.cena-estado').textContent=!div?'Sem dívida, não há o que liquidar.':hf<1?'HF abaixo de 1: qualquer pessoa pode liquidar parte da posição agora.':hf<1.2?'Margem apertada: uma queda pequena do ETH leva à liquidação.':div>gar*LTV?'Você está acima do limite para tomar mais (LTV), mas ainda não no ponto de liquidação.':'Posição saudável. Limiar de liquidação de exemplo: 80%; limite para tomar: 75%.';
+   };
+   [q,p,dv].forEach(x=>x.addEventListener('input',atualizar));atualizar();
+  },
+  liquidacao(fig){
+   let eth=2,preco=3000,div=4000;const LT=0.8,BONUS=0.05,est=$(fig,'.cena-estado');
+   const hf=()=>eth*preco*LT/div;
+   const mostrar=t=>{
+    $(fig,'.lq-gar').textContent=fmt(eth,4)+' ETH';$(fig,'.lq-gar-usd').textContent='a US$ '+fmt(preco,0)+' = US$ '+fmt(eth*preco,0);
+    $(fig,'.lq-div').textContent=fmt(div,0)+' USDC';$(fig,'.lq-hf').textContent='HF '+(div?fmt(hf(),2):'—');
+    fig.classList.toggle('hf-liquidavel',div>0&&hf()<1);est.textContent=t;
+   };
+   acao(fig,'cair',()=>{preco=Math.round(preco*0.95);
+    if(div>0&&hf()<1){const fator=hf()>0.95?0.5:1,paga=div*fator,leva=paga*(1+BONUS)/preco;div-=paga;eth=Math.max(0,eth-leva);
+     mostrar('Liquidada! HF caiu abaixo de 1. Um liquidante pagou '+fmt(paga,0)+' USDC da sua dívida e levou '+fmt(leva,4)+' ETH, '+(BONUS*100)+'% a mais que o valor pago (bônus de exemplo). Você perdeu esse bônus.');return;}
+    mostrar('O ETH caiu para US$ '+fmt(preco,0)+'. HF '+fmt(hf(),2)+'.');});
+   acao(fig,'pagar',()=>{if(div<=0)return;div=Math.max(0,div-1000);mostrar(div?'Pagar parte da dívida sobe o HF e afasta a liquidação. HF '+fmt(hf(),2)+'.':'Dívida quitada: a garantia está livre.');});
+   acao(fig,'recomecar',()=>{eth=2;preco=3000;div=4000;mostrar('2 ETH de garantia a US$ 3.000 e 4.000 USDC de dívida. Limiar de 80%: HF 1,20.');});
+   mostrar('2 ETH de garantia a US$ 3.000 e 4.000 USDC de dívida. Limiar de 80%: HF 1,20.');
+  },
+  divida(fig){
+   const r=$(fig,'.dv-preco');
+   const atualizar=()=>{
+    const p=Number(r.value),hf=4000*0.8/p;
+    $(fig,'.dv-txt').textContent='US$ '+fmt(p,0);$(fig,'.dv-valor').textContent='US$ '+fmt(p,0);$(fig,'.dv-hf').textContent=fmt(hf,2);
+    fig.classList.toggle('hf-liquidavel',hf<1);
+    $(fig,'.cena-estado').textContent=hf<1?'Liquidável: a garantia não mudou, mas a dívida ficou cara demais. Você deve 1 ETH, e 1 ETH passou a valer mais de US$ 3.200.':p>2000?'Você pegou 1 ETH quando valia US$ 2.000. Ele subiu, então você deve mais em dólar sem ter pegado nada a mais.':'Com o ETH mais barato, a dívida em dólar diminui. Garantia estável não elimina o risco da dívida volátil.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  amm(fig){
+   const r=$(fig,'.am-dx'),X=10,Y=30000,K=X*Y,FEE=0.003;
+   const pos=(x,y)=>[(40+(x-4)*35).toFixed(1),(200-(y-15000)/60000*170).toFixed(1)];
+   const atualizar=()=>{
+    const dx=Number(r.value),x2=X-dx,y2=K/x2,paga=(y2-Y)/(1-FEE),medio=paga/dx,imp=(medio/(Y/X)-1)*100;
+    $(fig,'.am-txt').textContent=fmt(dx,1)+' ETH';$(fig,'.am-paga').textContent=fmt(paga,0)+' USDC';$(fig,'.am-medio').textContent='US$ '+fmt(medio,0);
+    $(fig,'.am-imp').textContent='+'+fmt(imp,1)+'%';$(fig,'.am-pool').textContent=fmt(x2,1)+' ETH e '+fmt(Y+paga,0)+' USDC';
+    const [ax,ay]=pos(X,Y),[bx,by]=pos(x2,y2);$(fig,'.am-antes').setAttribute('cx',ax);$(fig,'.am-antes').setAttribute('cy',ay);$(fig,'.am-depois').setAttribute('cx',bx);$(fig,'.am-depois').setAttribute('cy',by);
+    $(fig,'.cena-estado').textContent='O pool começa com 10 ETH e 30.000 USDC (preço US$ 3.000). A regra x·y = k mantém o produto fixo: quanto mais ETH você tira, mais caro fica cada um. Inclui a taxa de 0,3%.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  il(fig){
+   const r=$(fig,'.il-r'),passos=[0.2,0.25,0.33,0.4,0.5,0.6,0.67,0.75,0.8,0.9,1,1.25,1.5,1.75,2,2.5,3,3.5,4,4.5,5];
+   const atualizar=()=>{
+    const k=passos[Number(r.value)],hold=1000+1000*k,lp=2000*Math.sqrt(k),perda=(lp/hold-1)*100,max=6000;
+    $(fig,'.il-txt').textContent=fmt(k,2).replace(/,?0+$/,'')+'×';
+    $(fig,'.il-barra-hold').setAttribute('width',String(Math.round(hold/max*300)));$(fig,'.il-barra-lp').setAttribute('width',String(Math.round(lp/max*300)));
+    $(fig,'.il-hold').setAttribute('x',String(160+Math.round(hold/max*300)));$(fig,'.il-lp').setAttribute('x',String(160+Math.round(lp/max*300)));
+    $(fig,'.il-hold').textContent='US$ '+fmt(hold,0);$(fig,'.il-lp').textContent='US$ '+fmt(lp,0);$(fig,'.il-perda').textContent=fmt(perda,1)+'%';
+    $(fig,'.cena-estado').textContent=k===1?'Preço igual ao da entrada: sem perda.':'Você entrou com US$ 1.000 em ETH e US$ 1.000 em USDC. O pool vende o que sobe e compra o que cai, então você fica com menos do ativo que valorizou. Só as taxas da pool podem compensar. Não conta as taxas.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
+  },
+  apy(fig){
+   const a=$(fig,'.ap-apr'),n=$(fig,'.ap-n'),q=$(fig,'.ap-queda');
+   const atualizar=()=>{
+    const apr=Number(a.value)/100,nn=Number(n.value),queda=Number(q.value)/100,apy=Math.pow(1+apr/nn,nn)-1,real=apy*(1-queda);
+    $(fig,'.ap-apr-txt').textContent=fmt(apr*100,0)+'%';$(fig,'.ap-queda-txt').textContent=fmt(queda*100,0)+'%';
+    $(fig,'.ap-apy').textContent=fmt(apy*100,1)+'%';$(fig,'.ap-fim').textContent='US$ '+fmt(1000*(1+real),0);$(fig,'.ap-real').textContent=fmt(real*100,1)+'%';
+    $(fig,'.cena-estado').textContent=queda>0?'O rendimento veio num token que caiu '+fmt(queda*100,0)+'%: o APY de '+fmt(apy*100,1)+'% vira '+fmt(real*100,1)+'% de verdade. Sem contar taxas de rede e de troca.':'APR não conta o reinvestimento; APY conta. A diferença cresce com taxas altas e reinvestimento frequente.';
+   };
+   [a,q].forEach(x=>x.addEventListener('input',atualizar));n.addEventListener('change',atualizar);atualizar();
+  },
+  loop(fig){
+   const l=$(fig,'.lp-ltv'),nn=$(fig,'.lp-n'),LT=0.8;
+   const atualizar=()=>{
+    const ltv=Number(l.value)/100,n=Number(nn.value);let exp=0;for(let k=0;k<=n;k++)exp+=1000*Math.pow(ltv,k);
+    const div=exp-1000,hf=div?exp*LT/div:Infinity,queda=div?(1-div/(exp*LT))*100:100;
+    $(fig,'.lp-ltv-txt').textContent=fmt(ltv*100,0)+'%';$(fig,'.lp-n-txt').textContent=String(n);
+    $(fig,'.lp-exp').textContent='US$ '+fmt(exp,0);$(fig,'.lp-div').textContent='US$ '+fmt(div,0);$(fig,'.lp-hf').textContent=div?fmt(hf,2):'—';
+    $(fig,'.lp-queda').textContent=div?fmt(queda,1)+'%':'—';fig.classList.toggle('hf-perigo',div>0&&queda<20);
+    $(fig,'.cena-estado').textContent=!div?'Sem voltas: US$ 1.000 em ETH, sem dívida.':'Cada volta pega dólar emprestado contra o ETH e compra mais ETH. Com US$ 1.000 você fica exposto a US$ '+fmt(exp,0)+', e uma queda de '+fmt(queda,1)+'% já liquida. Limiar de exemplo: 80%; não conta juros nem taxas.';
+   };
+   [l,nn].forEach(x=>x.addEventListener('input',atualizar));atualizar();
+  },
+  flash(fig){
+   const r=$(fig,'.fl-dif'),EMP=1e6,FEE=0.0005,GAS=50;
+   const limpar=()=>{$(fig,'.fl-txt').textContent=fmt(Number(r.value),2)+'%';$$(fig,'.at-passo').forEach(g=>g.classList.remove('feito','falhou'));$(fig,'.fl-res').textContent='—';
+    $(fig,'.cena-estado').textContent='Você toma 1 milhão de USDC sem garantia, faz a arbitragem e devolve tudo na mesma transação. Taxa do empréstimo: 0,05%. Gas de exemplo: US$ 50.';};
+   r.addEventListener('input',limpar);
+   acao(fig,'executar',()=>{
+    const lucro=EMP*Number(r.value)/100-EMP*FEE-GAS;
+    const devolve=lucro+GAS>0;
+    $$(fig,'.at-passo').forEach((g,k)=>{g.classList.toggle('feito',devolve||k<3);g.classList.toggle('falhou',!devolve&&k===3);});
+    $(fig,'.fl-res').textContent=devolve?(lucro>=0?'lucro de US$ '+fmt(lucro,0):'devolveu, mas o gas comeu: US$ '+fmt(lucro,0)):'revertida · perdeu só o gas (US$ '+fmt(GAS,0)+')';
+    $(fig,'.cena-estado').textContent=devolve?'O empréstimo voltou com a taxa de US$ '+fmt(EMP*FEE,0)+' dentro da mesma transação.':'A arbitragem rendeu menos que a taxa do empréstimo. Sem dinheiro para devolver, a transação inteira reverte: é como se o empréstimo nunca tivesse existido.';
+   });
+   limpar();
+  },
  };
  /* Desbloqueio de exemplo (milhões de um total de 1.000): 200 no lançamento,
     400 da comunidade liberados em 48 meses e 400 de equipe e investidores
     travados por 12 meses e liberados nos 24 seguintes. */
  const circulante=m=>200+400*Math.min(m,48)/48+(m<12?0:400*Math.min(m-12,24)/24);
- return {html,ligar,circulante,KINDS:Object.keys(html)};
+ /* Juros de exemplo com "joelho" em 80% de utilização: até lá sobem devagar
+    (até 4% ao ano); depois disparam (até 79%). Quem fornece recebe os juros
+    vezes a utilização, menos 10% de reserva. */
+ const juros=u=>{const tomar=u<=0.8?0.04*u/0.8:0.04+0.75*(u-0.8)/0.2;return {tomar,fornecer:tomar*u*0.9};};
+ return {html,ligar,circulante,juros,KINDS:Object.keys(html)};
 })();

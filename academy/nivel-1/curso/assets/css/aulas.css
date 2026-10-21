@@ -231,3 +231,12 @@
 .re-roubado .re-caixa-at{stroke:#f87171}
 .px-v2 .px-impl{stroke:#f87171}
 .c-cenarios .btn[aria-pressed=true]{border-color:#67e8f9;color:#cffafe}
+
+/* ===== Interativos do Módulo 6 (21/10/2026) ===== */
+.hf-perigo .hf-barra{fill:#fcd34d}
+.hf-perigo .hf-valor,.hf-perigo .lp-hf{color:#fde68a}
+.hf-liquidavel .hf-barra{fill:#f87171}
+.hf-liquidavel .hf-valor,.hf-liquidavel .lq-hf,.hf-liquidavel .dv-hf{color:#fecaca;fill:#fecaca}
+.hf-liquidavel .lq-caixa-div,.hf-liquidavel .dv-caixa{stroke:#f87171}
+.hf-barra,.il-barra-hold,.il-barra-lp,.f-barra-cap,.f-barra-fdv{transition:width .3s}
+@media (prefers-reduced-motion:reduce){.hf-barra,.il-barra-hold,.il-barra-lp,.f-barra-cap,.f-barra-fdv{transition:none}}

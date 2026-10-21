@@ -192,6 +192,35 @@ const tick=ms=>new Promise(r=>setTimeout(r,ms));
  clica(px,'passar');assert.equal(px.querySelector('.px-versao').textContent,'Versão 2');n++;
  const tl=px.querySelector('.px-timelock');tl.checked=false;tl.dispatchEvent(new w.Event('change'));clica(px,'propor');clica(px,'sacar');assert.equal(px.querySelector('.px-fundos').textContent,'50 USDC na sua carteira');n++;
  }
+ { // ===== Módulo 6 =====
+ ev("app.navigate('m6')");
+ const pr=[...d.querySelectorAll('#tab-content > .lesson-layout > div > .lesson')];
+ assert.equal(pr.length,12);n++;
+ for(const a of pr){assert.ok(a.classList.contains('tem-visual'),a.id);n++;}
+ const txt=(f,s)=>f.querySelector(s).textContent;
+ // Utilização: 60% → 3,0% para quem toma; 90% → acima do joelho.
+ const ut=fig('utilizacao');assert.equal(txt(ut,'.ut-tomar'),'3,0% ao ano');assert.equal(txt(ut,'.ut-fornecer'),'1,6% ao ano');n+=2;
+ muda(ut.querySelector('.ut-u'),90);assert.equal(txt(ut,'.ut-tomar'),'41,5% ao ano');assert.match(est(ut),/disparam/);n+=2;
+ // HF: 2 ETH × 3.000 × 0,8 ÷ 3.000 = 1,60; liquida a 1.875.
+ const hf=fig('hf');assert.equal(txt(hf,'.hf-valor'),'1,60');assert.equal(txt(hf,'.hf-liq'),'US$ 1.875');assert.equal(txt(hf,'.hf-cap'),'4.500 USDC');n+=3;
+ muda(hf.querySelector('.hf-preco'),1800);assert.ok(hf.classList.contains('hf-liquidavel'));n++;
+ // Liquidação: 4 quedas de 5% passam de HF 1.
+ const lq=fig('liquidacao');for(let k=0;k<4;k++)clica(lq,'cair');assert.match(est(lq),/^Liquidada/);assert.equal(txt(lq,'.lq-div'),'2.000 USDC');n+=2;
+ clica(lq,'recomecar');clica(lq,'pagar');assert.equal(txt(lq,'.lq-hf'),'HF 1,60');n++;
+ // Dívida volátil: ETH a 3.300 liquida.
+ const dv=fig('divida');assert.equal(txt(dv,'.dv-hf'),'1,60');muda(dv.querySelector('.dv-preco'),3300);assert.ok(dv.classList.contains('hf-liquidavel'));n+=2;
+ // AMM: comprar 1 ETH de 10/30.000 custa 3.343 USDC (com 0,3%).
+ const am=fig('amm');assert.equal(txt(am,'.am-paga'),'3.343 USDC');assert.equal(txt(am,'.am-imp'),'+11,4%');n+=2;
+ // IL: 2× = −5,7%; 1× = 0.
+ const il=fig('il');assert.equal(txt(il,'.il-perda'),'0,0%');muda(il.querySelector('.il-r'),14);assert.equal(txt(il,'.il-perda'),'-5,7%');muda(il.querySelector('.il-r'),20);assert.equal(txt(il,'.il-perda'),'-25,5%');n+=3;
+ // APY: 20% mensal = 21,9%; token −50% → real 11,0%.
+ const ap=fig('apy');assert.equal(txt(ap,'.ap-apy'),'21,9%');muda(ap.querySelector('.ap-queda'),50);assert.equal(txt(ap,'.ap-real'),'11,0%');n+=2;
+ // Loop: 50% e 3 voltas = 1.875 de exposição, 875 de dívida.
+ const lp=fig('loop');assert.equal(txt(lp,'.lp-exp'),'US$ 1.875');assert.equal(txt(lp,'.lp-div'),'US$ 875');n+=2;
+ // Flash: 0,1% de diferença dá lucro; 0,03% reverte.
+ const fl=fig('flash');clica(fl,'executar');assert.equal(txt(fl,'.fl-res'),'lucro de US$ 450');n++;
+ muda(fl.querySelector('.fl-dif'),0.03);clica(fl,'executar');assert.match(txt(fl,'.fl-res'),/^revertida/);n++;
+ }
  assert.deepEqual(errors,[]);n++;
  console.log('visual ok: '+n+' verificações');
  process.exit(0);
