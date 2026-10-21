@@ -45,3 +45,13 @@
 }
 
 .sim-field textarea{display:block;background:#0b1120;border:1px solid #2a3b55;border-radius:7px;color:#e2e8f0;width:100%;box-sizing:border-box;padding:10px 12px;margin-top:6px;min-height:110px;resize:vertical;font:inherit;font-size:14px;line-height:1.5}
+
+/* Celular (21/10/2026): os recuos somados (página de fora, iframe, contêiner,
+   aula e figura) deixavam só ~247px de figura visível em 375px. Aqui o
+   contêiner e a aula encolhem o recuo e a figura vai de borda a borda da aula. */
+@media (max-width:600px){
+ #view-container{padding-left:10px!important;padding-right:10px!important}
+ .lesson,.panel{padding:16px 14px}
+ .aula-figura{margin-left:-14px;margin-right:-14px;padding:10px 8px;border-radius:0;border-left:0;border-right:0}
+ .lesson-toc{padding:12px}
+}
