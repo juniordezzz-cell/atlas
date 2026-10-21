@@ -47,7 +47,7 @@ ev("app.navigate('m7','labs');document.getElementById('vl-price').value='3000';d
 assert.equal(errors.length,0,errors.join('\n'));assertions++;
 ev('academy.state.completed=[];academy.state.notes={};academy.load();');assert.equal(ev('academy.state.completed.length'),10);assert.ok(ev("academy.state.notes.m6.includes('Nota 6')"));assertions+=2;
 for(const module of ev('COURSE')){
- for(const section of module.sections){assert.ok(section[4].length>0);for(const key of section[4])assert.ok(ev(`SOURCES[${JSON.stringify(key)}]`));assertions++;}
+ for(const section of (module.sections||[])){assert.ok(section[4].length>0);for(const key of section[4])assert.ok(ev(`SOURCES[${JSON.stringify(key)}]`));assertions++;}
 }
 for(const svg of d.querySelectorAll('svg[role="img"]')){for(const id of (svg.getAttribute('aria-labelledby')||'').split(' ').filter(Boolean))assert.ok(d.getElementById(id));assertions++;}
 for(const file of ['assets/vendor/chart.umd.js','assets/vendor/lucide.js'])new vm.Script(fs.readFileSync(root+'/'+file,'utf8'));

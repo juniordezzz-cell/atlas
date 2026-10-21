@@ -27,3 +27,7 @@
  .timeline li::before{left:0;top:-28px}
 }
 @media print{.aula-analogia,.aula-figura,.aula-historia,.aula-frase,.aula-dado{background:white;color:#111;border-color:#bbb}}
+/* Tabelas largas rolam dentro do .table-scroll em vez de alargar a coluna da grade no celular. */
+.lesson-layout>*{min-width:0}
+/* No celular a figura mantém pelo menos 480px (texto de 16 no viewBox de 640 fica com 12px) e rola de lado. */
+@media (max-width:600px){.aula-figura{overflow-x:auto;padding:12px}.aula-figura svg{min-width:480px}}
