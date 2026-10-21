@@ -247,3 +247,8 @@
 .dp-barra{transition:width .3s}
 .hf-liquidavel .dp-barra{fill:#f87171}
 @media (prefers-reduced-motion:reduce){.pa-ponto,.dp-barra{transition:none}}
+
+/* ===== Interativos do Módulo 8 (21/10/2026) ===== */
+.pm-ok .k-cartao.escolhido{border-color:#67e8f9}
+.pm-bloq .k-cartao.escolhido{border-color:#f87171;background:#f8717114}
+.pm-bloq .cena-estado{color:#fecaca}

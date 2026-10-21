@@ -297,6 +297,28 @@ const AcademyInterativos=(()=>{
    +svg(640,80,'<rect x="10" y="15" width="620" height="34" rx="8" fill="'+C.fundo+'" stroke="'+C.linha+'" stroke-width="2"/><rect class="dp-barra" x="10" y="15" height="34" rx="8" fill="'+C.ciano+'" width="620"/><text class="dp-preco" x="320" y="38" text-anchor="middle" font-size="16" font-weight="700" fill="#05080f"></text>'
     +'<text x="10" y="70" font-size="12" fill="'+C.mudo+'">pool com 10 milhões de cada lado</text>')
    +estado(''),
+  /* ===== Módulo 8 ===== */
+  /* Quem faz o quê num RWA, e o que acontece se falhar. */
+  papeisrwa:()=>'<p class="interativo-sub">Clique em cada participante.</p><div class="k-cartoes">'
+   +[['Emissor','cria e vende o token'],['Veículo jurídico','empresa que é dona do ativo'],['Custodiante','guarda o ativo de verdade'],['Administrador','cobra, paga e faz a contabilidade'],['Auditor','confere contas e reservas'],['Oráculo','publica o valor na rede']]
+    .map(([n,s],k)=>'<button type="button" class="k-cartao" data-k="'+k+'"><strong>'+n+'</strong><small>'+s+'</small></button>').join('')
+   +'</div>'+estado('Um token de RWA só vale o que essa cadeia de pessoas e empresas entregar.'),
+  /* Renda líquida de um imóvel tokenizado. */
+  renda:()=>'<p class="interativo-sub">Imóvel de R$ 2 milhões dividido em 1.000 tokens (exemplo)</p>'
+   +'<label class="interativo-rotulo">Aluguel bruto por mês (R$) <span class="rd-alug-txt"></span><input class="rd-alug" type="range" min="5000" max="20000" step="500" value="12000"></label>'
+   +'<label class="interativo-rotulo">Meses vazio no ano <span class="rd-vac-txt"></span><input class="rd-vac" type="range" min="0" max="6" step="1" value="1"></label>'
+   +'<label class="interativo-rotulo">Despesas por mês: condomínio, IPTU, manutenção (R$) <span class="rd-desp-txt"></span><input class="rd-desp" type="range" min="0" max="6000" step="250" value="2500"></label>'
+   +'<label class="interativo-rotulo">Taxa da plataforma (% da renda) <span class="rd-taxa-txt"></span><input class="rd-taxa" type="range" min="0" max="20" step="1" value="10"></label>'
+   +'<div class="mt-conta"><p>Bruto no ano <strong class="rd-bruto"></strong></p><p>Líquido no ano <strong class="rd-liq"></strong></p><p>Por token, por mês <strong class="rd-token"></strong></p><p>Rendimento real <strong class="rd-pct"></strong></p></div>'+estado(''),
+  /* Token com lista de permitidos (estilo ERC-3643). */
+  permissao:()=>'<p class="interativo-sub">Você tem 10 tokens de um fundo. Para quem dá para enviar?</p><div class="k-cartoes">'
+   +[['Bruno','identidade verificada'],['Carla','verificada, mas de país não aceito'],['Carteira sem cadastro','endereço qualquer'],['Sua outra carteira','ainda não cadastrada']]
+    .map(([n,s],k)=>'<button type="button" class="k-cartao" data-k="'+k+'"><strong>'+n+'</strong><small>'+s+'</small></button>').join('')
+   +'</div>'+botoes([['congelar','O emissor congela sua carteira'],['recomecar','Recomeçar']])+estado(''),
+  /* Fundo de títulos tokenizado: valor da cota × preço no mercado. */
+  navrwa:()=>'<p class="interativo-sub">Você tem 10.000 tokens de um fundo de títulos curtos, com valor de US$ 1,00 cada e rendimento de 5% ao ano (exemplo). É sábado.</p>'
+   +'<label class="interativo-rotulo">Desconto de quem compra no mercado agora <span class="nv-txt"></span><input class="nv-desc" type="range" min="0" max="5" step="0.25" value="1"></label>'
+   +'<div class="mt-conta"><p>Vender agora no mercado <strong class="nv-agora"></strong></p><p>Resgatar no emissor na segunda <strong class="nv-segunda"></strong></p><p>Diferença <strong class="nv-dif"></strong></p></div>'+estado(''),
  };
 
  const ligar={
@@ -898,6 +920,47 @@ const AcademyInterativos=(()=>{
     $(fig,'.cena-estado').textContent=v===0?'Pool equilibrada: 1 por 1.':(du.checked?'Com dúvida sobre as reservas, cada vendedor puxa outros: o volume de venda quase dobra. ':'')+'A pool vende a stablecoin cada vez mais barato. Quem confia nas reservas compra barato para resgatar a US$ 1, se puder resgatar; sem essa confiança, o desconto fica.';
    };
    r.addEventListener('input',atualizar);du.addEventListener('change',atualizar);atualizar();
+  },
+  /* ===== Módulo 8 ===== */
+  papeisrwa(fig){
+   const t=['Emissor: estrutura a oferta, cria os tokens e define as regras. Se falhar ou mentir, o token pode não representar nada.',
+    'Veículo jurídico: uma empresa separada que é a dona legal do ativo, e o token dá direitos sobre ela. Se não for separada, o ativo pode entrar na falência do emissor.',
+    'Custodiante: guarda o ouro, os títulos ou a escritura. Se perder ou desviar, o lastro some, e a blockchain não percebe.',
+    'Administrador: cobra aluguéis ou juros, paga despesas e distribui a renda. Se parar, a renda para, mesmo com o token circulando normalmente.',
+    'Auditor: confere se as contas e os ativos batem. Sem auditoria, você confia só na palavra do emissor.',
+    'Oráculo: publica na rede o valor dos ativos. Se atrasar ou errar, o preço usado em empréstimos e resgates fica errado.'];
+   $$(fig,'.k-cartao').forEach(b=>b.addEventListener('click',()=>{$$(fig,'.k-cartao').forEach(x=>x.classList.toggle('escolhido',x===b));$(fig,'.cena-estado').textContent=t[Number(b.dataset.k)];}));
+  },
+  renda(fig){
+   const a=$(fig,'.rd-alug'),v=$(fig,'.rd-vac'),dp=$(fig,'.rd-desp'),tx=$(fig,'.rd-taxa'),R=v2=>'R$ '+fmt(v2,0);
+   const atualizar=()=>{
+    const alug=Number(a.value),vac=Number(v.value),desp=Number(dp.value),taxa=Number(tx.value)/100;
+    const bruto=alug*12,recebido=alug*(12-vac),liq=Math.max(0,(recebido-desp*12)*(1-taxa));
+    $(fig,'.rd-alug-txt').textContent=R(alug);$(fig,'.rd-vac-txt').textContent=String(vac);$(fig,'.rd-desp-txt').textContent=R(desp);$(fig,'.rd-taxa-txt').textContent=fmt(taxa*100,0)+'%';
+    $(fig,'.rd-bruto').textContent=R(bruto);$(fig,'.rd-liq').textContent=R(liq);$(fig,'.rd-token').textContent='R$ '+fmt(liq/1000/12);
+    $(fig,'.rd-pct').textContent=fmt(liq/2e6*100,1)+'% ao ano';
+    $(fig,'.cena-estado').textContent='O anúncio diz "aluguel de '+R(alug)+' por mês", que daria '+fmt(bruto/2e6*100,1)+'% ao ano. Depois de vacância, despesas e taxa, sobram '+fmt(liq/2e6*100,1)+'%. Antes ainda de impostos. Valores de exemplo.';
+   };
+   [a,v,dp,tx].forEach(x=>x.addEventListener('input',atualizar));atualizar();
+  },
+  permissao(fig){
+   let congelado=false;const est=$(fig,'.cena-estado');
+   const r=['Enviado: Bruno está na lista de identidades verificadas.','Bloqueado: Carla é verificada, mas o fundo não aceita investidores do país dela.','Bloqueado: o contrato só aceita carteiras com identidade cadastrada.','Bloqueado: até ser cadastrada, nem uma carteira sua pode receber.'];
+   $$(fig,'.k-cartao').forEach(b=>b.addEventListener('click',()=>{const k=Number(b.dataset.k);$$(fig,'.k-cartao').forEach(x=>x.classList.toggle('escolhido',x===b));
+    const ok=k===0&&!congelado;fig.classList.toggle('pm-ok',ok);fig.classList.toggle('pm-bloq',!ok);
+    est.textContent=congelado?'Bloqueado: sua carteira está congelada pelo emissor. Nenhuma transferência sai dela.':r[k];}));
+   acao(fig,'congelar',()=>{congelado=true;fig.classList.add('pm-bloq');fig.classList.remove('pm-ok');est.textContent='O emissor congelou sua carteira, por ordem judicial ou suspeita de fraude. Nesse padrão de token, ele também pode mover seus tokens à força.';});
+   acao(fig,'recomecar',()=>{congelado=false;fig.classList.remove('pm-ok','pm-bloq');$$(fig,'.k-cartao').forEach(x=>x.classList.remove('escolhido'));est.textContent='Tokens de RWA costumam só circular entre carteiras aprovadas.';});
+   est.textContent='Tokens de RWA costumam só circular entre carteiras aprovadas.';
+  },
+  navrwa(fig){
+   const r=$(fig,'.nv-desc'),Q=10000;
+   const atualizar=()=>{
+    const d=Number(r.value)/100,agora=Q*(1-d),segunda=Q*(1+0.05*2/365);
+    $(fig,'.nv-txt').textContent=fmt(d*100,2)+'%';$(fig,'.nv-agora').textContent='US$ '+fmt(agora);$(fig,'.nv-segunda').textContent='US$ '+fmt(segunda);$(fig,'.nv-dif').textContent='US$ '+fmt(segunda-agora);
+    $(fig,'.cena-estado').textContent='O fundo só resgata em dia útil. Quem precisa sair no fim de semana vende para outra pessoa, que cobra um desconto por esperar. O token vale US$ 1 no papel, mas o preço de saída depende de quem compra. Valores de exemplo.';
+   };
+   r.addEventListener('input',atualizar);atualizar();
   },
  };
  /* Desbloqueio de exemplo (milhões de um total de 1.000): 200 no lançamento,

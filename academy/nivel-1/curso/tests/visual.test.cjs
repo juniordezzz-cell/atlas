@@ -241,6 +241,22 @@ const tick=ms=>new Promise(r=>setTimeout(r,ms));
  const dp=fig('depeg');assert.equal(txt(dp,'.dp-preco'),'US$ 1,000');muda(dp.querySelector('.dp-venda'),2);assert.equal(txt(dp,'.dp-preco'),'US$ 0,694');n+=2;
  const du=dp.querySelector('.dp-duvida');du.checked=true;du.dispatchEvent(new w.Event('change'));assert.equal(txt(dp,'.dp-preco'),'US$ 0,541');n++;
  }
+ { // ===== Módulo 8 =====
+ ev("app.navigate('m8')");
+ const pr=[...d.querySelectorAll('#tab-content > .lesson-layout > div > .lesson')];
+ assert.equal(pr.length,8);n++;
+ for(const a of pr){assert.ok(a.classList.contains('tem-visual'),a.id);n++;}
+ const txt=(f,s)=>f.querySelector(s).textContent;
+ // Papéis: o custodiante explica o lastro.
+ const pp=fig('papeisrwa');pp.querySelectorAll('.k-cartao')[2].click();assert.match(est(pp),/^Custodiante/);n++;
+ // Renda: valores iniciais dão 4,6% ao ano e R$ 7,65 por token por mês.
+ const rd=fig('renda');assert.equal(txt(rd,'.rd-pct'),'4,6% ao ano');assert.equal(txt(rd,'.rd-token'),'R$ 7,65');assert.equal(txt(rd,'.rd-bruto'),'R$ 144.000');n+=3;
+ // Permissão: Bruno passa; carteira sem cadastro não; congelado, nem Bruno.
+ const pm=fig('permissao'),cs=pm.querySelectorAll('.k-cartao');cs[0].click();assert.ok(pm.classList.contains('pm-ok'));cs[2].click();assert.ok(pm.classList.contains('pm-bloq'));n+=2;
+ clica(pm,'congelar');cs[0].click();assert.ok(pm.classList.contains('pm-bloq'));assert.match(est(pm),/congelada/);n+=2;
+ // Valor da cota: 1% de desconto custa 102,74 frente ao resgate de segunda.
+ const nv=fig('navrwa');assert.equal(txt(nv,'.nv-agora'),'US$ 9.900,00');assert.equal(txt(nv,'.nv-dif'),'US$ 102,74');n+=2;
+ }
  assert.deepEqual(errors,[]);n++;
  console.log('visual ok: '+n+' verificações');
  process.exit(0);
