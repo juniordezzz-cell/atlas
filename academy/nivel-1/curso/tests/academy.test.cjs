@@ -49,6 +49,9 @@ ev('academy.state.completed=[];academy.state.notes={};academy.load();');assert.e
 for(const module of ev('COURSE')){
  for(const section of (module.sections||[])){assert.ok(section[4].length>0);for(const key of section[4])assert.ok(ev(`SOURCES[${JSON.stringify(key)}]`));assertions++;}
 }
+// Cartão de fonte: chave com prefixo de módulo (m1.x) não leva a data fixa; chave antiga mantém o texto antigo.
+{const nova=ev("academy.sourceCard('m1.suetonio')"),antiga=ev("academy.sourceCard('hash')");
+ assert.ok(!nova.includes('02/10/2026')&&nova.includes('Fonte primária'));assert.ok(antiga.includes('consultada em 02/10/2026'));assertions+=2;}
 for(const svg of d.querySelectorAll('svg[role="img"]')){for(const id of (svg.getAttribute('aria-labelledby')||'').split(' ').filter(Boolean))assert.ok(d.getElementById(id));assertions++;}
 for(const file of ['assets/vendor/chart.umd.js','assets/vendor/lucide.js'])new vm.Script(fs.readFileSync(root+'/'+file,'utf8'));
 for(const url of [...d.querySelectorAll('a[href]')].map(a=>a.getAttribute('href'))){assert.ok(!url.startsWith('javascript:'));assertions++;}
