@@ -4,7 +4,7 @@ AcademyLabs.m1=(function(){
  /* Frase original, cifrada com caesar(...,3). */
  const SECRETO='Phqvdjhqv vhfuhwdv halvwhp kd plokduhv gh dqrv. Txhp oh vhp d fkdyh yh dshqdv ohwudv vhp vhqwlgr. Frqwdu dv ohwudv pdlv frpxqv dmxgd d ghvfreulu r vhjuhgr hvfrqglgr.';
  let decifrar=false;
- function normalize(t){return String(t).normalize('NFD').replace(/[̀-ͯ]/g,'');}
+ function normalize(t){return String(t).normalize('NFD').replace(/[\u{300}-\u{36f}]/gu,'');}
  function caesar(t,s){const k=((Math.trunc(Number(s))||0)%26+26)%26;return normalize(t).replace(/[A-Za-z]/g,c=>{const b=c<'a'?65:97;return String.fromCharCode((c.charCodeAt(0)-b+k)%26+b);});}
  function bruteForce(t){const r=[];for(let s=1;s<=25;s++)r.push({shift:s,text:caesar(t,-s)});return r;}
  function frequencies(t){const c={};let n=0;for(const ch of normalize(t).toLowerCase()){if(ch>='a'&&ch<='z'){c[ch]=(c[ch]||0)+1;n++;}}const f={};if(n)for(const k of Object.keys(c))f[k]=c[k]/n;return f;}
