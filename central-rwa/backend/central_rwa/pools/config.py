@@ -4,6 +4,7 @@ conferidas nas APIs em 22–23/09/2026."""
 
 from __future__ import annotations
 
+import os
 import re
 from datetime import datetime, timezone
 
@@ -77,6 +78,35 @@ LLAMA_PROJECTS: set[str] = {
 FUSAO_AERO = datetime(2026, 10, 22, tzinfo=timezone.utc)
 FAMILIAS_LEGADO_AERO = ("aerodrome", "velodrome")
 
+# Aero direto da rede (pools/aero.py): LpSugar de cada rede, tirado da config
+# do app app.aero.xyz e conferido com count() em 22/10/2026 (Base 652 pools,
+# Optimism 85, Ethereum 58, Arbitrum 30). Ink (0xd87aE3…) fica de fora com a rede.
+AERO_SUGAR: dict[str, str] = {
+    "Base": "0xb2A7bDB79FbE254DdAeB151c9ff7649bddad48E5",
+    "Optimism": "0x25eC650f0b213300D9576923f1cd2C06428D322E",
+    "Ethereum": "0xa916A76b052AcD3b0FF6Cc76b55602fba456a85C",
+    "Arbitrum": "0xee717411f6E44F9feE011835C8E6FAaC5dEfF166",
+}
+# RPC pública, sem chave. Para usar uma com chave (Alchemy, QuickNode, a da
+# Coinbase), basta o secret ATLAS_RPC_BASE / _OPTIMISM / _ETHEREUM / _ARBITRUM.
+RPC_PUBLICA: dict[str, str] = {
+    "Base": "https://mainnet.base.org",
+    "Optimism": "https://mainnet.optimism.io",
+    "Ethereum": "https://ethereum-rpc.publicnode.com",
+    "Arbitrum": "https://arb1.arbitrum.io/rpc",
+}
+# chain da DefiLlama coins (preço atual) por rede do ATLAS
+LLAMA_COINS_CHAIN: dict[str, str] = {"Base": "base", "Optimism": "optimism",
+                                     "Ethereum": "ethereum", "Arbitrum": "arbitrum"}
+# token sem preço na DefiLlama (o AERO novo, 0x3f5bf3…, em 22/10) vai à GeckoTerminal;
+# o teto limita a espera (30 por pedido, ~10 s cada)
+AERO_PRECO_GECKO_MAX = 90
+
+
+def rpc_url(rede: str) -> str | None:
+    chave = os.environ.get("ATLAS_RPC_" + rede.upper().replace(" ", "_"), "").strip()
+    return chave or RPC_PUBLICA.get(rede)
+
 # DEXes puxadas da GeckoTerminal (a DefiLlama não traz volume delas)
 GECKO_SOURCES: dict[str, list[dict]] = {
     "PancakeSwap": [
@@ -94,9 +124,12 @@ GECKO_SOURCES: dict[str, list[dict]] = {
     "Velodrome": [{"rede": "Optimism", "dexes": ["velodrome-finance-slipstream", "velodrome-slipstream-v2-optimism", "velodrome-finance-v2"]}],
     # Aero: contratos novos, ids conferidos em /networks/{rede}/dexes em 22/10/2026.
     # Ink (aero-slipstream-ink) fica de fora: a rede não está em GECKO_NET.
+    # É a reserva: a coleta só pede estas quando o Sugar da rede falha (AERO_SUGAR).
     "Aero": [
         {"rede": "Base", "dexes": ["aero-slipstream-base", "aero-volatile-base"]},
         {"rede": "Optimism", "dexes": ["aero-slipstream-optimism"]},
+        {"rede": "Ethereum", "dexes": ["aero-slipstream-ethereum"]},
+        {"rede": "Arbitrum", "dexes": ["aero-slipstream-arbitrum"]},
     ],
     "THENA": [{"rede": "BNB Chain", "dexes": ["thena-fusion", "thena-v3", "thena"]}],
 }

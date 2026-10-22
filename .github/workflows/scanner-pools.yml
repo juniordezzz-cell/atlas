@@ -43,6 +43,11 @@ jobs:
         working-directory: central-rwa/backend
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      # Aero pelo Sugar (22/10/2026): sem secret, usa a RPC pública da rede
+      ATLAS_RPC_BASE: ${{ secrets.ATLAS_RPC_BASE }}
+      ATLAS_RPC_OPTIMISM: ${{ secrets.ATLAS_RPC_OPTIMISM }}
+      ATLAS_RPC_ETHEREUM: ${{ secrets.ATLAS_RPC_ETHEREUM }}
+      ATLAS_RPC_ARBITRUM: ${{ secrets.ATLAS_RPC_ARBITRUM }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6

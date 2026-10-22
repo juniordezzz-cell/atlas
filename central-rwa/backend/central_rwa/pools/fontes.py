@@ -365,6 +365,83 @@ class ClienteFontes:
             return None
         return r.json()
 
+    def _rpc(self, rede: str, chamadas: list[tuple[str, str]], lote: int = 25) -> list[str | None]:
+        """eth_call em lote (JSON-RPC batch). Uma resposta por chamada; None na que falhou.
+        A RPC pública da Base devolve 429 em rajada (22/10/2026): espera e repete."""
+        url = config.rpc_url(rede)
+        out: list[str | None] = []
+        for i in range(0, len(chamadas), lote):
+            parte = chamadas[i:i + lote]
+            corpo = [{"jsonrpc": "2.0", "id": j, "method": "eth_call",
+                      "params": [{"to": para, "data": dados}, "latest"]} for j, (para, dados) in enumerate(parte)]
+            for tentativa in range(1, 5):
+                r = self.client.post(url, json=corpo)
+                if r.status_code != 429 and r.status_code < 500:
+                    break
+                self.sleep(3 * tentativa)
+            r.raise_for_status()
+            por_id = {x.get("id"): x.get("result") for x in r.json()}
+            out.extend(por_id.get(j) for j in range(len(parte)))
+        return out
+
+    def aero_pools(self, rede: str) -> list[dict]:
+        """Todas as pools da Aero na rede, pelo LpSugar (pools/aero.py)."""
+        from . import aero
+
+        sugar = config.AERO_SUGAR[rede]
+        total = int(self._rpc(rede, [(sugar, aero.SEL_COUNT)])[0] or "0x0", 16)
+        lps: list[dict] = []
+        for offset in range(0, total, aero.LOTE):
+            res = self._rpc(rede, [(sugar, aero.chamada_all(aero.LOTE, offset))])[0]
+            if res is None:
+                self.parciais.append(f"aero:{rede} offset {offset}: sem resposta")
+                break
+            lps.extend(aero.decodificar_lps(res))
+        return lps
+
+    def aero_tokens(self, rede: str, enderecos: list[str], prioridade: tuple[str, ...] = ()) -> dict[str, dict]:
+        """Símbolo, casas e preço de cada token: DefiLlama coins primeiro (o preço
+        do site todo); o que faltar, preço da GeckoTerminal e símbolo/casas do contrato."""
+        from . import aero
+
+        chain = config.LLAMA_COINS_CHAIN[rede]
+        out: dict[str, dict] = {}
+        for i in range(0, len(enderecos), 80):
+            ids = ",".join(f"{chain}:{e}" for e in enderecos[i:i + 80])
+            try:
+                r = self.client.get(f"https://coins.llama.fi/prices/current/{ids}")
+                r.raise_for_status()
+                for chave, v in ((r.json() or {}).get("coins") or {}).items():
+                    if v.get("price") and v.get("decimals") is not None:
+                        out[chave.split(":", 1)[1].lower()] = {"simbolo": str(v.get("symbol") or "?"),
+                                                              "decimais": int(v["decimals"]), "preco": float(v["price"])}
+            except (httpx.HTTPError, ValueError, TypeError) as exc:
+                self.parciais.append(f"aero:{rede} preços DefiLlama: {type(exc).__name__}")
+        faltam = [e for e in enderecos if e not in out]
+        faltam = [e for e in prioridade if e in faltam] + [e for e in faltam if e not in prioridade]
+        faltam = faltam[:config.AERO_PRECO_GECKO_MAX]
+        precos: dict[str, float] = {}
+        for i in range(0, len(faltam), 30):
+            r = self._gecko(f"{GECKO}/simple/networks/{config.GECKO_NET[rede]}/token_price/{','.join(faltam[i:i + 30])}")
+            if r is None or r.status_code >= 400:
+                self.parciais.append(f"aero:{rede} preços GeckoTerminal: sem resposta")
+                continue
+            for e, p in ((((r.json() or {}).get("data") or {}).get("attributes") or {}).get("token_prices") or {}).items():
+                if _num(p):
+                    precos[e.lower()] = float(p)
+        if precos:
+            alvo = list(precos)
+            try:
+                res = self._rpc(rede, [(e, sel) for e in alvo for sel in (aero.SEL_SYMBOL, aero.SEL_DECIMALS)])
+            except (httpx.HTTPError, ValueError, TypeError) as exc:
+                self.parciais.append(f"aero:{rede} símbolos: {type(exc).__name__}")
+                res = [None] * (2 * len(alvo))
+            for k, e in enumerate(alvo):
+                simbolo, casas = aero.decodificar_texto(res[2 * k]), res[2 * k + 1]
+                if simbolo and casas and len(casas) >= 66:
+                    out[e] = {"simbolo": simbolo, "decimais": int(casas, 16), "preco": precos[e]}
+        return out
+
     def tokens_multi(self, net: str, enderecos: list[str]) -> dict:
         data: list[dict] = []
         for i in range(0, len(enderecos), 30):
