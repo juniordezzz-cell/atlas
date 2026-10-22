@@ -166,3 +166,17 @@ A Aero (Aerodrome + Velodrome) entrou no ar em 21/10 às 20:00 de Nova York (22/
 - Teste: `tests/test_pools_fusao_aero.py`. 208 Python passaram.
 
 Pendente: `PARTE_EMISSAO_PRESUMIDA` (0,6) vale para as pools da Aero vindas da GeckoTerminal; com o teto de recompensa ligado à receita, deve ser menor. Medir uma semana depois de a DefiLlama listar a Aero.
+
+## Aero direto da rede, pelo Sugar (22/10/2026)
+
+Pedido do dono (usa a Aerodrome para LP): dados da Aero sem erro, de fonte própria. A Aero não tem API HTTP nem chave; o app `app.aero.xyz` lê tudo on-chain pelo **LpSugar** novo (um por rede, endereços tirados da config do app e conferidos com `count()`: Base 652 pools, Optimism 85, Ethereum 58, Arbitrum 30). Erros da GeckoTerminal que isso resolve: a taxa no nome da pool não é a do contrato (WETH/cbBTC CL1 "0,02%" × 0,0085% no contrato e no app) e não há emissão (a nota presumia 60%).
+
+- `pools/aero.py`: `decodificar_lps` (ABI do `struct Lp` decodificada à mão, sem dependência nova) e `parse_aero`. Contas iguais às do app: AERO APR = emissão/s × preço × ano ÷ valor em stake; APR de taxa = taxas da janela de 48 h anualizadas, menos a `unstakedFee`, ÷ TVL; volume = metade de cada lado, como no app. A taxa da Aero é dinâmica (WETH/cbBTC CL10: 0,05% de manhã, 0,15% à tarde) — `fee` = taxas ÷ volume da janela, a do momento fica em `sinais.taxa_atual`. Gauge parado ou emissão 0 → `apr_reward = 0`. Token sem preço: a pool fica de fora. ID `gecko:<rede>:<endereço>`, `fonte = "aero"`, `projeto` `aero-slipstream`/`aero-volatile`/`aero-stable`.
+- `fontes.ClienteFontes`: `_rpc` (eth_call em lote, repete em 429), `aero_pools` (all() de 300 em 300) e `aero_tokens` (preço e casas pela DefiLlama coins; o que faltar — o AERO novo `0x3f5bf3…` em 22/10 — pela GeckoTerminal, até `AERO_PRECO_GECKO_MAX`, com símbolo e casas lidos do contrato).
+- `config`: `AERO_SUGAR`, `RPC_PUBLICA`, `LLAMA_COINS_CHAIN`, `rpc_url(rede)` — secret `ATLAS_RPC_BASE`/`_OPTIMISM`/`_ETHEREUM`/`_ARBITRUM` troca a RPC pública por uma com chave (Alchemy, QuickNode, Coinbase); vazio = pública. O workflow já passa os quatro.
+- `coleta._candidatas`: Sugar antes da GeckoTerminal; rede lida pelo Sugar não pede as `GECKO_SOURCES["Aero"]` (ficam de reserva; ganharam Ethereum e Arbitrum). `reconciliar_diretas` inclui `aero`, leva o `apr_reward` da direta e, na Aero, não exige taxa igual (dinâmica).
+- `conferencia.conferir`: pool com `sinais.fonte_direta = "Aero"` não vai para a segunda fonte — o contrato já é a primária.
+- Conferido em 22/10 contra o app: AERO/USDC 0,3% US$ 12 mi, 6,7% de taxa e 88% de AERO (app 6,7% e 91,1%); AERO/fBOMB 6,1% (app 6,1%). Coleta das quatro redes: ~45 s.
+- Teste: `tests/test_pools_aero_sugar.py` com a resposta real do Sugar (`fixtures/aero_sugar_all_base_20261022.hex`). 220 Python passaram.
+
+Limites: a emissão muda em tempo real (Predictive Allocation, sem epoch) e no lançamento passa de 1.000% em várias pools — o valor é o do instante da coleta; acima de 10.000% a regra "APR impossível" de sempre vale. Ink e Robinhood/Arc ficam de fora (Ink não está em `GECKO_NET`; Robinhood sem RPC conferida).

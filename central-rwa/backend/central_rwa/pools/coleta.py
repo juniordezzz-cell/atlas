@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from time import perf_counter
 
 from . import config
+from .aero import parse_aero, tokens_das_pools
 from .classificacao import categorias, classe_par, passa_pre_corte, trilho
 from .conferencia import conferir
 from .fontes import _data, parse_gecko_pools, parse_llama, parse_token_info, parse_tokens_multi
@@ -42,6 +43,8 @@ def reconciliar_diretas(todas: list[Candidata]) -> list[Candidata]:
     def casam(antiga: Candidata, direta: Candidata) -> bool:
         if antiga.tvl <= 0 or abs(antiga.tvl-direta.tvl)/antiga.tvl > 0.15:
             return False
+        if direta.fonte == 'aero':   # taxa dinâmica (22/10/2026): contratos + TVL + casamento único bastam
+            return True
         return antiga.fee <= 0 or direta.fee <= 0 or abs(antiga.fee-direta.fee) < 1e-6
 
     grupos: dict[tuple, list[Candidata]] = {}
@@ -53,7 +56,7 @@ def reconciliar_diretas(todas: list[Candidata]) -> list[Candidata]:
     pares: list[tuple[Candidata, Candidata]] = []
     for grupo in grupos.values():
         antigas = [c for c in grupo if c.fonte == 'defillama']
-        diretas = [c for c in grupo if c.fonte in {'orca', 'raydium'}]
+        diretas = [c for c in grupo if c.fonte in {'orca', 'raydium', 'aero'}]
         for direta in diretas:
             opcoes = [a for a in antigas if casam(a, direta)]
             if len(opcoes) == 1 and sum(casam(opcoes[0], d) for d in diretas) == 1:
@@ -67,6 +70,8 @@ def reconciliar_diretas(todas: list[Candidata]) -> list[Candidata]:
         if direta.fee > 0:
             antiga.fee = direta.fee
         antiga.apr = direta.apr if direta.apr is not None else antiga.apr
+        # a emissão on-chain (Aero) vale mais que a da DefiLlama; Orca/Raydium mandam None
+        antiga.apr_reward = direta.apr_reward if direta.apr_reward is not None else antiga.apr_reward
         antiga.sinais.update(direta.sinais)
         removidas.add(direta.id)
     return [c for c in todas if c.id not in removidas]
@@ -170,8 +175,28 @@ def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
             cli.parciais.append(f'{nome}: {type(exc).__name__}')
         status.append({'fonte': nome, 'rede': 'Solana', 'dex': nome,
                        'estado': estado, 'contagem': len(cands), 'em': agora})
+    aero_ok: set[str] = set()   # redes lidas pelo Sugar: a GeckoTerminal da Aero vira reserva
+    if hasattr(cli, 'aero_pools'):
+        for rede in config.AERO_SUGAR:
+            antes = len(cli.parciais)
+            try:
+                lps = cli.aero_pools(rede)
+                emissao = tuple({lp['emissionsToken'].lower() for lp in lps if lp['emissions']})
+                cands = parse_aero(lps, rede, cli.aero_tokens(rede, tokens_das_pools(lps), emissao))
+                todas.extend(cands)
+                if cands:
+                    aero_ok.add(rede)
+                estado = 'parcial' if len(cli.parciais) > antes or not cands else 'ok'
+            except Exception as exc:   # RPC fora: a GeckoTerminal cobre a rede
+                cands = []
+                estado = f'falhou: {type(exc).__name__}'
+                cli.parciais.append(f'aero:{rede}: {type(exc).__name__}')
+            status.append({'fonte': 'aero', 'rede': rede, 'dex': 'Aero',
+                           'estado': estado, 'contagem': len(cands), 'em': agora})
     for dex, fontes_dex in config.GECKO_SOURCES.items():
         for src in fontes_dex:
+            if dex == "Aero" and src["rede"] in aero_ok:
+                continue
             net = config.GECKO_NET[src["rede"]]
             for slug in src["dexes"]:
                 antes = len(cli.parciais)

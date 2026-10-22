@@ -171,7 +171,10 @@ def _eficiencia(c: Candidata) -> float:
 def conferir(cli, cands: list[Candidata], gecko_net: dict[str, str], max_pares: int = MAX_PARES) -> dict:
     """Confere as candidatas da DefiLlama, das mais eficientes para as menos,
     até `max_pares` buscas. Devolve um resumo para o log da coleta."""
-    alvo = [c for c in cands if c.fonte == "defillama" and c.rede in gecko_net]
+    # pool lida na rede (Aero pelo Sugar) já é a fonte primária: a GeckoTerminal
+    # erra a taxa dela e não teria o que corrigir (22/10/2026)
+    alvo = [c for c in cands if c.fonte == "defillama" and c.rede in gecko_net
+            and c.sinais.get("fonte_direta") != "Aero"]
     # Taxa não informada primeiro: com fee 0 a eficiência dá 0 e essas pools
     # ficavam no fim da fila, nunca conferidas (89 em 07/10/2026). Depois, as
     # mais eficientes — pelo APR da fonte quando a taxa falta.
