@@ -52,6 +52,10 @@ DIVERGE_VOL = 1.5       # volume diverge quando um é mais de 1,5× o outro
 TAXA_FIXA_NA_GECKO = {"uniswap", "pancakeswap", "sushiswap", "raydium", "orca", "camelot",
                       "quickswap", "thena", "cetus", "meteora"}
 MAX_PARES = 40          # buscas por coleta (~7 min a 6 pedidos/min)
+# Projects da DefiLlama cujo slug na GeckoTerminal não segue família + versão
+# (22/10/2026): a aerodrome-v1 é "aerodrome-base" lá e nunca era conferida; a
+# Slipstream fica presa às suas ("-2", "-3") para não casar com a v1 por TVL.
+_DEX_GECKO = {"aerodrome-v1": ("aerodrome-base",), "aerodrome-slipstream": ("aerodrome-slipstream",)}
 
 
 @dataclass
@@ -99,7 +103,11 @@ def _familia(projeto: str) -> tuple[str, str | None]:
 def _mesma_dex(projeto: str, dex_gecko: str) -> bool:
     fam, ver = _familia(projeto)
     slug = (dex_gecko or "").lower().replace("_", "-")
-    if not fam or not slug.startswith(fam):
+    p = (projeto or "").lower().replace("_", "-")
+    if p in _DEX_GECKO:
+        return slug.startswith(_DEX_GECKO[p])
+    # família inteira (22/10/2026): "aero" não pode casar com "aerodrome-*"
+    if not fam or not (slug == fam or slug.startswith(fam + "-")):
         return False
     if ver:
         return re.search(r"\b" + ver + r"\b", slug.replace("-", " ")) is not None

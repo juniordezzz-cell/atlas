@@ -15,7 +15,8 @@ FAMILIAS = {'uniswap': 'Uniswap', 'pancakeswap': 'PancakeSwap', 'raydium': 'Rayd
             'velodrome': 'Velodrome', 'thena': 'THENA', 'camelot': 'Camelot',
             'sushiswap': 'SushiSwap', 'curve': 'Curve', 'quickswap': 'QuickSwap',
             'traderjoe': 'LFJ', 'pharaoh': 'Pharaoh', 'cetus': 'Cetus',
-            'hyperswap': 'HyperSwap', 'ramses': 'Ramses'}
+            'hyperswap': 'HyperSwap', 'ramses': 'Ramses',
+            'aero-': 'Aero'}   # com hífen: "aero" sozinho pegaria "aerodrome-*"
 
 
 def _dex(slug):

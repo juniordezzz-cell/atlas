@@ -5,6 +5,7 @@ conferidas nas APIs em 22–23/09/2026."""
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 
 # Pedido posterior: TVL >= US$ 100 mil obrigatório; razão > 0,50.
 # Volume absoluto não tem piso independente.
@@ -50,6 +51,8 @@ _PROJETOS: dict[str, str] = {
     "meteora-dlmm": "Meteora", "meteora-amm": "Meteora", "meteora-dammv2": "Meteora",
     "aerodrome-slipstream": "Aerodrome", "aerodrome-v1": "Aerodrome", "aerodrome": "Aerodrome",
     "velodrome-v2": "Velodrome", "velodrome-v3": "Velodrome", "velodrome-slipstream": "Velodrome",
+    # Aero (fusão de 21/10/2026): a DefiLlama ainda não listava em 22/10; nomes previstos
+    "aero": "Aero", "aero-slipstream": "Aero", "aero-v1": "Aero", "aero-volatile": "Aero", "aero-cl": "Aero",
     "camelot-v2": "Camelot", "camelot-v3": "Camelot",
     "thena-v1": "THENA", "thena-fusion": "THENA", "thena": "THENA",
     "kamino-liquidity": "Kamino", "sushiswap": "SushiSwap", "sushiswap-v3": "SushiSwap",
@@ -63,8 +66,16 @@ _PROJETOS: dict[str, str] = {
 # DEXes que a DefiLlama cobre com volume + APR de taxa
 LLAMA_PROJECTS: set[str] = {
     "Uniswap", "Raydium", "Orca", "Aerodrome", "Camelot", "Kamino", "SushiSwap", "Curve",
-    "QuickSwap", "LFJ", "Pharaoh", "Cetus", "HyperSwap", "Project X", "Ramses",
+    "QuickSwap", "LFJ", "Pharaoh", "Cetus", "HyperSwap", "Project X", "Ramses", "Aero",
 }
+
+# Fusão Aero (21/10/2026 20:00 em Nova York = 22/10 00:00 UTC): Aerodrome e
+# Velodrome viraram Aero e as emissões antigas pararam. A DefiLlama seguiu
+# publicando apyReward velho (137 das 139 aerodrome-v1 em 22/10), e a pool
+# WETH/cbBTC CL1 subia no ranking por 4.515% de emissão que não existia mais.
+# Pool de slug antigo rende só a taxa daqui em diante.
+FUSAO_AERO = datetime(2026, 10, 22, tzinfo=timezone.utc)
+FAMILIAS_LEGADO_AERO = ("aerodrome", "velodrome")
 
 # DEXes puxadas da GeckoTerminal (a DefiLlama não traz volume delas)
 GECKO_SOURCES: dict[str, list[dict]] = {
@@ -81,6 +92,12 @@ GECKO_SOURCES: dict[str, list[dict]] = {
     "Uniswap": [{"rede": "Robinhood", "dexes": ["uniswap-v3-robinhood", "uniswap-v2-robinhood", "uniswap-v4-robinhood"]}],
     "Meteora": [{"rede": "Solana", "dexes": ["meteora", "meteora-damm-v2"]}],
     "Velodrome": [{"rede": "Optimism", "dexes": ["velodrome-finance-slipstream", "velodrome-slipstream-v2-optimism", "velodrome-finance-v2"]}],
+    # Aero: contratos novos, ids conferidos em /networks/{rede}/dexes em 22/10/2026.
+    # Ink (aero-slipstream-ink) fica de fora: a rede não está em GECKO_NET.
+    "Aero": [
+        {"rede": "Base", "dexes": ["aero-slipstream-base", "aero-volatile-base"]},
+        {"rede": "Optimism", "dexes": ["aero-slipstream-optimism"]},
+    ],
     "THENA": [{"rede": "BNB Chain", "dexes": ["thena-fusion", "thena-v3", "thena"]}],
 }
 

@@ -30,7 +30,7 @@ from statistics import mean, pstdev
 from . import config
 from .modelos import Candidata, Leitura
 
-VE33 = {"Aerodrome", "Velodrome", "THENA", "Pharaoh", "Ramses"}
+VE33 = {"Aerodrome", "Velodrome", "Aero", "THENA", "Pharaoh", "Ramses"}
 PESOS = {"taxa": 0.30, "giro": 0.30, "rendimento": 0.20, "consistencia": 0.10, "profundidade": 0.05, "tendencia": 0.05}
 TAXA_DESCONHECIDA = 0.3
 PERDA_EMISSAO = 0.5       # pool 100% paga em emissão fica com metade da nota

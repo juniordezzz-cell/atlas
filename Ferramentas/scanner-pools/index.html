@@ -1704,7 +1704,7 @@ function ratio(p){ return p.tvl>0 ? volDia(p)/p.tvl : 0; }
    stake; apyReward = com stake), e a tela diz qual é. Emissão é paga no
    token da DEX: se ele cai, o rendimento cai junto.
    ------------------------------------------------------------ */
-const VE33 = { Aerodrome:"AERO", Velodrome:"VELO", THENA:"THE", Pharaoh:"PHAR", Ramses:"RAM" };
+const VE33 = { Aerodrome:"AERO", Velodrome:"VELO", Aero:"AERO", THENA:"THE", Pharaoh:"PHAR", Ramses:"RAM" };
 function ehVe33(p){ return !!VE33[p.platform]; }
 function aprLP(p){
   const taxa = (p.apr!=null && isFinite(p.apr)) ? Number(p.apr) : null;
