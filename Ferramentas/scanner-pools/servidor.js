@@ -74,7 +74,7 @@
   /* Pool ve(3,3) que paga em emissão (AERO, VELO…) perde até metade da nota,
      na proporção da renda em emissão (nota.py parte_emissao, 12/10/2026). A
      nota gravada antes da regra não tem "emissao": a tela aplica a perda. */
-  var VE33 = ["Aerodrome", "Velodrome", "THENA", "Pharaoh", "Ramses"];
+  var VE33 = ["Aerodrome", "Velodrome", "Aero", "THENA", "Pharaoh", "Ramses"];
   var PERDA_EMISSAO = 0.5;
   var PARTE_EMISSAO_PRESUMIDA = 0.6;   /* fonte sem dado (THENA): mediana da Aerodrome, 55% */
   function semDadoEmissao(dex, apr, reward) { return VE33.indexOf(dex) !== -1 && apr == null && reward == null; }

@@ -153,3 +153,16 @@ Complemento (12/10/2026): THENA e parte da Velodrome só vêm da GeckoTerminal, 
 Depois que o USDC deixou de barrar, PLTRx/USDC, SPCXx, NVDAx, GMEx, BABA, DJT, HIMS e outras apareciam duas vezes: a DefiLlama manda taxa 0 (não informada) e a Orca/Raydium a taxa real, e `coleta.reconciliar_diretas` exigia taxa igual. Regra nova (pedido do dono: conferir endereço, TVL e taxa): mesma rede e DEX, os mesmos dois contratos, TVL até 15% diferente e taxa igual ou não informada por um dos lados; taxas informadas e diferentes (0,08% × 0,25%) ficam separadas; só junta casamento único nos dois sentidos. Fica o ID da DefiLlama, com a taxa da direta. SOL/USDC da Orca (0,01/0,02/0,04%, DefiLlama sem taxa) casa cada tier pelo TVL. Tela: `semDuplicataDireta` em `servidor.js` com a mesma regra, e a remoção antiga por endereço da conferência passou a levar a taxa da cópia. Solana na tela: 131 → 89 pools. 200 Python e 23 JS passaram.
 
 Complemento (12/10/2026, depois da coleta das 23:10): SOL/USDC 0,01% da Orca seguiu duplicada — a DefiLlama tem três SOL/USDC da Orca sem taxa (US$ 203, 211 e 223 mil), o TVL não decide e `reconciliar_diretas` corretamente não junta. A conferência já sabia o endereço (83v8…), mas `unir_mesma_pool` só casava pelo endereço com fonte `geckoterminal`; passou a incluir `orca` e `raydium` (mesmo formato de ID `gecko:solana:<endereço>`). 201 Python passaram.
+
+## Fusão Aero (22/10/2026)
+
+A Aero (Aerodrome + Velodrome) entrou no ar em 21/10 às 20:00 de Nova York (22/10 00:00 UTC). As emissões antigas pararam, mas a DefiLlama seguiu com `apyReward` velho (137 das 139 aerodrome-v1, 67 das 71 velodrome-v2). A pool de referência WETH/cbBTC CL1 0,0085% (0x7c74…efa9) caiu de 4.515,8% de emissão e US$ 3,21 mi de TVL para 0 e US$ 1,75 mi. Em 22/10 a DefiLlama ainda não tinha project "aero"; a GeckoTerminal tinha `aero-slipstream-base`, `aero-volatile-base`, `aero-slipstream-optimism` e `aero-slipstream-ink` (contratos novos).
+
+- `coleta.encerrar_emissao_legado`: depois de `config.FUSAO_AERO`, pool com slug `aerodrome*`/`velodrome*` fica com `apr_reward = 0` (não None, para a nota não presumir 60%) e `sinais.emissao_encerrada`. Roda depois da descoberta.
+- `config`: `"Aero"` em `LLAMA_PROJECTS`, nomes previstos em `_PROJETOS` (`aero`, `aero-slipstream`, `aero-v1`, `aero-volatile`, `aero-cl`; conferir quando a DefiLlama listar) e `GECKO_SOURCES["Aero"]` (Base e Optimism). Ink fica de fora: não está em `GECKO_NET`.
+- `nota.VE33`, `servidor.js`, `assistente-dados.js` e `index.html` (`VE33`) ganharam "Aero".
+- `descoberta.FAMILIAS`: `'aero-'` com hífen, para não pegar `aerodrome-*`.
+- `conferencia._mesma_dex`: família inteira (`aero` não casa com `aerodrome-*`) e `_DEX_GECKO` — a aerodrome-v1 é `aerodrome-base` na GeckoTerminal e nunca era conferida; a Slipstream fica presa às suas.
+- Teste: `tests/test_pools_fusao_aero.py`. 208 Python passaram.
+
+Pendente: `PARTE_EMISSAO_PRESUMIDA` (0,6) vale para as pools da Aero vindas da GeckoTerminal; com o teto de recompensa ligado à receita, deve ser menor. Medir uma semana depois de a DefiLlama listar a Aero.

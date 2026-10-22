@@ -19,7 +19,7 @@
   const num=(v,d=2)=>Number(v).toLocaleString('pt-BR',{maximumFractionDigits:d});
   /* percentual curto que não some: 0,0001% continua 0,0001%, não 0% */
   const pct=v=>{v=Number(v);if(!Number.isFinite(v))return '—';const a=Math.abs(v);return num(v,a===0?0:a<0.001?5:a<0.01?4:a<1?3:2);};
-  const ve33=new Set(['Aerodrome','Velodrome','THENA','Pharaoh','Ramses']);
+  const ve33=new Set(['Aerodrome','Velodrome','Aero','THENA','Pharaoh','Ramses']);
   const regrasBase='TVL mínimo US$ 100.000; razão > 0,50. Meme detectada: razão > 2 e aprovação por pool; conservadora nunca admite meme. Sólidas não significa segura. Referências por lado: conservadora 30% a 60%, 3 a 9 meses; mediana 9% a 27%, cerca de 27 dias; agressiva 3% a 9%, giro de 3 a 9 dias. Essas referências não classificam automaticamente: considerar faixa, função, prazo e ativos. Em 9%, objetivo e prazo desempatarão; entre 27% e 30%, pedir contexto. Range de 6% = −6%/+6%, não −3%/+3%; faixa assimétrica mantém os limites informados. Mediana pode admitir meme em tese com prazo e saída. BTC e ETH geralmente ficam fora de agressivas; exceções exigem justificativa confirmada. SOL pode integrar os três perfis sem virar meme. Crossovers são interesses, não aprovação automática. Não há obrigação de abrir 3, 6 ou 9 pools. Taxas agregadas não são lucro líquido nem rendimento garantido da posição concentrada.';
   function par(s){return norm(s).replace(/\s+/g,'').split(/[/\-]/).sort().join('/');}
   const razao=p=>Number(p.tvl)>0?Number(p.vol24h)/Number(p.tvl):0;

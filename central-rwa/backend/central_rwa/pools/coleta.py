@@ -131,6 +131,22 @@ def unir_mesma_pool(cands: list[Candidata]) -> list[Candidata]:
     return [c for c in cands if c.id not in remover]
 
 
+def encerrar_emissao_legado(cands: list[Candidata], agora: datetime) -> int:
+    """Depois da fusão Aero, pool de slug Aerodrome/Velodrome não tem emissão:
+    apr_reward vira 0 (e não None, que a nota leria como "sem dado" e
+    presumiria 60% em emissão). Devolve quantas mudaram."""
+    if agora < config.FUSAO_AERO:
+        return 0
+    n = 0
+    for c in cands:
+        if (c.projeto or "").lower().startswith(config.FAMILIAS_LEGADO_AERO):
+            if c.apr_reward:
+                n += 1
+            c.apr_reward = 0.0
+            c.sinais["emissao_encerrada"] = "fusão Aero (22/10/2026)"
+    return n
+
+
 def _candidatas(cli, status: list[dict], agora: datetime) -> list[Candidata]:
     todas: list[Candidata] = []
     try:
@@ -251,6 +267,7 @@ def coletar(cli, store, agora: datetime) -> dict:
     status.append({'fonte': 'descoberta', 'rede': None, 'dex': None,
                    'estado': 'parcial' if descoberta.get('pendentes') or len(cli.parciais) > falhas_antes else 'ok',
                    'contagem': descoberta['adicionadas'], 'em': agora})
+    encerrar_emissao_legado(todas, agora)
     cands = [c for c in todas if passa_pre_corte(c)]
     # Segunda fonte ANTES de classificar e dar nota: número corrigido aqui é o
     # que entra na nota, no APR e no ranking. Corrigido para baixo pode sair
