@@ -181,6 +181,81 @@ correção. A causa era **página antiga em cache**:
   `.claude/launch.json` passaram a usá-lo. Se já houver uma janela do
   servidor antigo aberta, feche-a uma vez para o `.bat` subir o novo.
 
+### Causa raiz de verdade (depuração sistemática, 15/10/2026)
+
+As duas correções acima trataram sintomas. Os testes automáticos clicavam
+**sem passar o mouse antes** (card reto) e sempre funcionavam. Medindo o
+**clique real do dono** no Chrome dele, quase todo `pointerdown` caía em
+`DIV.atropos-scale`, até parado no centro do card. Com o card
+**inclinado pelo hover** (`preserve-3d`), o Chrome trata as camadas-embrulho
+da Atropos (`.atropos-scale`, `.atropos-rotate`) como "na frente" do
+conteúdo e entrega o clique a elas, fora do `<a>`.
+
+Reprodução automática: hover em dois pontos, depois
+`elementFromPoint(ponteiro)` devolve `DIV.atropos-scale` (falha).
+
+**Correção (uma linha de regra):** `pointer-events: none` em
+`.atlas-3d .atropos-scale` e `.atlas-3d .atropos-rotate`, e `auto` em
+`.atropos-inner` (`css/ferramentas.css`). Com o card inclinado, o mesmo
+ponto devolve `A.tool-card` e o clique abre a ferramenta; topo, título,
+botão e canto também acertam o link. O `repassarClique()` de
+`atlas-cards3d.js` fica como rede de segurança (botão solto já fora do
+link por causa do giro).
+
+**Lição:** para qualquer efeito com hover/3D, testar o clique **depois**
+de passar o mouse, e de preferência com a mão do dono e um registro de
+eventos.
+
+## Cenário só em azul (15/10/2026)
+
+O dono gostou do movimento, mas não das cores: o roxo (`#2B2470`) e o
+verde-azulado (`#0F4C5E`) não são do ATLAS (o verde lembrava o Pendle) e
+as Ferramentas perderam a identidade. Também pediu um movimento mais
+fluido, sem "bolinhas". A referência que ele ia mandar (LayerZero) deixou
+de servir porque o site deles mudou.
+
+Paleta `atlas` em `core/ui/atlas-cenario.js`, só com azuis do próprio
+sistema: `#05080F` (fundo), `#0A1A2F` (`--azul-escuro`), `#0E3E8A`
+(`--atlas-accent-deep`), `#07121F` (`--azul-profundo`) e `#1E5FB4` (azul
+royal). As "bolinhas" vêm do shader: cada cor é uma mancha que passeia.
+Com tons vizinhos, `u_distortion` 1 e `u_swirl` 0,65 (antes 0,75 e
+0,12), elas se esticam em ondas. A velocidade baixou de 0,12 para 0,1.
+`atlas-cenario.js?v=3` em todas as páginas que usam o cenário.
+
+## Scanner legível sobre o cenário + Oráculo (15/10/2026)
+
+Pedido do dono, confirmado ponto a ponto antes de fazer:
+1. **Painel de vidro em todas as abas do Scanner.** O fundo continua se
+   mexendo, mas o conteúdo fica sobre `rgba(6,12,24,.74)` com desfoque, e
+   os números não borram. O rodapé também (`Ferramentas/scanner-pools/visual-cenario.css`).
+2. **Cabeçalho de ponta a ponta.** Antes ficava dentro da `.wrap` (parava
+   antes da borda e mudava de largura entre abas); agora é uma faixa de
+   vidro com as abas centralizadas e a ativa com fundo leve.
+3. **Ações de cada pool em ícone** (histórico, editar, comparar, ✓, ✕), na
+   própria linha, discretas até o hover. O bloco preto fixo (`#080c18`)
+   só volta, em vidro, quando a tabela rola de lado (`.rola`, posta por
+   `visual-cenario.js`). Mesmos `onclick`, com `title`/`aria-label`.
+4. **Oráculo (só o ícone grande da aba).** 232 px; boneco e aro flutuam
+   **só para cima e para baixo** (`sp-sobe`, 0 → -14 px, sem girar); o aro
+   vermelho/azul continua girando; em volta, os **três anéis de luz e o
+   halo da tela de abertura** (`css/atlas-celestial.css`), portados para
+   `assistente.css` (`.sp-palco`, `.sp-anel-a/b/c`, `.sp-halo`). O painel
+   flutuante e o ícone pequeno não mudam. Ver `docs/oraculo-ferramentas.md`.
+5. **Menu lateral** (pages/*) com cenário: vidro `rgba(6,12,24,.5)` com
+   desfoque, no lugar do degradê sólido; no celular (gaveta) fica 0,94.
+
+Conferido no navegador: Descobrir, Radar, Guia e Oráculo (1700 px e
+celular de 375 px sem rolagem lateral); movimento do Oráculo medido
+pelos quadros da animação; testes `regras`, `assistente` e
+`assistente-conversa` (48 passam).
+
+**Ajustes depois da publicação (15/10/2026):** a área de digitar do Oráculo
+(`.sp-pe`) tinha fundo sólido (`--bg`) e virava um retângulo preto no
+painel; agora é vidro com desfoque. O rodapé passou a ter a largura da
+aba aberta (Oráculo 1140 px, Guia 920 px) via `data-aba` na `.wrap`,
+posto pelo `switchTab`. O Guia ganhou `margin: 0 auto` (só com
+`max-width` ele grudava à esquerda).
+
 ## Próximo passo (decisão do dono)
 
 Se aprovar, levar o cenário para o restante do site. O caminho mais

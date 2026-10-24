@@ -8,14 +8,33 @@ function ctxCom(respostas) {
   return { lidas, uid: 'uidDono', firestore: { lerChave: async (uid, chave) => { lidas.push([uid, chave]); return respostas[chave] ?? { valor: null, atualizado: null }; } } };
 }
 
-test('as quatro ferramentas existem com schema fechado', () => {
-  assert.deepEqual(FERRAMENTAS.map((f) => f.nome), ['listar_carteiras', 'ver_posicoes', 'ver_caixa', 'historico']);
+test('ferramentas de leitura e escrita existem com schema fechado', () => {
+  assert.deepEqual(FERRAMENTAS.map((f) => f.nome), [
+    'listar_carteiras', 'ver_posicoes', 'ver_caixa', 'historico',
+    'preparar_carteira', 'preparar_deposito', 'preparar_saque', 'preparar_compra', 'preparar_venda', 'preparar_desfazer',
+    'confirmar', 'cancelar',
+  ]);
   for (const f of FERRAMENTAS) {
     assert.equal(f.schema.type, 'object');
     assert.equal(f.schema.additionalProperties, false);
     assert.ok(f.descricao.length > 20);
   }
   assert.deepEqual(Object.keys(ferramenta('historico').schema.properties), ['carteira', 'token', 'desde', 'limite']);
+  assert.deepEqual(ferramenta('preparar_compra').schema.required, ['carteira', 'token', 'quantidade', 'preco']);
+  assert.equal(ferramenta('confirmar').destrutiva, true);
+  assert.equal(ferramenta('preparar_compra').escrita, true);
+  assert.equal(ferramenta('ver_posicoes').escrita, undefined);
+});
+
+test('preparar_* usa o fluxo de prévia e cancelar não grava', async () => {
+  const lidas = [];
+  const ctx = { uid: 'uidDono', segredo: 's'.repeat(40), agora: () => Date.parse('2026-10-16T02:00:00Z'),
+    firestore: { lerDocs: async (u, ks) => { lidas.push(u); return Object.fromEntries(ks.map((k) => [k, { bruto: null, updateTime: null, mcpOp: null }])); }, gravar: async () => { throw new Error('não deveria gravar'); } } };
+  const r = await ferramenta('preparar_carteira').executar({ nome: 'Binance' }, ctx);
+  assert.match(r.texto, /PRÉVIA/);
+  assert.ok(lidas.every((u) => u === 'uidDono'));
+  const c = await ferramenta('cancelar').executar({ id_previa: r.dados.id_previa }, ctx);
+  assert.match(c.texto, /Cancelado/);
 });
 
 test('carrega as três chaves só do uid do contexto', async () => {

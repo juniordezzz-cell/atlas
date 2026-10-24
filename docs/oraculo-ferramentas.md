@@ -45,3 +45,12 @@ Preferências confirmadas ficam em `scanner.chat_memory` por UID Firebase; feedb
 2. Escrever testes para filtros, ordenação, escopo de ferramenta, memória e ausência de dados; rodar as suítes JS do Scanner e da função, além da suíte Python quando tocar o coletor.
 3. Atualizar este MD e `AGENTS.md` quando o contrato mudar. Marcar separadamente **código versionado**, **site publicado** e **função Supabase implantada**.
 4. Links diretos para pools são uma etapa futura solicitada pelo proprietário; não inferir URL a partir do símbolo do par.
+
+## Exceção visual: ícone grande da aba Oráculo do Scanner (15/10/2026)
+
+A pedido do dono, só a apresentação da conversa vazia **na aba** Oráculo do
+Scanner ganhou um palco próprio: ícone de 232 px que flutua só na vertical,
+com o aro vermelho/azul girando e os anéis de luz da tela de abertura em
+volta (`Ferramentas/scanner-pools/assistente.css`, `.sp-palco`). Avatar,
+nome, botão flutuante, painel flutuante e ícone pequeno seguem a identidade
+única. Registro: `docs/visual-ferramentas-2026-10-15.md`.

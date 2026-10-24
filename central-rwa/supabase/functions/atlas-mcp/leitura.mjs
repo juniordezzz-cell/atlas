@@ -8,12 +8,12 @@ export function normalizarTexto(s) {
   return String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
 }
 
-function usd(v) {
+export function usd(v) {
   const s = Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (v < 0 ? '-$ ' : '$ ') + s;
 }
 
-function qtd(v) {
+export function qtd(v) {
   return Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 8 });
 }
 

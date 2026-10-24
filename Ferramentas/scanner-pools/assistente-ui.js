@@ -148,7 +148,19 @@
 
     function vazio(v){
       const box=el('div','sp-vazio');
-      box.append(avatar('sp-avatar-g'),el('h3',null,'O que você quer saber das pools?'),
+      // só na aba Oráculo: palco do ícone grande, com os anéis de luz da
+      // tela de abertura (css/atlas-celestial.css) girando em volta e o
+      // Oráculo flutuando no meio. O painel flutuante segue com o ícone
+      // de sempre.
+      let topo=avatar('sp-avatar-g');
+      if(!v.flutuante){
+        const palco=el('div','sp-palco'),cena=el('div','sp-palco-cena');
+        palco.setAttribute('aria-hidden','true');
+        cena.append(el('span','sp-halo'),el('span','sp-anel sp-anel-a'),el('span','sp-anel sp-anel-c'),
+          topo,el('span','sp-anel sp-anel-b'));
+        palco.append(cena);topo=palco;
+      }
+      box.append(topo,el('h3',null,'O que você quer saber das pools?'),
         el('p',null,'Filtre por token, par, DEX ou rede, peça a ordem (maior volume, maior APR), limites (razão acima de 3) ou quanto rende um valor numa pool.'));
       const grade=el('div','sp-sugestoes');
       EXEMPLOS.forEach(([rot,q])=>{const b=el('button','sp-sugestao',rot);b.type='button';b.onclick=()=>submit(q);b.disabled=busy;grade.append(b);});

@@ -16,12 +16,17 @@ const DADOS = {
 function montar({ email = 'juniordezzz@gmail.com', env = ENV } = {}) {
   const store = storeMemoria();
   const lidas = [];
-  const firestore = { lerChave: async (uid, chave) => { lidas.push(uid); return { valor: uid === 'uidDono' ? (DADOS[chave] ?? null) : null, atualizado: null }; } };
+  const gravados = new Map();
+  const firestore = {
+    lerChave: async (uid, chave) => { lidas.push(uid); return { valor: uid === 'uidDono' ? (DADOS[chave] ?? null) : null, atualizado: null }; },
+    lerDocs: async (uid, chaves) => { lidas.push(uid); return Object.fromEntries(chaves.map((k) => [k, gravados.has(k) ? gravados.get(k) : { bruto: DADOS[k] ? JSON.stringify(DADOS[k]) : null, updateTime: DADOS[k] ? 'T0' : null, mcpOp: null }])); },
+    gravar: async (uid, { opId, mudancas }) => { for (const [k, v] of Object.entries(mudancas)) gravados.set(k, { bruto: v, updateTime: 'T' + opId, mcpOp: opId }); },
+  };
   const fetcher = async (url) => {
     if (String(url).includes('accounts:lookup')) return Response.json({ users: [{ localId: 'uidDono', email, emailVerified: true }] });
     throw new Error('fetch inesperado ' + url);
   };
-  return { store, lidas, h: createHandler({ env: { get: (k) => env[k] }, fetcher, store, firestore }) };
+  return { store, lidas, gravados, h: createHandler({ env: { get: (k) => env[k] }, fetcher, store, firestore }) };
 }
 const u = (p) => BASE + p;
 
@@ -100,7 +105,7 @@ test('fluxo completo: conecta e consulta PYTH só com o uid do token', async () 
   assert.equal(init.result.serverInfo.name, 'atlas');
   assert.equal((await rpc(h, t.access_token, { jsonrpc: '2.0', method: 'notifications/initialized' })).status, 202);
   const lista = await (await rpc(h, t.access_token, { jsonrpc: '2.0', id: 2, method: 'tools/list' })).json();
-  assert.equal(lista.result.tools.length, 4);
+  assert.equal(lista.result.tools.length, 12);
   const r = await (await rpc(h, t.access_token, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'ver_posicoes', arguments: { token: 'pyth' } } })).json();
   assert.equal(r.result.isError, false);
   assert.match(r.result.content[0].text, /PYTH: 152,6472/);
@@ -120,4 +125,16 @@ test('renovação funciona e reuso derruba o acesso', async () => {
   assert.equal((await rpc(h, t2.access_token, { jsonrpc: '2.0', id: 1, method: 'ping' })).status, 200);
   assert.equal((await h(new Request(u('/token'), { method: 'POST', body: form }))).status, 400);
   assert.equal((await rpc(h, t2.access_token, { jsonrpc: '2.0', id: 1, method: 'ping' })).status, 401);
+});
+
+test('fluxo de escrita pelo MCP: prévia não grava, confirmar grava com o uid do token', async () => {
+  const { h, gravados, lidas } = montar();
+  const t = await conectar(h);
+  const p = await (await rpc(h, t.access_token, { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'preparar_carteira', arguments: { nome: 'OKX' } } })).json();
+  assert.match(p.result.content[0].text, /PRÉVIA/);
+  assert.equal(gravados.size, 0);
+  const c = await (await rpc(h, t.access_token, { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'confirmar', arguments: { id_previa: p.result.structuredContent.id_previa } } })).json();
+  assert.equal(c.result.isError, false);
+  assert.ok(JSON.parse(gravados.get('atlas.wallets.v2').bruto).wallets.some((w) => w.name === 'OKX'));
+  assert.ok(lidas.every((x) => x === 'uidDono'));
 });

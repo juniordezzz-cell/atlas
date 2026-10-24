@@ -275,6 +275,17 @@
 .tools-grid > .atlas-3d { display: block; height: 100%; }
 .atlas-3d .atropos-inner { border-radius: 20px; }
 
+/* CAUSA RAIZ do "card não abre" (15/10/2026, medido no clique real do
+   dono): com o card inclinado pelo hover (preserve-3d), o Chrome
+   considera as camadas-embrulho .atropos-scale/.atropos-rotate "na
+   frente" do conteúdo e entrega o clique a elas, nunca ao <a>. Elas só
+   transformam, não precisam do mouse: com pointer-events none, o clique
+   atravessa até o link. O .atropos-inner devolve o mouse ao conteúdo, e
+   a Atropos continua recebendo os eventos pelo .atropos (borbulhando). */
+.atlas-3d .atropos-scale,
+.atlas-3d .atropos-rotate { pointer-events: none; }
+.atlas-3d .atropos-inner { pointer-events: auto; }
+
 html .tools-grid .tool-card--art {
   height: 100%;
   min-height: 540px;

@@ -13,6 +13,19 @@ html.atlas-com-cenario:not([data-theme="light"]) body { background: transparent;
    .fx-app = app Finanças (Ferramentas/entradas-saidas/financas) */
 html.atlas-com-cenario:not([data-theme="light"]) .fx-app { background: transparent; }
 
+/* Menu lateral (pages/*): com o cenário, ele vira vidro escuro mais leve
+   e deixa o fundo aparecer um pouco (pedido do dono, 15/10/2026). No
+   celular ele é uma gaveta por cima do conteúdo: fica quase opaco. */
+html.atlas-com-cenario:not([data-theme="light"]) .sidebar {
+  background: rgba(6, 12, 24, 0.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.05);
+          backdrop-filter: blur(16px) saturate(1.05);
+  border-right-color: rgba(140, 170, 225, 0.08);
+}
+@media (max-width: 860px) {
+  html.atlas-com-cenario:not([data-theme="light"]) .sidebar { background: rgba(6, 12, 24, 0.94); }
+}
+
 /* trocou para o tema claro com a página aberta (botão do Finanças):
    o cenário escuro sai e cada página volta ao próprio fundo */
 html[data-theme="light"] .atlas-cenario { display: none; }
