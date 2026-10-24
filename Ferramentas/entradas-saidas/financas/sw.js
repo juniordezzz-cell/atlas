@@ -6,7 +6,7 @@
 // rede manda; o cache só serve quando não há conexão, e a navegação sem
 // rede e sem cópia cai em offline.html.
 
-const CACHE = "financas-v10";
+const CACHE = "financas-v11";
 
 const ASSETS = [
   "index.html",
@@ -34,6 +34,7 @@ const ASSETS = [
   "js/core/categorias.js",
   "js/core/interpretador.js",
   "js/core/conversa.js",
+  "js/core/extrato.js",
   "js/telas/painel.js",
   "js/telas/oraculo.js",
   "js/telas/lancamentos.js",

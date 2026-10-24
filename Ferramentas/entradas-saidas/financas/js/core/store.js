@@ -40,7 +40,8 @@ function novoId() {
 function lancamentoValido(l) {
   return !!l && typeof l === "object" && TIPOS.includes(l.tipo) &&
     /^\d{4}-\d{2}-\d{2}$/.test(String(l.data)) &&
-    Number.isSafeInteger(l.centavos) && (l.centavos > 0 || (l.tipo === "saldo" && l.centavos === 0));
+    Number.isSafeInteger(l.centavos) && (l.centavos > 0 || (l.tipo === "saldo" && l.centavos === 0)) &&
+    (l.tipo !== "transferencia" || l.sentido === "saida" || l.sentido === "entrada");
 }
 
 function limparLancamento(l, i) {
@@ -52,6 +53,7 @@ function limparLancamento(l, i) {
     descricao: String(l.descricao || "").slice(0, 120),
     categoria: l.categoria ? String(l.categoria).slice(0, 60) : null,
     ...(l.destino ? { destino: String(l.destino).slice(0, 60) } : {}),
+    ...(l.tipo === "transferencia" ? { sentido: l.sentido } : {}),
     criadoEm: Number.isFinite(Number(l.criadoEm)) ? Number(l.criadoEm) : i
   };
 }

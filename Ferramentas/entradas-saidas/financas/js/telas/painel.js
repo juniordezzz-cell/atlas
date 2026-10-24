@@ -104,7 +104,8 @@ function tres(lancs, estado) {
       el("p", {
         class: "fp-big-nota",
         text: `${pct != null ? `${pct}% dos ganhos · ` : ""}${r.quantos.saidas} ${r.quantos.saidas === 1 ? "despesa" : "despesas"}` +
-          (r.investido ? ` · investiu ${R(r.investido)} (fora daqui)` : "")
+          (r.investido ? ` · investiu ${R(r.investido)} (fora daqui)` : "") +
+          (r.transferido > 0 ? ` · ${R(r.transferido)} foram para outras contas suas (fora daqui)` : "")
       }),
       el("div", { class: "fp-barra" }, el("i", { style: { width: `${(r.saiu / base) * 100}%`, background: "var(--vermelho)" } }))));
 }
