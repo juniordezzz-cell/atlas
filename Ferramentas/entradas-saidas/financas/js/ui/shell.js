@@ -12,16 +12,17 @@
   // A navegação agora é 100% própria: pílulas no desktop, barra inferior
   // + "Mais" no celular.
 
+  // 23/10/2026: o Finanças passou a ser "lançar falando". Entradas,
+  // Despesas, Relatórios e Análises viraram uma lista só (Lançamentos);
+  // Planejar ficou secundário (metas de gasto).
   const SECTIONS = [
-    { slug: "dashboard",     label: "Visão geral",      href: "index.html" },
-    { slug: "comparativo",   label: "Planejar",         href: "planejar.html" },
-    { slug: "entradas",      label: "Entradas",         href: "entradas.html" },
-    { slug: "despesas",      label: "Despesas",         href: "despesas.html" },
+    { slug: "dashboard",     label: "Painel",           href: "index.html" },
+    { slug: "oraculo",       label: "Oráculo",          href: "oraculo.html" },
+    { slug: "lancamentos",   label: "Lançamentos",      href: "lancamentos.html" },
     { slug: "investimentos", label: "Investimentos",    href: "investimentos.html" },
-    { slug: "relatorios",    label: "Relatórios",       href: "relatorios.html" },
-    { slug: "analises",      label: "Análises",         href: "analises.html" },
+    { slug: "planejar",      label: "Planejar",         href: "planejar.html", secundaria: true },
   ];
-  const MOBILE_PRIMARY = ["dashboard", "comparativo", "despesas"]; // + FAB + "Mais"
+  const MOBILE_PRIMARY = ["dashboard", "oraculo", "lancamentos"]; // + FAB + "Mais"
 
   function applyTheme() {
     let t = "dark";
@@ -31,16 +32,16 @@
 
   function pills(active) {
     return `<nav class="fx-subnav" aria-label="Seções do Finanças">` +
-      SECTIONS.map(s => `<a class="fx-pill${s.slug === active ? " is-active" : ""}" href="${s.href}">${s.label}</a>`).join("") +
+      SECTIONS.map(s => `<a class="fx-pill${s.slug === active ? " is-active" : ""}${s.secundaria ? " fx-pill--sec" : ""}" href="${s.href}">${s.label}</a>`).join("") +
       `</nav>`;
   }
 
   function bottomBar(active) {
     const items = MOBILE_PRIMARY.map(slug => {
       const s = SECTIONS.find(x => x.slug === slug);
-      return `<a class="fx-tab${s.slug === active ? " is-active" : ""}" href="${s.href}"><span class="fx-tab-ic" aria-hidden="true"></span><span>${s.label === "Visão geral" ? "Início" : s.label}</span></a>`;
+      return `<a class="fx-tab${s.slug === active ? " is-active" : ""}" href="${s.href}"><span class="fx-tab-ic" aria-hidden="true"></span><span>${s.label}</span></a>`;
     });
-    const fab = `<a class="fx-fab" href="planejar.html" aria-label="Lançar / planejar">＋</a>`;
+    const fab = `<a class="fx-fab" href="oraculo.html" aria-label="Lançar pelo Oráculo">＋</a>`;
     const mais = `<button class="fx-tab" type="button" data-fx-more aria-haspopup="true" aria-expanded="false"><span class="fx-tab-ic" aria-hidden="true"></span><span>Mais</span></button>`;
     return `<nav class="fx-bottombar" aria-label="Navegação">${items[0]}${items[1]}${fab}${items[2]}${mais}</nav>`;
   }
@@ -49,7 +50,7 @@
   // alvo do FAB central) + Configurações (fora de SECTIONS de propósito,
   // pois não é uma "seção" do módulo, e sim o acesso a preferências).
   function overflowSections() {
-    return SECTIONS.filter(s => !MOBILE_PRIMARY.includes(s.slug) && s.slug !== "comparativo");
+    return SECTIONS.filter(s => !MOBILE_PRIMARY.includes(s.slug));
   }
 
   function moreMenu(active) {

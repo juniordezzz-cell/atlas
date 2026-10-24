@@ -112,6 +112,15 @@ test("perguntas: quanto tenho, gastei com X, recebi", () => {
   assert.match(c.responder("quanto recebi?").texto, /R\$\s1\.000,00/);
 });
 
+test("lançamento de antes do acerto de caixa avisa que não muda o caixa", () => {
+  const { c, estado } = nova();
+  c.responder("tenho 800 em caixa");
+  const r = c.responder("ontem recebi 500");
+  assert.equal(caixaAte(estado().lancamentos), 80000);
+  assert.match(r.texto, /antes do seu acerto de caixa/);
+  assert.doesNotMatch(c.responder("uber 10").texto, /acerto/);
+});
+
 test("erro de leitura não lança nada", () => {
   const { c, estado } = nova();
   const r = c.responder("recebi 500 em 30/12/2026");

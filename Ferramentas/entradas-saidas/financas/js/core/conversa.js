@@ -15,7 +15,7 @@
    ============================================================ */
 import { interpretar, temValor } from "./interpretador.js";
 import { adicionar, remover } from "./store.js";
-import { caixaAte, resumoMes, investidoPorDestino } from "./livro.js";
+import { caixaAte, resumoMes, investidoPorDestino, ordenar } from "./livro.js";
 import { formatarCentavos } from "./dinheiro.js";
 import {
   categoriaDe, categoriaDeEntrada, palavrasChave, sugestoes, todasCategorias, normalizar
@@ -43,6 +43,10 @@ function linha(l, hoje) {
   if (l.tipo === "investimento") return `${R(l.centavos)} → ${l.destino} (investimento, não é gasto) · ${dia}`;
   if (l.tipo === "resgate") return `${R(l.centavos)} ← ${l.destino} (voltou para o caixa) · ${dia}`;
   return `Caixa definido em ${R(l.centavos)} · ${dia}`;
+}
+
+function ultimoAcerto(lancs) {
+  return ordenar(lancs).filter((l) => l.tipo === "saldo").pop() || null;
 }
 
 export function criarConversa({ ler, salvar, hoje = todayKey }) {
@@ -97,6 +101,12 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
       linhas.push(feitos.length === 1 ? "Anotado:" : `Anotei ${feitos.length}:`);
       feitos.forEach((l) => linhas.push(linha(l, hojeK)));
       linhas.push(caixaTexto(estado));
+      // "tenho 800" hoje já inclui o que entrou ontem: o retroativo vai
+      // para o histórico do mês, mas não mexe no caixa de agora
+      const acerto = ultimoAcerto(estado.lancamentos);
+      if (acerto && feitos.some((l) => l.tipo !== "saldo" && l.data < acerto.data)) {
+        linhas.push(`(É de antes do seu acerto de caixa de ${quando(acerto.data, hojeK)} (${R(acerto.centavos)}), então conta no mês mas não muda o caixa de agora.)`);
+      }
     }
     if (pendentes.length) {
       const p = perguntaDe(pendentes[0], estado);
@@ -234,7 +244,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
 
     if (!temValor(t)) {
       const r = perguntar(t, estado);
-      return r || { ...AJUDA, texto: "Não entendi. " + AJUDA.texto };
+      // naoEntendi: o painel flutuante do Atlas pode responder no lugar
+      return r || { ...AJUDA, texto: "Não entendi. " + AJUDA.texto, naoEntendi: true };
     }
 
     const r = interpretar(t, { hoje: hoje(), aprendizado: estado.aprendizado });

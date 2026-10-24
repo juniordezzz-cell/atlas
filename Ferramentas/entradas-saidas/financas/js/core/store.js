@@ -129,7 +129,10 @@ function salvarEstado(estado) {
 }
 
 function adicionar(estado, lanc) {
-  const l = { id: novoId(), descricao: "", categoria: null, criadoEm: Date.now(), ...lanc };
+  // criadoEm sempre cresce: dois lançamentos no mesmo milissegundo
+  // (uma frase com dois gastos) mantêm a ordem em que foram ditos
+  const maior = estado.lancamentos.reduce((m, x) => Math.max(m, Number(x.criadoEm) || 0), 0);
+  const l = { id: novoId(), descricao: "", categoria: null, ...lanc, criadoEm: Math.max(Date.now(), maior + 1) };
   if (!lancamentoValido(l)) throw new Error("Lançamento inválido");
   estado.lancamentos.push(limparLancamento(l, estado.lancamentos.length));
   return estado;

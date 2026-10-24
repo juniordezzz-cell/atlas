@@ -15,7 +15,8 @@
      (countUpCurrency, em financas/js/app-bridge.js, lê
      settings.animations para decidir se anima os números).
    - Backup (exportar/importar) e "restaurar dados" usam a mesma
-     API do core (getState/saveState/refreshSummary/resetState),
+     API do core (getState/saveState/migrateState/resetState) — o
+     backup importado passa pela migração (v1 ou v2, ver core/store.js),
      só que agora local-first — sem nuvem, sem "resetarNuvem".
 
    Local-first: sem backend na nuvem, sem rede. pt-BR.
@@ -142,7 +143,7 @@
         reader.onload = () => {
           try {
             const nextState = JSON.parse(reader.result);
-            FinanceUtils.saveState(FinanceUtils.refreshSummary(nextState));
+            FinanceUtils.saveState(FinanceUtils.migrateState(nextState));
             FinanceUtils.toast("Backup importado.");
             initSwitches();
             initProfile();
@@ -157,8 +158,11 @@
 
     if (resetButton) {
       resetButton.addEventListener("click", () => {
+        if (!confirm("Apagar todos os lançamentos, metas e o que o Oráculo aprendeu? Exporte um backup antes se quiser guardar.")) {
+          return;
+        }
         FinanceUtils.resetState();
-        FinanceUtils.toast("Dados restaurados.");
+        FinanceUtils.toast("Dados apagados.");
         initSwitches();
         initProfile();
       });

@@ -1,76 +1,45 @@
 // Service worker do módulo Finanças (ATLAS). Escopo restrito a financas/.
-// Cache-first para o app shell; navegação sem cache/rede cai em offline.html.
 //
-// IMPORTANTE: como é cache-first, TODA alteração em HTML/CSS/JS da
-// ferramenta só chega a quem já abriu depois de subir esta versão — o
-// "activate" apaga os caches de nome diferente e força o refetch.
-//
-// v2 = tela de Configurações ganhou a seção "Aplicativo (APK)" com o
-// botão de baixar, e o css/financas.css ganhou .fx-badge / .fx-note--muted
-// / .fx-btn--disabled. Sem o bump, o cache-first continuaria servindo o
-// CSS e o HTML antigos, e a seção/estilos novos não apareceriam.
-//
-// v3 = o app virou AUTÔNOMO: saiu a sidebar/menu stand-in do ATLAS do
-// shell.js (era o que travava aberto no celular) e o .fx-app deixou de
-// reservar a coluna dela. Sem o bump, o cache-first continuaria servindo
-// o shell.js e o CSS antigos, e o menu quebrado voltaria.
-//
-// v4 = o app ganhou nome ("ATLASfinances") e uma tela de boot/boas-vindas
-// na abertura (css/boot.css + js/boot.js, injetados no index.html). Entram
-// no precache; sem o bump o index antigo (sem a splash) seguiria em cache.
-//
-// v5 = o boot passou a exibir a arte de abertura (assets/boot-hero.png)
-// no lugar do ícone "A". A imagem entra no precache para a splash abrir
-// offline; sem o bump o index/boot antigos seguiriam em cache.
-//
-// v6 = as páginas passaram a carregar a trava de login do ATLAS
-// (../../../core/atlas-auth.js + atlas-secure.js + SDK do Firebase). Esses
-// arquivos moram FORA desta pasta e são do ATLAS: o fetch abaixo não os
-// guarda em cache (senão um ajuste no login nunca chegaria aqui).
-//
-// v7 = correção de segurança SEC-001: texto livre e datas escapados antes
-// do innerHTML (app-bridge.js, core/format.js, pages/*). Este SW serve do
-// cache primeiro — sem o bump, quem já instalou seguiria com o código antigo.
-//
-// v8 = o resumo passou a ser do MÊS ATUAL e do REALIZADO (core/finance.js):
-// o Planejar gera o ano inteiro e os cards somavam tudo — R$ 12.000 de
-// "entradas" em setembro para um salário de R$ 1.000. Sem o bump, quem já
-// instalou continuaria vendo os números errados.
-//
-// v9 = botão "Voltar ao Atlas" na barra (js/ui/shell.js + css/financas.css).
-const CACHE = "financas-v9";
+// 23/10/2026 — REDE PRIMEIRO. Até a v9 era cache-primeiro: toda mudança
+// em HTML/CSS/JS só chegava depois de trocar o nome do cache, e quem já
+// tinha aberto o app seguia vendo a versão velha ("não pegou"). Agora a
+// rede manda; o cache só serve quando não há conexão, e a navegação sem
+// rede e sem cópia cai em offline.html.
+
+const CACHE = "financas-v10";
 
 const ASSETS = [
   "index.html",
-  "planejar.html",
-  "entradas.html",
-  "despesas.html",
+  "oraculo.html",
+  "lancamentos.html",
   "investimentos.html",
-  "relatorios.html",
-  "analises.html",
+  "planejar.html",
   "configuracoes.html",
   "offline.html",
   "manifest.webmanifest",
   "css/atlas-tokens.css",
   "css/boot.css",
   "css/financas.css",
+  "css/painel.css",
   "js/boot.js",
-  "js/ui/shell.js",
-  "js/ui/charts.js",
-  "js/app-bridge.js",
-  "js/core/format.js",
-  "js/core/store.js",
-  "js/core/finance.js",
-  "js/core/recurrence.js",
-  "js/pages/visao-geral.js",
-  "js/pages/planejar.js",
-  "js/pages/entradas.js",
-  "js/pages/despesas.js",
-  "js/pages/investimentos.js",
-  "js/pages/relatorios.js",
-  "js/pages/analises.js",
-  "js/pages/configuracoes.js",
   "js/pwa.js",
+  "js/app-bridge.js",
+  "js/ui/shell.js",
+  "js/ui/fundo-fluxo.js",
+  "js/ui/comum.js",
+  "js/core/dinheiro.js",
+  "js/core/datas.js",
+  "js/core/livro.js",
+  "js/core/store.js",
+  "js/core/categorias.js",
+  "js/core/interpretador.js",
+  "js/core/conversa.js",
+  "js/telas/painel.js",
+  "js/telas/oraculo.js",
+  "js/telas/lancamentos.js",
+  "js/telas/investimentos.js",
+  "js/telas/planejar.js",
+  "js/pages/configuracoes.js",
   "assets/boot-hero.png",
   "assets/icons/icon-192.png",
   "assets/icons/icon-512.png",
@@ -81,6 +50,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE)
       .then((cache) => cache.addAll(ASSETS))
+      .catch(() => {})
       .then(() => self.skipWaiting())
   );
 });
@@ -103,30 +73,26 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Fora do escopo do app (ex.: /core/ e /assets/vendor/ do ATLAS, usados
-  // pela trava de login) — vai direto pra rede, sem cache deste SW.
+  // Fora do escopo do app (ex.: /core/ e /assets/ do ATLAS) — vai direto pra rede.
   if (!req.url.startsWith(self.registration.scope)) {
     return;
   }
 
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(req)
-        .then((res) => {
-          if (res && res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(req, clone));
-          }
-          return res;
+    fetch(req)
+      .then((res) => {
+        if (res && res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(req, clone));
+        }
+        return res;
+      })
+      .catch(() =>
+        caches.match(req, { ignoreSearch: true }).then((cached) => {
+          if (cached) return cached;
+          if (req.mode === "navigate") return caches.match("offline.html");
+          return Response.error();
         })
-        .catch(() => {
-          if (req.mode === "navigate") {
-            return caches.match("offline.html");
-          }
-          return undefined;
-        });
-    })
+      )
   );
 });
