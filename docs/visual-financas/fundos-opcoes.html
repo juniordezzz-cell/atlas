@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fundos — Finanças</title>
+<style>
+:root{--fundo:#03060C;--texto:#E6F1FF;--suave:rgba(230,241,255,.62);--fraco:rgba(230,241,255,.38);--borda:rgba(140,170,225,.12);--azul:#00BFFF}
+*{box-sizing:border-box;margin:0}
+body{background:var(--fundo);color:var(--texto);font-family:Inter,"Segoe UI",system-ui,sans-serif;padding:26px 16px 50px}
+.wrap{max-width:1240px;margin:0 auto}
+h2{font-size:20px;margin-bottom:6px}
+.sub{color:var(--suave);font-size:14px;margin-bottom:6px;line-height:1.5}
+.ref{color:var(--fraco);font-size:12.5px;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.op{border:1px solid var(--borda);border-radius:18px;overflow:hidden;cursor:pointer;background:#050A14;transition:border-color .2s}
+.op.selected{border-color:var(--azul);box-shadow:0 0 0 1px var(--azul)}
+.palco{position:relative;height:340px;overflow:hidden}
+.palco canvas{position:absolute;inset:0;width:100%;height:100%}
+/* silhueta do painel por cima, para ver o fundo atrás do conteúdo */
+.ui{position:absolute;inset:16px;display:flex;flex-direction:column;gap:10px}
+.ui .t{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}
+.ui .c{background:rgba(8,14,26,.62);backdrop-filter:blur(10px);border:1px solid rgba(140,170,225,.10);border-radius:12px;padding:10px}
+.ui .l{font-size:9.5px;color:var(--fraco)}
+.ui .v{font-size:15px;font-weight:700;margin-top:3px}
+.ui .g{flex:1;background:rgba(8,14,26,.18);backdrop-filter:none}
+.ui .bar{display:flex;align-items:center;gap:8px;background:rgba(8,14,26,.85);border:1px solid rgba(0,191,255,.25);border-radius:999px;padding:5px 6px 5px 6px;font-size:10.5px;color:var(--fraco)}
+.ui .bar img{width:26px;height:26px;border-radius:50%;object-fit:cover}
+.ui .bar b{margin-left:auto;background:linear-gradient(135deg,#00BFFF,#00F0FF);color:#04121e;border-radius:999px;padding:4px 10px;font-size:10px}
+.info{padding:14px 16px 16px}
+.info h3{font-size:15px;margin-bottom:4px}
+.info h3 span{color:var(--azul);margin-right:6px}
+.info p{font-size:13px;color:var(--suave);line-height:1.5}
+.avatar{display:flex;gap:14px;align-items:center;margin-top:24px;border:1px solid var(--borda);border-radius:16px;padding:14px 16px;background:#050A14}
+.avatar img{width:56px;height:56px;border-radius:50%;object-fit:cover;animation:flut 4s ease-in-out infinite}
+@keyframes flut{50%{transform:translateY(-6px)}}
+.avatar p{font-size:13.5px;color:var(--suave);line-height:1.5}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>Qual fundo para o Finanças?</h2>
+  <p class="sub">Os três estão rodando de verdade: azul e preto, movimento lento e mais calmo que o atual. Por cima de cada um tem a silhueta do painel, para você ver o fundo atrás do conteúdo. Clique no que preferir.</p>
+  <p class="ref">Para comparar: o Scanner usa manchas de cor que fluem; o Academy usa rede neural com blocos ligados. Nenhum dos três abaixo repete isso.</p>
+
+  <div class="grid">
+    <div class="op" data-choice="fluxo" onclick="sel(this)">
+      <div class="palco"><canvas id="cA"></canvas><div class="ui">
+        <div class="t"><div class="c"><div class="l">Em caixa</div><div class="v">R$ 1.284</div></div><div class="c"><div class="l">Entrou</div><div class="v" style="color:#00E28A">2.000</div></div><div class="c"><div class="l">Saiu</div><div class="v" style="color:#FF5470">615</div></div></div>
+        <div class="c g"></div>
+        <div class="bar"><img src="../../assets/atena.webp" alt="">gastei 9,80 no uber<b>Lançar</b></div></div></div>
+      <div class="info"><h3><span>A</span>Fios de fluxo</h3><p>Linhas finas de luz azul correm devagar pela tela, como gráficos de dinheiro entrando e saindo. Tem a ver com o assunto, é discreto e tem cara de site financeiro.</p></div>
+    </div>
+
+    <div class="op" data-choice="mare" onclick="sel(this)">
+      <div class="palco"><canvas id="cB"></canvas><div class="ui">
+        <div class="t"><div class="c"><div class="l">Em caixa</div><div class="v">R$ 1.284</div></div><div class="c"><div class="l">Entrou</div><div class="v" style="color:#00E28A">2.000</div></div><div class="c"><div class="l">Saiu</div><div class="v" style="color:#FF5470">615</div></div></div>
+        <div class="c g"></div>
+        <div class="bar"><img src="../../assets/atena.webp" alt="">recebi 500<b>Lançar</b></div></div></div>
+      <div class="info"><h3><span>B</span>Maré profunda</h3><p>Uma luz azul escura sobe e desce como água vista de baixo, com grão de filme por cima. É o mais sóbrio dos três: quase preto, só respira.</p></div>
+    </div>
+
+    <div class="op" data-choice="pontos" onclick="sel(this)">
+      <div class="palco"><canvas id="cC"></canvas><div class="ui">
+        <div class="t"><div class="c"><div class="l">Em caixa</div><div class="v">R$ 1.284</div></div><div class="c"><div class="l">Entrou</div><div class="v" style="color:#00E28A">2.000</div></div><div class="c"><div class="l">Saiu</div><div class="v" style="color:#FF5470">615</div></div></div>
+        <div class="c g"></div>
+        <div class="bar"><img src="../../assets/atena.webp" alt="">mandei 100 pra Binance<b>Lançar</b></div></div></div>
+      <div class="info"><h3><span>C</span>Grade de pontos com onda</h3><p>Um campo de pontinhos azuis, quase apagados, com uma onda de luz que atravessa de tempos em tempos, como um pulso de "lançamento registrado". Mais tecnológico.</p></div>
+    </div>
+  </div>
+
+  <div class="avatar"><img src="../../assets/atena.webp" alt=""><p><b style="color:var(--texto)">O Oráculo usa o seu personagem.</b> No esboço anterior eu tinha posto um ícone qualquer, foi erro meu. Na versão real ele é este boneco flutuando, o mesmo do site inteiro, na barra de lançar e na aba Oráculo.</p></div>
+</div>
+
+<script>
+function sel(el){document.querySelectorAll('.op').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');if(window.toggleSelect)toggleSelect(el)}
+function prep(id){const c=document.getElementById(id),x=c.getContext('2d');function r(){c.width=c.clientWidth;c.height=c.clientHeight}r();addEventListener('resize',r);return [c,x]}
+
+/* A — fios de fluxo */
+(function(){const [c,x]=prep('cA');const fios=Array.from({length:9},(_,i)=>({y:.18+i*.08,a:.03+Math.random()*.05,f:1.5+Math.random()*2.5,v:.05+Math.random()*.08,p:Math.random()*9,al:.12+Math.random()*.35}));
+function d(t){t/=1000;const w=c.width,h=c.height;x.fillStyle='#03060C';x.fillRect(0,0,w,h);
+ const g=x.createRadialGradient(w*.3,h*.2,0,w*.3,h*.2,w*.9);g.addColorStop(0,'rgba(0,70,140,.28)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,w,h);
+ fios.forEach(o=>{x.beginPath();for(let i=0;i<=80;i++){const u=i/80;const y=(o.y+Math.sin(u*o.f*6.28+t*o.v*6+o.p)*o.a+Math.sin(u*13+t*.7+o.p)*.008)*h;i?x.lineTo(u*w,y):x.moveTo(0,y)}
+  x.strokeStyle=`rgba(0,191,255,${o.al})`;x.lineWidth=1.1;x.shadowColor='rgba(0,191,255,.6)';x.shadowBlur=6;x.stroke();x.shadowBlur=0;
+  const u=((t*o.v*.6+o.p)%1),y=(o.y+Math.sin(u*o.f*6.28+t*o.v*6+o.p)*o.a+Math.sin(u*13+t*.7+o.p)*.008)*h;x.fillStyle=`rgba(0,240,255,${o.al+.3})`;x.beginPath();x.arc(u*w,y,1.8,0,7);x.fill()});
+ requestAnimationFrame(d)}requestAnimationFrame(d)})();
+
+/* B — maré profunda */
+(function(){const [c,x]=prep('cB');const n=document.createElement('canvas');n.width=n.height=128;const nx=n.getContext('2d'),im=nx.createImageData(128,128);for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=14}nx.putImageData(im,0,0);
+ function d(t){t/=1000;const w=c.width,h=c.height;x.fillStyle='#02050A';x.fillRect(0,0,w,h);
+  [[.25,.15,.55,'0,90,170',.33],[.75,.35,.6,'0,60,130',.4],[.45,.85,.5,'0,120,200',.22]].forEach((b,i)=>{const cx=(b[0]+Math.sin(t*.12+i*2)*.12)*w,cy=(b[1]+Math.cos(t*.1+i)*.1)*h,r=b[2]*Math.max(w,h)*(1+Math.sin(t*.25+i)*.08);const g=x.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,`rgba(${b[3]},${b[4]})`);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,w,h)});
+  for(let k=0;k<4;k++){x.beginPath();for(let i=0;i<=60;i++){const u=i/60,y=h*(.3+k*.18)+Math.sin(u*5+t*.3+k)*h*.04;i?x.lineTo(u*w,y):x.moveTo(0,y)}x.strokeStyle='rgba(120,190,255,.04)';x.lineWidth=40;x.stroke()}
+  x.fillStyle=x.createPattern(n,'repeat');x.save();x.translate((t*37)%128,(t*23)%128);x.fillRect(-128,-128,w+256,h+256);x.restore();
+  requestAnimationFrame(d)}requestAnimationFrame(d)})();
+
+/* C — grade de pontos com onda */
+(function(){const [c,x]=prep('cC');function d(t){t/=1000;const w=c.width,h=c.height;x.fillStyle='#03060C';x.fillRect(0,0,w,h);
+ const s=18,per=5,fase=(t%per)/per,ox=-.2*w+fase*1.6*w;
+ for(let yy=s/2;yy<h;yy+=s)for(let xx=s/2;xx<w;xx+=s){const dx=xx-ox-(yy-h/2)*.35;const onda=Math.exp(-(dx*dx)/(2*60*60));const bg=.08+.05*Math.sin(xx*.02+yy*.03+t*.6);const a=bg+onda*.7;x.fillStyle=`rgba(0,${150+onda*90|0},255,${a})`;x.beginPath();x.arc(xx,yy,.9+onda*1.4,0,7);x.fill()}
+ const g=x.createRadialGradient(w/2,h*1.1,0,w/2,h*1.1,h);g.addColorStop(0,'rgba(0,80,160,.25)');g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,w,h);
+ requestAnimationFrame(d)}requestAnimationFrame(d)})();
+</script>
+</body>
+</html>

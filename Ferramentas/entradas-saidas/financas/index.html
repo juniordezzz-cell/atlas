@@ -10,9 +10,10 @@
   <link rel="stylesheet" href="css/atlas-tokens.css">
   <link rel="stylesheet" href="css/boot.css">
   <link rel="stylesheet" href="css/financas.css">
+  <link rel="stylesheet" href="css/painel.css?v=1">
   <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#05080F">
+  <meta name="theme-color" content="#03060C">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ATLASfinances">
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
@@ -20,18 +21,13 @@
   <script src="../../../core/atlas-auth.js"></script>
   <script src="../../../core/atlas-secure.js"></script>
   <link rel="stylesheet" href="../../../core/ui/atlas-shell.css">
-<!-- Cenário de fundo do ATLAS (piloto 15/10/2026, Paper Shaders).
-     Registro: docs/visual-ferramentas-2026-10-15.md -->
-<link rel="stylesheet" href="../../../core/ui/atlas-cenario.css?v=5">
-<script type="module" src="../../../core/ui/atlas-cenario.js?v=3"></script>
 </head>
 <body data-page="dashboard">
 
   <!-- ============ BOOT / BOAS-VINDAS ============
        Splash de abertura do app (eco do boot do site). Só aqui, na tela
        de abertura; js/boot.js roda a barra e revela o app, uma vez por
-       sessão. Fica no topo do body para cobrir tudo desde o primeiro
-       frame; o app é montado normalmente por trás. -->
+       sessão. -->
   <div class="boot" id="fxBoot" role="status" aria-label="Carregando ATLASfinances">
     <div class="boot__sky" aria-hidden="true">
       <span class="boot__glow"></span>
@@ -52,92 +48,27 @@
   <div class="fx-app" data-fx-app>
     <main class="fx-main" data-fx-main>
       <section class="fx-content">
-        <div class="fx-dashboard">
-
-          <!-- Boas-vindas — mostrada só quando não há entries/expenses/planner
-               ainda (financas/js/pages/visao-geral.js decide e alterna [hidden]) -->
-          <article class="card fx-welcome" data-fx-welcome hidden>
-            <h2>Seu Finanças está pronto — e vazio</h2>
-            <p>Comece planejando o mês ou carregue dados de exemplo para ver o painel funcionando antes de lançar as suas próprias entradas e despesas.</p>
-            <div class="fx-welcome-actions">
-              <a class="fx-btn fx-btn--primary" href="planejar.html">Começar a planejar</a>
-              <button class="fx-btn" type="button" data-fx-load-example>Carregar dados de exemplo</button>
-            </div>
-          </article>
-
-          <div data-fx-dashboard-content>
-
-          <!-- Card herói: Saldo do mês -->
-          <article class="card fx-hero">
-            <div class="fx-hero-head">
-              <p class="fx-hero-label">Saldo do mês</p>
-              <p class="fx-hero-value" data-saldo-mes>R$ 0,00</p>
-              <p class="fx-hero-note" data-note-saldo>—</p>
-            </div>
-            <div class="fx-hero-chart">
-              <canvas id="cashFlowHero" aria-label="Tendência do saldo nos últimos meses"></canvas>
-            </div>
-          </article>
-
-          <!-- Mini-cards: Entradas / Saídas / Investido -->
-          <section class="fx-minicards" aria-label="Resumo do mês">
-            <article class="card fx-minicard fx-minicard--green">
-              <p class="fx-minicard-label">Entradas</p>
-              <p class="fx-minicard-value" data-total-entradas>R$ 0,00</p>
-              <p class="fx-minicard-note" data-note-entradas>—</p>
-            </article>
-            <article class="card fx-minicard fx-minicard--red">
-              <p class="fx-minicard-label">Saídas</p>
-              <p class="fx-minicard-value" data-total-despesas>R$ 0,00</p>
-              <p class="fx-minicard-note" data-note-despesas>—</p>
-            </article>
-            <article class="card fx-minicard">
-              <p class="fx-minicard-label">Investido</p>
-              <p class="fx-minicard-value" data-total-investimentos>R$ 0,00</p>
-              <p class="fx-minicard-note">Total investido</p>
-            </article>
-          </section>
-
-          <!-- Fluxo financeiro do mês -->
-          <article class="card fx-chart-card">
-            <div class="fx-chart-head">
-              <h2 class="fx-section-title">Fluxo financeiro do mês</h2>
-              <div class="fx-legend">
-                <span class="fx-legend-item"><span class="fx-dot fx-dot--cyan"></span>Entradas</span>
-                <span class="fx-legend-item"><span class="fx-dot fx-dot--red"></span>Saídas</span>
-              </div>
-            </div>
-            <div class="fx-canvas-wrap">
-              <canvas id="cashFlowChart" aria-label="Gráfico de linha do fluxo financeiro do mês"></canvas>
-            </div>
-          </article>
-
-          <!-- Seções reveladas ao rolar -->
-          <article class="card fx-section fx-reveal">
-            <h2 class="fx-section-title">Distribuição das despesas</h2>
-            <div class="fx-progress-list" data-expense-detail></div>
-          </article>
-
-          <article class="card fx-section fx-reveal">
-            <h2 class="fx-section-title">Últimas movimentações</h2>
-            <div class="fx-transactions" data-last-transactions></div>
-          </article>
-
-          <article class="card fx-section fx-reveal">
-            <h2 class="fx-section-title">Desempenho mês a mês</h2>
-            <div class="fx-monthly-performance" data-monthly-performance></div>
-          </article>
-
+        <!-- Painel de 23/10/2026: tudo é montado por js/telas/painel.js.
+             Design: ../docs/superpowers/specs/2026-10-23-financas-objetiva-design.md -->
+        <div class="fp-pagina" id="painel">
+          <div data-conteudo></div>
+          <div class="fp-barra-oraculo" data-barra>
+            <div data-chat-lista aria-live="polite"></div>
+            <form class="fp-barra-form" data-chat-form autocomplete="off">
+              <img class="fp-avatar" src="../../../assets/atena.webp" alt="Oráculo">
+              <input type="text" enterkeyhint="send" maxlength="500" aria-label="Fale com o Oráculo"
+                placeholder="O que você quer anotar hoje?">
+              <button class="fp-enviar" type="submit">Lançar</button>
+            </form>
           </div>
-
         </div>
       </section>
     </main>
   </div>
-  <script src="js/ui/shell.js"></script>
-  <script type="module" src="js/app-bridge.js"></script>
-  <script src="js/pages/visao-geral.js"></script>
-  <script>window.Shell.mount({ page: "dashboard", title: "Finanças", subtitle: "Fluxo de caixa pessoal" });</script>
+  <script src="js/ui/shell.js?v=2"></script>
+  <script>window.Shell.mount({ page: "dashboard", title: "Finanças", subtitle: "Ganhos e despesas" });</script>
+  <script src="js/ui/fundo-fluxo.js?v=1"></script>
+  <script type="module" src="js/telas/painel.js?v=1"></script>
   <script src="js/pwa.js" defer></script>
   <script src="../../../core/ui/atlas-shell.js"></script>
 </body>

@@ -10,7 +10,7 @@ Existe **um Oráculo** no Atlas inteiro: mesmo nome, avatar `assets/atena.webp`,
 | --- | --- | --- |
 | Páginas principais, DeFi e carteiras | Estado e operações internas do Atlas | `core/ui/atlas-shell.js`, `core/atlas-oraculo-operacoes.js`; comandos de texto determinísticos, com prévia e confirmação. Prints usam `oraculo-imagem`, separada. Ver `docs/oraculo-operacoes.md` e `docs/oraculo-imagem.md`. |
 | Scanner Pools | Pools elegíveis do scanner, preferências confirmadas, decisões, notas e histórico disponível | `Ferramentas/scanner-pools/assistente-*.js` e função Supabase `scanner-chat`. O painel é o Oráculo global; análise de pools não executa operações. Modelo só interpreta e explica candidatas calculadas localmente. |
-| Finanças | Painel global do Oráculo disponível | Ainda não existe adaptador que leia os dados locais de Finanças. Não alegar que ele já analisa receitas ou despesas. |
+| Finanças | Lançamentos locais de Finanças (livro-caixa em centavos), categorias aprendidas e metas | Desde 23/10/2026: `Ferramentas/entradas-saidas/financas/js/core/conversa.js`, regras locais sem IA. Lança o que o dono fala, pergunta a categoria quando não entende e responde caixa/gastos/investido. Aba Oráculo própria + `AtlasOraculo.registerTool`; o que não é de finanças volta ao Oráculo geral. Ver `docs/financas-2026-10-23.md`. |
 | Outras ferramentas | Mesmo painel quando integrado | Criar adaptador de contexto e testes próprios antes de prometer respostas especializadas. |
 
 O roteamento é por intenção. Perguntas de pools no Scanner vão ao adaptador do scanner; comandos de abrir/fechar posições continuam no motor de operações. Respostas de uma especialização não modificam outra. Nenhum texto de pool, prompt ou modelo pode executar uma transação por si só.

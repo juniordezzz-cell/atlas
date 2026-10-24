@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Lançamentos · ATLASfinances</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="css/atlas-tokens.css">
+  <link rel="stylesheet" href="css/financas.css">
+  <link rel="stylesheet" href="css/painel.css?v=1">
+  <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#03060C">
+  <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+  <script src="../../../core/atlas-auth.js"></script>
+  <script src="../../../core/atlas-secure.js"></script>
+  <link rel="stylesheet" href="../../../core/ui/atlas-shell.css">
+</head>
+<body data-page="lancamentos">
+  <div class="fx-app" data-fx-app>
+    <main class="fx-main" data-fx-main>
+      <section class="fx-content">
+        <div class="fp-pagina" id="lancamentos"></div>
+      </section>
+    </main>
+  </div>
+  <script src="js/ui/shell.js?v=2"></script>
+  <script>window.Shell.mount({ page: "lancamentos", title: "Lançamentos", subtitle: "Tudo que foi lançado" });</script>
+  <script src="js/ui/fundo-fluxo.js?v=1"></script>
+  <script type="module" src="js/telas/lancamentos.js?v=1"></script>
+  <script src="js/pwa.js" defer></script>
+  <script src="../../../core/ui/atlas-shell.js"></script>
+</body>
+</html>
