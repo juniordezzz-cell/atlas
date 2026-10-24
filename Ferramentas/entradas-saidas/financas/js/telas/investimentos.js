@@ -36,7 +36,7 @@ function render() {
         el("p", { class: "fp-big-nota", text: `${R(r.investido)} mandados · ${R(r.resgatado)} de volta` })),
       el("article", { class: "fp-card fp-big" },
         el("p", { class: "fp-big-rotulo", text: "Como registrar" }),
-        el("p", { class: "fp-big-nota", style: { fontSize: ".9rem", lineHeight: "1.55", color: "var(--texto-suave)" }, text: "Diga ao Oráculo \"mandei 100 pra Binance\" ou \"tirei 200 da Binance\". Não conta como despesa: o dinheiro continua seu, só mudou de lugar." }),
+        el("p", { class: "fp-big-nota", style: { fontSize: ".9rem", lineHeight: "1.55", color: "var(--texto-suave)" }, text: "Diga ao Oráculo \"mandei 100 pra Binance\" ou \"tirei 200 da Binance\". Entra nas despesas do mês, para a conta do caixa fechar; aqui você vê quanto tem em cada lugar." }),
         el("p", { style: { margin: "12px 0 0" } }, el("button", { type: "button", class: "fp-btn", text: "+ Manual", on: { click: () => abrirEditor(null, { tipo: "investimento" }) } })))),
     el("section", { class: "fp-tresb" },
       el("article", { class: "fp-card" },

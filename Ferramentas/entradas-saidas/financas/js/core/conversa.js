@@ -16,7 +16,7 @@
 import { interpretar, temValor } from "./interpretador.js";
 import { lerExtrato, pareceExtrato, chaveNome, chaveRepetido } from "./extrato.js";
 import { adicionar, remover } from "./store.js";
-import { caixaAte, resumoMes, investidoPorDestino, ordenar } from "./livro.js";
+import { caixaAte, resumoMes, investidoPorDestino, ordenar, ehSaida, categoriaDaSaida } from "./livro.js";
 import { formatarCentavos } from "./dinheiro.js";
 import {
   categoriaDe, categoriaDeEntrada, palavrasChave, sugestoes, todasCategorias, normalizar
@@ -45,9 +45,9 @@ function linha(l, hoje) {
     const cat = l.categoria && l.categoria !== l.descricao ? ` · ${l.categoria}` : "";
     return `−${R(l.centavos)} · ${l.descricao}${cat} · ${dia}`;
   }
-  if (l.tipo === "investimento") return `${R(l.centavos)} → ${l.destino} (investimento, não é despesa) · ${dia}`;
+  if (l.tipo === "investimento") return `${R(l.centavos)} → ${l.destino} (investimento, entra nas despesas) · ${dia}`;
   if (l.tipo === "resgate") return `${R(l.centavos)} ← ${l.destino} (voltou para o caixa) · ${dia}`;
-  if (l.tipo === "transferencia") return `${l.sentido === "saida" ? "−" : "+"}${R(l.centavos)} ⇄ ${l.descricao} (entre contas suas, não é despesa) · ${dia}`;
+  if (l.tipo === "transferencia") return `${l.sentido === "saida" ? "−" : "+"}${R(l.centavos)} ⇄ ${l.descricao} (para outra conta, entra nas despesas) · ${dia}`;
   return `Caixa definido em ${R(l.centavos)} · ${dia}`;
 }
 
@@ -196,7 +196,7 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
       const tr = feitos.filter((l) => l.tipo === "transferencia");
       if (tr.length) {
         const liquido = tr.reduce((a, l) => a + (l.sentido === "saida" ? l.centavos : -l.centavos), 0);
-        linhas.push(`Transferências entre contas suas: ${R(Math.abs(liquido))} ${liquido >= 0 ? "saíram" : "entraram"} (${tr.length}, não contam como despesa)`);
+        linhas.push(`Transferências entre contas suas: ${R(Math.abs(liquido))} ${liquido >= 0 ? "saíram" : "entraram"} (${tr.length}, entram nas despesas)`);
       }
       const indefinidos = feitos.filter((l) => l.categoria === "A definir").length;
       if (indefinidos) linhas.push(`${indefinidos} ${indefinidos === 1 ? "ficou" : "ficaram"} em "A definir": toque em cada um em Lançamentos para escolher a categoria.`);
@@ -254,7 +254,7 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
     if (/\b(quanto (eu )?(gastei|paguei)|gastos?|saidas?|despesas?|gastei)\b/.test(n)) {
       const resto = n.replace(/\b(quanto|eu|gastei|paguei|gastos?|saidas?|despesas?|com|de|do|no|na|em|esse|este|nesse|neste|mes|passado|hoje|ontem|semana|foi|o|a|meu|meus|minhas?)\b/g, " ").trim();
       const cat = resto ? categoriaDe(resto, estado.aprendizado).categoria : null;
-      const filtro = (l) => l.tipo === "saida" && (!cat || l.categoria === cat);
+      const filtro = (l) => ehSaida(l) && (!cat || categoriaDaSaida(l) === cat);
       let periodo, lista;
       if (/\bhoje\b/.test(n)) { periodo = "hoje"; lista = lancs.filter((l) => l.data === hojeK); }
       else if (/\bontem\b/.test(n)) { periodo = "ontem"; lista = lancs.filter((l) => l.data === somarDias(hojeK, -1)); }
@@ -265,7 +265,7 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
       const linhas = [`Despesas ${cat ? `com ${cat} ` : ""}${periodo}: ${R(total)} (${gastos.length} ${gastos.length === 1 ? "lançamento" : "lançamentos"}).`];
       if (!cat && gastos.length) {
         const por = {};
-        gastos.forEach((l) => { por[l.categoria || "Outros"] = (por[l.categoria || "Outros"] || 0) + l.centavos; });
+        gastos.forEach((l) => { const c = categoriaDaSaida(l); por[c] = (por[c] || 0) + l.centavos; });
         const top = Object.entries(por).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([c, v]) => `${c}: ${R(v)}`);
         linhas.push(`Mais: ${top.join(" · ")}`);
       }
@@ -281,7 +281,7 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
     if (/\b(resumo|balanco|como (eu )?(to|estou|tou)|como esta|como ta)\b/.test(n)) {
       const r = resumoMes(lancs, mes);
       return {
-        texto: [`${nomeMes(mes)}:`, `Ganhos ${R(r.entrou)} · Despesas ${R(r.saiu)} · Investido ${R(r.investido - r.resgatado)}`,
+        texto: [`${nomeMes(mes)}:`, `Ganhos ${R(r.entrou)} · Despesas ${R(r.saiu)}${r.investido ? ` (inclui ${R(r.investido)} investidos)` : ""}`,
           `Saldo do mês: ${R(r.entrou - r.saiu)}`, caixaTexto(estado)].join("\n"),
         sugestoes: [], mudou: false
       };

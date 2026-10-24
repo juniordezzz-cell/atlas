@@ -47,7 +47,7 @@ test("caixaAte(data) para no fim daquele dia", () => {
   assert.equal(caixaAte(l, "2026-10-20"), 49000);
 });
 
-test("investimento sai do caixa mas não é gasto; resgate volta", () => {
+test("investimento é despesa (fatia Investimentos); resgate é ganho", () => {
   const l = [
     L("2026-10-01", "saldo", 50000),
     L("2026-10-02", "investimento", 10000, { destino: "Binance" }),
@@ -56,11 +56,12 @@ test("investimento sai do caixa mas não é gasto; resgate volta", () => {
   ];
   assert.equal(caixaAte(l), 50000 - 10000 - 980 + 3000);
   const r = resumoMes(l, "2026-10");
-  assert.equal(r.entrou, 0);
-  assert.equal(r.saiu, 980);
+  assert.equal(r.entrou, 3000);
+  assert.equal(r.saiu, 10980);
+  assert.equal(r.consumo, 980);
   assert.equal(r.investido, 10000);
   assert.equal(r.resgatado, 3000);
-  assert.deepEqual(r.porCategoria, { Transporte: 980 });
+  assert.deepEqual(r.porCategoria, { Investimentos: 10000, Transporte: 980 });
   const inv = investidoPorDestino(l);
   assert.equal(inv.total, 7000);
   assert.deepEqual(inv.destinos, { Binance: 7000 });
@@ -94,12 +95,13 @@ test("série diária: um ponto por dia do mês com o caixa no fim do dia", () =>
   assert.deepEqual(s[0], { dia: 1, entrou: 0, saiu: 0, investiu: 0, caixa: 10000 });
   assert.deepEqual(s[1], { dia: 2, entrou: 50000, saiu: 1000, investiu: 0, caixa: 59000 });
   assert.equal(s[4].investiu, 2000);
+  assert.equal(s[4].saiu, 2000);
   assert.equal(s[4].caixa, 57000);
   assert.equal(s[30].caixa, 57000);
   assert.equal(serieDiaria(l, "2026-02").length, 28);
 });
 
-test("transferência entre contas mexe no caixa mas não é despesa nem ganho", () => {
+test("transferência para outra conta é despesa; a que volta é ganho", () => {
   const l = [
     L("2026-10-01", "saldo", 100000),
     L("2026-10-12", "transferencia", 50000, { sentido: "saida" }),
@@ -108,7 +110,26 @@ test("transferência entre contas mexe no caixa mas não é despesa nem ganho", 
   ];
   assert.equal(caixaAte(l), 100000 - 50000 + 20000);
   const r = resumoMes(l, "2026-10");
-  assert.deepEqual([r.entrou, r.saiu, r.transferido], [0, 0, 30000]);
+  assert.deepEqual([r.entrou, r.saiu, r.consumo, r.transferido], [20000, 50000, 0, 30000]);
+  assert.deepEqual(r.porCategoria, { "Transferências": 50000 });
+});
+
+test("a conta fecha: caixa do fim = caixa do início + ganhos − despesas", () => {
+  const l = [
+    L("2026-09-20", "entrada", 20000),
+    L("2026-09-25", "saida", 27811),
+    L("2026-10-03", "entrada", 175000),
+    L("2026-10-07", "saida", 68713),
+    L("2026-10-12", "transferencia", 50000, { sentido: "saida" }),
+    L("2026-10-15", "transferencia", 21300, { sentido: "saida" }),
+    L("2026-10-20", "investimento", 10000, { destino: "Binance" }),
+    L("2026-10-22", "resgate", 2500, { destino: "Binance" })
+  ];
+  const r = resumoMes(l, "2026-10");
+  const inicio = caixaAte(l, "2026-09-30"), fim = caixaAte(l, "2026-10-31");
+  assert.equal(fim, inicio + r.entrou - r.saiu);
+  const serie = serieDiaria(l, "2026-10");
+  assert.equal(serie.reduce((a, d) => a + d.entrou - d.saiu, inicio), fim);
 });
 
 test("meses com dados, do mais novo ao mais velho", () => {

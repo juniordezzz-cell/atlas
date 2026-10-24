@@ -6,14 +6,14 @@
        descricao, categoria, destino?, criadoEm (ms) }
 
    Efeito de cada tipo no caixa:
-     entrada       + centavos         (conta em "Entrou")
-     saida         − centavos         (conta em "Saiu")
-     investimento  − centavos         (conta em "Investido", não é gasto)
-     resgate       + centavos         (abate do "Investido")
+     entrada       + centavos         (ganho)
+     saida         − centavos         (despesa)
+     investimento  − centavos         (despesa, fatia "Investimentos";
+                                       soma no investido por destino)
+     resgate       + centavos         (ganho; abate do investido)
      saldo         caixa = centavos   (ponto de partida; não conta no mês)
-     transferencia ± centavos         (entre contas do dono; sentido
-                                       "saida" ou "entrada"; não é
-                                       despesa nem ganho — 24/10/2026)
+     transferencia ± centavos         (entre contas; sentido "saida" é
+                                       despesa, "entrada" é ganho)
 
    O caixa corrido segue a ordem data → criadoEm. Um "saldo" diz
    quanto havia naquele dia; o que foi lançado antes dele não muda o
@@ -57,23 +57,53 @@ export function caixaAte(lancs, data) {
 
 const doMes = (lancs, mes) => ordenar(lancs).filter((l) => l.data.slice(0, 7) === mes);
 
+/* Tudo que saiu do caixa é despesa e tudo que entrou é ganho (pedido do
+   dono, 24/10/2026: "senão sempre dá erro matemático"). Assim
+       caixa no fim do mês = caixa no início + entrou − saiu
+   (só um acerto de caixa, "tenho X", quebra a igualdade, de propósito).
+   Investimento e transferência para outra conta entram em `saiu` com as
+   fatias "Investimentos" e "Transferências"; resgate e transferência
+   que volta entram em `entrou`. `consumo` é só o que foi gasto de fato
+   (é o que as metas do Planejar medem). */
+export const CAT_INVESTIMENTOS = "Investimentos";
+export const CAT_TRANSFERENCIAS = "Transferências";
+
+export function ehSaida(l) {
+  return l.tipo === "saida" || l.tipo === "investimento" || (l.tipo === "transferencia" && l.sentido === "saida");
+}
+export function ehEntrada(l) {
+  return l.tipo === "entrada" || l.tipo === "resgate" || (l.tipo === "transferencia" && l.sentido === "entrada");
+}
+/* Fatia do gráfico de despesas */
+export function categoriaDaSaida(l) {
+  if (l.tipo === "investimento") return CAT_INVESTIMENTOS;
+  if (l.tipo === "transferencia") return CAT_TRANSFERENCIAS;
+  return l.categoria || "Outros";
+}
+
 export function resumoMes(lancs, mes) {
   const r = {
-    entrou: 0, saiu: 0, investido: 0, resgatado: 0, transferido: 0,
+    entrou: 0, saiu: 0, consumo: 0, investido: 0, resgatado: 0,
+    transferido: 0, transfSaiu: 0, transfEntrou: 0,
     porCategoria: {}, quantos: { entradas: 0, saidas: 0, investimentos: 0 }, ultimaEntrada: null
   };
   for (const l of doMes(lancs, mes)) {
-    if (l.tipo === "entrada") { r.entrou += l.centavos; r.quantos.entradas++; r.ultimaEntrada = l.data; }
-    else if (l.tipo === "saida") {
+    if (ehEntrada(l)) {
+      r.entrou += l.centavos; r.quantos.entradas++;
+      if (l.tipo === "entrada") r.ultimaEntrada = l.data;
+      if (l.tipo === "resgate") r.resgatado += l.centavos;
+      if (l.tipo === "transferencia") r.transfEntrou += l.centavos;
+    } else if (ehSaida(l)) {
       r.saiu += l.centavos; r.quantos.saidas++;
-      const cat = l.categoria || "Outros";
+      const cat = categoriaDaSaida(l);
       r.porCategoria[cat] = (r.porCategoria[cat] || 0) + l.centavos;
+      if (l.tipo === "saida") r.consumo += l.centavos;
+      if (l.tipo === "investimento") { r.investido += l.centavos; r.quantos.investimentos++; }
+      if (l.tipo === "transferencia") r.transfSaiu += l.centavos;
     }
-    else if (l.tipo === "investimento") { r.investido += l.centavos; r.quantos.investimentos++; }
-    else if (l.tipo === "resgate") r.resgatado += l.centavos;
-    // transferido: o que foi para outras contas, menos o que veio delas
-    else if (l.tipo === "transferencia") r.transferido += l.sentido === "saida" ? l.centavos : -l.centavos;
   }
+  // transferido: o que foi para outras contas, menos o que veio delas
+  r.transferido = r.transfSaiu - r.transfEntrou;
   return r;
 }
 
@@ -96,9 +126,9 @@ export function serieDiaria(lancs, mes) {
     const chave = `${mes}-${String(d.dia).padStart(2, "0")}`;
     for (; i < todos.length && todos[i].data === chave; i++) {
       const l = todos[i];
-      if (l.tipo === "entrada") d.entrou += l.centavos;
-      else if (l.tipo === "saida") d.saiu += l.centavos;
-      else if (l.tipo === "investimento") d.investiu += l.centavos;
+      if (ehEntrada(l)) d.entrou += l.centavos;
+      else if (ehSaida(l)) d.saiu += l.centavos;
+      if (l.tipo === "investimento") d.investiu += l.centavos;
       caixa = aplicar(caixa, l);
     }
     d.caixa = caixa;
