@@ -74,12 +74,12 @@ function render() {
 
   const cats = Object.entries(m.categorias);
   raiz.replaceChildren(
-    el("div", { class: "fp-cabeca" }, el("h1", { text: "Metas de gasto" }), el("span", { class: "fp-sub", style: { margin: 0 }, text: `${nomeMes(mes)} · só o que foi lançado conta` })),
+    el("div", { class: "fp-cabeca" }, el("h1", { text: "Metas de despesas" }), el("span", { class: "fp-sub", style: { margin: 0 }, text: `${nomeMes(mes)} · só o que foi lançado conta` })),
     el("article", { class: "fp-card" },
       el("h2", { text: "Meta do mês" }),
-      el("p", { class: "fp-sub", text: "Um limite para tudo que sair no mês (investimento não conta)." }),
+      el("p", { class: "fp-sub", text: "Um limite para as despesas do mês (investimento não conta)." }),
       m.mensal ? el("div", { class: "fp-metas", style: { marginBottom: "16px" } },
-        el("div", { class: "fp-meta-topo" }, el("span", { text: `Gasto até agora` }), el("b", { text: `${R(r.saiu)} de ${R(m.mensal)}` })),
+        el("div", { class: "fp-meta-topo" }, el("span", { text: `Despesas até agora` }), el("b", { text: `${R(r.saiu)} de ${R(m.mensal)}` })),
         barra(r.saiu, m.mensal),
         el("p", { class: "fp-big-nota", text: r.saiu > m.mensal ? `Passou ${R(r.saiu - m.mensal)} da meta.` : `Ainda cabem ${R(m.mensal - r.saiu)} neste mês.` })) : null,
       formMensal),

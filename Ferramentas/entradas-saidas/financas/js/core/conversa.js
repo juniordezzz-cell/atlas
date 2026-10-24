@@ -40,7 +40,7 @@ function linha(l, hoje) {
     const cat = l.categoria && l.categoria !== l.descricao ? ` · ${l.categoria}` : "";
     return `−${R(l.centavos)} · ${l.descricao}${cat} · ${dia}`;
   }
-  if (l.tipo === "investimento") return `${R(l.centavos)} → ${l.destino} (investimento, não é gasto) · ${dia}`;
+  if (l.tipo === "investimento") return `${R(l.centavos)} → ${l.destino} (investimento, não é despesa) · ${dia}`;
   if (l.tipo === "resgate") return `${R(l.centavos)} ← ${l.destino} (voltou para o caixa) · ${dia}`;
   return `Caixa definido em ${R(l.centavos)} · ${dia}`;
 }
@@ -73,8 +73,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
   function perguntaDe(item, estado) {
     if (!item.tipo) {
       return {
-        texto: `"${item.descricao}" (${R(item.centavos)}): isso entrou, saiu ou foi investido?`,
-        sugestoes: ["Entrou", "Saiu", "Investi", "Cancelar"]
+        texto: `"${item.descricao}" (${R(item.centavos)}): é ganho, despesa ou investimento?`,
+        sugestoes: ["Ganho", "Despesa", "Investimento", "Cancelar"]
       };
     }
     return {
@@ -126,8 +126,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
       return r;
     }
     if (!item.tipo) {
-      if (/^(entrou|entrada|recebi|ganhei)/.test(n)) { item.tipo = "entrada"; item.categoria = categoriaDeEntrada(item.descricao); }
-      else if (/^(saiu|saida|gastei|paguei|gasto)/.test(n)) { item.tipo = "saida"; item.categoria = categoriaDe(item.descricao, estado.aprendizado).categoria; }
+      if (/^(ganho|entrou|entrada|recebi|ganhei)/.test(n)) { item.tipo = "entrada"; item.categoria = categoriaDeEntrada(item.descricao); }
+      else if (/^(despesa|saiu|saida|gastei|paguei|gasto)/.test(n)) { item.tipo = "saida"; item.categoria = categoriaDe(item.descricao, estado.aprendizado).categoria; }
       else if (/^(investi|investimento|apliquei)/.test(n)) { item.tipo = "investimento"; item.destino = "Investimentos"; item.categoria = "Investimento"; }
       else return { ...perguntaDe(item, estado), mudou: false };
       pendentes.shift();
@@ -182,8 +182,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
         sugestoes: [], mudou: false
       };
     }
-    if (/\b(quanto (eu )?(gastei|paguei)|gastos?|saidas?|gastei)\b/.test(n)) {
-      const resto = n.replace(/\b(quanto|eu|gastei|paguei|gastos?|saidas?|com|de|no|na|em|esse|este|nesse|neste|mes|passado|hoje|ontem|semana|foi|o|a|meu|meus)\b/g, " ").trim();
+    if (/\b(quanto (eu )?(gastei|paguei)|gastos?|saidas?|despesas?|gastei)\b/.test(n)) {
+      const resto = n.replace(/\b(quanto|eu|gastei|paguei|gastos?|saidas?|despesas?|com|de|do|no|na|em|esse|este|nesse|neste|mes|passado|hoje|ontem|semana|foi|o|a|meu|meus|minhas?)\b/g, " ").trim();
       const cat = resto ? categoriaDe(resto, estado.aprendizado).categoria : null;
       const filtro = (l) => l.tipo === "saida" && (!cat || l.categoria === cat);
       let periodo, lista;
@@ -193,7 +193,7 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
       else { periodo = `em ${nomeDoMes}`; lista = lancs.filter((l) => l.data.slice(0, 7) === mes); }
       const gastos = lista.filter(filtro);
       const total = gastos.reduce((a, l) => a + l.centavos, 0);
-      const linhas = [`Você gastou ${R(total)} ${cat ? `com ${cat} ` : ""}${periodo} (${gastos.length} ${gastos.length === 1 ? "gasto" : "gastos"}).`];
+      const linhas = [`Despesas ${cat ? `com ${cat} ` : ""}${periodo}: ${R(total)} (${gastos.length} ${gastos.length === 1 ? "lançamento" : "lançamentos"}).`];
       if (!cat && gastos.length) {
         const por = {};
         gastos.forEach((l) => { por[l.categoria || "Outros"] = (por[l.categoria || "Outros"] || 0) + l.centavos; });
@@ -202,9 +202,9 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
       }
       return { texto: linhas.join("\n"), sugestoes: [], mudou: false };
     }
-    if (/\b(quanto (eu )?(recebi|ganhei)|quanto entrou|entradas?|recebi)\b/.test(n)) {
+    if (/\b(quanto (eu )?(recebi|ganhei)|quanto entrou|entradas?|ganhos?|recebi)\b/.test(n)) {
       const r = resumoMes(lancs, mes);
-      return { texto: `Entrou ${R(r.entrou)} em ${nomeDoMes} (${r.quantos.entradas} ${r.quantos.entradas === 1 ? "recebimento" : "recebimentos"}).`, sugestoes: [], mudou: false };
+      return { texto: `Ganhos em ${nomeDoMes}: ${R(r.entrou)} (${r.quantos.entradas} ${r.quantos.entradas === 1 ? "lançamento" : "lançamentos"}).`, sugestoes: [], mudou: false };
     }
     if (/\b(quanto (eu )?tenho|meu caixa|meu saldo|saldo|caixa|quanto tem)\b/.test(n)) {
       return { texto: `Seu caixa: ${R(caixaAte(lancs))}.`, sugestoes: [], mudou: false };
@@ -212,8 +212,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
     if (/\b(resumo|balanco|como (eu )?(to|estou|tou)|como esta|como ta)\b/.test(n)) {
       const r = resumoMes(lancs, mes);
       return {
-        texto: [`${nomeMes(mes)}:`, `Entrou ${R(r.entrou)} · Saiu ${R(r.saiu)} · Investiu ${R(r.investido - r.resgatado)}`,
-          `Sobrou no mês: ${R(r.entrou - r.saiu)}`, caixaTexto(estado)].join("\n"),
+        texto: [`${nomeMes(mes)}:`, `Ganhos ${R(r.entrou)} · Despesas ${R(r.saiu)} · Investido ${R(r.investido - r.resgatado)}`,
+          `Saldo do mês: ${R(r.entrou - r.saiu)}`, caixaTexto(estado)].join("\n"),
         sugestoes: [], mudou: false
       };
     }
@@ -221,8 +221,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
   }
 
   const AJUDA = {
-    texto: "Me fala do jeito que você falaria:\n• \"recebi 500\"\n• \"uber 9,80\" ou \"45 no mercadinho\"\n• \"mandei 100 pra Binance\"\n• \"tenho 800 em caixa\" (para acertar o caixa)\nTambém respondo \"quanto tenho?\" e \"quanto gastei este mês?\".",
-    sugestoes: ["Quanto tenho?", "Quanto gastei este mês?", "Resumo do mês"],
+    texto: "Me conte seus ganhos e despesas do jeito que você falaria:\n• \"recebi 500\"\n• \"uber 9,80\" ou \"45 no mercadinho\"\n• \"mandei 100 pra Binance\"\n• \"tenho 800 em caixa\" (para acertar o caixa)\nTambém respondo \"quanto tenho?\" e \"despesas do mês\".",
+    sugestoes: ["Quanto tenho?", "Despesas do mês", "Resumo do mês"],
     mudou: false
   };
 

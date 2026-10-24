@@ -6,7 +6,7 @@
    • a conversa do Oráculo (uma por página, a mesma para a barra do
      Painel, a aba Oráculo e o painel flutuante do Atlas);
    • o chat (mensagens + botões de sugestão);
-   • o editor de lançamento (corrigir, apagar, lançar à mão);
+   • o editor de lançamento (corrigir, apagar, lançamento manual);
    • utilidades (toast, ícones, link ao Atlas).
    Qualquer mudança nos dados dispara "financas:mudou" em window.
    ============================================================ */
@@ -106,7 +106,7 @@ export function valorComSinal(l) {
   return "= " + R(l.centavos);
 }
 
-export const NOME_TIPO = { entrada: "Entrada", saida: "Saída", investimento: "Investimento", resgate: "Resgate", saldo: "Acerto de caixa" };
+export const NOME_TIPO = { entrada: "Ganho", saida: "Despesa", investimento: "Investimento", resgate: "Resgate", saldo: "Acerto de caixa" };
 
 /* Uma linha de lançamento (Painel e Lançamentos). Toque abre o editor. */
 export function linhaLancamento(l, rotuloDia) {
@@ -206,7 +206,7 @@ export function abrirEditor(lanc, { tipo = "saida" } = {}) {
   // fecha e tira do DOM na hora (o evento "close" pode atrasar com a aba em segundo plano)
   const fechar = () => { if (dlg.open) dlg.close(); dlg.remove(); };
   const form = el("form", { class: "fp-form", novalidate: true },
-    el("h3", { text: novo ? "Lançar à mão" : "Corrigir lançamento" }),
+    el("h3", { text: novo ? "Lançamento manual" : "Corrigir lançamento" }),
     seg,
     campo("Valor (R$)", el("input", { name: "valor", inputmode: "decimal", autocomplete: "off", placeholder: "9,80", value: valorInicial })),
     campo("Dia", el("input", { name: "data", type: "date", max: todayKey(), value: l.data })),

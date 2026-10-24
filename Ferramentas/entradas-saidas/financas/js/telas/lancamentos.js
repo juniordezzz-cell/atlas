@@ -3,7 +3,7 @@
    ------------------------------------------------------------
    Substitui Entradas, Despesas, Relatórios e Análises (23/10/2026).
    Lista por dia, filtro por tipo, busca, corrigir/apagar (toque na
-   linha), lançar à mão e exportar CSV do que está na tela.
+   linha), lançamento manual e exportar CSV do que está na tela.
    ============================================================ */
 import { lerEstado } from "../core/store.js";
 import { resumoMes, mesesComDados, ordenar } from "../core/livro.js";
@@ -20,7 +20,7 @@ if (!/^\d{4}-\d{2}$/.test(mes || "") || mes > atual()) mes = atual();
 let filtro = "tudo";
 let busca = "";
 
-const FILTROS = [["tudo", "Tudo"], ["entrada", "Entrou"], ["saida", "Saiu"], ["investimento", "Investiu"], ["saldo", "Acertos"]];
+const FILTROS = [["tudo", "Tudo"], ["entrada", "Ganhos"], ["saida", "Despesas"], ["investimento", "Investimentos"], ["saldo", "Acertos"]];
 
 function passa(l) {
   if (filtro === "investimento" && l.tipo !== "investimento" && l.tipo !== "resgate") return false;
@@ -70,13 +70,13 @@ function render() {
       el("button", { type: "button", "aria-label": "Próximo mês", text: "›", disabled: mes >= atual(), on: { click: () => ir(1) } })),
     el("div", { class: "fp-filtros" },
       el("button", { type: "button", class: "fp-btn", text: "Exportar CSV", disabled: !lista.length, on: { click: () => csv(lista) } }),
-      el("button", { type: "button", class: "fp-btn fp-btn--primario", text: "+ Lançar à mão", on: { click: () => abrirEditor(null) } })));
+      el("button", { type: "button", class: "fp-btn fp-btn--primario", text: "+ Manual", on: { click: () => abrirEditor(null) } })));
 
   const resumo = el("div", { class: "fp-card fp-resumo-linha" },
-    el("span", {}, "Entrou ", el("b", { class: "fp-pos", text: R(r.entrou) })),
-    el("span", {}, "Saiu ", el("b", { class: "fp-neg", text: R(r.saiu) })),
-    el("span", {}, "Investiu ", el("b", { class: "fp-inv", text: R(r.investido - r.resgatado) })),
-    el("span", {}, "Sobrou no mês ", el("b", { class: r.entrou - r.saiu < 0 ? "fp-neg" : "", text: R(r.entrou - r.saiu) })));
+    el("span", {}, "Ganhos ", el("b", { class: "fp-pos", text: R(r.entrou) })),
+    el("span", {}, "Despesas ", el("b", { class: "fp-neg", text: R(r.saiu) })),
+    el("span", {}, "Investido ", el("b", { class: "fp-inv", text: R(r.investido - r.resgatado) })),
+    el("span", {}, "Saldo do mês ", el("b", { class: r.entrou - r.saiu < 0 ? "fp-neg" : "", text: R(r.entrou - r.saiu) })));
 
   const campoBusca = el("input", {
     class: "fp-busca", type: "search", placeholder: "Buscar (uber, mercado…)", value: busca, "aria-label": "Buscar lançamento",

@@ -20,6 +20,6 @@ const perguntar = (t) => el("button", {
 
 raiz.querySelector("[data-exemplos]").replaceChildren(
   preencher("recebi 500"), preencher("uber 9,80"), preencher("45 no mercadinho"),
-  preencher("mandei 100 pra Binance"), perguntar("Quanto tenho?"), perguntar("Quanto gastei este mês?"));
+  preencher("mandei 100 pra Binance"), perguntar("Quanto tenho?"), perguntar("Despesas do mês"));
 
 campo.focus({ preventScroll: true });

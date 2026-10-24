@@ -57,11 +57,11 @@ test("palavra genérica não é aprendida", () => {
   assert.equal(estado().aprendizado.pagamento, undefined);
 });
 
-test("sem tipo: pergunta se entrou ou saiu", () => {
+test("sem tipo: pergunta se é ganho, despesa ou investimento", () => {
   const { c, estado } = nova();
   const p = c.responder("joaquim 50");
-  assert.deepEqual(p.sugestoes.slice(0, 3), ["Entrou", "Saiu", "Investi"]);
-  c.responder("Entrou");
+  assert.deepEqual(p.sugestoes.slice(0, 3), ["Ganho", "Despesa", "Investimento"]);
+  c.responder("Ganho");
   assert.equal(estado().lancamentos[0].tipo, "entrada");
 });
 
@@ -110,6 +110,9 @@ test("perguntas: quanto tenho, gastei com X, recebi", () => {
   assert.match(c.responder("quanto gastei com transporte?").texto, /R\$\s60,00/);
   assert.match(c.responder("quanto gastei esse mês").texto, /R\$\s65,00/);
   assert.match(c.responder("quanto recebi?").texto, /R\$\s1\.000,00/);
+  // os botões do Oráculo usam os termos novos (ganhos e despesas)
+  assert.match(c.responder("Despesas do mês").texto, /^Despesas em .*R\$\s65,00/);
+  assert.match(c.responder("meus ganhos").texto, /^Ganhos em .*R\$\s1\.000,00/);
 });
 
 test("lançamento de antes do acerto de caixa avisa que não muda o caixa", () => {

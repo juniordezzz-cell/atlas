@@ -1,7 +1,7 @@
 /* ============================================================
    painel.js — tela inicial do Finanças (23/10/2026)
    ------------------------------------------------------------
-   Três números grandes (caixa, entrou, saiu), gráfico do mês dia a
+   Três números grandes (caixa, ganhos, despesas), gráfico do mês dia a
    dia, para onde foi o dinheiro, investido, metas e últimos
    lançamentos. Embaixo, a barra do Oráculo: lança daqui mesmo.
    Todo número sai de js/core/livro.js (centavos inteiros).
@@ -88,22 +88,22 @@ function tres(lancs, estado) {
       el("p", { class: "fp-big-nota", text: notaCaixa })),
     el("article", { class: "fp-card fp-big fp-big--entrou" },
       el("div", { class: "fp-big-ic" }, icone("M12 16V8m0 0l-3.5 3.5M12 8l3.5 3.5", "#00E28A")),
-      el("p", { class: "fp-big-rotulo", text: "Entrou no mês" }),
+      el("p", { class: "fp-big-rotulo", text: "Ganhos do mês" }),
       el("p", { class: "fp-big-valor fp-pos", text: R(r.entrou) }),
       el("p", {
         class: "fp-big-nota",
         text: r.quantos.entradas
-          ? `${r.quantos.entradas} ${r.quantos.entradas === 1 ? "recebimento" : "recebimentos"} · último dia ${r.ultimaEntrada.slice(8, 10)}`
-          : "Nenhum recebimento lançado"
+          ? `${r.quantos.entradas} ${r.quantos.entradas === 1 ? "ganho" : "ganhos"} · último no dia ${r.ultimaEntrada.slice(8, 10)}`
+          : "Nenhum ganho lançado"
       }),
       el("div", { class: "fp-barra" }, el("i", { style: { width: `${(r.entrou / base) * 100}%`, background: "var(--verde)" } }))),
     el("article", { class: "fp-card fp-big fp-big--saiu" },
       el("div", { class: "fp-big-ic" }, icone("M12 8v8m0 0l-3.5-3.5M12 16l3.5-3.5", "#FF5470")),
-      el("p", { class: "fp-big-rotulo", text: "Saiu no mês" }),
+      el("p", { class: "fp-big-rotulo", text: "Despesas do mês" }),
       el("p", { class: "fp-big-valor fp-neg", text: R(r.saiu) }),
       el("p", {
         class: "fp-big-nota",
-        text: `${pct != null ? `${pct}% do que entrou · ` : ""}${r.quantos.saidas} ${r.quantos.saidas === 1 ? "gasto" : "gastos"}` +
+        text: `${pct != null ? `${pct}% dos ganhos · ` : ""}${r.quantos.saidas} ${r.quantos.saidas === 1 ? "despesa" : "despesas"}` +
           (r.investido ? ` · investiu ${R(r.investido)} (fora daqui)` : "")
       }),
       el("div", { class: "fp-barra" }, el("i", { style: { width: `${(r.saiu / base) * 100}%`, background: "var(--vermelho)" } }))));
@@ -158,7 +158,7 @@ function grafico(lancs) {
     const mostrar = () => {
       const caixaTxt = i >= ateDia ? "Ainda não chegou" : i < inicio ? "Caixa: antes do primeiro acerto" : `Caixa: ${R(d.caixa)}`;
       dica.textContent = "";
-      [`Dia ${d.dia}`, d.entrou ? `Entrou: ${R(d.entrou)}` : null, d.saiu ? `Saiu: ${R(d.saiu)}` : null,
+      [`Dia ${d.dia}`, d.entrou ? `Ganhos: ${R(d.entrou)}` : null, d.saiu ? `Despesas: ${R(d.saiu)}` : null,
         d.investiu ? `Investiu: ${R(d.investiu)}` : null, caixaTxt].filter(Boolean)
         .forEach((t, k) => { if (k) dica.appendChild(el("br")); dica.appendChild(document.createTextNode(t)); });
       dica.style.left = `${(x(i) / W) * 100}%`;
@@ -170,7 +170,7 @@ function grafico(lancs) {
     alvo.appendChild(r);
   });
 
-  const svg = el("svg", { viewBox: `0 0 ${W} 230`, role: "img", "aria-label": "Entradas, saídas e caixa por dia do mês", on: { mouseleave: () => { dica.hidden = true; } } },
+  const svg = el("svg", { viewBox: `0 0 ${W} 230`, role: "img", "aria-label": "Ganhos, despesas e caixa por dia do mês", on: { mouseleave: () => { dica.hidden = true; } } },
     el("defs", {}, el("linearGradient", { id: "fpArea", x1: "0", x2: "0", y1: "0", y2: "1" },
       el("stop", { offset: "0", "stop-color": "#00BFFF", "stop-opacity": ".32" }),
       el("stop", { offset: "1", "stop-color": "#00BFFF", "stop-opacity": "0" }))),
@@ -189,11 +189,11 @@ function grafico(lancs) {
     alvo);
 
   return el("article", { class: "fp-card" },
-    el("h2", { text: "Entradas e saídas, dia a dia" }),
-    el("p", { class: "fp-sub", text: "Barras: o que entrou e saiu no dia · linha: o caixa. Toque num dia para ver." }),
+    el("h2", { text: "Ganhos e despesas, dia a dia" }),
+    el("p", { class: "fp-sub", text: "Barras: ganhos e despesas do dia · linha: o caixa. Toque num dia para ver." }),
     el("div", { class: "fp-leg" },
-      el("span", {}, el("i", { style: { background: "var(--verde)" } }), "Entrou"),
-      el("span", {}, el("i", { style: { background: "var(--vermelho)" } }), "Saiu"),
+      el("span", {}, el("i", { style: { background: "var(--verde)" } }), "Ganhos"),
+      el("span", {}, el("i", { style: { background: "var(--vermelho)" } }), "Despesas"),
       el("span", {}, el("i", { style: { background: "var(--atlas-accent)" } }), "Caixa")),
     el("div", { class: "fp-grafico" }, svg, dica));
 }
@@ -210,7 +210,7 @@ function categorias(lancs) {
     el("h2", { text: "Para onde foi o dinheiro" }),
     el("p", { class: "fp-sub", text: `${nomeMes(mes)} · por categoria` }));
   if (!r.saiu) {
-    card.appendChild(el("p", { class: "fp-vazio", text: "Nenhum gasto lançado neste mês." }));
+    card.appendChild(el("p", { class: "fp-vazio", text: "Nenhuma despesa lançada neste mês." }));
     return card;
   }
   let acum = 0;
@@ -224,11 +224,11 @@ function categorias(lancs) {
     return c;
   });
   card.appendChild(el("div", { class: "fp-anel" },
-    el("svg", { viewBox: "0 0 42 42", role: "img", "aria-label": "Gastos por categoria" },
+    el("svg", { viewBox: "0 0 42 42", role: "img", "aria-label": "Despesas por categoria" },
       el("circle", { cx: "21", cy: "21", r: "15.915", fill: "none", stroke: "rgba(255,255,255,.06)", "stroke-width": "5" }),
       arcos,
       el("text", { x: "21", y: "21", "text-anchor": "middle", fill: "currentColor", "font-size": "4.4", "font-weight": "700", text: reaisCurto(r.saiu) }),
-      el("text", { x: "21", y: "26", "text-anchor": "middle", fill: "rgba(230,241,255,.45)", "font-size": "2.6", text: "gastos" })),
+      el("text", { x: "21", y: "26", "text-anchor": "middle", fill: "rgba(230,241,255,.45)", "font-size": "2.6", text: "despesas" })),
     el("ul", { class: "fp-cats" }, top.map(([nome, v], i) => el("li", {},
       el("i", { style: { background: CORES[i % CORES.length] } }),
       el("span", { text: nome }),
@@ -246,7 +246,7 @@ function investido(lancs) {
   const destinos = Object.entries(inv.destinos).filter(([, v]) => v !== 0).sort((a, b) => b[1] - a[1]);
   return el("article", { class: "fp-card" },
     el("h2", { text: "Investido" }),
-    el("p", { class: "fp-sub", text: "Dinheiro que saiu do caixa para investir. Não conta como gasto." }),
+    el("p", { class: "fp-sub", text: "Dinheiro que saiu do caixa para investir. Não conta como despesa." }),
     el("p", { class: "fp-inv-valor" }, R(liquido), " ", el("small", { class: "fp-neutro", style: { fontSize: ".8rem", fontWeight: "500" }, text: "neste mês" })),
     el("p", { class: "fp-big-nota", text: `${R(inv.total)} no total` }),
     destinos.length ? el("div", { class: "fp-chips" }, destinos.map(([d, v]) => el("span", { class: "fp-chip", text: `${d} · ${R(v)}` }))) : el("div", { class: "fp-chips" }),
@@ -267,9 +267,9 @@ function metas(lancs, estado) {
   if (!m.mensal && !cats.length) return null;
   const r = resumoMes(lancs, mes);
   return el("article", { class: "fp-card" },
-    el("h2", { text: "Metas de gasto" }),
+    el("h2", { text: "Metas de despesas" }),
     el("p", { class: "fp-sub", text: "Do Planejar. Não lançam nada no caixa." }),
-    m.mensal ? barraMeta("Gasto do mês", r.saiu, m.mensal) : null,
+    m.mensal ? barraMeta("Despesas do mês", r.saiu, m.mensal) : null,
     cats.slice(0, 5).map(([c, v]) => barraMeta(c, r.porCategoria[c] || 0, v)),
     el("p", { style: { margin: "14px 0 0" } }, el("a", { class: "fp-link", href: "planejar.html", text: "Editar metas" })));
 }
@@ -291,7 +291,7 @@ function boasVindas() {
   return el("article", { class: "fp-card fp-boas" },
     el("img", { src: AVATAR, alt: "" }),
     el("h2", { text: "Seu Finanças começa com uma frase" }),
-    el("p", { text: "Diga ao Oráculo, lá embaixo, quanto você tem em caixa agora. Depois é só ir falando o que entra e o que sai: ele anota, separa por categoria e faz as contas do mês." }),
+    el("p", { text: "Diga ao Oráculo, lá embaixo, quanto você tem em caixa agora. Depois é só ir falando seus ganhos e despesas: ele anota, separa por categoria e faz as contas do mês." }),
     el("div", { class: "fp-sugs", style: { justifyContent: "center" } },
       exemplo("tenho 800 em caixa"), exemplo("recebi 500"), exemplo("uber 9,80"), exemplo("mandei 100 pra Binance")));
 }
