@@ -50,7 +50,7 @@ function render() {
         dentroDoAtlas ? el("p", { style: { margin: "16px 0 0" } }, el("a", { class: "fp-link", href: LINK_CARTEIRAS, text: "Ver carteiras no Atlas →" })) : null),
       el("article", { class: "fp-card" },
         el("h2", { text: "Histórico" }),
-        el("p", { class: "fp-sub", text: "Toque para corrigir ou apagar." }),
+        el("p", { class: "fp-sub", text: "Lápis corrige, X apaga." }),
         historico.length
           ? el("div", { class: "fp-lista" }, historico.map((l) => linhaLancamento(l, diaCurto(l.data, hoje))))
           : el("p", { class: "fp-vazio", text: "Sem movimentações de investimento." }))));

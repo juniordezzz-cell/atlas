@@ -20,7 +20,7 @@ import { paraCentavos } from "./dinheiro.js";
 import { dataValida, montar, todayKey } from "./datas.js";
 import { normalizar, categoriaDe, todasCategorias, MERCADINHO } from "./categorias.js";
 
-const RE_DATA = /(^|\s)(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4})(?=\s)/g;
+const RE_DATA = /(^|[\s;])(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4})(?=[\s;])/g;
 const RE_VALOR = /^([+-])?\s*(?:r\$\s*)?([+-])?\s*(\d[\d.,]*)$/i;
 /* tipo do banco, como campo inteiro (várias linhas) */
 const RE_TIPO_CAMPO = /^(pix( recebido| enviado| devolvido)?|d[eé]bito|cr[eé]dito|compra( no (d[eé]bito|cr[eé]dito))?|transfer[eê]ncia( enviada| recebida)?|ted|doc|boleto|pagamento|tarifa)$/i;
@@ -64,8 +64,9 @@ function foraDeParenteses(texto, pos) {
 /* Um bloco depois da data → { nome, tipoBanco, categoria, valorTexto } */
 function campos(bloco) {
   let partes, valorTexto;
-  if (/[\t\n]/.test(bloco)) {
-    partes = bloco.split(/[\t\n]+/).map((x) => x.trim()).filter(Boolean);
+  if (/[\t\n;]/.test(bloco)) {
+    // linhas, colunas de planilha (tab) ou CSV com ponto e vírgula
+    partes = bloco.split(/[\t\n;]+/).map((x) => x.trim()).filter(Boolean);
     valorTexto = partes.pop() || "";
     // "R$" numa coluna e o número na outra
     if (/^r\$$/i.test(partes[partes.length - 1] || "")) partes.pop();

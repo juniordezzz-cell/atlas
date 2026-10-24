@@ -52,6 +52,11 @@ test("separado por tabulação (copiado de planilha)", () => {
   assert.deepEqual(r.itens.map((i) => [i.tipo, i.centavos]), [["saida", 1196], ["entrada", 25000]]);
 });
 
+test("CSV com ponto e vírgula (arquivo exportado)", () => {
+  const r = lerExtrato("Data;Nome;Tipo;Categoria;Valor\n2026-10-12;UBER DO BRASIL;Pix enviado;Transporte;-11,96\n2026-10-16;JONES;Pix recebido;Entrada - Jones;250,00\n", { hoje: HOJE });
+  assert.deepEqual(r.itens.map((i) => [i.tipo, i.centavos, i.categoria]), [["saida", 1196, "Transporte"], ["entrada", 25000, "Recebimento"]]);
+});
+
 test("data no formato brasileiro", () => {
   const r = lerExtrato("12/10/2026\nUBER DO BRASIL\nPix enviado\nTransporte\n-11.96", { hoje: HOJE });
   assert.equal(r.itens[0].data, "2026-10-12");

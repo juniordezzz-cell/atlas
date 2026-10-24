@@ -9,7 +9,7 @@ import { lerEstado } from "../core/store.js";
 import { resumoMes, mesesComDados, ordenar } from "../core/livro.js";
 import { todayKey, nomeMes, somarMeses, diaCurto } from "../core/datas.js";
 import { normalizar } from "../core/categorias.js";
-import { el, R, linhaLancamento, abrirEditor, ligarOraculoGlobal, NOME_TIPO } from "../ui/comum.js";
+import { el, R, linhaLancamento, abrirEditor, ligarOraculoGlobal, NOME_TIPO, botaoImportar } from "../ui/comum.js";
 
 const raiz = document.getElementById("lancamentos");
 ligarOraculoGlobal();
@@ -70,6 +70,7 @@ function render() {
       el("button", { type: "button", "aria-label": "Próximo mês", text: "›", disabled: mes >= atual(), on: { click: () => ir(1) } })),
     el("div", { class: "fp-filtros" },
       el("button", { type: "button", class: "fp-btn", text: "Exportar CSV", disabled: !lista.length, on: { click: () => csv(lista) } }),
+      botaoImportar(),
       el("button", { type: "button", class: "fp-btn fp-btn--primario", text: "+ Manual", on: { click: () => abrirEditor(null) } })));
 
   const resumo = el("div", { class: "fp-card fp-resumo-linha" },

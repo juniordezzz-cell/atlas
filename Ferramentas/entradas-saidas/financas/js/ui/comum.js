@@ -14,7 +14,8 @@ import { lerEstado, salvarEstado, adicionar, atualizar, remover } from "../core/
 import { criarConversa } from "../core/conversa.js";
 import { paraCentavos, formatarCentavos } from "../core/dinheiro.js";
 import { todayKey } from "../core/datas.js";
-import { todasCategorias, CATEGORIAS_ENTRADA, MERCADINHO } from "../core/categorias.js";
+import { todasCategorias, CATEGORIAS_ENTRADA, MERCADINHO, normalizar } from "../core/categorias.js";
+import { lerExtrato, pareceExtrato } from "../core/extrato.js";
 
 export const R = (c, o) => formatarCentavos(c, o);
 
@@ -114,10 +115,34 @@ export const NOME_TIPO = { entrada: "Ganho", saida: "Despesa", investimento: "In
 export function linhaLancamento(l, rotuloDia) {
   const sub = [rotuloDia, l.tipo === "saida" ? l.categoria : l.tipo === "saldo" ? "Acerto de caixa" : l.tipo === "transferencia" ? (l.sentido === "saida" ? "Para outra conta sua" : "De outra conta sua") : l.tipo === "entrada" ? l.categoria : `${NOME_TIPO[l.tipo]} · ${l.destino}`]
     .filter(Boolean).join(" · ");
-  return el("button", { type: "button", class: "fp-linha", on: { click: () => abrirEditor(l) } },
-    el("span", { class: `fp-linha-ic ${classeTipo(l.tipo)}`, "aria-hidden": "true", text: icone(l) }),
-    el("span", { class: "fp-linha-txt" }, el("b", { text: l.descricao }), el("small", { text: sub })),
-    el("span", { class: `fp-linha-v ${classeTipo(l.tipo)}`, text: valorComSinal(l) }));
+  // a linha inteira abre a correção; o lápis faz o mesmo e o X apaga
+  return el("div", { class: "fp-linha" },
+    el("button", { type: "button", class: "fp-linha-corpo", "aria-label": `Corrigir ${l.descricao}`, on: { click: () => abrirEditor(l) } },
+      el("span", { class: `fp-linha-ic ${classeTipo(l.tipo)}`, "aria-hidden": "true", text: icone(l) }),
+      el("span", { class: "fp-linha-txt" }, el("b", { text: l.descricao }), el("small", { text: sub })),
+      el("span", { class: `fp-linha-v ${classeTipo(l.tipo)}`, text: valorComSinal(l) })),
+    el("span", { class: "fp-linha-acoes" },
+      el("button", { type: "button", class: "fp-acao", title: "Editar", "aria-label": `Editar ${l.descricao}`, on: { click: () => abrirEditor(l) } }, iconeLapis()),
+      el("button", { type: "button", class: "fp-acao fp-acao--apagar", title: "Apagar", "aria-label": `Apagar ${l.descricao}`, on: { click: () => apagarLancamento(l) } }, iconeX())));
+}
+
+function iconeLapis() {
+  return el("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", "aria-hidden": "true" },
+    el("path", { d: "M4 20h4L19 9l-4-4L4 16v4z", stroke: "currentColor", "stroke-width": "1.8", "stroke-linejoin": "round" }),
+    el("path", { d: "M13.5 6.5l4 4", stroke: "currentColor", "stroke-width": "1.8" }));
+}
+function iconeX() {
+  return el("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", "aria-hidden": "true" },
+    el("path", { d: "M6 6l12 12M18 6L6 18", stroke: "currentColor", "stroke-width": "2", "stroke-linecap": "round" }));
+}
+
+/* Apaga com confirmação; true se apagou. */
+export function apagarLancamento(l) {
+  if (!confirm(`Apagar "${l.descricao}" (${R(l.centavos)})?`)) return false;
+  salvarEstado(remover(lerEstado(), l.id));
+  avisarMudanca();
+  toast("Lançamento apagado.");
+  return true;
 }
 
 /* ---------------- toast ---------------- */
@@ -252,11 +277,7 @@ export function abrirEditor(lanc, { tipo = "saida" } = {}) {
   mostrarCampos();
 
   function apagar() {
-    if (!confirm(`Apagar "${l.descricao}" (${R(l.centavos)})?`)) return;
-    salvarEstado(remover(lerEstado(), l.id));
-    avisarMudanca();
-    toast("Lançamento apagado.");
-    fechar();
+    if (apagarLancamento(l)) fechar();
   }
 
   form.addEventListener("submit", (e) => {
@@ -294,4 +315,99 @@ export function abrirEditor(lanc, { tipo = "saida" } = {}) {
   dlg.addEventListener("close", () => dlg.remove());
   dlg.showModal();
   (novo ? form.elements.valor : form.elements.descricao).focus();
+}
+
+/* ---------------- importar extrato ---------------- */
+
+/* Cola o texto ou escolhe o arquivo (.txt/.csv); mostra o resumo antes
+   e só lança quando o dono toca em Importar. Quem lança é a mesma
+   conversa do Oráculo: não repete o que já está lançado, aprende os
+   nomes e o "Desfazer" do Oráculo desfaz a importação inteira. */
+export function abrirImportar() {
+  const area = el("textarea", {
+    class: "fp-import-texto", rows: "9", spellcheck: "false",
+    placeholder: "Cole aqui o extrato do banco. Ex.:\n2026-10-12\nUBER DO BRASIL\nPix enviado\nTransporte\n-11.96"
+  });
+  const arquivo = el("input", { type: "file", accept: ".txt,.csv,text/plain,text/csv", hidden: true });
+  const previa = el("div", { class: "fp-import-previa", "aria-live": "polite" });
+  const botao = el("button", { type: "submit", class: "fp-btn fp-btn--primario", text: "Importar", disabled: true });
+  const dlg = el("dialog", { class: "fp-dialogo fp-dialogo--largo" });
+  const fechar = () => { if (dlg.open) dlg.close(); dlg.remove(); };
+
+  function atualizar() {
+    const texto = area.value;
+    botao.disabled = true;
+    if (!texto.trim()) { previa.replaceChildren(); return; }
+    if (!pareceExtrato(texto)) {
+      previa.replaceChildren(el("p", { class: "fp-form-erro", text: "Não reconheci como extrato. Cada lançamento precisa da data (2026-10-12 ou 12/10/2026) e terminar no valor (-11.96)." }));
+      return;
+    }
+    const estado = lerEstado();
+    const r = lerExtrato(texto, { aprendizado: estado.aprendizado });
+    const chave = (l) => `${l.data}|${l.tipo}|${l.centavos}|${normalizar(l.descricao)}`;
+    const ja = {};
+    estado.lancamentos.forEach((l) => { ja[chave(l)] = (ja[chave(l)] || 0) + 1; });
+    const novos = r.itens.filter((i) => { const k = chave(i); if (ja[k]) { ja[k]--; return false; } return true; });
+    const soma = (t) => novos.filter((i) => i.tipo === t).reduce((a, i) => a + i.centavos, 0);
+    const qtd = (t) => novos.filter((i) => i.tipo === t).length;
+    const linhas = [
+      el("p", {}, el("b", { text: `${novos.length} ${novos.length === 1 ? "lançamento novo" : "lançamentos novos"}` }),
+        r.itens.length > novos.length ? ` · ${r.itens.length - novos.length} já estavam lançados` : ""),
+      qtd("entrada") ? el("p", { class: "fp-pos", text: `Ganhos: ${R(soma("entrada"))} (${qtd("entrada")})` }) : null,
+      qtd("saida") ? el("p", { class: "fp-neg", text: `Despesas: ${R(soma("saida"))} (${qtd("saida")})` }) : null,
+      qtd("transferencia") ? el("p", { text: `Transferências entre contas suas: ${R(soma("transferencia"))} (${qtd("transferencia")})` }) : null,
+      novos.some((i) => i.categoria === "A definir") ? el("p", { class: "fp-neutro", text: `${novos.filter((i) => i.categoria === "A definir").length} sem categoria: entram como "A definir".` }) : null,
+      r.erros.length ? el("p", { class: "fp-form-erro", text: `${r.erros.length} não ${r.erros.length === 1 ? "vai" : "vão"} entrar: ${r.erros.slice(0, 2).join(" ")}` }) : null
+    ];
+    previa.replaceChildren(...linhas.filter(Boolean));
+    botao.disabled = novos.length === 0;
+  }
+
+  area.addEventListener("input", atualizar);
+  arquivo.addEventListener("change", async () => {
+    const f = arquivo.files[0];
+    if (!f) return;
+    if (f.size > 2_000_000) { toast("Arquivo grande demais (máx. 2 MB)."); return; }
+    area.value = await f.text();
+    atualizar();
+  });
+
+  const form = el("form", { class: "fp-form", on: {
+    submit: (e) => {
+      e.preventDefault();
+      const r = responder(area.value);
+      previa.replaceChildren(el("p", { class: "fp-import-resultado", text: r.texto }));
+      area.hidden = true;
+      form.querySelector("[data-acoes-import]").replaceChildren(
+        el("span"),
+        dentroDeLancamentos() ? null : el("a", { class: "fp-btn", href: "lancamentos.html", text: "Ver lançamentos" }),
+        el("button", { type: "button", class: "fp-btn fp-btn--primario", text: "Fechar", on: { click: fechar } }));
+    }
+  } },
+  el("h3", { text: "Importar extrato" }),
+  el("p", { class: "fp-sub", style: { margin: 0 }, text: "Cole o extrato do banco (data, nome, tipo, categoria e valor) ou escolha o arquivo. Nada é lançado antes de você tocar em Importar." }),
+  area,
+  el("div", { class: "fp-filtros" },
+    el("button", { type: "button", class: "fp-btn", text: "Escolher arquivo (.txt ou .csv)", on: { click: () => arquivo.click() } }),
+    arquivo),
+  previa,
+  el("div", { class: "fp-form-acoes", "data-acoes-import": "" },
+    el("span"),
+    el("button", { type: "button", class: "fp-btn", text: "Cancelar", on: { click: fechar } }),
+    botao));
+
+  dlg.appendChild(form);
+  document.body.appendChild(dlg);
+  dlg.addEventListener("close", () => dlg.remove());
+  dlg.showModal();
+  area.focus();
+}
+
+function dentroDeLancamentos() {
+  return document.body.dataset.page === "lancamentos";
+}
+
+/* Botão "Importar extrato" pronto para qualquer tela. */
+export function botaoImportar(classe = "fp-btn") {
+  return el("button", { type: "button", class: classe, on: { click: abrirImportar } }, "⇩ Importar extrato");
 }
