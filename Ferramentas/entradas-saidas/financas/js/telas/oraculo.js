@@ -8,7 +8,7 @@
 import { el, montarChat, ligarOraculoGlobal, botaoImportar } from "../ui/comum.js";
 
 const raiz = document.getElementById("oraculo");
-const campo = raiz.querySelector("[data-chat-form] input");
+const campo = raiz.querySelector("[data-chat-form] textarea, [data-chat-form] input");
 const chat = montarChat(raiz, { aoResponder: () => raiz.classList.add("tem-conversa") });
 ligarOraculoGlobal();
 

@@ -288,7 +288,7 @@ function ultimos(lancs) {
 function boasVindas() {
   const exemplo = (t) => el("button", {
     type: "button", class: "fp-sug", text: t,
-    on: { click: () => { const i = barra.querySelector("input"); i.value = t; i.focus(); } }
+    on: { click: () => { const i = barra.querySelector("textarea, input"); i.value = t; i.focus(); } }
   });
   return el("article", { class: "fp-card fp-boas" },
     el("img", { src: AVATAR, alt: "" }),
