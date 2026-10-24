@@ -25,6 +25,7 @@ function barra(gasto, meta) {
 function salvar(muda) {
   const s = lerEstado();
   muda(s.metas);
+  s.metasEm = Date.now(); // a meta editada por último vence na sincronia
   salvarEstado(s);
   avisarMudanca();
 }

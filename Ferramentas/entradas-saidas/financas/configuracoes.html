@@ -33,19 +33,21 @@
                 <button type="button" data-theme-choice="light">Claro</button>
               </div>
               <div class="fx-divider"></div>
-              <div class="fx-switch-row">
-                <div><strong>Animação dos números</strong><p>Efeito de contagem nos valores em R$</p></div>
-                <label class="fx-switch"><input id="animationsToggle" type="checkbox"><span></span></label>
-              </div>
-              <div class="fx-switch-row">
-                <div><strong>Tabelas compactas</strong><p>Reduz o espaçamento das listas e tabelas</p></div>
-                <label class="fx-switch"><input id="compactTablesToggle" type="checkbox"><span></span></label>
+              <!-- 24/10/2026: as chaves "Animação dos números" e "Tabelas
+                   compactas" saíram (as telas novas não têm contagem nem
+                   tabela). No lugar: sincronia e atualizar o app. -->
+              <h2 class="fx-section-title">Celular e computador</h2>
+              <p class="fx-note" id="nuvemStatus">Verificando a sincronização…</p>
+              <h2 class="fx-section-title" style="margin-top:16px">Versão do app</h2>
+              <p class="fx-note">Se o celular continuar mostrando telas antigas, toque aqui. Seus lançamentos não são apagados.</p>
+              <div class="fx-config-actions">
+                <button id="forcarAtualizacao" class="fx-btn" type="button"><span aria-hidden="true">↻</span> Atualizar o app agora</button>
               </div>
             </article>
 
             <article class="card">
               <h2 class="fx-section-title">Backup</h2>
-              <p class="fx-note">Seus dados ficam só neste navegador. Exporte um backup para guardar em outro lugar, ou restaure a partir de um arquivo salvo antes.</p>
+              <p class="fx-note">Com login, seus lançamentos ficam na sua conta e aparecem no celular e no computador. O backup é uma cópia extra em arquivo: exporte para guardar, ou restaure a partir de um arquivo salvo antes.</p>
               <div class="fx-config-actions">
                 <button id="exportBackup" class="fx-btn fx-btn--primary" type="button"><span aria-hidden="true">↓</span> Exportar dados</button>
                 <label class="fx-btn" for="importBackup"><span aria-hidden="true">↑</span> Importar backup</label>

@@ -17,7 +17,18 @@ import { todayKey } from "../core/datas.js";
 import { todasCategorias, CATEGORIAS_ENTRADA, MERCADINHO, normalizar } from "../core/categorias.js";
 import { lerExtrato, pareceExtrato, chaveRepetido, chaveNome } from "../core/extrato.js";
 
+import "./nuvem.js";
+
 export const R = (c, o) => formatarCentavos(c, o);
+
+// chegou coisa do outro aparelho: avisa (as telas se redesenham sozinhas)
+window.addEventListener("financas:mudou", (e) => {
+  const d = e.detail || {};
+  if (d.remoto && d.depois !== d.antes) {
+    const n = d.depois - d.antes;
+    toast(n > 0 ? `${n} ${n === 1 ? "lançamento chegou" : "lançamentos chegaram"} do outro aparelho.` : "Atualizado com o outro aparelho.");
+  }
+});
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const SVG_TAGS = new Set(["svg", "g", "rect", "circle", "path", "line", "text", "defs", "linearGradient", "stop", "title", "polyline"]);
@@ -399,10 +410,11 @@ export function abrirImportar() {
       const r = responder(area.value);
       previa.replaceChildren(el("p", { class: "fp-import-resultado", text: r.texto }));
       area.hidden = true;
-      form.querySelector("[data-acoes-import]").replaceChildren(
+      form.querySelector("[data-acoes-import]").replaceChildren(...[
         el("span"),
         dentroDeLancamentos() ? null : el("a", { class: "fp-btn", href: "lancamentos.html", text: "Ver lançamentos" }),
-        el("button", { type: "button", class: "fp-btn fp-btn--primario", text: "Fechar", on: { click: fechar } }));
+        el("button", { type: "button", class: "fp-btn fp-btn--primario", text: "Fechar", on: { click: fechar } })
+      ].filter(Boolean));
     }
   } },
   el("h3", { text: "Importar extrato" }),
