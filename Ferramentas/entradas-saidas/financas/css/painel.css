@@ -120,12 +120,20 @@ html.fp-com-fundo .fx-bottombar { background: rgba(6, 11, 20, 0.92); -webkit-bac
 .fp-meta-topo b { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .fp-lista { display: flex; flex-direction: column; }
-.fp-linha {
-  display: flex; align-items: center; gap: 12px; padding: 10px 4px; border: 0; border-bottom: 1px solid var(--fp-borda);
-  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%; border-radius: 8px;
-}
+.fp-linha { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--fp-borda); }
 .fp-linha:last-child { border-bottom: 0; }
-.fp-linha:hover { background: rgba(255, 255, 255, .03); }
+.fp-linha-corpo {
+  display: flex; align-items: center; gap: 12px; padding: 10px 4px; border: 0; flex: 1; min-width: 0;
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 8px;
+}
+.fp-linha-corpo:hover { background: rgba(255, 255, 255, .03); }
+.fp-linha-acoes { display: flex; gap: 4px; flex: none; }
+.fp-acao {
+  width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--fp-borda); background: none;
+  color: var(--texto-suave); display: grid; place-items: center; cursor: pointer;
+}
+.fp-acao:hover { color: var(--texto); border-color: color-mix(in srgb, var(--atlas-accent) 40%, transparent); }
+.fp-acao--apagar:hover { color: var(--vermelho); border-color: color-mix(in srgb, var(--vermelho) 45%, transparent); }
 .fp-linha-ic { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex: none; background: rgba(255, 255, 255, .05); font-size: 1rem; }
 .fp-linha-txt { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .fp-linha-txt b { font-weight: 500; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -229,6 +237,15 @@ html.fp-com-fundo .fx-bottombar { background: rgba(6, 11, 20, 0.92); -webkit-bac
 .fp-form-acoes { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
 .fp-form-acoes > span { flex: 1; }
 
+.fp-dialogo--largo { width: min(640px, calc(100vw - 32px)); }
+.fp-import-texto {
+  width: 100%; min-height: 180px; background: var(--fundo); border: 1px solid var(--fp-borda); border-radius: 12px;
+  padding: 10px 12px; color: var(--texto); font-family: var(--font-mono); font-size: .82rem; resize: vertical;
+}
+.fp-import-texto[hidden] { display: none; }
+.fp-import-previa p { margin: 0 0 4px; font-size: .9rem; }
+.fp-import-resultado { white-space: pre-line; line-height: 1.55; }
+
 .fp-toast {
   position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
   background: var(--fp-vidro-forte); border: 1px solid var(--fp-borda); border-radius: 999px; padding: 10px 18px;
@@ -248,7 +265,16 @@ html.fp-com-fundo .fx-bottombar { background: rgba(6, 11, 20, 0.92); -webkit-bac
   .fx-content { padding: 16px; }
   .fp-pagina { padding-bottom: 150px; }
   .fp-barra-oraculo, .fp-oraculo .fp-barra-form { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
-  .fp-toast { bottom: 150px; }
+  .fp-dialogo--largo { width: min(640px, calc(100vw - 32px)); }
+.fp-import-texto {
+  width: 100%; min-height: 180px; background: var(--fundo); border: 1px solid var(--fp-borda); border-radius: 12px;
+  padding: 10px 12px; color: var(--texto); font-family: var(--font-mono); font-size: .82rem; resize: vertical;
+}
+.fp-import-texto[hidden] { display: none; }
+.fp-import-previa p { margin: 0 0 4px; font-size: .9rem; }
+.fp-import-resultado { white-space: pre-line; line-height: 1.55; }
+
+.fp-toast { bottom: 150px; }
   .fp-tres { gap: 12px; }
   .fp-big { padding: 18px; }
   .fp-big-ic { display: none; }
@@ -260,6 +286,10 @@ html.fp-com-fundo .fx-bottombar { background: rgba(6, 11, 20, 0.92); -webkit-bac
   .fp-palco-av img { width: 132px; height: 132px; }
 }
 @media (max-width: 420px) {
+  .fp-linha-ic { display: none; }
+  .fp-linha-corpo { gap: 8px; }
+  .fp-acao { width: 30px; height: 30px; }
+  .fp-linha-v { font-size: .84rem; }
   .fp-anel { flex-direction: column; align-items: stretch; }
   .fp-anel svg { align-self: center; }
   .fp-enviar { padding: 10px 14px; }

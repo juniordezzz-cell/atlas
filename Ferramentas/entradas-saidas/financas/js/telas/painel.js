@@ -10,7 +10,7 @@ import { lerEstado } from "../core/store.js";
 import { caixaAte, resumoMes, serieDiaria, investidoPorDestino, mesesComDados, diasNoMes, ordenar } from "../core/livro.js";
 import { todayKey, nomeMes, somarMeses, diaCurto } from "../core/datas.js";
 import {
-  el, R, montarChat, ligarOraculoGlobal, linhaLancamento, dentroDoAtlas, LINK_CARTEIRAS, AVATAR
+  el, R, montarChat, ligarOraculoGlobal, linhaLancamento, dentroDoAtlas, LINK_CARTEIRAS, AVATAR, botaoImportar
 } from "../ui/comum.js";
 
 const raiz = document.getElementById("painel");
@@ -279,22 +279,24 @@ function ultimos(lancs) {
   const lista = [...lancs].sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b.criadoEm - a.criadoEm)).slice(0, 7);
   return el("article", { class: "fp-card" },
     el("h2", { text: "Últimos lançamentos" }),
-    el("p", { class: "fp-sub", text: "Toque num lançamento para corrigir ou apagar." }),
+    el("p", { class: "fp-sub", text: "Lápis corrige, X apaga." }),
     el("div", { class: "fp-lista" }, lista.map((l) => linhaLancamento(l, diaCurto(l.data, hoje())))),
-    el("p", { style: { margin: "12px 0 0" } }, el("a", { class: "fp-link", href: "lancamentos.html", text: "Ver todos" })));
+    el("div", { class: "fp-filtros", style: { marginTop: "12px" } },
+      el("a", { class: "fp-link", href: "lancamentos.html", text: "Ver todos" }), botaoImportar("fp-link")));
 }
 
 function boasVindas() {
   const exemplo = (t) => el("button", {
     type: "button", class: "fp-sug", text: t,
-    on: { click: () => { const i = barra.querySelector("input"); i.value = t; i.focus(); } }
+    on: { click: () => { const i = barra.querySelector("textarea, input"); i.value = t; i.focus(); } }
   });
   return el("article", { class: "fp-card fp-boas" },
     el("img", { src: AVATAR, alt: "" }),
     el("h2", { text: "Seu Finanças começa com uma frase" }),
     el("p", { text: "Diga ao Oráculo, lá embaixo, quanto você tem em caixa agora. Depois é só ir falando seus ganhos e despesas: ele anota, separa por categoria e faz as contas do mês." }),
     el("div", { class: "fp-sugs", style: { justifyContent: "center" } },
-      exemplo("tenho 800 em caixa"), exemplo("recebi 500"), exemplo("uber 9,80"), exemplo("mandei 100 pra Binance")));
+      exemplo("tenho 800 em caixa"), exemplo("recebi 500"), exemplo("uber 9,80"), exemplo("mandei 100 pra Binance")),
+    el("p", { style: { margin: "18px 0 0" } }, botaoImportar()));
 }
 
 /* ---------------- montagem ---------------- */
