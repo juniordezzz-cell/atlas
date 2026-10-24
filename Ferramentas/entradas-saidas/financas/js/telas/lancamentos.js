@@ -6,7 +6,7 @@
    linha), lançamento manual e exportar CSV do que está na tela.
    ============================================================ */
 import { lerEstado } from "../core/store.js";
-import { resumoMes, mesesComDados, ordenar } from "../core/livro.js";
+import { resumoMes, mesesComDados, ordenar, ehEntrada, ehSaida } from "../core/livro.js";
 import { todayKey, nomeMes, somarMeses, diaCurto } from "../core/datas.js";
 import { normalizar } from "../core/categorias.js";
 import { el, R, linhaLancamento, abrirEditor, ligarOraculoGlobal, NOME_TIPO, botaoImportar } from "../ui/comum.js";
@@ -76,8 +76,8 @@ function render() {
   const resumo = el("div", { class: "fp-card fp-resumo-linha" },
     el("span", {}, "Ganhos ", el("b", { class: "fp-pos", text: R(r.entrou) })),
     el("span", {}, "Despesas ", el("b", { class: "fp-neg", text: R(r.saiu) })),
-    el("span", {}, "Investido ", el("b", { class: "fp-inv", text: R(r.investido - r.resgatado) })),
-    r.transferido ? el("span", {}, "Para outras contas ", el("b", { text: R(r.transferido) })) : null,
+    r.investido ? el("span", { class: "fp-neutro" }, "dos quais investido ", el("b", { class: "fp-inv", text: R(r.investido) })) : null,
+    r.transfSaiu ? el("span", { class: "fp-neutro" }, "para outras contas ", el("b", { text: R(r.transfSaiu) })) : null,
     el("span", {}, "Saldo do mês ", el("b", { class: r.entrou - r.saiu < 0 ? "fp-neg" : "", text: R(r.entrou - r.saiu) })));
 
   const campoBusca = el("input", {
@@ -103,8 +103,8 @@ function render() {
       dias[dias.length - 1].itens.push(l);
     }
     card.replaceChildren(...dias.map((d) => {
-      const ent = d.itens.filter((l) => l.tipo === "entrada").reduce((a, l) => a + l.centavos, 0);
-      const sai = d.itens.filter((l) => l.tipo === "saida").reduce((a, l) => a + l.centavos, 0);
+      const ent = d.itens.filter(ehEntrada).reduce((a, l) => a + l.centavos, 0);
+      const sai = d.itens.filter(ehSaida).reduce((a, l) => a + l.centavos, 0);
       const tot = [ent ? `+${R(ent)}` : null, sai ? `−${R(sai)}` : null].filter(Boolean).join(" · ");
       return el("section", { class: "fp-dia" },
         el("div", { class: "fp-dia-topo" }, el("span", { text: diaCurto(d.data, hoje) }), el("span", { text: tot })),

@@ -300,3 +300,4 @@ body[data-page="oraculo"] [data-atlas-ui="oraculo"] { display: none !important; 
 @media (prefers-reduced-motion: reduce) {
   .fp-avatar, .fp-palco-av img, .fp-palco-av::before, .fp-palco-av::after { animation: none; }
 }
+.fp-conta { margin-top: 4px !important; color: var(--texto-suave) !important; font-variant-numeric: tabular-nums; }

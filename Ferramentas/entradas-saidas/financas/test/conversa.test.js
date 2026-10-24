@@ -92,12 +92,13 @@ test("caixa negativo avisa", () => {
   assert.match(r.texto, /-R\$\s100,00/);
 });
 
-test("investimento não conta como gasto", () => {
+test("investimento entra nas despesas (a conta do caixa fecha)", () => {
   const { c, estado } = nova();
   c.responder("tenho 500 em caixa");
   c.responder("mandei 100 pra binance");
   const r = c.responder("quanto gastei esse mês?");
-  assert.match(r.texto, /R\$\s0,00/);
+  assert.match(r.texto, /R\$\s100,00/);
+  assert.match(r.texto, /Investimentos: R\$\s100,00/);
   assert.equal(caixaAte(estado().lancamentos), 40000);
   assert.match(c.responder("quanto investi?").texto, /Binance/);
 });

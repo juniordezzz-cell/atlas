@@ -56,6 +56,16 @@ function cabecalho(lancs) {
 
 /* ---------------- três números ---------------- */
 
+/* A conta à vista: início do mês + ganhos − despesas = caixa. Com um
+   acerto de caixa ("tenho X") no mês, o caixa parte dele: diz isso. */
+function contaDoCaixa(lancs, r, caixa) {
+  const anterior = somarMeses(mes, -1);
+  const inicio = caixaAte(lancs, `${anterior}-${String(diasNoMes(anterior)).padStart(2, "0")}`);
+  const acerto = ordenar(lancs).filter((l) => l.tipo === "saldo" && l.data.slice(0, 7) === mes).pop();
+  if (acerto) return `Parte do acerto de caixa de ${acerto.data.slice(8, 10)}/${acerto.data.slice(5, 7)} (${R(acerto.centavos)}), com o que entrou e saiu depois.`;
+  return `Começou o mês com ${R(inicio)} · + ganhos ${R(r.entrou)} − despesas ${R(r.saiu)} = ${R(caixa)}`;
+}
+
 function tres(lancs, estado) {
   const atual = hoje().slice(0, 7);
   const r = resumoMes(lancs, mes);
@@ -68,7 +78,8 @@ function tres(lancs, estado) {
     const meta = estado.metas.mensal;
     if (caixa < 0) notaCaixa = "O caixa está negativo";
     else if (meta) {
-      const resta = meta - r.saiu;
+      // a meta mede o consumo (investir não estoura a meta de gasto)
+      const resta = meta - r.consumo;
       notaCaixa = resta <= 0
         ? `Meta do mês estourada em ${R(-resta)}`
         : `Dentro da meta: até ${R(Math.floor(Math.min(resta, caixa) / dias))} por dia até o dia ${diasNoMes(mes)}`;
@@ -86,7 +97,8 @@ function tres(lancs, estado) {
           el("circle", { cx: "16.5", cy: "12.5", r: "1.6", fill: "#00F0FF" }))),
       el("p", { class: "fp-big-rotulo", text: mes === atual ? "Em caixa agora" : "Caixa no fim do mês" }),
       el("p", { class: `fp-big-valor${caixa < 0 ? " fp-neg" : ""}`, text: R(caixa) }),
-      el("p", { class: "fp-big-nota", text: notaCaixa })),
+      el("p", { class: "fp-big-nota", text: notaCaixa }),
+      el("p", { class: "fp-big-nota fp-conta", text: contaDoCaixa(lancs, r, caixa) })),
     el("article", { class: "fp-card fp-big fp-big--entrou" },
       el("div", { class: "fp-big-ic" }, icone("M12 16V8m0 0l-3.5 3.5M12 8l3.5 3.5", "#00E28A")),
       el("p", { class: "fp-big-rotulo", text: "Ganhos do mês" }),
@@ -105,8 +117,8 @@ function tres(lancs, estado) {
       el("p", {
         class: "fp-big-nota",
         text: `${pct != null ? `${pct}% dos ganhos · ` : ""}${r.quantos.saidas} ${r.quantos.saidas === 1 ? "despesa" : "despesas"}` +
-          (r.investido ? ` · investiu ${R(r.investido)} (fora daqui)` : "") +
-          (r.transferido > 0 ? ` · ${R(r.transferido)} foram para outras contas suas (fora daqui)` : "")
+          (r.investido ? ` · inclui ${R(r.investido)} investidos` : "") +
+          (r.transfSaiu ? ` · inclui ${R(r.transfSaiu)} para outras contas` : "")
       }),
       el("div", { class: "fp-barra" }, el("i", { style: { width: `${(r.saiu / base) * 100}%`, background: "var(--vermelho)" } }))));
 }
@@ -248,7 +260,7 @@ function investido(lancs) {
   const destinos = Object.entries(inv.destinos).filter(([, v]) => v !== 0).sort((a, b) => b[1] - a[1]);
   return el("article", { class: "fp-card" },
     el("h2", { text: "Investido" }),
-    el("p", { class: "fp-sub", text: "Dinheiro que saiu do caixa para investir. Não conta como despesa." }),
+    el("p", { class: "fp-sub", text: "O que foi do caixa para investir. Já está somado nas despesas do mês." }),
     el("p", { class: "fp-inv-valor" }, R(liquido), " ", el("small", { class: "fp-neutro", style: { fontSize: ".8rem", fontWeight: "500" }, text: "neste mês" })),
     el("p", { class: "fp-big-nota", text: `${R(inv.total)} no total` }),
     destinos.length ? el("div", { class: "fp-chips" }, destinos.map(([d, v]) => el("span", { class: "fp-chip", text: `${d} · ${R(v)}` }))) : el("div", { class: "fp-chips" }),
@@ -271,7 +283,7 @@ function metas(lancs, estado) {
   return el("article", { class: "fp-card" },
     el("h2", { text: "Metas de despesas" }),
     el("p", { class: "fp-sub", text: "Do Planejar. Não lançam nada no caixa." }),
-    m.mensal ? barraMeta("Despesas do mês", r.saiu, m.mensal) : null,
+    m.mensal ? barraMeta("Gastos do mês (sem investimentos)", r.consumo, m.mensal) : null,
     cats.slice(0, 5).map(([c, v]) => barraMeta(c, r.porCategoria[c] || 0, v)),
     el("p", { style: { margin: "14px 0 0" } }, el("a", { class: "fp-link", href: "planejar.html", text: "Editar metas" })));
 }
