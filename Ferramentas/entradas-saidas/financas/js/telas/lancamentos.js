@@ -20,7 +20,7 @@ if (!/^\d{4}-\d{2}$/.test(mes || "") || mes > atual()) mes = atual();
 let filtro = "tudo";
 let busca = "";
 
-const FILTROS = [["tudo", "Tudo"], ["entrada", "Ganhos"], ["saida", "Despesas"], ["investimento", "Investimentos"], ["saldo", "Acertos"]];
+const FILTROS = [["tudo", "Tudo"], ["entrada", "Ganhos"], ["saida", "Despesas"], ["investimento", "Investimentos"], ["transferencia", "Transferências"], ["saldo", "Acertos"]];
 
 function passa(l) {
   if (filtro === "investimento" && l.tipo !== "investimento" && l.tipo !== "resgate") return false;
@@ -40,7 +40,7 @@ function csv(lista) {
   const cel = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
   const sinal = { entrada: 1, saida: -1, investimento: -1, resgate: 1, saldo: 1 };
   const valor = (l) => {
-    const c = l.centavos * sinal[l.tipo];
+    const c = l.centavos * (l.tipo === "transferencia" ? (l.sentido === "saida" ? -1 : 1) : sinal[l.tipo]);
     const abs = Math.abs(c);
     return `${c < 0 ? "-" : ""}${Math.floor(abs / 100)},${String(abs % 100).padStart(2, "0")}`;
   };
@@ -76,6 +76,7 @@ function render() {
     el("span", {}, "Ganhos ", el("b", { class: "fp-pos", text: R(r.entrou) })),
     el("span", {}, "Despesas ", el("b", { class: "fp-neg", text: R(r.saiu) })),
     el("span", {}, "Investido ", el("b", { class: "fp-inv", text: R(r.investido - r.resgatado) })),
+    r.transferido ? el("span", {}, "Para outras contas ", el("b", { text: R(r.transferido) })) : null,
     el("span", {}, "Saldo do mês ", el("b", { class: r.entrou - r.saiu < 0 ? "fp-neg" : "", text: R(r.entrou - r.saiu) })));
 
   const campoBusca = el("input", {

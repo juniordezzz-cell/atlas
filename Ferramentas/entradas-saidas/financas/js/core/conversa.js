@@ -14,6 +14,7 @@
    flutuante do Atlas (AtlasOraculo.registerTool).
    ============================================================ */
 import { interpretar, temValor } from "./interpretador.js";
+import { lerExtrato, pareceExtrato, chaveNome } from "./extrato.js";
 import { adicionar, remover } from "./store.js";
 import { caixaAte, resumoMes, investidoPorDestino, ordenar } from "./livro.js";
 import { formatarCentavos } from "./dinheiro.js";
@@ -26,6 +27,10 @@ const GENERICAS = new Set(["pagamento", "conta", "contas", "boleto", "pix", "com
   "gasto", "coisa", "coisas", "negocio", "lancamento"]);
 
 const R = (c) => formatarCentavos(c);
+
+/* nomes que não ensinam nada sozinhos (empresa, sobrenome comum) */
+const NOMES_COMUNS = new Set(["google", "brasil", "pagamentos", "banco", "conta", "pix", "loja", "comercio",
+  "posto", "mercado", "supermercado", "silva", "santos", "souza", "oliveira", "pereira", "lima", "costa"]);
 
 function quando(data, hoje) {
   if (data === hoje) return "hoje";
@@ -42,6 +47,7 @@ function linha(l, hoje) {
   }
   if (l.tipo === "investimento") return `${R(l.centavos)} → ${l.destino} (investimento, não é despesa) · ${dia}`;
   if (l.tipo === "resgate") return `${R(l.centavos)} ← ${l.destino} (voltou para o caixa) · ${dia}`;
+  if (l.tipo === "transferencia") return `${l.sentido === "saida" ? "−" : "+"}${R(l.centavos)} ⇄ ${l.descricao} (entre contas suas, não é despesa) · ${dia}`;
   return `Caixa definido em ${R(l.centavos)} · ${dia}`;
 }
 
@@ -64,7 +70,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
     const lanc = {
       data: item.data, tipo: item.tipo, centavos: item.centavos,
       descricao: item.descricao, categoria: item.categoria || null,
-      ...(item.destino ? { destino: item.destino } : {})
+      ...(item.destino ? { destino: item.destino } : {}),
+      ...(item.sentido ? { sentido: item.sentido } : {})
     };
     adicionar(estado, lanc);
     return estado.lancamentos[estado.lancamentos.length - 1];
@@ -144,6 +151,63 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
     }
     pendentes.shift();
     return processar([item], estado);
+  }
+
+  /* Extrato colado: lança tudo de uma vez, sem repetir o que já está
+     lançado, e aprende o nome → categoria de cada despesa. */
+  function importar(texto, estado, prefixo = []) {
+    const hojeK = hoje();
+    const r = lerExtrato(texto, { hoje: hojeK, aprendizado: estado.aprendizado });
+    if (!r.itens.length) {
+      return { texto: [...prefixo, "Não consegui ler nenhum lançamento desse extrato.", ...r.erros.slice(0, 3)].join("\n"), sugestoes: [], mudou: false };
+    }
+    const chave = (l) => `${l.data}|${l.tipo}|${l.centavos}|${normalizar(l.descricao)}`;
+    const ja = {};
+    estado.lancamentos.forEach((l) => { ja[chave(l)] = (ja[chave(l)] || 0) + 1; });
+    const feitos = [];
+    let repetidos = 0;
+    for (const item of r.itens) {
+      const k = chave(item);
+      if (ja[k]) { ja[k]--; repetidos++; continue; }
+      feitos.push(lancar(estado, item));
+      if (item.tipo === "saida" && item.categoria && item.categoria !== "A definir") {
+        const nome = chaveNome(item.descricao);
+        const primeiro = nome.split(" ")[0];
+        if (nome && !estado.aprendizado[nome]) estado.aprendizado[nome] = item.categoria;
+        if (primeiro && primeiro.length >= 3 && !NOMES_COMUNS.has(primeiro) && !estado.aprendizado[primeiro]) estado.aprendizado[primeiro] = item.categoria;
+      }
+    }
+    salvar(estado);
+    ultimoLote = feitos.map((l) => l.id);
+
+    const total = (t) => feitos.filter((l) => l.tipo === t).reduce((a, l) => a + l.centavos, 0);
+    const qtd = (t) => feitos.filter((l) => l.tipo === t).length;
+    const datas = r.itens.map((i) => i.data).sort();
+    const linhas = [...prefixo];
+    if (feitos.length) {
+      linhas.push(`Importei ${feitos.length} ${feitos.length === 1 ? "lançamento" : "lançamentos"} do extrato (${quando(datas[0], hojeK)} a ${quando(datas[datas.length - 1], hojeK)}):`);
+      if (qtd("entrada")) linhas.push(`Ganhos: ${R(total("entrada"))} (${qtd("entrada")})`);
+      if (qtd("saida")) linhas.push(`Despesas: ${R(total("saida"))} (${qtd("saida")})`);
+      const tr = feitos.filter((l) => l.tipo === "transferencia");
+      if (tr.length) {
+        const liquido = tr.reduce((a, l) => a + (l.sentido === "saida" ? l.centavos : -l.centavos), 0);
+        linhas.push(`Transferências entre contas suas: ${R(Math.abs(liquido))} ${liquido >= 0 ? "saíram" : "entraram"} (${tr.length}, não contam como despesa)`);
+      }
+      const indefinidos = feitos.filter((l) => l.categoria === "A definir").length;
+      if (indefinidos) linhas.push(`${indefinidos} ${indefinidos === 1 ? "ficou" : "ficaram"} em "A definir": toque em cada um em Lançamentos para escolher a categoria.`);
+    } else {
+      linhas.push("Tudo desse extrato já estava lançado. Não repeti nada.");
+    }
+    if (feitos.length && repetidos) linhas.push(`${repetidos} já ${repetidos === 1 ? "estava lançado e foi ignorado" : "estavam lançados e foram ignorados"}.`);
+    if (r.erros.length) linhas.push(`Não lancei ${r.erros.length}: ${r.erros.slice(0, 3).join(" ")}`);
+    if (feitos.length) {
+      linhas.push(caixaTexto(estado));
+      const acerto = ultimoAcerto(estado.lancamentos);
+      if (acerto && feitos.some((l) => l.data < acerto.data)) {
+        linhas.push(`(O que é de antes do seu acerto de caixa de ${quando(acerto.data, hojeK)} (${R(acerto.centavos)}) conta nos meses, mas não muda o caixa de agora.)`);
+      }
+    }
+    return { texto: linhas.join("\n"), sugestoes: feitos.length ? ["Desfazer"] : [], mudou: feitos.length > 0 };
   }
 
   function desfazer(estado) {
@@ -227,7 +291,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
   };
 
   function responder(texto) {
-    const t = String(texto == null ? "" : texto).trim().slice(0, 500);
+    // extrato colado pode ser longo; frase normal raramente passa de 500
+    const t = String(texto == null ? "" : texto).trim().slice(0, 20000);
     if (!t) return AJUDA;
     const estado = ler();
     const n = normalizar(t).replace(/[!?.]/g, "").trim();
@@ -241,6 +306,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
       prefixo.push(`Não lancei "${pendentes[0].descricao}" (ficou sem resposta).`);
       pendentes = [];
     }
+
+    if (pareceExtrato(t)) return importar(t, estado, prefixo);
 
     if (!temValor(t)) {
       const r = perguntar(t, estado);

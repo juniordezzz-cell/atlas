@@ -99,6 +99,18 @@ test("série diária: um ponto por dia do mês com o caixa no fim do dia", () =>
   assert.equal(serieDiaria(l, "2026-02").length, 28);
 });
 
+test("transferência entre contas mexe no caixa mas não é despesa nem ganho", () => {
+  const l = [
+    L("2026-10-01", "saldo", 100000),
+    L("2026-10-12", "transferencia", 50000, { sentido: "saida" }),
+    L("2026-10-13", "transferencia", 20000, { sentido: "entrada" }),
+    L("2026-10-14", "transferencia", 999, { sentido: "?" })
+  ];
+  assert.equal(caixaAte(l), 100000 - 50000 + 20000);
+  const r = resumoMes(l, "2026-10");
+  assert.deepEqual([r.entrou, r.saiu, r.transferido], [0, 0, 30000]);
+});
+
 test("meses com dados, do mais novo ao mais velho", () => {
   assert.deepEqual(mesesComDados([L("2026-09-01", "entrada", 1), L("2026-10-03", "saida", 1), L("2026-09-09", "saida", 1)]), ["2026-10", "2026-09"]);
 });
