@@ -73,6 +73,12 @@ test("lançamento inválido de um backup é descartado na migração", () => {
   assert.deepEqual(s.lancamentos.map((l) => l.id), ["a"]);
 });
 
+test("nome aprendido longo não é cortado (senão nunca mais casa)", () => {
+  const chave = "@despesa:claude google brasil pagamentos pix automatico";
+  const s = migrarEstado({ versao: 2, lancamentos: [], aprendizado: { [chave]: "Assinaturas/IA" } }, HOJE);
+  assert.equal(s.aprendizado[chave], "Assinaturas/IA");
+});
+
 test("adicionar, atualizar e remover", () => {
   let s = estadoVazio();
   s = adicionar(s, { data: "2026-10-23", tipo: "saida", centavos: 980, descricao: "Uber", categoria: "Transporte" });

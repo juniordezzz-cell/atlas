@@ -78,6 +78,17 @@ test("data no futuro e valor estranho viram erro, sem derrubar o resto", () => {
   assert.equal(r.erros.length, 2);
 });
 
+test("correção do dono vale: Pix para o pai é despesa, mesmo o extrato dizendo outra conta", () => {
+  const aprendizado = { "@despesa:jeferson renato ferreira silveira": "Contas da casa" };
+  const { itens } = lerExtrato(TEXTO, { hoje: HOJE, aprendizado });
+  const pai = itens.find((i) => i.centavos === 50000 && i.data === "2026-10-12");
+  const junior = itens.find((i) => i.centavos === 21300);
+  assert.deepEqual([pai.tipo, pai.categoria, pai.sentido], ["saida", "Contas da casa", undefined]);
+  assert.deepEqual([junior.tipo, junior.sentido], ["transferencia", "saida"]);
+  assert.equal(soma(itens, (i) => i.tipo === "saida"), 96524 + 50000);
+  assert.equal(soma(itens, (i) => i.tipo === "transferencia"), 21300);
+});
+
 test("frase normal não é extrato", () => {
   assert.equal(pareceExtrato("gastei 9,80 no uber"), false);
   assert.equal(pareceExtrato("recebi 500 em 15/10"), false);

@@ -70,7 +70,9 @@ function migrarEstado(raw, hoje = todayKey()) {
       .filter(lancamentoValido).map(limparLancamento);
     if (raw.aprendizado && typeof raw.aprendizado === "object") {
       for (const [k, v] of Object.entries(raw.aprendizado)) {
-        if (typeof v === "string") base.aprendizado[String(k).slice(0, 40)] = v.slice(0, 60);
+        // chave até 120: nomes de extrato são longos e uma chave cortada
+        // nunca mais casa com o nome (até 24/10/2026 cortava em 40)
+        if (typeof v === "string" && String(k).length <= 120) base.aprendizado[String(k)] = v.slice(0, 60);
       }
     }
     const m = raw.metas || {};

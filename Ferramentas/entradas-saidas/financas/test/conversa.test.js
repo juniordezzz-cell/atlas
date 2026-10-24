@@ -151,6 +151,22 @@ test("extrato colado: importa tudo, não repete, aprende e desfaz", async () => 
   assert.equal(s.lancamentos.length, 29);
 });
 
+test("reimportar depois de corrigir o tipo não duplica", async () => {
+  const { readFileSync } = await import("node:fs");
+  const texto = readFileSync(new URL("./dados/extrato-2026-10.txt", import.meta.url), "utf8");
+  let s = estadoVazio();
+  const c = criarConversa({ ler: () => JSON.parse(JSON.stringify(s)), salvar: (x) => { s = x; }, hoje: () => "2026-10-24" });
+  c.responder(texto);
+  const pai = s.lancamentos.find((l) => l.centavos === 50000 && l.data === "2026-10-12");
+  // o dono troca no lápis: transferência → despesa
+  Object.assign(pai, { tipo: "saida", categoria: "Contas da casa" });
+  delete pai.sentido;
+  const r = c.responder(texto);
+  assert.equal(s.lancamentos.length, 29);
+  assert.match(r.texto, /já estava lançado/);
+  assert.equal(caixaAte(s.lancamentos), 27176);
+});
+
 test("erro de leitura não lança nada", () => {
   const { c, estado } = nova();
   const r = c.responder("recebi 500 em 30/12/2026");

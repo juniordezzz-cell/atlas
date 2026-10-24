@@ -14,7 +14,7 @@
    flutuante do Atlas (AtlasOraculo.registerTool).
    ============================================================ */
 import { interpretar, temValor } from "./interpretador.js";
-import { lerExtrato, pareceExtrato, chaveNome } from "./extrato.js";
+import { lerExtrato, pareceExtrato, chaveNome, chaveRepetido } from "./extrato.js";
 import { adicionar, remover } from "./store.js";
 import { caixaAte, resumoMes, investidoPorDestino, ordenar } from "./livro.js";
 import { formatarCentavos } from "./dinheiro.js";
@@ -161,7 +161,9 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
     if (!r.itens.length) {
       return { texto: [...prefixo, "Não consegui ler nenhum lançamento desse extrato.", ...r.erros.slice(0, 3)].join("\n"), sugestoes: [], mudou: false };
     }
-    const chave = (l) => `${l.data}|${l.tipo}|${l.centavos}|${normalizar(l.descricao)}`;
+    // sem o tipo e a categoria: um lançamento que o dono corrigiu
+    // (transferência → despesa) continua sendo "o mesmo" do extrato
+    const chave = (l) => chaveRepetido(l);
     const ja = {};
     estado.lancamentos.forEach((l) => { ja[chave(l)] = (ja[chave(l)] || 0) + 1; });
     const feitos = [];
