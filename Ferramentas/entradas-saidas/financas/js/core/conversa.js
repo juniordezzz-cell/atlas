@@ -71,7 +71,8 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
       data: item.data, tipo: item.tipo, centavos: item.centavos,
       descricao: item.descricao, categoria: item.categoria || null,
       ...(item.destino ? { destino: item.destino } : {}),
-      ...(item.sentido ? { sentido: item.sentido } : {})
+      ...(item.sentido ? { sentido: item.sentido } : {}),
+      ...(item.origem ? { origem: item.origem } : {})
     };
     adicionar(estado, lanc);
     return estado.lancamentos[estado.lancamentos.length - 1];
@@ -171,7 +172,9 @@ export function criarConversa({ ler, salvar, hoje = todayKey }) {
     for (const item of r.itens) {
       const k = chave(item);
       if (ja[k]) { ja[k]--; repetidos++; continue; }
-      feitos.push(lancar(estado, item));
+      // origem "extrato": se o mesmo extrato for importado no outro
+      // aparelho, a sincronia reconhece e não duplica
+      feitos.push(lancar(estado, { ...item, origem: "extrato" }));
       if (item.tipo === "saida" && item.categoria && item.categoria !== "A definir") {
         const nome = chaveNome(item.descricao);
         const primeiro = nome.split(" ")[0];

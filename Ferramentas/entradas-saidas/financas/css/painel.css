@@ -140,11 +140,11 @@ html.fp-com-fundo .fx-bottombar { background: rgba(6, 11, 20, 0.92); -webkit-bac
 .fp-linha-txt small { color: var(--texto-fraco); font-size: .74rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fp-linha-v { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; font-size: .9rem; }
 
-/* ---------- boas-vindas ---------- */
-.fp-boas { text-align: center; padding: 36px 20px; }
-.fp-boas img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; animation: fp-flutua 4s ease-in-out infinite; }
-.fp-boas h2 { font-size: 1.2rem; margin: 14px 0 6px; }
-.fp-boas p { color: var(--texto-suave); max-width: 520px; margin: 0 auto 16px; line-height: 1.55; }
+/* ---------- comece por aqui (Painel sem lançamentos) ---------- */
+.fp-comece { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  border-color: color-mix(in srgb, var(--atlas-accent) 30%, transparent); }
+.fp-comece-txt { flex: 1; min-width: 220px; }
+.fp-comece .fp-sugs { margin: 0; }
 @keyframes fp-flutua { 50% { transform: translateY(-8px); } }
 
 /* ---------- barra do Oráculo (Painel) ---------- */
@@ -153,7 +153,10 @@ html.fp-com-fundo .fx-bottombar { background: rgba(6, 11, 20, 0.92); -webkit-bac
   display: flex; flex-direction: column; gap: 8px;
 }
 /* o botão flutuante do Oráculo do Atlas fica no canto direito */
-.fp-barra-oraculo, .fp-oraculo .fp-barra-form { margin-right: 76px; }
+.fp-barra-oraculo { margin-right: 76px; }
+/* Na aba Oráculo a conversa já está na tela: o botão flutuante do Atlas
+   seria o terceiro personagem (pedido do dono, 24/10/2026). */
+body[data-page="oraculo"] [data-atlas-ui="oraculo"] { display: none !important; }
 .fp-barra-oraculo [data-chat-lista]:empty { display: none; }
 .fp-barra-oraculo .fp-msg { max-width: 640px; }
 .fp-barra-form {
@@ -295,5 +298,5 @@ html.fp-com-fundo .fx-bottombar { background: rgba(6, 11, 20, 0.92); -webkit-bac
   .fp-enviar { padding: 10px 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fp-avatar, .fp-boas img, .fp-palco-av img, .fp-palco-av::before, .fp-palco-av::after { animation: none; }
+  .fp-avatar, .fp-palco-av img, .fp-palco-av::before, .fp-palco-av::after { animation: none; }
 }

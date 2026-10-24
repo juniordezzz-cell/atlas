@@ -10,8 +10,9 @@ import { lerEstado } from "../core/store.js";
 import { caixaAte, resumoMes, serieDiaria, investidoPorDestino, mesesComDados, diasNoMes, ordenar } from "../core/livro.js";
 import { todayKey, nomeMes, somarMeses, diaCurto } from "../core/datas.js";
 import {
-  el, R, montarChat, ligarOraculoGlobal, linhaLancamento, dentroDoAtlas, LINK_CARTEIRAS, AVATAR, botaoImportar
+  el, R, montarChat, ligarOraculoGlobal, linhaLancamento, dentroDoAtlas, LINK_CARTEIRAS, botaoImportar
 } from "../ui/comum.js";
+import { situacaoNuvem } from "../ui/nuvem.js";
 
 const raiz = document.getElementById("painel");
 const conteudo = raiz.querySelector("[data-conteudo]");
@@ -280,23 +281,27 @@ function ultimos(lancs) {
   return el("article", { class: "fp-card" },
     el("h2", { text: "Últimos lançamentos" }),
     el("p", { class: "fp-sub", text: "Lápis corrige, X apaga." }),
-    el("div", { class: "fp-lista" }, lista.map((l) => linhaLancamento(l, diaCurto(l.data, hoje())))),
+    lista.length
+      ? el("div", { class: "fp-lista" }, lista.map((l) => linhaLancamento(l, diaCurto(l.data, hoje()))))
+      : el("p", { class: "fp-vazio", text: "Nada lançado ainda." }),
     el("div", { class: "fp-filtros", style: { marginTop: "12px" } },
       el("a", { class: "fp-link", href: "lancamentos.html", text: "Ver todos" }), botaoImportar("fp-link")));
 }
 
-function boasVindas() {
+/* Sem nenhum lançamento: o Painel continua sendo o Painel (zerado), com
+   uma faixa curta de "comece por aqui". Antes era um cartão grande com o
+   personagem e exemplos, e no celular parecia a aba Oráculo (24/10/2026). */
+function comeceAqui() {
   const exemplo = (t) => el("button", {
     type: "button", class: "fp-sug", text: t,
     on: { click: () => { const i = barra.querySelector("textarea, input"); i.value = t; i.focus(); } }
   });
-  return el("article", { class: "fp-card fp-boas" },
-    el("img", { src: AVATAR, alt: "" }),
-    el("h2", { text: "Seu Finanças começa com uma frase" }),
-    el("p", { text: "Diga ao Oráculo, lá embaixo, quanto você tem em caixa agora. Depois é só ir falando seus ganhos e despesas: ele anota, separa por categoria e faz as contas do mês." }),
-    el("div", { class: "fp-sugs", style: { justifyContent: "center" } },
-      exemplo("tenho 800 em caixa"), exemplo("recebi 500"), exemplo("uber 9,80"), exemplo("mandei 100 pra Binance")),
-    el("p", { style: { margin: "18px 0 0" } }, botaoImportar()));
+  const sincronizando = situacaoNuvem() === "conectando";
+  return el("article", { class: "fp-card fp-comece" },
+    el("div", { class: "fp-comece-txt" },
+      el("h2", { text: sincronizando ? "Buscando seus lançamentos na nuvem…" : "Nenhum lançamento neste aparelho ainda" }),
+      el("p", { class: "fp-sub", style: { margin: 0 }, text: "Diga ao Oráculo, aqui embaixo, quanto você tem em caixa, ou importe o extrato do banco. Com login, o que você lança no computador aparece aqui também." })),
+    el("div", { class: "fp-sugs" }, exemplo("tenho 800 em caixa"), exemplo("recebi 500"), botaoImportar("fp-sug")));
 }
 
 /* ---------------- montagem ---------------- */
@@ -304,21 +309,20 @@ function boasVindas() {
 function render() {
   const estado = lerEstado();
   const lancs = estado.lancamentos;
-  if (!lancs.length) {
-    conteudo.replaceChildren(boasVindas());
-    return;
-  }
   const meta = metas(lancs, estado);
-  conteudo.replaceChildren(
+  conteudo.replaceChildren(...[
+    lancs.length ? null : comeceAqui(),
     cabecalho(lancs),
     tres(lancs, estado),
     el("section", { class: "fp-dois" }, grafico(lancs), categorias(lancs)),
     el("section", { class: "fp-tresb" },
       el("div", { class: "fp-coluna" }, investido(lancs), meta),
-      ultimos(lancs)));
+      ultimos(lancs))
+  ].filter(Boolean));
 }
 
 window.addEventListener("financas:mudou", render);
 window.addEventListener("storage", render);
+window.addEventListener("financas:nuvem", () => { if (!lerEstado().lancamentos.length) render(); });
 render();
 void chat;

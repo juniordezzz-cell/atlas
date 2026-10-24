@@ -87,13 +87,20 @@ test("adicionar, atualizar e remover", () => {
   assert.ok(Number.isFinite(s.lancamentos[0].criadoEm));
   s = atualizar(s, id, { centavos: 1100 });
   assert.equal(s.lancamentos[0].centavos, 1100);
+  assert.ok(s.lancamentos[0].editadoEm > 0);
   s = remover(s, id);
   assert.equal(s.lancamentos.length, 0);
+  // a marca de apagado sobrevive a salvar e reler (vai para o outro aparelho)
+  assert.ok(s.removidos[id] > 0);
+  assert.ok(migrarEstado(JSON.parse(JSON.stringify(s)), HOJE).removidos[id] > 0);
 });
 
 test("salvar e reler; resetState zera", () => {
   salvarEstado(adicionar(estadoVazio(), { data: "2026-10-23", tipo: "entrada", centavos: 50000 }));
   assert.equal(getState().lancamentos.length, 1);
+  const id = getState().lancamentos[0].id;
   resetState();
   assert.equal(getState().lancamentos.length, 0);
+  // apagar tudo vale também para a nuvem/outro aparelho
+  assert.ok(getState().removidos[id] > 0);
 });

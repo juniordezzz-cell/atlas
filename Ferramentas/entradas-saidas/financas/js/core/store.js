@@ -26,6 +26,10 @@ function estadoVazio() {
     lancamentos: [],
     aprendizado: {},
     metas: { mensal: null, categorias: {} },
+    // sincronia entre aparelhos (js/core/sincronia.js): o que foi apagado
+    // { id: quando } e quando as metas mudaram por último
+    removidos: {},
+    metasEm: 0,
     profile: { name: "", email: "", currency: "BRL" },
     settings: { animations: true }
   };
@@ -54,6 +58,8 @@ function limparLancamento(l, i) {
     categoria: l.categoria ? String(l.categoria).slice(0, 60) : null,
     ...(l.destino ? { destino: String(l.destino).slice(0, 60) } : {}),
     ...(l.tipo === "transferencia" ? { sentido: l.sentido } : {}),
+    ...(l.origem === "extrato" ? { origem: "extrato" } : {}),
+    ...(Number(l.editadoEm) > 0 ? { editadoEm: Number(l.editadoEm) } : {}),
     criadoEm: Number.isFinite(Number(l.criadoEm)) ? Number(l.criadoEm) : i
   };
 }
@@ -80,6 +86,11 @@ function migrarEstado(raw, hoje = todayKey()) {
     for (const [k, v] of Object.entries(m.categorias || {})) {
       if (Number.isSafeInteger(v) && v > 0) base.metas.categorias[String(k).slice(0, 60)] = v;
     }
+    base.metasEm = Number(raw.metasEm) > 0 ? Number(raw.metasEm) : 0;
+    for (const [id, t] of Object.entries(raw.removidos || {})) {
+      if (Number(t) > 0) base.removidos[String(id)] = Number(t);
+    }
+    base.lancamentos = base.lancamentos.filter((l) => !base.removidos[l.id]);
     return base;
   }
 
@@ -145,13 +156,19 @@ function adicionar(estado, lanc) {
 function atualizar(estado, id, campos) {
   const i = estado.lancamentos.findIndex((l) => l.id === id);
   if (i < 0) return estado;
-  const l = { ...estado.lancamentos[i], ...campos, id };
+  // editadoEm: na sincronia, a correção mais nova vence a cópia antiga
+  const antes = estado.lancamentos[i];
+  const l = { ...antes, ...campos, id, editadoEm: Math.max(Date.now(), (Number(antes.editadoEm) || 0) + 1) };
   if (!lancamentoValido(l)) throw new Error("Lançamento inválido");
   estado.lancamentos[i] = limparLancamento(l, i);
   return estado;
 }
 
+/* Apagar deixa a marca em `removidos`, para o outro aparelho também apagar. */
 function remover(estado, id) {
+  if (estado.lancamentos.some((l) => l.id === id)) {
+    estado.removidos = { ...(estado.removidos || {}), [id]: Date.now() };
+  }
   estado.lancamentos = estado.lancamentos.filter((l) => l.id !== id);
   return estado;
 }
@@ -165,8 +182,16 @@ function updateState(fn) {
   const cur = lerEstado();
   return salvarEstado(fn(cur) || cur);
 }
+/* Apagar tudo marca cada lançamento como apagado: sem isso, a nuvem
+   (ou o outro aparelho) traria tudo de volta na próxima sincronia. */
 function resetState() {
-  return salvarEstado(estadoVazio());
+  const antes = lerEstado();
+  const vazio = estadoVazio();
+  const agora = Date.now();
+  vazio.removidos = { ...(antes.removidos || {}) };
+  antes.lancamentos.forEach((l) => { vazio.removidos[l.id] = agora; });
+  vazio.metasEm = agora;
+  return salvarEstado(vazio);
 }
 
 export {
