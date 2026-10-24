@@ -15,7 +15,7 @@ import { criarConversa } from "../core/conversa.js";
 import { paraCentavos, formatarCentavos } from "../core/dinheiro.js";
 import { todayKey } from "../core/datas.js";
 import { todasCategorias, CATEGORIAS_ENTRADA, MERCADINHO, normalizar } from "../core/categorias.js";
-import { lerExtrato, pareceExtrato } from "../core/extrato.js";
+import { lerExtrato, pareceExtrato, chaveRepetido, chaveNome } from "../core/extrato.js";
 
 export const R = (c, o) => formatarCentavos(c, o);
 
@@ -303,6 +303,7 @@ export function abrirEditor(lanc, { tipo = "saida" } = {}) {
     };
     try {
       const s = lerEstado();
+      if (!novo) lembrarCorrecao(s, l, campos);
       salvarEstado(novo ? adicionar(s, campos) : atualizar(s, l.id, campos));
     } catch (err) {
       return falha("Não deu para salvar: confira os campos.");
@@ -315,6 +316,26 @@ export function abrirEditor(lanc, { tipo = "saida" } = {}) {
   dlg.addEventListener("close", () => dlg.remove());
   dlg.showModal();
   (novo ? form.elements.valor : form.elements.descricao).focus();
+}
+
+/* O dono corrigiu o tipo: o próximo extrato com esse nome já vem certo.
+   Transferência → despesa guarda a categoria; despesa → transferência
+   marca o nome como conta dele. Mudou só a categoria de uma despesa:
+   o nome passa a ir para ela. */
+function lembrarCorrecao(estado, antes, depois) {
+  const chave = chaveNome(depois.descricao || antes.descricao || "");
+  if (!chave) return;
+  const a = estado.aprendizado;
+  if (depois.tipo === "saida" && antes.tipo === "transferencia") {
+    a[`@despesa:${chave}`] = depois.categoria;
+    delete a[`@transferencia:${chave}`];
+  } else if (depois.tipo === "transferencia" && antes.tipo !== "transferencia") {
+    a[`@transferencia:${chave}`] = "Transferência entre contas";
+    delete a[`@despesa:${chave}`];
+  } else if (depois.tipo === "saida" && depois.categoria && depois.categoria !== antes.categoria && depois.categoria !== "A definir") {
+    a[chave] = depois.categoria;
+    if (a[`@despesa:${chave}`]) a[`@despesa:${chave}`] = depois.categoria;
+  }
 }
 
 /* ---------------- importar extrato ---------------- */
@@ -344,7 +365,7 @@ export function abrirImportar() {
     }
     const estado = lerEstado();
     const r = lerExtrato(texto, { aprendizado: estado.aprendizado });
-    const chave = (l) => `${l.data}|${l.tipo}|${l.centavos}|${normalizar(l.descricao)}`;
+    const chave = chaveRepetido;
     const ja = {};
     estado.lancamentos.forEach((l) => { ja[chave(l)] = (ja[chave(l)] || 0) + 1; });
     const novos = r.itens.filter((i) => { const k = chave(i); if (ja[k]) { ja[k]--; return false; } return true; });

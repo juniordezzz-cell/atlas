@@ -135,14 +135,26 @@ export function lerExtrato(texto, ctx = {}) {
     const sinal = v[1] || v[2];
     const banco = normalizar(c.tipoBanco);
     const entrou = sinal ? sinal === "+" : /recebid|credito|devolvid/.test(banco);
-    const entreContas = RE_ENTRE_CONTAS.test(normalizar(`${c.categoria} ${c.nome}`));
-    const tipo = entreContas ? "transferencia" : entrou ? "entrada" : "saida";
     const descricao = arrumarNome(c.nome || c.tipoBanco || "Lançamento").slice(0, 80);
-    const item = { data, tipo, centavos, descricao, categoria: categoriaFinal(c.categoria || "", tipo, descricao, aprendizado) };
+    // o dono já corrigiu este nome antes? (ex.: o extrato diz "outra conta",
+    // mas o Pix para o pai é despesa — 24/10/2026). A correção vale.
+    const chave = chaveNome(descricao);
+    const despesaForcada = !entrou && aprendizado[`@despesa:${chave}`];
+    const entreContas = !despesaForcada &&
+      (!!aprendizado[`@transferencia:${chave}`] || RE_ENTRE_CONTAS.test(normalizar(`${c.categoria} ${c.nome}`)));
+    const tipo = entreContas ? "transferencia" : entrou ? "entrada" : "saida";
+    const categoria = despesaForcada || categoriaFinal(c.categoria || "", tipo, descricao, aprendizado);
+    const item = { data, tipo, centavos, descricao, categoria };
     if (tipo === "transferencia") item.sentido = entrou ? "entrada" : "saida";
     itens.push(item);
   }
   return { itens, erros };
+}
+
+/* Mesmo lançamento do extrato? Dia + valor + nome (não o tipo nem a
+   categoria, que o dono pode ter corrigido depois de importar). */
+export function chaveRepetido(l) {
+  return `${l.data}|${l.centavos}|${chaveNome(l.descricao || "")}`;
 }
 
 export { chaveNome };
