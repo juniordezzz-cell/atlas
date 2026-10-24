@@ -1,0 +1,145 @@
+2026-09-24
+Cartao + Protegido
+Débito
+Seguro/Tarifas
+-1.90
+2026-09-25
+jones silveira
+Pix recebido
+Entrada - Jones
+200.00
+2026-09-27
+Claude (Google Brasil Pagamentos - Pix Automático)
+Pix enviado
+Assinaturas/IA
+-110.00
+2026-09-29
+MARLENE STIFFT SEEFELDT
+Pix enviado
+Mercadinho
+-50.21
+2026-09-30
+Robson Soares Silveira
+Pix enviado
+A definir (pessoa)
+-96.00
+2026-09-30
+CAROLINE GARCIA
+Pix enviado
+A definir (pessoa)
+-20.00
+2026-10-02
+Jaqueline Silva da Silva
+Pix enviado
+A definir (pessoa)
+-23.00
+2026-10-03
+JONES FERREIRA SILVEIRA
+Pix recebido
+Entrada - Jones
+500.00
+2026-10-07
+MARLENE STIFFT SEEFELDT
+Pix enviado
+Mercadinho
+-65.33
+2026-10-07
+CAROLINE GARCIA
+Pix enviado
+A definir (pessoa)
+-5.00
+2026-10-09
+VIGHOR EMPREENDIMENTOS LTDA (posto)
+Pix enviado
+Moto - Combustível
+-65.01
+2026-10-10
+JONES FERREIRA SILVEIRA
+Pix recebido
+Entrada - Jones
+300.00
+2026-10-11
+Miguel Soares da Silva
+Pix enviado
+A definir (pessoa)
+-4.62
+2026-10-11
+JONES FERREIRA SILVEIRA
+Pix recebido
+Entrada - Jones
+200.00
+2026-10-12
+Jeferson Renato Ferreira Silveira (outra conta)
+Transferência
+Transferência entre contas
+-500.00
+2026-10-12
+UBER DO BRASIL
+Pix enviado
+Transporte
+-11.96
+2026-10-12
+UBER DO BRASIL
+Pix enviado
+Transporte
+-12.93
+2026-10-12
+MARLENE STIFFT SEEFELDT
+Pix enviado
+Mercadinho
+-70.44
+2026-10-13
+GOOGLE BRASIL PAGAMENTOS
+Pix enviado
+Assinaturas/Google
+-6.50
+2026-10-13
+UBER DO BRASIL
+Pix enviado
+Transporte
+-9.94
+2026-10-15
+JEFERSON RENATO FERREIRA SILVEIRA JUNIOR (outra conta)
+Transferência
+Transferência entre contas
+-213.00
+2026-10-15
+JONATHAN DOS SANTOS ALMEIDA
+Pix enviado
+A definir (pessoa)
+-35.00
+2026-10-15
+IGOR DA ROSA GRIMMLER (pneu novo)
+Pix enviado
+Moto - Manutenção
+-200.00
+2026-10-16
+JONES FERREIRA SILVEIRA
+Pix recebido
+Entrada - Jones
+250.00
+2026-10-18
+Codex (Google Brasil Pagamentos)
+Pix enviado
+Assinaturas/IA
+-95.99
+2026-10-19
+MARLENE STIFFT SEEFELDT
+Pix enviado
+Mercadinho
+-34.37
+2026-10-23
+JONES FERREIRA SILVEIRA
+Pix recebido
+Entrada - Jones
+500.00
+2026-10-23
+MARLENE STIFFT SEEFELDT
+Pix enviado
+Mercadinho
+-45.14
+2026-10-24
+Cartao + Protegido
+Débito
+Seguro/Tarifas
+-1.90

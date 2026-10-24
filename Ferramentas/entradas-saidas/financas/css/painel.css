@@ -155,8 +155,12 @@ html.fp-com-fundo .fx-bottombar { background: rgba(6, 11, 20, 0.92); -webkit-bac
   padding: 7px 7px 7px 8px; box-shadow: 0 10px 40px rgba(0, 0, 0, .45);
 }
 .fp-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: none; animation: fp-flutua 4s ease-in-out infinite; }
-.fp-barra-form input { flex: 1; min-width: 0; background: transparent; border: 0; color: var(--texto); font: inherit; font-size: 1rem; outline: none; }
-.fp-barra-form input::placeholder { color: var(--texto-fraco); }
+.fp-barra-form input, .fp-barra-form textarea {
+  flex: 1; min-width: 0; background: transparent; border: 0; color: var(--texto); font: inherit; font-size: 1rem; outline: none;
+  resize: none; line-height: 1.4; max-height: 9.8em; padding: 4px 0; overflow-y: auto;
+}
+.fp-barra-form input::placeholder, .fp-barra-form textarea::placeholder { color: var(--texto-fraco); }
+.fp-barra-form:has(textarea:not([rows="1"])) { border-radius: 22px; align-items: flex-end; }
 .fp-enviar { background: var(--atlas-grad); color: var(--atlas-on-accent); border: 0; border-radius: 999px; padding: 10px 18px; font: inherit; font-weight: 700; cursor: pointer; }
 
 /* ---------- mensagens ---------- */

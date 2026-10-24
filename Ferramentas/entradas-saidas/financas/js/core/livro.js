@@ -11,19 +11,23 @@
      investimento  − centavos         (conta em "Investido", não é gasto)
      resgate       + centavos         (abate do "Investido")
      saldo         caixa = centavos   (ponto de partida; não conta no mês)
+     transferencia ± centavos         (entre contas do dono; sentido
+                                       "saida" ou "entrada"; não é
+                                       despesa nem ganho — 24/10/2026)
 
    O caixa corrido segue a ordem data → criadoEm. Um "saldo" diz
    quanto havia naquele dia; o que foi lançado antes dele não muda o
    caixa depois dele. Só conta o que foi lançado: não há previsão.
    ============================================================ */
 
-export const TIPOS = ["entrada", "saida", "investimento", "resgate", "saldo"];
+export const TIPOS = ["entrada", "saida", "investimento", "resgate", "saldo", "transferencia"];
 
 const SINAL = { entrada: 1, saida: -1, investimento: -1, resgate: 1 };
 
 /* Centavos válidos: inteiro positivo (saldo também aceita zero). */
 function valido(l) {
   if (!l || !TIPOS.includes(l.tipo) || !/^\d{4}-\d{2}-\d{2}$/.test(String(l.data))) return false;
+  if (l.tipo === "transferencia" && l.sentido !== "saida" && l.sentido !== "entrada") return false;
   return Number.isSafeInteger(l.centavos) && (l.centavos > 0 || (l.tipo === "saldo" && l.centavos === 0));
 }
 
@@ -32,8 +36,13 @@ export function ordenar(lancs) {
     a.data < b.data ? -1 : a.data > b.data ? 1 : (Number(a.criadoEm) || 0) - (Number(b.criadoEm) || 0));
 }
 
+function sinal(l) {
+  if (l.tipo === "transferencia") return l.sentido === "entrada" ? 1 : -1;
+  return SINAL[l.tipo];
+}
+
 function aplicar(caixa, l) {
-  return l.tipo === "saldo" ? l.centavos : caixa + SINAL[l.tipo] * l.centavos;
+  return l.tipo === "saldo" ? l.centavos : caixa + sinal(l) * l.centavos;
 }
 
 /* Caixa no fim do dia `data` (sem data: tudo que foi lançado). */
@@ -50,7 +59,7 @@ const doMes = (lancs, mes) => ordenar(lancs).filter((l) => l.data.slice(0, 7) ==
 
 export function resumoMes(lancs, mes) {
   const r = {
-    entrou: 0, saiu: 0, investido: 0, resgatado: 0,
+    entrou: 0, saiu: 0, investido: 0, resgatado: 0, transferido: 0,
     porCategoria: {}, quantos: { entradas: 0, saidas: 0, investimentos: 0 }, ultimaEntrada: null
   };
   for (const l of doMes(lancs, mes)) {
@@ -62,6 +71,8 @@ export function resumoMes(lancs, mes) {
     }
     else if (l.tipo === "investimento") { r.investido += l.centavos; r.quantos.investimentos++; }
     else if (l.tipo === "resgate") r.resgatado += l.centavos;
+    // transferido: o que foi para outras contas, menos o que veio delas
+    else if (l.tipo === "transferencia") r.transferido += l.sentido === "saida" ? l.centavos : -l.centavos;
   }
   return r;
 }

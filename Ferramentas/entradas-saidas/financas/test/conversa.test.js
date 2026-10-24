@@ -124,6 +124,33 @@ test("lançamento de antes do acerto de caixa avisa que não muda o caixa", () =
   assert.doesNotMatch(c.responder("uber 10").texto, /acerto/);
 });
 
+test("extrato colado: importa tudo, não repete, aprende e desfaz", async () => {
+  const { readFileSync } = await import("node:fs");
+  const texto = readFileSync(new URL("./dados/extrato-2026-10.txt", import.meta.url), "utf8");
+  let s = estadoVazio();
+  const c = criarConversa({ ler: () => JSON.parse(JSON.stringify(s)), salvar: (x) => { s = x; }, hoje: () => "2026-10-24" });
+  const r = c.responder(texto);
+  assert.equal(s.lancamentos.length, 29);
+  // sem acerto de caixa: 1.950,00 − 965,24 − 713,00
+  assert.equal(caixaAte(s.lancamentos), 27176);
+  assert.match(r.texto, /Importei 29/);
+  assert.match(r.texto, /Ganhos: R\$\s1\.950,00 \(6\)/);
+  assert.match(r.texto, /Despesas: R\$\s965,24 \(21\)/);
+  assert.match(r.texto, /Transferências entre contas suas: R\$\s713,00 saíram/);
+  assert.match(r.texto, /6 ficaram em "A definir"/);
+  assert.equal(s.aprendizado["marlene stifft seefeldt"], "Mercadinho, bar e padaria");
+  assert.equal(s.aprendizado.marlene, "Mercadinho, bar e padaria");
+  // colar de novo não duplica
+  const r2 = c.responder(texto);
+  assert.equal(s.lancamentos.length, 29);
+  assert.match(r2.texto, /já estava lançado/);
+  // o que aprendeu vale na frase normal
+  c.responder("pix marlene 40");
+  assert.equal(s.lancamentos[29].categoria, "Mercadinho, bar e padaria");
+  c.responder("desfazer");
+  assert.equal(s.lancamentos.length, 29);
+});
+
 test("erro de leitura não lança nada", () => {
   const { c, estado } = nova();
   const r = c.responder("recebi 500 em 30/12/2026");

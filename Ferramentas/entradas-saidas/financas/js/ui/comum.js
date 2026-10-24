@@ -91,6 +91,7 @@ export function icone(l) {
   if (l.tipo === "entrada") return "💰";
   if (l.tipo === "investimento" || l.tipo === "resgate") return "📈";
   if (l.tipo === "saldo") return "🧾";
+  if (l.tipo === "transferencia") return "🔁";
   return ICONES[l.categoria] || "•";
 }
 
@@ -103,14 +104,15 @@ export function valorComSinal(l) {
   if (l.tipo === "saida") return "−" + R(l.centavos);
   if (l.tipo === "investimento") return "→ " + R(l.centavos);
   if (l.tipo === "resgate") return "← " + R(l.centavos);
+  if (l.tipo === "transferencia") return "⇄ " + (l.sentido === "saida" ? "−" : "+") + R(l.centavos);
   return "= " + R(l.centavos);
 }
 
-export const NOME_TIPO = { entrada: "Ganho", saida: "Despesa", investimento: "Investimento", resgate: "Resgate", saldo: "Acerto de caixa" };
+export const NOME_TIPO = { entrada: "Ganho", saida: "Despesa", investimento: "Investimento", resgate: "Resgate", saldo: "Acerto de caixa", transferencia: "Transferência" };
 
 /* Uma linha de lançamento (Painel e Lançamentos). Toque abre o editor. */
 export function linhaLancamento(l, rotuloDia) {
-  const sub = [rotuloDia, l.tipo === "saida" ? l.categoria : l.tipo === "saldo" ? "Acerto de caixa" : l.tipo === "entrada" ? l.categoria : `${NOME_TIPO[l.tipo]} · ${l.destino}`]
+  const sub = [rotuloDia, l.tipo === "saida" ? l.categoria : l.tipo === "saldo" ? "Acerto de caixa" : l.tipo === "transferencia" ? (l.sentido === "saida" ? "Para outra conta sua" : "De outra conta sua") : l.tipo === "entrada" ? l.categoria : `${NOME_TIPO[l.tipo]} · ${l.destino}`]
     .filter(Boolean).join(" · ");
   return el("button", { type: "button", class: "fp-linha", on: { click: () => abrirEditor(l) } },
     el("span", { class: `fp-linha-ic ${classeTipo(l.tipo)}`, "aria-hidden": "true", text: icone(l) }),
@@ -140,6 +142,18 @@ export function montarChat(caixa, { compacto = false, aoResponder } = {}) {
   const lista = caixa.querySelector("[data-chat-lista]");
   const form = caixa.querySelector("[data-chat-form]");
   const campo = form.querySelector("input, textarea");
+  // caixa de várias linhas (extrato colado): cresce até ~7 linhas;
+  // Enter envia, Shift+Enter quebra a linha
+  const crescer = () => {
+    if (campo.tagName !== "TEXTAREA") return;
+    campo.style.height = "auto";
+    campo.style.height = `${campo.scrollHeight}px`;
+    campo.setAttribute("rows", campo.value.includes("\n") ? "2" : "1");
+  };
+  campo.addEventListener("input", crescer);
+  campo.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); }
+  });
 
   function bolha(texto, quem, sugestoes = []) {
     if (compacto) lista.replaceChildren();
@@ -166,7 +180,9 @@ export function montarChat(caixa, { compacto = false, aoResponder } = {}) {
   function enviar(texto) {
     const t = String(texto || "").trim();
     if (!t) return;
-    if (!compacto) bolha(t, "eu");
+    // extrato colado: mostra o começo, não as 150 linhas
+    const linhas = t.split("\n");
+    if (!compacto) bolha(linhas.length > 6 ? `${linhas.slice(0, 5).join("\n")}\n… (${linhas.length} linhas coladas)` : t, "eu");
     const r = responder(t);
     bolha(r.texto, "oraculo", r.sugestoes || []);
     if (aoResponder) aoResponder(r);
@@ -176,6 +192,7 @@ export function montarChat(caixa, { compacto = false, aoResponder } = {}) {
     e.preventDefault();
     const t = campo.value;
     campo.value = "";
+    crescer();
     enviar(t);
     campo.focus();
   });
@@ -199,7 +216,7 @@ export function abrirEditor(lanc, { tipo = "saida" } = {}) {
   const valorInicial = l.centavos || (l.tipo === "saldo" && !novo) ? R(l.centavos).replace(/^-?R\$\s*/, "") : "";
 
   const seg = el("div", { class: "fp-seg", role: "radiogroup", "aria-label": "Tipo" },
-    ["entrada", "saida", "investimento", "resgate", "saldo"].map((t) =>
+    ["entrada", "saida", "investimento", "resgate", "transferencia", "saldo"].map((t) =>
       el("label", {}, el("input", { type: "radio", name: "tipo", value: t, checked: l.tipo === t }), el("span", { text: NOME_TIPO[t] }))));
   const erro = el("p", { class: "fp-form-erro", hidden: true });
   const dlg = el("dialog", { class: "fp-dialogo" });
@@ -215,6 +232,9 @@ export function abrirEditor(lanc, { tipo = "saida" } = {}) {
     el("datalist", { id: "fpCats" }, cats.map((c) => el("option", { value: c }))),
     campo("Onde (corretora, banco…)", el("input", { name: "destino", list: "fpDest", maxlength: "40", autocomplete: "off", placeholder: "Binance", value: l.destino || "" }), { "data-so": "investimento resgate" }),
     el("datalist", { id: "fpDest" }, destinos.map((d) => el("option", { value: d }))),
+    campo("Sentido", el("select", { name: "sentido" },
+      el("option", { value: "saida", text: "Saiu para outra conta minha", selected: l.sentido !== "entrada" }),
+      el("option", { value: "entrada", text: "Veio de outra conta minha", selected: l.sentido === "entrada" })), { "data-so": "transferencia" }),
     erro,
     el("div", { class: "fp-form-acoes" },
       novo ? null : el("button", { type: "button", class: "fp-btn fp-btn--perigo", text: "Apagar", on: { click: apagar } }),
@@ -256,8 +276,9 @@ export function abrirEditor(lanc, { tipo = "saida" } = {}) {
       descricao: f.descricao.value.trim() || (investe ? destino : NOME_TIPO[t]),
       categoria: t === "entrada" ? (f.categoria.value.trim() || "Recebimento")
         : t === "saida" ? (f.categoria.value.trim() || "Outros")
-        : t === "saldo" ? null : "Investimento",
-      destino: investe ? destino : undefined
+        : t === "saldo" ? null : t === "transferencia" ? "Transferência entre contas" : "Investimento",
+      destino: investe ? destino : undefined,
+      sentido: t === "transferencia" ? f.sentido.value : undefined
     };
     try {
       const s = lerEstado();
