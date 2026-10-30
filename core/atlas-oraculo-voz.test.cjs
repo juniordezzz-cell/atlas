@@ -70,4 +70,3 @@ test('trocar conversa pelo menu externo interrompe fala antes de reutilizar o ca
   const r=s.instances[0];s.doc.dispatchEvent(new Event('click'));
   r.result('fala da conversa anterior');assert.equal(r.aborted,true);assert.equal(v.input.value,'');
 });
-
