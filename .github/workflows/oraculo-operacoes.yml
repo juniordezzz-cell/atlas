@@ -13,4 +13,3 @@ jobs:
         with:
           node-version: '22'
       - run: node --test core/atlas-oraculo-voz.test.cjs core/atlas-oraculo-operacoes.test.cjs defi/js/pool-history.test.cjs core/atlas-oraculo-imagem-schema.test.mjs core/atlas-oraculo-imagem-fluxo.test.mjs core/atlas-oraculo-imagem-ui.test.cjs central-rwa/supabase/functions/oraculo-imagem/handler.test.mjs
-
