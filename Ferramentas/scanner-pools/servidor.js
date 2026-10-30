@@ -244,15 +244,11 @@
   /* ---------- link direto para a pool na corretora (08/10/2026) ----------
      Formatos conferidos abrindo pools reais: PancakeSwap (bsc, base, arb),
      Uniswap (inclusive id de 32 bytes da v4), Orca e a busca da Raydium (que
-     serve para pool concentrada e comum). Sem formato conferido, a página da
-     pool na GeckoTerminal (tem o atalho para a corretora); sem endereço, a
-     página da pool na DefiLlama. */
+     serve para pool concentrada e comum). Sem formato direto conhecido ou
+     sem endereço, não há link nem seta. Agregadores não são destinos de pools. */
   var LINK_PANCAKE = { "BNB Chain": "bsc", "Base": "base", "Arbitrum": "arb", "Ethereum": "eth" };
   var LINK_UNISWAP = { "Ethereum": "ethereum", "Base": "base", "Arbitrum": "arbitrum", "Optimism": "optimism",
     "Polygon": "polygon", "BNB Chain": "bnb", "Avalanche": "avalanche" };
-  var LINK_GECKO = { "Solana": "solana", "Base": "base", "Arbitrum": "arbitrum", "BNB Chain": "bsc", "Ethereum": "eth",
-    "Optimism": "optimism", "Polygon": "polygon_pos", "Avalanche": "avax", "Sui": "sui-network", "HyperEVM": "hyperevm",
-    "Robinhood": "robinhood" };
   function enderecoPool(p) {
     var s = p.sinais || {}, sid = String(p.sid || "");
     if (s.endereco_pool) return String(s.endereco_pool);
@@ -263,8 +259,7 @@
   /* Trava (08/10/2026): só sai link para estes domínios, e só em https.
      O domínio vem do código, nunca dos dados; esta conferência garante que
      uma mudança futura na montagem do link não leve a outro site. */
-  var DOMINIOS_OFICIAIS = ["pancakeswap.finance", "app.uniswap.org", "www.orca.so", "raydium.io",
-    "www.geckoterminal.com", "defillama.com"];
+  var DOMINIOS_OFICIAIS = ["pancakeswap.finance", "app.uniswap.org", "www.orca.so", "raydium.io"];
   function seguro(link) {
     if (!link) return null;
     var m = /^https:\/\/([^\/?#:@]+)[\/?#]/.exec(link.url);
@@ -280,10 +275,7 @@
       if (dex === "Uniswap" && LINK_UNISWAP[rede]) return { url: "https://app.uniswap.org/explore/pools/" + LINK_UNISWAP[rede] + "/" + e, onde: "Uniswap" };
       if (dex === "Orca") return { url: "https://www.orca.so/pools/" + e, onde: "Orca" };
       if (dex === "Raydium") return { url: "https://raydium.io/liquidity-pools/?token=" + e, onde: "Raydium" };
-      if (LINK_GECKO[rede]) return { url: "https://www.geckoterminal.com/" + LINK_GECKO[rede] + "/pools/" + e, onde: "GeckoTerminal" };
     }
-    var sid = String(p.sid || "");
-    if (sid.indexOf("llama:") === 0) return { url: "https://defillama.com/yields/pool/" + encodeURIComponent(sid.slice(6)), onde: "DefiLlama" };
     return null;
   }
 
