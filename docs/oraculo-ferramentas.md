@@ -62,3 +62,9 @@ com o aro vermelho/azul girando e os anéis de luz da tela de abertura em
 volta (`Ferramentas/scanner-pools/assistente.css`, `.sp-palco`). Avatar,
 nome, botão flutuante, painel flutuante e ícone pequeno seguem a identidade
 única. Registro: `docs/visual-ferramentas-2026-10-15.md`.
+
+## Destinos dos links das pools — 29/10/2026
+
+Tabela e cartões do Oráculo só exibem link/seta quando `ScannerServidor.linkPool`
+retorna destino na própria plataforma. GeckoTerminal, CoinGecko e DefiLlama não
+são destinos permitidos; sem link direto conhecido, o nome fica sem seta.

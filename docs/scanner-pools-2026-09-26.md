@@ -180,3 +180,15 @@ Pedido do dono (usa a Aerodrome para LP): dados da Aero sem erro, de fonte próp
 - Teste: `tests/test_pools_aero_sugar.py` com a resposta real do Sugar (`fixtures/aero_sugar_all_base_20261022.hex`). 220 Python passaram.
 
 Limites: a emissão muda em tempo real (Predictive Allocation, sem epoch) e no lançamento passa de 1.000% em várias pools — o valor é o do instante da coleta; acima de 10.000% a regra "APR impossível" de sempre vale. Ink e Robinhood/Arc ficam de fora (Ink não está em `GECKO_NET`; Robinhood sem RPC conferida).
+
+
+## Links das pools — 29/10/2026
+
+Por pedido do proprietário, nomes de pools só têm link e seta ↗ quando o destino
+é a própria plataforma (formatos já conhecidos de PancakeSwap, Uniswap, Orca
+e Raydium). Sem endereço ou formato direto conhecido, o nome fica como texto,
+sem seta. Removidas alternativas GeckoTerminal e DefiLlama e excluídos os
+agregadores da lista de domínios permitidos. Vale para tabela e cartões do
+Oráculo, que usam `ScannerServidor.linkPool`. A origem dos dados não define o
+destino: uma pool coletada via GeckoTerminal pode continuar com link direto
+para sua corretora. Validar com `node --test Ferramentas/scanner-pools/regras.test.cjs`.
