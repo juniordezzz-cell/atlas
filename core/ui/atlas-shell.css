@@ -489,6 +489,21 @@ html[data-atlas-menu-open="on"] .atlas-oraculo[data-open="false"] {
   flex: none;
 }
 .atlas-oraculo__composer:focus-within { box-shadow: 0 0 0 2px rgba(91, 140, 255, 0.35); }
+/* Controle compartilhado pelo painel global e pelas conversas das Ferramentas. */
+button.atlas-voz__mic {
+  display: grid; place-items: center; flex: 0 0 44px;
+  width: 44px; height: 44px; min-height: 44px; padding: 10px;
+  border: 1px solid currentColor; border-radius: 50%;
+  background: transparent; color: inherit; cursor: pointer;
+}
+button.atlas-voz__mic svg { width: 22px; height: 22px; pointer-events: none; }
+button.atlas-voz__mic[aria-pressed="true"] { background: #a52b36; color: #fff; }
+button.atlas-voz__mic:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+button.atlas-voz__mic:disabled { opacity: .5; cursor: not-allowed; }
+.atlas-voz__status {
+  flex: none; margin: 4px 12px 10px; font-size: 12px; line-height: 1.4;
+  color: inherit; opacity: .8; overflow-wrap: anywhere;
+}
 .atlas-oraculo__input {
   flex: 1 1 auto;
   min-width: 0;

@@ -1,5 +1,7 @@
 # Orientações para agentes
 
+Ditado do Oráculo: `core/atlas-oraculo-voz.js`, carregado pelo shell, só preenche rascunhos em português. Nunca enviar ou confirmar automaticamente ao reconhecer voz. Sem chave API do Atlas; depende de SpeechRecognition do navegador. Ver `docs/oraculo-voz.md` e validar com `node --test core/atlas-oraculo-voz.test.cjs`.
+
 Antes de alterar o Oráculo nas Ferramentas, leia [o contrato de continuidade](docs/oraculo-ferramentas.md) e atualize-o na mesma PR quando mudar comportamento, estratégia, memória, integração ou implantação. O proprietário decidiu usar uma identidade visual única do Oráculo, com especializações e permissões separadas por ferramenta.
 Antes de alterar o Scanner Pools, leia [as regras vigentes de 26/09/2026](docs/superpowers/specs/2026-09-26-scanner-regras-design.md), [o registro de implementação](docs/scanner-pools-2026-09-26.md) e [a metodologia do assistente](docs/scanner-pools-metodologia-ia.md). Não inserir chaves no navegador; OpenRouter está integrado por Edge Function Supabase. Consultar a auditoria de aplicação do método de 29/09/2026 no MD e o guia de implantação antes de alterar prompt/filtros. GitHub Pages não republica a função.
 
