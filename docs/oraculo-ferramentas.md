@@ -17,6 +17,14 @@ O roteamento é por intenção. Perguntas de pools no Scanner vão ao adaptador 
 
 ## Chaves, memória e implantação
 
+Ditado autorizado em 29/10/2026: `core/atlas-oraculo-voz.js`, carregado pelo shell,
+adiciona microfone ao painel global e às conversas de Scanner/Finanças. A voz só
+preenche rascunho; o dono revisa e envia. Sem chave API própria ou Edge Function;
+depende do serviço de voz do navegador e pode transmitir áudio a esse serviço.
+Digitação permanece disponível sem suporte ou permissão. Contrato, testes e
+limites: [Oráculo por voz](oraculo-voz.md). Código preparado; publicação do Pages
+deve ser verificada separadamente.
+
 O navegador nunca guarda nem recebe chave privada de modelo. `scanner-chat` usa `SCANNER_OPENROUTER_API_KEY` no Supabase; o Oráculo por imagem tem integração própria; comandos de texto não exigem chave. Não confundir identidade visual única com chave única ou permissão única. A função `scanner-chat` autentica Firebase, restringe conta e cota e recebe apenas o recorte necessário. `GitHub Pages` publica HTML/JS/CSS; **não publica Edge Functions**. Para alterações em `central-rwa/supabase/functions/scanner-chat/`, seguir `docs/scanner-pools-openrouter-deploy.md` e confirmar deployment separadamente.
 
 Preferências confirmadas ficam em `scanner.chat_memory` por UID Firebase; feedback não altera regras automaticamente. Favoritos e decisões por pool do Scanner ainda ficam no navegador e em backup. O JSON de estratégia pessoal define prioridades e cortes adicionais sem enfraquecer os pisos obrigatórios do scanner: TVL ≥ US$ 100 mil e razão de volume 24h/TVL > 0,50. Tokens favoritos são preferência, nunca aprovação ou garantia de lucro.

@@ -2007,6 +2007,12 @@
     } else {
       anchorGuard(existing);
     }
+    if (!document.querySelector('script[data-atlas-voz]')) {
+      var voz = document.createElement('script');
+      voz.setAttribute('data-atlas-voz', '');
+      voz.src = RAIZ + 'core/atlas-oraculo-voz.js';
+      document.head.appendChild(voz);
+    }
   }
 
   /* ============================================================
