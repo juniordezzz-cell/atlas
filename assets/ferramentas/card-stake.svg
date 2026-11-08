@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1080" width="720" height="1080">
+  <!-- Capa provisória da bancada do ATLAS. Trocar por card-stake.webp quando o dono mandar a arte (docs/ferramentas-bancada-2026-11-08.md). -->
+  <defs>
+    <linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1120"/><stop offset="1" stop-color="#0A1122"/></linearGradient>
+    <radialGradient id="l" cx="0.62" cy="0.26" r="0.55"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0.22"/><stop offset="0.6" stop-color="#2EC785" stop-opacity="0.06"/><stop offset="1" stop-color="#0B1120" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="720" height="1080" fill="url(#f)"/>
+  <rect width="720" height="1080" fill="url(#l)"/>
+  <g transform="translate(192 132) scale(14)" fill="none" stroke="#8B5CF6" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"><path d="M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4M12 15v2"/></g>
+  <g transform="translate(206 146) scale(14)" fill="none" stroke="#2EC785" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"><path d="M6 11h12v10H6zM8 11V7a4 4 0 0 1 8 0v4M12 15v2"/></g>
+</svg>

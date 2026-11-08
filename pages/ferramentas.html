@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Ferramentas do ATLAS: a bancada de utilidades que rodam ao lado do sistema. Financas (entradas e saidas), Scanner Pools (pools de liquidez) e Calculadora de Market Cap.">
+  <meta name="description" content="Ferramentas do ATLAS: a bancada de utilidades que rodam ao lado do sistema. Finanças, Conversor e Câmbio, Escada (DCA), Lucro Cripto, Simulador de Trade, Scanner Pools, Estratégia de Pool, Staking, Juros Compostos, Calculadora de Market Cap e Comparador de Ativos.">
   <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
@@ -130,6 +130,138 @@
           </div>
         </a>
 
+        <!-- FERRAMENTA · Conversor e Câmbio
+             Mora em Ferramentas/conversor/. Registro: docs/ferramentas-bancada-2026-11-08.md
+             Capa provisória em SVG até a arte final (card-conv.webp). -->
+        <a class="tool-card tool-card--art" href="../Ferramentas/conversor/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <img class="tool-card__art" src="../assets/ferramentas/card-conv.svg?v=1" alt="" decoding="async"
+               style="object-position: 50% 20%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Conversor e Câmbio</h3>
+            <p class="tool-card__desc">Real, Dólar e Euro para as maiores criptos e as moedas entre si, pela cotação do mercado, com gráfico, market cap e tabelas prontas.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Cripto ⇄ moeda</span>
+              <span class="tool-card__chip">Câmbio via stablecoin</span>
+              <span class="tool-card__chip">Ao vivo</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO · Planejar entradas e saídas ============ -->
+    <section class="tools-sec">
+      <div class="tools-sec__head">
+        <span class="tools-sec__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 20h4v-4h4v-4h4V8h4V4"/>
+          </svg>
+        </span>
+        <h2 class="tools-sec__title">Planejar entradas e saídas</h2>
+        <span class="tools-sec__sub">Como entrar, quanto sobra e quanto arriscar</span>
+        <span class="tools-sec__count">3</span>
+      </div>
+
+      <div class="tools-grid">
+
+        <!-- FERRAMENTA · Escada (DCA e preço médio)
+             Mora em Ferramentas/escada-dca/. Registro: docs/ferramentas-bancada-2026-11-08.md
+             Capa provisória em SVG até a arte final (card-escada.webp). -->
+        <a class="tool-card tool-card--art" href="../Ferramentas/escada-dca/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <img class="tool-card__art" src="../assets/ferramentas/card-escada.svg?v=1" alt="" loading="lazy" decoding="async"
+               style="object-position: 50% 20%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Escada · DCA e preço médio</h3>
+            <p class="tool-card__desc">Entrar aos poucos: divida o capital em 2 a 5 compras, veja o preço médio no gráfico real e compare com comprar tudo de uma vez. Tem DCA no tempo, venda escalonada e Replay.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Preço médio</span>
+              <span class="tool-card__chip">500 tokens</span>
+              <span class="tool-card__chip">Replay</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
+          </div>
+        </a>
+
+        <!-- FERRAMENTA · Lucro Cripto
+             Mora em Ferramentas/lucro-cripto/. Registro: docs/ferramentas-bancada-2026-11-08.md
+             Capa provisória em SVG até a arte final (card-lucro.webp). -->
+        <a class="tool-card tool-card--art" href="../Ferramentas/lucro-cripto/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <img class="tool-card__art" src="../assets/ferramentas/card-lucro.svg?v=1" alt="" loading="lazy" decoding="async"
+               style="object-position: 50% 20%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Lucro Cripto</h3>
+            <p class="tool-card__desc">Quanto sobra de verdade numa compra e venda: lucro depois das taxas, preço para empatar e o imposto estimado no Brasil.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Taxas</span>
+              <span class="tool-card__chip">Empate</span>
+              <span class="tool-card__chip">Imposto</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
+          </div>
+        </a>
+
+        <!-- FERRAMENTA · Simulador de Trade
+             Mora em Ferramentas/simulador-de-trade/. Registro: docs/ferramentas-bancada-2026-11-08.md
+             Capa provisória em SVG até a arte final (card-trade.webp). -->
+        <a class="tool-card tool-card--art" href="../Ferramentas/simulador-de-trade/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <img class="tool-card__art" src="../assets/ferramentas/card-trade.svg?v=1" alt="" loading="lazy" decoding="async"
+               style="object-position: 50% 20%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Simulador de Trade</h3>
+            <p class="tool-card__desc">Long e short com alavancagem, preço de liquidação, stop e alvo arrastáveis no gráfico de candles, e a banca crescendo entrada após entrada.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Alavancagem</span>
+              <span class="tool-card__chip">Liquidação</span>
+              <span class="tool-card__chip">Gestão de banca</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- ============ SEÇÃO · DeFi e renda ============
+         Scanner Pools acha a pool; Estratégia de Pool monta a faixa. -->
+    <section class="tools-sec">
+      <div class="tools-sec__head">
+        <span class="tools-sec__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7h18M3 17h18"/>
+            <path d="M3 12c3-3 6 3 9 0s6 3 9 0"/>
+          </svg>
+        </span>
+        <h2 class="tools-sec__title">DeFi e renda</h2>
+        <span class="tools-sec__sub">Pools, staking e juros: quanto isso rende?</span>
+        <span class="tools-sec__count">4</span>
+      </div>
+
+      <div class="tools-grid">
+
         <!-- FERRAMENTA · Scanner Pools (pools de liquidez)
              Mora em Ferramentas/scanner-pools/ e é um HTML único, com a trava
              de login do ATLAS (core/atlas-secure.js) como todo o resto.
@@ -158,28 +290,79 @@
           </div>
         </a>
 
-        <!-- Marcador honesto: a bancada vai crescer. Não finge ser
-             clicável (ver .tool-card--soon). Troque por uma ferramenta
-             real quando existir. -->
-        <div class="tool-card tool-card--soon" aria-hidden="true">
-          <span class="tool-card__badge tool-card__badge--soon">Em breve</span>
-          <span class="tool-card__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-          </span>
-          <h3 class="tool-card__title">Próxima ferramenta</h3>
-          <p class="tool-card__desc">Espaço reservado para a próxima ideia da bancada. Quando você definir, viramos este card num link de verdade.</p>
-          <span class="tool-card__cta">Em construção</span>
-        </div>
+        <!-- FERRAMENTA · Estratégia de Pool
+             Mora em Ferramentas/estrategia-de-pool/. Registro: docs/ferramentas-bancada-2026-11-08.md
+             Capa provisória em SVG até a arte final (card-pool.webp). -->
+        <a class="tool-card tool-card--art" href="../Ferramentas/estrategia-de-pool/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <img class="tool-card__art" src="../assets/ferramentas/card-pool.svg?v=1" alt="" loading="lazy" decoding="async"
+               style="object-position: 50% 20%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Estratégia de Pool</h3>
+            <p class="tool-card__desc">Monte a faixa da pool pela estratégia: comprar na descida, vender na subida, renda em dólar, proporção do token ou faixa cheia (V2), com impermanent loss e taxas no histórico.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Faixa concentrada</span>
+              <span class="tool-card__chip">Impermanent loss</span>
+              <span class="tool-card__chip">APR real</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
+          </div>
+        </a>
+
+        <!-- FERRAMENTA · Staking
+             Mora em Ferramentas/staking/. Registro: docs/ferramentas-bancada-2026-11-08.md
+             Capa provisória em SVG até a arte final (card-stake.webp). -->
+        <a class="tool-card tool-card--art" href="../Ferramentas/staking/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <img class="tool-card__art" src="../assets/ferramentas/card-stake.svg?v=1" alt="" loading="lazy" decoding="async"
+               style="object-position: 50% 20%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Staking</h3>
+            <p class="tool-card__desc">Quanto rende deixar os tokens em staking, APR contra APY, o rendimento real acima da inflação do token e o que acontece se o preço mudar.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">APR e APY</span>
+              <span class="tool-card__chip">Rendimento real</span>
+              <span class="tool-card__chip">Cenário de preço</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
+          </div>
+        </a>
+
+        <!-- FERRAMENTA · Juros Compostos
+             Mora em Ferramentas/juros-compostos/. Registro: docs/ferramentas-bancada-2026-11-08.md
+             Capa provisória em SVG até a arte final (card-juros.webp). -->
+        <a class="tool-card tool-card--art" href="../Ferramentas/juros-compostos/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <img class="tool-card__art" src="../assets/ferramentas/card-juros.svg?v=1" alt="" loading="lazy" decoding="async"
+               style="object-position: 50% 20%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Juros Compostos</h3>
+            <p class="tool-card__desc">Aportes todo mês: o valor final em dinheiro de hoje, quanto aportar para chegar à meta e a comparação com CDI e poupança.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Meta</span>
+              <span class="tool-card__chip">Inflação</span>
+              <span class="tool-card__chip">CDI e poupança</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
+          </div>
+        </a>
 
       </div>
     </section>
 
-    <!-- ============ SEÇÃO · Estudar o mercado ============
-         Ferramentas de estudo: simulam e explicam, sem ler nem gravar
-         nada da carteira. -->
+    <!-- ============ SEÇÃO · Estudar o mercado ============ -->
     <section class="tools-sec">
       <div class="tools-sec__head">
         <span class="tools-sec__icon" aria-hidden="true">
@@ -191,7 +374,7 @@
         </span>
         <h2 class="tools-sec__title">Estudar o mercado</h2>
         <span class="tools-sec__sub">Simulações para entender, sem mexer na carteira</span>
-        <span class="tools-sec__count">1</span>
+        <span class="tools-sec__count">2</span>
       </div>
 
       <div class="tools-grid">
@@ -214,6 +397,29 @@
               <span class="tool-card__chip">Preço sonhado</span>
               <span class="tool-card__chip">Batalha</span>
               <span class="tool-card__chip">Dicionário</span>
+            </div>
+            <span class="tool-card__cta">
+              Abrir ferramenta
+              <span class="tool-card__arrow" aria-hidden="true"></span>
+            </span>
+          </div>
+        </a>
+
+        <!-- FERRAMENTA · Comparador de Ativos
+             Mora em Ferramentas/comparador-de-ativos/. Registro: docs/ferramentas-bancada-2026-11-08.md
+             Capa provisória em SVG até a arte final (card-comp.webp). -->
+        <a class="tool-card tool-card--art" href="../Ferramentas/comparador-de-ativos/index.html" data-atlas-3d>
+          <span class="tool-card__badge tool-card__badge--free" data-atropos-offset="5">Grátis</span>
+          <img class="tool-card__art" src="../assets/ferramentas/card-comp.svg?v=1" alt="" loading="lazy" decoding="async"
+               style="object-position: 50% 20%" data-atropos-offset="-4">
+          <span class="tool-card__veil" aria-hidden="true"></span>
+          <div class="tool-card__body" data-atropos-offset="2">
+            <h3 class="tool-card__title">Comparador de Ativos</h3>
+            <p class="tool-card__desc">Cripto contra ouro, ações e CDI, em reais ou dólares: rendimento no período e quanto você teria hoje em cada um.</p>
+            <div class="tool-card__chips">
+              <span class="tool-card__chip">Cripto × ouro</span>
+              <span class="tool-card__chip">Ações em token</span>
+              <span class="tool-card__chip">CDI</span>
             </div>
             <span class="tool-card__cta">
               Abrir ferramenta
