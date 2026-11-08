@@ -11,3 +11,4 @@ Repositórios de terceiros (o que cada um faz e onde está):
 Ferramentas (cenário + cards 3D): [registro de 15/10](docs/visual-ferramentas-2026-10-15.md).
 Academy (abas + curso Nível 1 em iframe): [registro de 20/10](docs/academy-2026-10-20.md).
 Finanças "lançar falando" (Oráculo, centavos, só o lançado): [registro de 23/10](docs/financas-2026-10-23.md).
+Bancada de Ferramentas (8 calculadoras do site antigo, `_comum/`, build do quadro): [registro de 08/11](docs/ferramentas-bancada-2026-11-08.md).

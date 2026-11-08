@@ -156,7 +156,11 @@
 /* v97 = o Academy virou central com abas (Início, Cursos, Artigos, Links,
    Papers) e recebeu o curso da pasta AtlasAcademy como Nível 1
    (academy/nivel-1/, curso num iframe em academy/nivel-1/curso/). */
-var VERSAO = "atlas-v97";
+/* v98 = a bancada de Ferramentas ganhou 8 ferramentas vindas do site antigo
+   (Conversor e Câmbio, Escada, Lucro Cripto, Simulador de Trade, Estratégia
+   de Pool, Staking, Juros Compostos, Comparador de Ativos) em 4 seções.
+   Registro: docs/ferramentas-bancada-2026-11-08.md */
+var VERSAO = "atlas-v98";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

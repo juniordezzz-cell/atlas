@@ -24,3 +24,5 @@ Visual das Ferramentas (piloto de 15/10/2026): antes de mexer no fundo ou nos ca
 Repositórios de terceiros: o catálogo é [referencias/REPOSITORIOS.md](referencias/REPOSITORIOS.md). Trouxe, atualizou ou removeu um repositório? Atualize o catálogo no mesmo commit.
 
 Conector MCP do Atlas (Claude lendo e, em fases seguintes, registrando operações): consultar [o contrato e a implantação](docs/atlas-mcp.md) antes de alterar `central-rwa/supabase/functions/atlas-mcp/`, `pages/conectar-claude.html` ou `js/conectar-claude.js`. O conector só acessa `atlas_users/{uid do token}`; nunca aceitar `uid` como parâmetro. Validar com `node --test central-rwa/supabase/functions/atlas-mcp/*.test.mjs js/conectar-claude.test.cjs`.
+
+Bancada de Ferramentas (08/11/2026): as 8 calculadoras vindas do site antigo, as peças comuns (`Ferramentas/_comum/`) e o build da Escada e da Estratégia de Pool estão no [registro](docs/ferramentas-bancada-2026-11-08.md). Validar com `node --test Ferramentas/_comum/*.test.cjs`. Não reintroduzir nada do MundoDeFi nem chave de API no navegador.
