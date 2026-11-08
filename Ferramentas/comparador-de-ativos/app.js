@@ -296,16 +296,16 @@ function renderCompare(){
 
   const byMoney=[...vis].sort((x,y)=>(y.cmpMoney||0)-(x.cmpMoney||0));
   document.getElementById("s2-list").innerHTML = notaJanela + byMoney.map(r=>{
-    if(r.cmpMoney==null) return `<div class="cmp-row"><span class="cmp-badge" style="background:${r.a.color}">${r.a.sym}</span><span class="cmp-text">${r.a.name}: sem histórico no período</span></div>`;
+    if(r.cmpMoney==null) return `<div class="cmp-row"><span class="cmp-badge" style="background:${r.a.color}">${escH(r.a.sym)}</span><span class="cmp-text">${escH(r.a.name)}: sem histórico no período</span></div>`;
     const cls=r.cmpMoney>=STATE.amountCmp?"pos":"neg";
-    return `<div class="cmp-row"><span class="cmp-badge" style="background:${r.a.color}">${r.a.sym}</span><span class="cmp-text">${fmtMoney(STATE.amountCmp)} em ${r.a.name} hoje seriam <b class="${cls}">${fmtMoney(r.cmpMoney)}</b></span></div>`;
+    return `<div class="cmp-row"><span class="cmp-badge" style="background:${r.a.color}">${escH(r.a.sym)}</span><span class="cmp-text">${fmtMoney(STATE.amountCmp)} em ${escH(r.a.name)} hoje seriam <b class="${cls}">${fmtMoney(r.cmpMoney)}</b></span></div>`;
   }).join("");
 
   const byPct=[...vis].sort((x,y)=>(y.cmpPct==null?-1e9:y.cmpPct)-(x.cmpPct==null?-1e9:x.cmpPct));
   document.getElementById("s3-list").innerHTML = notaJanela + byPct.map(r=>{
-    if(r.cmpPct==null) return `<div class="cmp-row"><span class="cmp-badge" style="background:${r.a.color}">${r.a.sym}</span><span class="cmp-text">${r.a.name}: sem histórico no período</span></div>`;
+    if(r.cmpPct==null) return `<div class="cmp-row"><span class="cmp-badge" style="background:${r.a.color}">${escH(r.a.sym)}</span><span class="cmp-text">${escH(r.a.name)}: sem histórico no período</span></div>`;
     const cls=r.cmpPct>=0?"pos":"neg";
-    return `<div class="cmp-row"><span class="cmp-badge" style="background:${r.a.color}">${r.a.sym}</span><span class="cmp-text">${r.a.name}: <b class="${cls}">${fmtPct(r.cmpPct)}</b> no período</span></div>`;
+    return `<div class="cmp-row"><span class="cmp-badge" style="background:${r.a.color}">${escH(r.a.sym)}</span><span class="cmp-text">${escH(r.a.name)}: <b class="${cls}">${fmtPct(r.cmpPct)}</b> no período</span></div>`;
   }).join("");
 
   updateLegends();
@@ -319,7 +319,7 @@ function legendHTML(){
     if(STATE.hidden[key]) cls+=" off";
     if(r.status==="loading"){ cls+=" loading"; status=`<span class="lg-status">…</span>`; }
     else if(r.status==="error"){ cls+=" error"; status=`<span class="lg-status">erro · tocar</span>`; }
-    return `<span class="${cls}" data-k="${key}"><span class="lg-dot" style="background:${a.color}"></span><span class="lg-name">${a.name}</span>${status}</span>`;
+    return `<span class="${cls}" data-k="${escH(key)}"><span class="lg-dot" style="background:${a.color}"></span><span class="lg-name">${escH(a.name)}</span>${status}</span>`;
   }).join("");
 }
 function updateLegends(){ ["s2-legend","s3-legend"].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=legendHTML(); }); }
@@ -360,7 +360,7 @@ function renderPeers(){
   const row=document.getElementById("peers-row");
   row.innerHTML=STATE.set.map(k=>{
     const a=ASSETS[k], prim=k===STATE.primary;
-    return `<span class="chip ${prim?"primary":""}"><span class="dot" style="background:${a.color}"></span>${a.name}${prim?" ⭐":""}${prim?"":`<span class="x" onclick="removeAsset('${k}')">✕</span>`}</span>`;
+    return `<span class="chip ${prim?"primary":""}"><span class="dot" style="background:${a.color}"></span>${escH(a.name)}${prim?" ⭐":""}${prim?"":`<span class="x" onclick="removeAsset(${jsAttr(k)})">✕</span>`}</span>`;
   }).join("") + `<span class="chip chip-add" onclick="document.getElementById('search-input').focus()">+ adicionar</span>`;
   const a=ASSETS[STATE.primary];
   document.getElementById("peers-note").textContent=`Ativo principal: ${a.name}. Painel: 2 criptos (pesquisado + rival) + Ouro, Nvidia, Google, S&P 500, Nasdaq 100 e CDI. Clique nas bolinhas para isolar.`;
@@ -392,7 +392,7 @@ function sdItem(key,name,sym,color,img,tag){
   const ico=img&&/^https:\/\//.test(img)?`<img src="${escH(img)}" alt="">`:escH(sym.slice(0,3));
   return `<div class="sd-item" onclick="caPick(${jsAttr(key)},${jsAttr(name)},${jsAttr(sym)})">
     <span class="sd-ico" style="background:${color}">${ico}</span>
-    <div><div class="sd-name">${name}</div><div class="sd-sym">${sym}</div></div>
+    <div><div class="sd-name">${escH(name)}</div><div class="sd-sym">${escH(sym)}</div></div>
     <span class="sd-tag ${tag}">${tag}</span></div>`;
 }
 function caPick(key,name,sym){
@@ -429,7 +429,7 @@ function syncPeriodButtons(){
 function renderTdNotice(){
   const el=document.getElementById("td-notice");
   const errs=STATE.set.filter(k=>RAW[k]&&RAW[k].status==="error").map(k=>ASSETS[k].name);
-  el.innerHTML = errs.length ? `<div class="notice info">ℹ️ Não carregou: ${[...new Set(errs)].join(", ")}. Pode ser limite momentâneo da API ou símbolo a ajustar. Toque na bolinha do ativo (legenda) pra tentar de novo.</div>` : "";
+  el.innerHTML = errs.length ? `<div class="notice info">ℹ️ Não carregou: ${escH([...new Set(errs)].join(", "))}. Pode ser limite momentâneo da API ou símbolo a ajustar. Toque na bolinha do ativo (legenda) pra tentar de novo.</div>` : "";
 }
 
 /* ════════════════ TICKER ════════════════ */

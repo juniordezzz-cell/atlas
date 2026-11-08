@@ -113,6 +113,10 @@ function closeAssetResults(){
   el('asset-search-results').classList.remove('open');
 }
 
+// texto vindo da CoinGecko ou digitado nunca entra cru no HTML
+const escH = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const urlSegura = u => /^https:\/\//.test(u || '') ? u : '';
+
 function renderAssetResults(coins, query){
   const box = el('asset-search-results');
   let html = '';
@@ -122,14 +126,14 @@ function renderAssetResults(coins, query){
     html += '<div class="asr-empty">Nenhum ativo encontrado.</div>';
   } else {
     html += coins.slice(0, 8).map(c => `
-      <div class="asr-item" data-id="${c.id}" data-symbol="${c.symbol}" data-name="${c.name.replace(/"/g,'&quot;')}" data-thumb="${c.thumb || ''}">
-        ${c.thumb ? `<img src="${c.thumb}" alt="">` : '<span class="asr-icon-fallback"></span>'}
-        <span class="asr-name">${c.name}</span>
-        <span class="asr-sym">${c.symbol.toUpperCase()}</span>
+      <div class="asr-item" data-id="${escH(c.id)}" data-symbol="${escH(c.symbol)}" data-name="${escH(c.name)}" data-thumb="${escH(urlSegura(c.thumb))}">
+        ${urlSegura(c.thumb) ? `<img src="${escH(c.thumb)}" alt="">` : '<span class="asr-icon-fallback"></span>'}
+        <span class="asr-name">${escH(c.name)}</span>
+        <span class="asr-sym">${escH(String(c.symbol || '').toUpperCase())}</span>
       </div>`).join('');
   }
   if(query && query.trim() !== ''){
-    html += `<div class="asr-item asr-manual" data-manual="1">➕ Usar "${query}" como ativo manual</div>`;
+    html += `<div class="asr-item asr-manual" data-manual="1">➕ Usar "${escH(query)}" como ativo manual</div>`;
   }
   box.innerHTML = html;
   box.classList.add('open');
@@ -326,7 +330,7 @@ function calcular(){
 
   // Badge de posição no gráfico
   const symTxt = selectedAsset.manual ? (selectedAsset.name || 'Manual') : selectedAsset.symbol.toUpperCase();
-  el('chart-badge').innerHTML = `${symTxt} · <span class="badge-${dir}">${dir==='long'?'LONG':'SHORT'}</span> · Entrada ${fmt(entrada)} · ${lev}x`;
+  el('chart-badge').innerHTML = `${escH(symTxt)} · <span class="badge-${dir}">${dir==='long'?'LONG':'SHORT'}</span> · Entrada ${fmt(entrada)} · ${lev}x`;
 
   if(entrada <= 0){ atualizarPreview(0, lev); slInfo = null; drawChart(); return; }
 

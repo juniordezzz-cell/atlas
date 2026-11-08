@@ -449,9 +449,18 @@
     var t = String(texto == null ? '' : texto).replace(/[^0-9,.\-]/g, '');
     if (!/[0-9]/.test(t)) return null;
     if (t.indexOf(',') >= 0) t = t.replace(/\./g, '').replace(',', '.');
-    else if (/^-?[0-9]{1,3}(\.[0-9]{3})+$/.test(t)) t = t.replace(/\./g, '');
+    else if (/^-?[1-9][0-9]{0,2}(\.[0-9]{3})+$/.test(t)) t = t.replace(/\./g, '');
     var n = parseFloat(t);
     return isFinite(n) ? n : null;
+  };
+
+  /* O caminho de volta: número para escrever num campo de texto, no
+     formato que o lerNumero entende. Vírgula decimal, sem separador de
+     milhar e nunca em notação científica (String(1.2e-9) daria "1.2e-9",
+     que voltaria como 1,2). Até 12 casas decimais. */
+  F.numeroCampo = function (v) {
+    if (v == null || v === '' || !isFinite(Number(v))) return '';
+    return Number(v).toLocaleString('pt-BR', { useGrouping: false, maximumFractionDigits: 12 });
   };
 
   /* ══════════════════════════════════════════════════════════════

@@ -100,7 +100,7 @@
       var img = $('sk-ficha-img'); img.hidden = !t.img; if (t.img) img.src = t.img;
       $('sk-sym').value = t.sym;
       AtlasBuscaToken.mercado(t.id).then(function (m) {
-        $('sk-preco').value = String(+m.preco.toPrecision(8)).replace('.', ',');
+        $('sk-preco').value = C.numeroCampo(m.preco);
         status('Preço de hoje: ' + usd(m.preco) + '.'); calcular();
       }).catch(function (e) { status('Não consegui buscar o preço (' + e.message + '). Digite o preço à mão.'); });
     }

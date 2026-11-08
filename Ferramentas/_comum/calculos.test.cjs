@@ -418,3 +418,19 @@ test('precoEmpate', () => {
   assert.equal(C.precoEmpate(10, 0), 10);
   assert.equal(C.precoEmpate(10, 100), null);
 });
+
+/* ── Correções da revisão final (08/11) ── */
+test('lerNumero: zero à esquerda não é grupo de milhar', () => {
+  assert.equal(C.lerNumero('0.001'), 0.001);
+  assert.equal(C.lerNumero('0.123'), 0.123);
+  assert.equal(C.lerNumero('1.234'), 1234);
+});
+test('numeroCampo escreve sem notação científica e volta igual pelo lerNumero', () => {
+  assert.equal(C.numeroCampo(1.2e-9), '0,0000000012');
+  assert.equal(C.numeroCampo(74526), '74526');
+  assert.equal(C.numeroCampo(0.231704), '0,231704');
+  assert.equal(C.numeroCampo(12345.5), '12345,5');
+  assert.equal(C.numeroCampo(null), '');
+  [1.2e-9, 0.001, 0.123, 74526, 12345.5, 6988.5521, 0.14309116].forEach(v =>
+    assert.equal(C.lerNumero(C.numeroCampo(v)), v));
+});

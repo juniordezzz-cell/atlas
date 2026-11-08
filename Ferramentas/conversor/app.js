@@ -394,8 +394,16 @@ document.querySelectorAll('.periodos button').forEach(btn => {
 });
 
 // ---------- orquestração ----------
+// "08/11 às 14:32": a cotação guardada diz de quando é
+function quandoFoi(t) {
+  const d = new Date(t);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
 function mostrarErro(e) {
   console.error(e);
+  const at = document.getElementById('atualizado');
+  if (/atualizando…$/.test(at.textContent)) at.textContent = at.textContent.replace('atualizando…', 'sem conexão agora');
   document.getElementById('erro-api').style.display = 'block';
 }
 
@@ -475,7 +483,10 @@ const CB = (function () {
   async function iniciar() {
     $('cb-erro-api').style.display = 'none';
     try { await carregar(); recalc(ultimo); }
-    catch (e) { if (!valorUSD) { $('cb-erro-api').style.display = 'block'; $('cb-atualizado').textContent = 'Erro ao carregar.'; } }
+    catch (e) {
+      if (!valorUSD) { $('cb-erro-api').style.display = 'block'; $('cb-atualizado').textContent = 'Erro ao carregar.'; }
+      else $('cb-atualizado').textContent = $('cb-atualizado').textContent.replace('atualizando…', 'sem conexão agora');
+    }
   }
   function abrir() {
     if (iniciado) return; iniciado = true;
@@ -486,7 +497,7 @@ const CB = (function () {
     $('cb-input-de').value = '1.000';
     try {
       const c = JSON.parse(localStorage.getItem(CHAVE) || 'null');
-      if (c && c.v) { valorUSD = c.v; recalc('de'); $('cb-atualizado').textContent = 'Cotação salva às ' + hora(c.t) + ' · atualizando…'; }
+      if (c && c.v) { valorUSD = c.v; recalc('de'); $('cb-atualizado').textContent = 'Cotação salva em ' + quandoFoi(c.t) + ' · atualizando…'; }
     } catch (e) {}
     $('cb-input-de').addEventListener('input', () => { ultimo = 'de'; recalc('de'); });
     $('cb-input-para').addEventListener('input', () => { ultimo = 'para'; recalc('para'); });
@@ -534,8 +545,7 @@ document.querySelectorAll('[data-modo]').forEach(b => b.addEventListener('click'
     if (c && c.p && c.p[fiatAtual]) {
       precosFiat = c.p; recalcular();
       document.getElementById('taxa-valor').textContent = fmtMoeda(c.p[fiatAtual]);
-      document.getElementById('atualizado').textContent = 'Cotação salva às ' +
-        new Date(c.t).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }) + ' · atualizando…';
+      document.getElementById('atualizado').textContent = 'Cotação salva em ' + quandoFoi(c.t) + ' · atualizando…';
     }
   } catch (e) {}
   if (params.get('modo') === 'cambio') setModo('cambio');

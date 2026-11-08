@@ -13,7 +13,7 @@
   function ler(id) { return C.lerNumero($(id).value); }
   function usd(v) { return (v < 0 ? '−' : '') + 'US$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: Math.abs(v) < 1 && v !== 0 ? 6 : 2 }); }
   function brl(v) { return (v < 0 ? '−' : '') + 'R$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-  function campo(id, v) { $(id).value = v == null ? '' : String(+(+v).toPrecision(10)).replace('.', ','); }
+  function campo(id, v) { $(id).value = v == null ? '' : C.numeroCampo(+(+v).toPrecision(10)); }
   function linkSeguro(u) { return /^https:\/\//.test(u || '') ? u : ''; }
   function status(t) { $('lc-status').textContent = t || ''; }
 

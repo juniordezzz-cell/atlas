@@ -357,6 +357,7 @@ body.present .kv b{font-size:19px}
 </div>
 
 <script src="../../core/http.js"></script>
+<script src="../_comum/calculos.js?v=2"></script>
 <script type="application/json" id="snap">__SNAP__</script>
 <script>
 (()=>{
@@ -377,10 +378,11 @@ const fp=p=>isFinite(p)?p.toLocaleString('pt-BR',{minimumFractionDigits:dec(p),m
 const fu=v=>isFinite(v)?(v<-0.005?'−':'')+'$'+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
 const fpct=v=>isFinite(v)?(v>0.05?'+':v<-0.05?'−':'')+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%':'—';
 const fq=q=>isFinite(q)?q.toLocaleString('pt-BR',{maximumFractionDigits:q>=1000?0:q>=1?2:6}):'—';
-const num=s=>{const v=parseFloat(String(s).trim().replace(/\s/g,'').replace(',','.'));return isFinite(v)?v:NaN};
+// número digitado no formato brasileiro ("5.000", "0,5"): contas comuns da bancada
+const num=s=>{const v=AtlasCalculos.lerNumero(s);return v==null?NaN:v};
 const sgn=v=>v>=0?'up':'dn';
 const rnd=v=>+v.toFixed(dec(v));
-const fnum=v=>String(rnd(v)).replace('.',',');
+const fnum=v=>AtlasCalculos.numeroCampo(rnd(v));
 
 /* ---------- dados: CoinGecko, com DeFi Llama de reserva ---------- */
 const API='https://api.coingecko.com/api/v3';
@@ -1234,7 +1236,7 @@ async function scApply(sc){
   S.cap=+sc.cap>0?+sc.cap:100;$('#cap').value=fnum(S.cap);S.active=['1','2','3','4','5','L','C'].includes(sc.active)?sc.active:'3';S.strats=cp(sc.strats);if(!S.strats.L)S.strats.L=[];
   if(sc.hi>0)S.hi=sc.hi;if(sc.lo>0)S.lo=sc.lo;if(sc.test>0)S.test=sc.test;if(sc.pool&&sc.pool.a>0)S.pool={...sc.pool};
   if(sc.sell&&sc.sell.ps){SL.qty=+sc.sell.qty||0;SL.cost=+sc.sell.cost||0;SL.n=[1,2,3,4].includes(sc.sell.n)?sc.sell.n:3;SL.ps=cp(sc.sell.ps);SL.key=S.key;SL.bodyFor='';$('#selQty').value=fnum(SL.qty);$('#selCost').value=fnum(SL.cost)}
-  if(sc.cal){$('#calAmt').value=sc.cal.amt||'50';$('#calFreq').value=sc.cal.freq||'7';$('#calStart').value=sc.cal.start||'';$('#calEnd').value=sc.cal.end||'';CAL.keep=!(CAL.key===S.key&&CAL.ser)}
+  if(sc.cal){$('#calAmt').value=sc.cal.amt?fnum(sc.cal.amt):'50';$('#calFreq').value=sc.cal.freq||'7';$('#calStart').value=sc.cal.start||'';$('#calEnd').value=sc.cal.end||'';CAL.keep=!(CAL.key===S.key&&CAL.ser)}
   PHS.on=!!(sc.ph&&sc.ph.on);PHS.apr=sc.ph&&sc.ph.apr>=0?sc.ph.apr:25;$('#phApr').value=fnum(PHS.apr);
   if(PHS.on&&sc.ph.t){let best=0,bd=Infinity;S.candles.forEach((c,k)=>{const d=Math.abs(c.t-sc.ph.t);if(d<bd){bd=d;best=k}});phSetIdx(best);if(sc.pool&&sc.pool.p0)S.pool.p0=sc.pool.p0}
   S.drawBy[S.key]=Array.isArray(sc.drawings)?cp(sc.drawings):[];
