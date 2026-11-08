@@ -163,8 +163,9 @@ const runAssetSearch = debounce(async (query) => {
   }
   renderAssetResults(null, query);
   try{
-    const data = await AtlasHttp.getJSON(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`, { ttl: 300000 });
-    renderAssetResults((data.coins || []).map(c => ({ id:c.id, symbol:c.symbol, name:c.name, thumb:c.thumb })), query);
+    // roteador: catálogo local dos 500 maiores, rede só se não achar
+    const lista = await AtlasDados.buscar(query);
+    renderAssetResults(lista.map(c => ({ id:c.id, symbol:c.sym, name:c.nome, thumb:c.img })), query);
   }catch(e){
     renderAssetResults([], query);
   }
@@ -189,17 +190,19 @@ async function fetchPrice(){
   status.textContent = 'Buscando preço ao vivo…';
   status.style.color = 'var(--ciano)';
   try{
-    const data = await AtlasHttp.getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(selectedAsset.id)}&vs_currencies=usd`, { ttl: 60000 });
-    const preco = data[selectedAsset.id].usd;
+    const p = await AtlasDados.preco(selectedAsset.id, selectedAsset.symbol);
+    if(!p) throw new Error('sem preço');
+    const preco = p.usd;
     el('entrada').value = preco;
     if((parseFloat(el('saida').value) || 0) === 0){
       el('saida').value = (preco * 1.05).toFixed(decimalsForPrice(preco));
     }
-    status.textContent = 'Preço atualizado pela CoinGecko.';
-    status.style.color = 'var(--verde)';
+    status.textContent = p.salvo ? `Preço guardado de ${AtlasDados.quandoTexto(p.quando)} (nenhuma fonte no ar agora).`
+                                 : `Preço atualizado · ${p.fonte}.`;
+    status.style.color = p.salvo ? 'var(--dourado)' : 'var(--verde)';
     calcular();
   }catch(e){
-    status.textContent = 'Erro ao conectar à API. Digite manualmente.';
+    status.textContent = 'Nenhuma fonte tem o preço deste ativo agora. Digite o preço de entrada.';
     status.style.color = 'var(--vermelho)';
   }
 }
@@ -572,26 +575,11 @@ async function fetchKlines(){
     drawChart();
     return;
   }
-  const symbol = selectedAsset.symbol.toUpperCase() + 'USDT';
   try{
-    /* Duas portas da Binance (a api.binance.com é bloqueada em alguns
-       países e redes; a data-api.binance.vision é só de cotações) e, se o
-       token não tiver par em USDT, as velas da CoinGecko. */
-    let data = null;
-    for(const host of ['https://data-api.binance.vision','https://api.binance.com']){
-      try{
-        const d = await AtlasHttp.getJSON(`${host}/api/v3/klines?symbol=${symbol}&interval=${chartInterval}&limit=100`, { ttl: 60000, retries: 0 });
-        if(Array.isArray(d) && d.length){ data = d; break; }
-      }catch(_){}
-    }
-    if(data){
-      candleData = data.map(k => ({ t:k[0], o:+k[1], h:+k[2], l:+k[3], c:+k[4] }));
-    }else{
-      const days = {'15m':1,'1h':7,'4h':30,'1d':180}[chartInterval] || 7;
-      const d = await AtlasHttp.getJSON(`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(selectedAsset.id)}/ohlc?vs_currency=usd&days=${days}`, { ttl: 300000 });
-      if(!Array.isArray(d) || !d.length) throw new Error('sem dados');
-      candleData = d.slice(-100).map(k => ({ t:k[0], o:+k[1], h:+k[2], l:+k[3], c:+k[4] }));
-    }
+    // roteador: Binance, depois CoinGecko, depois DefiLlama (só fechamento)
+    const precoRef = parseFloat(el('entrada').value) || null;
+    const r = await AtlasDados.velas(selectedAsset.id, selectedAsset.symbol, chartInterval, 100, precoRef);
+    candleData = r.velas.slice(-100);
   }catch(e){
     candleData = [];
   }

@@ -337,9 +337,9 @@
         },
         function () {
           if (id.indexOf('pk:') === 0) return null;
-          var ms = MS[intervalo] || MS['1h'];
-          var ini = Math.floor((agora() - limite * ms) / 1000);
-          return pedir('defillama', LL + '/chart/coingecko:' + encodeURIComponent(id) + '?start=' + ini + '&span=' + limite + '&period=' + intervalo).then(function (d) {
+          // contado para trás a partir de agora: "start" antes do token existir volta vazio; máximo de 500 pontos
+          var fim = Math.floor(agora() / 1000);
+          return pedir('defillama', LL + '/chart/coingecko:' + encodeURIComponent(id) + '?end=' + fim + '&span=' + Math.min(500, limite) + '&period=' + intervalo).then(function (d) {
             var k = d && d.coins && d.coins[Object.keys(d.coins)[0]];
             if (!k || !k.prices || k.prices.length < 3) return null;
             return { velas: deFechamentos(k.prices.map(function (p) { return [p.timestamp * 1000, p.price]; })), fonte: 'DefiLlama' };
@@ -368,9 +368,10 @@
           },
           function () {
             if (id.indexOf('pk:') === 0) return null;
-            var semanal = dias > 1000, span = semanal ? Math.ceil(dias / 7) : dias;
-            var ini = Math.floor((agora() - dias * MS['1d']) / 1000);
-            return pedir('defillama', LL + '/chart/coingecko:' + encodeURIComponent(id) + '?start=' + ini + '&span=' + span + '&period=' + (semanal ? '1w' : '1d'), { timeout: 15000 }).then(function (d) {
+            // contado para trás a partir de agora (máximo de 500 pontos; antes de o token existir não vem nada)
+            var semanal = dias > 500, span = Math.min(500, semanal ? Math.ceil(dias / 7) : dias);
+            var fim = Math.floor(agora() / 1000);
+            return pedir('defillama', LL + '/chart/coingecko:' + encodeURIComponent(id) + '?end=' + fim + '&span=' + span + '&period=' + (semanal ? '1w' : '1d'), { timeout: 15000 }).then(function (d) {
               var k = d && d.coins && d.coins[Object.keys(d.coins)[0]];
               if (!k || !k.prices || k.prices.length < 3) return null;
               return { serie: k.prices.map(function (p) { return { t: p.timestamp * 1000, v: p.price }; }), fonte: 'DefiLlama' };

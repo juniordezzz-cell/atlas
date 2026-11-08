@@ -34,7 +34,7 @@
       <div class="ticker-item"><span class="ticker-flag">₿</span><div class="ticker-info"><span class="ticker-label">Bitcoin BTC</span><span class="ticker-val" id="tk-btc">carregando...</span></div><span class="ticker-chg" id="tk-btc-c"></span></div>
       <div class="ticker-item"><span class="ticker-flag">Ξ</span><div class="ticker-info"><span class="ticker-label">Ethereum ETH</span><span class="ticker-val" id="tk-eth">carregando...</span></div><span class="ticker-chg" id="tk-eth-c"></span></div>
     </div>
-    <div class="last-updated">Cotações em tempo real · <span id="tk-time">—</span></div>
+    <div class="last-updated">Cotações <span id="tk-time">—</span></div>
 
     <!-- SEARCH -->
     <div class="search-card">
@@ -156,17 +156,19 @@
       <h2>Como ler</h2>
       <p>Comparar <strong>Bitcoin, Ethereum e outras criptos</strong> com <strong>ouro, ações e CDI</strong> é a forma honesta de ver risco e retorno: o ouro é a reserva clássica, o S&amp;P 500 é o termômetro da bolsa americana e o CDI é o piso da renda fixa no Brasil.</p>
       <h3>De onde vêm os dados?</h3>
-      <p>Criptos: Binance (histórico longo) e CoinGecko. <strong>Ouro</strong> é o PAX Gold (PAXG), um token lastreado em ouro físico, que acompanha o preço da onça. <strong>S&amp;P 500, Nasdaq 100, Nvidia e Google</strong> são tokens de ação (xStocks), que seguem a ação e existem desde meados de 2025: para eles o histórico tem cerca de um ano. CDI e IPCA vêm do Banco Central.</p>
+      <p>Criptos: Binance (histórico longo) e DefiLlama, com a CoinGecko só de reserva. <strong>Ouro</strong> é o PAX Gold (PAXG), um token lastreado em ouro físico, que acompanha o preço da onça. <strong>S&amp;P 500, Nasdaq 100, Nvidia e Google</strong> são tokens de ação (xStocks), que seguem a ação e existem desde meados de 2025, com histórico pela DefiLlama. CDI e IPCA vêm do Banco Central.</p>
       <h3>Real ou dólar?</h3>
-      <p>Ativos cotados em dólar viram reais pela cotação do USDT de hoje. CDI e IPCA são índices acumulados, sem moeda.</p>
+      <p>Ativos cotados em dólar viram reais pelo câmbio de hoje. CDI e IPCA são índices acumulados, sem moeda.</p>
     </section>
   </div>
 </div>
 
 <script src="../../core/http.js"></script>
+<script src="../../core/dados/tokens-top.js"></script>
+<script src="../../core/atlas-dados.js?v=1"></script>
 <script src="../../assets/vendor/chart-4.4.1.min.js"></script>
 <script src="../_comum/calculos.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=2"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>
