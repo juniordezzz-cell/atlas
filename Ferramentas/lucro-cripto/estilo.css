@@ -1,0 +1,13 @@
+/* ATLAS · Lucro Cripto — peças próprias. A base vem de ../_comum/ferramenta.css. */
+.lc-busca{position:relative;max-width:520px}
+.lc-rotulo{display:block;font-size:12.5px;color:var(--mut);margin-bottom:5px}
+#lc-busca{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--txt);font:inherit;padding:9px 12px}
+#lc-busca:focus{outline:2px solid var(--accent);outline-offset:1px}
+.lc-sugestoes{position:absolute;z-index:5;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;background:#0d1320;border:1px solid var(--line);border-radius:10px;max-height:300px;overflow:auto}
+.lc-sugestoes li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer}
+.lc-sugestoes li[aria-selected="true"],.lc-sugestoes li:hover{background:var(--accent-bg)}
+.lc-sugestoes img{width:22px;height:22px;border-radius:50%}
+.lc-sugestoes .rank{margin-left:auto;color:var(--mut2);font-size:12px}
+.lc-ficha{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+.lc-ficha img{border-radius:50%}
+.lc-ficha .num{color:var(--txt2)}

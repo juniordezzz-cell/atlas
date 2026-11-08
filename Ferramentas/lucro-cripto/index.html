@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Lucro Cripto do ATLAS: lucro líquido de uma operação depois das taxas, preço para empatar e o imposto estimado no Brasil.">
+<title>Lucro Cripto — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<link rel="stylesheet" href="estilo.css?v=1">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>Lucro <span>Cripto</span></h1>
+    <p class="sub">Quanto sobra de verdade numa compra e venda, depois das taxas e do imposto.</p>
+    <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
+  </header>
+
+  <section class="bloco">
+    <h2 class="bloco__titulo">Token</h2>
+    <div class="lc-busca">
+      <label for="lc-busca" class="lc-rotulo">Busque o token (opcional, para usar o preço de hoje)</label>
+      <input id="lc-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Ex.: BTC, Solana, JUP"
+             role="combobox" aria-expanded="false" aria-controls="lc-sugestoes" aria-autocomplete="list">
+      <ul id="lc-sugestoes" class="lc-sugestoes" role="listbox" hidden></ul>
+    </div>
+    <div class="lc-ficha" id="lc-ficha" hidden>
+      <img id="lc-ficha-img" alt="" width="28" height="28">
+      <b id="lc-ficha-nome"></b>
+      <span class="num" id="lc-ficha-preco"></span>
+      <button type="button" class="btn" id="lc-usar-preco">Usar o preço de hoje como venda</button>
+    </div>
+    <p class="status" id="lc-status"></p>
+  </section>
+
+  <section class="bloco">
+    <h2 class="bloco__titulo">Operação</h2>
+    <div class="grade2">
+      <div class="campo"><label for="lc-qtd">Quantidade comprada</label><input id="lc-qtd" inputmode="decimal" value="1"></div>
+      <div class="campo"><label for="lc-taxa">Taxa da exchange (% por operação)</label><input id="lc-taxa" inputmode="decimal" value="0,1"></div>
+      <div class="campo"><label for="lc-compra">Preço de compra (US$)</label><input id="lc-compra" inputmode="decimal" placeholder="Preço pago"></div>
+      <div class="campo"><label for="lc-venda">Preço de venda (US$)</label><input id="lc-venda" inputmode="decimal" placeholder="Preço de saída"></div>
+      <div class="campo"><label for="lc-dolar">Dólar em reais (R$)</label><input id="lc-dolar" inputmode="decimal" value="5,50"></div>
+      <div class="campo"><label for="lc-custodia">Onde a cripto está</label>
+        <select id="lc-custodia"><option value="br">Exchange brasileira ou carteira própria</option><option value="ext">Exchange estrangeira</option></select></div>
+      <div class="campo"><label for="lc-outras">Outras vendas de cripto no mesmo mês (R$)</label><input id="lc-outras" inputmode="decimal" value="0"></div>
+    </div>
+    <p class="dica">Taxa comum: 0,1% na Binance e na Bybit, 0,05% na BingX. A taxa é cobrada na compra e de novo na venda.</p>
+    <div class="acoes">
+      <button type="button" class="btn btn--principal" id="lc-calcular">Calcular lucro</button>
+      <button type="button" class="btn btn--link" id="lc-limpar">Limpar</button>
+    </div>
+    <p class="aviso aviso--erro" id="lc-erro" hidden>Preencha a quantidade, o preço de compra e o preço de venda.</p>
+  </section>
+
+  <div id="lc-resultado" hidden>
+    <div class="resultados">
+      <div class="res res--destaque"><div class="res__rotulo">Lucro líquido (US$)</div><div class="res__valor" id="lc-r-lucro">—</div></div>
+      <div class="res"><div class="res__rotulo">Lucro em reais</div><div class="res__valor" id="lc-r-lucro-brl">—</div></div>
+      <div class="res"><div class="res__rotulo">Variação líquida</div><div class="res__valor" id="lc-r-pct">—</div></div>
+      <div class="res"><div class="res__rotulo">Valor investido</div><div class="res__valor" id="lc-r-inv">—</div><div class="res__nota">compra + taxa da compra</div></div>
+      <div class="res"><div class="res__rotulo">Valor de saída</div><div class="res__valor" id="lc-r-out">—</div><div class="res__nota">venda − taxa da venda</div></div>
+      <div class="res"><div class="res__rotulo">Taxas pagas</div><div class="res__valor" id="lc-r-taxas">—</div></div>
+      <div class="res"><div class="res__rotulo">Preço para empatar</div><div class="res__valor" id="lc-r-empate">—</div><div class="res__nota">Vendendo abaixo disso, as taxas comem o lucro.</div></div>
+      <div class="res"><div class="res__rotulo">Imposto estimado</div><div class="res__valor" id="lc-r-ir">—</div><div class="res__nota" id="lc-r-ir-nota"></div></div>
+      <div class="res res--bom"><div class="res__rotulo">Sobra depois do imposto</div><div class="res__valor" id="lc-r-sobra">—</div></div>
+    </div>
+    <p class="status">Estimativa pela regra em vigor quando a ferramenta foi feita. A lei muda e cada caso tem detalhes (compensação de prejuízo, permutas, custo médio de várias compras). Confirme com um contador antes de pagar.</p>
+  </div>
+
+  <section class="explica">
+    <h2>Como ler</h2>
+    <p>O lucro da tela da exchange raramente é o que entra no bolso. A taxa sai <strong>duas vezes</strong>, na compra e na venda, e o custo de verdade é o que você desembolsou: compra mais a taxa da compra.</p>
+    <h3>Imposto</h3>
+    <p>Exchange brasileira ou carteira própria: <strong>vendas de até R$ 35 mil no mês são isentas</strong>. Acima disso, o lucro paga 15% (até R$ 5 milhões de ganho), por DARF com código 4600 até o último dia útil do mês seguinte. Exchange estrangeira: 15% sobre o lucro, na declaração do ano seguinte, sem a isenção dos R$ 35 mil.</p>
+    <h3>Comprou em várias vezes?</h3>
+    <p>Use o preço médio. A <a href="../escada-dca/index.html">Escada</a> calcula o preço médio das suas compras e traz para cá com um clique.</p>
+  </section>
+
+</div>
+
+<script src="../../core/http.js"></script>
+<script src="../_comum/calculos.js?v=1"></script>
+<script src="app.js?v=1"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>
