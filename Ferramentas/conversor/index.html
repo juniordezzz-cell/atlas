@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Conversor e Câmbio do ATLAS: Real, Dólar e Euro para as maiores criptos e entre si, com a cotação do mercado ao vivo.">
+<title>Conversor e Câmbio — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<link rel="stylesheet" href="estilo.css?v=1">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>Conversor e <span>Câmbio</span></h1>
+    <p class="sub">Real, Dólar e Euro para as maiores criptos, e as moedas entre si, com a cotação do mercado.</p>
+    <p class="estudo">Cotação de referência para estudo, sem taxas. Não usa os dados da sua carteira.</p>
+  </header>
+
+  <div class="modo-wrap">
+    <div class="toggle" role="tablist" aria-label="O que converter">
+      <button type="button" role="tab" data-modo="cripto" class="ativo" aria-selected="true">Moeda ⇄ Cripto</button>
+      <button type="button" role="tab" data-modo="cambio" aria-selected="false">Moeda ⇄ Moeda (câmbio)</button>
+    </div>
+  </div>
+
+  <div id="modo-cripto">
+  <!-- ===== HERO + TAXA AO VIVO ===== -->
+  <div class="hero">
+    <span class="eyebrow">Conversor Fiat → Cripto · cotação ao vivo · as maiores do mercado</span>
+    <h2 class="par-titulo">Converter <span class="par" id="h1-fiat">Real (BRL)</span> em <span class="par" id="h1-moeda">Bitcoin (BTC)</span></h2>
+    <p class="taxa-viva">1 <span id="taxa-sym">BTC</span> vale agora <strong id="taxa-valor">—</strong>
+      <span class="variacao" id="taxa-var"></span></p>
+    <p class="tri-fiat" id="tri-fiat">—</p>
+    <p class="atualizado" id="atualizado">Carregando cotação…</p>
+  </div>
+
+  <div class="erro-api" id="erro-api">
+    Não foi possível carregar a cotação agora. A API pode estar limitando requisições — aguarde alguns segundos.
+    <button onclick="iniciar()">Tentar de novo</button>
+  </div>
+
+  <!-- ===== CONVERSOR ESTILO TRADUTOR ===== -->
+  <div class="conversor-card">
+    <div class="tradutor" id="tradutor">
+
+      <!-- Painel FIAT -->
+      <div class="painel painel-fiat">
+        <div class="painel-topo">
+          <label for="select-fiat">Moeda</label>
+          <select id="select-fiat" aria-label="Escolher moeda fiduciária">
+            <option value="brl">🇧🇷 BRL — Real</option>
+            <option value="usd">🇺🇸 USD — Dólar</option>
+            <option value="eur">🇪🇺 EUR — Euro</option>
+          </select>
+        </div>
+        <input class="valor" type="text" inputmode="decimal" id="input-fiat"
+               placeholder="0,00" aria-label="Valor na moeda fiduciária">
+      </div>
+
+      <!-- Botão inverter -->
+      <div class="meio">
+        <button class="swap-btn" id="btn-swap" title="Inverter direção da conversão"
+                aria-label="Inverter direção da conversão">⇄</button>
+      </div>
+
+      <!-- Painel CRIPTO -->
+      <div class="painel painel-cripto">
+        <div class="painel-topo">
+          <label>Cripto</label>
+          <div class="busca-wrap">
+            <div class="busca-token" id="busca-token">
+              <img id="token-img" src="" alt="" style="display:none">
+              <input type="text" id="input-busca" placeholder="Buscar token por nome ou sigla…"
+                     autocomplete="off" aria-label="Buscar criptomoeda">
+            </div>
+            <div class="dropdown" id="dropdown" role="listbox"></div>
+          </div>
+        </div>
+        <input class="valor" type="text" inputmode="decimal" id="input-cripto"
+               placeholder="0,00" aria-label="Quantidade da criptomoeda">
+      </div>
+
+    </div>
+    <div class="conversor-rodape">
+      <span>Fonte: CoinGecko · sem taxas, só a cotação de mercado</span>
+      <span id="taxa-inversa">—</span>
+    </div>
+  </div>
+
+  <!-- ===== GRÁFICO ===== -->
+  <section>
+    <h2><span class="ico">📈</span>Gráfico <span id="grafico-titulo">SOL/BRL</span></h2>
+    <p class="sub">Evolução do preço na moeda selecionada, pela CoinGecko.</p>
+    <div class="grafico-card">
+      <div class="grafico-topo">
+        <div>
+          <strong id="grafico-preco" style="font-size:1.25rem">—</strong>
+          <span class="variacao" id="grafico-var"></span>
+        </div>
+        <div class="periodos" role="group" aria-label="Período do gráfico">
+          <button data-dias="1">24h</button>
+          <button data-dias="7" class="ativo">7D</button>
+          <button data-dias="30">30D</button>
+        </div>
+      </div>
+      <div id="grafico-wrap">
+        <p class="grafico-vazio">Carregando gráfico…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ESTATÍSTICAS ===== -->
+  <section>
+    <h2><span class="ico">📊</span>Estatísticas de <span id="stats-nome">Solana</span></h2>
+    <p class="sub">Números das últimas 24 horas e do ativo, na moeda selecionada.</p>
+    <div class="stats-grid">
+      <div class="stat"><div class="label">Mínima 24h</div><div class="valor" id="st-min">—</div></div>
+      <div class="stat"><div class="label">Máxima 24h</div><div class="valor" id="st-max">—</div></div>
+      <div class="stat"><div class="label">Variação 24h</div><div class="valor" id="st-var">—</div></div>
+      <div class="stat"><div class="label">Market Cap</div><div class="valor" id="st-mcap">—</div></div>
+      <div class="stat"><div class="label">Volume 24h</div><div class="valor" id="st-vol">—</div></div>
+      <div class="stat"><div class="label">Oferta circulante</div><div class="valor" id="st-supply">—</div></div>
+      <div class="stat"><div class="label">Topo histórico (ATH)</div><div class="valor" id="st-ath">—</div></div>
+      <div class="stat"><div class="label">Distância do ATH</div><div class="valor" id="st-ath-dist">—</div></div>
+    </div>
+  </section>
+
+  <!-- ===== TABELAS ===== -->
+  <section>
+    <h2><span class="ico">🔁</span>Tabelas de conversão</h2>
+    <p class="sub">Valores calculados com a cotação ao vivo — atualizam junto com o preço.</p>
+    <div class="tabelas">
+      <div class="tabela-card">
+        <h3><span class="tab-fiat">BRL</span> → <span class="tab-sym">SOL</span></h3>
+        <table id="tabela-fiat"><tbody></tbody></table>
+      </div>
+      <div class="tabela-card">
+        <h3><span class="tab-sym">SOL</span> → <span class="tab-fiat">BRL</span></h3>
+        <table id="tabela-cripto"><tbody></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== OUTROS PARES ===== -->
+  <section>
+    <h2><span class="ico">🪙</span>Conversões populares</h2>
+    <p class="sub">Troque o par do conversor com um clique.</p>
+    <div class="chips" id="chips-pares"></div>
+  </section>
+
+  </div><!-- /modo-cripto -->
+
+  <!-- ===== MODO CÂMBIO (moeda ⇄ moeda, via stablecoin) ===== -->
+  <div id="modo-cambio" hidden>
+    <div class="hero">
+      <span class="eyebrow">Câmbio ao vivo · via stablecoin</span>
+      <h2 class="par-titulo">Converter <span class="par" id="cb-h1-de">Real (BRL)</span> em <span class="par" id="cb-h1-para">Dólar (USD)</span></h2>
+      <p class="taxa-viva">1 <span id="cb-taxa-de">BRL</span> vale agora <strong id="cb-taxa-valor">—</strong></p>
+      <p class="atualizado" id="cb-atualizado">Carregando cotação…</p>
+    </div>
+    <div class="erro-api" id="cb-erro-api">
+      Não foi possível carregar a cotação agora. A API pode estar limitando requisições — aguarde alguns segundos.
+      <button type="button" id="cb-retry">Tentar de novo</button>
+    </div>
+    <div class="conversor-card">
+      <div class="tradutor">
+        <div class="painel">
+          <div class="painel-topo"><label for="cb-select-de">De</label><select id="cb-select-de"></select></div>
+          <input class="valor" type="text" inputmode="decimal" id="cb-input-de" placeholder="0,00" aria-label="Valor na moeda de origem">
+        </div>
+        <div class="meio"><button class="swap-btn" id="cb-swap" type="button" title="Inverter direção" aria-label="Inverter direção da conversão">⇄</button></div>
+        <div class="painel">
+          <div class="painel-topo"><label for="cb-select-para">Para</label><select id="cb-select-para"></select></div>
+          <input class="valor" type="text" inputmode="decimal" id="cb-input-para" placeholder="0,00" aria-label="Valor na moeda de destino">
+        </div>
+      </div>
+      <div class="conversor-rodape">
+        <span>Cotação de mercado via stablecoins USDT e USDC, sem taxas. Difere do câmbio do banco, que embute spread.</span>
+        <span id="cb-taxa-inversa">—</span>
+      </div>
+    </div>
+    <section>
+      <h2><span class="ico">📊</span>Tabela de conversão <span id="cb-tab-titulo">BRL → USD</span></h2>
+      <p class="sub">Valores de referência com a cotação atual do mercado.</p>
+      <div class="tabela-card">
+        <table>
+          <thead><tr><th id="cb-th-de">De</th><th style="text-align:right" id="cb-th-para">Para</th></tr></thead>
+          <tbody id="cb-tabela-corpo"><tr><td colspan="2" style="text-align:center;color:var(--muted)">Carregando…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div><!-- /modo-cambio -->
+
+  <section class="explica">
+    <h2>Como ler</h2>
+    <h3>A conversão tem taxa?</h3>
+    <p>Não. Aqui aparece a <strong>cotação pura de mercado</strong>. Numa exchange o valor final muda um pouco por causa da taxa de negociação e do spread de cada plataforma.</p>
+    <h3>De onde vêm os preços?</h3>
+    <p>Da <strong>CoinGecko</strong>, que junta as cotações de centenas de exchanges. O preço atualiza sozinho a cada minuto enquanto a página está aberta. Se a busca falhar, a última cotação guardada aparece na hora, com o horário dela.</p>
+    <h3>Por que o câmbio é diferente do banco?</h3>
+    <p>O modo <strong>Moeda ⇄ Moeda</strong> usa o preço das stablecoins USDT e USDC em cada moeda. É o câmbio que você pega operando no mercado cripto. O banco embute spread e taxas, por isso costuma ser pior.</p>
+    <h3>O que é market cap?</h3>
+    <p>É o <strong>preço multiplicado pela quantidade de moedas em circulação</strong>, o tamanho da cripto. Para ver se um token é barato ou caro, use a <a href="../calculadora-market-cap/index.html">Calculadora de Market Cap</a>.</p>
+  </section>
+
+</div>
+
+<script src="../../core/http.js"></script>
+<script src="../_comum/calculos.js?v=1"></script>
+<script src="app.js?v=1"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>

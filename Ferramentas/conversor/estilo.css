@@ -1,0 +1,106 @@
+/* ATLAS · Conversor e Câmbio — peças próprias da ferramenta.
+   A base (cores, cabeçalho, campos, .toggle, .explica) vem de
+   ../_comum/ferramenta.css. Visual sereno: sem glow. */
+
+/* seletor de modo */
+.modo-wrap{margin:0 0 6px}
+.modo-wrap .toggle button{padding:8px 16px}
+.toggle button.ativo{background:var(--accent-bg);color:var(--txt)}
+
+/* título do par e taxa ao vivo */
+.hero{padding:18px 0 4px}
+.eyebrow{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--mut);margin-bottom:8px}
+.par-titulo{font-size:20px;margin:0 0 8px;font-weight:700}
+.par-titulo .par{color:var(--accent)}
+.taxa-viva{color:var(--mut);margin:0 0 4px;font-size:15px}
+.taxa-viva strong{color:var(--txt);font-size:17px;font-family:var(--mono)}
+.variacao{font-weight:600;font-size:13px}
+.variacao.up{color:var(--green)} .variacao.down{color:var(--red)}
+.tri-fiat{color:var(--mut);margin:0 0 4px;font-size:13.5px}
+.tri-fiat b{color:var(--txt);font-weight:600;font-family:var(--mono)}
+.tri-fiat .sep{color:var(--mut2);margin:0 6px}
+.atualizado{color:var(--mut2);font-size:12px;margin:0}
+
+/* conversor estilo tradutor */
+.conversor-card{margin:16px 0 0;background:var(--panel-a);border:1px solid var(--line);border-radius:14px;padding:18px}
+.tradutor{display:flex;align-items:stretch;gap:12px}
+.tradutor.invertido .painel-fiat{order:3}
+.tradutor.invertido .meio{order:2}
+.tradutor.invertido .painel-cripto{order:1}
+.painel{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.painel:focus-within{border-color:var(--accent-line)}
+.painel-topo{display:flex;align-items:center;gap:10px;min-height:38px}
+.painel label{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.painel select{background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);font:inherit;padding:6px 8px}
+.painel input.valor{width:100%;background:transparent;border:0;outline:none;color:var(--txt);font-family:var(--mono);font-size:22px;font-weight:600}
+.painel input.valor::placeholder{color:var(--mut2)}
+.meio{display:flex;align-items:center;justify-content:center}
+.swap-btn{width:42px;height:42px;border-radius:50%;background:var(--panel);border:1px solid var(--line);color:var(--accent);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .25s,border-color .15s}
+.swap-btn:hover{border-color:var(--accent-line);transform:rotate(180deg)}
+.conversor-rodape{margin-top:12px;font-size:12px;color:var(--mut);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+/* busca de token */
+.busca-wrap{position:relative;flex:1;min-width:0}
+.busca-token{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:text}
+.busca-token img{width:22px;height:22px;border-radius:50%}
+.busca-token input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:var(--txt);font:inherit;font-weight:600}
+.busca-token input::placeholder{color:var(--mut2)}
+.dropdown{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:30;background:#0d1320;border:1px solid var(--line);border-radius:10px;max-height:300px;overflow-y:auto;display:none}
+.dropdown.aberto{display:block}
+.dropdown .item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer}
+.dropdown .item:hover,.dropdown .item.foco{background:var(--accent-bg)}
+.dropdown .item img{width:22px;height:22px;border-radius:50%}
+.dropdown .item .sym{font-weight:700}
+.dropdown .item .nome{color:var(--mut);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dropdown .item .rank{margin-left:auto;font-size:12px;color:var(--mut2)}
+.dropdown .vazio{padding:12px;color:var(--mut);text-align:center}
+.populares{padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--mut)}
+
+/* seções */
+section h2{font-size:16px;margin:30px 0 4px}
+section h2 .ico{margin-right:6px}
+section > .sub{margin:0 0 12px;font-size:13px}
+
+/* gráfico */
+.grafico-card{background:var(--panel-a);border:1px solid var(--line);border-radius:14px;padding:16px}
+.grafico-topo{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.grafico-topo strong{font-family:var(--mono)}
+.periodos{display:flex;gap:6px}
+.periodos button{background:transparent;border:1px solid var(--line);color:var(--mut);font:inherit;font-size:12.5px;border-radius:999px;padding:5px 12px;cursor:pointer}
+.periodos button.ativo{background:var(--accent-bg);border-color:var(--accent-line);color:var(--txt)}
+.grafico-card svg{width:100%;height:auto;display:block}
+.grafico-vazio{color:var(--mut);text-align:center;padding:40px 0}
+
+/* estatísticas */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.stat{background:var(--panel-a);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat .label{font-size:12px;color:var(--mut)}
+.stat .valor{font-size:16px;font-weight:700;font-family:var(--mono);overflow-wrap:anywhere}
+
+/* tabelas de conversão */
+.tabelas{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tabela-card{background:var(--panel-a);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tabela-card h3{font-size:13px;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--mut)}
+.tabela-card table{width:100%;border-collapse:collapse;font-size:13.5px}
+.tabela-card th{text-align:left;padding:8px 14px;font-size:11.5px;color:var(--mut);text-transform:uppercase}
+.tabela-card td{padding:8px 14px;border-bottom:1px solid #161d2b;font-family:var(--mono)}
+.tabela-card tr:last-child td{border-bottom:0}
+.tabela-card td:last-child{text-align:right;color:var(--green)}
+
+/* conversões populares */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips a{background:var(--panel-a);border:1px solid var(--line);color:var(--txt2);font-size:13px;padding:6px 14px;border-radius:999px;text-decoration:none}
+.chips a:hover{border-color:var(--accent-line);color:var(--txt)}
+
+/* erro de rede */
+.erro-api{display:none;margin:14px 0 0;background:rgba(240,85,106,.07);border:1px solid #5a2430;border-radius:10px;padding:12px 14px;font-size:13px;color:var(--txt2)}
+.erro-api button{margin-left:10px;background:var(--red);border:0;color:#fff;font:inherit;font-weight:600;border-radius:8px;padding:4px 12px;cursor:pointer}
+
+@media (max-width:720px){
+  .tradutor{flex-direction:column}
+  .swap-btn{transform:rotate(90deg)}
+  .swap-btn:hover{transform:rotate(270deg)}
+  .tabelas{grid-template-columns:1fr}
+}
+.grafico-card svg text{font-family:var(--mono);fill:var(--mut)}
+.modo-wrap .toggle{border-radius:14px}
