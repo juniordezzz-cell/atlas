@@ -1,0 +1,106 @@
+/* ATLAS · Ferramentas/_comum/ferramenta.css
+   Visual comum das calculadoras da bancada (Conversor, Juros, Lucro,
+   Staking, Comparador, Simulador). Mesma paleta e mesmo cabeçalho da
+   Calculadora de Market Cap. Visual sereno: sem glow, sem grade, sem
+   spotlight. O que for só de uma ferramenta fica no estilo.css dela.
+   Registro: docs/ferramentas-bancada-2026-11-08.md */
+:root{
+  --bg:#0a0e17; --panel:#111723; --panel-a:rgba(17,23,35,.88); --line:#1e2735;
+  --txt:#e6ecf5; --txt2:#c3ccdb; --mut:#7d8aa0; --mut2:#556074;
+  --accent:#5b8cff; --accent-bg:#18213a; --accent-line:#2c3a5c;
+  --green:#2ec785; --amber:#f5b942; --red:#f0556a;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:Inter,'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5}
+[hidden]{display:none!important}
+a{color:var(--accent)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.pos{color:var(--green)} .neg{color:var(--red)}
+
+/* página */
+.wrap{max-width:1080px;margin:0 auto;padding:22px 16px 72px}
+.wrap--larga{max-width:1480px}
+
+/* cabeçalho */
+.top{margin-bottom:22px}
+.voltar{display:inline-block;color:var(--mut);text-decoration:none;font-size:13px;margin-bottom:10px}
+.voltar:hover{color:var(--txt)}
+.top h1{font-size:24px;margin:0;font-weight:700}
+.top h1 span{color:var(--accent)}
+.sub{color:var(--mut);margin:4px 0 0}
+.estudo{color:var(--mut2);font-size:12.5px;margin:6px 0 0}
+
+/* blocos */
+.bloco{background:var(--panel-a);border:1px solid var(--line);border-radius:14px;padding:18px;margin:0 0 18px}
+.bloco__titulo{margin:0 0 14px;font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.secao-titulo{margin:24px 0 10px;font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+
+/* campos */
+.grade2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grade3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.campo{min-width:0}
+.campo label{display:block;font-size:12.5px;color:var(--mut);margin-bottom:5px}
+.campo input,.campo select{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--txt);font:inherit;padding:9px 12px}
+.campo input:focus,.campo select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.campo__junto{display:flex;gap:6px}
+.campo__junto input{flex:1 1 auto;min-width:0}
+.campo__junto select{flex:0 0 auto;width:auto}
+.dica{color:var(--mut2);font-size:12px;margin:6px 0 0}
+
+/* botões */
+.acoes{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
+.btn{background:transparent;border:1px solid var(--line);color:var(--txt2);border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+.btn:hover{border-color:var(--accent-line);color:var(--txt)}
+.btn--principal{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn--principal:hover{background:#4a7bf0;border-color:#4a7bf0;color:#fff}
+.btn--link{border:0;padding:4px 2px;color:var(--mut);text-decoration:underline;text-underline-offset:3px}
+.btn--link:hover{color:var(--txt)}
+
+/* seletor de opções (moeda, modo, APR/APY…) */
+.toggle{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--panel-a)}
+.toggle button{background:transparent;border:0;color:var(--mut);border-radius:999px;padding:7px 16px;font:inherit;cursor:pointer}
+.toggle button[aria-selected="true"]{background:var(--accent-bg);color:var(--txt)}
+
+/* resultados */
+.resultados{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 18px}
+.res{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--panel-a);min-width:0}
+.res__rotulo{font-size:12px;color:var(--mut)}
+.res__valor{font-size:22px;font-weight:700;margin:2px 0 0;font-family:var(--mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.res__nota{font-size:12.5px;color:var(--mut);margin:6px 0 0}
+.res--destaque{border-color:var(--accent-line);background:#121a2c}
+.res--destaque .res__valor{color:#9db8ff}
+.res--bom .res__valor{color:var(--green)}
+.res--ruim .res__valor{color:var(--red)}
+
+/* tabelas */
+.tabela{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel-a)}
+.tabela table{width:100%;border-collapse:collapse;font-size:13.5px}
+.tabela th,.tabela td{text-align:right;padding:9px 12px;border-bottom:1px solid #161d2b;white-space:nowrap}
+.tabela th:first-child,.tabela td:first-child{text-align:left}
+.tabela thead th{font-size:11.5px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tabela tbody tr:last-child td{border-bottom:0}
+.tabela td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tabela td:first-child{font-family:inherit}
+.tabela tr.ativa td{background:var(--accent-bg)}
+
+/* gráfico */
+.grafico{position:relative;height:240px}
+.grafico canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+
+/* avisos e textos */
+.aviso{border:1px solid #4d3d1a;background:rgba(245,185,66,.07);color:var(--txt2);border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 14px}
+.aviso--erro{border-color:#5a2430;background:rgba(240,85,106,.07)}
+.status{color:var(--mut2);font-size:12px;margin:6px 0 0}
+.explica{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);color:var(--txt2);max-width:760px}
+.explica h2{color:var(--txt);font-size:18px;margin:0 0 10px}
+.explica h3{color:var(--txt);font-size:15px;margin:22px 0 6px}
+.explica p{margin:6px 0}
+.explica strong{color:var(--txt)}
+
+@media (max-width:700px){
+  .grade2,.grade3{grid-template-columns:1fr}
+  .res__valor{font-size:20px}
+  .bloco{padding:14px}
+}
