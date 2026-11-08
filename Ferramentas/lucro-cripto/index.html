@@ -50,7 +50,7 @@
       <div class="campo"><label for="lc-taxa">Taxa da exchange (% por operação)</label><input id="lc-taxa" inputmode="decimal" value="0,1"></div>
       <div class="campo"><label for="lc-compra">Preço de compra (US$)</label><input id="lc-compra" inputmode="decimal" placeholder="Preço pago"></div>
       <div class="campo"><label for="lc-venda">Preço de venda (US$)</label><input id="lc-venda" inputmode="decimal" placeholder="Preço de saída"></div>
-      <div class="campo"><label for="lc-dolar">Dólar em reais (R$)</label><input id="lc-dolar" inputmode="decimal" value="5,50"></div>
+      <div class="campo"><label for="lc-dolar">Dólar em reais (R$)</label><input id="lc-dolar" inputmode="decimal" value="5,50"><p class="dica" id="lc-dolar-fonte">Buscando a cotação…</p></div>
       <div class="campo"><label for="lc-custodia">Onde a cripto está</label>
         <select id="lc-custodia"><option value="br">Exchange brasileira ou carteira própria</option><option value="ext">Exchange estrangeira</option></select></div>
       <div class="campo"><label for="lc-outras">Outras vendas de cripto no mesmo mês (R$)</label><input id="lc-outras" inputmode="decimal" value="0"></div>
@@ -90,8 +90,10 @@
 </div>
 
 <script src="../../core/http.js"></script>
+<script src="../../core/dados/tokens-top.js"></script>
+<script src="../../core/atlas-dados.js?v=1"></script>
 <script src="../_comum/calculos.js?v=1"></script>
-<script src="../_comum/busca-token.js?v=1"></script>
+<script src="../_comum/busca-token.js?v=2"></script>
 <script src="app.js?v=1"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>

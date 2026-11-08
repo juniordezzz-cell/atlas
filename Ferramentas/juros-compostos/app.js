@@ -1,14 +1,12 @@
 /* ATLAS · Juros Compostos (Ferramentas/juros-compostos/)
    Contas em ../_comum/calculos.js (testadas no Node). Aqui só a tela:
    lê os campos, chama as contas, desenha resultado, tabela e gráfico.
-   Rede só pelo AtlasHttp: a Selic do Banco Central (série 432).
+   Selic do Banco Central (série 432) pelo roteador (core/atlas-dados.js).
    Registro: docs/ferramentas-bancada-2026-11-08.md */
 (function () {
   'use strict';
   var C = window.AtlasCalculos;
   var $ = function (id) { return document.getElementById(id); };
-  var SELIC_URL = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json';
-  var CHAVE_SELIC = 'atlas.juros.selic.v1';
   var MOEDAS = { BRL: { sim: 'R$', loc: 'pt-BR' }, USD: { sim: 'US$', loc: 'en-US' }, EUR: { sim: '€', loc: 'de-DE' } };
   var moeda = 'BRL', selic = null, selicFonte = '';
 
@@ -132,19 +130,15 @@
     });
   }
 
-  // Selic: guardada primeiro, depois a do Banco Central (12 h de cache no AtlasHttp)
-  try {
-    var c = JSON.parse(localStorage.getItem(CHAVE_SELIC) || 'null');
-    if (c && c.v) { selic = c.v; selicFonte = 'guardada em ' + new Date(c.t).toLocaleDateString('pt-BR'); }
-  } catch (e) {}
-  AtlasHttp.getJSON(SELIC_URL, { ttl: 12 * 3600 * 1000 }).then(function (d) {
-    var v = parseFloat(String(d && d[0] && d[0].valor).replace(',', '.'));
+  // Selic pelo roteador: Banco Central; se cair, o último valor guardado, com a data
+  AtlasDados.serieBcb(432, { ultimos: 1 }).then(function (r) {
+    var d = r.dados, v = parseFloat(String(d && d[0] && d[0].valor).replace(',', '.'));
     if (!(v > 0)) return;
-    selic = v; selicFonte = 'Banco Central, ' + d[0].data;
-    try { localStorage.setItem(CHAVE_SELIC, JSON.stringify({ v: v, t: Date.now() })); } catch (e) {}
+    selic = v;
+    selicFonte = r.salvo ? 'valor guardado de ' + AtlasDados.quandoTexto(r.quando) + ', Banco Central fora do ar' : 'Banco Central, ' + d[0].data;
     if (!$('jz-resultado').hidden) calcular();
   }).catch(function () {
-    if (!selic) $('jz-cmp-nota').textContent = 'Não consegui buscar a Selic agora. A comparação com CDI e poupança volta quando o Banco Central responder.';
+    $('jz-cmp-nota').textContent = 'Não consegui buscar a Selic agora. A comparação com CDI e poupança volta quando o Banco Central responder.';
   });
 
   // eventos

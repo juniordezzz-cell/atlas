@@ -1,12 +1,12 @@
 /* ATLAS · Staking (Ferramentas/staking/)
    Contas em ../_comum/calculos.js: staking, aprParaApy, apyParaApr.
-   Rede só pelo AtlasHttp: busca e preço do token (busca-token.js) e o
-   dólar em reais pela cotação do USDT. Registro: docs/ferramentas-bancada-2026-11-08.md */
+   Dados pelo roteador (core/atlas-dados.js): busca e preço do token
+   (busca-token.js) e dólar em reais pelo câmbio do roteador. Registro: docs/ferramentas-bancada-2026-11-08.md */
 (function () {
   'use strict';
   var C = window.AtlasCalculos;
   var $ = function (id) { return document.getElementById(id); };
-  var modo = 'valor', horizonte = 12, dolar = null, ultimo = null;
+  var modo = 'valor', horizonte = 12, dolar = null, dolarNota = 'buscando o dólar…', ultimo = null;
   var NOMES = { 1: '1 mês', 3: '3 meses', 6: '6 meses', 12: '1 ano', 24: '2 anos', 60: '5 anos' };
 
   function ler(id) { var n = C.lerNumero($(id).value); return n == null ? 0 : n; }
@@ -64,7 +64,7 @@
     $('sk-r-periodo').textContent = 'em ' + NOMES[horizonte];
     $('sk-r-usd').textContent = ultimo.preco ? usd(g * ultimo.preco) : '—';
     $('sk-r-brl').textContent = ultimo.preco && dolar ? brl(g * ultimo.preco * dolar) : '—';
-    $('sk-r-fx').textContent = dolar ? 'US$ 1 = ' + brl(dolar) : 'buscando o dólar…';
+    $('sk-r-fx').textContent = dolar ? 'US$ 1 = ' + brl(dolar) + ' · ' + dolarNota : dolarNota;
     var linhas = $('sk-proj').rows, idx = { 1: 0, 3: 1, 6: 2, 12: 3, 24: 4, 60: 5 }[horizonte];
     for (var i = 0; i < linhas.length; i++) linhas[i].className = i === idx ? 'ativa' : '';
   }
@@ -99,17 +99,21 @@
       $('sk-ficha').hidden = false; $('sk-ficha-nome').textContent = t.nome + ' (' + t.sym + ')';
       var img = $('sk-ficha-img'); img.hidden = !t.img; if (t.img) img.src = t.img;
       $('sk-sym').value = t.sym;
-      AtlasBuscaToken.mercado(t.id).then(function (m) {
+      AtlasBuscaToken.mercado(t.id, t.sym).then(function (m) {
         $('sk-preco').value = C.numeroCampo(m.preco);
-        status('Preço de hoje: ' + usd(m.preco) + '.'); calcular();
-      }).catch(function (e) { status('Não consegui buscar o preço (' + e.message + '). Digite o preço à mão.'); });
+        status(m.salvo ? 'Preço guardado de ' + AtlasDados.quandoTexto(m.quando) + ': ' + usd(m.preco) + ' (sem fonte no ar agora).'
+                       : 'Preço de hoje: ' + usd(m.preco) + ' · ' + m.fonte + '.');
+        calcular();
+      }).catch(function () { status('Nenhuma fonte tem o preço deste token agora. Digite o preço à mão.'); });
     }
   });
 
-  // dólar em reais (cotação do USDT)
-  AtlasHttp.getJSON('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=brl,usd', { ttl: 600000 }).then(function (d) {
-    var t = d && d.tether; if (t && t.brl > 0 && t.usd > 0) { dolar = t.brl / t.usd; if (ultimo) calcular(); }
-  }).catch(function () { if (ultimo) destaque(); });
+  // dólar em reais (câmbio do roteador; guardado se as fontes caírem)
+  AtlasDados.cambio().then(function (c) {
+    dolar = c.por.brl;
+    dolarNota = (c.salvo ? 'guardado de ' : c.fonte + ', ') + AtlasDados.quandoTexto(c.quando);
+    if (ultimo) calcular();
+  }).catch(function () { dolarNota = 'sem cotação do dólar agora'; if (ultimo) destaque(); });
 
   // eventos
   document.querySelectorAll('#sk-modo button').forEach(function (b) {
