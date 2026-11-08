@@ -150,3 +150,45 @@ test('historico cai para a DefiLlama', async () => {
   assert.equal(r.fonte, 'DefiLlama');
   assert.deepEqual(r.serie[2], { t: 3000, v: 2020 });
 });
+
+test('precos com fontes limitadas não sai delas e pode não guardar', async () => {
+  const arm = memoria();
+  const { D, http } = montar([['coins.llama.fi/prices/current', { coins: {} }], ['binance', [{ symbol: 'JUPUSDT', price: '0.2' }]]], { armazenamento: arm });
+  const r = await D.precos([{ id: 'jupiter-exchange-solana', sym: 'JUP' }], { fontes: ['defillama'], guardar: false });
+  assert.equal(r.precos['jupiter-exchange-solana'], undefined);
+  assert.equal(conta(http, 'binance'), 0);
+  await montar([['coins.llama.fi/prices/current', { coins: { 'coingecko:solana': { price: 1 } } }]], { armazenamento: arm }).D.precos([{ id: 'solana', sym: 'SOL' }], { guardar: false });
+  assert.equal(arm.getItem('atlas.dados.ultimo.v1'), null, 'guardar:false não grava');
+});
+
+test('variacoes24h pela DefiLlama', async () => {
+  const { D } = montar([['coins.llama.fi/percentage', { coins: { 'coingecko:solana': -1.5 } }]]);
+  assert.deepEqual(await D.variacoes24h(['solana', 'bitcoin']), { solana: -1.5 });
+});
+
+test('velas tenta a DefiLlama antes da CoinGecko', async () => {
+  const { D, http } = montar([
+    ['binance', ERRO(400)],
+    ['coins.llama.fi/chart', { coins: { 'coingecko:x': { prices: [{ timestamp: 1, price: 1 }, { timestamp: 2, price: 2 }, { timestamp: 3, price: 3 }] } } }]
+  ]);
+  const r = await D.velas('x', 'XYZ', '1h', 100);
+  assert.equal(r.fonte, 'DefiLlama');
+  assert.equal(conta(http, 'api.coingecko.com'), 0);
+});
+
+test('buscar com soRede pula o catálogo', async () => {
+  const catalogo = { quando: 1, lista: [['solana', 'SOL', 'Solana', '', 5]] };
+  const { D } = montar([['api.coingecko.com/api/v3/search', { coins: [{ id: 'solana-x', symbol: 'solx', name: 'Sol X' }] }]], { catalogo });
+  const r = await D.buscar('sol', { soRede: true });
+  assert.equal(r[0].id, 'solana-x');
+});
+
+test('historico ignora a Binance quando o preço não bate', async () => {
+  const k = (c) => [1, '0', '0', '0', String(c)];
+  const { D } = montar([
+    ['binance', [k(10), k(10), k(10)]],
+    ['coins.llama.fi/chart', { coins: { 'coingecko:x': { prices: [{ timestamp: 1, price: 1 }, { timestamp: 2, price: 1 }, { timestamp: 3, price: 1 }] } } }]
+  ]);
+  const r = await D.historico('x', 'XYZ', 365, 1);
+  assert.equal(r.fonte, 'DefiLlama');
+});

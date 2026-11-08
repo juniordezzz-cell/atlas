@@ -9,7 +9,7 @@
      pedidos), disjuntor (fonte que deu 429 ou caiu fica pausada por
      alguns minutos, combinado entre as abas pelo localStorage), pedido
      igual simultâneo vira um só. A rede em si é o AtlasHttp.
-   - Cima: um método por tipo de dado (precos, buscar, ficha, velas,
+   - Cima: um método por tipo de dado (precos, variacoes24h, buscar, ficha, velas,
      historico, cambio, serieBcb, pools). Cada um tenta as fontes na
      ordem combinada e guarda o último dado bom, com a hora, para quando
      tudo falhar. A CoinGecko vem por último em tudo que outra fonte
@@ -107,9 +107,11 @@
 
     /* ---------- último dado bom ---------- */
     function ultimos() { try { return JSON.parse(ler(CHAVE_ULTIMO) || '{}') || {}; } catch (e) { return {}; } }
-    function lembrar(chave, valor, fonte) {
+    function lembrar(chave, valor, fonte) { var um = {}; um[chave] = { v: valor, f: fonte }; lembrarVarios(um); }
+    function lembrarVarios(novos) {
+      var ks0 = Object.keys(novos); if (!ks0.length) return;
       var tudo = ultimos();
-      tudo[chave] = { v: valor, t: agora(), f: fonte };
+      ks0.forEach(function (k) { tudo[k] = { v: novos[k].v, t: agora(), f: novos[k].f }; });
       var ks = Object.keys(tudo);
       if (ks.length > MAX_ULTIMOS) {
         ks.sort(function (a, b) { return tudo[a].t - tudo[b].t; })
@@ -146,14 +148,16 @@
     }
 
     /* ---------- preço atual ---------- */
-    function precos(itens) {
+    function precos(itens, op) {
+      op = op || {};
+      var guardar = op.guardar !== false, permitidas = op.fontes || null, novos = {};
       itens = (itens || []).filter(function (x) { return x && x.id; });
       var r = { precos: {}, fontes: {}, salvos: [], quando: {} };
       var faltam = function () { return itens.filter(function (x) { return r.precos[x.id] == null; }); };
       function marcar(id, usd, fonte) {
         if (!(usd > 0)) return;
         r.precos[id] = usd; r.fontes[id] = fonte; r.quando[id] = agora();
-        lembrar('preco:' + id, usd, fonte);
+        if (guardar) novos['preco:' + id] = { v: usd, f: fonte };
       }
       var cg = function (x) { return x.id.indexOf('pk:') !== 0; };
       function etapaLlama() {
@@ -206,10 +210,13 @@
           ids.forEach(function (id) { if (d && d[id]) marcar(id, num(d[id].usd), 'CoinGecko'); });
         }, function () {});
       }
-      var etapas = [etapaLlama, etapaBinance, etapaPaprika, etapaGecko];
+      var etapas = [['defillama', etapaLlama], ['binance', etapaBinance], ['coinpaprika', etapaPaprika], ['coingecko', etapaGecko]]
+        .filter(function (e) { return !permitidas || permitidas.indexOf(e[0]) !== -1; })
+        .map(function (e) { return e[1]; });
       var seq = Promise.resolve();
       etapas.forEach(function (e) { seq = seq.then(function () { return faltam().length ? e() : null; }); });
       return seq.then(function () {
+        lembrarVarios(novos);
         faltam().forEach(function (x) {
           var u = lembrado('preco:' + x.id);
           if (u) { r.precos[x.id] = u.v; r.fontes[x.id] = u.f; r.quando[x.id] = u.t; r.salvos.push(x.id); }
@@ -224,8 +231,22 @@
       });
     }
 
+    /* variação de 24 h em %, pela DefiLlama (lotes de 100); sem reserva: falha vira {} */
+    function variacoes24h(ids) {
+      var lotes = [], out = {};
+      ids = (ids || []).filter(function (i) { return i && i.indexOf('pk:') !== 0; });
+      for (var k = 0; k < ids.length; k += 100) lotes.push(ids.slice(k, k + 100));
+      return Promise.all(lotes.map(function (lote) {
+        var u = LL + '/percentage/' + lote.map(function (i) { return 'coingecko:' + encodeURIComponent(i); }).join(',') + '?period=24h';
+        return pedir('defillama', u).then(function (d) {
+          Object.keys((d && d.coins) || {}).forEach(function (k) { var v = num(d.coins[k]); if (v != null) out[decodeURIComponent(k.slice(10))] = v; });
+        }, function () {});
+      })).then(function () { return out; });
+    }
+
     /* ---------- busca de token ---------- */
-    function buscar(q) {
+    function buscar(q, op) {
+      op = op || {};
       q = String(q || '').trim();
       if (q.length < 2) return Promise.resolve([]);
       var ql = q.toLowerCase(), qu = q.toUpperCase();
@@ -237,7 +258,7 @@
       }).slice(0, 8).map(function (c) {
         return { id: c[0], sym: String(c[1]).toUpperCase(), nome: c[2], img: c[3] ? IMG_CG + c[3] : '', rank: c[4] || null, fonte: 'catálogo' };
       });
-      if (locais.length) return Promise.resolve(locais);
+      if (locais.length && !op.soRede) return Promise.resolve(locais);
       return cadeia([
         function () {
           return pedir('coingecko', CG + '/search?query=' + encodeURIComponent(q), { ttl: 86400000 }).then(function (d) {
@@ -330,13 +351,6 @@
         },
         function () {
           if (id.indexOf('pk:') === 0) return null;
-          return pedir('coingecko', CG + '/coins/' + encodeURIComponent(id) + '/ohlc?vs_currency=usd&days=' + (CG_DIAS[intervalo] || 30)).then(function (d) {
-            var cs = (d || []).map(function (k) { return { t: k[0], o: k[1], h: k[2], l: k[3], c: k[4] }; });
-            return cs.length >= 3 ? { velas: cs.slice(-limite), fonte: 'CoinGecko' } : null;
-          });
-        },
-        function () {
-          if (id.indexOf('pk:') === 0) return null;
           // contado para trás a partir de agora: "start" antes do token existir volta vazio; máximo de 500 pontos
           var fim = Math.floor(agora() / 1000);
           return pedir('defillama', LL + '/chart/coingecko:' + encodeURIComponent(id) + '?end=' + fim + '&span=' + Math.min(500, limite) + '&period=' + intervalo).then(function (d) {
@@ -344,26 +358,36 @@
             if (!k || !k.prices || k.prices.length < 3) return null;
             return { velas: deFechamentos(k.prices.map(function (p) { return [p.timestamp * 1000, p.price]; })), fonte: 'DefiLlama' };
           });
+        },
+        function () {
+          if (id.indexOf('pk:') === 0) return null;
+          return pedir('coingecko', CG + '/coins/' + encodeURIComponent(id) + '/ohlc?vs_currency=usd&days=' + (CG_DIAS[intervalo] || 30)).then(function (d) {
+            var cs = (d || []).map(function (k) { return { t: k[0], o: k[1], h: k[2], l: k[3], c: k[4] }; });
+            return cs.length >= 3 ? { velas: cs.slice(-limite), fonte: 'CoinGecko' } : null;
+          });
         }
       ]);
     }
 
     /* ---------- histórico longo ---------- */
-    function historico(id, sym, dias) {
+    function historico(id, sym, dias, precoRef) {
       sym = String(sym || '').toUpperCase(); dias = dias || 365;
       var kl = function (intervalo, limite) {
         return pedir('binance', BN + '/klines?symbol=' + sym + 'USDT&interval=' + intervalo + '&limit=' + limite).then(function (d) {
           return (d || []).map(function (k) { return { t: k[0], v: +k[4] }; }).filter(function (p) { return p.v > 0; });
         }, function () { return []; });
       };
-      return guardado('hist:' + id + ':' + dias, 600000, function () {
+      return guardado('hist:' + id + ':' + dias + ':' + (precoRef ? 1 : 0), 600000, function () {
         return cadeia([
           function () {
             if (!symOk(sym) || STABLES[sym]) return null;
             return Promise.all([dias > 1000 ? kl('1w', Math.min(1000, Math.ceil(dias / 7))) : Promise.resolve([]), kl('1d', Math.min(1000, dias))]).then(function (rs) {
               var diario = rs[1], inicio = diario.length ? diario[0].t : Infinity;
               var serie = rs[0].filter(function (p) { return p.t < inicio; }).concat(diario);
-              return serie.length >= 3 ? { serie: serie, fonte: 'Binance' } : null;
+              if (serie.length < 3) return null;
+              // mesma sigla, outro token na Binance: o último preço precisa bater (8%)
+              if (precoRef && Math.abs(serie[serie.length - 1].v / precoRef - 1) >= 0.08) return null;
+              return { serie: serie, fonte: 'Binance' };
             });
           },
           function () {
@@ -456,7 +480,7 @@
     }
 
     return {
-      pedir: pedir, precos: precos, preco: preco, buscar: buscar, doCatalogo: doCatalogo, ficha: ficha,
+      pedir: pedir, precos: precos, preco: preco, variacoes24h: variacoes24h, buscar: buscar, doCatalogo: doCatalogo, ficha: ficha,
       velas: velas, historico: historico, cambio: cambio, serieBcb: serieBcb, pools: pools,
       quandoTexto: quandoTexto, fontes: FONTES
     };
