@@ -65,7 +65,7 @@ const lerInput = el => window.AtlasCalculos.lerNumero(el.value);
 const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // ---------- top 500 (carregada sob demanda + cache) ----------
-const CACHE_LISTA = 'mdfi_top500_v1';
+const CACHE_LISTA = 'atlas.conversor.top.v1';
 const CACHE_HORAS = 12;
 let listaPromise = null;
 
