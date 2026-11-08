@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Simulador de Trade do ATLAS: long e short com alavancagem, preço de liquidação, stop e gestão de banca, com gráfico de candles desenhável.">
+<title>Simulador de Trade — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<link rel="stylesheet" href="estilo.css?v=1">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+</head>
+<body>
+
+<main class="container-wide">
+
+  <header class="top">
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>Simulador de <span>Trade</span></h1>
+    <p class="sub">Long e short com alavancagem: lucro, prejuízo, stop, preço de liquidação e a banca crescendo entrada após entrada. Desenhe no gráfico, arraste as linhas ou digite os valores.</p>
+    <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
+  </header>
+
+  <div class="trade-layout">
+
+    <!-- ===== ESQUERDA: GESTÃO DE BANCA ===== -->
+    <div class="tl-banca">
+      <div class="card card-banca">
+        <div class="card-title">💰 Gestão de banca</div>
+
+        <div class="field">
+          <label for="banca-inicial">Banca inicial ($)</label>
+          <input type="number" id="banca-inicial" value="50" step="any" oninput="setBancaInicial()">
+        </div>
+
+        <div class="switch-row">
+          <div>
+            <div class="sr-txt">Reinvestir lucros</div>
+            <div class="sr-sub">Usa a banca inteira a cada entrada (juros compostos)</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-reinvestir" checked onchange="toggleReinvestir()">
+            <span class="slider-toggle"></span>
+          </label>
+        </div>
+
+        <div class="field" id="aposta-wrap" style="display:none;margin-bottom:6px">
+          <label for="aposta">Aposta por entrada ($)</label>
+          <input type="number" id="aposta" value="50" step="any" oninput="calcular()">
+        </div>
+
+        <div class="hist-title" style="margin-top:16px">Banca salva</div>
+        <div class="banca-stats">
+          <div class="stat full">
+            <div class="st-label">Banca atual</div>
+            <div class="st-val" id="st-banca">$50.00</div>
+          </div>
+          <div class="stat">
+            <div class="st-label">Crescimento ($)</div>
+            <div class="st-val" id="st-cresc">$0.00</div>
+          </div>
+          <div class="stat">
+            <div class="st-label">Crescimento (%)</div>
+            <div class="st-val" id="st-cresc-pct">0.0%</div>
+          </div>
+          <div class="stat">
+            <div class="st-label">Entradas</div>
+            <div class="st-val" id="st-entradas">0</div>
+          </div>
+          <div class="stat">
+            <div class="st-label">Média / entrada</div>
+            <div class="st-val" id="st-media">$0.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CENTRO: GRÁFICO ===== -->
+    <div class="tl-chart">
+      <div class="card chart-card">
+        <div class="chart-toolbar">
+          <div class="chart-asset"><span class="live-dot"></span><span id="chart-asset-name">Bitcoin (BTC)</span></div>
+          <div class="chart-toolbar-right">
+            <div class="chart-tf" id="chart-tf">
+              <button type="button" data-tf="15m">15m</button>
+              <button type="button" data-tf="1h" class="active">1h</button>
+              <button type="button" data-tf="4h">4h</button>
+              <button type="button" data-tf="1d">1d</button>
+            </div>
+            <div class="chart-tools">
+              <button type="button" class="chart-tool-btn" id="btn-pencil" title="Desenhar no gráfico">✏️</button>
+              <button type="button" class="chart-tool-btn" id="btn-clear-draw" title="Limpar desenhos">🗑️</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="trade-chart"></canvas>
+          <canvas id="draw-layer"></canvas>
+          <div class="chart-badge" id="chart-badge">BTC · <span class="badge-long">LONG</span> · Entrada $0.00 · 5x</div>
+          <div class="chart-msg" id="chart-msg">Candles indisponíveis para este ativo. As linhas de entrada, saída, stop loss e liquidação continuam funcionando normalmente.</div>
+        </div>
+        <div class="chart-legend">
+          <span><i class="dot-entrada"></i>Entrada</span>
+          <span><i class="dot-tp"></i>Take profit (saída)</span>
+          <span><i class="dot-sl"></i>Stop loss</span>
+          <span><i class="dot-liq"></i>Liquidação estimada</span>
+        </div>
+        <div class="chart-hint">Arraste as linhas direto no gráfico, ou clique no lápis ✏️ para desenhar livre por cima dos candles.</div>
+      </div>
+    </div>
+
+    <!-- ===== DIREITA: PARÂMETROS DO TRADE ===== -->
+    <div class="tl-params">
+      <div class="card">
+        <div class="card-title">Parâmetros do trade</div>
+
+        <div class="field">
+          <label>Direção da operação</label>
+          <div class="dir-toggle">
+            <button type="button" class="dir-btn active long" id="btn-long" onclick="setDirection('long')">LONG (compra)</button>
+            <button type="button" class="dir-btn" id="btn-short" onclick="setDirection('short')">SHORT (venda)</button>
+          </div>
+        </div>
+
+        <div class="field asset-search-field">
+          <label for="asset-search">Ativo</label>
+          <div class="asset-search-box">
+            <input type="text" id="asset-search" placeholder="Buscar ativo (ex: SOL, Injective...)" autocomplete="off">
+            <div class="asset-search-results" id="asset-search-results"></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="entrada">Preço de entrada ($)</label>
+          <div class="input-icon">
+            <input type="number" id="entrada" value="0" step="any" oninput="calcular()">
+            <button type="button" class="btn-fetch" id="btn-fetch" onclick="fetchPrice()" title="Atualizar preço ao vivo">⚡</button>
+          </div>
+          <div class="status" id="api-status">Carregando preço…</div>
+        </div>
+
+        <div class="field" id="preco-atual-wrap" style="display:none">
+          <label for="preco-atual-manual">Preço atual do ativo ($) — opcional</label>
+          <input type="number" id="preco-atual-manual" placeholder="Preço de referência (não entra no cálculo)" step="any" oninput="drawChart()">
+        </div>
+
+        <div class="field">
+          <label for="saida">Take profit — preço-alvo de saída ($)</label>
+          <input type="number" id="saida" value="0" step="any" oninput="calcular()">
+        </div>
+
+        <div class="field">
+          <label for="stop-loss">Stop loss ($) — opcional</label>
+          <input type="number" id="stop-loss" value="0" step="any" oninput="calcular()">
+        </div>
+
+        <div class="slider-box">
+          <div class="slider-head"><span>Alavancagem</span><b id="lev-val">5x</b></div>
+          <input type="range" id="lev-slider" min="1" max="10" value="5" oninput="onLeverageChange()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SEÇÃO DE RESULTADOS (abaixo do gráfico) ===== -->
+  <div class="results-section">
+
+    <div class="card">
+      <div class="card-title">📊 Projeção e registro desta operação</div>
+      <div class="preview" id="preview-banca">Preencha entrada, alvo e banca para ver a projeção.</div>
+
+      <div class="field" style="margin-bottom:10px">
+        <label for="override">Resultado real desta entrada ($) — opcional</label>
+        <input type="number" id="override" placeholder="deixe vazio p/ usar a projeção" step="any">
+      </div>
+
+      <div class="banca-actions">
+        <button class="btn btn-main" onclick="registrarEntrada()">Registrar na banca ↑</button>
+        <button class="btn btn-ghost" onclick="desfazer()" title="Desfazer última">↶</button>
+        <button class="btn btn-ghost" onclick="resetarBanca()" title="Resetar banca">⟳</button>
+      </div>
+
+      <div class="hist">
+        <div class="hist-title">Histórico de entradas</div>
+        <div class="hist-list" id="hist"><div class="hist-empty">Nenhuma entrada registrada ainda.</div></div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="info-card">
+        <p>Tamanho da posição</p>
+        <h3 id="card-pos">$250.00</h3>
+      </div>
+      <div class="info-card">
+        <p>Take profit (lucro estimado)</p>
+        <h3 id="card-tp" class="verde">$0.00</h3>
+      </div>
+      <div class="info-card">
+        <p>Stop loss (perda estimada)</p>
+        <h3 id="card-sl" class="muted-val">—</h3>
+      </div>
+      <div class="info-card">
+        <p>Preço de liquidação estimado</p>
+        <h3 id="card-liq" class="liq">$0.00</h3>
+      </div>
+      <div class="info-card">
+        <p>Variação real do ativo</p>
+        <h3 id="card-mov">0.00%</h3>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-head">Matriz de performance por alavancagem</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Alav.</th>
+              <th>Variação real</th>
+              <th>Retorno alav. (PnL)</th>
+              <th>Lucro/prejuízo</th>
+              <th>Liquidação</th>
+            </tr>
+          </thead>
+          <tbody id="matrix-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-head">Impacto rápido no mercado (alav. <span id="cenario-lev-label">5x</span>)</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Movimento</th>
+              <th>Preço do ativo</th>
+              <th>Resultado 1x</th>
+              <th>Resultado alavancado</th>
+            </tr>
+          </thead>
+          <tbody id="scenarios-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Aviso:</strong> os cálculos usam o modelo de margem isolada com 100% de consumo do colateral na liquidação. Operações alavancadas envolvem alto risco de perda total do capital. Ferramenta educacional — não é recomendação de investimento.
+    </div>
+  </div>
+</main>
+
+<script src="../../core/http.js"></script>
+<script src="../_comum/calculos.js?v=1"></script>
+<script src="app.js?v=1"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>
