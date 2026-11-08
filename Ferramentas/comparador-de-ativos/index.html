@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Comparador de Ativos do ATLAS: cripto contra ouro, ações e CDI, em reais ou dólares, com rendimento e quanto você teria hoje.">
+<title>Comparador de Ativos — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<link rel="stylesheet" href="estilo.css?v=1">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>Comparador de <span>Ativos</span></h1>
+    <p class="sub">Cripto contra ouro, ações e CDI: cotação, rendimento e quanto você teria hoje em cada um.</p>
+    <p class="estudo">Histórico para estudo. Rentabilidade passada não garante retorno futuro, e nada aqui usa os dados da sua carteira.</p>
+  </header>
+
+  <div class="container">
+
+    <!-- TICKER -->
+    <div class="ticker-bar">
+      <div class="ticker-item"><span class="ticker-flag">🇺🇸</span><div class="ticker-info"><span class="ticker-label">Dólar USD</span><span class="ticker-val" id="tk-usd">carregando...</span></div><span class="ticker-chg" id="tk-usd-c"></span></div>
+      <div class="ticker-item"><span class="ticker-flag">₿</span><div class="ticker-info"><span class="ticker-label">Bitcoin BTC</span><span class="ticker-val" id="tk-btc">carregando...</span></div><span class="ticker-chg" id="tk-btc-c"></span></div>
+      <div class="ticker-item"><span class="ticker-flag">Ξ</span><div class="ticker-info"><span class="ticker-label">Ethereum ETH</span><span class="ticker-val" id="tk-eth">carregando...</span></div><span class="ticker-chg" id="tk-eth-c"></span></div>
+    </div>
+    <div class="last-updated">Cotações em tempo real · <span id="tk-time">—</span></div>
+
+    <!-- SEARCH -->
+    <div class="search-card">
+      <div class="search-wrap">
+        <div class="search-box">
+          <span class="s-ico">🔍</span>
+          <input type="text" id="search-input" autocomplete="off" placeholder="Pesquise um ativo: Bitcoin, Ethereum, Solana, Aave, Ouro, Nvidia…"/>
+        </div>
+        <div class="search-dd" id="search-dd"></div>
+      </div>
+      <div class="search-hint">
+        Exemplos:
+        <b onclick="caQuickPick('bitcoin')">Bitcoin</b> ·
+        <b onclick="caQuickPick('ethereum')">Ethereum</b> ·
+        <b onclick="caQuickPick('solana')">Solana</b> ·
+        <b onclick="caQuickPick('aave')">Aave</b> ·
+        <b onclick="caQuickPick('nvidia')">Nvidia</b>
+      </div>
+
+      <div class="global-ctrl">
+        <span style="font-size:.72rem;color:var(--text-muted);font-weight:600">Moeda:</span>
+        <button class="cur-btn active" data-cur="brl" onclick="caSetCurrency('brl')"><span>🇧🇷</span> Real (R$)</button>
+        <button class="cur-btn" data-cur="usd" onclick="caSetCurrency('usd')"><span>🇺🇸</span> Dólar (US$)</button>
+      </div>
+    </div>
+
+    <!-- CONCORRENTES -->
+    <div class="card peers-card">
+      <span class="peers-title">Comparando</span>
+      <div class="peers-row" id="peers-row"></div>
+      <span class="card-sub" id="peers-note">Pesquise um ativo acima e a página sugere os concorrentes automaticamente — sempre cruzando cripto com mercado tradicional + CDI.</span>
+    </div>
+
+    <!-- TWELVE DATA NOTICE (some/aparece conforme a chave) -->
+    <div id="td-notice"></div>
+
+    <!-- ── SEÇÃO 1: COTAÇÃO DO ATIVO PRINCIPAL ── -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">📈 Cotação — <span id="s1-asset">Bitcoin</span></div>
+          <div class="card-sub">Histórico de preço do ativo principal</div>
+        </div>
+        <div class="period-ctrl" id="s1-period">
+          <button class="period-btn" data-d="7" data-k="7D">7D</button>
+          <button class="period-btn" data-d="30" data-k="30D">30D</button>
+          <button class="period-btn" data-d="180" data-k="6M">6M</button>
+          <button class="period-btn" data-d="ytd" data-k="YTD">YTD</button>
+          <button class="period-btn active" data-d="365" data-k="1A">1A</button>
+          <button class="period-btn" data-d="1825" data-k="5A">5A</button>
+          <button class="period-btn" data-d="3650" data-k="10A">10A</button>
+        </div>
+      </div>
+      <div class="primary-top">
+        <span class="primary-price" id="s1-price">—</span>
+        <span class="primary-chg" id="s1-chg"></span>
+      </div>
+      <div class="chart-wrap tall"><canvas id="s1-chart"></canvas></div>
+
+      <div class="invest-row">
+        <div class="invest-box">
+          <div class="lab">Quanto você compra</div>
+          <div class="val">Com <span id="s1-buy-prefix">R$</span> <input class="invest-inline-input" type="number" id="s1-buy-amount" value="1000" min="1" step="100"/> você teria <b id="s1-buy-units">—</b></div>
+        </div>
+        <div class="invest-box">
+          <div class="lab">Se você tivesse investido</div>
+          <div class="val"><span id="s1-inv-prefix">R$</span> <span id="s1-inv-amount">1.000</span> há <span id="s1-inv-period">1 ano</span>, hoje você teria <b id="s1-inv-result">—</b></div>
+        </div>
+      </div>
+
+      <div class="section-label">📊 Retorno do investimento</div>
+      <div class="ret-grid" id="s1-ret"></div>
+      <div class="muted-line">* Variação de preço no período. Não inclui taxas, custódia ou impostos. Conteúdo educacional — não é recomendação de investimento.</div>
+    </div>
+
+    <!-- ── SEÇÃO 2: COMPARAÇÃO EM DINHEIRO ── -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">💰 Quanto você teria investindo</div>
+          <div class="card-sub">Valor acumulado de cada ativo ao longo do tempo</div>
+        </div>
+        <div class="period-ctrl" id="s2-period">
+          <button class="period-btn active" data-d="365" data-k="1A">1 ano</button>
+          <button class="period-btn" data-d="1825" data-k="5A">5 anos</button>
+          <button class="period-btn" data-d="3650" data-k="10A">10 anos</button>
+        </div>
+      </div>
+      <div class="amount-row">
+        <span style="font-size:.72rem;color:var(--text-muted);font-weight:600">Investindo:</span>
+        <div class="amount-wrap"><span class="prefix" id="s2-prefix">R$</span><input type="number" id="s2-amount" value="1000" min="1" step="100"/></div>
+        <div class="amount-presets" id="s2-presets"></div>
+      </div>
+      <div class="chart-legend" id="s2-legend"></div>
+      <div class="chart-wrap tall"><canvas id="s2-chart"></canvas></div>
+      <div class="cmp-list" id="s2-list"></div>
+      <div class="muted-line">Clique nas bolinhas da legenda para ligar/desligar cada ativo. No modo Dólar, o CDI é convertido pelo câmbio USD/BRL atual — aproximação. Ativos mais novos podem ter menos histórico que o período escolhido.</div>
+    </div>
+
+    <!-- ── SEÇÃO 3: COMPARAÇÃO EM % ── -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">📉 Comparação de rentabilidade (%)</div>
+          <div class="card-sub">Variação percentual no período, base 0% no início</div>
+        </div>
+        <div class="period-ctrl" id="s3-period">
+          <button class="period-btn active" data-d="365" data-k="1A">1 ano</button>
+          <button class="period-btn" data-d="1825" data-k="5A">5 anos</button>
+          <button class="period-btn" data-d="3650" data-k="10A">10 anos</button>
+        </div>
+      </div>
+      <div class="chart-legend" id="s3-legend"></div>
+      <div class="chart-wrap tall"><canvas id="s3-chart"></canvas></div>
+      <div class="cmp-list" id="s3-list"></div>
+    </div>
+
+    <section class="explica">
+      <h2>Como ler</h2>
+      <p>Comparar <strong>Bitcoin, Ethereum e outras criptos</strong> com <strong>ouro, ações e CDI</strong> é a forma honesta de ver risco e retorno: o ouro é a reserva clássica, o S&amp;P 500 é o termômetro da bolsa americana e o CDI é o piso da renda fixa no Brasil.</p>
+      <h3>De onde vêm os dados?</h3>
+      <p>Criptos: Binance (histórico longo) e CoinGecko. <strong>Ouro</strong> é o PAX Gold (PAXG), um token lastreado em ouro físico, que acompanha o preço da onça. <strong>S&amp;P 500, Nasdaq 100, Nvidia e Google</strong> são tokens de ação (xStocks), que seguem a ação e existem desde meados de 2025: para eles o histórico tem cerca de um ano. CDI e IPCA vêm do Banco Central.</p>
+      <h3>Real ou dólar?</h3>
+      <p>Ativos cotados em dólar viram reais pela cotação do USDT de hoje. CDI e IPCA são índices acumulados, sem moeda.</p>
+    </section>
+  </div>
+</div>
+
+<script src="../../core/http.js"></script>
+<script src="../../assets/vendor/chart-4.4.1.min.js"></script>
+<script src="../_comum/calculos.js?v=1"></script>
+<script src="app.js?v=1"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>
