@@ -160,7 +160,10 @@
    (Conversor e Câmbio, Escada, Lucro Cripto, Simulador de Trade, Estratégia
    de Pool, Staking, Juros Compostos, Comparador de Ativos) em 4 seções.
    Registro: docs/ferramentas-bancada-2026-11-08.md */
-var VERSAO = "atlas-v98";
+/* v99 = roteador de dados (core/atlas-dados.js) para as 8 ferramentas da
+   bancada: reserva por tipo de dado, pausa da fonte que der limite e último
+   valor guardado. Mapa das fontes: docs/apis/. */
+var VERSAO = "atlas-v99";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

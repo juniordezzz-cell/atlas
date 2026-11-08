@@ -1,7 +1,10 @@
-# Roteamento de dados do ATLAS (proposta de 08/11/2026)
+# Roteamento de dados do ATLAS (08/11/2026)
 
-Status: **proposta para o dono revisar.** Nada disto está implementado ainda,
-exceto o que está marcado como "já existe".
+Status: **implementado para as 8 ferramentas da bancada** em `core/atlas-dados.js`
+(`window.AtlasDados`, testes em `core/testes/atlas-dados.test.cjs`), aprovado
+pelo dono em 08/11/2026. Hold, DeFi, Trade, RWA, Dashboard e Carteiras seguem
+na cadeia de preço de 16/10 (`core/atlas-precos.js`); a página Mercado segue na
+`tryChain` do registro de provedores (decisão 3 abaixo ainda pendente).
 
 A tela pede um **tipo de dado**; o roteador tenta as fontes na ordem abaixo e
 devolve a primeira resposta boa. Toda resposta boa é guardada como "último dado
@@ -18,23 +21,37 @@ símbolo (`SOLUSDT`); CoinPaprika e CoinLore usam o tradutor que já existe em
 |---|---|---|---|---|---|---|
 | **Preço atual** (1 ou vários tokens) | DefiLlama, em lote *(já existe)* | Binance (pares USDT) | CoinPaprika | CoinGecko | 60 s | último preço com data; campo para digitar |
 | **Preço de token só de DEX** | GeckoTerminal *(já existe)* | DefiLlama (endereço do contrato) | — | — | 60 s | último preço com data |
-| **Busca de token** (nome ou sigla) | lista local dos ~500 maiores (sem rede) | CoinPaprika | CoinGecko | — | 24 h | "não achei"; pode digitar o preço à mão |
-| **Lista dos maiores** (top N com market cap e variação) | CoinLore | CoinPaprika | CoinGecko | lista embutida (`snap.json`) | 10 min | lista embutida, com a data dela |
-| **Ficha do token** (market cap, oferta, ATH) | CoinPaprika | CoinLore | CoinGecko | — | 1 h | última ficha com data; "indisponível" nos campos que faltarem |
-| **Velas e gráfico** (15m a semanal) | Binance | DefiLlama (série diária) | CoinGecko (≤365 dias) | — | 1–5 min | último gráfico guardado; sem gráfico, a conta continua |
-| **Histórico longo** (anos) | Binance (semanal) | DefiLlama `/chart` | CoinGecko (≤365 dias) | — | 6 h | último histórico guardado |
+| **Busca de token** (nome ou sigla) | catálogo local dos 500 maiores (`core/dados/tokens-top.js`, sem rede) | CoinGecko (cache 24 h) | CoinPaprika | — | 24 h | "não achei"; pode digitar o preço à mão |
+| **Lista dos maiores** (top N com variação) | catálogo local + preço e variação da DefiLlama em lote | — | — | instantâneo embutido (`snap.json`) | 2 min | instantâneo embutido, com a data dele |
+| **Ficha do token** (market cap, oferta, ATH) | CoinPaprika (lista de 250, 2 min) + máx./mín. 24 h da Binance | CoinGecko | — | — | 2 min | última ficha com data; "indisponível" nos campos que faltarem |
+| **Velas e gráfico** (15m a semanal) | Binance (último preço precisa bater em 8%) | DefiLlama (só fechamento, até 500 pontos) | CoinGecko | — | — | sem gráfico, a conta continua |
+| **Histórico longo** (anos) | Binance (semanal + diário, preço conferido) | DefiLlama `/chart` (contado a partir de hoje, até 500 pontos) | CoinGecko (≤365 dias) | — | 10 min | — |
 | **Câmbio** (real, dólar, euro, libra) | open.er-api *(já existe em `core/currency.js`)* | Binance (`USDTBRL`, `EURUSDT`, `GBPUSDT`) | CoinGecko `exchange_rates` | — | 1 h | última cotação com data; campo editável |
-| **Câmbio "cripto"** (via stablecoin) | Binance `USDTBRL` | DefiLlama (preço do USDT) | CoinGecko | — | 60 s | igual ao câmbio |
+| **USDT e USDC** (modo câmbio do Conversor) | cadeia de preço (DefiLlama primeiro) | | | | 60 s | 1 dólar |
 | **Selic, CDI, IPCA** | Banco Central | — | — | — | 12 h | último valor com data |
 | **Pools e APR** | DefiLlama Yields | — | — | — | 30 min | último valor com data; APR editável |
 | **Categorias/setores** | CoinGecko *(já existe, guardado em `atlas-setores.js`)* | — | — | — | 7 dias | categoria guardada |
 | **Medo e ganância** | alternative.me *(já existe)* | — | — | — | 1 h | último valor com data |
 
+### Ajustes feitos na construção (em relação à proposta)
+- **Busca:** CoinGecko antes da CoinPaprika — os ids da CoinGecko servem direto
+  na DefiLlama e trazem imagem; a busca é rara, fica 24 h em cache e o
+  disjuntor pula a CoinGecko quando ela está no limite.
+- **Lista dos maiores:** sai a CoinLore. O catálogo local já tem os 500 nomes e
+  imagens; preço e variação vêm da DefiLlama em 5 pedidos de lote.
+- **DefiLlama `/chart`:** aceita no máximo 500 pontos e devolve vazio quando o
+  início é anterior ao token; por isso o roteador sempre conta para trás a
+  partir de agora (`end=`).
+
 ### Proteções comuns a todas as cadeias
-- **Fila por fonte:** no máximo N pedidos por minuto a cada fonte, somando
-  todas as telas abertas (CoinGecko ~10/min, GeckoTerminal 25/min, CoinPaprika
-  e CoinLore espaçados, DefiLlama e Binance folgados).
-- **Disjuntor:** fonte que devolveu 429 ou ficou fora fica pulada por 3 minutos.
+- **Fila por fonte** (por página): intervalo mínimo entre pedidos — CoinGecko
+  6 s, GeckoTerminal 2,5 s, CoinLore e open.er-api 1 s, CoinPaprika 0,4 s,
+  Banco Central 0,2 s, DefiLlama 0,15 s, Binance 0,06 s.
+- **Disjuntor** (combinado entre as abas por `atlas.dados.pausa.<fonte>`):
+  fonte que devolveu 429 fica pulada por 3 minutos; rede fora ou erro 5xx, por
+  1 minuto. Erro 4xx comum (ex.: par inexistente na Binance) não pausa.
+- **Último dado bom:** `atlas.dados.ultimo.v1` (preço por token, ficha, câmbio,
+  Selic), no máximo 400 entradas; a lista dos 500 não entra.
 - **Pedido igual ao mesmo tempo vira um só:** duas telas pedindo o preço de SOL
   no mesmo segundo recebem a mesma resposta.
 - **Respostas grandes não entram no cache comum** do `AtlasHttp` em
@@ -60,16 +77,16 @@ símbolo (`SOLUSDT`); CoinPaprika e CoinLore usam o tradutor que já existe em
 | Hold, Trade, RWA, DeFi, Dashboard, Carteiras | ✔ *(já pela cadeia)* | ✔ | | ✔ (autocomplete) | | | ✔ | | |
 | Mercado | ✔ | ✔ | ✔ | ✔ | ✔ | | | | |
 
-## 3. Hoje × proposta (onde a CoinGecko sai da frente)
+## 3. Antes × depois (onde a CoinGecko saiu da frente)
 
-| Tela | Hoje, ao abrir | Com o roteador |
+| Tela | Antes, ao abrir | Com o roteador (medido em 08/11) |
 |---|---|---|
-| Conversor | 4–5 pedidos à CoinGecko (preço, mercado, gráfico, câmbio; mais 2 páginas de 250 na busca) | preço DefiLlama, gráfico Binance, câmbio open.er-api/Binance, ficha CoinPaprika; CoinGecko só se tudo falhar |
-| Escada e Pool | 2 páginas de 250 na CoinGecko (lista) + velas Binance + série DefiLlama | lista CoinLore → CoinPaprika; resto igual |
-| Lucro, Staking | busca + preço + câmbio na CoinGecko | busca local/CoinPaprika, preço DefiLlama, câmbio open.er-api |
-| Comparador | lista, busca, câmbio e xStocks na CoinGecko | histórico Binance/DefiLlama; xStocks pela DefiLlama `/chart` (a conferir); câmbio open.er-api |
-| Simulador | busca e preço na CoinGecko, velas Binance | busca local/CoinPaprika, preço DefiLlama, velas Binance |
-| Mercado | CoinGecko primeiro em rankings, ficha e gráfico (cadeia `tryChain` já tem reservas) | trocar a ordem: CoinLore/CoinPaprika/Binance antes |
+| Conversor | 4–5 pedidos à CoinGecko (preço, mercado, gráfico, câmbio; mais 2 páginas de 250 na busca) | 0 à CoinGecko: preço DefiLlama, câmbio open.er-api, ficha CoinPaprika, gráfico Binance |
+| Escada e Pool | 2 páginas de 250 na CoinGecko (lista) + velas Binance + série DefiLlama | 0 à CoinGecko: lista e variação DefiLlama, velas Binance |
+| Lucro, Staking | busca + preço + câmbio na CoinGecko | 0 à CoinGecko: busca local, preço DefiLlama, câmbio open.er-api |
+| Comparador | lista, busca, câmbio e xStocks na CoinGecko | 0 à CoinGecko: históricos Binance e DefiLlama (xStocks diários desde 07/2025), CDI do Banco Central, câmbio open.er-api, faixa de cima CoinPaprika |
+| Simulador | busca e preço na CoinGecko, velas Binance | 0 à CoinGecko: busca local, preço DefiLlama, velas Binance |
+| Mercado | CoinGecko primeiro em rankings, ficha e gráfico (cadeia `tryChain` já tem reservas) | **não mudou** (decisão 3) |
 
 ## 4. Pontos para o dono decidir
 

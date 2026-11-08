@@ -8,6 +8,7 @@ Leia antes de colocar qualquer chamada de rede nova no site.
 |---|---|
 | [inventario.md](inventario.md) | Cada API, uma por uma: endereço, chave, limite, o que entrega, quem usa hoje |
 | [roteamento.md](roteamento.md) | Para cada tipo de dado, a ordem das fontes (principal e reservas), e o que cada ferramenta usa |
+| `core/atlas-dados.js` | O roteador em si (`AtlasDados.precos`, `buscar`, `ficha`, `velas`, `historico`, `cambio`, `serieBcb`, `pools`) |
 
 Levantamento feito em 08/11/2026 lendo o código do ramo `main` (commit `bf90bf0`).
 
@@ -26,9 +27,9 @@ CoinGecko **direto**, sem passar pela cadeia de preço do ATLAS
 
 ## As regras (valem para o site inteiro)
 
-1. **Nenhuma tela chama API direto.** Tudo passa pelo roteador de dados (a
-   fachada que será criada a partir de `core/atlas-precos.js` e de
-   `core/providers/registry.js`). A tela pede um **tipo de dado** ("preço de
+1. **Nenhuma tela chama API direto.** Tudo passa pelo roteador de dados
+   `core/atlas-dados.js` (`window.AtlasDados`), ou pela cadeia de preço de
+   16/10 (`core/atlas-precos.js`) nas telas de patrimônio. A tela pede um **tipo de dado** ("preço de
    SOL", "velas de 4 h de JUP", "dólar em reais"), não uma API.
 2. **Toda informação tem pelo menos uma reserva.** A ordem está em
    [roteamento.md](roteamento.md). Se a principal falha, dá limite (429) ou

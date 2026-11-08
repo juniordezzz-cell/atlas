@@ -67,7 +67,16 @@ Marca, links do site, PRO/planos, login Nexus e `pro-gate.js`, zonas travadas
 injetados, metadados de SEO (`og:*`, `canonical`, `ld+json`), fontes do Google e
 o Chart.js de CDN (agora `assets/vendor/chart-4.4.1.min.js`).
 
-## Fontes de dados que mudaram
+## Fontes de dados (roteador de 08/11)
+
+Desde a noite de 08/11, nenhuma ferramenta da bancada chama API direto: tudo
+passa por `core/atlas-dados.js`, com reserva para cada tipo de dado, pausa da
+fonte que der limite e o último valor bom guardado com data. Ordem das fontes:
+[docs/apis/roteamento.md](apis/roteamento.md). Cada página carrega
+`core/http.js`, `core/dados/tokens-top.js` (quando busca token) e
+`core/atlas-dados.js`.
+
+## Fontes de dados que mudaram (migração)
 
 - **Comparador:** saiu a Twelve Data (a chave ficava no navegador e a prata
   dava 404). **Ouro** = PAX Gold (PAXG/USDT na Binance, histórico desde 2020).

@@ -5,7 +5,7 @@ Uma seção por fonte. "Página" é o que roda no navegador (GitHub Pages);
 Limites com **(oficial)** vieram da documentação da própria API; com
 **(não oficial)** são de terceiros ou da prática e precisam de folga.
 
-Resumo de quanto cada uma aparece no código da página:
+Resumo de quanto cada uma aparecia no código da página em 08/11, antes do roteador:
 
 | Fonte | Arquivos da página que chamam | Exige chave? |
 |---|---|---|
@@ -45,11 +45,9 @@ Resumo de quanto cada uma aparece no código da página:
     `core/atlas-price.js`, `core/atlas-setores.js` (categorias),
     `core/atlas-token-icons.js` e `js/atlas-assets.js` (ícones e
     autocomplete), `core/currency.js` (reserva do câmbio).
-  - **Chamadas diretas, fora da cadeia** (as 8 ferramentas de 08/11):
-    `Ferramentas/conversor/app.js`, `lucro-cripto/app.js`, `staking/app.js`,
-    `simulador-de-trade/app.js`, `comparador-de-ativos/app.js`,
-    `_comum/busca-token.js` e `_fonte-quadro/quadro-src.html` (Escada e
-    Estratégia de Pool).
+  - As 8 ferramentas da bancada **não chamam mais a CoinGecko direto**: passam
+    pelo roteador `core/atlas-dados.js`, onde ela é a última reserva (e a 2ª na
+    busca de token fora do catálogo local).
 - **Quem usa (servidor):** `central-rwa/backend/central_rwa/providers/coingecko.py`,
   `pools/fontes.py`.
 
@@ -121,8 +119,8 @@ Resumo de quanto cada uma aparece no código da página:
   uma vez por dia.
 - **Chave:** não. **Limite:** grátis com uso moderado; pede cache (não oficial).
 - **Quem usa (página):** `core/currency.js` (câmbio do ATLAS inteiro; a reserva
-  é a CoinGecko `exchange_rates`). As ferramentas de 08/11 **não** usam este
-  módulo: tiram o dólar em reais da cotação do USDT na CoinGecko.
+  é a CoinGecko `exchange_rates`) e o roteador `core/atlas-dados.js` (câmbio
+  das ferramentas: open.er-api → Binance → CoinGecko).
 
 ## alternative.me — índice de medo e ganância
 
