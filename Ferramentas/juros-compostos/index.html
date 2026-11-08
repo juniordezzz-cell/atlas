@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Juros Compostos do ATLAS: simule aportes mensais, veja o valor em dinheiro de hoje, quanto aportar para chegar à meta e a comparação com CDI e poupança.">
+<title>Juros Compostos — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<link rel="stylesheet" href="estilo.css?v=1">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>Juros <span>Compostos</span></h1>
+    <p class="sub">Quanto o seu dinheiro vira com aportes todo mês, em dinheiro de hoje e contra a renda fixa.</p>
+    <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
+  </header>
+
+  <div class="toggle" role="tablist" aria-label="Moeda" id="jz-moeda">
+    <button type="button" role="tab" data-cur="BRL" aria-selected="true">Real</button>
+    <button type="button" role="tab" data-cur="USD" aria-selected="false">Dólar</button>
+    <button type="button" role="tab" data-cur="EUR" aria-selected="false">Euro</button>
+  </div>
+
+  <section class="bloco" style="margin-top:16px">
+    <h2 class="bloco__titulo">Simulação</h2>
+    <div class="grade2">
+      <div class="campo"><label for="jz-inicial">Valor inicial (<span class="jz-sim">R$</span>)</label><input id="jz-inicial" inputmode="decimal" value="1.000"></div>
+      <div class="campo"><label for="jz-aporte">Aporte mensal (<span class="jz-sim">R$</span>)</label><input id="jz-aporte" inputmode="decimal" value="500"></div>
+      <div class="campo"><label for="jz-taxa">Taxa de juros (%)</label>
+        <div class="campo__junto"><input id="jz-taxa" inputmode="decimal" value="12"><select id="jz-tipo-taxa" aria-label="Período da taxa"><option value="anual">ao ano</option><option value="mensal">ao mês</option></select></div></div>
+      <div class="campo"><label for="jz-periodo">Período</label>
+        <div class="campo__junto"><input id="jz-periodo" inputmode="numeric" value="10"><select id="jz-tipo-periodo" aria-label="Unidade do período"><option value="anos">anos</option><option value="meses">meses</option></select></div></div>
+      <div class="campo"><label for="jz-inflacao">Inflação esperada (% ao ano)</label><input id="jz-inflacao" inputmode="decimal" value="4,5"></div>
+      <div class="campo"><label for="jz-meta">Meta (opcional, <span class="jz-sim">R$</span>)</label><input id="jz-meta" inputmode="decimal" placeholder="Ex.: 200.000"></div>
+      <div class="campo" id="jz-retirada-campo" hidden><label for="jz-retirada">Retirada mensal (<span class="jz-sim">R$</span>)</label><input id="jz-retirada" inputmode="decimal" value="0"></div>
+    </div>
+    <div class="acoes">
+      <button type="button" class="btn btn--principal" id="jz-calcular">Calcular</button>
+      <button type="button" class="btn btn--link" id="jz-retiradas">Simular retiradas mensais</button>
+      <button type="button" class="btn btn--link" id="jz-limpar">Limpar</button>
+    </div>
+  </section>
+
+  <div id="jz-resultado" hidden>
+    <div class="resultados">
+      <div class="res res--destaque"><div class="res__rotulo">Valor final</div><div class="res__valor" id="jz-r-final">—</div><div class="res__nota" id="jz-r-zerou"></div></div>
+      <div class="res"><div class="res__rotulo">Total investido</div><div class="res__valor" id="jz-r-investido">—</div></div>
+      <div class="res res--bom"><div class="res__rotulo">Total em juros</div><div class="res__valor" id="jz-r-juros">—</div></div>
+      <div class="res"><div class="res__rotulo">Final em dinheiro de hoje</div><div class="res__valor" id="jz-r-real">—</div><div class="res__nota" id="jz-r-real-nota"></div></div>
+      <div class="res" id="jz-meta-box" hidden><div class="res__rotulo">Meta</div><div class="res__valor" id="jz-r-meta">—</div><div class="res__nota" id="jz-r-meta-nota"></div></div>
+    </div>
+
+    <h2 class="secao-titulo">Comparar com a renda fixa</h2>
+    <div class="tabela">
+      <table><thead><tr><th>Onde</th><th>Taxa ao ano</th><th>Valor final</th><th>Diferença para a sua</th></tr></thead>
+      <tbody id="jz-cmp"></tbody></table>
+    </div>
+    <p class="status" id="jz-cmp-nota"></p>
+
+    <h2 class="secao-titulo">Evolução</h2>
+    <div class="bloco">
+      <div class="jz-legenda"><span><i style="background:#5b8cff"></i>Total acumulado</span><span><i style="background:#7d8aa0"></i>Valor investido</span></div>
+      <div class="grafico" style="height:280px"><canvas id="jz-grafico"></canvas></div>
+    </div>
+
+    <h2 class="secao-titulo">Mês a mês</h2>
+    <div class="tabela jz-tabela-mes">
+      <table><thead><tr><th>Mês</th><th>Juros</th><th>Total investido</th><th>Total juros</th><th>Total acumulado</th></tr></thead>
+      <tbody id="jz-meses"></tbody></table>
+    </div>
+  </div>
+
+  <section class="explica">
+    <h2>Como ler</h2>
+    <p>Juros compostos são <strong>juros que rendem sobre juros</strong>: a cada mês o rendimento entra no saldo e passa a render também. A distância crescente entre as duas linhas do gráfico é esse efeito.</p>
+    <h3>Taxa anual vira mensal como?</h3>
+    <p>Pela conta certa, <strong>(1 + taxa)^(1/12) − 1</strong>. Dividir por 12 exagera: 12% ao ano é 0,95% ao mês, não 1%.</p>
+    <h3>Dinheiro de hoje</h3>
+    <p>Com inflação, o mesmo valor compra menos no futuro. "Final em dinheiro de hoje" mostra quanto o resultado vale em poder de compra atual, e o ganho real é o que sobra acima da inflação.</p>
+    <h3>Renda fixa</h3>
+    <p>A Selic vem do Banco Central. O CDI fica 0,10 ponto abaixo dela e aparece antes do imposto de renda. A poupança rende 0,5% ao mês quando a Selic passa de 8,5% ao ano (senão, 70% da Selic) e é isenta. Para staking e pools, use o <a href="../staking/index.html">Staking</a> e a <a href="../estrategia-de-pool/index.html">Estratégia de Pool</a>.</p>
+  </section>
+
+</div>
+
+<script src="../../core/http.js"></script>
+<script src="../../assets/vendor/chart-4.4.1.min.js"></script>
+<script src="../_comum/calculos.js?v=1"></script>
+<script src="app.js?v=1"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>
