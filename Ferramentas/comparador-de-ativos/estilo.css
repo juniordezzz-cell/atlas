@@ -1,7 +1,6 @@
 /* ATLAS · Comparador de Ativos — visual da página (veio do comparador antigo,
    com as cores e fontes do ATLAS). Base comum em ../_comum/ferramenta.css. */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-/* tokens (espelham mundodefi-tokens.css para a página renderizar sozinha) */
 :root{
   --bg:#0a0e17;--surface:rgba(17,23,35,.88);--surface2:#111723;--surface3:#18213a;
   --border:#1e2735;--border2:#2c3a5c;--acc:#5b8cff;--gold2:#d4920f;
