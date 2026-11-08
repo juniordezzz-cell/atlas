@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="__DESC__">
+<title>__TITLE__ — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<!-- Inter e JetBrains Mono servidas pelo próprio ATLAS -->
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+<style>
+/* Layout: terminal de trading — quadro (gráfico desenhável) à esquerda; à direita lista de ativos em cima e calculadora embaixo; empilha no celular */
+:root{
+  --bg:#0a0e17; --panel:#111723; --raise:#18213a; --line:#1e2735; --fg:#e6ecf5; --muted:#7d8aa0;
+  --up:#2ec785; --down:#f0556a; --avg:#f5b942; --test:#5b8cff; --pool:#b197fc; --chalk:#f4f6fb; --accent:#5b8cff;
+  --f-display:Inter, "Segoe UI", system-ui, sans-serif;
+  --f-body:Inter, "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body[data-tool="dca"] .only-pool,body[data-tool="pool"] .only-dca{display:none!important}
+button,input,select{font:inherit;color:inherit}
+.app{height:100%;display:flex;flex-direction:column;gap:10px;padding-block:12px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+h1{font-family:var(--f-display);font-weight:700;font-size:20px;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1 span{color:var(--accent)}
+.voltar{color:var(--muted);text-decoration:none;font-size:13px;white-space:nowrap}
+.voltar:hover{color:var(--fg)}
+.estudo{color:#556074;font-size:12px;flex-basis:100%;margin:-6px 0 0}
+.grp{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:2px}
+.seg button{background:none;border:0;padding:4px 9px;border-radius:6px;cursor:pointer;color:var(--muted);font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--raise);color:var(--fg)}
+.inp{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 8px;width:86px;font-family:var(--f-mono);font-size:13px}
+.inp:focus,select:focus,button:focus-visible{outline:2px solid var(--test);outline-offset:1px}
+select{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 6px}
+.btn{background:var(--raise);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.sm{padding:3px 8px;font-size:12px}
+.main{flex:1;min-height:0;display:flex;gap:10px}
+.board{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line)}
+.tool{width:34px;height:32px;display:grid;place-items:center;background:none;border:1px solid transparent;border-radius:6px;cursor:pointer;color:var(--muted)}
+.tool:hover{color:var(--fg)}
+.tool[aria-pressed="true"]{background:var(--raise);border-color:var(--line);color:var(--fg)}
+.tool svg{width:18px;height:18px}
+.sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.sw{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{border-color:var(--fg)}
+.status{margin-left:auto;font-size:12px;color:var(--muted);max-width:340px;text-align:right}
+.status.err{color:var(--down)}
+.hintbar{padding:4px 10px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+.cwrap{position:relative;flex:1;min-height:0}
+.cwrap canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.txtin{position:absolute;z-index:3;background:var(--bg);border:1px solid var(--test);border-radius:4px;padding:3px 6px;font-weight:600;width:200px}
+aside{width:400px;flex:none;display:flex;flex-direction:column;gap:10px;min-height:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+.wl{flex:0 1 auto;max-height:38%}
+.wlh{display:flex;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);position:relative}
+.wlh{flex-wrap:wrap}
+.wlh .inp{flex:1 1 100%;width:auto;font-family:var(--f-body)}
+#wcount{font-size:11.5px;margin-left:auto}
+.star{background:none;border:0;cursor:pointer;color:var(--muted);font-size:15px;line-height:1;padding:0}
+.star.on{color:var(--avg)}
+.wmore{display:block;width:calc(100% - 20px);margin:6px 10px 10px;background:var(--raise);border:1px dashed var(--line);border-radius:6px;padding:7px;cursor:pointer;color:var(--muted);font-size:12.5px}
+.wmore:hover{color:var(--fg)}
+.wlist{overflow-y:auto;min-height:0}
+.wrow{display:grid;grid-template-columns:20px 1fr auto 62px 18px;align-items:center;gap:8px;padding:5px 10px;cursor:pointer;font-size:13px;border-left:2px solid transparent}
+.wrow:hover{background:var(--raise)}
+.wrow.on{background:var(--raise);border-left-color:var(--avg)}
+.wrow img,.wrow .ic{width:18px;height:18px;border-radius:50%}
+.wrow .ic{background:var(--line);display:grid;place-items:center;font-size:10px;font-weight:600}
+.wrow .s{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wrow .s small{font-weight:400;color:var(--muted);margin-left:6px}
+.wrow .pr,.wrow .ch{font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+.wrow .star:not(.on){opacity:.35}
+.wrow:hover .star{opacity:1}
+.wres{position:absolute;left:10px;right:10px;top:100%;z-index:5;background:var(--raise);border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.wres button{display:flex;width:100%;gap:8px;align-items:center;background:none;border:0;padding:7px 10px;cursor:pointer;text-align:left;font-size:13px}
+.wres button:hover{background:var(--line)}
+.wres img{width:18px;height:18px;border-radius:50%}
+.wnote{padding:10px 12px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.calc{flex:1}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:10px 6px;cursor:pointer;color:var(--muted);font-weight:500}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--avg)}
+.tabs button.pool[aria-selected="true"]{border-bottom-color:var(--pool)}
+.pane{overflow-y:auto;padding:12px 14px 16px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sub{display:flex;flex-wrap:wrap;gap:4px}
+.sub button{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 10px;cursor:pointer;color:var(--muted);font-size:12.5px}
+.sub button[aria-pressed="true"]{border-color:var(--avg);color:var(--avg);background:var(--raise)}
+table{width:100%;border-collapse:collapse;font-family:var(--f-mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+th{font-family:var(--f-body);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:right;padding:4px}
+th:first-child,td:first-child{text-align:left}
+td{padding:3px 4px;text-align:right;border-top:1px solid var(--line)}
+td .inp{width:92px;padding:3px 6px;text-align:right}
+tr.next td:first-child{color:var(--avg);font-weight:600}
+tr.next td:first-child::before{content:"▸ "}
+.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0}
+.x:hover{color:var(--down)}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kv{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.kv b{display:block;font-family:var(--f-mono);font-size:16px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kv em{font-style:normal;font-family:var(--f-mono);font-size:12px}
+.kv.hl{border-color:var(--avg)} .kv.hl b{color:var(--avg)}
+.kv.pv{border-color:var(--pool)} .kv.pv b{color:var(--pool)}
+.note{font-size:13px;line-height:1.5;color:var(--muted);margin:0}
+.note strong{color:var(--fg);font-weight:600}
+.note .a{color:var(--avg)} .note .p{color:var(--pool)} .note .t{color:var(--test)}
+h3{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.sc{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;display:flex;flex-direction:column;gap:6px}
+.sc.best{border-color:var(--avg)}
+.sch{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.sch b{font-size:14px}
+.sch span{font-family:var(--f-mono);font-size:12.5px;color:var(--avg)}
+.tbar{height:6px;background:var(--panel);border-radius:3px;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--avg);border-radius:3px}
+.scg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:11px;color:var(--muted)}
+.scg b{display:block;font-family:var(--f-mono);font-size:12.5px;color:var(--fg);font-weight:600}
+.scg em{font-style:normal;font-family:var(--f-mono);font-size:11.5px}
+.chip{align-self:flex-start;display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid}
+.empty{border:1px dashed var(--line);border-radius:8px;padding:12px;color:var(--muted);font-size:13px;line-height:1.5}
+.f{display:flex;flex-direction:column;gap:3px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fgrid .inp{width:100%}
+.up{color:var(--up)} .dn{color:var(--down)}
+.board{position:relative}
+.cmp{display:flex;flex-direction:column;gap:6px}
+.cmp .it{display:grid;grid-template-columns:minmax(110px,165px) 1fr 64px;align-items:center;gap:8px;font-size:12.5px}
+.cmp .bar{height:10px;background:var(--bg);border-radius:3px;position:relative;overflow:hidden}
+.cmp .bar i{position:absolute;top:0;bottom:0;border-radius:3px}
+.cmp .v{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.btn.hl{border-color:var(--test);color:var(--test)}
+.btn[aria-pressed="true"]{background:var(--test);border-color:var(--test);color:#fff}
+.btn.buy{background:var(--up);border-color:var(--up);color:#06231e;font-weight:600}
+.btn.sell{background:var(--down);border-color:var(--down);color:#2b0606;font-weight:600}
+.tabs button{font-size:13px;padding:10px 4px}
+.tabs button.sell[aria-selected="true"]{border-bottom-color:var(--down)}
+.rbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;border-top:1px solid var(--line);background:var(--raise)}
+.pop{position:absolute;right:10px;top:46px;z-index:8;width:min(360px,calc(100% - 20px));background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.scrow{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:13px}
+.scrow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scrow small{color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--pool)}
+.minichart{width:100%;height:170px;display:block;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.poolbtn{display:flex;justify-content:space-between;gap:8px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 9px;cursor:pointer;font-size:12.5px;text-align:left}
+.poolbtn:hover{border-color:var(--pool)}
+.poolbtn b{color:var(--pool);font-family:var(--f-mono)}
+body.present header,body.present .wl{display:none!important}
+body.present .pane{font-size:15px}
+body.present .note{font-size:14.5px}
+body.present .kv b{font-size:19px}
+@media (max-width:1100px){aside{width:350px}}
+@media (max-width:900px){
+  .app{height:auto}
+  .main{flex-direction:column}
+  .board{height:66vh;min-height:400px;flex:none}
+  aside{width:100%}
+  .wl{max-height:300px}
+  .status{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>__H1__</h1>
+    <div class="grp">
+      <span class="lbl">Tempo</span>
+      <div class="seg" id="tf">
+        <button data-tf="15m" aria-pressed="false">15m</button>
+        <button data-tf="1h" aria-pressed="false">1h</button>
+        <button data-tf="4h" aria-pressed="true">4h</button>
+        <button data-tf="1D" aria-pressed="false">Diário</button>
+        <button data-tf="1W" aria-pressed="false">Semanal</button>
+      </div>
+    </div>
+    <div class="grp">
+      <label class="lbl" for="sim">Exemplo simulado</label>
+      <select id="sim">
+        <option value="">Escolher…</option>
+        <option value="ENA">Pump e queda (ENA)</option>
+        <option value="SOL">Lateral, pool 90–110 (SOL)</option>
+        <option value="UNI">Queda, pool 6–10 (UNI)</option>
+        <option value="ALTA">Tendência de alta</option>
+      </select>
+      <button class="btn" id="regen" hidden>Novo gráfico</button>
+    </div>
+    <div class="grp">
+      <span class="lbl">Linhas</span>
+      <label class="lbl" for="hi">Máx</label><input class="inp" id="hi" inputmode="decimal">
+      <label class="lbl" for="lo">Mín</label><input class="inp" id="lo" inputmode="decimal">
+      <button class="btn sm" id="hlReset" title="Coloca as linhas na máxima e na mínima do gráfico">↺</button>
+    </div>
+    <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
+  </header>
+
+  <div class="main">
+    <section class="board">
+      <div class="tools" id="tools">
+        <button class="tool" data-t="move" title="Mover gráfico e linhas (V)" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 8-6 2-2 6z"/></svg></button>
+        <button class="tool only-dca" data-t="buy" title="Comprar: clique no gráfico (B)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg></button>
+        <span class="sep"></span>
+        <button class="tool" data-t="pen" title="Caneta (P)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg></button>
+        <button class="tool" data-t="arrow" title="Seta: arraste (A)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 19L19 5M10 5h9v9"/></svg></button>
+        <button class="tool" data-t="hline" title="Linha horizontal (H)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></svg></button>
+        <button class="tool" data-t="text" title="Texto (T)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></button>
+        <button class="tool" data-t="eraser" title="Borracha (E)" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 20h12M4 15l9-9 6 6-7 7H8z"/></svg></button>
+        <span class="sep"></span>
+        <div class="grp" id="colors"></div>
+        <span class="sep"></span>
+        <button class="tool" id="undo" title="Desfazer (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
+        <button class="btn sm" id="clear">Apagar quadro</button>
+        <button class="btn sm" id="fit" title="Mostra o gráfico inteiro com escala automática">Ajustar</button>
+        <span class="sep"></span>
+        <button class="btn sm hl only-dca" id="replayBtn" title="Esconde o futuro e avança vela por vela">▶ Replay</button>
+        <button class="btn sm" id="cardBtn" aria-pressed="false" title="Mostra um quadro com os números em cima do gráfico">Resumo</button>
+        <button class="btn sm" id="presentBtn" title="Tela cheia para aula e live">Apresentar</button>
+        <button class="btn sm" id="imgBtn" title="Salva o quadro como imagem PNG">Imagem</button>
+        <button class="btn sm" id="scBtn" aria-expanded="false" title="Salvar ou abrir uma aula pronta">Cenários</button>
+        <span class="status" id="status"></span>
+      </div>
+      <div class="pop" id="scPop" hidden>
+        <h3>Cenários de aula</h3>
+        <div class="row"><input class="inp" id="scName" placeholder="Nome (ex.: Aula ENA DCA)" style="flex:1;width:auto;font-family:var(--f-body)" maxlength="60"><button class="btn sm" id="scSave">Salvar</button></div>
+        <div id="scList" class="stack" style="gap:4px"></div>
+        <div class="row"><button class="btn sm" id="scDown">Baixar arquivo .json</button><label class="btn sm" for="scFile">Abrir arquivo</label><input type="file" id="scFile" accept=".json,application/json" hidden></div>
+        <p class="note">Guarda o token, o tempo gráfico, as compras, a venda, a pool e os desenhos. O arquivo serve para mandar a aula para outra pessoa.</p>
+      </div>
+      <div class="cwrap" id="cwrap"><canvas id="cv"></canvas></div>
+      <div class="rbar" id="rbar" hidden>
+        <button class="btn sm" id="rPlay">▶ Play</button>
+        <button class="btn sm" id="rStep">Próxima vela →</button>
+        <label class="lbl" for="rSpeed">Velocidade</label>
+        <select id="rSpeed"><option value="700">Lenta</option><option value="300" selected>Normal</option><option value="90">Rápida</option></select>
+        <span class="sep"></span>
+        <button class="btn sm buy" id="rBuy">Comprar</button>
+        <button class="btn sm sell" id="rSell">Vender tudo</button>
+        <button class="btn sm" id="rExit" style="margin-left:auto">Sair do replay</button>
+      </div>
+      <div class="hintbar" id="hint"></div>
+    </section>
+
+    <aside>
+      <section class="card wl">
+        <div class="wlh">
+          <input class="inp" id="q" placeholder="Buscar entre 500 tokens (ex.: jup, pepe, aave)" autocomplete="off" aria-label="Buscar token">
+          <div class="seg" id="wtab"><button data-w="top" aria-pressed="true">Top 500</button><button data-w="fav" aria-pressed="false">★ Favoritos</button></div>
+          <span class="note" id="wcount"></span>
+          <div class="wres" id="wres" hidden></div>
+        </div>
+        <div class="wlist" id="wlist"></div>
+      </section>
+
+      <section class="card calc">
+        <div class="tabs only-dca" role="tablist">
+          <button role="tab" id="tab-dca" aria-selected="true">Preço médio</button>
+          <button role="tab" id="tab-cal" aria-selected="false">DCA no tempo</button>
+          <button role="tab" id="tab-sell" class="sell" aria-selected="false">Venda</button>
+          <button role="tab" id="tab-pool" class="pool only-pool" aria-selected="false">Pool</button>
+        </div>
+
+        <div class="pane" id="pane-dca">
+          <div class="row">
+            <label class="lbl" for="cap">Capital</label><span>$</span><input class="inp" id="cap" value="1000" inputmode="decimal" style="width:80px">
+            <span class="note" id="capNote"></span>
+          </div>
+          <div class="sub" id="sub">
+            <button data-s="1">1 compra</button><button data-s="2">2 compras</button><button data-s="3">3 compras</button><button data-s="4">4 compras</button><button data-s="5">5 compras</button><button data-s="L">Livre</button><button data-s="C">Comparar</button>
+          </div>
+          <div id="stratBody" class="stack"></div>
+          <div id="res" class="stack"></div>
+        </div>
+
+        <div class="pane" id="pane-pool" hidden>
+          <div class="sub" id="pStrat">
+            <button data-ps="buy">Comprar na descida</button><button data-ps="sell">Vender na subida</button><button data-ps="yield">Renda em dólar</button><button data-ps="ratio">Proporção</button><button data-ps="full">Faixa cheia (V2)</button>
+          </div>
+          <p class="note">Procurando uma pool? Abra o <a href="../scanner-pools/index.html" style="color:var(--accent)">Scanner Pools</a>.</p>
+          <p class="note" id="pIntro"></p>
+          <div class="row" id="pQuick"></div>
+          <div class="fgrid">
+            <div class="f"><label class="lbl" for="pa">Mín da faixa</label><input class="inp" id="pa" inputmode="decimal"></div>
+            <div class="f"><label class="lbl" for="pb">Máx da faixa</label><input class="inp" id="pb" inputmode="decimal"></div>
+            <div class="f"><label class="lbl" for="p0">Preço na entrada</label><input class="inp" id="p0" inputmode="decimal"></div>
+            <div class="f"><label class="lbl" for="dep">Depósito ($)</label><input class="inp" id="dep" inputmode="decimal"></div>
+          </div>
+          <div class="f"><label class="lbl" for="pRatio">Proporção na entrada: <span id="pRatioL" style="color:var(--pool)"></span></label><input type="range" id="pRatio" min="0" max="100" step="1"></div>
+          <div id="poolRes" class="stack"></div>
+          <h3>Taxas da pool</h3>
+          <div class="row"><label class="lbl" for="phApr">APR da posição (%)</label><input class="inp" id="phApr" value="25" inputmode="decimal" style="width:70px"><button class="btn sm" id="phFetch">Buscar APR real (DeFi Llama)</button></div>
+          <div id="phPools" class="stack" style="gap:4px"></div>
+          <h3>Simular no histórico do gráfico</h3>
+          <label class="row note" for="phOn"><input type="checkbox" id="phOn"> Entrar na pool numa vela do passado e ver o que aconteceu até hoje</label>
+          <div id="phBox" class="stack" hidden>
+            <div class="f"><label class="lbl" for="phIdx">Entrada na pool: <span id="phDate" style="color:var(--pool)"></span></label><input type="range" id="phIdx" min="0" max="10" value="0"></div>
+            <div id="phRes" class="stack"></div>
+          </div>
+        </div>
+
+        <div class="pane" id="pane-cal" hidden>
+          <p class="note">O DCA de verdade: um valor fixo em datas fixas, sem olhar o preço. A conta usa o histórico diário real do token.</p>
+          <div class="fgrid">
+            <div class="f"><label class="lbl" for="calAmt">Valor por aporte ($)</label><input class="inp" id="calAmt" value="50" inputmode="decimal"></div>
+            <div class="f"><label class="lbl" for="calFreq">Frequência</label><select id="calFreq"><option value="1">Todo dia</option><option value="7" selected>Toda semana</option><option value="14">A cada 2 semanas</option><option value="30">Todo mês</option></select></div>
+            <div class="f"><label class="lbl" for="calStart">Começou em</label><input class="inp" id="calStart" type="date"></div>
+            <div class="f"><label class="lbl" for="calEnd">Parou em</label><input class="inp" id="calEnd" type="date"></div>
+          </div>
+          <div class="sub" id="calAgo"><button data-ago="90">3 meses</button><button data-ago="180">6 meses</button><button data-ago="365">1 ano</button><button data-ago="730">2 anos</button><button data-ago="top">Desde o topo</button><button data-ago="all">Desde o início</button></div>
+          <div id="calRes" class="stack"></div>
+        </div>
+
+        <div class="pane" id="pane-sell" hidden>
+          <p class="note">O espelho do DCA: em vez de tentar acertar o topo, a pessoa vende em partes enquanto o preço sobe.</p>
+          <div class="fgrid">
+            <div class="f"><label class="lbl" for="selQty">Tokens para vender</label><input class="inp" id="selQty" inputmode="decimal"></div>
+            <div class="f"><label class="lbl" for="selCost">Preço médio de compra</label><input class="inp" id="selCost" inputmode="decimal"></div>
+          </div>
+          <div class="row"><button class="btn sm" id="selFromDca">Usar o resultado da aba Preço médio</button><button class="btn sm" id="selSpread">Espalhar alvos acima do preço</button></div>
+          <div class="sub" id="selSub"><button data-n="1">Vender tudo de uma vez</button><button data-n="2">2 vendas</button><button data-n="3">3 vendas</button><button data-n="4">4 vendas</button></div>
+          <div id="selBody" class="stack"></div>
+          <div id="selRes" class="stack"></div>
+        </div>
+
+        <div class="pane" id="pane-replay" hidden>
+          <h3>Replay: e se fosse você?</h3>
+          <p class="note">O futuro fica escondido. A cada vela a pessoa decide: comprar, esperar ou vender. Ninguém sabe onde é o fundo.</p>
+          <div class="fgrid">
+            <div class="f"><label class="lbl" for="rCap">Dinheiro inicial ($)</label><input class="inp" id="rCap" value="1000" inputmode="decimal"></div>
+            <div class="f"><label class="lbl" for="rAmt">Valor por compra ($)</label><input class="inp" id="rAmt" value="250" inputmode="decimal"></div>
+          </div>
+          <div id="rRes" class="stack"></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script src="../../core/http.js"></script>
+<script type="application/json" id="snap">__SNAP__</script>
+<script>
+(()=>{
+const TOOL='__TOOL__';document.body.dataset.tool=TOOL;
+const $=s=>document.querySelector(s);
+const css=getComputedStyle(document.documentElement);
+const C=k=>css.getPropertyValue(k).trim();
+const COL={bg:C('--bg'),panel:C('--panel'),line:C('--line'),fg:C('--fg'),muted:C('--muted'),up:C('--up'),down:C('--down'),avg:C('--avg'),test:C('--test'),pool:C('--pool'),chalk:C('--chalk')};
+const FM=C('--f-mono'),FB=C('--f-body');
+const PEN=[COL.chalk,'#ffd43b','#51cf66','#ff6b6b',COL.test];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const setHTML=(el,h)=>{el.replaceChildren(document.createRange().createContextualFragment(h))};
+const ls={get(k,d){try{const v=localStorage.getItem('atlas.quadro.'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem('atlas.quadro.'+k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- formatação pt-BR ---------- */
+const dec=p=>{const a=Math.abs(p);if(!a)return 2;return a>=10?2:a>=1?3:a>=0.01?4:Math.min(12,Math.ceil(-Math.log10(a))+3)};
+const fp=p=>isFinite(p)?p.toLocaleString('pt-BR',{minimumFractionDigits:dec(p),maximumFractionDigits:dec(p)}):'—';
+const fu=v=>isFinite(v)?(v<-0.005?'−':'')+'$'+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+const fpct=v=>isFinite(v)?(v>0.05?'+':v<-0.05?'−':'')+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%':'—';
+const fq=q=>isFinite(q)?q.toLocaleString('pt-BR',{maximumFractionDigits:q>=1000?0:q>=1?2:6}):'—';
+const num=s=>{const v=parseFloat(String(s).trim().replace(/\s/g,'').replace(',','.'));return isFinite(v)?v:NaN};
+const sgn=v=>v>=0?'up':'dn';
+const rnd=v=>+v.toFixed(dec(v));
+const fnum=v=>String(rnd(v)).replace('.',',');
+
+/* ---------- dados: CoinGecko, com DeFi Llama de reserva ---------- */
+const API='https://api.coingecko.com/api/v3';
+const DEFAULT_WATCH=['bitcoin','ethereum','solana','ethena','uniswap','chainlink','aave','hyperliquid','jupiter-exchange-solana','pendle','ondo-finance','render-token','pyth-network','sui','raydium','jito-governance-token','lido-dao','morpho','aerodrome-finance','binancecoin'];
+/* Velas: Binance primeiro (OHLC de verdade, 500 velas), depois CoinGecko, depois DeFi Llama */
+const WEEK_OFF=4*864e5; // semanas começam na segunda-feira
+const TF={
+  '15m':{lbl:'15m',ms:9e5,bin:'15m',cg:{days:1,kind:'bucket'},llama:['15m',300]},
+  '1h':{lbl:'1h',ms:36e5,bin:'1h',cg:{days:14,kind:'closes'},llama:['1h',336]},
+  '4h':{lbl:'4h',ms:144e5,bin:'4h',cg:{days:30,kind:'ohlc'},llama:['4h',180]},
+  '1D':{lbl:'Diário',ms:864e5,bin:'1d',cg:{days:90,kind:'bucket'},llama:['1d',365]},
+  '1W':{lbl:'Semanal',ms:6048e5,bin:'1w',cg:{days:365,kind:'bucket',daily:true},llama:['1w',104]}};
+const SNAP_TF=['1h','4h','1D'];
+const memo={};
+async function getJSON(url,ttl=90e3){const h=memo[url];if(h&&Date.now()-h.t<ttl)return h.d;const d=await AtlasHttp.getJSON(url,{ttl:0,timeout:/yields\.llama\.fi/.test(url)?30000:12000,retries:1});memo[url]={t:Date.now(),d};return d}
+const fromCloses=pr=>pr.slice(1).map(([t,c],k)=>{const o=pr[k][1];return{t,o,c,h:Math.max(o,c),l:Math.min(o,c)}});
+function bucket(pr,ms,off=0){const m=new Map();pr.forEach(([t,p])=>{const b=Math.floor((t-off)/ms)*ms+off;const c=m.get(b);if(!c)m.set(b,{t:b,o:p,h:p,l:p,c:p});else{c.h=Math.max(c.h,p);c.l=Math.min(c.l,p);c.c=p}});return[...m.values()]}
+async function fetchCandles(id,tf){
+  const T=TF[tf];const m=S.market[id]||{};
+  if(m.sym&&/^[A-Z0-9]{2,12}$/.test(m.sym)){
+    try{const d=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${m.sym}USDT&interval=${T.bin}&limit=500`,60e3);
+      const cs=d.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]}));const last=cs.length?cs[cs.length-1].c:0;
+      if(cs.length>=3&&(!m.price||Math.abs(last/m.price-1)<.08))return{src:'Binance',cs};
+    }catch(e){/* token fora da Binance: segue para a CoinGecko */}
+  }
+  try{
+    const g=T.cg;
+    if(g.kind==='ohlc'){const d=await getJSON(`${API}/coins/${encodeURIComponent(id)}/ohlc?vs_currency=usd&days=${g.days}`);return{src:'CoinGecko',cs:d.map(([t,o,h,l,c])=>({t,o,h,l,c}))}}
+    const d=await getJSON(`${API}/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=${g.days}`+(g.daily?'&interval=daily':''));
+    return{src:'CoinGecko',cs:g.kind==='closes'?fromCloses(d.prices):bucket(d.prices,T.ms,tf==='1W'?WEEK_OFF:0)};
+  }catch(err){
+    const[period,span]=T.llama;const start=Math.floor((Date.now()-span*T.ms)/1000);
+    const d=await getJSON(`https://coins.llama.fi/chart/coingecko:${encodeURIComponent(id)}?start=${start}&span=${span}&period=${period}`);
+    const k=Object.values(d.coins||{})[0];if(!k||!k.prices||k.prices.length<3)throw err;
+    return{src:'DeFi Llama',cs:fromCloses(k.prices.map(p=>[p.timestamp*1000,p.price]))};
+  }
+}
+async function fetchMarkets(ids){
+  if(!ids.length)return;
+  try{const d=await getJSON(`${API}/coins/markets?vs_currency=usd&ids=${ids.map(encodeURIComponent).join(',')}&price_change_percentage=24h`,55e3);
+    d.forEach(c=>{const o=S.market[c.id]||{};S.market[c.id]={...o,sym:String(c.symbol||'').toUpperCase(),name:c.name,img:c.image||o.img,price:c.current_price,ch:c.price_change_percentage_24h,rank:c.market_cap_rank}})}
+  catch(err){const d=await getJSON('https://coins.llama.fi/prices/current/'+ids.map(i=>'coingecko:'+encodeURIComponent(i)).join(','),55e3);
+    Object.entries(d.coins||{}).forEach(([k,v])=>{const id=k.slice(10);const o=S.market[id]||{};S.market[id]={...o,sym:o.sym||String(v.symbol||id).toUpperCase(),name:o.name||id,price:v.price}});
+    if(!Object.keys(d.coins||{}).length)throw err}
+}
+async function fetchTop(){
+  const pages=await Promise.all([1,2].map(p=>getJSON(`${API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${p}&price_change_percentage=24h`,110e3)));
+  const ids=[];pages.flat().forEach(c=>{if(!(c.current_price>0))return;ids.push(c.id);const o=S.market[c.id]||{};
+    S.market[c.id]={...o,sym:String(c.symbol||'').toUpperCase(),name:c.name,img:c.image||o.img,price:c.current_price,ch:c.price_change_percentage_24h,rank:c.market_cap_rank}});
+  if(ids.length>50){S.top=ids;S.topSet=new Set(ids)}
+}
+
+/* ---------- gerador simulado ---------- */
+const PAT={
+  pump:[[0,.15],[.07,.38],[.13,.08],[.2,.42],[.27,.12],[.33,0],[.4,.3],[.47,.56],[.54,1],[.6,.72],[.67,.8],[.74,.52],[.81,.6],[.9,.38]],
+  alta:[[0,.04],[.15,.28],[.25,.14],[.42,.5],[.52,.36],[.72,.8],[.82,.66]],
+  queda:[[0,.92],[.07,1],[.25,.62],[.35,.74],[.55,.36],[.65,.46],[.85,.06]],
+  lateral:[[0,.5],[.1,.92],[.2,.18],[.3,.85],[.4,.08],[.5,.8],[.6,.14],[.7,1],[.8,0],[.9,.72]]
+};
+function gen(pattern,endN,seed,lo,hi){
+  const N=170;let s=seed>>>0||1;const r=()=>(s=(s*1664525+1013904223)>>>0)/4294967296;
+  const pts=[...PAT[pattern],[1,endN]];
+  const base=t=>{for(let k=1;k<pts.length;k++){if(t<=pts[k][0]){const[a,va]=pts[k-1],[b,vb]=pts[k];const f=(t-a)/(b-a);return va+(vb-va)*f*f*(3-2*f)}}return endN};
+  let n=0,prev=base(0);const cs=[];
+  for(let k=0;k<N;k++){n=n*.82+(r()-.5)*.075;const v=base(k/(N-1))+n;cs.push({o:prev,c:v,h:Math.max(prev,v)+r()*r()*.05,l:Math.min(prev,v)-r()*r()*.05});prev=v}
+  let mn=Infinity,mx=-Infinity;cs.forEach(c=>{mn=Math.min(mn,c.l);mx=Math.max(mx,c.h)});
+  const m=v=>(v-mn)/(mx-mn);cs.forEach(c=>{c.o=m(c.o);c.c=m(c.c);c.h=m(c.h);c.l=m(c.l)});
+  const d=endN-cs[N-1].c,M=18;
+  for(let k=N-M;k<N;k++){const f=(k-(N-M)+1)/M;const c=cs[k];['o','c','h','l'].forEach(q=>c[q]=Math.min(1,Math.max(0,c[q]+d*f)));c.h=Math.max(c.h,c.o,c.c);c.l=Math.min(c.l,c.o,c.c)}
+  const now=Date.now(),step=144e5;
+  return cs.map((c,k)=>({t:now-(N-1-k)*step,o:lo+c.o*(hi-lo),h:lo+c.h*(hi-lo),l:lo+c.l*(hi-lo),c:lo+c.c*(hi-lo)}));
+}
+const PRESETS={
+  ENA:{asset:'ENA',lo:.1339,hi:.2944,pattern:'pump',seed:11,now:.1564,pool:{a:.1339,b:.2944,dep:100},tab:'dca'},
+  SOL:{asset:'SOL',lo:82,hi:128,pattern:'lateral',seed:5,now:100,pool:{a:90,b:110,dep:1000},tab:'pool'},
+  UNI:{asset:'UNI',lo:5.2,hi:11.5,pattern:'queda',seed:3,now:7,pool:{a:6,b:10,dep:1000},tab:'pool'},
+  ALTA:{asset:'ABC',lo:1,hi:2.4,pattern:'alta',seed:9,now:2.2,pool:{a:2.2,b:2.8,dep:1000},tab:'dca'}
+};
+
+/* ---------- estado ---------- */
+const S={tool:'move',color:PEN[0],drawBy:{},undo:[],frozen:null,showPool:false,tf:(t=>TF[t]?t:'4h')(ls.get('tf','4h')),
+  watch:ls.get('watch',DEFAULT_WATCH),market:{},live:false,cap:1000,active:'3',slot:0,strats:{L:[]},pool:{a:1,b:2,p0:1.5,dep:100},
+  candles:[],vx0:0,vx1:1,autoY:true,vy:{min:0,max:1},mouse:null};
+/* foto embutida: 500 maiores tokens da CoinGecko com 7 dias de preço por hora (usada quando a API não responde) */
+const SNAP=(()=>{try{return JSON.parse(document.getElementById('snap').textContent)}catch(e){return{t:Date.now(),c:[]}}})();
+const IMG='https://coin-images.coingecko.com/coins/images/';
+const fmtSnap=new Date(SNAP.t).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+SNAP.c.forEach(([id,sym,name,img,price,ch,rank,spark])=>{S.market[id]={sym,name,img:img?IMG+img:'',price,ch,rank,spark}});
+S.top=SNAP.c.map(r=>r[0]);S.topSet=new Set(S.top);S.wtab=ls.get('wtab','top');
+if(!S.watch.includes('syrup'))S.watch.push('syrup','sky');
+const D=()=>S.drawBy[S.key]||(S.drawBy[S.key]=[]);
+const n=()=>S.candles.length;
+const t0=()=>S.candles[0].t;
+const dt=()=>n()>1?(S.candles[n()-1].t-S.candles[0].t)/(n()-1):TF[S.tf].ms;
+const tOf=i=>t0()+i*dt();
+const iOf=t=>(t-t0())/dt();
+function extent(){let lo=Infinity,hi=-Infinity;S.candles.forEach(c=>{lo=Math.min(lo,c.l);hi=Math.max(hi,c.h)});return{lo,hi}}
+function placeT(p){for(let k=0;k<n();k++){const c=S.candles[k];if(p>=c.l&&p<=c.h)return c.t}
+  let best=0,bd=Infinity;S.candles.forEach((c,k)=>{const d=Math.min(Math.abs(c.l-p),Math.abs(c.h-p));if(d<bd){bd=d;best=k}});return S.candles[best].t}
+
+function setAsset(o,keepStrats){
+  if(RP.on&&o.key!==S.key)rpExit();
+  const newAsset=o.key!==S.key;Object.assign(S,o);
+  if(PHS.idx>n()-2)PHS.idx=Math.max(0,n()-2);if(PHS.on)S.pool.p0=S.candles[PHS.idx].c;
+  const e=extent();S.hi=e.hi;S.lo=e.lo;
+  if(newAsset&&!keepStrats){S.test=S.now;defaultStrats();S.strats.L=[];S.pool={a:rnd(S.lo),b:rnd(S.hi),p0:rnd(S.now),dep:S.pool.dep||1000};S.undo=[]}
+  ['1','2','3','4','5','L'].forEach(k=>(S.strats[k]||[]).forEach(b=>{if(b.t==null||iOf(b.t)<-5||iOf(b.t)>n()+60)b.t=placeT(b.p)}));
+  fitView();syncHeader();syncPool();renderWatch();renderStrat();renderAll();
+  if(S.tab==='cal')ensureDaily();
+  if(TOOL==='pool'&&newAsset&&!keepStrats){S.pool.p0=rnd(S.now);setPStrat(S.pstrat)}
+}
+function defaultStrats(){[1,2,3,4,5].forEach(k=>{S.strats[k]=Array.from({length:k},(_,j)=>{const p=rnd(k===1?S.hi:S.hi-(S.hi-S.lo)*j/(k-1));return{p,t:placeT(p)}})});S.slot=0}
+
+function loadSim(key,seed){
+  const p=PRESETS[key];const sd=seed??p.seed;
+  const cs=gen(p.pattern,Math.min(.97,Math.max(.03,(p.now-p.lo)/(p.hi-p.lo))),sd,p.lo,p.hi);
+  const last=cs[cs.length-1];last.c=p.now;last.h=Math.max(last.h,last.c);last.l=Math.min(last.l,last.c);
+  S.simKey=key;S.seed=sd;S.id=null;S.src='Simulado';
+  setAsset({mode:'sim',key:'sim:'+key+':'+sd,asset:p.asset,name:'Exemplo simulado',candles:cs,now:p.now,tf:S.tf});
+  S.pool={a:p.pool.a,b:p.pool.b,p0:p.now,dep:p.pool.dep};syncPool();setTab(p.tab);
+  if(TOOL==='pool')setPStrat(p.pool.b/p.pool.a>100?'full':p.pool.a<p.now&&p.pool.b>p.now?'yield':p.pool.b<=p.now?'buy':'sell',false);
+  $('#regen').hidden=false;setStatus('Exemplo simulado · preços inventados para a aula');
+}
+async function selectLive(id){
+  S.pending=id;const m=S.market[id]||{};const sym=m.sym||id;
+  if(S.live){
+    setStatus('Carregando '+sym+'…');
+    try{const{src,cs}=await fetchCandles(id,S.tf);if(S.pending!==id)return;if(cs.length<3)throw new Error('Poucos dados para '+sym);
+      S.id=id;S.src=src;
+      setAsset({mode:'live',key:'live:'+id,asset:m.sym||id.toUpperCase(),name:m.name||id,candles:cs,now:m.price||cs[cs.length-1].c});
+      ls.set('asset',id);$('#sim').value='';$('#regen').hidden=true;
+      setStatus(`${src} · atualizado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`);return;
+    }catch(e){if(S.pending!==id)return;if(!(m.spark&&m.spark.length>10)){setStatus(e.message||'Não consegui carregar '+sym,true);return}
+      setStatus((e.message||'Erro na API.')+' Mostrando a foto de 7 dias.',true)}
+  }
+  if(!(m.spark&&m.spark.length>10)){setStatus(`Sem acesso à API aqui e sem dados guardados de ${sym}.`,true);return}
+  const len=m.spark.length;const pr=m.spark.map((p,k)=>[SNAP.t-(len-1-k)*36e5,p]).filter(x=>x[1]>0);
+  if(!SNAP_TF.includes(S.tf)){S.tf='4h';syncHeader()}
+  const cs=S.tf==='1h'?fromCloses(pr):bucket(pr,TF[S.tf].ms);
+  S.id=id;S.src='foto de '+fmtSnap;
+  setAsset({mode:'live',key:'live:'+id,asset:m.sym,name:m.name,candles:cs,now:m.price});
+  ls.set('asset',id);$('#sim').value='';$('#regen').hidden=true;
+  if(!S.live)setStatus(`Sem acesso à API aqui: foto de ${fmtSnap} com 7 dias (1h, 4h ou diário). No arquivo local todos os tempos funcionam ao vivo.`);
+}
+function setStatus(t,err){const el=$('#status');el.textContent=t;el.classList.toggle('err',!!err)}
+
+/* ---------- canvas e escala ---------- */
+const cv=$('#cv'),ctx=cv.getContext('2d');let W=0,H=0;
+const AX=82,BOT=24,TOP=30;
+function resize(){const r=$('#cwrap').getBoundingClientRect();const d=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0);draw()}
+new ResizeObserver(resize).observe($('#cwrap'));
+const R=()=>W-AX, PH=()=>H-TOP-BOT;
+const bw=()=>R()/(S.vx1-S.vx0);
+const X=i=>(i-S.vx0+.5)*bw();
+const I=x=>x/bw()-.5+S.vx0;
+const XT=t=>X(iOf(t));
+let V={min:0,max:1};
+const Y=p=>TOP+(1-(p-V.min)/(V.max-V.min))*PH();
+const P=y=>V.min+(1-(y-TOP)/PH())*(V.max-V.min);
+function fitView(){const N=n();S.vx0=-1;S.vx1=N+Math.max(5,Math.round(N*.12));S.autoY=true}
+function clampX(){const N=n();let span=S.vx1-S.vx0;const ns=Math.max(8,Math.min(N*3,span));if(ns!==span){const c=(S.vx0+S.vx1)/2;S.vx0=c-ns/2;S.vx1=c+ns/2;span=ns}
+  if(S.vx1<3){S.vx1=3;S.vx0=3-span}if(S.vx0>N-3){S.vx0=N-3;S.vx1=S.vx0+span}}
+/* replay: estado e quantas velas aparecem */
+const RP={on:false,picking:false,idx:0,start:0,cap:100,cash:0,tok:0,inv:0,realized:0,trades:[],timer:null,done:false};
+const visN=()=>RP.on&&!RP.picking?RP.idx+1:n();
+function view(){
+  if(S.frozen)return S.frozen;if(!S.autoY)return S.vy;
+  const a=Math.max(0,Math.floor(S.vx0)),b=Math.min(visN()-1,Math.ceil(S.vx1));let lo=Infinity,hi=-Infinity;
+  for(let k=a;k<=b;k++){const c=S.candles[k];lo=Math.min(lo,c.l);hi=Math.max(hi,c.h)}
+  if(!isFinite(lo)){const e=extent();lo=e.lo;hi=e.hi}
+  if(S.showPool&&!(TOOL==='pool'&&S.pstrat==='full')){lo=Math.min(lo,S.pool.a);hi=Math.max(hi,S.pool.b)}
+  const pad=(hi-lo)*.08||hi*.05;return{min:lo-pad,max:hi+pad};
+}
+function niceStep(r){const e=Math.pow(10,Math.floor(Math.log10(r)));const f=r/e;return(f<1.5?1:f<3?2:f<7?5:10)*e}
+function fmtT(t,full){const d=new Date(t);const two=v=>String(v).padStart(2,'0');const day=`${two(d.getDate())}/${two(d.getMonth()+1)}`;const hm=`${two(d.getHours())}:${two(d.getMinutes())}`;
+  const tf=S.mode==='sim'?'4h':S.tf;const yy=`${day}/${String(d.getFullYear()).slice(2)}`;
+  if(full)return tf==='1D'||tf==='1W'?yy:`${day} ${hm}`;
+  if(tf==='15m')return hm;if(tf==='1h')return`${day} ${two(d.getHours())}h`;if(tf==='1W')return yy;return day}
+
+const STRAT_COL={1:COL.down,2:'#ffa94d',3:COL.avg,4:'#ffe066',5:'#c0eb75',L:'#51cf66'};
+const STRAT_NAME={1:'1 compra',2:'2 compras',3:'3 compras',4:'4 compras',5:'5 compras',L:'Livre'};
+
+function draw(){
+  if(!W||!n())return;V=view();const Rr=R();const N=n();
+  ctx.fillStyle=COL.panel;ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.beginPath();ctx.rect(0,0,Rr,H-BOT);ctx.clip();
+  // grade
+  const st=niceStep((V.max-V.min)/8);ctx.lineWidth=1;
+  for(let p=Math.ceil(V.min/st)*st;p<=V.max;p+=st){const y=Math.round(Y(p))+.5;ctx.strokeStyle=COL.line;ctx.globalAlpha=.5;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(Rr,y);ctx.stroke()}
+  const tstep=Math.max(1,Math.ceil(100/bw()));const ts0=Math.ceil(S.vx0/tstep)*tstep;
+  for(let i=ts0;i<=S.vx1;i+=tstep){const x=Math.round(X(i))+.5;ctx.globalAlpha=.3;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H-BOT);ctx.stroke()}
+  ctx.globalAlpha=1;
+  const tags=[];
+  // pool
+  if(S.showPool){const{a,b}=S.pool;const ya=Y(a),yb=Y(b);const px0=PHS.on?Math.max(0,X(PHS.idx)):0;ctx.fillStyle=COL.pool;ctx.globalAlpha=.1;ctx.fillRect(px0,yb,Rr-px0,ya-yb);ctx.globalAlpha=1;
+    dline(a,COL.pool,1.5,[6,4]);dline(b,COL.pool,1.5,[6,4]);const g=Math.sqrt(a*b);dline(g,COL.pool,1,[2,3]);rlabel(g,'preço médio da pool √(mín×máx)',COL.pool);
+    if(PHS.on){ctx.strokeStyle=COL.pool;ctx.setLineDash([4,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(px0,0);ctx.lineTo(px0,H-BOT);ctx.stroke();ctx.setLineDash([]);ctx.font='600 11px '+FB;ctx.fillStyle=COL.pool;ctx.fillText('entrada na pool',px0+5,TOP+8)}
+    tags.push({p:b,c:COL.pool},{p:a,c:COL.pool},{p:g,c:COL.pool})}
+  // candles
+  const w=Math.max(1,Math.min(14,bw()*.66));const a0=Math.max(0,Math.floor(S.vx0)-1),a1=Math.min(visN()-1,Math.ceil(S.vx1)+1);
+  for(let k=a0;k<=a1;k++){const c=S.candles[k];const col=c.c>=c.o?COL.up:COL.down;const x=X(k);
+    ctx.strokeStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(Math.round(x)+.5,Y(c.h));ctx.lineTo(Math.round(x)+.5,Y(c.l));ctx.stroke();
+    const y1=Y(Math.max(c.o,c.c)),y2=Y(Math.min(c.o,c.c));ctx.fillStyle=col;ctx.fillRect(x-w/2,y1,w,Math.max(1,y2-y1))}
+  drawOverlays(tags,Rr);
+  D().forEach(drawObj);
+  // mira
+  const m=S.mouse;
+  if(m&&m.x<Rr&&m.y<H-BOT&&!drag){ctx.strokeStyle=COL.muted;ctx.globalAlpha=.6;ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,Math.round(m.y)+.5);ctx.lineTo(Rr,Math.round(m.y)+.5);ctx.moveTo(Math.round(m.x)+.5,0);ctx.lineTo(Math.round(m.x)+.5,H-BOT);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
+  ctx.restore();
+  drawChrome(tags,m,st,tstep,ts0,Rr);
+}
+function drawOverlays(tags,Rr){
+  if(RP.on){drawReplay(tags,Rr);return}
+  const mid=(S.hi+S.lo)/2;dline(mid,COL.muted,1,[3,5]);label(mid,'meio da faixa (média simples)',COL.muted);
+  dline(S.hi,COL.chalk,2);dline(S.lo,COL.chalk,2);label(S.hi,'MÁXIMA',COL.chalk,true);label(S.lo,'MÍNIMA',COL.chalk,true);
+  tags.push({p:S.hi,c:COL.chalk,dark:true},{p:S.lo,c:COL.chalk,dark:true});
+  if(S.tab==='cal'){const c=CAL.res;if(c&&!c.err){dline(c.avg,COL.avg,2.5);label(c.avg,'PREÇO MÉDIO DO DCA NO TEMPO',COL.avg,true);tags.push({p:c.avg,c:COL.avg,dark:true});
+    ctx.fillStyle=COL.up;c.buys.forEach(b=>{const x=XT(b.t);if(x<-5||x>Rr+5)return;ctx.beginPath();ctx.arc(x,Y(b.p),3.2,0,7);ctx.fill()})}}
+  else if(S.tab==='sell')drawSell(tags,Rr);
+  else if(S.tab==='dca')drawDcaOverlay(tags,Rr);
+  dline(S.now,COL.muted,1,[1,3]);
+  dline(S.test,COL.test,1.5,[5,4]);rlabel(S.test,'preço de teste (arraste)',COL.test);
+  tags.push({p:S.now,c:'#3a4560'},{p:S.test,c:COL.test});
+}
+function marker(x,y,txt,col,next){
+  if(next){ctx.strokeStyle=COL.avg;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,11,0,7);ctx.stroke()}
+  ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();ctx.strokeStyle=COL.panel;ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle=COL.panel;ctx.font='bold 10px '+FB;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,x,y+.5);ctx.textAlign='left';
+}
+function drawDcaOverlay(tags,Rr){
+  if(S.active==='C'){
+    ['1','2','3','4','5','L'].forEach(k=>{const s=stats(stratBuys(k));if(!s)return;dline(s.avg,STRAT_COL[k],k==='1'?2:1.6,k==='1'?[]:[7,4]);rlabel(s.avg,`${STRAT_NAME[k]} · médio ${fp(s.avg)}`,STRAT_COL[k]);tags.push({p:s.avg,c:STRAT_COL[k],dark:true})});
+  }else{
+    const bs=stratBuys(S.active);const s=stats(bs);
+    if(s){dline(s.avg,COL.avg,2.5);label(s.avg,'SEU PREÇO MÉDIO',COL.avg,true);tags.push({p:s.avg,c:COL.avg,dark:true})}
+    bs.forEach((b,k)=>{const x=XT(b.t),y=Y(b.p);ctx.strokeStyle=COL.up;ctx.setLineDash([2,3]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(Rr,y);ctx.stroke();ctx.setLineDash([]);
+      const next=S.tool==='buy'&&S.active!=='L'&&k===S.slot%bs.length;
+      if(next){ctx.strokeStyle=COL.avg;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,11,0,7);ctx.stroke()}
+      ctx.fillStyle=COL.up;ctx.beginPath();ctx.arc(x,y,7,0,7);ctx.fill();ctx.strokeStyle=COL.panel;ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle=COL.panel;ctx.font='bold 10px '+FB;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(k+1,x,y+.5);ctx.textAlign='left';
+      pill(x+13,y,`${fu(b.usd)} a ${fp(b.p)}`,COL.up)});
+  }
+}
+function drawChrome(tags,m,st,tstep,ts0,Rr){
+  const N=visN();
+  // legenda
+  const hi=m&&m.x<Rr?Math.round(I(m.x)):N-1;const c=S.candles[Math.max(0,Math.min(N-1,hi))];
+  ctx.textBaseline='middle';ctx.font='600 13px '+FB;ctx.fillStyle=COL.fg;const head=`${S.asset} · ${S.mode==='sim'?'4h':TF[S.tf].lbl} · ${S.src||''}`;ctx.fillText(head,10,15);
+  let x=16+ctx.measureText(head).width;ctx.font='11.5px '+FM;
+  [['Abr',c.o],['Máx',c.h],['Mín',c.l],['Fch',c.c]].forEach(([k,v])=>{ctx.fillStyle=COL.muted;ctx.fillText(k,x,15);x+=ctx.measureText(k+' ').width;ctx.fillStyle=c.c>=c.o?COL.up:COL.down;const s=fp(v);ctx.fillText(s,x,15);x+=ctx.measureText(s).width+10});
+  // eixo do tempo
+  ctx.fillStyle=COL.panel;ctx.fillRect(0,H-BOT,W,BOT);ctx.strokeStyle=COL.line;ctx.beginPath();ctx.moveTo(0,H-BOT+.5);ctx.lineTo(W,H-BOT+.5);ctx.moveTo(Rr+.5,0);ctx.lineTo(Rr+.5,H);ctx.stroke();
+  ctx.font='11px '+FM;ctx.fillStyle=COL.muted;ctx.textAlign='center';
+  for(let i=ts0;i<=S.vx1;i+=tstep){const xx=X(i);if(xx>20&&xx<Rr-20)ctx.fillText(fmtT(tOf(i)),xx,H-BOT/2)}
+  ctx.textAlign='left';
+  // eixo de preço
+  for(let p=Math.ceil(V.min/st)*st;p<=V.max;p+=st){const y=Y(p);if(y>TOP-10&&y<H-BOT-4){ctx.fillStyle=COL.muted;ctx.fillText(fp(p),Rr+8,y)}}
+  tags.forEach(t=>t.y=Y(t.p));const vis=tags.filter(t=>t.y>-8&&t.y<H-BOT+8).sort((a,b)=>a.y-b.y);
+  for(let k=1;k<vis.length;k++)if(vis[k].y-vis[k-1].y<17)vis[k].y=vis[k-1].y+17;
+  vis.forEach(t=>{ctx.fillStyle=t.c;ctx.fillRect(Rr+1,t.y-8,AX-1,16);ctx.fillStyle=t.dark?'#10131c':'#fff';ctx.font='600 10.5px '+FM;ctx.fillText(fp(t.p),Rr+6,t.y+.5)});
+  if(m&&m.x<Rr&&m.y<H-BOT&&!drag){const p=P(m.y);ctx.fillStyle=COL.fg;ctx.fillRect(Rr+1,m.y-8,AX-1,16);ctx.fillStyle=COL.bg;ctx.font='600 10.5px '+FM;ctx.fillText(fp(p),Rr+6,m.y+.5);
+    const s=fmtT(tOf(I(m.x)),true);ctx.font='11px '+FM;const tw=ctx.measureText(s).width+12;ctx.fillStyle=COL.fg;ctx.fillRect(m.x-tw/2,H-BOT+2,tw,BOT-4);ctx.fillStyle=COL.bg;ctx.textAlign='center';ctx.fillText(s,m.x,H-BOT/2);ctx.textAlign='left'}
+  if(!S.autoY){ctx.font='600 10px '+FB;ctx.fillStyle=COL.muted;ctx.fillText('ESCALA MANUAL',Rr+6,H-BOT/2)}
+  if(S.card||document.body.classList.contains('present'))drawCard();
+}
+function drawCard(){
+  const cl=cardLines();if(!cl)return;const[title,rows]=cl;
+  ctx.font='700 15px '+FB;let w=ctx.measureText(title).width;
+  ctx.font='14px '+FM;rows.forEach(r=>{w=Math.max(w,ctx.measureText(r[0]+'  '+r[1]).width+24)});
+  const x=10,y=TOP+4,h=30+rows.length*22;w+=24;
+  ctx.fillStyle=COL.bg;ctx.globalAlpha=.92;ctx.fillRect(x,y,w,h);ctx.globalAlpha=1;ctx.strokeStyle=COL.avg;ctx.lineWidth=1.5;ctx.strokeRect(x+.5,y+.5,w-1,h-1);
+  ctx.textBaseline='middle';ctx.font='700 15px '+FB;ctx.fillStyle=COL.fg;ctx.fillText(title,x+12,y+16);
+  rows.forEach((r,k)=>{const yy=y+40+k*22;ctx.font='13px '+FB;ctx.fillStyle=COL.muted;ctx.fillText(r[0],x+12,yy);ctx.font='600 14px '+FM;ctx.fillStyle=r[2]||COL.fg;ctx.textAlign='right';ctx.fillText(r[1],x+w-12,yy);ctx.textAlign='left'});
+}
+function dline(p,c,wd,dash){const y=Math.round(Y(p))+.5;ctx.strokeStyle=c;ctx.lineWidth=wd;ctx.setLineDash(dash||[]);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(R(),y);ctx.stroke();ctx.setLineDash([])}
+function label(p,t,c,bold){ctx.font=(bold?'700 11px ':'11px ')+FB;ctx.fillStyle=c;ctx.textBaseline='bottom';ctx.fillText(t,8,Y(p)-3);ctx.textBaseline='middle'}
+function rlabel(p,t,c){ctx.font='600 11px '+FB;ctx.fillStyle=c;ctx.textAlign='right';ctx.textBaseline='bottom';ctx.fillText(t,R()-8,Y(p)-3);ctx.textAlign='left';ctx.textBaseline='middle'}
+function pill(x,y,t,c){ctx.font='600 11px '+FM;const w=ctx.measureText(t).width+10;ctx.fillStyle=COL.bg;ctx.globalAlpha=.85;ctx.fillRect(x,y-9,w,18);ctx.globalAlpha=1;ctx.strokeStyle=c;ctx.lineWidth=1;ctx.strokeRect(x+.5,y-8.5,w-1,17);ctx.fillStyle=c;ctx.textBaseline='middle';ctx.fillText(t,x+5,y+.5)}
+function drawObj(o){
+  ctx.strokeStyle=ctx.fillStyle=o.color;ctx.lineCap=ctx.lineJoin='round';
+  if(o.type==='pen'){ctx.lineWidth=3;ctx.beginPath();o.pts.forEach((q,k)=>k?ctx.lineTo(XT(q.t),Y(q.p)):ctx.moveTo(XT(q.t),Y(q.p)));ctx.stroke()}
+  else if(o.type==='arrow'){const x1=XT(o.a.t),y1=Y(o.a.p),x2=XT(o.b.t),y2=Y(o.b.p);const len=Math.hypot(x2-x1,y2-y1);if(len<4)return;const an=Math.atan2(y2-y1,x2-x1);const hd=Math.min(34,len*.5);
+    ctx.globalAlpha=.9;ctx.lineWidth=12;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2-Math.cos(an)*hd*.8,y2-Math.sin(an)*hd*.8);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-hd*Math.cos(an-.55),y2-hd*Math.sin(an-.55));ctx.lineTo(x2-hd*Math.cos(an+.55),y2-hd*Math.sin(an+.55));ctx.closePath();ctx.fill();ctx.globalAlpha=1}
+  else if(o.type==='hline'){ctx.lineWidth=2;const y=Y(o.p);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(R(),y);ctx.stroke();ctx.font='600 11px '+FM;ctx.textAlign='right';ctx.textBaseline='bottom';ctx.fillText(fp(o.p),R()-6,y-3);ctx.textAlign='left';ctx.textBaseline='middle'}
+  else if(o.type==='text'){ctx.font='600 17px '+FB;ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=4;ctx.textBaseline='middle';ctx.fillText(o.text,XT(o.t),Y(o.p));ctx.shadowBlur=0}
+}
+
+/* ---------- interação ---------- */
+const pt=e=>{const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+const toD=q=>({t:tOf(I(q.x)),p:P(q.y)});
+function segD(px,py,x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1;const L=dx*dx+dy*dy;let t=L?((px-x1)*dx+(py-y1)*dy)/L:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-x1-t*dx,py-y1-t*dy)}
+function hitObj(o,q){
+  if(o.type==='hline')return Math.abs(Y(o.p)-q.y)<8;
+  if(o.type==='arrow')return segD(q.x,q.y,XT(o.a.t),Y(o.a.p),XT(o.b.t),Y(o.b.p))<12;
+  if(o.type==='pen'){for(let k=1;k<o.pts.length;k++)if(segD(q.x,q.y,XT(o.pts[k-1].t),Y(o.pts[k-1].p),XT(o.pts[k].t),Y(o.pts[k].p))<10)return true;return o.pts.length===1&&Math.hypot(XT(o.pts[0].t)-q.x,Y(o.pts[0].p)-q.y)<10}
+  if(o.type==='text'){ctx.font='600 17px '+FB;const w=ctx.measureText(o.text).width;const x=XT(o.t),y=Y(o.p);return q.x>=x-4&&q.x<=x+w+4&&Math.abs(q.y-y)<13}
+}
+function handleAt(q){
+  if(RP.on)return null;
+  if(S.tab==='sell'){const sl=SL.ps[SL.n]||[];for(let k=sl.length-1;k>=0;k--){const b=sl[k];if(Math.hypot(XT(b.t)-q.x,Y(b.p)-q.y)<10)return{k:'sell',n:k}}}
+  if(S.tab==='dca'&&S.active!=='C'){const bs=S.strats[S.active]||[];for(let k=bs.length-1;k>=0;k--){const b=bs[k];if(Math.hypot(XT(b.t)-q.x,Y(b.p)-q.y)<10)return{k:'buy',n:k}}}
+  const near=p=>Math.abs(Y(p)-q.y)<7;
+  if(near(S.test))return{k:'test'};
+  if(S.showPool){if(near(S.pool.a))return{k:'pa'};if(near(S.pool.b))return{k:'pb'}}
+  if(near(S.hi))return{k:'hi'};if(near(S.lo))return{k:'lo'};
+  return null;
+}
+let drag=null,cur=null,erasing=false;
+function pushUndo(){S.undo.push({key:S.key,j:JSON.stringify(D())});if(S.undo.length>80)S.undo.shift()}
+cv.addEventListener('pointerdown',e=>{
+  const q=pt(e);if($('.txtin'))return;cv.setPointerCapture(e.pointerId);const v=view();
+  if(q.x>R()){drag={k:'yaxis',y:q.y,vy:{...v}};S.autoY=false;S.vy={...v};return}
+  if(q.y>H-BOT){drag={k:'xaxis',x:q.x,v0:S.vx0,v1:S.vx1};return}
+  if(RP.on&&RP.picking){rpStart(I(q.x));return}
+  const t=S.tool;
+  if(t==='move'){const h=handleAt(q);if(h){drag=h;S.frozen=v}else drag={k:'pan',x:q.x,y:q.y,v0:S.vx0,v1:S.vx1,vy:{...v},bw:bw()};cv.style.cursor=h?cv.style.cursor:'grabbing'}
+  else if(t==='buy')buyAt(q);
+  else if(t==='pen'){pushUndo();cur={type:'pen',color:S.color,pts:[toD(q)]};D().push(cur)}
+  else if(t==='arrow'){pushUndo();cur={type:'arrow',color:S.color,a:toD(q),b:toD(q)};D().push(cur)}
+  else if(t==='hline'){pushUndo();D().push({type:'hline',color:S.color,p:P(q.y)})}
+  else if(t==='text')textAt(q);
+  else if(t==='eraser'){pushUndo();erasing=true;erase(q)}
+  draw();
+});
+cv.addEventListener('pointermove',e=>{
+  const q=pt(e);S.mouse=q;
+  if(drag){
+    if(drag.k==='yaxis'){const f=Math.exp((q.y-drag.y)*.006);const c=(drag.vy.min+drag.vy.max)/2,h=(drag.vy.max-drag.vy.min)/2*f;S.vy={min:c-h,max:c+h};draw();return}
+    if(drag.k==='xaxis'){const f=Math.exp((drag.x-q.x)*.006);const span=(drag.v1-drag.v0)*f;S.vx1=drag.v1;S.vx0=drag.v1-span;clampX();draw();return}
+    if(drag.k==='pan'){const di=(q.x-drag.x)/drag.bw;S.vx0=drag.v0-di;S.vx1=drag.v1-di;clampX();
+      if(!S.autoY||Math.abs(q.y-drag.y)>14){S.autoY=false;const dp=(q.y-drag.y)/PH()*(drag.vy.max-drag.vy.min);S.vy={min:drag.vy.min+dp,max:drag.vy.max+dp}}draw();return}
+    const p=Math.max(1e-12,P(q.y));
+    if(drag.k==='buy'){const b=S.strats[S.active][drag.n];b.p=p;b.t=tOf(I(q.x));syncBuyRow(drag.n)}
+    else if(drag.k==='sell'){const b=SL.ps[SL.n][drag.n];b.p=p;b.t=tOf(I(q.x));const i=$('#sp'+drag.n);if(i)i.value=fnum(p)}
+    else if(drag.k==='test')S.test=p;
+    else if(drag.k==='pa'){S.pool.a=Math.min(p,S.pool.b*.999);syncPool()}
+    else if(drag.k==='pb'){S.pool.b=Math.max(p,S.pool.a*1.001);syncPool()}
+    else if(drag.k==='hi'){S.hi=Math.max(p,S.lo*1.001);syncHeader()}
+    else if(drag.k==='lo'){S.lo=Math.min(p,S.hi*.999);syncHeader()}
+    renderAll();return}
+  if(cur){if(cur.type==='pen')cur.pts.push(toD(q));else cur.b=toD(q);draw();return}
+  if(erasing){erase(q);return}
+  if(q.x>R())cv.style.cursor='ns-resize';else if(q.y>H-BOT)cv.style.cursor='ew-resize';
+  else if(S.tool==='move'){const h=handleAt(q);cv.style.cursor=h?(h.k==='buy'?'grab':'ns-resize'):'grab'}
+  else cv.style.cursor=S.tool==='eraser'?'cell':S.tool==='text'?'text':'crosshair';
+  draw();
+});
+cv.addEventListener('pointerleave',()=>{S.mouse=null;draw()});
+const end=()=>{if(drag){const k=drag.k;drag=null;S.frozen=null;if(k==='buy'){renderStrat()}if(k==='sell')renderSellBody();renderAll()}
+  if(cur){if(cur.type==='arrow'&&Math.hypot(XT(cur.a.t)-XT(cur.b.t),Y(cur.a.p)-Y(cur.b.p))<6){D().pop();S.undo.pop()}cur=null}erasing=false;draw()};
+cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+cv.addEventListener('wheel',e=>{e.preventDefault();const q=pt(e);
+  if(q.x>R()){const v=view();S.autoY=false;const f=Math.exp(e.deltaY*.0015);const c=P(q.y);S.vy={min:c-(c-v.min)*f,max:c+(v.max-c)*f};draw();return}
+  if(Math.abs(e.deltaX)>Math.abs(e.deltaY)){const di=e.deltaX/bw();S.vx0+=di;S.vx1+=di;clampX();draw();return}
+  const f=Math.exp(e.deltaY*.0015);const c=I(Math.min(q.x,R()));S.vx0=c-(c-S.vx0)*f;S.vx1=c+(S.vx1-c)*f;clampX();draw()},{passive:false});
+cv.addEventListener('dblclick',e=>{const q=pt(e);if(q.x>R()){S.autoY=true;draw()}else if(q.y>H-BOT){fitView();draw()}});
+function erase(q){const d=D();const k=d.length;S.drawBy[S.key]=d.filter(o=>!hitObj(o,q));if(D().length!==k)draw()}
+function textAt(q){const inp=document.createElement('input');inp.className='txtin';inp.style.left=Math.min(q.x,W-210)+'px';inp.style.top=(q.y-14)+'px';inp.style.color=S.color;inp.placeholder='Escreva e aperte Enter';$('#cwrap').appendChild(inp);
+  const d=toD(q);let done=false;const fin=ok=>{if(done)return;done=true;if(ok&&inp.value.trim()){pushUndo();D().push({type:'text',color:S.color,text:inp.value.trim(),t:d.t,p:d.p})}inp.remove();draw()};
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')fin(true);if(e.key==='Escape')fin(false);e.stopPropagation()});inp.addEventListener('blur',()=>fin(true));setTimeout(()=>inp.focus(),0)}
+function buyAt(q){
+  const p=P(q.y);if(!(p>0))return;const t=tOf(I(q.x));
+  if(RP.on){setHint('No replay, compre e venda pelos botões da barra embaixo do gráfico.');return}
+  if(S.tab==='sell'){const a=SL.ps[SL.n];a[SL.slot%a.length]={p:rnd(p),t};SL.slot=(SL.slot+1)%a.length;renderSellBody();renderAll();return}
+  if(S.tab==='cal'){setHint('No DCA no tempo as compras acontecem por data, não por clique. Mude a frequência e as datas no painel.');return}
+  if(S.tab==='pool'){setHint('Na pool, arraste as linhas roxas para mudar a faixa.');return}
+  if(S.active==='C'){setHint('Na aba Comparar não dá para comprar. Escolha 1, 2, 3, 4 compras ou Livre.');return}
+  if(S.active==='L'){const usd=num($('#perBuy')?.value);if(!(usd>0))return;S.strats.L.push({p:rnd(p),usd,t})}
+  else{const a=S.strats[S.active];a[S.slot%a.length]={p:rnd(p),t};S.slot=(S.slot+1)%a.length}
+  renderStrat();renderAll();
+}
+
+const TOOL_HINT={move:'Roda do mouse: zoom · arrastar: mover o gráfico · arrastar a escala de preço: esticar · duplo clique na escala: automático. Linhas e bolinhas verdes também se arrastam.',
+  buy:'Clique no gráfico no preço em que a pessoa compra.',pen:'Desenhe livremente.',arrow:'Clique e arraste para fazer a seta.',hline:'Clique para marcar um nível.',text:'Clique onde quer escrever.',eraser:'Passe por cima do desenho para apagar.'};
+function setHint(t){$('#hint').textContent=t}
+function setTool(t){S.tool=t;document.querySelectorAll('#tools .tool[data-t]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===t));
+  setHint(t==='buy'&&/^[1-5]$/.test(S.active)?`Clique no gráfico para escolher o preço da compra #${S.slot%(+S.active)+1} de ${S.active}.`:TOOL_HINT[t]);renderStrat();draw()}
+document.querySelectorAll('#tools .tool[data-t]').forEach(b=>b.onclick=()=>setTool(b.dataset.t));
+PEN.forEach((c,k)=>{const b=document.createElement('button');b.className='sw';b.style.background=c;b.setAttribute('aria-label','Cor '+(k+1));b.setAttribute('aria-pressed',k===0);b.onclick=()=>{S.color=c;document.querySelectorAll('.sw').forEach(x=>x.setAttribute('aria-pressed',x===b))};$('#colors').appendChild(b)});
+$('#undo').onclick=()=>{for(let k=S.undo.length-1;k>=0;k--)if(S.undo[k].key===S.key){S.drawBy[S.key]=JSON.parse(S.undo[k].j);S.undo.splice(k,1);draw();return}};
+$('#clear').onclick=()=>{if(D().length){pushUndo();S.drawBy[S.key]=[];draw()}};
+$('#fit').onclick=()=>{fitView();draw()};
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();$('#undo').click();return}
+  const m={v:'move',b:'buy',p:'pen',a:'arrow',h:'hline',t:'text',e:'eraser'}[e.key.toLowerCase()];if(m&&!e.ctrlKey&&!e.metaKey)setTool(m)});
+
+/* ---------- lista de ativos ---------- */
+function wrow(id){const m=S.market[id];if(!m||!(m.price>0))return'';const ch=m.ch;const fav=S.watch.includes(id);
+  return`<div class="wrow${S.mode==='live'&&S.id===id?' on':''}" data-id="${esc(id)}" role="button" tabindex="0">${m.img?`<img src="${esc(m.img)}" alt="" loading="lazy">`:''}<span class="ic"${m.img?' hidden':''}>${esc((m.sym||'?')[0])}</span><span class="s">${esc(m.sym)}<small>${esc(m.name)}</small></span><span class="pr">${fp(m.price)}</span><span class="ch ${ch==null?'':sgn(ch)}">${ch==null?'':fpct(ch)}</span><button class="star${fav?' on':''}" data-fav="${esc(id)}" aria-label="${fav?'Tirar dos':'Pôr nos'} favoritos">${fav?'★':'☆'}</button></div>`}
+function renderWatch(){
+  const el=$('#wlist');const q=$('#q').value.trim().toLowerCase();let ids,extra='';
+  document.querySelectorAll('#wtab button').forEach(b=>b.setAttribute('aria-pressed',!q&&b.dataset.w===S.wtab));
+  if(q){
+    const all=S.top.concat(Object.keys(S.market).filter(id=>!S.topSet.has(id)));
+    const sc=id=>{const m=S.market[id];if(!m||!m.sym)return 9;const s=m.sym.toLowerCase(),nm=String(m.name).toLowerCase();return s===q?0:s.startsWith(q)?1:nm.startsWith(q)?2:(s.includes(q)||nm.includes(q)||id.includes(q))?3:9};
+    ids=all.map(id=>[id,sc(id)]).filter(x=>x[1]<9).sort((a,b)=>a[1]-b[1]||(S.market[a[0]].rank||9999)-(S.market[b[0]].rank||9999)).slice(0,80).map(x=>x[0]);
+    if(S.live)extra=`<button class="wmore" id="wmore">Buscar “${esc(q)}” em todos os tokens da CoinGecko</button>`;
+    else if(!ids.length)extra='<div class="wnote">Nenhum token com esse nome entre os 500 maiores.</div>';
+    $('#wcount').textContent=`${ids.length} encontrados`;
+  }else{ids=S.wtab==='top'?S.top:S.watch.filter(id=>S.market[id]);$('#wcount').textContent=S.wtab==='top'?`${ids.length} tokens`:`${ids.length} favoritos`}
+  setHTML(el,(ids.map(wrow).join('')+extra)||'<div class="wnote">Nenhum favorito ainda. Toque na ☆ de um token para guardar aqui.</div>');
+  el.querySelectorAll('.wrow').forEach(r=>{const ic=r.querySelector('img');if(ic)ic.onerror=()=>{ic.remove();r.querySelector('.ic').hidden=false};
+    r.onclick=e=>{const f=e.target.dataset.fav;if(f){S.watch=S.watch.includes(f)?S.watch.filter(x=>x!==f):[...S.watch,f];ls.set('watch',S.watch);renderWatch();return}selectLive(r.dataset.id)};
+    r.onkeydown=e=>{if(e.key==='Enter')selectLive(r.dataset.id)}});
+  const mo=$('#wmore');if(mo)mo.onclick=()=>search(q);
+}
+$('#q').addEventListener('input',()=>{$('#wres').hidden=true;renderWatch();$('#wlist').scrollTop=0});
+document.querySelectorAll('#wtab button').forEach(b=>b.onclick=()=>{S.wtab=b.dataset.w;ls.set('wtab',S.wtab);$('#q').value='';renderWatch();$('#wlist').scrollTop=0});
+$('#q').addEventListener('keydown',e=>{if(e.key==='Escape'){$('#wres').hidden=true;$('#q').value=''}});
+document.addEventListener('click',e=>{if(!e.target.closest('.wlh'))$('#wres').hidden=true});
+async function search(v){
+  try{const d=await getJSON(`${API}/search?query=${encodeURIComponent(v)}`,300e3);const cs=(d.coins||[]).slice(0,8);const el=$('#wres');
+    setHTML(el,cs.length?cs.map(c=>`<button data-id="${esc(c.id)}">${c.thumb?`<img src="${esc(c.thumb)}" alt="">`:''}<b>${esc(String(c.symbol).toUpperCase())}</b><span class="note">${esc(c.name)}</span></button>`).join(''):'<div class="wnote">Nada encontrado.</div>');el.hidden=false;
+    el.querySelectorAll('img').forEach(i=>i.onerror=()=>i.remove());
+    el.querySelectorAll('button').forEach(b=>b.onclick=async()=>{const id=b.dataset.id;el.hidden=true;$('#q').value='';if(!S.watch.includes(id)){S.watch.unshift(id);ls.set('watch',S.watch)}S.wtab='fav';
+      try{await fetchMarkets([id])}catch(e){}renderWatch();selectLive(id)});
+  }catch(e){setStatus(e.message,true)}
+}
+
+/* ---------- DCA ---------- */
+function stratBuys(k){const a=S.strats[k]||[];return k==='L'?a:a.map(b=>({...b,usd:S.cap/a.length}))}
+function stats(bs){bs=bs.filter(b=>b.p>0&&b.usd>0);if(!bs.length)return null;const inv=bs.reduce((s,b)=>s+b.usd,0),tok=bs.reduce((s,b)=>s+b.usd/b.p,0);
+  return{inv,tok,avg:inv/tok,simple:bs.reduce((s,b)=>s+b.p,0)/bs.length,at:p=>tok*p}}
+function renderStrat(){
+  document.querySelectorAll('#sub button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===S.active));
+  $('#capNote').textContent=/^[1-5]$/.test(S.active)?`= ${fu(S.cap/+S.active)} por compra`:'';
+  const el=$('#stratBody');const A=esc(S.asset);
+  if(S.active==='C'){el.replaceChildren();return}
+  if(S.active==='L'){
+    const a=S.strats.L;
+    setHTML(el,`<p class="note">Compras livres: cada clique no gráfico com ⊕ compra o valor abaixo naquele preço.</p>
+    ${a.length?`<table><thead><tr><th>#</th><th>Preço</th><th>Valor $</th><th>Tokens</th><th></th></tr></thead><tbody>${a.map((b,k)=>`<tr data-k="${k}"><td>${k+1}</td><td><input class="inp" id="bp${k}" data-f="p" value="${fnum(b.p)}" inputmode="decimal" aria-label="Preço da compra ${k+1}"></td><td><input class="inp" id="bu${k}" data-f="usd" value="${fnum(b.usd)}" inputmode="decimal" style="width:70px" aria-label="Valor da compra ${k+1}"></td><td class="tq">${fq(b.usd/b.p)}</td><td><button class="x" aria-label="Remover compra ${k+1}">×</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Nenhuma compra livre ainda. Escolha a ferramenta <strong>Comprar</strong> (⊕) e clique no gráfico.</div>'}
+    <div class="row"><label class="lbl" for="perBuy">Valor por clique</label><span>$</span><input class="inp" id="perBuy" value="${fnum(S.per||S.cap/4)}" inputmode="decimal" style="width:80px"><button class="btn sm" id="clearL" style="margin-left:auto">Limpar</button></div>`);
+    $('#perBuy').addEventListener('input',()=>{const v=num($('#perBuy').value);if(v>0)S.per=v});
+    $('#clearL').onclick=()=>{S.strats.L=[];renderStrat();renderAll()};
+  }else{
+    const k=+S.active,a=S.strats[S.active],u=S.cap/k;
+    setHTML(el,`<p class="note">${k===1?`A pessoa coloca os ${fu(S.cap)} de uma vez, num preço só.`:`A pessoa divide ${fu(S.cap)} em ${k} compras de ${fu(u)}.`} Digite o preço de cada compra ou use ⊕ e clique no gráfico.</p>
+    <table><thead><tr><th>#</th><th>Preço</th><th>Valor</th><th>Tokens ${A}</th></tr></thead><tbody>${a.map((b,j)=>`<tr data-k="${j}" class="${S.tool==='buy'&&j===S.slot%k?'next':''}"><td>${j+1}</td><td><input class="inp" id="bp${j}" data-f="p" value="${fnum(b.p)}" inputmode="decimal" aria-label="Preço da compra ${j+1}"></td><td>${fu(u)}</td><td class="tq">${fq(u/b.p)}</td></tr>`).join('')}</tbody></table>
+    <div class="row"><button class="btn sm" id="spread">${k===1?'Usar a linha máxima':'Espalhar da máxima até a mínima'}</button><button class="btn sm" id="useNow">${k===1?'Usar o preço de hoje':'Começar no preço de hoje'}</button></div>`);
+    $('#spread').onclick=()=>{S.strats[S.active]=Array.from({length:k},(_,j)=>{const p=rnd(k===1?S.hi:S.hi-(S.hi-S.lo)*j/(k-1));return{p,t:placeT(p)}});S.slot=0;renderStrat();renderAll()};
+    $('#useNow').onclick=()=>{const top=S.now;S.strats[S.active]=Array.from({length:k},(_,j)=>{const p=rnd(k===1?top:top-(top-S.lo)*j/(k-1));return{p,t:placeT(p)}});S.slot=0;renderStrat();renderAll()};
+  }
+  el.querySelectorAll('tr[data-k]').forEach(tr=>{const j=+tr.dataset.k;
+    tr.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{const v=num(inp.value);if(!(v>0))return;const b=S.strats[S.active][j];b[inp.dataset.f]=v;if(inp.dataset.f==='p')b.t=placeT(v);const usd=S.active==='L'?b.usd:S.cap/S.strats[S.active].length;tr.querySelector('.tq').textContent=fq(usd/b.p);renderAll()}));
+    const x=tr.querySelector('.x');if(x)x.onclick=()=>{S.strats.L.splice(j,1);renderStrat();renderAll()}});
+}
+function syncBuyRow(j){const b=S.strats[S.active][j];const i=$('#bp'+j);if(!i)return;i.value=fnum(b.p);const usd=S.active==='L'?b.usd:S.cap/S.strats[S.active].length;i.closest('tr').querySelector('.tq').textContent=fq(usd/b.p)}
+const plSpan=(v,inv)=>`<em class="${sgn(v-inv)}">${fpct((v/inv-1)*100)}</em>`;
+function renderRes(){
+  const el=$('#res');const A=esc(S.asset);
+  if(S.active==='C')return renderCompare(el);
+  const s=stats(stratBuys(S.active));if(!s){el.replaceChildren();return}
+  const one=stats(stratBuys('1'));const vN=s.at(S.now),vT=s.at(S.test);
+  const vs=S.active!=='1'&&one?`<p class="note">Contra <strong>1 compra</strong> a ${fp(S.strats[1][0].p)}: ${s.tok>=one.tok?'você fica com':'você fica com'} <strong class="${sgn(s.tok-one.tok)}">${s.tok>=one.tok?'+':'−'}${fq(Math.abs(s.tok-one.tok))} ${A}</strong> (${fpct((s.tok/one.tok-1)*100)}), que hoje valem ${fu((s.tok-one.tok)*S.now)}.</p>`:'';
+  setHTML(el,`
+  <div class="big">
+    <div class="kv hl"><span class="lbl">Preço médio</span><b>${fp(s.avg)}</b></div>
+    <div class="kv"><span class="lbl">Tokens</span><b>${fq(s.tok)}</b><span class="lbl">${A} · ${fu(s.inv)} investidos</span></div>
+    <div class="kv"><span class="lbl">Hoje (${fp(S.now)})</span><b>${fu(vN)}</b>${plSpan(vN,s.inv)} <em class="${sgn(vN-s.inv)}">${fu(vN-s.inv)}</em></div>
+    <div class="kv"><span class="lbl" style="color:var(--test)">Teste (${fp(S.test)})</span><b>${fu(vT)}</b>${plSpan(vT,s.inv)} <em class="${sgn(vT-s.inv)}">${fu(vT-s.inv)}</em></div>
+  </div>
+  ${vs}
+  ${S.active!=='1'?`<p class="note">Preço médio = total investido ÷ tokens. Com o mesmo valor em cada compra você leva <strong>mais tokens quando está barato</strong>, por isso o <span class="a">preço médio (${fp(s.avg)})</span> fica abaixo da média simples dos preços (${fp(s.simple)}).</p>`:''}
+  <p class="note">Sai do prejuízo acima de <span class="a">${fp(s.avg)}</span>. ${S.now<s.avg?`Do preço de hoje, faltam <strong>${fpct((s.avg/S.now-1)*100)}</strong>.`:'No preço de hoje já está <strong class="up">no lucro</strong>.'}</p>`);
+}
+function renderCompare(el){
+  const A=esc(S.asset);const rows=['1','2','3','4','5','L'].map(k=>({k,s:stats(stratBuys(k))})).filter(r=>r.s);
+  if(!rows.length){el.replaceChildren();return}
+  const base=rows.find(r=>r.k==='1')?.s;const maxT=Math.max(...rows.map(r=>r.s.tok));
+  const fixed=rows.filter(r=>r.k!=='L');const best=fixed.reduce((a,b)=>b.s.tok>a.s.tok?b:a,fixed[0]);
+  const cards=rows.map(({k,s})=>{const d=base?s.tok-base.tok:0;const vN=s.at(S.now),vT=s.at(S.test);
+    return`<div class="sc${best&&k===best.k?' best':''}">
+      <div class="sch"><b style="color:${STRAT_COL[k]}">${STRAT_NAME[k]}${k==='L'?` · ${fu(s.inv)}`:''}</b><span>médio ${fp(s.avg)}</span></div>
+      <div class="tbar"><i style="width:${s.tok/maxT*100}%;background:${STRAT_COL[k]}"></i></div>
+      <div class="scg">
+        <span>Tokens<b>${fq(s.tok)}</b>${base&&k!=='1'?`<em class="${sgn(d)}">${d>=0?'+':'−'}${fq(Math.abs(d))}</em>`:'<em>&nbsp;</em>'}</span>
+        <span>Hoje<b>${fu(vN)}</b>${plSpan(vN,s.inv)}</span>
+        <span style="color:var(--test)">Teste<b>${fu(vT)}</b>${plSpan(vT,s.inv)}</span>
+      </div></div>`}).join('');
+  let concl='';
+  if(base&&best&&best.k!=='1'){const d=best.s.tok-base.tok;concl=`<p class="note">Com <strong>${STRAT_NAME[best.k]}</strong> a pessoa teria <strong class="up">+${fq(d)} ${A}</strong> (${fpct((best.s.tok/base.tok-1)*100)}) a mais do que comprando tudo de uma vez a ${fp(S.strats[1][0].p)}. No preço de hoje isso é <strong>${fu(d*S.now)}</strong> de diferença, com o mesmo dinheiro.</p>`}
+  else if(base&&best)concl=`<p class="note">Aqui a compra única rendeu mais tokens, porque foi feita num preço mais baixo que as compras fracionadas. Fracionar protege de comprar tudo no topo, mas não vence quem acerta o fundo.</p>`;
+  setHTML(el,`<p class="note">Mesmo capital (${fu(S.cap)}), jeitos diferentes de entrar. Medido no <strong>preço de hoje</strong> (${fp(S.now)}) e no <span class="t">preço de teste</span> (${fp(S.test)}). As linhas de preço médio de cada estratégia aparecem no gráfico.</p>${cards}${concl}`);
+}
+document.querySelectorAll('#sub button').forEach(b=>b.onclick=()=>{S.active=b.dataset.s;S.slot=0;setTool(S.tool);renderAll()});
+$('#cap').addEventListener('input',()=>{const v=num($('#cap').value);if(v>0){S.cap=v;renderStrat();renderAll()}});
+
+/* ---------- pool concentrada ---------- */
+function clAmt(L,a,b,p){const sa=Math.sqrt(a),sb=Math.sqrt(b),sp=Math.sqrt(Math.min(Math.max(p,a),b));return{x:L*(1/sp-1/sb),y:L*(sp-sa)}}
+/* ---------- Estratégia de pool ---------- */
+const PSTRAT={
+  buy:{name:'Comprar na descida',intro:'A faixa fica toda abaixo do preço de hoje e você deposita só USDC. Se o preço cair, a pool compra o token aos poucos, como um DCA automático, e ainda cobra taxas de quem negocia.',quick:[['−5% a −20%',[-.05,-.2]],['−10% a −30%',[-.1,-.3]],['−20% a −50%',[-.2,-.5]]],def:1},
+  sell:{name:'Vender na subida',intro:'A faixa fica toda acima do preço de hoje e você deposita só o token. Se o preço subir, a pool vende aos poucos e você recebe USDC, ganhando taxas enquanto espera.',quick:[['+5% a +20%',[.05,.2]],['+10% a +40%',[.1,.4]],['+25% a +100%',[.25,1]]],def:1},
+  yield:{name:'Renda em dólar',intro:'A faixa fica em volta do preço de hoje. Enquanto o preço ficar dentro dela, a posição rende taxas. Quanto mais estreita a faixa, mais taxa por dólar, e mais fácil o preço sair dela.',quick:[['±5%',.05],['±10%',.1],['±20%',.2],['±50%',.5]],def:1},
+  ratio:{name:'Proporção',intro:'Na pool concentrada quem decide quanto fica em token e quanto em USDC é a posição do preço dentro da faixa. Escolha a proporção e a ferramenta calcula a faixa (com largura de ±20%), ou arraste o controle abaixo.',quick:[['80/20',.8],['70/30',.7],['50/50',.5],['30/70',.3],['20/80',.2]],def:2}
+};
+PSTRAT.full={name:'Faixa cheia (V2)',intro:'A pool clássica (Uniswap V2, Raydium padrão, Balancer): a liquidez cobre todos os preços, então a posição nunca sai da faixa e sempre rende taxas. Em troca, cada dólar rende bem menos taxa que numa faixa concentrada, e a perda contra quem só segurou (impermanent loss) continua existindo.',quick:[['50/50 · faixa cheia',0]],def:0};
+S.pstrat='yield';
+const tokShare=(a,b,p)=>{const v=clAmt(1,a,b,p),t=v.x*p;return t/(t+v.y)};
+function rangeForShare(w,k,p){
+  if(w>=.995)return{a:p,b:p*k};if(w<=.005)return{a:p/k,b:p};
+  let lo=0,hi=1;for(let i=0;i<60;i++){const u=(lo+hi)/2,a=p/Math.pow(k,u);if(tokShare(a,a*k,p)>w)lo=u;else hi=u}
+  const a=p/Math.pow(k,(lo+hi)/2);return{a,b:a*k};
+}
+function applyQuick(st,i){
+  const q=PSTRAT[st].quick[i][1],p=S.pool.p0;let a,b;
+  if(st==='buy'){b=p*(1+q[0]);a=p*(1+q[1])}
+  else if(st==='sell'){a=p*(1+q[0]);b=p*(1+q[1])}
+  else if(st==='yield'){a=p/(1+q);b=p*(1+q)}
+  else if(st==='full'){a=p/1000;b=p*1000}
+  else{const r=rangeForShare(q,1.44,p);a=r.a;b=r.b}
+  S.pool.a=rnd(a);S.pool.b=rnd(b);syncPool();renderAll();
+}
+function setPStrat(st,quick=true){
+  S.pstrat=st;document.querySelectorAll('#pStrat button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ps===st));$('#pIntro').textContent=PSTRAT[st].intro;
+  setHTML($('#pQuick'),PSTRAT[st].quick.map((q,i)=>`<button class="btn sm" data-q="${i}">${q[0]}</button>`).join(''));
+  $('#pQuick').querySelectorAll('button').forEach(b=>b.onclick=()=>applyQuick(st,+b.dataset.q));
+  if(quick)applyQuick(st,PSTRAT[st].def);else renderAll();
+}
+document.querySelectorAll('#pStrat button').forEach(b=>b.onclick=()=>{if(!PHS.on)S.pool.p0=rnd(S.now);setPStrat(b.dataset.ps)});
+$('#pRatio').addEventListener('input',()=>{const w=+$('#pRatio').value/100,{a,b,p0}=S.pool,r=rangeForShare(w,Math.max(1.02,b/a),p0);S.pool.a=rnd(r.a);S.pool.b=rnd(r.b);syncPool();renderAll()});
+function renderPool(){
+  const{a,b,p0,dep}=S.pool;const el=$('#poolRes');const A=esc(S.asset);
+  if(!(a>0&&b>a&&p0>0&&dep>0)){setHTML(el,'<div class="empty">Confira os campos: o mínimo precisa ser menor que o máximo, e todos maiores que zero.</div>');return}
+  const u=clAmt(1,a,b,p0),L=dep/(u.x*p0+u.y),e=clAmt(L,a,b,p0),geo=Math.sqrt(a*b),share=tokShare(a,b,p0),sh=Math.round(share*100);
+  $('#pRatio').value=sh;$('#pRatioL').textContent=`${sh}% ${S.asset} · ${100-sh}% USDC`;
+  const pos=p0>=b?'usdc':p0<=a?'token':'in',apr=PHS.apr||0,day=dep*apr/100/365;
+  const atA=clAmt(L,a,b,a),atB=clAmt(L,a,b,b),vA=atA.x*a,vB=atB.y,holdA=e.x*a+e.y,holdB=e.x*b+e.y;
+  const warn=t=>`<p class="note dn">${t}</p>`;let head='';
+  if(S.pstrat==='buy'){const tokNow=dep/p0;
+    head=`${pos!=='usdc'?warn(`A faixa precisa ficar toda abaixo de ${fp(p0)} para a posição ser só USDC. Hoje ${sh}% já entra como ${A}.`):''}
+    <div class="big"><div class="kv pv"><span class="lbl">Preço médio de compra</span><b>${fp(geo)}</b><em class="up">${fpct((geo/p0-1)*100)} vs hoje</em></div>
+    <div class="kv"><span class="lbl">Se o preço cair até ${fp(a)}</span><b>${fq(atA.x)}</b><span class="lbl">${A}</span></div></div>
+    <p class="note">Comprando tudo hoje a ${fp(p0)}, os mesmos ${fu(dep)} dariam ${fq(tokNow)} ${A}. Se o preço atravessar a faixa inteira, a pool entrega <strong class="up">${fpct((atA.x/tokNow-1)*100)}</strong> de tokens, comprando em degraus de ${fp(b)} até ${fp(a)}.</p>
+    <p class="note">Atenção: se o preço cair até o meio da faixa e voltar a subir, a pool vende de volta o que comprou. Para ficar com os tokens, retire a liquidez quando o preço chegar perto do mínimo.</p>`}
+  else if(S.pstrat==='sell'){const tok=e.x+e.y/p0;
+    head=`${pos!=='token'?warn(`A faixa precisa ficar toda acima de ${fp(p0)} para a posição ser só ${A}. Hoje ${100-sh}% já entra como USDC.`):''}
+    <div class="big"><div class="kv pv"><span class="lbl">Preço médio de venda</span><b>${fp(geo)}</b><em class="up">${fpct((geo/p0-1)*100)} vs hoje</em></div>
+    <div class="kv"><span class="lbl">Se o preço subir até ${fp(b)}</span><b>${fu(vB)}</b><span class="lbl">em USDC</span></div></div>
+    <p class="note">Vendendo tudo hoje, ${fq(tok)} ${A} dariam ${fu(dep)}. Pela pool, se o preço atravessar a faixa, você recebe <strong class="up">${fu(vB-dep)}</strong> a mais, vendendo em degraus de ${fp(a)} até ${fp(b)}.</p>
+    <p class="note">Atenção: se o preço subir até o meio da faixa e cair de novo, a pool recompra o token. Para garantir o lucro, retire a liquidez perto do máximo.</p>`}
+  else if(S.pstrat==='full'){
+    const il=(r,w)=>Math.pow(r,w)/(w*r+1-w)-1;
+    const moves=[-.75,-.5,-.25,.25,.5,1,2,4];
+    const days=v=>day>0?Math.ceil(Math.abs(v)/day).toLocaleString('pt-BR')+' dias':'—';
+    const e10=1/(1-Math.pow(1/1.21,1/4)),e20=1/(1-Math.pow(1/1.44,1/4));
+    head=`<div class="big">
+      <div class="kv"><span class="lbl">${A} na entrada</span><b>${fq(dep/2/p0)}</b><span class="lbl">${fu(dep/2)}</span></div>
+      <div class="kv"><span class="lbl">USDC na entrada</span><b>${fu(dep/2)}</b></div>
+      <div class="kv pv"><span class="lbl">Renda estimada</span><b>${fu(day*30)}/mês</b><span class="lbl">${fu(day)} por dia, sem sair da faixa</span></div>
+    </div>
+    <h3>Perda contra só segurar (impermanent loss)</h3>
+    <p class="note">Quanto a posição fica abaixo de quem só guardou os tokens, se o preço de ${A} variar. A coluna 80/20 é a pool com pesos diferentes (Balancer), que perde menos. A última coluna diz quantos dias de taxa, pelo APR de cima, pagam a perda da pool 50/50.</p>
+    <table><thead><tr><th>Preço de ${A}</th><th>50/50</th><th>80/20</th><th>Dias de taxa</th></tr></thead><tbody>
+    ${moves.map(m=>{const r=1+m,l5=il(r,.5),l8=il(r,.8),hold=dep/2*r+dep/2;return `<tr><td>${fpct(m*100)} (${fp(p0*r)})</td><td class="dn">${fpct(l5*100)}</td><td class="dn">${fpct(l8*100)}</td><td>${days(l5*hold)}</td></tr>`}).join('')}
+    </tbody></table>
+    <p class="note">Comparando: uma faixa de ±10% concentra o capital <strong>${e10.toLocaleString('pt-BR',{maximumFractionDigits:1})}×</strong> e uma de ±20% <strong>${e20.toLocaleString('pt-BR',{maximumFractionDigits:1})}×</strong>. Com o mesmo volume de negociação, elas rendem esse múltiplo de taxa por dólar, mas param de render quando o preço sai da faixa. A faixa cheia rende pouco, porém nunca para.</p>
+    <p class="note">Par de stablecoins (USDC/USDT): o preço quase não muda, então a perda fica perto de zero. O risco ali é uma das moedas perder o pareamento com o dólar.</p>`}
+  else{const eff=1/(1-Math.pow(a/b,1/4)),ilA=vA-holdA,ilB=vB-holdB,days=v=>day>0?Math.ceil(Math.abs(v)/day)+' dias':'—';
+    head=`${pos!=='in'?warn('O preço de entrada está fora da faixa: a posição só rende taxas quando o preço voltar para dentro.'):''}
+    <div class="big">
+      <div class="kv"><span class="lbl">${A} na entrada</span><b>${fq(e.x)}</b><span class="lbl">${fu(e.x*p0)}</span></div>
+      <div class="kv"><span class="lbl">USDC na entrada</span><b>${fu(e.y)}</b></div>
+      <div class="kv pv"><span class="lbl">Renda estimada</span><b>${fu(day*30)}/mês</b><span class="lbl">${fu(day)} por dia dentro da faixa</span></div>
+      <div class="kv"><span class="lbl">Concentração</span><b>${eff.toLocaleString('pt-BR',{maximumFractionDigits:1})}×</b><span class="lbl">capital vs faixa infinita</span></div>
+    </div>
+    <p class="note">Se o preço sair por baixo (${fp(a)}), você fica 100% em ${A} valendo ${fu(vA)}: <strong class="dn">${fu(ilA)}</strong> contra quem só segurou. Pela renda estimada, isso equivale a <strong>${days(ilA)}</strong> de taxa.</p>
+    <p class="note">Se sair por cima (${fp(b)}), você fica 100% em USDC com ${fu(vB)}: <strong class="dn">${fu(ilB)}</strong> contra segurar, ou <strong>${days(ilB)}</strong> de taxa.</p>`}
+  const t=clAmt(L,a,b,S.test),vPool=t.x*S.test+t.y,vHold=e.x*S.test+e.y;
+  setHTML(el,`${head}
+  ${S.pstrat==='full'?'':`<h3>Preço médio da faixa</h3>
+  <p class="note">A pool troca pelo preço médio <span class="p">√(mín × máx) = ${fp(geo)}</span>, a média geométrica, um pouco abaixo da média simples (${fp((a+b)/2)}).</p>`}
+  <h3>No preço de teste (${fp(S.test)})</h3>
+  ${cmpRows([['Posição na pool',vPool],['Só segurar',vHold],['Ficar em USDC',dep]],dep)}
+  <p class="note">Nesse preço a posição tem ${fq(t.x)} ${A} + ${fu(t.y)}. Arraste a <span class="t">linha azul</span>. As taxas não entram aqui; o teste no histórico, mais abaixo, inclui as taxas.</p>`);
+}
+['pa','pb','p0','dep'].forEach(id=>$('#'+id).addEventListener('input',()=>{const v=num($('#'+id).value);if(v>0){S.pool[{pa:'a',pb:'b',p0:'p0',dep:'dep'}[id]]=v;renderAll()}}));
+function syncPool(){$('#pa').value=fnum(S.pool.a);$('#pb').value=fnum(S.pool.b);$('#p0').value=fnum(S.pool.p0);$('#dep').value=fnum(S.pool.dep)}
+
+/* ---------- abas ---------- */
+const TABS=['dca','cal','sell','pool'];
+S.tab='dca';
+const dstr=t=>{const d=new Date(t);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const fdate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+const fpctAbs=v=>Math.round(v).toLocaleString('pt-BR')+'%';
+function cmpRows(rows,base){const mx=Math.max(...rows.map(r=>Math.abs(r[1]/base-1)),.01);
+  return`<div class="cmp">${rows.map(([nm,v])=>{const pc=(v/base-1)*100,w=Math.abs(pc/100)/mx*50;return`<div class="it"><span>${nm}</span><span class="bar"><i style="background:var(--${pc>=0?'up':'down'});${pc>=0?'left:50%':'right:50%'};width:${w}%"></i></span><span class="v ${sgn(pc)}">${fpct(pc)}</span></div>`}).join('')}</div>`}
+
+/* ---------- DCA no tempo ---------- */
+const CAL={key:null,ser:null,src:'',loading:false,err:null,res:null,keep:false};
+const FREQ_NAME={1:'por dia',7:'por semana',14:'a cada 2 semanas',30:'por mês'};
+async function fetchDaily(id){
+  const m=S.market[id]||{};
+  if(m.sym&&/^[A-Z0-9]{2,12}$/.test(m.sym)){
+    try{let out=[],start=0;
+      for(let pg=0;pg<4;pg++){const d=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${m.sym}USDT&interval=1d&limit=1000&startTime=${start}`,600e3);if(!d.length)break;out=out.concat(d.map(k=>[k[0],+k[4]]));if(d.length<1000)break;start=d[d.length-1][0]+1}
+      if(out.length>10&&(!m.price||Math.abs(out[out.length-1][1]/m.price-1)<.08))return{src:'Binance, desde a listagem',ser:out};
+    }catch(e){/* fora da Binance */}
+  }
+  const d=await getJSON(`${API}/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=365&interval=daily`,600e3);
+  return{src:'CoinGecko, último ano',ser:d.prices.filter(x=>x[1]>0)};
+}
+async function ensureDaily(){
+  if(CAL.key===S.key&&(CAL.ser||CAL.loading||CAL.err))return;
+  CAL.key=S.key;CAL.ser=null;CAL.err=null;CAL.res=null;
+  if(S.mode==='sim'){CAL.ser=S.candles.map(c=>[c.t,c.c]);CAL.src='exemplo simulado (velas de 4h)';calDefaults();renderAll();return}
+  if(!S.live){CAL.err='O DCA no tempo precisa do histórico diário, e aqui a API está bloqueada. Use esta aba no arquivo local ou no seu site.';renderAll();return}
+  CAL.loading=true;renderAll();const key=S.key;
+  try{const r=await fetchDaily(S.id);if(CAL.key!==key)return;CAL.ser=r.ser;CAL.src=r.src}catch(e){if(CAL.key!==key)return;CAL.err=e.message||'Não consegui buscar o histórico diário.'}
+  CAL.loading=false;calDefaults();renderAll();
+}
+function calDefaults(){
+  if(!CAL.ser||!CAL.ser.length)return;const first=CAL.ser[0][0],last=CAL.ser[CAL.ser.length-1][0];
+  ['calStart','calEnd'].forEach(id=>{$('#'+id).min=dstr(first);$('#'+id).max=dstr(last)});
+  if(CAL.keep){CAL.keep=false;return}
+  $('#calStart').value=dstr(Math.max(first,last-365*864e5));$('#calEnd').value=dstr(last);
+  if(last-first<60*864e5)$('#calFreq').value='1';
+}
+document.querySelectorAll('#calAgo button').forEach(b=>b.onclick=()=>{if(!CAL.ser)return;const first=CAL.ser[0][0],last=CAL.ser[CAL.ser.length-1][0];let st;
+  if(b.dataset.ago==='top'){let mx=-1;st=first;CAL.ser.forEach(([t,c])=>{if(c>mx){mx=c;st=t}})}else if(b.dataset.ago==='all')st=first;else st=Math.max(first,last-(+b.dataset.ago)*864e5);
+  $('#calStart').value=dstr(st);$('#calEnd').value=dstr(last);renderAll()});
+['calAmt','calFreq','calStart','calEnd'].forEach(id=>{$('#'+id).addEventListener('input',renderAll);$('#'+id).addEventListener('change',renderAll)});
+function calRun(){
+  const ser=CAL.ser;if(!ser||ser.length<2)return null;
+  const amt=num($('#calAmt').value),freq=+$('#calFreq').value;
+  const st=Date.parse($('#calStart').value+'T00:00:00'),en=Date.parse($('#calEnd').value+'T23:59:59');
+  if(!(amt>0)||!isFinite(st)||!isFinite(en)||st>=en)return{err:'Confira o valor e as datas: o começo precisa vir antes do fim.'};
+  const first=ser[0][0],last=ser[ser.length-1][0];
+  const d=new Date(Math.max(st,first));d.setHours(0,0,0,0);const stop=Math.min(en,last+864e5);const dates=[];
+  while(d.getTime()<=stop&&dates.length<4000){dates.push(d.getTime());if(freq===30)d.setMonth(d.getMonth()+1);else d.setDate(d.getDate()+freq)}
+  let j=0;const buys=[];
+  for(const t of dates){while(j<ser.length-1&&ser[j][0]<t-432e5)j++;if(ser[j][0]>=t-432e5&&(!buys.length||buys[buys.length-1].t!==ser[j][0]))buys.push({t:ser[j][0],p:ser[j][1]})}
+  if(!buys.length)return{err:'Não há preço nesse período.'};
+  const inv=amt*buys.length,tok=buys.reduce((s,b)=>s+amt/b.p,0),avg=inv/tok,pStart=buys[0].p,lumpTok=inv/pStart;
+  const series=[];let k=0,tk=0,iv=0,worst=0,worstT=buys[0].t;
+  for(const[t,c]of ser){if(t<buys[0].t)continue;while(k<buys.length&&buys[k].t<=t){tk+=amt/buys[k].p;iv+=amt;k++}const v=tk*c;series.push([t,v,iv,lumpTok*c]);const r=v/iv-1;if(r<worst){worst=r;worstT=t}}
+  return{amt,freq,buys,inv,tok,avg,pStart,lumpTok,series,worst,worstT,valNow:tok*S.now,lumpNow:lumpTok*S.now};
+}
+function renderCal(){
+  const el=$('#calRes');const A=esc(S.asset);
+  if(CAL.err){CAL.res=null;setHTML(el,`<div class="empty">${esc(CAL.err)}</div>`);return}
+  if(CAL.loading||!CAL.ser){CAL.res=null;setHTML(el,'<div class="empty">Carregando o histórico diário…</div>');return}
+  const r=calRun();CAL.res=r;
+  if(!r||r.err){setHTML(el,`<div class="empty">${esc(r?r.err:'Sem dados.')}</div>`);return}
+  const pl=r.valNow-r.inv,lpl=r.lumpNow-r.inv,dTok=r.tok-r.lumpTok;
+  setHTML(el,`
+  <div class="big">
+    <div class="kv"><span class="lbl">Aportes</span><b>${r.buys.length} × ${fu(r.amt)}</b><span class="lbl">${fdate(r.buys[0].t)} → ${fdate(r.buys[r.buys.length-1].t)}</span></div>
+    <div class="kv"><span class="lbl">Investido</span><b>${fu(r.inv)}</b></div>
+    <div class="kv hl"><span class="lbl">Preço médio</span><b>${fp(r.avg)}</b></div>
+    <div class="kv"><span class="lbl">Tokens</span><b>${fq(r.tok)}</b><span class="lbl">${A}</span></div>
+    <div class="kv" style="grid-column:1/-1"><span class="lbl">Hoje (${fp(S.now)})</span><b>${fu(r.valNow)} <em class="${sgn(pl)}">${fu(pl)} · ${fpct((r.valNow/r.inv-1)*100)}</em></b></div>
+  </div>
+  <div class="legend"><span><i style="background:var(--avg)"></i>Carteira com DCA</span><span><i style="background:var(--muted)"></i>Total investido</span><span><i style="background:var(--pool)"></i>Tudo no 1º dia</span></div>
+  <canvas class="minichart" id="calCv"></canvas>
+  <h3>Contra colocar tudo no primeiro dia</h3>
+  <p class="note">Os mesmos ${fu(r.inv)} a ${fp(r.pStart)} em ${fdate(r.buys[0].t)} dariam <strong>${fq(r.lumpTok)} ${A}</strong>, que hoje valem <strong class="${sgn(lpl)}">${fu(r.lumpNow)} (${fpct((r.lumpNow/r.inv-1)*100)})</strong>. O DCA juntou <strong class="${sgn(dTok)}">${dTok>=0?'+':'−'}${fq(Math.abs(dTok))} ${A}</strong> ${dTok>=0?'a mais':'a menos'}.</p>
+  <p class="note">${dTok>=0?'O preço passou boa parte do período abaixo do começo, então comprar aos poucos rendeu mais tokens.':'O preço subiu no período, então quem colocou tudo no começo levou mais tokens. O DCA não promete o maior lucro: ele tira a necessidade de acertar o momento.'}</p>
+  <h3>O pior momento</h3>
+  <p class="note">${r.worst<0?`Em <strong>${fdate(r.worstT)}</strong> a carteira chegou a <strong class="dn">${fpct(r.worst*100)}</strong> do que tinha sido investido. É nessa hora que muita gente desiste e perde o efeito do DCA.`:'A carteira não ficou no prejuízo em nenhum momento do período.'}</p>
+  <p class="note">Fonte: ${esc(CAL.src)}. Preço de fechamento de cada dia de aporte, sem taxas da corretora.</p>`);
+  drawCalChart($('#calCv'),r);
+}
+function drawCalChart(c,r){
+  const d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(!w||r.series.length<2)return;c.width=w*d;c.height=h*d;const g=c.getContext('2d');g.setTransform(d,0,0,d,0,0);
+  const s=r.series,t0=s[0][0],t1=s[s.length-1][0];let mx=0;s.forEach(p=>{mx=Math.max(mx,p[1],p[2],p[3])});mx*=1.08;
+  const L=8,RP_=58,T=8,B=20;const xs=t=>L+(t-t0)/(t1-t0||1)*(w-L-RP_),ys=v=>T+(1-v/mx)*(h-T-B);
+  g.font='10px '+FM;g.textBaseline='middle';const stp=niceStep(mx/4);
+  for(let v=0;v<=mx;v+=stp){const y=Math.round(ys(v))+.5;g.strokeStyle=COL.line;g.globalAlpha=.6;g.beginPath();g.moveTo(L,y);g.lineTo(w-RP_,y);g.stroke();g.globalAlpha=1;g.fillStyle=COL.muted;g.fillText('$'+Math.round(v).toLocaleString('pt-BR'),w-RP_+4,y)}
+  g.fillStyle=COL.muted;g.fillText(fdate(t0),L,h-8);g.textAlign='right';g.fillText(fdate(t1),w-RP_,h-8);g.textAlign='left';
+  const line=(idx,col,wd,step)=>{g.strokeStyle=col;g.lineWidth=wd;g.beginPath();s.forEach((p,k)=>{const x=xs(p[0]),y=ys(p[idx]);if(!k)g.moveTo(x,y);else if(step){g.lineTo(x,ys(s[k-1][idx]));g.lineTo(x,y)}else g.lineTo(x,y)});g.stroke()};
+  line(3,COL.pool,1.2);line(2,COL.muted,1.5,true);line(1,COL.avg,2);
+}
+
+/* ---------- venda escalonada ---------- */
+const SL={key:null,qty:0,cost:0,n:3,ps:{},slot:0,bodyFor:''};
+function sellDefaults(){const lo=Math.max(S.now,SL.cost||S.now),hi=Math.max(S.hi,lo*1.5),N=n();
+  [1,2,3,4].forEach(k=>{SL.ps[k]=Array.from({length:k},(_,j)=>{const p=rnd(k===1?hi:lo+(hi-lo)*(j+1)/k);return{p,t:tOf(N-1+4+j*4)}})});SL.slot=0;SL.bodyFor=''}
+function sellFromDca(){const s=stats(stratBuys(S.active==='C'?'3':S.active))||stats(stratBuys('3'));SL.qty=s?s.tok:100/S.now;SL.cost=s?s.avg:S.now;$('#selQty').value=fnum(SL.qty);$('#selCost').value=fnum(SL.cost)}
+function sellInit(){SL.key=S.key;sellFromDca();sellDefaults()}
+function sellList(){const a=SL.ps[SL.n]||[];return a.map(b=>({...b,qty:SL.qty/a.length}))}
+function sellStats(){const l=sellList();if(!l.length||!(SL.qty>0)||!(SL.cost>0))return null;const recv=l.reduce((s,b)=>s+b.qty*b.p,0);return{l,recv,avg:recv/SL.qty,cost:SL.qty*SL.cost,top:Math.max(...l.map(b=>b.p))}}
+function renderSellBody(){
+  const el=$('#selBody');const A=esc(S.asset);const l=sellList();
+  document.querySelectorAll('#selSub button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.n===SL.n));
+  setHTML(el,`<table><thead><tr><th>#</th><th>Preço</th><th>Tokens ${A}</th><th>Recebe</th></tr></thead><tbody>${l.map((b,j)=>`<tr data-k="${j}" class="${S.tool==='buy'&&j===SL.slot%l.length?'next':''}"><td>${j+1}</td><td><input class="inp" id="sp${j}" value="${fnum(b.p)}" inputmode="decimal" aria-label="Preço da venda ${j+1}"></td><td>${fq(b.qty)}</td><td class="rv">${fu(b.qty*b.p)}</td></tr>`).join('')}</tbody></table>
+  <p class="note">Digite o preço de cada venda ou use ⊕ e clique no gráfico. As bolinhas vermelhas também se arrastam.</p>`);
+  el.querySelectorAll('tr[data-k]').forEach(tr=>{const j=+tr.dataset.k;tr.querySelector('input').addEventListener('input',e=>{const v=num(e.target.value);if(!(v>0))return;SL.ps[SL.n][j].p=v;tr.querySelector('.rv').textContent=fu(SL.qty/SL.n*v);renderAll()})});
+  SL.bodyFor=S.key+':'+SL.n+':'+SL.qty;
+}
+function renderSell(){
+  if(SL.key!==S.key)sellInit();
+  if(SL.bodyFor!==S.key+':'+SL.n+':'+SL.qty)renderSellBody();
+  const el=$('#selRes');const s=sellStats();
+  if(!s){setHTML(el,'<div class="empty">Coloque quantos tokens a pessoa tem e o preço médio de compra.</div>');return}
+  const T=S.test,exec=s.l.filter(b=>b.p<=T),rest=SL.qty-exec.reduce((a,b)=>a+b.qty,0);
+  const vScale=exec.reduce((a,b)=>a+b.qty*b.p,0)+rest*T,vTop=T>=s.top?SL.qty*s.top:SL.qty*T;
+  const pl=s.recv-s.cost;
+  setHTML(el,`
+  <div class="big">
+    <div class="kv" style="border-color:var(--down)"><span class="lbl">Preço médio de venda</span><b style="color:var(--down)">${fp(s.avg)}</b></div>
+    <div class="kv"><span class="lbl">Recebe (todas as vendas)</span><b>${fu(s.recv)}</b></div>
+    <div class="kv" style="grid-column:1/-1"><span class="lbl">Lucro sobre o custo (${fu(s.cost)})</span><b class="${sgn(pl)}">${fu(pl)} · ${fpct((s.recv/s.cost-1)*100)}</b></div>
+  </div>
+  <p class="note"><a style="color:var(--accent)" href="../lucro-cripto/index.html?compra=${encodeURIComponent(+SL.cost.toPrecision(8))}&venda=${encodeURIComponent(+s.avg.toPrecision(8))}&qtd=${encodeURIComponent(+SL.qty.toPrecision(8))}${S.id?'&token='+encodeURIComponent(S.id):''}">Calcular o lucro com taxas e imposto no Lucro Cripto →</a></p>
+  <h3>E se o preço só chegar até ${fp(T)}?</h3>
+  ${cmpRows([[`Escalonada (${exec.length} de ${s.l.length})`,vScale],['Tudo no alvo mais alto',vTop],['Vender tudo hoje',SL.qty*S.now],['Segurar',SL.qty*T]],s.cost)}
+  <p class="note">${exec.length===0?'Nenhum alvo foi atingido: a pessoa ainda tem todos os tokens.':exec.length<s.l.length?`<strong>${exec.length} de ${s.l.length}</strong> vendas aconteceram. Quem esperou só o alvo mais alto (${fp(s.top)}) não vendeu nada.`:'Todas as vendas aconteceram. Quem vendeu em partes garantiu lucro no caminho, sem precisar acertar o topo.'} Arraste a <span class="t">linha azul</span> para testar até onde o preço vai. Percentuais sobre o custo de compra.</p>`);
+}
+function drawSell(tags,Rr){
+  if(SL.key!==S.key)return;const s=sellStats();
+  if(SL.cost>0){dline(SL.cost,COL.avg,1.5,[6,4]);label(SL.cost,'SEU PREÇO MÉDIO DE COMPRA',COL.avg,true);tags.push({p:SL.cost,c:COL.avg,dark:true})}
+  if(!s)return;dline(s.avg,COL.down,2.2);rlabel(s.avg,'PREÇO MÉDIO DE VENDA',COL.down);tags.push({p:s.avg,c:COL.down});
+  s.l.forEach((b,k)=>{const x=XT(b.t),y=Y(b.p);ctx.strokeStyle=COL.down;ctx.setLineDash([2,3]);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(x,y);ctx.stroke();ctx.setLineDash([]);
+    marker(x,y,k+1,COL.down,S.tool==='buy'&&k===SL.slot%s.l.length);pill(x+13,y,`vende ${fq(b.qty)} a ${fp(b.p)}`,COL.down)});
+}
+$('#selQty').addEventListener('input',()=>{const v=num($('#selQty').value);if(v>0){SL.qty=v;renderAll()}});
+$('#selCost').addEventListener('input',()=>{const v=num($('#selCost').value);if(v>0){SL.cost=v;renderAll()}});
+$('#selFromDca').onclick=()=>{sellFromDca();renderAll()};
+$('#selSpread').onclick=()=>{sellDefaults();renderAll()};
+document.querySelectorAll('#selSub button').forEach(b=>b.onclick=()=>{SL.n=+b.dataset.n;SL.slot=0;renderAll()});
+
+/* ---------- pool no histórico ---------- */
+const PHS={on:false,idx:0,apr:25};
+function phSetIdx(i){PHS.idx=Math.max(0,Math.min(n()-2,Math.round(i)));S.pool.p0=rnd(S.candles[PHS.idx].c);syncPool()}
+$('#phOn').addEventListener('change',()=>{PHS.on=$('#phOn').checked;if(PHS.on)phSetIdx(Math.round(n()*.4));renderAll()});
+$('#phIdx').addEventListener('input',()=>{phSetIdx(+$('#phIdx').value);renderAll()});
+$('#phApr').addEventListener('input',()=>{const v=num($('#phApr').value);if(v>=0){PHS.apr=v;renderAll()}});
+function phSim(){
+  const{a,b,dep}=S.pool;if(!(a>0&&b>a&&dep>0))return null;const k0=PHS.idx,p0=S.candles[k0].c;
+  const u=clAmt(1,a,b,p0),L=dep/(u.x*p0+u.y),e=clAmt(L,a,b,p0),yr=dt()/(365*864e5);let fees=0,inR=0,cnt=0;
+  for(let k=k0+1;k<n();k++){const c=S.candles[k].c;cnt++;if(c>=a&&c<=b){inR++;const v=clAmt(L,a,b,c);fees+=(v.x*c+v.y)*PHS.apr/100*yr}}
+  const pl=S.candles[n()-1].c,v=clAmt(L,a,b,pl),vPool=v.x*pl+v.y,vHold=e.x*pl+e.y;
+  return{p0,pl,days:cnt*dt()/864e5,inPct:cnt?inR/cnt*100:0,fees,vPool,vHold,total:vPool+fees,dep,state:pl<a?'below':pl>b?'above':'in'};
+}
+function renderPH(){
+  $('#phBox').hidden=!PHS.on;$('#p0').disabled=PHS.on;$('#phOn').checked=PHS.on;if(!PHS.on)return;
+  const r=$('#phIdx');r.max=n()-2;r.value=PHS.idx;const c0=S.candles[PHS.idx];$('#phDate').textContent=`${fmtT(c0.t,true)} a ${fp(c0.c)}`;
+  const s=phSim(),el=$('#phRes'),A=esc(S.asset);if(!s){setHTML(el,'<div class="empty">Confira a faixa e o depósito da pool.</div>');return}
+  const il=s.vPool-s.vHold;
+  const st=s.state==='below'?`Hoje o preço (${fp(s.pl)}) está <strong>abaixo da faixa</strong>: a posição virou 100% ${A} e parou de render taxas.`:s.state==='above'?`Hoje o preço (${fp(s.pl)}) está <strong>acima da faixa</strong>: a posição virou 100% USDC e parou de render taxas.`:`Hoje o preço (${fp(s.pl)}) está <strong>dentro da faixa</strong>, rendendo taxas.`;
+  setHTML(el,`
+  <div class="big">
+    <div class="kv"><span class="lbl">Período</span><b>${Math.max(1,Math.round(s.days))} dias</b><span class="lbl">entrada a ${fp(s.p0)}</span></div>
+    <div class="kv"><span class="lbl">Dentro da faixa</span><b>${fpctAbs(s.inPct)}</b><span class="lbl">do tempo</span></div>
+    <div class="kv"><span class="lbl">Taxas ganhas</span><b class="up">${fu(s.fees)}</b></div>
+    <div class="kv"><span class="lbl">Posição sem taxas</span><b>${fu(s.vPool)}</b></div>
+    <div class="kv pv" style="grid-column:1/-1"><span class="lbl">Total com taxas</span><b>${fu(s.total)} <em class="${sgn(s.total-s.dep)}">${fpct((s.total/s.dep-1)*100)}</em></b></div>
+  </div>
+  ${cmpRows([['Pool + taxas',s.total],['Só segurar',s.vHold],['Ficar em USDC',s.dep]],s.dep)}
+  <p class="note">${st} ${s.fees+il>=0?'As taxas <strong class="up">cobriram</strong> a perda impermanente.':`As taxas <strong class="dn">não cobriram</strong> a perda impermanente de ${fu(-il)}.`}</p>
+  <p class="note">Estimativa: o APR conta só nas velas em que o preço fechou dentro da faixa. O valor real depende do volume da pool no período.</p>`);
+}
+$('#phFetch').onclick=async()=>{
+  const el=$('#phPools');setHTML(el,'<div class="note">Baixando as pools da DeFi Llama (uns 10 MB)…</div>');
+  try{const d=await getJSON('https://yields.llama.fi/pools',900e3);const sym=String(S.asset).toUpperCase();
+    const list=(d.data||[]).filter(p=>{const parts=String(p.symbol).toUpperCase().split(/[-\/ ]/);return parts.length===2&&parts.includes(sym)&&p.tvlUsd>50000&&(p.apyBase??p.apy)>0}).sort((x,y)=>y.tvlUsd-x.tvlUsd).slice(0,6);
+    if(!list.length){setHTML(el,`<div class="note">Nenhuma pool de ${esc(sym)} com mais de $50 mil na DeFi Llama.</div>`);return}
+    setHTML(el,list.map((p,k)=>`<button class="poolbtn" data-k="${k}"><span>${esc(p.project)} · ${esc(p.chain)} · ${esc(p.symbol)}<br><small class="note">TVL ${fu(p.tvlUsd).replace(/,\d\d$/,'')}</small></span><b>${(p.apyBase??p.apy).toLocaleString('pt-BR',{maximumFractionDigits:1})}% a.a.</b></button>`).join(''));
+    el.querySelectorAll('.poolbtn').forEach(b=>b.onclick=()=>{const p=list[+b.dataset.k];PHS.apr=+(p.apyBase??p.apy).toFixed(2);$('#phApr').value=fnum(PHS.apr);renderAll()});
+  }catch(e){setHTML(el,'<div class="note dn">Não consegui falar com a DeFi Llama. No link do claude.ai a API fica bloqueada; use o arquivo local ou o site.</div>')}
+};
+
+/* ---------- replay ---------- */
+const rpPrice=()=>S.candles[RP.idx].c;
+function rpEnter(){$('#scPop').hidden=true;RP.on=true;RP.picking=true;RP.done=false;RP.trades=[];$('#rbar').hidden=false;$('#replayBtn').textContent='■ Sair do replay';setHint('Replay: clique no gráfico na vela onde a aula começa. Tudo depois dela fica escondido.');setTab(S.tab)}
+function rpExit(){rpStop();RP.on=false;RP.picking=false;$('#rbar').hidden=true;$('#replayBtn').textContent='▶ Replay';setHint(TOOL_HINT[S.tool]);setTab(S.tab)}
+function rpStart(i){RP.picking=false;RP.done=false;RP.start=RP.idx=Math.max(3,Math.min(n()-3,Math.round(i)));const c=num($('#rCap').value);RP.cap=c>0?c:100;RP.cash=RP.cap;RP.tok=0;RP.inv=0;RP.trades=[];
+  const span=Math.min(S.vx1-S.vx0,Math.max(40,n()*.6));S.vx1=RP.idx+span*.3;S.vx0=S.vx1-span;S.autoY=true;clampX();setHint('Avance com Próxima vela (ou a seta →) ou Play. Compre e venda pelos botões verdes e vermelhos.');renderAll()}
+function rpStep(){if(!RP.on||RP.picking||RP.done)return;RP.idx++;if(X(RP.idx)>R()*.85){S.vx0+=1;S.vx1+=1}if(RP.idx>=n()-1){RP.idx=n()-1;RP.done=true;rpStop()}renderAll()}
+function rpStop(){clearInterval(RP.timer);RP.timer=null;$('#rPlay').textContent='▶ Play'}
+function rpPlay(){if(RP.timer)return rpStop();if(RP.picking||RP.done)return;RP.timer=setInterval(rpStep,+$('#rSpeed').value);$('#rPlay').textContent='⏸ Pausar'}
+function rpBuy(){if(RP.picking||RP.done)return;const a=num($('#rAmt').value),amt=Math.min(a>0?a:25,RP.cash);if(amt<.01){setHint('Acabou o dinheiro. Venda ou avance até o fim.');return}const p=rpPrice();RP.tok+=amt/p;RP.cash-=amt;RP.inv+=amt;RP.trades.push({i:RP.idx,type:'b',p,usd:amt});renderAll()}
+function rpSell(){if(RP.picking||RP.tok<=0)return;const p=rpPrice(),v=RP.tok*p;RP.realized+=v-RP.inv;RP.cash+=v;RP.trades.push({i:RP.idx,type:'s',p,usd:v});RP.tok=0;RP.inv=0;renderAll()}
+function drawReplay(tags,Rr){
+  if(RP.picking)return;
+  const xs=X(RP.start);ctx.strokeStyle=COL.test;ctx.setLineDash([4,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xs,0);ctx.lineTo(xs,H-BOT);ctx.stroke();ctx.setLineDash([]);ctx.font='600 11px '+FB;ctx.fillStyle=COL.test;ctx.fillText('início do replay',xs+5,TOP+8);
+  if(RP.tok>0){const avg=RP.inv/RP.tok;dline(avg,COL.avg,2.2);label(avg,'SEU PREÇO MÉDIO',COL.avg,true);tags.push({p:avg,c:COL.avg,dark:true})}
+  RP.trades.forEach(tr=>{const c=S.candles[tr.i],x=X(tr.i),buy=tr.type==='b',y=buy?Y(c.l)+13:Y(c.h)-13;ctx.fillStyle=buy?COL.up:COL.down;ctx.beginPath();
+    if(buy){ctx.moveTo(x,y-7);ctx.lineTo(x-7,y+6);ctx.lineTo(x+7,y+6)}else{ctx.moveTo(x,y+7);ctx.lineTo(x-7,y-6);ctx.lineTo(x+7,y-6)}ctx.closePath();ctx.fill()});
+  const p=rpPrice();dline(p,COL.test,1,[2,3]);tags.push({p,c:COL.test});
+  if(RP.done){ctx.font='700 24px '+C('--f-display');ctx.fillStyle=COL.fg;ctx.textAlign='center';ctx.fillText('Fim do replay',Rr/2,TOP+34);ctx.textAlign='left'}
+}
+function renderReplay(){
+  const el=$('#rRes');const a=num($('#rAmt').value);$('#rBuy').textContent='Comprar '+fu(a>0?a:25);
+  if(RP.picking){setHTML(el,'<div class="empty">Clique no gráfico na vela onde o replay começa. Tudo depois dela some, e a pessoa avança vela por vela.</div>');return}
+  const p=rpPrice(),tot=RP.cash+RP.tok*p,pc=(tot/RP.cap-1)*100,vStart=RP.cap/S.candles[RP.start].c*p;
+  let html=`<div class="big">
+    <div class="kv"><span class="lbl">Preço agora</span><b>${fp(p)}</b><span class="lbl">vela ${RP.idx-RP.start} de ${n()-1-RP.start}</span></div>
+    <div class="kv"><span class="lbl">Dinheiro</span><b>${fu(RP.cash)}</b></div>
+    <div class="kv"><span class="lbl">Tokens</span><b>${fq(RP.tok)}</b><span class="lbl">${RP.tok>0?'médio '+fp(RP.inv/RP.tok):'sem posição'}</span></div>
+    <div class="kv hl"><span class="lbl">Valor total</span><b>${fu(tot)}</b><em class="${sgn(pc)}">${fpct(pc)}</em></div>
+  </div>
+  <p class="note">Compras: ${RP.trades.filter(t=>t.type==='b').length} · vendas: ${RP.trades.filter(t=>t.type==='s').length}. Quem colocou tudo na primeira vela teria <strong class="${sgn(vStart-RP.cap)}">${fu(vStart)}</strong>.</p>`;
+  if(RP.done){let mn=Infinity,mx=-Infinity;for(let k=RP.start;k<n();k++){mn=Math.min(mn,S.candles[k].l);mx=Math.max(mx,S.candles[k].h)}
+    const dcaTok=[0,1,2,3].map(j=>S.candles[RP.start+Math.round((n()-1-RP.start)*j/3)].c).reduce((s,q)=>s+RP.cap/4/q,0);
+    html+=`<h3>Resultado final</h3>${cmpRows([['Você',tot],['Tudo na 1ª vela',vStart],['DCA em 4 partes',dcaTok*p],['Tudo no fundo*',RP.cap/mn*p],['Tudo no topo',RP.cap/mx*p]],RP.cap)}
+    <p class="note">*Comprar no fundo exato é impossível na vida real: só dá para saber depois. O DCA fica no meio do caminho de propósito, sem precisar adivinhar nada.</p>
+    <div class="row"><button class="btn sm" id="rAgain">Jogar de novo</button></div>`}
+  setHTML(el,html);const ag=$('#rAgain');if(ag)ag.onclick=()=>{RP.picking=true;RP.done=false;RP.trades=[];fitView();setHint('Replay: clique no gráfico na vela onde a aula começa.');renderAll()};
+}
+$('#replayBtn').onclick=()=>RP.on?rpExit():rpEnter();
+$('#rPlay').onclick=rpPlay;$('#rStep').onclick=rpStep;$('#rBuy').onclick=rpBuy;$('#rSell').onclick=rpSell;$('#rExit').onclick=rpExit;
+$('#rSpeed').onchange=()=>{if(RP.timer){rpStop();rpPlay()}};
+$('#rAmt').addEventListener('input',()=>{if(RP.on)renderReplay()});
+addEventListener('keydown',e=>{if(!RP.on||e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;if(e.key==='ArrowRight'){e.preventDefault();rpStep()}});
+
+/* ---------- resumo, apresentação, imagem ---------- */
+S.card=false;
+function cardLines(){
+  if(RP.on){if(RP.picking)return null;const p=rpPrice(),tot=RP.cash+RP.tok*p;return[`Replay · ${S.asset}`,[['Valor total',`${fu(tot)} (${fpct((tot/RP.cap-1)*100)})`,tot>=RP.cap?COL.up:COL.down],['Tokens',fq(RP.tok)],['Preço médio',RP.tok>0?fp(RP.inv/RP.tok):'—',COL.avg]]]}
+  if(S.tab==='dca'){
+    if(S.active==='C'){const rows=['1','2','3','4','5','L'].map(k=>{const s=stats(stratBuys(k));return s?[STRAT_NAME[k],`médio ${fp(s.avg)} · ${fq(s.tok)} tokens`,STRAT_COL[k]]:null}).filter(Boolean);return rows.length?[`${fu(S.cap)} em ${S.asset}: jeitos de entrar`,rows]:null}
+    const s=stats(stratBuys(S.active));if(!s)return null;const v=s.at(S.now);
+    return[S.active==='L'?`Compras livres · ${S.asset}`:`${STRAT_NAME[S.active]} de ${fu(S.cap/+S.active)} · ${S.asset}`,[['Preço médio',fp(s.avg),COL.avg],['Tokens',fq(s.tok)],['Hoje',`${fu(v)} (${fpct((v/s.inv-1)*100)})`,v>=s.inv?COL.up:COL.down]]]}
+  if(S.tab==='cal'){const r=CAL.res;if(!r||r.err)return null;return[`DCA de ${fu(r.amt)} ${FREQ_NAME[r.freq]} · ${S.asset}`,[['Desde',fdate(r.buys[0].t)],['Investido',fu(r.inv)],['Preço médio',fp(r.avg),COL.avg],['Hoje',`${fu(r.valNow)} (${fpct((r.valNow/r.inv-1)*100)})`,r.valNow>=r.inv?COL.up:COL.down]]]}
+  if(S.tab==='sell'){const s=sellStats();if(!s)return null;return[`Venda em ${SL.n} ${SL.n>1?'partes':'parte'} · ${S.asset}`,[['Preço médio de compra',fp(SL.cost),COL.avg],['Preço médio de venda',fp(s.avg),COL.down],['Lucro',`${fu(s.recv-s.cost)} (${fpct((s.recv/s.cost-1)*100)})`,s.recv>=s.cost?COL.up:COL.down]]]}
+  if(S.tab==='pool'){const{a,b}=S.pool;const rows=[['Estratégia',PSTRAT[S.pstrat].name],['Preço médio da faixa',fp(Math.sqrt(a*b)),COL.pool]];if(!PHS.on&&(S.pstrat==='yield'||S.pstrat==='ratio'||S.pstrat==='full'))rows.push(['Renda estimada',fu(S.pool.dep*(PHS.apr||0)/100/365*30)+'/mês',COL.up]);if(PHS.on){const s=phSim();if(s)rows.push(['Taxas ganhas',fu(s.fees),COL.up],['Total com taxas',fu(s.total),s.total>=s.dep?COL.up:COL.down],['Só segurar',fu(s.vHold)])}return[`Pool ${fp(a)} – ${fp(b)} · ${S.asset}`,rows]}
+  return null;
+}
+$('#cardBtn').onclick=()=>{S.card=!S.card;$('#cardBtn').setAttribute('aria-pressed',S.card);draw()};
+$('#presentBtn').onclick=async()=>{const on=!document.body.classList.contains('present');document.body.classList.toggle('present',on);$('#presentBtn').textContent=on?'Sair da apresentação':'Apresentar';
+  try{if(on&&!document.fullscreenElement)await document.documentElement.requestFullscreen();else if(!on&&document.fullscreenElement)await document.exitFullscreen()}catch(e){/* tela cheia é opcional */}};
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&document.body.classList.contains('present')){document.body.classList.remove('present');$('#presentBtn').textContent='Apresentar'}});
+async function saveFile(name,data){
+  try{if(window.claude&&window.claude.use){const dl=await window.claude.use('downloads');if(dl){await dl.save({filename:name,data});setStatus('Arquivo salvo: '+name);return}}}
+  catch(e){if(e&&(e.code==='declined'||e.code==='rate_limited'))return}
+  const blob=data instanceof Blob?data:new Blob([data],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);setStatus('Arquivo salvo: '+name);
+}
+$('#imgBtn').onclick=async()=>{
+  const old=S.card,om=S.mouse;S.card=true;S.mouse=null;draw();const d=devicePixelRatio||1,band=38;
+  const oc=document.createElement('canvas');oc.width=cv.width;oc.height=cv.height+band*d;const o=oc.getContext('2d');
+  o.fillStyle=COL.bg;o.fillRect(0,0,oc.width,oc.height);o.setTransform(d,0,0,d,0,0);o.textBaseline='middle';
+  o.font='700 17px '+C('--f-display');o.fillStyle=COL.fg;const T1=TOOL==='pool'?'Estratégia de ':'Escada ',T2=TOOL==='pool'?'Pool':'· DCA e preço médio';o.fillText(T1,12,band/2);const w1=o.measureText(T1).width;o.fillStyle=COL.avg;o.fillText(T2,12+w1,band/2);
+  o.font='13px '+FB;o.fillStyle=COL.muted;o.textAlign='right';o.fillText(`${S.asset} · ${new Date().toLocaleDateString('pt-BR')}`,W-12,band/2);
+  o.setTransform(1,0,0,1,0,0);o.drawImage(cv,0,band*d);S.card=old;S.mouse=om;draw();
+  const blob=await new Promise(r=>oc.toBlob(r,'image/png'));if(blob)await saveFile(`quadro-${String(S.asset).toLowerCase()}-${dstr(Date.now())}.png`,blob);
+};
+
+/* ---------- cenários ---------- */
+function scSnap(name){return{v:1,name,at:Date.now(),asset:S.asset,mode:S.mode,id:S.id||null,simKey:S.simKey||null,seed:S.seed,tf:S.tf,cap:S.cap,active:S.active,strats:S.strats,hi:S.hi,lo:S.lo,test:S.test,pool:S.pool,tab:S.tab,pstrat:S.pstrat,
+  ph:{on:PHS.on,t:PHS.on?S.candles[PHS.idx].t:null,apr:PHS.apr},cal:{amt:$('#calAmt').value,freq:$('#calFreq').value,start:$('#calStart').value,end:$('#calEnd').value},sell:{qty:SL.qty,cost:SL.cost,n:SL.n,ps:SL.ps},drawings:D()}}
+async function scApply(sc){
+  if(!sc||sc.v!==1||typeof sc.strats!=='object'){setStatus('Arquivo de cenário inválido.',true);return}
+  if(RP.on)rpExit();
+  if(sc.mode==='sim'&&PRESETS[sc.simKey]){loadSim(sc.simKey,sc.seed);$('#sim').value=sc.simKey}
+  else{if(!S.market[sc.id]){setStatus('O token desse cenário não está na lista.',true);return}if(TF[sc.tf])S.tf=sc.tf;syncHeader();await selectLive(sc.id);if(S.id!==sc.id)return}
+  const cp=o=>JSON.parse(JSON.stringify(o));
+  S.cap=+sc.cap>0?+sc.cap:100;$('#cap').value=fnum(S.cap);S.active=['1','2','3','4','5','L','C'].includes(sc.active)?sc.active:'3';S.strats=cp(sc.strats);if(!S.strats.L)S.strats.L=[];
+  if(sc.hi>0)S.hi=sc.hi;if(sc.lo>0)S.lo=sc.lo;if(sc.test>0)S.test=sc.test;if(sc.pool&&sc.pool.a>0)S.pool={...sc.pool};
+  if(sc.sell&&sc.sell.ps){SL.qty=+sc.sell.qty||0;SL.cost=+sc.sell.cost||0;SL.n=[1,2,3,4].includes(sc.sell.n)?sc.sell.n:3;SL.ps=cp(sc.sell.ps);SL.key=S.key;SL.bodyFor='';$('#selQty').value=fnum(SL.qty);$('#selCost').value=fnum(SL.cost)}
+  if(sc.cal){$('#calAmt').value=sc.cal.amt||'50';$('#calFreq').value=sc.cal.freq||'7';$('#calStart').value=sc.cal.start||'';$('#calEnd').value=sc.cal.end||'';CAL.keep=!(CAL.key===S.key&&CAL.ser)}
+  PHS.on=!!(sc.ph&&sc.ph.on);PHS.apr=sc.ph&&sc.ph.apr>=0?sc.ph.apr:25;$('#phApr').value=fnum(PHS.apr);
+  if(PHS.on&&sc.ph.t){let best=0,bd=Infinity;S.candles.forEach((c,k)=>{const d=Math.abs(c.t-sc.ph.t);if(d<bd){bd=d;best=k}});phSetIdx(best);if(sc.pool&&sc.pool.p0)S.pool.p0=sc.pool.p0}
+  S.drawBy[S.key]=Array.isArray(sc.drawings)?cp(sc.drawings):[];
+  if(TOOL==='pool'&&sc.pstrat&&PSTRAT[sc.pstrat])setPStrat(sc.pstrat,false);
+  syncHeader();syncPool();renderStrat();setTab(TABS.includes(sc.tab)?sc.tab:'dca');setStatus('Cenário aberto: '+(sc.name||''));
+}
+function renderScList(){
+  const list=ls.get('scen-'+TOOL,[]);
+  setHTML($('#scList'),list.length?list.map((s,k)=>`<div class="scrow"><span>${esc(s.name)} <small>${esc(s.sc&&s.sc.asset||'')} · ${fdate(s.at)}</small></span><button class="btn sm" data-open="${k}">Abrir</button><button class="x" data-del="${k}" aria-label="Apagar ${esc(s.name)}">×</button></div>`).join(''):'<div class="note">Nenhum cenário salvo neste navegador ainda.</div>');
+  $('#scList').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const s=ls.get('scen-'+TOOL,[])[+b.dataset.open];if(s){$('#scPop').hidden=true;scApply(s.sc)}});
+  $('#scList').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const l=ls.get('scen-'+TOOL,[]);l.splice(+b.dataset.del,1);ls.set('scen-'+TOOL,l);renderScList()});
+}
+$('#scBtn').onclick=e=>{e.stopPropagation();const p=$('#scPop');p.hidden=!p.hidden;$('#scBtn').setAttribute('aria-expanded',!p.hidden);if(!p.hidden)renderScList()};
+document.addEventListener('click',e=>{if(!e.target.closest('#scPop')&&e.target.id!=='scBtn')$('#scPop').hidden=true});
+$('#scSave').onclick=()=>{const name=$('#scName').value.trim()||`${S.asset} · ${new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
+  const l=ls.get('scen-'+TOOL,[]);l.unshift({name,at:Date.now(),sc:scSnap(name)});ls.set('scen-'+TOOL,l.slice(0,30));$('#scName').value='';renderScList();setStatus('Cenário salvo neste navegador: '+name)};
+$('#scDown').onclick=()=>{const name=$('#scName').value.trim()||('aula-'+String(S.asset).toLowerCase());saveFile(name.replace(/[^\w\-]+/g,'-').toLowerCase()+'.json',JSON.stringify(scSnap(name)))};
+$('#scFile').addEventListener('change',async()=>{const f=$('#scFile').files[0];if(!f)return;try{const sc=JSON.parse(await f.text());$('#scPop').hidden=true;await scApply(sc)}catch(e){setStatus('Não consegui ler esse arquivo de cenário.',true)}$('#scFile').value=''});
+
+/* ---------- cabeçalho, abas ---------- */
+function syncHeader(){$('#hi').value=fnum(S.hi);$('#lo').value=fnum(S.lo);document.querySelectorAll('#tf button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tf===S.tf))}
+function setTab(t){if(TOOL==='pool')t='pool';else if(t==='pool')t='dca';S.tab=t;S.showPool=t==='pool'&&!RP.on;document.querySelector('.tabs').hidden=RP.on;
+  TABS.forEach(k=>{$('#tab-'+k).setAttribute('aria-selected',k===t);$('#pane-'+k).hidden=RP.on||k!==t});$('#pane-replay').hidden=!RP.on;
+  if(t==='cal'&&!RP.on&&n())ensureDaily();renderAll()}
+TABS.forEach(k=>$('#tab-'+k).onclick=()=>setTab(k));
+document.querySelectorAll('#tf button').forEach(b=>b.onclick=()=>{
+  if(S.mode==='live'&&!S.live){
+    if(!SNAP_TF.includes(b.dataset.tf)){setStatus(`Aqui sem API só dá 1h, 4h e diário (foto de 7 dias). 15m e semanal funcionam no arquivo local.`,true);return}
+    S.tf=b.dataset.tf;ls.set('tf',S.tf);syncHeader();selectLive(S.id);return}
+  S.tf=b.dataset.tf;ls.set('tf',S.tf);syncHeader();
+  if(S.mode==='live'&&S.id){const id=S.id;S.key='';S.pending=id;setStatus('Carregando…');fetchCandles(id,S.tf).then(({src,cs})=>{if(S.pending!==id)return;S.src=src;setAsset({key:'live:'+id,candles:cs},true);setStatus(`${src} · atualizado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`)}).catch(e=>setStatus(e.message,true))}
+  else setStatus('Exemplos simulados usam velas de 4h. O tempo vale para ativos reais.')});
+$('#sim').onchange=()=>{const v=$('#sim').value;if(v)loadSim(v)};
+$('#regen').onclick=()=>{if(S.simKey)loadSim(S.simKey,(Math.random()*1e9)|0)};
+['hi','lo'].forEach(id=>$('#'+id).addEventListener('change',()=>{const v=num($('#'+id).value);if(v>0){if(id==='hi'&&v>S.lo)S.hi=v;if(id==='lo'&&v<S.hi)S.lo=v}syncHeader();renderAll()}));
+$('#hlReset').onclick=()=>{const e=extent();S.hi=e.hi;S.lo=e.lo;syncHeader();renderAll()};
+
+function renderAll(){if(!n())return;
+  if(RP.on)renderReplay();else if(S.tab==='dca')renderRes();else if(S.tab==='pool'){renderPool();renderPH()}else if(S.tab==='cal')renderCal();else if(S.tab==='sell')renderSell();
+  draw()}
+
+/* ---------- início ---------- */
+S.active='3';loadSim('ENA');$('#sim').value='ENA';setTool('move');
+const favMissing=()=>S.watch.filter(i=>!S.topSet.has(i));
+(async()=>{
+  try{await fetchTop();S.live=true}catch(e){S.live=false}
+  if(S.live&&favMissing().length){try{await fetchMarkets(favMissing())}catch(e){}}
+  renderWatch();
+  const saved=ls.get('asset','ethena');await selectLive(S.market[saved]?saved:'ethena');
+})();
+setInterval(()=>{if(!S.live||document.hidden)return;fetchTop().then(()=>favMissing().length?fetchMarkets(favMissing()):0).then(()=>{if(!$('#q').value)renderWatch();if(S.mode==='live'&&S.market[S.id]){S.now=S.market[S.id].price;renderAll()}}).catch(()=>{})},120000);
+document.fonts&&document.fonts.ready.then(draw);
+})();
+</script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>
