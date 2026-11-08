@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
 <link rel="stylesheet" href="../../core/ui/atlas-shell.css">
 <link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
-<link rel="stylesheet" href="estilo.css?v=1">
 <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
 <script src="../../core/atlas-auth.js"></script>
 <script src="../../core/atlas-secure.js"></script>
@@ -29,13 +28,13 @@
 
   <section class="bloco">
     <h2 class="bloco__titulo">Token</h2>
-    <div class="lc-busca">
-      <label for="lc-busca" class="lc-rotulo">Busque o token (opcional, para usar o preço de hoje)</label>
+    <div class="busca-token">
+      <label for="lc-busca">Busque o token (opcional, para usar o preço de hoje)</label>
       <input id="lc-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Ex.: BTC, Solana, JUP"
              role="combobox" aria-expanded="false" aria-controls="lc-sugestoes" aria-autocomplete="list">
-      <ul id="lc-sugestoes" class="lc-sugestoes" role="listbox" hidden></ul>
+      <ul id="lc-sugestoes" class="busca-token__lista" role="listbox" hidden></ul>
     </div>
-    <div class="lc-ficha" id="lc-ficha" hidden>
+    <div class="ficha-token" id="lc-ficha" hidden>
       <img id="lc-ficha-img" alt="" width="28" height="28">
       <b id="lc-ficha-nome"></b>
       <span class="num" id="lc-ficha-preco"></span>
@@ -92,6 +91,7 @@
 
 <script src="../../core/http.js"></script>
 <script src="../_comum/calculos.js?v=1"></script>
+<script src="../_comum/busca-token.js?v=1"></script>
 <script src="app.js?v=1"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>

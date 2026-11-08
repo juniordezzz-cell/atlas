@@ -8,7 +8,7 @@
   var C = window.AtlasCalculos;
   var API = 'https://api.coingecko.com/api/v3';
   var $ = function (id) { return document.getElementById(id); };
-  var token = null, espera = null, sugestoes = [], foco = -1;
+  var token = null;
 
   function ler(id) { return C.lerNumero($(id).value); }
   function usd(v) { return (v < 0 ? '−' : '') + 'US$ ' + Math.abs(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: Math.abs(v) < 1 && v !== 0 ? 6 : 2 }); }
@@ -28,49 +28,13 @@
   }
   function carregarToken(id) {
     status('');
-    return AtlasHttp.getJSON(API + '/coins/markets?vs_currency=usd&ids=' + encodeURIComponent(id), { ttl: 60000 }).then(function (d) {
-      var c = d && d[0]; if (!c) throw new Error('não achei');
-      mostrarFicha({ id: c.id, sym: String(c.symbol || '').toUpperCase(), nome: c.name, img: c.image, preco: c.current_price });
-    }).catch(function (e) { status('Não consegui buscar o preço agora (' + e.message + '). Digite os preços à mão.'); });
+    return AtlasBuscaToken.mercado(id).then(mostrarFicha)
+      .catch(function (e) { status('Não consegui buscar o preço agora (' + e.message + '). Digite os preços à mão.'); });
   }
-  function fecharSugestoes() { $('lc-sugestoes').hidden = true; $('lc-busca').setAttribute('aria-expanded', 'false'); foco = -1; }
-  function desenharSugestoes() {
-    var ul = $('lc-sugestoes'); ul.textContent = '';
-    sugestoes.forEach(function (c, i) {
-      var li = document.createElement('li'); li.setAttribute('role', 'option'); li.setAttribute('aria-selected', String(i === foco));
-      var src = linkSeguro(c.thumb);
-      if (src) { var im = document.createElement('img'); im.src = src; im.alt = ''; li.appendChild(im); }
-      var b = document.createElement('b'); b.textContent = String(c.symbol || '').toUpperCase(); li.appendChild(b);
-      var n = document.createElement('span'); n.textContent = c.name; li.appendChild(n);
-      if (c.market_cap_rank) { var r = document.createElement('span'); r.className = 'rank'; r.textContent = '#' + c.market_cap_rank; li.appendChild(r); }
-      li.addEventListener('mousedown', function (ev) { ev.preventDefault(); escolher(i); });
-      ul.appendChild(li);
-    });
-    ul.hidden = !sugestoes.length; $('lc-busca').setAttribute('aria-expanded', String(!!sugestoes.length));
-  }
-  function escolher(i) {
-    var c = sugestoes[i]; if (!c) return;
-    $('lc-busca').value = String(c.symbol || '').toUpperCase(); fecharSugestoes();
-    mostrarFicha({ id: c.id, sym: String(c.symbol || '').toUpperCase(), nome: c.name, img: c.large || c.thumb, preco: null });
-    carregarToken(c.id);
-  }
-  $('lc-busca').addEventListener('input', function () {
-    var q = this.value.trim(); clearTimeout(espera);
-    if (q.length < 2) { sugestoes = []; desenharSugestoes(); return; }
-    espera = setTimeout(function () {
-      AtlasHttp.getJSON(API + '/search?query=' + encodeURIComponent(q), { ttl: 300000 }).then(function (d) {
-        sugestoes = ((d && d.coins) || []).slice(0, 8); foco = -1; desenharSugestoes();
-      }).catch(function (e) { status('Busca indisponível agora (' + e.message + ').'); });
-    }, 350);
+  AtlasBuscaToken.ligar({
+    input: $('lc-busca'), lista: $('lc-sugestoes'), aoErro: status,
+    aoEscolher: function (t) { t.preco = null; mostrarFicha(t); carregarToken(t.id); }
   });
-  $('lc-busca').addEventListener('keydown', function (ev) {
-    if ($('lc-sugestoes').hidden) return;
-    if (ev.key === 'ArrowDown') { foco = Math.min(sugestoes.length - 1, foco + 1); desenharSugestoes(); ev.preventDefault(); }
-    else if (ev.key === 'ArrowUp') { foco = Math.max(0, foco - 1); desenharSugestoes(); ev.preventDefault(); }
-    else if (ev.key === 'Enter') { escolher(foco < 0 ? 0 : foco); ev.preventDefault(); }
-    else if (ev.key === 'Escape') fecharSugestoes();
-  });
-  $('lc-busca').addEventListener('blur', function () { setTimeout(fecharSugestoes, 150); });
   $('lc-usar-preco').addEventListener('click', function () { if (token && token.preco != null) { campo('lc-venda', token.preco); calcular(); } });
 
   /* ---------- conta ---------- */

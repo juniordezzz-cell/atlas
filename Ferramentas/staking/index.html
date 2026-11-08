@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Staking do ATLAS: quanto rende deixar os tokens em staking, APR contra APY, rendimento real acima da inflação do token e o efeito do preço.">
+<title>Staking — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>Simulador de <span>Staking</span></h1>
+    <p class="sub">Quanto rende deixar seus tokens em staking, e quanto disso é ganho de verdade.</p>
+    <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
+  </header>
+
+  <section class="bloco">
+    <h2 class="bloco__titulo">Token</h2>
+    <div class="busca-token">
+      <label for="sk-busca">Busque o token para usar o preço de hoje</label>
+      <input id="sk-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Ex.: SOL, Ethereum, JUP"
+             role="combobox" aria-expanded="false" aria-controls="sk-sugestoes" aria-autocomplete="list">
+      <ul id="sk-sugestoes" class="busca-token__lista" role="listbox" hidden></ul>
+    </div>
+    <div class="ficha-token" id="sk-ficha" hidden><img id="sk-ficha-img" alt="" width="28" height="28"><b id="sk-ficha-nome"></b></div>
+    <p class="status" id="sk-status"></p>
+  </section>
+
+  <section class="bloco">
+    <h2 class="bloco__titulo">Staking</h2>
+    <div class="toggle" role="tablist" aria-label="Como lançar" id="sk-modo" style="margin-bottom:14px">
+      <button type="button" role="tab" data-modo="valor" aria-selected="true">Valor investido</button>
+      <button type="button" role="tab" data-modo="qtd" aria-selected="false">Quantidade de tokens</button>
+    </div>
+    <div class="grade2">
+      <div class="campo" id="sk-campo-valor"><label for="sk-valor">Valor investido (US$)</label><input id="sk-valor" inputmode="decimal" value="1.000"></div>
+      <div class="campo" id="sk-campo-qtd" hidden><label for="sk-qtd">Quantidade de tokens</label><input id="sk-qtd" inputmode="decimal" value="10"></div>
+      <div class="campo"><label for="sk-preco">Preço do token (US$)</label><input id="sk-preco" inputmode="decimal" value="100"></div>
+      <div class="campo"><label for="sk-sym">Sigla do token</label><input id="sk-sym" value="TOKEN" maxlength="12"></div>
+      <div class="campo"><label for="sk-taxa">Taxa de rendimento (% ao ano)</label>
+        <div class="campo__junto"><input id="sk-taxa" inputmode="decimal" value="7"><select id="sk-tipo" aria-label="Tipo da taxa"><option value="apy">APY (composto)</option><option value="apr">APR (simples)</option></select></div></div>
+      <div class="campo"><label for="sk-infl">Inflação do token (% ao ano)</label><input id="sk-infl" inputmode="decimal" value="0"></div>
+      <div class="campo"><label for="sk-cen">Preço do token em 1 ano (cenário, %)</label><input id="sk-cen" inputmode="decimal" value="0"></div>
+    </div>
+    <p class="dica">Inflação do token: quanto a oferta cresce por ano com tokens novos (Solana ~4%, Ethereum ~0%). Ela é paga justamente com o rendimento do staking, então o ganho de verdade é o que sobra acima dela.</p>
+    <div class="acoes"><button type="button" class="btn btn--principal" id="sk-calcular">Simular rendimento</button></div>
+  </section>
+
+  <div id="sk-resultado" hidden>
+    <div class="toggle" role="tablist" aria-label="Horizonte" id="sk-horizonte" style="margin-bottom:12px">
+      <button type="button" role="tab" data-m="6" aria-selected="false">6 meses</button>
+      <button type="button" role="tab" data-m="12" aria-selected="true">1 ano</button>
+      <button type="button" role="tab" data-m="60" aria-selected="false">5 anos</button>
+    </div>
+    <div class="resultados">
+      <div class="res res--destaque"><div class="res__rotulo">Tokens ganhos</div><div class="res__valor" id="sk-r-tokens">—</div><div class="res__nota" id="sk-r-periodo">em 1 ano</div></div>
+      <div class="res res--bom"><div class="res__rotulo">Rendimento em US$</div><div class="res__valor" id="sk-r-usd">—</div><div class="res__nota">só os ganhos, ao preço de hoje</div></div>
+      <div class="res"><div class="res__rotulo">Rendimento em R$</div><div class="res__valor" id="sk-r-brl">—</div><div class="res__nota" id="sk-r-fx"></div></div>
+      <div class="res"><div class="res__rotulo">Taxa equivalente</div><div class="res__valor" id="sk-r-equiv">—</div><div class="res__nota" id="sk-r-equiv-nota"></div></div>
+      <div class="res"><div class="res__rotulo">Rendimento real</div><div class="res__valor" id="sk-r-real">—</div><div class="res__nota">acima da inflação do token, ao ano</div></div>
+      <div class="res"><div class="res__rotulo">Valor em 1 ano no cenário</div><div class="res__valor" id="sk-r-cen">—</div><div class="res__nota" id="sk-r-cen-nota"></div></div>
+    </div>
+
+    <h2 class="secao-titulo">Projeção</h2>
+    <div class="tabela"><table><thead><tr><th>Período</th><th>Tokens ganhos</th><th>Total</th><th>Em US$</th><th>Em R$</th></tr></thead><tbody id="sk-proj"></tbody></table></div>
+
+    <h2 class="secao-titulo">E se o preço mudar? (valor depois de 1 ano)</h2>
+    <div class="tabela"><table><thead><tr><th>Preço do token</th><th>Com staking</th><th>Sem staking</th><th>Resultado contra hoje</th></tr></thead><tbody id="sk-cenarios"></tbody></table></div>
+
+    <h2 class="secao-titulo">Tokens ao longo de 5 anos</h2>
+    <div class="bloco"><div class="grafico"><canvas id="sk-grafico"></canvas></div></div>
+  </div>
+
+  <section class="explica">
+    <h2>Como ler</h2>
+    <p><strong>Staking</strong> é travar tokens para ajudar a validar uma rede (Ethereum, Solana, Cardano…) e receber mais tokens em troca. O rendimento vem no próprio token.</p>
+    <h3>APR ou APY?</h3>
+    <p>O <strong>APR</strong> é a taxa sem reinvestir. O <strong>APY</strong> já conta o rendimento rendendo de novo. Escolha o que a plataforma mostra; a caixa "Taxa equivalente" traduz um no outro.</p>
+    <h3>Rendimento real</h3>
+    <p>Boa parte do rendimento do staking é paga com tokens novos. Se a rede emite 4% ao ano e o staking paga 7%, sua fatia da rede cresce só uns 3%. É esse o ganho de verdade.</p>
+    <h3>O preço manda</h3>
+    <p>Staking aumenta a quantidade de tokens, não protege do preço. A tabela "E se o preço mudar?" mostra que uma queda de 50% apaga anos de rendimento.</p>
+  </section>
+
+</div>
+
+<script src="../../core/http.js"></script>
+<script src="../../assets/vendor/chart-4.4.1.min.js"></script>
+<script src="../_comum/calculos.js?v=1"></script>
+<script src="../_comum/busca-token.js?v=1"></script>
+<script src="app.js?v=1"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>
