@@ -1,0 +1,21 @@
+name: Ferramentas · contas da bancada
+
+on:
+  push:
+    paths: ["Ferramentas/_comum/**", ".github/workflows/ferramentas-calculos.yml"]
+  pull_request:
+    paths: ["Ferramentas/_comum/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calculos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: node --test Ferramentas/_comum/*.test.cjs
