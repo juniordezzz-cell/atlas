@@ -1,12 +1,13 @@
 name: Scanner Pools · testes
 
 # Era "Central RWA · testes". A Central RWA saiu em 11/11/2026; ficam os testes
-# do Scanner (JS da tela, função scanner-chat e o coletor Python).
+# do Scanner (JS da tela, função scanner-chat e o coletor Python) e o motor
+# do Estúdio de Agentes de Pools (estudio/motor).
 on:
   push:
-    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "core/atlas-storage.js", ".github/workflows/scanner-testes.yml"]
+    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "estudio/**", "core/atlas-storage.js", ".github/workflows/scanner-testes.yml"]
   pull_request:
-    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "core/atlas-storage.js"]
+    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "estudio/**", "core/atlas-storage.js"]
   workflow_dispatch:
 
 permissions:
@@ -22,6 +23,7 @@ jobs:
           node-version: '24'
       - run: node --test Ferramentas/scanner-pools/*.test.cjs
       - run: node --test central-rwa/supabase/functions/scanner-chat/handler.test.mjs
+      - run: node --test estudio/motor/*.test.mjs   # Estúdio de Agentes: motor = simulador
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 10
