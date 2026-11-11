@@ -47,4 +47,49 @@ Definições assumidas (aprovadas com a Fase 1):
 
 Validação: `node --test estudio/motor/*.test.mjs` (também no workflow `scanner-testes`).
 
+## Fase 2 — varredura (12/11/2026)
+
+Critério de pronto: o banco recebe dados novos a cada 15 minutos por 48 horas
+sem falha. Medido em `estudio.varredura_status` (uma linha por execução).
+
+**Fluxo:** `pg_cron` (a cada 15 min) → `estudio.disparar_varredura()` →
+workflow `estudio-varredura.yml` → `python -m central_rwa estudio` →
+schema `estudio`.
+
+| Peça | O que faz |
+|---|---|
+| `estudio.pools_alvo` (visão) | Filtro sobre `scanner.pools`: Solana e Base, ativa, não barrada, TVL ≥ $250 mil, giro > 0,5, endereço conhecido (`gecko:` no ID, `sinais.endereco_pool` ou a conferência). Em 11/11: 123 pools; 15 sem endereço ficaram de fora. |
+| `estudio.snapshots` | DexScreener, até 30 pools por chamada: preço do ativo no outro token e em dólar, TVL, volume 24h, giro e taxa (vinda do Scanner). 7 dias. |
+| `estudio.snapshots_hora` | Resumo por hora, 30 dias. |
+| `estudio.candles` | Velas de 1h da GeckoTerminal (`currency=token&token=<ativo>`), 45 dias. Pool nova baixa 1.000 velas; depois, uma vez por hora, só as que faltam. Orçamento de 30 chamadas por execução (~5 min). |
+| `estudio.candles_estado` | Ativo, cotação, quando buscou, primeira e última vela, falhas. |
+| `estudio.pools_prontas` (visão) | Alvos com pelo menos 7 dias de velas: o que os agentes vão usar. Substitui a data de criação, que falta em parte das pools. |
+| `estudio.varredura_status` | Uma linha por execução: estado `ok`, `parcial` ou `erro`, contagens e falhas. |
+| `estudio.manutencao()` | Ao fim de cada varredura: resume por hora e apaga o que venceu. |
+
+**Ativo e cotação:** o "ativo" é o token volátil; a cotação é o outro, na ordem
+stable > WETH/ETH > SOL > cbBTC/WBTC. Empate fica com o token base da DexScreener.
+Em par com stable, o preço é em dólar; em SOL/JUP, é JUP em SOL — que é o preço
+que mexe na faixa do LP.
+
+**Acesso:** tudo com RLS e sem visão pública. O papel `estudio_agente` lê só as
+visões do estúdio (não o `scanner.pools`) e grava só nas tabelas do estúdio. A
+migração cria o papel sem senha; o dono ativa uma vez:
+
+1. Supabase → SQL Editor:
+   `alter role estudio_agente with login password '<senha forte, só letras e números>';`
+2. GitHub → Settings → Secrets → Actions → `ESTUDIO_DB_URL` =
+   `postgresql://estudio_agente.opaimjoimbndwuwkxuva:<senha>@<host do pooler>:5432/postgres`
+   (o mesmo host do "Session pooler" que o `SUPABASE_DB_URL` usa).
+
+Sem o segredo, o workflow avisa e sai sem erro.
+
+Rodar local, sem banco: `python -m central_rwa estudio --dry-run --orcamento-gecko 6`
+(alvos pela visão pública do Scanner). Em 11/11: 123/123 snapshots, 6 pools com velas
+(4.403 velas), 54 s, zero 429.
+
+Validação: `python -m pytest -q` em `central-rwa/backend`
+(`test_estudio_varredura.py` com respostas reais; `test_estudio_postgres.py` com
+Postgres embutido: filtro, privilégios do papel e a varredura gravando).
+
 Plano completo e relatório da Fase 0 ficam com o dono (fora do repositório).

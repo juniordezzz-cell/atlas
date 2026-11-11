@@ -27,6 +27,7 @@ Para gravar no banco, copie `.env.example` para `.env` e preencha `SUPABASE_DB_U
 | Comando | O que faz |
 |---|---|
 | `pools [--dry-run] [--pular-se-recente MIN]` | Uma coleta do Scanner |
+| `estudio [--dry-run] [--orcamento-gecko N]` | Uma varredura do Estúdio de Agentes (grava com `ESTUDIO_DB_URL`) |
 | `migrate` | Aplica `central-rwa/supabase/migrations/*.sql` (todas idempotentes, a cada coleta) |
 
 Toda migração nova precisa ser idempotente: o workflow do Scanner roda todas antes de cada coleta.

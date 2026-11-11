@@ -2,6 +2,7 @@
 
 Comandos:
   pools [--dry-run] [--pular-se-recente MIN]   coleta do Scanner Pools
+  estudio [--dry-run] [--orcamento-gecko N]     varredura do Estúdio de Agentes
   migrate                                       aplica supabase/migrations
 
 A Central RWA saiu em 11/11/2026; o pacote guarda o nome antigo para não
@@ -29,6 +30,12 @@ def main(argv: list[str] | None = None) -> None:
         from .pools.comando import rodar as rodar_pools
 
         rodar_pools(argv[1:])
+        return
+
+    if argv and argv[0] == "estudio":
+        from .estudio.comando import rodar as rodar_estudio
+
+        rodar_estudio(argv[1:])
         return
 
     if argv == ["migrate"]:
