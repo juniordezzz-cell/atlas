@@ -192,3 +192,13 @@ agregadores da lista de domínios permitidos. Vale para tabela e cartões do
 Oráculo, que usam `ScannerServidor.linkPool`. A origem dos dados não define o
 destino: uma pool coletada via GeckoTerminal pode continuar com link direto
 para sua corretora. Validar com `node --test Ferramentas/scanner-pools/regras.test.cjs`.
+
+## Retirada da Central RWA (11/11/2026)
+
+Pedido do dono: o Supabase fica só com o Scanner Pools e o Estúdio de Agentes de Pools, para sobrar espaço no plano grátis (banco em 161 MB de 500 MB antes da retirada).
+
+- Banco: `20261111000001_remover_central_rwa.sql` apaga as visões `public.crwa_*` e o schema `central_rwa`. As migrações `20260919000001` a `04` saíram da pasta — `apply_migrations` roda todos os `.sql` antes de cada coleta e as recriaria vazias. `scanner`, `atlas_mcp`, `scanner.chat_*` e o agendamento ficam intactos. Backup antes do merge: workflow `central-rwa-backup.yml` (artefato `central-rwa-backup-20261111`, 90 dias), removido depois.
+- Python: ficaram `pools/`, `db/connect.py`, `db/migracoes.py` (era `apply_migrations` em `repository.py`), `gha.py` e `ambiente.py` (era `load_env_file` em `config/`). `python -m central_rwa` aceita só `pools` e `migrate`. Dependências: `httpx` e `psycopg`. O nome do pacote ficou para não mexer no workflow.
+- Workflows: saíram `central-rwa-daily`, `-backfill` e `-tier-a`. `central-rwa-tests` virou `scanner-testes`, sem o job `deploy` (as migrações continuam aplicadas pelo `scanner-pools.yml`).
+- Site: a página RWA perdeu Central RWA, Eventos e Agentes e abre no Dashboard; `RWA/js/central.js` saiu; `sw.js` v99.
+- Documentação da Central RWA (`docs/central-rwa/`) saiu; o último estado está na tag `central-rwa-final`.

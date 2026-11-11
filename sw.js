@@ -160,7 +160,9 @@
    (Conversor e Câmbio, Escada, Lucro Cripto, Simulador de Trade, Estratégia
    de Pool, Staking, Juros Compostos, Comparador de Ativos) em 4 seções.
    Registro: docs/ferramentas-bancada-2026-11-08.md */
-var VERSAO = "atlas-v98";
+/* v99 = a Central RWA saiu (o backend deixou o Supabase): a página RWA perdeu
+   as abas Central RWA, Eventos e Agentes e abre no Dashboard. */
+var VERSAO = "atlas-v99";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
