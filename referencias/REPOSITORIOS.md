@@ -158,12 +158,13 @@ Finanças e algumas do DeFi ainda puxam as mesmas fontes do Google Fonts.
 
 ---
 
-## 4. Backend da Central RWA (`central-rwa/backend`, Python)
+## 4. Backend do Scanner Pools (`central-rwa/backend`, Python)
 
-Instalados pelo `pyproject.toml`, não ficam no git:
-`httpx` (chamadas HTTP), `pydantic` (validação de dados), `PyYAML`
-(configuração), `psycopg` (Postgres/Supabase). Para testes: `pytest`, `respx`
-(simula as APIs) e `pgserver` (Postgres embutido).
+A pasta guarda o nome da Central RWA, retirada em 11/11/2026. Instalados pelo
+`pyproject.toml`, não ficam no git: `httpx` (chamadas HTTP) e `psycopg`
+(Postgres/Supabase). Para testes: `pytest`, `respx` (simula as APIs) e
+`pgserver` (Postgres embutido). `pydantic`, `PyYAML` e `yfinance` saíram com a
+Central RWA.
 
 ---
 
@@ -174,7 +175,7 @@ Instalados pelo `pyproject.toml`, não ficam no git:
 | CoinGecko, Coinpaprika, Coinlore, Binance | Preços e dados de tokens |
 | DefiLlama (yields, coins, stablecoins) e GeckoTerminal | Pools, TVL, volume (o Scanner confere um contra o outro) |
 | alternative.me | Índice de medo e ganância |
-| Supabase | Banco do Scanner/Central RWA, coleta agendada e Edge Functions |
+| Supabase | Banco do Scanner Pools e do conector MCP, coleta agendada e Edge Functions |
 | OpenRouter | IA do Oráculo e do Scanner (chave só no servidor, nunca no navegador) |
 
 ---

@@ -16,6 +16,12 @@ inclusive em cache, pools manuais e aprovadas. O piso absoluto de volume continu
 Validação: `python -m pytest -q` em `central-rwa/backend` e
 `node --test Ferramentas/scanner-pools/regras.test.cjs` na raiz.
 
+Central RWA: retirada em 11/11/2026 (pedido do dono). O Supabase guarda só o Scanner
+Pools (`scanner`), o conector MCP (`atlas_mcp`) e, a seguir, o Estúdio de Agentes de
+Pools. A pasta `central-rwa/` e o pacote `central_rwa` mantêm o nome porque abrigam o
+coletor do Scanner. Não recriar `central_rwa`/`crwa_*`: o último estado está na tag
+`central-rwa-final`. Registro: [docs/scanner-pools-2026-09-26.md](docs/scanner-pools-2026-09-26.md).
+
 Para operações internas do Oráculo, consulte [o contrato e exemplos](docs/oraculo-operacoes.md). Comandos de texto: motor determinístico sem API. Prints: consultar [contrato e implantação](docs/oraculo-imagem.md), com extração por IA e validação matemática local; nunca executar blockchain ou criar depósitos implícitos. Preservar prévia, confirmar/cancelar, carteira proprietária e histórico separado por ciclo. Validar com `node --test core/atlas-oraculo-operacoes.test.cjs`.
 
 Histórico da aba DeFi/Pools: consultar [contrato e validação](docs/pools-historico-2026-09-29.md). Não inferir tokens finais a partir da entrada nem recalcular lucro de encerradas sem resumo preservado. O extrato de caixa e o resultado do ciclo são contas distintas.

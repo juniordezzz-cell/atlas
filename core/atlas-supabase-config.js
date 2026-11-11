@@ -1,6 +1,6 @@
 /* ============================================================
    ATLAS · core/atlas-supabase-config.js
-   Onde o site lê os dados da Central RWA (backend em central-rwa/).
+   Onde o site lê os dados do Scanner Pools (coletor em central-rwa/backend/).
 
    Os dois valores vêm do Supabase → botão "Connect" (ou Project
    Settings → API):
@@ -9,7 +9,7 @@
 
    Os dois são PÚBLICOS por natureza, como a apiKey do Firebase: podem
    ficar no repositório. A chave publicável só consegue LER as visões
-   crwa_* (dado de mercado); as tabelas do backend continuam fechadas.
+   scanner_* (dado de mercado); as tabelas do backend continuam fechadas.
    NUNCA coloque aqui a senha do banco, a connection string ou uma
    chave "secret"/"service_role".
    ============================================================ */

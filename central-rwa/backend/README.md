@@ -1,11 +1,16 @@
-# Central RWA · backend (Fase 1)
+# Backend do Scanner Pools
 
-Coleta e roteamento de dados de **ativos tradicionais tokenizados** (ações, ETFs, commodities, T-bills).
-Roda em jobs agendados no GitHub Actions e grava no Supabase (Postgres). Custo zero.
+Coletor de pools de liquidez do Scanner Pools (`central_rwa/pools/`). Busca na
+DefiLlama, GeckoTerminal, Orca, Raydium e Aero (on-chain), aplica os cortes e a
+segurança, dá nota e grava no Supabase (schema `scanner`). Roda no GitHub Actions
+(`.github/workflows/scanner-pools.yml`), disparado pelo `pg_cron` do Supabase.
 
-- Especificação: [`docs/central-rwa/ESPECIFICACAO.md`](../../docs/central-rwa/ESPECIFICACAO.md)
-- Infraestrutura e alternativas: [`docs/central-rwa/INFRA_ALTERNATIVAS.md`](../../docs/central-rwa/INFRA_ALTERNATIVAS.md)
-- Fontes testadas de verdade: [`docs/central-rwa/FONTES_VERIFICADAS.md`](../../docs/central-rwa/FONTES_VERIFICADAS.md)
+Regras vigentes e histórico: [`docs/superpowers/specs/2026-09-26-scanner-regras-design.md`](../../docs/superpowers/specs/2026-09-26-scanner-regras-design.md)
+e [`docs/scanner-pools-2026-09-26.md`](../../docs/scanner-pools-2026-09-26.md).
+
+A pasta e o pacote ainda se chamam `central-rwa`/`central_rwa`: eram da Central RWA,
+retirada em 11/11/2026 (o último estado dela está na tag `central-rwa-final`). O
+nome ficou para não mexer no agendamento que já funciona.
 
 ## Rodar localmente
 
@@ -14,130 +19,14 @@ cd central-rwa/backend
 python -m venv .venv
 .venv/Scripts/pip install -e ".[dev]"      # no Linux/macOS: .venv/bin/pip
 .venv/Scripts/python -m pytest -q
-.venv/Scripts/python -m central_rwa tier_a --dry-run          # nada é gravado
-.venv/Scripts/python -m central_rwa daily --dry-run --only NVDA,GOLD
+.venv/Scripts/python -m central_rwa pools --dry-run     # coleta sem gravar
 ```
 
 Para gravar no banco, copie `.env.example` para `.env` e preencha `SUPABASE_DB_URL`.
 
-| Comando | O que faz | Onde roda |
-|---|---|---|
-| `migrate` | Aplica `central-rwa/supabase/migrations/*.sql` | manual / backfill |
-| `tier_a` | Snapshots dos tokens da camada A + cotação dos ativos de referência | Actions, 00h/06h/12h/18h de Brasília |
-| `daily` | Catálogo, snapshots da camada B, recálculo das camadas, 1 dia de histórico, T-bills | Actions, 00h30 de Brasília |
-| `backfill` | 10 anos de histórico da camada A (+ B conhecida). **Retomável** | Actions, manual |
-| `catalog` | Só o catálogo | manual |
-| `report` | Tamanho do banco por tabela | depois do daily/backfill |
-| `probe` | Uma chamada real por provedor, para checar chaves e formatos | manual |
+| Comando | O que faz |
+|---|---|
+| `pools [--dry-run] [--pular-se-recente MIN]` | Uma coleta do Scanner |
+| `migrate` | Aplica `central-rwa/supabase/migrations/*.sql` (todas idempotentes, a cada coleta) |
 
-Opções: `--dry-run` (usa um banco em memória) e `--only NVDA,GOLD` (limita os ativos).
-
-## Laboratório: testar cesta e regras sem banco
-
-```bash
-.venv/Scripts/python -m central_rwa lab risco                # mede o ATR% dos candidatos e corta em tercis
-.venv/Scripts/python -m central_rwa lab placar --sem-rede    # placar dos agentes como estão em agents.yaml
-.venv/Scripts/python -m central_rwa lab --agente macro       # roda a grade de config/experimentos.yaml
-```
-
-O `lab` roda os agentes **fora do banco**, com o mesmo motor do job (`train_agent`),
-para responder "e se a cesta 2 tivesse mais ativos?" sem tocar no placar do site.
-O histórico vem do Yahoo e fica em `central-rwa/backend/.cache/bars/` (fora do git);
-a série é cortada no mesmo primeiro dia do backfill, senão os números não batem com
-os do site — **o resultado de um agente muda conforme o início da série**, porque a
-estatística de cada evento olha todos os eventos anteriores.
-
-O que sai: uma linha por variante com treino e validação lado a lado, e no fim a
-variante **escolhida pelo treino** (`escolher()`), com o detalhe do que aconteceu
-com cada gatilho — quantos viraram operação e quantos foram recusados, por motivo.
-Ordenar pela validação seria escolher olhando a resposta: a tabela é ordenada pelo
-treino e a validação é só relatada.
-
-As grades já rodadas ficam em [`config/experimentos.yaml`](config/experimentos.yaml),
-para o experimento poder ser refeito igual depois.
-
-Toda tabela traz a coluna **maior ativo**: a fatia das operações que veio de um
-ativo só. Uma cesta em que um ativo responde por quase tudo não é uma cesta —
-foi assim que a "Macro & Índices" acabou sendo um agente de petróleo (100% das
-operações) e a "Big Tech" um agente de TSLA.
-
-### `lab risco` — de onde saem as cestas
-
-`lab risco` lê [`config/candidatos.yaml`](config/candidatos.yaml) (candidatos por
-tema, todos conferidos contra o catálogo de tokens), mede o **ATR% de 14 pregões**
-de cada um (mediana dos últimos 180 dias) e corta a lista em **tercis**:
-conservador, mediano, agressivo. Depois agrupa por (risco × tema) e monta as
-cestas possíveis dentro da regra de 5 a 8 ativos. Quem estreou na bolsa depois
-do corte da validação fica de fora: entraria sem nunca ter sido treinado.
-
-A classificação é **relativa à lista de candidatos** — acrescentar 14 mineradoras
-de bitcoin empurra os outros para baixo no ranking. Refazer a cada trimestre.
-
-## Primeira vez em produção
-
-1. Crie o projeto no Supabase e cadastre `SUPABASE_DB_URL` nos Secrets do repositório.
-2. No GitHub → Actions → **Central RWA · backfill** → *Run workflow*, marcando **migrate**.
-3. A partir daí, os agendamentos de 6h e diário rodam sozinhos. Sem o segredo, eles só avisam e pulam.
-
-## Como funciona o roteador
-
-Os coletores nunca chamam uma API direto. Eles pedem uma **capacidade** (`token_price`, `reference_history_daily`...) e o roteador ([`central_rwa/router/router.py`](central_rwa/router/router.py)) escolhe a fonte seguindo a ordem de `config/providers.yaml`. No caminho, ele:
-
-- **pula** um provedor que esteja sem chave, em cooldown, com o circuito aberto ou sem cota;
-- **conta a cota antes** de cada requisição HTTP. Em janelas curtas espera; em janelas longas passa para o próximo;
-- **põe em cooldown** quem respondeu 429 (backoff exponencial) e **abre o circuito** depois de N falhas seguidas;
-- **guarda o estado** das cotas e da saúde nas tabelas `provider_usage` e `provider_health`, porque cada job é efêmero;
-- **confirma o preço** de cada token em uma segunda fonte diferente e grava a divergência.
-
-## Adicionar um provedor novo
-
-1. Crie `central_rwa/providers/<nome>.py` com uma classe `Provider` (`name = "<nome>"`) implementando o método da capacidade:
-   - `token_quotes(network, addresses)`
-   - `daily_history(asset, start)`
-   - `quote(asset)`
-   - `tbill_rates(year)`
-   - `catalog()` / `catalog_category(rule, known)`
-
-   Use `self.get_json(...)`: é ele que passa pela cota do roteador e converte 429 em `RateLimited`.
-2. Registre a classe em `central_rwa/providers/__init__.py`.
-3. Em `config/providers.yaml`, declare os limites e a chave (`key_env`) e coloque o provedor na ordem da capacidade.
-4. Faça **uma chamada real**, salve a resposta em `tests/fixtures/` e escreva um teste de normalização.
-5. Registre o resultado em `docs/central-rwa/FONTES_VERIFICADAS.md`.
-
-## Adicionar um ativo à camada A
-
-Acrescente o ticker **do ativo de referência** em `config/watchlist.yaml` (ex.: `AMD`). Todos os tokens mapeados para ele, nas 4 redes, passam a ser atualizados a cada 6h.
-
-- **Commodity ou símbolo fora do padrão:** declare também em `config/reference_assets.yaml` (ex.: `GOLD` → Yahoo `GC=F`).
-- **Token mapeado errado ou com baixa confiança:** corrija em `config/mapping_overrides.yaml`.
-
-## Ler o resumo dos jobs
-
-Cada execução imprime um **RESUMO** no fim do log do Actions e grava o mesmo conteúdo em `central_rwa.job_runs.summary`:
-
-- **Chamadas / atendidos por provedor:** quanto cada fonte foi usada.
-- **Fallbacks acionados / provedores pulados:** quando e por que uma fonte foi trocada (cota, cooldown, sem chave).
-- **`catalogo`:** tokens por fonte e por rede, `low_confidence` (mapeamentos a revisar) e `unmapped`.
-- **`tokens_camada_a` / `tokens_camada_b`:** quantos tokens tiveram preço, quantos foram **confirmados por 2 fontes**, as divergências e os tokens sem preço (`missing_total`).
-- **`token_vs_ativo_acima_de_2pct`:** tokens descolados do ativo de referência (seção 7.2).
-- **`historico`:** linhas gravadas, cobertura de cada série e lacunas.
-- **`status`:**
-  - `ok`: tudo certo;
-  - `parcial`: alguma fonte falhou, mas o job terminou;
-  - `erro`: o job falhou e o workflow fica vermelho.
-
-## Consumo estimado do GitHub Actions
-
-Medido localmente em 2026-09-19:
-
-- `daily` ≈ 5 min, sendo a maior parte a espera da CoinGecko sem chave e ~18 s por ano no CSV do Tesouro.
-- `tier_a` ≈ 49 s, no teste de ponta a ponta contra Postgres.
-
-A tabela abaixo soma ~40 s de instalação por execução:
-
-| Job | Execuções/mês | Min/execução | Min/mês |
-|---|---|---|---|
-| tier_a | 120 | ~2 | ~240 |
-| daily | 30 | ~6 | ~180 |
-| testes (push) | ~20 | ~1 | ~20 |
-| **Total** | | | **~440 de 2.000** |
+Toda migração nova precisa ser idempotente: o workflow do Scanner roda todas antes de cada coleta.

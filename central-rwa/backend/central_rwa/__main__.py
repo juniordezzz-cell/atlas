@@ -1,18 +1,20 @@
-"""python -m central_rwa <job> [--dry-run] [--only NVDA,GOLD]
+"""python -m central_rwa <comando>
 
-Jobs: tier_a | daily | backfill | catalog | report | probe | migrate
-Fora dos jobs: `lab` (testa cesta e regras sem banco) — veja `lab --help`.
-Scanner Pools: `pools [--dry-run]` (coleta pools de liquidez).
+Comandos:
+  pools [--dry-run] [--pular-se-recente MIN]   coleta do Scanner Pools
+  migrate                                       aplica supabase/migrations
+
+A Central RWA saiu em 11/11/2026; o pacote guarda o nome antigo para não
+mexer no agendamento do Scanner (workflow scanner-pools.yml).
 """
 
 from __future__ import annotations
 
-import argparse
 import os
 import sys
 from pathlib import Path
 
-from .config import load_env_file
+from .ambiente import load_env_file
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -20,30 +22,16 @@ def main(argv: list[str] | None = None) -> None:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     argv = list(sys.argv[1:] if argv is None else argv)
-    if argv and argv[0] == "lab":  # laboratório: não toca no banco, tem opções próprias
-        from .engine.lab import rodar
+    backend = Path(__file__).resolve().parents[1]
+    load_env_file(backend / ".env")
 
-        rodar(argv[1:])
-        return
-    if argv and argv[0] == "pools":  # Scanner Pools: coletor próprio, fora do roteador RWA
-        load_env_file(Path(__file__).resolve().parents[1] / ".env")
+    if argv and argv[0] == "pools":
         from .pools.comando import rodar as rodar_pools
 
         rodar_pools(argv[1:])
         return
 
-    from .jobs import JOBS
-
-    parser = argparse.ArgumentParser(prog="central_rwa")
-    parser.add_argument("job", choices=[*JOBS, "migrate"])
-    parser.add_argument("--dry-run", action="store_true", help="roda tudo sem gravar no banco")
-    parser.add_argument("--only", help="limita a estes tickers de referência (ex.: NVDA,GOLD)")
-    args = parser.parse_args(argv)
-
-    backend = Path(__file__).resolve().parents[1]
-    load_env_file(backend / ".env")
-
-    if args.job == "migrate":
+    if argv == ["migrate"]:
         from .db import apply_migrations
         from .db.connect import diagnose
         from .gha import annotate
@@ -62,11 +50,7 @@ def main(argv: list[str] | None = None) -> None:
         annotate("notice", "Migrations", "aplicadas: " + ", ".join(applied))
         return
 
-    from .jobs.runner import job
-
-    only = {t.strip().upper() for t in args.only.split(",")} if args.only else None
-    with job(args.job, dry_run=args.dry_run, only=only) as ctx:
-        JOBS[args.job](ctx)
+    sys.exit(__doc__)
 
 
 if __name__ == "__main__":
