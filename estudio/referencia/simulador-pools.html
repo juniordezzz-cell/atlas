@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador de Pools LP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* layout: painel de mesa de operações em um único tema escuro; abas no topo, resumo antes do detalhe */
+:root{color-scheme:dark;
+--bg:#0d1420;--panel:#141d2c;--panel2:#0f1724;--line:#25324a;--ink:#e8edf5;--mut:#93a1b8;
+--a:#3f8fe0;--b:#c4781a;--good:#4fd1a1;--bad:#f27272;
+--disp:"Sora","IBM Plex Sans",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body)}
+.wrap{max-width:1040px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+header h1{font:600 21px/1.2 var(--disp);margin:0;text-wrap:balance}
+header p{color:var(--mut);font-size:13px;margin:4px 0 0}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.tabs button{flex:none;background:transparent;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font:500 14px var(--body);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card h2{font:600 15px var(--body);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.card h3{font:600 13px var(--body);margin:14px 0 6px;color:var(--mut)}
+.sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+.sw.A{background:var(--a)}.sw.B{background:var(--b)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:10px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+input,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:8px;font:15px var(--mono)}
+select{font-family:var(--body)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--a);outline-offset:1px}
+.prow{display:grid;grid-template-columns:26px 1fr 1fr 1fr;gap:8px;align-items:center;margin-top:6px}
+.prow span{color:var(--mut);font:13px var(--mono)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.two{grid-template-columns:1fr}}
+.btn{background:var(--ink);color:var(--bg);border:0;border-radius:8px;padding:12px 18px;font:600 15px var(--body);cursor:pointer}
+.btn.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{color:var(--mut);font-size:12.5px;margin:8px 0 0;max-width:68ch}
+.verdict{font-size:16px;border-left:4px solid var(--b);padding:4px 0 4px 12px}
+.verdict.A{border-color:var(--a)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-weight:500;color:var(--mut);text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;font-family:var(--body)}
+td input{min-width:76px;padding:5px;font-size:13px}
+.neg{color:var(--bad)}.posv{color:var(--good)}
+.chart{position:relative;height:250px}
+.pill{display:inline-block;border-radius:999px;padding:1px 8px;font:500 12px var(--body);border:1px solid var(--line)}
+.pill.A{border-color:var(--a);color:var(--a)}.pill.B{border-color:var(--b);color:var(--b)}
+.heat td{text-align:center;border:2px solid var(--panel)}
+.math p,.math li{max-width:70ch}
+code{background:var(--panel2);padding:1px 5px;border-radius:4px;font:12.5px var(--mono)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Simulador de Pools de Liquidez Concentrada</h1>
+<p>Compara duas estratégias de LP em milhares de caminhos de preço. Modelo Uniswap v3 / CLMM. Ferramenta de estudo, não é recomendação financeira.</p>
+</header>
+
+<div class="tabs" role="tablist">
+<button data-t="sim" aria-selected="true">Simulação</button>
+<button data-t="hunt" aria-selected="false">Caça-estratégias</button>
+<button data-t="nets" aria-selected="false">Redes</button>
+<button data-t="map" aria-selected="false">Mapa de decisão</button>
+<button data-t="math" aria-selected="false">Matemática</button>
+</div>
+
+<!-- ============ SIMULAÇÃO ============ -->
+<section id="t_sim" style="display:flex;flex-direction:column;gap:14px">
+<div class="card">
+<h2>Mercado</h2>
+<div class="grid">
+<div><label for="net">Rede</label><select id="net"></select></div>
+<div><label for="p0">Preço inicial ($)</label><input id="p0" type="number" step="any"></div>
+<div><label for="regime">Cenário de preço</label><select id="regime">
+<option value="gbm">Aleatório (sem tendência)</option><option value="lat">Lateral (volta à média)</option>
+<option value="up">Tendência de alta</option><option value="down">Tendência de baixa</option><option value="custom">Personalizado</option></select></div>
+<div><label for="vol">Volatilidade anual (%)</label><input id="vol" type="number" step="any"></div>
+<div><label for="mu">Tendência anual (%)</label><input id="mu" type="number" step="any"></div>
+<div><label for="kappa">Força da volta à média</label><input id="kappa" type="number" step="any"></div>
+<div><label for="days">Dias</label><input id="days" type="number"></div>
+<div><label for="tvl">TVL da pool ($)</label><input id="tvl" type="number" step="any"></div>
+<div><label for="vday">Volume diário ($)</label><input id="vday" type="number" step="any"></div>
+<div><label for="fee">Taxa da pool (%)</label><input id="fee" type="number" step="any"></div>
+<div><label for="conc">Concentração dos outros LPs (±%)</label><input id="conc" type="number" step="any"></div>
+<div><label for="gas">Gás por transação ($)</label><input id="gas" type="number" step="any"></div>
+<div><label for="swap">Custo de swap ao rebalancear (%)</label><input id="swap" type="number" step="any"></div>
+<div><label for="nsim">Nº de cenários</label><input id="nsim" type="number"></div>
+<div><label for="seed">Semente</label><input id="seed" type="number"></div>
+</div>
+<p class="note">TVL, volume, taxa e gás de cada rede são estimativas de exemplo. Troque pelos números reais da pool no seu dashboard. A concentração dos outros LPs define com quem você divide as taxas.</p>
+</div>
+
+<div class="two" id="strats"></div>
+
+<div class="row"><button class="btn" id="run">Simular</button><button class="btn sec" id="newpath">Outro caminho de exemplo</button><span class="note" id="status" style="margin:0"></span></div>
+
+<div class="card"><div class="verdict" id="verdict">Calculando…</div></div>
+<div class="card"><h2>Resultado por estratégia</h2><div class="tw"><table id="tres"></table></div>
+<p class="note">Resultado = valor final + taxas − custos − capital inicial. IL é a diferença para quem só segurou os mesmos tokens da abertura.</p></div>
+<div class="two">
+<div class="card"><h2>Onde a liquidez trabalha</h2><div class="chart"><canvas id="c1"></canvas></div><p class="note">Liquidez ativa (L) em cada preço. Posições sobrepostas se somam.</p></div>
+<div class="card"><h2>Valor no fechamento por preço, sem taxas</h2><div class="chart"><canvas id="c2"></canvas></div><p class="note">A distância até a linha tracejada (segurar os tokens) é a perda impermanente.</p></div>
+<div class="card"><h2>Caminho de exemplo: preço</h2><div class="chart"><canvas id="c3"></canvas></div><p class="note">Linhas tracejadas: limites externos da estratégia A na abertura.</p></div>
+<div class="card"><h2>Caminho de exemplo: taxas acumuladas ($)</h2><div class="chart"><canvas id="c3b"></canvas></div></div>
+</div>
+<div class="card"><h2>Distribuição do resultado em todos os cenários ($)</h2><div class="chart"><canvas id="c4"></canvas></div></div>
+</section>
+
+<!-- ============ CAÇA-ESTRATÉGIAS ============ -->
+<section id="t_hunt" hidden style="display:flex;flex-direction:column;gap:14px">
+<div class="card"><h2>Caça-estratégias</h2>
+<p class="note" style="margin-top:0">Testa todos os modelos com 1 a 6 posições, usando o capital, a faixa e o rebalanceamento da estratégia B e o mercado da aba Simulação. Todos enfrentam os mesmos caminhos de preço.</p>
+<div class="grid" style="margin-top:10px">
+<div><label for="hmetric">Métrica</label><select id="hmetric">
+<option value="mean">Resultado médio ($)</option><option value="p10">Cenário ruim, P10 ($)</option>
+<option value="fees">Taxas médias ($)</option><option value="rr">Retorno ÷ risco</option><option value="tir">Tempo em faixa (%)</option></select></div>
+</div>
+<div class="row" style="margin-top:10px"><button class="btn" id="hrun">Caçar</button><span class="note" id="hstatus" style="margin:0"></span></div>
+</div>
+<div class="card"><h2>Modelo × número de posições</h2><div class="tw"><table class="heat" id="hmat"></table></div>
+<p class="note">Cor mais forte = melhor na métrica escolhida. Vermelho = valor negativo.</p></div>
+<div class="card"><h2>Ranking</h2><div class="tw"><table id="hrank"></table></div></div>
+</section>
+
+<!-- ============ REDES ============ -->
+<section id="t_nets" hidden style="display:flex;flex-direction:column;gap:14px">
+<div class="card"><h2>Parâmetros por rede</h2>
+<div class="tw"><table id="ntab"></table></div>
+<p class="note">Valores de exemplo, editáveis. Confira gás, taxa, TVL e volume reais da pool do par que você vai operar em cada rede.</p>
+<div class="row" style="margin-top:10px"><button class="btn" id="nrun">Comparar redes</button><span class="note" id="nstatus" style="margin:0"></span></div></div>
+<div class="card"><h2>Mesmas estratégias A e B em cada rede</h2><div class="tw"><table id="nres"></table></div></div>
+<div class="card"><h2>Resultado médio por rede ($)</h2><div class="chart"><canvas id="c5"></canvas></div></div>
+<div class="card"><h2>Capital mínimo para o gás não pesar</h2><div class="tw"><table id="nmin"></table></div>
+<p class="note">Capital em que o custo de abrir e fechar a estratégia B consome 10% das taxas médias do período.</p></div>
+</section>
+
+<!-- ============ MAPA ============ -->
+<section id="t_map" hidden style="display:flex;flex-direction:column;gap:14px">
+<div class="card"><h2>Quando concentrar compensa</h2>
+<p class="note" style="margin-top:0">Cada célula roda A contra B com uma combinação de volatilidade e giro da pool (volume diário ÷ TVL). Mostra quem vence e por quanto, em dólares, no resultado médio.</p>
+<div class="row" style="margin-top:10px"><button class="btn" id="mrun">Gerar mapa</button><span class="note" id="mstatus" style="margin:0"></span></div></div>
+<div class="card"><h2>Vencedor por volatilidade (linhas) e Vol/TVL diário (colunas)</h2><div class="tw"><table class="heat" id="mmat"></table></div>
+<p class="note"><span class="pill A">A</span> azul, <span class="pill B">B</span> laranja. Cor mais forte = vantagem maior.</p></div>
+</section>
+
+<!-- ============ MATEMÁTICA ============ -->
+<section id="t_math" hidden style="display:flex;flex-direction:column;gap:14px">
+<div class="card math"><h2>Fórmulas do modelo</h2>
+<p><b>Liquidez</b> de uma posição com capital <code>V</code>, faixa <code>[a, b]</code> e preço <code>P</code> dentro da faixa: <code>L = V / (2√P − √a − P/√b)</code>. Abaixo da faixa: <code>L = V / (P(1/√a − 1/√b))</code>. Acima: <code>L = V / (√b − √a)</code>.</p>
+<p><b>Tokens:</b> <code>x = L(1/√P − 1/√b)</code> do ativo e <code>y = L(√P − √a)</code> em dólar. Abaixo de <code>a</code> a posição é 100% ativo, acima de <code>b</code> é 100% dólar.</p>
+<p><b>Valor:</b> <code>V(P) = x·P + y</code>. <b>Segurar:</b> <code>x₀·P + y₀</code>. <b>IL</b> = diferença entre os dois.</p>
+<p><b>Taxas por passo:</b> <code>volume × taxa × L_ativo / (L_pool + L_ativo)</code>, com <code>L_pool = TVL / (√P·(2 − √(1−c) − 1/√(1+c)))</code>.</p>
+<p><b>N posições:</b> L é aditivo. Dividir o capital em N faixas desenha uma curva de liquidez em degraus. A pergunta deixa de ser 1 contra 4 e vira qual formato de curva combina com o comportamento esperado do preço.</p>
+<p><b>Preço:</b> <code>ln P ← ln P + (μ − σ²/2)dt + κ(ln P₀ − ln P)dt + σ√dt·Z</code>. Com κ = 0 é browniano geométrico. Com κ > 0 o preço tende a voltar para o inicial.</p>
+<p><b>Rebalanceamento:</b> quando o preço sai da faixa mais larga, fecha tudo, paga gás (2 transações por posição) e swap sobre metade do valor, e reabre o mesmo formato centrado no preço novo.</p>
+</div>
+<div class="card math"><h2>Modelos de estratégia</h2>
+<ul>
+<li><b>Faixa única:</b> uma posição. Referência.</li>
+<li><b>Aninhadas:</b> faixas uma dentro da outra, capital igual. Muita liquidez no centro.</li>
+<li><b>Curve:</b> faixas vizinhas, mais capital perto do preço. Para mercado lateral.</li>
+<li><b>Bid-Ask:</b> faixas vizinhas, mais capital nas pontas. Ganha quando o preço oscila forte e volta.</li>
+<li><b>Spot:</b> faixas vizinhas, capital igual. Parecido com a faixa única, mas permite fechar pedaços.</li>
+<li><b>Acumulação:</b> faixas só abaixo do preço, 100% em dólar. Compra o ativo em degraus na queda e recebe taxa por isso.</li>
+</ul></div>
+<div class="card math"><h2>Como evoluir no Claude Code</h2>
+<ul>
+<li>Trocar o preço sorteado por <b>histórico real</b> (candles de 1h) e fazer backtest.</li>
+<li>Puxar <b>TVL, volume e liquidez por tick</b> da pool por API, no lugar da concentração estimada.</li>
+<li>Volume que <b>sobe junto com a volatilidade</b>, como acontece no mercado.</li>
+<li>Regras de rebalanceamento: por tempo, por distância do centro, só de um lado.</li>
+<li><b>Reinvestir taxas</b> e medir o efeito composto.</li>
+<li>Bins discretos do <b>Meteora DLMM</b> e taxa dinâmica.</li>
+<li>Hedge da perda impermanente com short em perp.</li>
+<li>Exportar cenários e salvar estratégias.</li>
+</ul></div>
+</section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+//<core>
+const Kc=c=>2-Math.sqrt(1-c)-1/Math.sqrt(1+c);
+function denom(P,a,b){const sa=Math.sqrt(a),sb=Math.sqrt(b);
+ if(P<=a)return P*(1/sa-1/sb); if(P>=b)return sb-sa; return 2*Math.sqrt(P)-sa-P/sb;}
+function amounts(L,P,a,b){const sa=Math.sqrt(a),sb=Math.sqrt(b);
+ if(P<=a)return[L*(1/sa-1/sb),0]; if(P>=b)return[0,L*(sb-sa)];
+ const s=Math.sqrt(P);return[L*(1/s-1/sb),L*(s-sa)];}
+function mkPos(cap,a,b,P){const L=cap/denom(P,a,b);const[x,y]=amounts(L,P,a,b);return{cap,a,b,L,x0:x,y0:y};}
+function val(ps,P){let s=0;for(const q of ps){const[x,y]=amounts(q.L,P,q.a,q.b);s+=x*P+y}return s}
+function actL(ps,P){let s=0;for(const q of ps)if(P>=q.a&&P<=q.b)s+=q.L;return s}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function genZ(n,steps,seed){const r=mulberry32(seed),Z=new Float32Array(n*steps);
+ for(let i=0;i<Z.length;i++){let u=0;while(!u)u=r();Z[i]=Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*r());}return Z}
+function buildPaths(Z,n,steps,M,vol){const dt=M.days/365/steps,sd=vol*Math.sqrt(dt),dr=(M.mu-vol*vol/2)*dt,l0=Math.log(M.p0),W=steps+1,D=new Float32Array(n*W);
+ for(let s=0;s<n;s++){let l=l0;D[s*W]=M.p0;for(let i=0;i<steps;i++){l+=dr+M.kappa*(l0-l)*dt+sd*Z[s*steps+i];D[s*W+i+1]=Math.exp(l);}}
+ return{n,steps,data:D,dtDays:M.days/steps}}
+const r4=v=>+(+v).toPrecision(4);
+// modelos: devolve [{cap,a,b}]
+function build(tpl,N,C,lo,hi,P0){
+ N=Math.max(1,N|0);
+ if(tpl==='acc'){const H=Math.min(hi,P0);if(H<=lo)return[{cap:C,a:lo,b:hi}];
+  const o=[];for(let j=0;j<N;j++)o.push({cap:C/N,a:r4(lo*Math.pow(H/lo,j/N)),b:r4(lo*Math.pow(H/lo,(j+1)/N))});return o}
+ if(tpl==='single'||N===1)return[{cap:C,a:lo,b:hi}];
+ if(tpl==='nested'){const c=(P0>lo&&P0<hi)?P0:Math.sqrt(lo*hi),o=[];
+  for(let i=0;i<N;i++){const f=i/N;o.push({cap:C/N,a:r4(lo+(c-lo)*f),b:r4(hi-(hi-c)*f)})}return o}
+ const e=[];for(let j=0;j<=N;j++)e.push(lo*Math.pow(hi/lo,j/N));
+ let c=0;for(let j=0;j<N;j++)if(P0>=e[j])c=j;
+ const w=[];for(let j=0;j<N;j++){const d=Math.abs(j-c);w.push(tpl==='curve'?N-d:tpl==='bidask'?1+d:1)}
+ const sw=w.reduce((s,x)=>s+x,0);
+ return w.map((x,j)=>({cap:C*x/sw,a:r4(e[j]),b:r4(e[j+1])}));
+}
+// avalia uma estratégia em todos os caminhos
+function evalStrat(defs,rebal,PX,M,trace){
+ const P0=M.p0,n=PX.n,steps=PX.steps,W=steps+1,D=PX.data;
+ const base=defs.map(d=>mkPos(d.cap,d.a,d.b,P0));
+ let cap=0,x0=0,y0=0,lo0=Infinity,hi0=0;for(const q of base){cap+=q.cap;x0+=q.x0;y0+=q.y0;lo0=Math.min(lo0,q.a);hi0=Math.max(hi0,q.b)}
+ const rel=defs.map(d=>({w:d.cap/cap,ra:d.a/P0,rb:d.b/P0}));
+ const canReb=rebal&&P0>lo0&&P0<hi0;
+ const volStep=M.vday*PX.dtDays,kc=Kc(M.conc),gasOC=M.gas*2*base.length;
+ const R={cap,n,gasOC,pnl:new Float64Array(n),fees:new Float64Array(n),il:new Float64Array(n),tir:new Float64Array(n),reb:new Float64Array(n),cost:new Float64Array(n),hodl:new Float64Array(n),L0:actL(base,P0),tr:null};
+ for(let s=0;s<n;s++){
+  let pos=base,lo=lo0,hi=hi0,fees=0,inr=0,reb=0,rc=0;const o=s*W;
+  const tr=(trace===s)?{t:[],p:[],f:[]}:null;
+  for(let i=0;i<steps;i++){
+   const p=D[o+i];
+   if(canReb&&(p<lo||p>hi)){const v=val(pos,p),c=M.gas*2*pos.length+v*0.5*M.swap,v2=Math.max(0,v-c);
+    pos=rel.map(r=>mkPos(v2*r.w,p*r.ra,p*r.rb,p));lo=p*lo0/P0;hi=p*hi0/P0;reb++;rc+=c;}
+   let La=0;for(const q of pos)if(p>=q.a&&p<=q.b)La+=q.L;
+   if(La>0){fees+=volStep*M.fee*La/(M.tvl/(Math.sqrt(p)*kc)+La);inr++;}
+   if(tr&&i%Math.max(1,Math.floor(steps/120))===0){tr.t.push((i*PX.dtDays).toFixed(1));tr.p.push(p);tr.f.push(fees);}
+  }
+  const pe=D[o+steps],v=val(pos,pe),h=x0*pe+y0;
+  R.fees[s]=fees;R.il[s]=v+rc-h;R.cost[s]=gasOC+rc;R.pnl[s]=v+fees-gasOC-cap;R.tir[s]=inr/steps;R.reb[s]=reb;R.hodl[s]=h-cap;
+  if(tr)R.tr=tr;
+ }
+ return R}
+const mean=a=>{let s=0;for(let i=0;i<a.length;i++)s+=a[i];return s/a.length};
+const sdev=a=>{const m=mean(a);let s=0;for(let i=0;i<a.length;i++)s+=(a[i]-m)**2;return Math.sqrt(s/a.length)};
+const pct=(a,q)=>{const s=Float64Array.from(a).sort();return s[Math.min(s.length-1,Math.floor(q*s.length))]};
+const frac=(a,f)=>{let c=0;for(let i=0;i<a.length;i++)if(f(a[i],i))c++;return c/a.length};
+//</core>
+
+const TPL={single:'Faixa única',nested:'Aninhadas (uma dentro da outra)',curve:'Curve (peso no centro)',bidask:'Bid-Ask (peso nas pontas)',spot:'Spot (faixas vizinhas iguais)',acc:'Acumulação (só abaixo do preço)',custom:'Personalizado'};
+const TDESC={single:'Uma posição cobrindo a faixa inteira.',nested:'Faixas cada vez mais estreitas em volta do preço, com capital igual. Concentra liquidez no centro.',curve:'Faixas vizinhas com mais capital perto do preço atual.',bidask:'Faixas vizinhas com mais capital nas pontas. Rende mais quando o preço se afasta.',spot:'Faixas vizinhas com o mesmo capital.',acc:'Só dólar, em faixas abaixo do preço. Compra o ativo em degraus se cair. O máximo é limitado ao preço atual e o rebalanceamento fica desligado.',custom:'Edite capital e faixa de cada posição.'};
+const NETS=[
+ {nome:'Solana',dex:'Orca / Raydium / Meteora',gas:0.003,fee:0.04,tvl:10e6,vday:25e6,conc:8},
+ {nome:'Base',dex:'Uniswap v3 / Aerodrome',gas:0.03,fee:0.05,tvl:8e6,vday:12e6,conc:8},
+ {nome:'Arbitrum',dex:'Uniswap v3',gas:0.08,fee:0.05,tvl:4e6,vday:2e6,conc:8},
+ {nome:'Ethereum',dex:'Uniswap v3',gas:6,fee:0.05,tvl:60e6,vday:50e6,conc:8}];
+const S={A:{tpl:'single',N:1,cap:100,lo:75,hi:100,reb:0,pos:[]},B:{tpl:'nested',N:4,cap:100,lo:75,hi:100,reb:0,pos:[]}};
+const COL={A:'#3f8fe0',B:'#c4781a',ink:'#e8edf5',mut:'#93a1b8',grid:'#1e2a3f'};
+
+// ---------- UI estratégias ----------
+$('strats').innerHTML=['A','B'].map(k=>`<div class="card"><h2><span class="sw ${k}"></span>Estratégia ${k}</h2><div class="grid">
+<div><label for="${k}_tpl">Modelo</label><select id="${k}_tpl">${Object.entries(TPL).map(([v,t])=>`<option value="${v}">${t}</option>`).join('')}</select></div>
+<div><label for="${k}_n">Nº de posições (1 a 8)</label><input id="${k}_n" type="number" min="1" max="8"></div>
+<div><label for="${k}_cap">Capital total ($)</label><input id="${k}_cap" type="number" step="any"></div>
+<div><label for="${k}_lo">Faixa mín ($)</label><input id="${k}_lo" type="number" step="any"></div>
+<div><label for="${k}_hi">Faixa máx ($)</label><input id="${k}_hi" type="number" step="any"></div>
+<div><label for="${k}_reb">Rebalancear</label><select id="${k}_reb"><option value="0">Não</option><option value="1">Recentrar ao sair da faixa</option></select></div>
+</div><p class="note" id="${k}_desc"></p><h3>Posições geradas (capital, mín, máx)</h3><div id="${k}_pos"></div></div>`).join('');
+function syncInputs(k){const s=S[k];$(k+'_tpl').value=s.tpl;$(k+'_n').value=s.N;$(k+'_cap').value=s.cap;$(k+'_lo').value=s.lo;$(k+'_hi').value=s.hi;$(k+'_reb').value=s.reb;$(k+'_desc').textContent=TDESC[s.tpl];}
+function drawPos(k){$(k+'_pos').innerHTML=S[k].pos.map((p,i)=>`<div class="prow"><span>#${i+1}</span>
+<input aria-label="Capital da posição ${i+1}" id="${k}p${i}c" data-k="${k}" data-i="${i}" data-f="cap" type="number" step="any" value="${r4(p.cap)}">
+<input aria-label="Mínimo da posição ${i+1}" id="${k}p${i}a" data-k="${k}" data-i="${i}" data-f="a" type="number" step="any" value="${p.a}">
+<input aria-label="Máximo da posição ${i+1}" id="${k}p${i}b" data-k="${k}" data-i="${i}" data-f="b" type="number" step="any" value="${p.b}"></div>`).join('');}
+function regen(k){const s=S[k];
+ if(s.tpl==='custom'){while(s.pos.length<s.N)s.pos.push({...(s.pos[s.pos.length-1]||{cap:s.cap/s.N,a:s.lo,b:s.hi})});s.pos.length=s.N;}
+ else{if(s.tpl==='single')s.N=1;s.pos=build(s.tpl,s.N,s.cap,s.lo,s.hi,+$('p0').value);s.N=s.pos.length;}
+ syncInputs(k);drawPos(k);}
+['A','B'].forEach(k=>{
+ ['tpl','n','cap','lo','hi','reb'].forEach(f=>$(k+'_'+f).addEventListener('change',e=>{const s=S[k],v=e.target.value;
+  if(f==='tpl'){s.tpl=v;if(v!=='single'&&v!=='custom'&&s.N===1)s.N=v==='acc'?3:4;}
+  else if(f==='n'){s.N=Math.max(1,Math.min(8,+v|0));if(s.tpl==='single'&&s.N>1)s.tpl='nested';}
+  else if(f==='reb')s.reb=+v;else s[f]=+v;
+  regen(k);}));
+ $(k+'_pos').addEventListener('change',e=>{const d=e.target.dataset;if(!d.f)return;S[k].pos[+d.i][d.f]=+e.target.value;S[k].tpl='custom';
+  S[k].cap=S[k].pos.reduce((s,p)=>s+p.cap,0);syncInputs(k);});
+});
+
+// ---------- mercado ----------
+$('net').innerHTML=NETS.map((n,i)=>`<option value="${i}">${n.nome} · ${n.dex}</option>`).join('');
+function loadNet(i){const n=NETS[i];$('fee').value=n.fee;$('tvl').value=n.tvl;$('vday').value=n.vday;$('conc').value=n.conc;$('gas').value=n.gas;}
+const DEF={p0:84,vol:75,mu:0,kappa:0,days:30,swap:0.15,nsim:1000,seed:42};
+Object.entries(DEF).forEach(([k,v])=>$(k).value=v);loadNet(0);
+$('net').onchange=e=>{loadNet(+e.target.value);run();};
+$('regime').onchange=e=>{const m={gbm:[0,0],lat:[0,25],up:[80,0],down:[-60,0]}[e.target.value];if(m){$('mu').value=m[0];$('kappa').value=m[1];}run();};
+['mu','kappa'].forEach(id=>$(id).addEventListener('change',()=>$('regime').value='custom'));
+$('p0').addEventListener('change',()=>{['A','B'].forEach(regen)});
+function market(){const g=id=>+$(id).value;
+ return{p0:g('p0'),vol:g('vol')/100,mu:g('mu')/100,kappa:g('kappa'),days:Math.max(1,g('days')),tvl:g('tvl'),vday:g('vday'),fee:g('fee')/100,conc:Math.min(.95,Math.max(.005,g('conc')/100)),gas:g('gas'),swap:g('swap')/100,nsim:Math.max(50,Math.min(3000,g('nsim')|0)),seed:g('seed')|0}}
+const defs=k=>S[k].pos.filter(p=>p.cap>0&&p.b>p.a&&p.a>0);
+let PX=null,ZZ=null,RES=null,pathIdx=0;
+function makePaths(M){const steps=Math.min(M.days*24,1440);ZZ=genZ(M.nsim,steps,M.seed);PX=buildPaths(ZZ,M.nsim,steps,M,M.vol);return PX}
+const sub=(px,n)=>({...px,n:Math.min(px.n,n)});
+
+// ---------- formatação ----------
+const f$=v=>(v<0?'−$':'$')+Math.abs(v).toFixed(2);
+const cl=(v,t)=>`<span class="${v<0?'neg':'posv'}">${t}</span>`;
+const sg=v=>cl(v,(v>=0?'+':'')+f$(v).replace('$','$'));
+function statsOf(R,days){const m=mean(R.pnl),sd=sdev(R.pnl);
+ return{mean:m,med:pct(R.pnl,.5),p10:pct(R.pnl,.1),p90:pct(R.pnl,.9),fees:mean(R.fees),il:mean(R.il),cost:mean(R.cost),tir:mean(R.tir)*100,reb:mean(R.reb),
+  loss:frac(R.pnl,v=>v<0)*100,beat:frac(R.pnl,(v,i)=>v>R.hodl[i])*100,rr:sd>0?m/sd:0,apr:mean(R.fees)/R.cap*365/days*100}}
+
+// ---------- SIMULAÇÃO ----------
+function busy(id,fn){$(id).textContent='Calculando…';setTimeout(()=>{try{fn();$(id).textContent='';}catch(e){$(id).textContent='Erro: '+e.message;}},20);}
+function run(){busy('status',()=>{
+ const M=market(),dA=defs('A'),dB=defs('B');
+ if(!dA.length||!dB.length){$('verdict').textContent='Confira capital e faixas: cada posição precisa de capital maior que zero e mínimo menor que máximo.';return;}
+ makePaths(M);pathIdx=0;
+ const A=evalStrat(dA,S.A.reb,PX,M,0),B=evalStrat(dB,S.B.reb,PX,M,0);RES={M,A,B,dA,dB};
+ const sa=statsOf(A,M.days),sb=statsOf(B,M.days),win=frac(B.pnl,(v,i)=>v>A.pnl[i])*100,d=sb.mean-sa.mean,w=d>=0?'B':'A';
+ $('verdict').className='verdict '+w;
+ $('verdict').innerHTML=`<b>Estratégia ${w} rende mais na média</b>, por ${f$(Math.abs(d))} em ${M.days} dias. B supera A em ${win.toFixed(0)}% dos ${M.nsim} cenários.`;
+ const Lfull=c=>c/(2*Math.sqrt(M.p0));
+ const rows=[
+  ['Posições',dA.length,dB.length],
+  ['Capital',f$(A.cap),f$(B.cap)],
+  ['Eficiência no preço inicial vs full range',(A.L0/Lfull(A.cap)).toFixed(1)+'x',(B.L0/Lfull(B.cap)).toFixed(1)+'x'],
+  ['Tempo rendendo taxa',sa.tir.toFixed(0)+'%',sb.tir.toFixed(0)+'%'],
+  ['Taxas médias',f$(sa.fees),f$(sb.fees)],
+  ['APR de taxas',sa.apr.toFixed(0)+'%',sb.apr.toFixed(0)+'%'],
+  ['IL médio',cl(sa.il,f$(sa.il)),cl(sb.il,f$(sb.il))],
+  ['Custos (gás + swap)',f$(sa.cost),f$(sb.cost)],
+  ['Rebalanceamentos (média)',sa.reb.toFixed(1),sb.reb.toFixed(1)],
+  ['<b>Resultado médio</b>',cl(sa.mean,f$(sa.mean)),cl(sb.mean,f$(sb.mean))],
+  ['Mediana',cl(sa.med,f$(sa.med)),cl(sb.med,f$(sb.med))],
+  ['Cenário ruim (P10)',cl(sa.p10,f$(sa.p10)),cl(sb.p10,f$(sb.p10))],
+  ['Cenário bom (P90)',cl(sa.p90,f$(sa.p90)),cl(sb.p90,f$(sb.p90))],
+  ['Chance de prejuízo',sa.loss.toFixed(0)+'%',sb.loss.toFixed(0)+'%'],
+  ['Chance de bater quem só segurou',sa.beat.toFixed(0)+'%',sb.beat.toFixed(0)+'%'],
+  ['Retorno ÷ risco',sa.rr.toFixed(2),sb.rr.toFixed(2)]];
+ $('tres').innerHTML=`<tr><th>Métrica</th><th><span class="pill A">A</span></th><th><span class="pill B">B</span></th></tr>`+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+ drawStatic();drawPath();
+});}
+const charts={};
+function mk(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart($(id),cfg);}
+Chart.defaults.font.family='"IBM Plex Sans",system-ui,sans-serif';Chart.defaults.color=COL.mut;
+function opt(xt,yt){return{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+ plugins:{legend:{labels:{color:COL.ink,boxWidth:10,boxHeight:10,filter:i=>i.text!==''}}},
+ scales:{x:{title:{display:!!xt,text:xt},ticks:{maxTicksLimit:7},grid:{color:COL.grid}},y:{title:{display:!!yt,text:yt},grid:{color:COL.grid}}}}}
+const ln=(label,data,c,extra)=>({label,data,borderColor:c,backgroundColor:c,borderWidth:2,pointRadius:0,...extra});
+function drawStatic(){const{M,A,B,dA,dB}=RES,pa=dA.map(d=>mkPos(d.cap,d.a,d.b,M.p0)),pb=dB.map(d=>mkPos(d.cap,d.a,d.b,M.p0));
+ const all=[...pa,...pb],lo=Math.min(...all.map(q=>q.a))*.85,hi=Math.max(...all.map(q=>q.b))*1.15,xs=[];
+ for(let i=0;i<=200;i++)xs.push(lo+(hi-lo)*i/200);const lab=xs.map(x=>x.toFixed(x<10?2:x<100?1:0));
+ mk('c1',{type:'line',data:{labels:lab,datasets:[ln('A',xs.map(x=>actL(pa,x)),COL.A,{stepped:true,fill:true,backgroundColor:'rgba(63,143,224,.15)'}),ln('B',xs.map(x=>actL(pb,x)),COL.B,{stepped:true,fill:true,backgroundColor:'rgba(196,120,26,.15)'})]},options:opt('Preço ($)','Liquidez ativa (L)')});
+ const h=ps=>{let x=0,y=0;ps.forEach(q=>{x+=q.x0;y+=q.y0});return P=>x*P+y},hA=h(pa),hB=h(pb);
+ mk('c2',{type:'line',data:{labels:lab,datasets:[ln('A',xs.map(x=>val(pa,x)),COL.A),ln('B',xs.map(x=>val(pb,x)),COL.B),
+  ln('Segurar (A)',xs.map(hA),COL.A,{borderDash:[5,4],borderWidth:1.2}),ln('Segurar (B)',xs.map(hB),COL.B,{borderDash:[5,4],borderWidth:1.2})]},options:opt('Preço no fechamento ($)','Valor ($)')});
+ const a=A.pnl,b=B.pnl;let mn=Infinity,mx=-Infinity;for(let i=0;i<a.length;i++){mn=Math.min(mn,a[i],b[i]);mx=Math.max(mx,a[i],b[i])}
+ const nb=28,w=(mx-mn)/nb||1,hh=arr=>{const c=Array(nb).fill(0);for(let i=0;i<arr.length;i++)c[Math.min(nb-1,Math.floor((arr[i]-mn)/w))]++;return c};
+ mk('c4',{type:'bar',data:{labels:Array.from({length:nb},(_,i)=>(mn+w*(i+.5)).toFixed(1)),datasets:[{label:'A',data:hh(a),backgroundColor:COL.A,borderRadius:2},{label:'B',data:hh(b),backgroundColor:COL.B,borderRadius:2}]},options:opt('Resultado ($)','Cenários')});
+}
+function drawPath(){const{M,dA,dB}=RES,i=pathIdx%PX.n,A=evalStrat(dA,S.A.reb,PX,M,i).tr,B=evalStrat(dB,S.B.reb,PX,M,i).tr;
+ const lo=Math.min(...dA.map(d=>d.a)),hi=Math.max(...dA.map(d=>d.b)),c=v=>A.t.map(()=>v);
+ mk('c3',{type:'line',data:{labels:A.t,datasets:[ln('Preço',A.p,COL.ink,{borderWidth:1.6}),ln('Limites de A',c(lo),COL.A,{borderDash:[4,4],borderWidth:1.2}),ln('',c(hi),COL.A,{borderDash:[4,4],borderWidth:1.2})]},options:opt('Dias','Preço ($)')});
+ mk('c3b',{type:'line',data:{labels:A.t,datasets:[ln('A',A.f,COL.A),ln('B',B.f,COL.B)]},options:opt('Dias','Taxas ($)')});}
+$('run').onclick=run;$('newpath').onclick=()=>{if(RES){pathIdx++;drawPath();}};
+
+// ---------- CAÇA-ESTRATÉGIAS ----------
+function tint(v,max,rgb){const t=max>0?Math.min(1,Math.abs(v)/max):0;return `background:rgba(${rgb},${(.08+.55*t).toFixed(2)})`}
+let HUNT=null;
+function hunt(){busy('hstatus',()=>{const M=market();if(!PX)makePaths(M);const px=sub(PX,300),s=S.B,list=[];
+ const tp=['single','nested','curve','bidask','spot','acc'];
+ for(const t of tp)for(let n=1;n<=6;n++){if(t==='single'&&n>1)continue;if(t!=='single'&&t!=='acc'&&n===1)continue;
+  const d=build(t,n,s.cap,s.lo,s.hi,M.p0),st=statsOf(evalStrat(d,s.reb,px,M),M.days);list.push({t,n,st});}
+ HUNT={list,M};drawHunt();});}
+function drawHunt(){if(!HUNT)return;const k=$('hmetric').value,{list}=HUNT,fmt=v=>k==='tir'?v.toFixed(0)+'%':k==='rr'?v.toFixed(2):f$(v);
+ const mx=Math.max(...list.map(x=>Math.abs(x.st[k])));
+ let h='<tr><th>Modelo</th>'+[1,2,3,4,5,6].map(n=>`<th style="text-align:center">${n}</th>`).join('')+'</tr>';
+ for(const t of ['single','nested','curve','bidask','spot','acc']){h+=`<tr><td>${TPL[t].split(' (')[0]}</td>`;
+  for(let n=1;n<=6;n++){const x=list.find(q=>q.t===t&&q.n===n);h+=x?`<td style="${tint(x.st[k],mx,x.st[k]<0?'242,114,114':'79,209,161')}">${fmt(x.st[k])}</td>`:'<td style="color:var(--mut)">·</td>';}h+='</tr>';}
+ $('hmat').innerHTML=h;
+ const top=[...list].sort((a,b)=>b.st[k]-a.st[k]).slice(0,8);
+ $('hrank').innerHTML='<tr><th>Estratégia</th><th>Média</th><th>P10</th><th>Taxas</th><th>IL</th><th>Em faixa</th><th>Ret÷risco</th><th></th></tr>'+top.map((x,i)=>`<tr><td>${i+1}. ${TPL[x.t].split(' (')[0]} × ${x.n}</td><td>${cl(x.st.mean,f$(x.st.mean))}</td><td>${cl(x.st.p10,f$(x.st.p10))}</td><td>${f$(x.st.fees)}</td><td>${cl(x.st.il,f$(x.st.il))}</td><td>${x.st.tir.toFixed(0)}%</td><td>${x.st.rr.toFixed(2)}</td><td><button class="btn sec sm" data-t="${x.t}" data-n="${x.n}">Usar em B</button></td></tr>`).join('');}
+$('hrun').onclick=hunt;$('hmetric').onchange=drawHunt;
+$('hrank').addEventListener('click',e=>{const d=e.target.dataset;if(!d.t)return;S.B.tpl=d.t;S.B.N=+d.n;regen('B');showTab('sim');run();});
+
+// ---------- REDES ----------
+function drawNets(){$('ntab').innerHTML='<tr><th>Rede</th><th>Gás/tx ($)</th><th>Taxa (%)</th><th>TVL ($)</th><th>Volume/dia ($)</th><th>Concentração (±%)</th></tr>'+NETS.map((n,i)=>`<tr><td>${n.nome}<br><span style="color:var(--mut);font-size:11.5px">${n.dex}</span></td>${['gas','fee','tvl','vday','conc'].map(f=>`<td><input id="n${i}${f}" aria-label="${f} ${n.nome}" data-i="${i}" data-f="${f}" type="number" step="any" value="${n[f]}"></td>`).join('')}</tr>`).join('');}
+drawNets();
+$('ntab').addEventListener('change',e=>{const d=e.target.dataset;if(d.f)NETS[+d.i][d.f]=+e.target.value;});
+function nets(){busy('nstatus',()=>{const M=market(),dA=defs('A'),dB=defs('B');if(!dA.length||!dB.length)throw new Error('defina as estratégias na aba Simulação');
+ if(!PX)makePaths(M);const px=sub(PX,400),out=[];
+ for(const n of NETS){const m={...M,gas:n.gas,fee:n.fee/100,tvl:n.tvl,vday:n.vday,conc:n.conc/100},a=statsOf(evalStrat(dA,S.A.reb,px,m),M.days),b=statsOf(evalStrat(dB,S.B.reb,px,m),M.days);
+  // capital mínimo: custo de abrir/fechar B = 10% das taxas (taxas escalam ~linear com o capital)
+  const capB=dB.reduce((s,p)=>s+p.cap,0),gasB=n.gas*2*dB.length,minCap=b.fees>0?gasB/(0.1*b.fees/capB):Infinity;
+  out.push({n,a,b,minCap,gasB});}
+ const best=out.reduce((x,y)=>Math.max(y.a.mean,y.b.mean)>Math.max(x.a.mean,x.b.mean)?y:x);
+ $('nres').innerHTML='<tr><th>Rede</th><th>Vol/TVL</th><th>Taxas A</th><th>Taxas B</th><th>Custos A</th><th>Custos B</th><th>Resultado A</th><th>Resultado B</th><th>Melhor</th></tr>'+out.map(o=>{const w=o.b.mean>o.a.mean?'B':'A';
+  return `<tr><td>${o.n.nome}${o===best?' <span class="pill" style="border-color:var(--good);color:var(--good)">melhor rede</span>':''}</td><td>${(o.n.vday/o.n.tvl).toFixed(2)}x</td><td>${f$(o.a.fees)}</td><td>${f$(o.b.fees)}</td><td>${f$(o.a.cost)}</td><td>${f$(o.b.cost)}</td><td>${cl(o.a.mean,f$(o.a.mean))}</td><td>${cl(o.b.mean,f$(o.b.mean))}</td><td><span class="pill ${w}">${w}</span></td></tr>`}).join('');
+ mk('c5',{type:'bar',data:{labels:out.map(o=>o.n.nome),datasets:[{label:'A',data:out.map(o=>o.a.mean),backgroundColor:COL.A,borderRadius:3},{label:'B',data:out.map(o=>o.b.mean),backgroundColor:COL.B,borderRadius:3}]},options:opt('','Resultado médio ($)')});
+ $('nmin').innerHTML='<tr><th>Rede</th><th>Gás para abrir e fechar B</th><th>Capital mínimo sugerido</th></tr>'+out.map(o=>`<tr><td>${o.n.nome}</td><td>${f$(o.gasB)}</td><td>${isFinite(o.minCap)?'$'+(o.minCap<10?o.minCap.toFixed(2):Math.round(o.minCap).toLocaleString('pt-BR')):'sem taxas'}</td></tr>`).join('');
+});}
+$('nrun').onclick=nets;
+
+// ---------- MAPA ----------
+function map(){busy('mstatus',()=>{const M=market(),dA=defs('A'),dB=defs('B');if(!dA.length||!dB.length)throw new Error('defina as estratégias na aba Simulação');
+ const n=250,steps=Math.min(M.days*24,720),Z=genZ(n,steps,M.seed+7),vols=[.3,.5,.75,1,1.3],rat=[.5,1,2,4,8],cells=[];let mx=0;
+ for(const v of vols){const px=buildPaths(Z,n,steps,M,v),row=[];for(const r of rat){const m={...M,vday:r*M.tvl},d=mean(evalStrat(dB,S.B.reb,px,m).pnl)-mean(evalStrat(dA,S.A.reb,px,m).pnl);row.push(d);mx=Math.max(mx,Math.abs(d));}cells.push(row);}
+ $('mmat').innerHTML='<tr><th>Volatilidade</th>'+rat.map(r=>`<th style="text-align:center">${r}x</th>`).join('')+'</tr>'+cells.map((row,i)=>`<tr><td>${(vols[i]*100).toFixed(0)}% a.a.</td>${row.map(d=>`<td style="${tint(d,mx,d>=0?'196,120,26':'63,143,224')}">${d>=0?'B':'A'} +${Math.abs(d).toFixed(2)}</td>`).join('')}</tr>`).join('');
+});}
+$('mrun').onclick=map;
+
+// ---------- abas ----------
+const ran={};
+function showTab(t){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
+ ['sim','hunt','nets','map','math'].forEach(x=>$('t_'+x).hidden=x!==t);
+ if(!ran[t]){ran[t]=1;if(t==='hunt')hunt();if(t==='nets')nets();if(t==='map')map();}}
+document.querySelector('.tabs').addEventListener('click',e=>{if(e.target.dataset.t)showTab(e.target.dataset.t)});
+
+regen('A');regen('B');run();
+</script>
+</body>
+</html>
