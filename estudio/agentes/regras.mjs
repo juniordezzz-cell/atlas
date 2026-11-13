@@ -23,7 +23,7 @@ export const LIMITES = {
   giroEstavelMin: 0.5,     // dia mais fraco dos últimos 7 ≥ 50% da mediana
   lateralMin: 0.6,         // fração do tempo a ±10% da mediana em 30 dias
   voltaMediaMin: 5,        // κ (volta à média) por ano
-  tendenciaForte: 0.4,     // |μ| ao ano
+  tendenciaForte: 1.5,     // movimento de 30 dias ≥ 1,5 oscilação normal (antes |μ| ≥ 0,4 ao ano: dava 90%)
   oscilacaoForte: 0.6,     // volatilidade de 30 dias ao ano
   precoParado: 0.2,        // volatilidade de 7 dias ao ano
   poolNovaDias: 30,        // menos que isso de velas = pool nova
@@ -97,7 +97,7 @@ export function aplicarRegra(id, m, extra = {}) {
     }
     case "curva": {
       const procura = maiorQue(m.kappa, L.voltaMediaMin) && maiorQue(m.giro, L.giroMin);
-      const descarta = m.mu != null && Math.abs(m.mu) >= L.tendenciaForte;
+      const descarta = m.tendencia != null && Math.abs(m.tendencia) >= L.tendenciaForte;
       return { procura, descarta, motivo: descarta ? "tendência forte" : procura ? "volta à média com giro alto" : "sem volta à média ou giro baixo" };
     }
     case "pontas": {

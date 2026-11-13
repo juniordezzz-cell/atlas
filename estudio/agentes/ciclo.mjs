@@ -71,10 +71,23 @@ export function prepararPool(pool, candlesBrutos, cfg = CONFIG) {
     { days: cfg.dias, nsim: cfg.nsim, seed: cfg.seed });
   if (!cal) return { erro: "calibração sem dados" };
   // Tudo na moeda da cotação: TVL, volume e gás vêm em dólar.
-  const M = { ...cal.M, tvl: cal.M.tvl / cot, vday: cal.M.vday / cot, gas: cal.M.gas / cot };
+  const M = { ...cal.M, mu: 0, tvl: cal.M.tvl / cot, vday: cal.M.vday / cot, gas: cal.M.gas / cot };
   const w = cfg.larguraSigmas * M.vol * Math.sqrt(cfg.dias / 365);
   const lo = p0 * Math.exp(-w), hi = p0 * Math.exp(w);
-  return { c, M, origem: cal.origem, cot, p0, lo, hi, cap: cfg.capitalUsd / cot, tvl, vol };
+  return { c, M, muHistorico: cal.M.mu, origem: cal.origem, cot, p0, lo, hi, cap: cfg.capitalUsd / cot, tvl, vol };
+}
+
+/**
+ * Movimento do preço na janela (até 30 dias) em oscilações normais:
+ * ln(último ÷ primeiro) ÷ (σ·√(dias/365)). ±1 é o tamanho de um mês comum;
+ * ±1,5 ou mais é tendência de verdade. Null sem volatilidade.
+ */
+export function tendencia(c, sigma, dias = 30) {
+  const j = janela(c, dias);
+  if (j.length < 2 || !(sigma > 0)) return null;
+  const anos = (j[j.length - 1][0] - j[0][0]) / DIA / 365;
+  if (!(anos > 0)) return null;
+  return Math.log(j[j.length - 1][4] / j[0][4]) / (sigma * Math.sqrt(anos));
 }
 
 /** O que as regras olham, calculado das velas e do snapshot. */
@@ -85,16 +98,18 @@ export function metricasPool(pool, prep, cfg = CONFIG) {
   const ult4 = vd.slice(-4);
   const j30 = janela(c, 30);
   const min30 = Math.min(...j30.map((x) => x[4]));
+  const sigma30 = volRealizada(c, 30), sigma7 = volRealizada(c, 7);
   return {
     dias: cfg.dias,
     giro: tvl > 0 ? vol / tvl : null,
     giroEstavel: ult7.length >= 3 ? Math.min(...ult7) >= 0.5 * mediana(ult7) : null,
     volumeCaindo3d: ult4.length === 4 ? ult4[1] < ult4[0] && ult4[2] < ult4[1] && ult4[3] < ult4[2] : false,
     lateral: lateralidade(c, 30, 0.1),
-    sigma30: volRealizada(c, 30),
-    sigma7: volRealizada(c, 7),
+    sigma30,
+    sigma7,
     kappa: M.kappa,
-    mu: M.mu,
+    mu: prep.muHistorico ?? null,
+    tendencia: tendencia(c, sigma30 ?? sigma7),
     diasHistorico: (c[c.length - 1][0] - c[0][0]) / DIA,
     naLista: naListaDeCompra(pool.ativo_simbolo),
     acimaDaMinima30: min30 > 0 ? p0 / min30 - 1 : null,
@@ -186,7 +201,7 @@ export function analisarPool(pool, candles, cfg = CONFIG) {
       apr_taxas_pct: st.apr,
       ref_media_usd: ref.st.mean * prep.cot,
       ganho_vs_ref_usd: ganho * prep.cot,
-      mercado: { ...prep.M, cotacao_usd: prep.cot },
+      mercado: { ...prep.M, cotacao_usd: prep.cot, mu_historico: prep.muHistorico ?? null },
       metricas: { ...m, regra: an.motivo },
       conc_estimada: prep.origem.concEstimada,
     });
