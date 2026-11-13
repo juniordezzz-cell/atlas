@@ -133,6 +133,9 @@ test("volume por dia completo, sem o dia que ainda não fechou", () => {
   const h = 3600, d0 = 20000 * 86400;
   const v = [[d0, 1, 1, 1, 1, 10], [d0 + h, 1, 1, 1, 1, 5], [d0 + 86400, 1, 1, 1, 1, 7], [d0 + 2 * 86400, 1, 1, 1, 1, 99]];
   assert.deepEqual(volumesDiarios(v), [15, 7]);
+  // dia sem volume conhecido fica de fora
+  const v2 = [[d0, 1, 1, 1, 1, 0], [d0 + 86400, 1, 1, 1, 1, 7], [d0 + 2 * 86400, 1, 1, 1, 1, 99]];
+  assert.deepEqual(volumesDiarios(v2), [7]);
 });
 
 test("rodada completa: status dos seis agentes e pools sem dados", () => {

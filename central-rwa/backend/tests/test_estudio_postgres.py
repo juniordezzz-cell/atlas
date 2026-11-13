@@ -104,3 +104,35 @@ def test_manutencao_resume_por_hora_e_apaga_o_vencido(dsns):
         c.execute("select estudio.manutencao()")
         assert c.execute("select count(*) from estudio.snapshots where pool_id = 'velho'").fetchone()[0] == 0
         assert c.execute("select sum(amostras) from estudio.snapshots_hora where pool_id = 'novo'").fetchone()[0] == 2
+
+
+def test_varredura_pela_defillama_grava_fonte_volume_e_chamadas(dsns, monkeypatch):
+    """Depois das velas da GT (teste acima), a DeFiLlama assume: fonte, endereço
+    da cotação, volume da hora pelos snapshots e o registro das chamadas."""
+    from tests.test_estudio_fontes_llama import AGORA as AGORA_LLAMA, AERO_DS, LlamaFalso
+
+    from central_rwa.estudio import varredura
+    monkeypatch.setattr(varredura, "DIF_MAX_PRECO", 1.0)   # fixtures de dias diferentes (ver test_estudio_fontes_llama)
+    uri, agente = dsns
+    with psycopg.connect(uri, autocommit=True) as c:
+        # como as pools de produção antes desta mudança: velas da GT, fonte ainda vazia
+        c.execute("update estudio.candles_estado set fonte = null")
+    store, cli = PostgresEstudio(agente), LlamaFalso()
+    try:
+        r = varrer(cli, store, AGORA_LLAMA)
+    finally:
+        store.close()
+    assert r["candles_pools_llama"] == 1 and r["chamadas_llama"] >= 1      # só o AERO a fixture conhece
+    aero = ALVOS[2]["pool_id"]
+    with psycopg.connect(uri) as c:
+        est = c.execute("select fonte, cotacao, cotacao_end, ativo from estudio.candles_estado where pool_id = %s",
+                        (aero,)).fetchone()
+        assert est[0] == "defillama" and est[1] == "USDC" and est[2] and est[3].lower() == AERO_DS.lower()
+        vol = c.execute("select volume_usd from estudio.candles where pool_id = %s and hora = %s",
+                        (aero, AGORA)).fetchone()[0]
+        snap = c.execute("select vol_24h from estudio.snapshots where pool_id = %s and observado_em = %s",
+                         (aero, AGORA)).fetchone()[0]
+        assert vol == pytest.approx(snap / 24)
+        llama, adiadas = c.execute("select chamadas_llama, velas_adiadas from estudio.varredura_status "
+                                   "order by id desc limit 1").fetchone()
+        assert llama == r["chamadas_llama"] and adiadas is False

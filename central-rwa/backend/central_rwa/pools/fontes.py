@@ -190,8 +190,8 @@ class ClienteFontes:
         self.parciais: list[str] = []
         self.gecko_metricas = {"requisicoes": 0, "limites_429": 0, "espera_s": 0.0}
 
-    def _gecko(self, url: str) -> httpx.Response | None:
-        for tentativa in range(1, 6):
+    def _gecko(self, url: str, tentativas: int = 5) -> httpx.Response | None:
+        for tentativa in range(1, tentativas + 1):
             falta = self._ultima + config.GECKO_INTERVALO_S - self.relogio()
             if falta > 0:
                 self.sleep(falta)

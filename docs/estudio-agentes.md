@@ -61,8 +61,8 @@ schema `estudio`.
 | `estudio.pools_alvo` (visão) | Filtro sobre `scanner.pools`: Solana e Base, ativa, não barrada, TVL ≥ $250 mil, giro > 0,5, endereço conhecido (`gecko:` no ID, `sinais.endereco_pool` ou a conferência). Em 11/11: 123 pools; 15 sem endereço ficaram de fora. |
 | `estudio.snapshots` | DexScreener, até 30 pools por chamada: preço do ativo no outro token e em dólar, TVL, volume 24h, giro e taxa (vinda do Scanner). 7 dias. |
 | `estudio.snapshots_hora` | Resumo por hora, 30 dias. |
-| `estudio.candles` | Velas de 1h da GeckoTerminal (`currency=token&token=<ativo>`), 45 dias. Pool nova baixa 1.000 velas; depois, uma vez por hora, só as que faltam. Orçamento de 30 chamadas por execução (~5 min). |
-| `estudio.candles_estado` | Ativo, cotação, quando buscou, primeira e última vela, falhas. |
+| `estudio.candles` | Preço de 1h, 45 dias. Desde 13/11 vem da DeFiLlama (ver "Fontes do histórico"); a GeckoTerminal fica de reserva. |
+| `estudio.candles_estado` | Ativo, cotação (símbolo e endereço), de onde vieram as velas (`fonte`), quando buscou, primeira e última vela, falhas. |
 | `estudio.pools_prontas` (visão) | Alvos com pelo menos 7 dias de velas: o que os agentes vão usar. Substitui a data de criação, que falta em parte das pools. |
 | `estudio.varredura_status` | Uma linha por execução: estado `ok`, `parcial` ou `erro`, contagens e falhas. |
 | `estudio.manutencao()` | Ao fim de cada varredura: resume por hora e apaga o que venceu. |
@@ -91,6 +91,32 @@ Rodar local, sem banco: `python -m central_rwa estudio --dry-run --orcamento-gec
 Validação: `python -m pytest -q` em `central-rwa/backend`
 (`test_estudio_varredura.py` com respostas reais; `test_estudio_postgres.py` com
 Postgres embutido: filtro, privilégios do papel e a varredura gravando).
+
+### Fontes do histórico (13/11/2026)
+
+A GeckoTerminal aceita ~6 pedidos por minuto e, quando recusa, a espera entre
+tentativas estourava os 14 min do workflow (três varreduras canceladas em
+12–13/11). O histórico passou para a **DeFiLlama** (`coins.llama.fi/chart`,
+sem chave, até 500 pontos por chamada):
+
+- Pools em dia (velas até 6 h atrás) vão juntas: **1 chamada por hora** cobre
+  todas. Pool nova ou atrasada baixa 31 dias em 2 ou 3 chamadas.
+- Vela = preço do ativo ÷ preço da cotação em dólar (cotação stable: o preço em
+  dólar), uma por hora (abertura = máxima = mínima = fechamento). O motor só usa
+  o fechamento.
+- Volume da hora = média do volume 24h dos snapshots daquela hora ÷ 24. Dia sem
+  volume conhecido não entra nas regras de volume dos agentes.
+- **Reserva (GeckoTerminal)**, até 15 chamadas por execução e 2 tentativas por
+  pedido, para: token que a DeFiLlama não tem (embrulhados de outra rede, como
+  SOL e JitoSOL na Base ou WBTC na Solana), preço parado há mais de 3 h, ou
+  preço a mais de 5% do preço da pool no snapshot. A pool que cai na reserva
+  continua nela (`candles_estado.fonte = 'geckoterminal'`).
+- **Trava:** a etapa de velas para em 7 minutos; o que sobrar fica para a
+  execução seguinte (`varredura_status.velas_adiadas`).
+
+Medido em 13/11 com as APIs reais (117 pools-alvo): histórico completo de 73
+pools em 274 chamadas e ~1 min, zero recusas; na hora seguinte, 1 chamada. 44
+pools ficam na reserva (31 sem token na DeFiLlama, 13 com preço diferente).
 
 ## Fase 3 — agentes sem IA (13/11/2026)
 
