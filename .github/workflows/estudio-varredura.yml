@@ -1,7 +1,9 @@
 name: Estúdio · varredura (15 min)
 
-# Estúdio de Agentes de Pools, Fase 2. Snapshot de 15 min (DexScreener) e
+# Estúdio de Agentes de Pools. Fase 2: snapshot de 15 min (DexScreener) e
 # velas de 1h (GeckoTerminal) das pools-alvo, gravados no schema estudio.
+# Fase 3: depois da varredura, a rodada dos seis agentes e do supervisor,
+# no máximo uma vez por hora (o próprio comando confere a última rodada).
 # Registro: docs/estudio-agentes.md.
 #
 # QUEM DISPARA: o pg_cron do Supabase, a cada 15 min, por workflow_dispatch
@@ -38,6 +40,13 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: central-rwa/backend/pyproject.toml
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
       - run: pip install -e .
       - name: Varredura
         run: python -m central_rwa estudio
+      # Roda mesmo se a varredura marcar erro: os agentes usam o que já está no banco.
+      - name: Agentes
+        if: ${{ !cancelled() }}
+        run: python -m central_rwa agentes
