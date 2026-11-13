@@ -24,6 +24,7 @@ jobs:
       - run: node --test Ferramentas/scanner-pools/*.test.cjs
       - run: node --test central-rwa/supabase/functions/scanner-chat/handler.test.mjs
       - run: node --test estudio/motor/*.test.mjs   # Estúdio de Agentes: motor = simulador
+      - run: node --test estudio/agentes/*.test.mjs # Estúdio de Agentes: agentes = caça-estratégias
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 10

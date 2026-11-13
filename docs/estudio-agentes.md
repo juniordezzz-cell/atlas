@@ -6,7 +6,7 @@ partir do Scanner Pools e simulam a própria estratégia. Os agentes só caçam 
 avisam: nenhuma chave de carteira entra no sistema. Tudo em dólar e com custo
 zero (Supabase Free, GitHub Actions de repositório público, APIs sem chave).
 
-Fases: 0 Reconhecimento · **1 Motor** · 2 Varredura · 3 Agentes sem IA ·
+Fases: 0 Reconhecimento · 1 Motor · 2 Varredura · **3 Agentes sem IA** ·
 4 Painel (escritório isométrico em voxel com os agentes trabalhando) · 5 IA.
 Regra do dono: antes de cada fase, descrever o que muda e esperar o OK.
 
@@ -91,5 +91,68 @@ Rodar local, sem banco: `python -m central_rwa estudio --dry-run --orcamento-gec
 Validação: `python -m pytest -q` em `central-rwa/backend`
 (`test_estudio_varredura.py` com respostas reais; `test_estudio_postgres.py` com
 Postgres embutido: filtro, privilégios do papel e a varredura gravando).
+
+## Fase 3 — agentes sem IA (13/11/2026)
+
+Critério de pronto: cada agente grava achados e status, e o ranking bate com o
+caça-estratégias do simulador.
+
+**Fluxo:** no mesmo workflow da varredura, depois dela, `python -m central_rwa
+agentes` (no máximo uma vez por hora: o comando confere a última rodada boa em
+`estudio.agentes_status`). O Python lê `estudio.pools_prontas`, o último
+snapshot e 31 dias de velas, entrega tudo em JSON para
+`estudio/agentes/rodar.mjs` e grava o que voltar. Uma rodada com ~110 pools
+leva menos de um minuto de motor.
+
+**Ciclo de cada agente, por pool:** regra (procura e não descarta) → simulação
+da sua estratégia com o motor da Fase 1 → comparação com a Faixa única na mesma
+pool, mesma faixa e mesmos sorteios → achado se ganhar dela na média **e** a
+média for positiva. Cada agente testa os N do seu modelo e fica com o melhor
+pela média, o mesmo critério do caça-estratégias.
+
+| Agente | Modelo (N) | Trabalha na pool quando… | Descarta quando… |
+|---|---|---|---|
+| Base | Faixa única (1) | giro ≥ 1 e estável (dia mais fraco dos últimos 7 ≥ 50% da mediana) | volume caiu 3 dias seguidos |
+| Concentrador | Aninhadas (2–5) | lateralidade ≥ 0,6 | σ 7 d × √(30/365) maior que a meia-largura da faixa do meio |
+| Curva | Curve (2–6) | κ ≥ 5 e giro ≥ 1 | \|μ\| ≥ 40% ao ano |
+| Pontas | Bid-Ask (2–6) | σ 30 d ≥ 60% e κ ≥ 5 | σ 7 d < 20% |
+| Grade | Spot (2–6) | menos de 30 dias de velas | giro < 1 |
+| Acumulador | Acumulação (1–6) | ativo na lista de compra e até 10% acima da mínima de 30 dias | ativo fora da lista |
+
+Limites, lista de compra e parâmetros ficam em `estudio/agentes/regras.mjs`.
+Lista de compra (dono, 13/11): SYRUP, AAVE, ENA, BTC, BNB, AERO, UNI, LDO, SUI,
+SOL, ETH, RENDER, ONDO, JTO, MORPHO, PENDLE, RAY, LINK, SKY, HYPE, JUP, PYTH,
+mais ações tokenizadas (padrão xStocks, como AAPLx e CRCLx, e SPACEX). WETH,
+WBTC, cbBTC e WSOL contam como ETH, BTC e SOL.
+
+**Simulação:** capital de $1.000, 30 dias, 300 caminhos (os mesmos do
+caça-estratégias), sem rebalanceamento. Faixa = preço × e^(±σ·√(30/365)); a
+Acumulação usa só a parte abaixo do preço (é o próprio `build` do simulador).
+Em par cotado em outro token (JUP/SOL), a simulação roda na moeda da cotação
+(capital, TVL, volume e gás convertidos pelo snapshot) e volta para dólar; a
+variação da própria cotação contra o dólar fica de fora, como no simulador.
+
+**Supervisor:** a cada rodada refaz `estudio.relatorios_diarios` do dia (UTC):
+ranking (achado mais recente de cada agente em cada pool, pela média), disputas
+(dois agentes com achado na mesma pool) e conflitos (achado de um agente numa
+pool que a regra de outro descarta; a regra do Acumulador não entra, porque é a
+lista de compra). O texto é da Fase 5.
+
+| Tabela | O que guarda |
+|---|---|
+| `estudio.achados` | agente, pool, modelo × N, faixas, posições, média, P10, P90, taxas, IL, custo, tempo em faixa, Faixa única de referência e o ganho sobre ela, o mercado M e as métricas da regra. 90 dias. |
+| `estudio.agentes_status` | uma linha por agente e uma do supervisor: estado (`cacando`, `ok`, `sem_pools`, `erro`), melhor pool, pools vistas e trabalhadas, achados. |
+| `estudio.relatorios_diarios` | uma linha por dia: ranking, disputas, conflitos, rodadas. |
+
+Mesmo acesso da Fase 2: RLS, nada público, o papel `estudio_agente` lê e grava
+só nessas tabelas. Nenhuma chave nova.
+
+Validação: `node --test estudio/agentes/*.test.mjs` (cada estratégia igual ao
+`hunt()` do HTML original e a `cacar()`, regras, lista de compra, supervisor,
+conversão de cotação) e `tests/test_estudio_agentes.py` (Postgres embutido +
+Node: a rodada grava achados, status e relatório; pula com menos de 55 min;
+erro não bloqueia a próxima). Conferido também na tela: simulador aberto com o
+mercado calibrado do SOL/USDC (velas reais de 11/11), 27 estratégias iguais às
+dos agentes até a quarta casa.
 
 Plano completo e relatório da Fase 0 ficam com o dono (fora do repositório).
