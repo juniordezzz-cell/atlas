@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 import subprocess
+from collections import Counter
 import sys
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -140,6 +141,11 @@ def chamar_node(entrada: dict, node: str = "node") -> dict:
     return json.loads(p.stdout)
 
 
+def conflitos_por_regra(conflitos: list[dict]) -> dict[str, int]:
+    """Quantos conflitos cada regra de descarte causou ("Grade · giro baixo": 70), do maior para o menor."""
+    return dict(Counter(f"{c['nome_contra']} · {c['motivo']}" for c in conflitos).most_common())
+
+
 def rodada(store, agora: datetime, forcar: bool = False) -> dict:
     """Uma rodada completa. Pula se a última foi há menos de 55 min (a não ser forçada)."""
     ultima = store.ultima_rodada()
@@ -161,9 +167,12 @@ def rodada(store, agora: datetime, forcar: bool = False) -> dict:
     except Exception as e:
         store.marcar("erro", rodada_em, f"{type(e).__name__}: {str(e)[:200]}")
         raise
+    conf = saida["relatorio"]["conflitos"]
     return {"estado": "ok", "rodada": iso(rodada_em), "pools": saida["pools"], "achados": len(saida["achados"]),
             "por_agente": {s["agente"]: s["achados"] for s in saida["status"]},
-            "disputas": len(saida["relatorio"]["disputas"]), "conflitos": len(saida["relatorio"]["conflitos"]),
+            "disputas": len(saida["relatorio"]["disputas"]), "conflitos": len(conf),
+            "conflitos_por_regra": conflitos_por_regra(conf),
+            "conflitos_por_par": dict(Counter(f"{c['nome']} × {c['nome_contra']}" for c in conf).most_common(10)),
             "erros": saida["erros"][:20], "duracao_motor_s": saida["duracao_s"]}
 
 
@@ -195,5 +204,6 @@ def rodar(argv: list[str]) -> None:
     annotate("notice", "Agentes",
              f"{r['pools']} pools · {r['achados']} achados · " +
              " · ".join(f"{k} {v}" for k, v in r["por_agente"].items()) +
-             f" · {r['disputas']} disputas · {r['conflitos']} conflitos")
+             f" · {r['disputas']} disputas · {r['conflitos']} conflitos" +
+             (" (" + ", ".join(f"{k}: {v}" for k, v in r["conflitos_por_regra"].items()) + ")" if r["conflitos"] else ""))
     print(json.dumps(r, ensure_ascii=False, default=str))
