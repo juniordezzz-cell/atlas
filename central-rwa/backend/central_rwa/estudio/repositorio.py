@@ -83,11 +83,20 @@ class MemoriaEstudio:
         if e.get("ativo") != item["ativo"]:
             e["primeira_vela"] = None
         e.update(ativo=item["ativo"], ativo_simbolo=item.get("ativo_simbolo"), cotacao=item.get("cotacao"),
-                 buscado_em=agora, falhas=0)
+                 cotacao_end=item.get("cotacao_end"), fonte=item.get("fonte"), buscado_em=agora, falhas=0)
         if velas:
             e["ultima_vela"] = max(velas[-1][0], e.get("ultima_vela") or velas[-1][0])
             e["primeira_vela"] = min(velas[0][0], e.get("primeira_vela") or velas[0][0])
         return novas
+
+    def volumes_hora(self, ids, desde):
+        """Volume da hora ≈ média do volume 24h dos snapshots daquela hora ÷ 24."""
+        soma: dict[tuple, list] = {}
+        for (pid, t), sn in self.snaps.items():
+            if pid in ids and t >= desde:
+                h = t.replace(minute=0, second=0, microsecond=0)
+                soma.setdefault((pid, h), []).append(sn["vol_24h"])
+        return {k: sum(v) / len(v) / 24 for k, v in soma.items()}
 
     def manutencao(self):
         pass
@@ -123,7 +132,7 @@ class PostgresEstudio:
         if not ids:
             return {}
         cur = self.conn.execute(
-            "select pool_id, ativo, ativo_simbolo, cotacao, buscado_em, ultima_vela, primeira_vela, falhas "
+            "select pool_id, ativo, ativo_simbolo, cotacao, cotacao_end, fonte, buscado_em, ultima_vela, primeira_vela, falhas "
             "from estudio.candles_estado where pool_id = any(%s)", (ids,))
         cols = [d.name for d in cur.description]
         return {r[0]: dict(zip(cols, r)) for r in cur.fetchall()}
@@ -149,13 +158,33 @@ class PostgresEstudio:
                             "returning (xmax = 0)", (item["pool_id"], *v))
                 novas += bool(cur.fetchone()[0])
             cur.execute(
-                "insert into estudio.candles_estado (pool_id, ativo, ativo_simbolo, cotacao, buscado_em, falhas, ultima_vela, primeira_vela) "
-                "select %s, %s, %s, %s, %s, 0, max(hora), min(hora) from estudio.candles where pool_id = %s "
+                "insert into estudio.candles_estado (pool_id, ativo, ativo_simbolo, cotacao, cotacao_end, fonte, buscado_em, "
+                "falhas, ultima_vela, primeira_vela) "
+                "select %s, %s, %s, %s, %s, %s, %s, 0, max(hora), min(hora) from estudio.candles where pool_id = %s "
                 "on conflict (pool_id) do update set ativo = excluded.ativo, ativo_simbolo = excluded.ativo_simbolo, "
-                "cotacao = excluded.cotacao, buscado_em = excluded.buscado_em, falhas = 0, "
+                "cotacao = excluded.cotacao, cotacao_end = coalesce(excluded.cotacao_end, estudio.candles_estado.cotacao_end), "
+                "fonte = excluded.fonte, buscado_em = excluded.buscado_em, falhas = 0, "
                 "ultima_vela = excluded.ultima_vela, primeira_vela = excluded.primeira_vela",
-                (item["pool_id"], item["ativo"], item.get("ativo_simbolo"), item.get("cotacao"), agora, item["pool_id"]))
+                (item["pool_id"], item["ativo"], item.get("ativo_simbolo"), item.get("cotacao"), item.get("cotacao_end"),
+                 item.get("fonte"), agora, item["pool_id"]))
         return novas
+
+    def volumes_hora(self, ids, desde):
+        """Volume da hora ≈ média do volume 24h dos snapshots daquela hora ÷ 24
+        (snapshots de 15 min nos últimos 7 dias; resumo horário antes disso)."""
+        if not ids:
+            return {}
+        cur = self.conn.execute(
+            "select pool_id, hora, vol from ("
+            "  select pool_id, date_trunc('hour', observado_em) as hora, avg(vol_24h) / 24 as vol "
+            "  from estudio.snapshots where pool_id = any(%s) and observado_em >= %s group by 1, 2"
+            "  union all"
+            "  select pool_id, hora, vol_24h / 24 from estudio.snapshots_hora h "
+            "  where pool_id = any(%s) and hora >= %s and vol_24h is not null and not exists ("
+            "    select 1 from estudio.snapshots s where s.pool_id = h.pool_id "
+            "    and date_trunc('hour', s.observado_em) = h.hora)"
+            ") v", (ids, desde, ids, desde))
+        return {(r[0], r[1]): float(r[2]) for r in cur.fetchall() if r[2] is not None}
 
     def manutencao(self):
         self.conn.execute("select estudio.manutencao()")
@@ -163,10 +192,11 @@ class PostgresEstudio:
     def finalizar(self, run_id, resumo):
         self.conn.execute(
             "update estudio.varredura_status set fim = %s, pools_alvo = %s, snapshots = %s, candles_pools = %s, "
-            "candles_novas = %s, chamadas_gt = %s, limites_429 = %s, falhas = %s, estado = %s where id = %s",
+            "candles_novas = %s, chamadas_gt = %s, limites_429 = %s, falhas = %s, estado = %s, "
+            "chamadas_llama = %s, velas_adiadas = %s where id = %s",
             (datetime.now(timezone.utc), resumo["pools_alvo"], resumo["snapshots"], resumo["candles_pools"],
              resumo["candles_novas"], resumo["chamadas_gt"], resumo["limites_429"], resumo["falhas"][:50],
-             resumo["estado"], run_id))
+             resumo["estado"], resumo.get("chamadas_llama", 0), bool(resumo.get("velas_adiadas")), run_id))
 
     def close(self):
         self.conn.close()

@@ -45,6 +45,10 @@ class ClienteFalso:
         pares = DS_SOL if rede == "Solana" else DS_BASE
         return [p for p in pares if p["pairAddress"] in enderecos or p["pairAddress"].lower() in enderecos]
 
+    def precos_llama(self, chaves, inicio, span):
+        self.pedidos_llama = getattr(self, "pedidos_llama", []) + [(tuple(chaves), inicio, span)]
+        return {"coins": {}}   # a DeFiLlama "não conhece" nada: tudo vai para a reserva (GT)
+
     def velas_gt(self, rede, endereco, ativo, limite):
         self.gecko.gecko_metricas["requisicoes"] += 1
         self.pedidos_velas.append((rede, endereco, ativo, limite))

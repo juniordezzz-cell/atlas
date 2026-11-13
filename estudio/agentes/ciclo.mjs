@@ -27,7 +27,9 @@ const DIA = 86400;
 const EM_DOLAR = ["mean", "med", "p10", "p90", "fees", "il", "cost"];
 const ESTAVEIS = ["USDC", "USDT", "USDS", "DAI", "USDE", "PYUSD", "USDBC", "EURC", "USD1", "FDUSD", "USDG", "AUSD", "SUSDS"];
 
-/** Volume em dólar por dia completo (UTC), do mais antigo ao mais novo. */
+/** Volume em dólar por dia completo (UTC), do mais antigo ao mais novo.
+ *  Velas da GeckoTerminal trazem o volume; as da DeFiLlama recebem o volume
+ *  da hora pelos snapshots de 15 min (volume 24h ÷ 24). */
 export function volumesDiarios(candles) {
   if (!candles.length) return [];
   const ultimoDia = Math.floor(candles[candles.length - 1][0] / DIA);
@@ -37,7 +39,8 @@ export function volumesDiarios(candles) {
     if (d >= ultimoDia) continue; // o dia de hoje ainda não fechou
     porDia.set(d, (porDia.get(d) || 0) + (c[5] || 0));
   }
-  return [...porDia.entries()].sort((a, b) => a[0] - b[0]).map((x) => x[1]);
+  // Dia sem volume conhecido (preço da DeFiLlama antes dos snapshots) não conta.
+  return [...porDia.entries()].filter((x) => x[1] > 0).sort((a, b) => a[0] - b[0]).map((x) => x[1]);
 }
 
 const mediana = (xs) => {

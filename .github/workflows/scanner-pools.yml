@@ -15,11 +15,13 @@ name: Scanner Pools · coleta (4h)
 #                      O cron do GitHub atrasa de 2 a 5 h; por isso não é ele
 #                      quem marca o ritmo.
 #   push               aplica as migrações na hora; também não coleta fora de hora.
+#                      Inclui as do Estúdio (*estudio*): o código novo do estúdio
+#                      não pode rodar horas antes das colunas que ele usa.
 on:
   push:
     branches: [main]
     paths: ['central-rwa/backend/central_rwa/pools/**', '.github/workflows/scanner-pools.yml',
-            'central-rwa/supabase/migrations/*scanner*']
+            'central-rwa/supabase/migrations/*scanner*', 'central-rwa/supabase/migrations/*estudio*']
   schedule:
     - cron: "50 * * * *"
   workflow_dispatch:

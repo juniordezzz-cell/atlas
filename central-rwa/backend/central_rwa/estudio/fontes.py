@@ -1,4 +1,5 @@
-"""Fontes da varredura: DexScreener (snapshot) e GeckoTerminal (velas de 1h).
+"""Fontes da varredura: DexScreener (snapshot), DeFiLlama (preço por hora) e
+GeckoTerminal (velas de 1h, só de reserva).
 
 Testadas em 11/11/2026, sem chave:
 - DexScreener /latest/dex/pairs/{rede}/{a,b,...}: até 30 pools por chamada,
@@ -6,6 +7,13 @@ Testadas em 11/11/2026, sem chave:
 - GeckoTerminal /ohlcv/hour com token=<ativo>&currency=token: preço do ativo
   em unidades do outro token do par; 1.000 velas (41 dias) por chamada. O
   ritmo (~6 pedidos/min medidos) é o do ClienteFontes do Scanner.
+
+Testada em 13/11/2026, sem chave:
+- DeFiLlama coins.llama.fi/chart/{rede:token,...}?start&span&period=1h: preço
+  do token em dólar, um ponto por hora (às vezes falta alguma), no máximo 500
+  pontos por chamada somando todos os tokens. 12 pedidos seguidos sem recusa.
+  Vira a fonte principal do histórico (13/11): 1 chamada por hora atualiza
+  todas as pools; a GeckoTerminal fica para quem a DeFiLlama não conhece.
 """
 
 from __future__ import annotations
@@ -20,6 +28,9 @@ from ..pools.config import STABLES
 from ..pools.fontes import GECKO, ClienteFontes
 
 DEXSCREENER = "https://api.dexscreener.com/latest/dex/pairs"
+LLAMA_CHART = "https://coins.llama.fi/chart"
+REDE_LLAMA = {"Solana": "solana", "Base": "base"}
+LLAMA_MAX_PONTOS = 500
 REDE_DS = {"Solana": "solana", "Base": "base"}
 REDE_GT = {"Solana": "solana", "Base": "base"}
 POR_CHAMADA_DS = 30
@@ -39,6 +50,7 @@ class Snapshot:
     ativo: str                # endereço
     ativo_simbolo: str
     cotacao: str              # símbolo do outro token
+    cotacao_end: str = ""     # endereço do outro token
 
 
 def escolher_ativo(base: dict, quote: dict) -> tuple[dict, dict]:
@@ -71,7 +83,54 @@ def parse_par_ds(par: dict, pool_id: str) -> Snapshot | None:
         preco = 1 / nativo if nativo else None
         preco_usd = usd / nativo if (usd and nativo) else None
     return Snapshot(pool_id, preco, preco_usd, tvl, vol, str(ativo.get("address", "")),
-                    str(ativo.get("symbol", "")), str(cot.get("symbol", "")))
+                    str(ativo.get("symbol", "")), str(cot.get("symbol", "")), str(cot.get("address", "")))
+
+
+def cotacao_estavel(simbolo: str | None) -> bool:
+    return str(simbolo or "").upper() in STABLES
+
+
+def chave_llama(rede: str, endereco: str | None) -> str | None:
+    """Token no formato da DeFiLlama (solana:<mint>, base:<0x...>)."""
+    if not endereco or rede not in REDE_LLAMA:
+        return None
+    return f"{REDE_LLAMA[rede]}:{endereco if rede == 'Solana' else endereco.lower()}"
+
+
+def parse_precos_llama(j: dict) -> dict[str, dict[int, float]]:
+    """Resposta do /chart → {chave: {hora_unix (início da hora): preço}}.
+    Pontos da mesma hora: fica o mais recente. Chave em minúsculas na Base."""
+    out: dict[str, dict[int, float]] = {}
+    for chave, v in ((j or {}).get("coins") or {}).items():
+        rede, _, end = chave.partition(":")
+        k = f"{rede}:{end.lower()}" if rede != "solana" else chave
+        horas: dict[int, tuple[int, float]] = {}
+        for ponto in (v or {}).get("prices") or []:
+            t, preco = _num(ponto.get("timestamp")), _num(ponto.get("price"))
+            if t is None or not preco or preco <= 0:
+                continue
+            h = int(t) // 3600 * 3600
+            if h not in horas or t >= horas[h][0]:
+                horas[h] = (int(t), preco)
+        out[k] = {h: p for h, (_, p) in horas.items()}
+    return out
+
+
+def velas_de_precos(ativo: dict[int, float], cotacao: dict[int, float] | None
+                    ) -> list[tuple[datetime, float, float, float, float, float]]:
+    """Preço do ativo na moeda da cotação, uma "vela" por hora (abertura =
+    máxima = mínima = fechamento). Sem a cotação (stable), o preço em dólar.
+    Hora sem os dois preços fica de fora. Volume entra depois (snapshots)."""
+    out = []
+    for h in sorted(ativo):
+        if cotacao is None:
+            p = ativo[h]
+        elif cotacao.get(h):
+            p = ativo[h] / cotacao[h]
+        else:
+            continue
+        out.append((datetime.fromtimestamp(h, timezone.utc), p, p, p, p, 0.0))
+    return out
 
 
 def parse_velas_gt(j: dict) -> list[tuple[datetime, float, float, float, float, float]]:
@@ -101,10 +160,23 @@ class ClienteEstudio:
         r.raise_for_status()
         return (r.json() or {}).get("pairs") or []
 
+    def precos_llama(self, chaves: list[str], inicio: int, span: int) -> dict:
+        """Preços por hora de vários tokens. span × tokens ≤ 500. Uma nova tentativa em erro."""
+        url = f"{LLAMA_CHART}/{','.join(chaves)}"
+        params = {"start": str(int(inicio)), "span": str(int(span)), "period": "1h"}
+        for tentativa in (1, 2):
+            try:
+                r = self.client.get(url, params=params)
+                if r.status_code == 200:
+                    return r.json()
+            except httpx.HTTPError:
+                pass
+        raise RuntimeError("DeFiLlama não respondeu")
+
     def velas_gt(self, rede: str, endereco: str, ativo: str, limite: int) -> dict | None:
         url = (f"{GECKO}/networks/{REDE_GT[rede]}/pools/{endereco}/ohlcv/hour"
                f"?aggregate=1&limit={max(1, min(1000, limite))}&currency=token&token={ativo}")
-        r = self.gecko._gecko(url)
+        r = self.gecko._gecko(url, tentativas=2)   # reserva: não fica minutos esperando a GT
         if r is None or r.status_code != 200:
             return None
         return r.json()
