@@ -1,7 +1,7 @@
 /* ============================================================
-   Estúdio de Agentes de Pools · agentes/supervisor.mjs
+   Laboratório de Agentes · agentes/supervisor.mjs
 
-   O sétimo agente (Fase 3, sem IA). A cada rodada refaz o relatório do dia:
+   O supervisor (Fase 3, sem IA). A cada rodada refaz o relatório do dia:
    - ranking: o achado mais recente de cada agente em cada pool, pela média
      em dólar;
    - disputas: pools com achado de dois ou mais agentes ao mesmo tempo (quem
@@ -13,6 +13,7 @@
 
 import { AGENTES } from "./regras.mjs";
 
+const LISTA = new Set(["acumulador", "acumulador_token"]);
 const NOME = Object.fromEntries(AGENTES.map((a) => [a.id, a.nome]));
 export const TAMANHO_RANKING = 20;
 
@@ -62,8 +63,8 @@ export function relatorioDoDia(achadosDoDia, analises = []) {
   const conflitos = [];
   for (const r of analises) {
     const comAchado = r.analises.filter((x) => x.achado);
-    // A regra do Acumulador é a sua lista de compra, não o mercado: não entra.
-    const descartam = r.analises.filter((x) => x.descarta === true && x.agente !== "acumulador");
+    // A regra dos Acumuladores é a lista de compra, não o mercado: não entra.
+    const descartam = r.analises.filter((x) => x.descarta === true && !LISTA.has(x.agente));
     for (const a of comAchado) for (const d of descartam) {
       if (a.agente === d.agente) continue;
       conflitos.push({ pool_id: r.pool_id, agente: a.agente, nome: NOME[a.agente], media_usd: a.media_usd ?? null,

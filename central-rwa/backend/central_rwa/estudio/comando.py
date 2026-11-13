@@ -30,14 +30,14 @@ def rodar(argv: list[str]) -> None:
     else:
         dsn = os.environ.get("ESTUDIO_DB_URL")
         if not dsn:
-            annotate("warning", "Estúdio", "ESTUDIO_DB_URL não configurada — varredura pulada (veja docs/estudio-agentes.md).")
+            annotate("warning", "Laboratório", "ESTUDIO_DB_URL não configurada — varredura pulada (veja docs/estudio-agentes.md).")
             print("ESTUDIO_DB_URL não definida. Use --dry-run para rodar sem banco.")
             return
         try:
             store = PostgresEstudio(dsn)
         except Exception as e:
             hint = diagnose(dsn, e)
-            annotate("error", "Estúdio · banco", hint)
+            annotate("error", "Laboratório · banco", hint)
             sys.exit(hint)
     inicio = datetime.now(timezone.utc)
     try:
@@ -47,7 +47,7 @@ def rodar(argv: list[str]) -> None:
     resumo["dry_run"] = args.dry_run
     resumo["duracao_s"] = round((datetime.now(timezone.utc) - inicio).total_seconds(), 1)
     nivel = {"ok": "notice", "parcial": "warning"}.get(resumo["estado"], "error")
-    annotate(nivel, "Estúdio",
+    annotate(nivel, "Laboratório · varredura",
              f"{resumo['snapshots']}/{resumo['pools_alvo']} snapshots · velas de {resumo['candles_pools']} pools "
              f"({resumo['candles_novas']} novas) · {resumo['chamadas_gt']} chamadas GT")
     print(json.dumps(resumo, ensure_ascii=False, default=str))
