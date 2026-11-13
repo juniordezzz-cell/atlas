@@ -1,6 +1,6 @@
-name: Estúdio · varredura (15 min)
+name: Laboratório de Agentes · varredura (15 min)
 
-# Estúdio de Agentes de Pools. Fase 2: snapshot de 15 min (DexScreener) e
+# Laboratório de Agentes (antigo Estúdio de Agentes de Pools). Fase 2: snapshot de 15 min (DexScreener) e
 # velas de 1h (GeckoTerminal) das pools-alvo, gravados no schema estudio.
 # Fase 3: depois da varredura, a rodada dos seis agentes e do supervisor,
 # no máximo uma vez por hora (o próprio comando confere a última rodada).

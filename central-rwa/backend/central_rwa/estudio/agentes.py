@@ -1,6 +1,6 @@
 """python -m central_rwa agentes [--forcar]
 
-Rodada dos agentes do estúdio (Fase 3, sem IA), uma vez por hora, depois da
+Rodada dos agentes do Laboratório de Agentes (Fase 3, sem IA), uma vez por hora, depois da
 varredura. O Python lê o banco (papel estudio_agente), entrega as pools e as
 velas para estudio/agentes/rodar.mjs (o motor é JavaScript, igual ao
 simulador) e grava achados, status e o relatório do supervisor.
@@ -24,7 +24,7 @@ from ..gha import annotate
 
 RAIZ = Path(__file__).resolve().parents[4]
 RODAR = RAIZ / "estudio" / "agentes" / "rodar.mjs"
-AGENTES = ("base", "concentrador", "curva", "pontas", "grade", "acumulador")
+AGENTES = ("base", "concentrador", "curva", "pontas", "grade", "acumulador", "acumulador_token")
 INTERVALO = timedelta(minutes=55)
 DIAS_VELAS = 31
 
@@ -182,26 +182,26 @@ def rodar(argv: list[str]) -> None:
     args = p.parse_args(argv)
     dsn = os.environ.get("ESTUDIO_DB_URL")
     if not dsn:
-        annotate("warning", "Agentes", "ESTUDIO_DB_URL não configurada — rodada pulada (veja docs/estudio-agentes.md).")
+        annotate("warning", "Laboratório · agentes", "ESTUDIO_DB_URL não configurada — rodada pulada (veja docs/estudio-agentes.md).")
         print("ESTUDIO_DB_URL não definida.")
         return
     try:
         store = PostgresAgentes(dsn)
     except Exception as e:
         hint = diagnose(dsn, e)
-        annotate("error", "Agentes · banco", hint)
+        annotate("error", "Laboratório · agentes · banco", hint)
         sys.exit(hint)
     try:
         r = rodada(store, datetime.now(timezone.utc), args.forcar)
     except Exception as e:
-        annotate("error", "Agentes", f"{type(e).__name__}: {str(e)[:300]}")
+        annotate("error", "Laboratório · agentes", f"{type(e).__name__}: {str(e)[:300]}")
         raise
     finally:
         store.close()
     if r["estado"] == "pulada":
         print(f"Agentes: última rodada em {r['ultima']}, menos de 55 min atrás. Pulada.")
         return
-    annotate("notice", "Agentes",
+    annotate("notice", "Laboratório · agentes",
              f"{r['pools']} pools · {r['achados']} achados · " +
              " · ".join(f"{k} {v}" for k, v in r["por_agente"].items()) +
              f" · {r['disputas']} disputas · {r['conflitos']} conflitos" +

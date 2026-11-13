@@ -1,3 +1,5 @@
+> **Laboratório de Agentes** é o nome atual (13/11/2026). Os nomes internos (`estudio` no banco, pastas e este arquivo) ficaram. Ficha dos agentes: [laboratorio-agentes-fichas.md](laboratorio-agentes-fichas.md).
+
 # Estúdio de Agentes de Pools — registro
 
 Seis agentes, um por modelo do simulador de pools (Faixa única, Aninhadas, Curve,

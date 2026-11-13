@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ============================================================
-   Estúdio de Agentes de Pools · agentes/rodar.mjs
+   Laboratório de Agentes · agentes/rodar.mjs
 
    Ponto de entrada de uma rodada. O Python (python -m central_rwa agentes)
    lê o banco, manda as pools e as velas em JSON pela entrada padrão e grava

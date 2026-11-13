@@ -1,10 +1,11 @@
 /* ============================================================
-   Estúdio de Agentes de Pools · agentes/regras.mjs
+   Laboratório de Agentes · agentes/regras.mjs
 
    Os seis agentes e as regras de cada um (Fase 3, 13/11/2026): "procura
    pools com" e "descarta quando" do plano, traduzidos em números calculados
    com as velas de 1h. Os limites ficam todos aqui, num lugar só, para
-   ajustar depois sem mexer no ciclo.
+   ajustar depois sem mexer no ciclo. A ficha de cada agente está em
+   docs/laboratorio-agentes-fichas.md.
    ============================================================ */
 
 /** Parâmetros da simulação de cada pool. Valores em dólar. */
@@ -28,6 +29,7 @@ export const LIMITES = {
   precoParado: 0.2,        // volatilidade de 7 dias ao ano
   poolNovaDias: 30,        // menos que isso de velas = pool nova
   pertoDoSuporte: 0.1,     // até 10% acima da mínima de 30 dias
+  semanaTipica: 7,         // Concentrador: o preço tem de caber na faixa do meio por tantos dias
 };
 
 /**
@@ -66,7 +68,9 @@ export const AGENTES = [
   { id: "curva", nome: "Curva", modelo: "curve", faixas: [2, 3, 4, 5, 6] },
   { id: "pontas", nome: "Pontas", modelo: "bidask", faixas: [2, 3, 4, 5, 6] },
   { id: "grade", nome: "Grade", modelo: "spot", faixas: [2, 3, 4, 5, 6] },
-  { id: "acumulador", nome: "Acumulador", modelo: "acc", faixas: [1, 2, 3, 4, 5, 6] },
+  { id: "acumulador", nome: "Acumulador Dólar", modelo: "acc", faixas: [1, 2, 3, 4, 5, 6] },
+  // Mesma regra e mesmo modelo, outro objetivo: terminar com mais unidades do token.
+  { id: "acumulador_token", nome: "Acumulador Token", modelo: "acc", faixas: [1, 2, 3, 4, 5, 6], objetivo: "tokens" },
 ];
 
 const sim = (v) => v === true;
@@ -90,8 +94,10 @@ export function aplicarRegra(id, m, extra = {}) {
     case "concentrador": {
       const procura = maiorQue(m.lateral, L.lateralMin);
       let descarta = null;
+      // O movimento de uma semana típica tem de caber na faixa do meio. (Até 13/11/2026
+      // comparava com o de 30 dias, que por construção é a faixa toda: descartava quase tudo.)
       if (extra.meiaLarguraCentral != null && m.sigma7 != null) {
-        descarta = m.sigma7 * Math.sqrt(m.dias / 365) > extra.meiaLarguraCentral;
+        descarta = m.sigma7 * Math.sqrt(L.semanaTipica / 365) > extra.meiaLarguraCentral;
       }
       return { procura, descarta, motivo: descarta ? "volatilidade passa da faixa do meio" : procura ? "preço lateral" : "preço pouco lateral" };
     }
@@ -110,7 +116,8 @@ export function aplicarRegra(id, m, extra = {}) {
       const descarta = menorQue(m.giro, L.giroMin);
       return { procura, descarta, motivo: descarta ? "giro baixo" : procura ? "pool nova" : "pool com histórico" };
     }
-    case "acumulador": {
+    case "acumulador":
+    case "acumulador_token": {
       const descarta = !m.naLista;
       const procura = sim(m.naLista) && m.acimaDaMinima30 != null && m.acimaDaMinima30 <= L.pertoDoSuporte;
       return { procura, descarta, motivo: descarta ? "fora da lista de compra" : procura ? "perto da mínima de 30 dias" : "longe da mínima de 30 dias" };

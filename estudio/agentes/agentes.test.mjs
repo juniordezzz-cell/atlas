@@ -11,7 +11,7 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { cacar, caminhos, MODELOS } from "../motor/simulador.mjs";
 import { AGENTES, aplicarRegra, naListaDeCompra } from "./regras.mjs";
-import { analisarPool, prepararPool, simular, volumesDiarios, rodarAgentes, emDolar, tendencia, metricasPool } from "./ciclo.mjs";
+import { analisarPool, prepararPool, simular, volumesDiarios, rodarAgentes, emDolar, tendencia, metricasPool, tokensNoFim } from "./ciclo.mjs";
 import { relatorioDoDia } from "./supervisor.mjs";
 
 const VELAS = JSON.parse(readFileSync(new URL("../motor/fixtures/gt_ohlcv_sol_usdc_orca_20261111.json", import.meta.url), "utf8"))
@@ -60,6 +60,7 @@ test("o agente fica com o melhor N do seu modelo, como o ranking do caça-estrat
   const r = analisarPool(SOL_USDC, VELAS);
   for (const an of r.analises.filter((x) => x.trabalha)) {
     const ag = AGENTES.find((a) => a.id === an.agente);
+    if (ag.objetivo === "tokens") continue;   // o Acumulador Token escolhe pelos tokens (teste próprio)
     const melhor = lista.filter((x) => x.t === ag.modelo && ag.faixas.includes(x.n)).sort((x, y) => y.st.mean - x.st.mean)[0];
     assert.equal(an.faixas, melhor.n, ag.id);
     assert.equal(an.media_usd, melhor.st.mean * prep.cot, ag.id);
@@ -72,6 +73,7 @@ test("achado só quando ganha da Faixa única na mesma pool, com média positiva
   const r = analisarPool({ ...SOL_USDC, taxa_pct: 0.3, vol_24h: 60e6 }, VELAS);
   assert.ok(r.achados.length > 0);
   for (const a of r.achados) {
+    if (a.agente === "acumulador_token") { assert.ok(a.metricas.tokens.ganho_pct > 0); continue; }
     assert.ok(a.media_usd > 0);
     if (a.agente !== "base") assert.ok(a.media_usd > a.ref_media_usd && a.ganho_vs_ref_usd > 0, a.agente);
     assert.equal(a.capital_usd, 1000);
@@ -124,7 +126,8 @@ test("regras dos agentes", () => {
   assert.ok(!ok("base", { ...m, volumeCaindo3d: true }));
   assert.ok(!ok("base", { ...m, giroEstavel: false }));
   assert.ok(ok("concentrador"));
-  assert.ok(!ok("concentrador", m, { meiaLarguraCentral: 0.01 }));   // σ7·√(30/365) ≈ 14% > 1%
+  assert.ok(!ok("concentrador", m, { meiaLarguraCentral: 0.05 }));   // semana típica: σ7·√(7/365) ≈ 6,9% > 5%
+  assert.ok(ok("concentrador", m, { meiaLarguraCentral: 0.08 }));    // cabe numa faixa do meio de ±8%
   assert.ok(!ok("concentrador", { ...m, lateral: 0.5 }));
   assert.ok(ok("curva"));
   assert.ok(!ok("curva", { ...m, tendencia: -1.6 }));       // queda maior que 1,5 oscilação normal
@@ -139,6 +142,7 @@ test("regras dos agentes", () => {
   assert.ok(ok("acumulador"));
   assert.ok(!ok("acumulador", { ...m, acimaDaMinima30: 0.2 }));
   assert.ok(!ok("acumulador", { ...m, naLista: false }));
+  assert.deepEqual(aplicarRegra("acumulador_token", m), aplicarRegra("acumulador", m));   // mesma regra, outro objetivo
   // sem dado (lateralidade precisa de 30 dias): não procura
   assert.ok(!ok("concentrador", { ...m, lateral: null }));
 });
@@ -157,13 +161,13 @@ test("volume por dia completo, sem o dia que ainda não fechou", () => {
   assert.deepEqual(volumesDiarios(v2), [7]);
 });
 
-test("rodada completa: status dos seis agentes e pools sem dados", () => {
+test("rodada completa: status dos sete agentes e pools sem dados", () => {
   const r = rodarAgentes({ rodada: "2026-11-13T00:00:00+00:00", pools: [
     { ...SOL_USDC, candles: VELAS },
     { ...SOL_USDC, pool_id: "sem-velas", candles: VELAS.slice(0, 50) },
     { ...SOL_USDC, pool_id: "sem-taxa", taxa_pct: null, candles: VELAS },
   ] });
-  assert.equal(r.status.length, 6);
+  assert.equal(r.status.length, 7);
   assert.deepEqual(r.status.map((s) => s.agente), AGENTES.map((a) => a.id));
   for (const s of r.status) assert.equal(s.pools_vistas, 3);
   assert.deepEqual(r.erros.map((e) => e.erro).sort(), ["menos de 7 dias de velas", "sem taxa"]);
@@ -195,7 +199,51 @@ test("rodar.mjs: JSON entra pela entrada padrão e sai pela saída padrão", () 
   const p = spawnSync(process.execPath, [fileURLToPath(new URL("./rodar.mjs", import.meta.url))], { input: JSON.stringify(entrada), encoding: "utf8" });
   assert.equal(p.status, 0, p.stderr);
   const out = JSON.parse(p.stdout);
-  assert.equal(out.status.length, 6);
+  assert.equal(out.status.length, 7);
   assert.ok(out.achados.length > 0);
   assert.ok(out.relatorio.ranking.length > 0);
+});
+
+test("Acumulador Token: mediana de tokens contra comprar agora e esperar com dólar", () => {
+  // dois cenários: preço cai para 50 e sobe para 200, capital 100 a preço 100
+  const px = { n: 2, steps: 1, data: new Float32Array([100, 50, 100, 200]) };
+  const R = { n: 2, cap: 100, pnl: new Float64Array([10, -20]) };
+  const t = tokensNoFim(R, px, 100);
+  assert.equal(t.comprar_agora, 1);
+  assert.equal(t.esperar_com_dolar, (100 / 50 + 100 / 200) / 2);   // 1,25
+  assert.equal(t.mediana, (110 / 50 + 80 / 200) / 2);              // 1,3
+  assert.ok(Math.abs(t.ganho_pct - (1.3 / 1.25 - 1) * 100) < 1e-9);
+});
+
+test("Acumulador Token na pool real: escolhe pelo token e grava a conta", () => {
+  const r = analisarPool({ ...SOL_USDC, ativo_simbolo: "SOL" }, VELAS);
+  const an = r.analises.find((x) => x.agente === "acumulador_token");
+  assert.ok(an);
+  if (an.trabalha) {
+    assert.ok(Number.isFinite(an.tokens.mediana) && Number.isFinite(an.tokens.ganho_pct));
+    const ach = r.achados.find((x) => x.agente === "acumulador_token");
+    assert.equal(Boolean(ach), an.tokens.ganho_pct > 0);
+    if (ach) assert.equal(ach.metricas.tokens.mediana, an.tokens.mediana);
+  }
+});
+
+const VELAS_ORD = [...VELAS].sort((a, b) => a[0] - b[0]);
+test("Concentrador: fica com o melhor N cuja faixa do meio aguenta uma semana típica", () => {
+  // mesma pool com a última semana mais calma (retornos de 1h pela metade)
+  const v = [...VELAS].sort((a, b) => a[0] - b[0]).map((c) => [...c]);
+  const ini = v.length - 168;
+  for (let i = ini + 1; i < v.length; i++) {
+    const r = Math.log(VELAS_ORD[i][4] / VELAS_ORD[i - 1][4]) / 2;
+    v[i][4] = v[i - 1][4] * Math.exp(r);
+  }
+  const pool = { ...SOL_USDC, preco: v[v.length - 1][4], preco_usd: v[v.length - 1][4] };
+  const r = analisarPool(pool, v);
+  const an = r.analises.find((x) => x.agente === "concentrador");
+  const prep = prepararPool(pool, v);
+  const semana = r.metricas.sigma7 * Math.sqrt(7 / 365);
+  if (an.procura) {
+    assert.equal(an.trabalha, true);
+    const meia = (prep.hi - prep.lo) / 2 / prep.p0 / an.faixas;   // faixa do meio das aninhadas ≈ total ÷ N
+    assert.ok(meia >= semana * 0.98, `N=${an.faixas} meia ${meia} semana ${semana}`);
+  }
 });

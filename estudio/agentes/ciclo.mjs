@@ -1,5 +1,5 @@
 /* ============================================================
-   Estúdio de Agentes de Pools · agentes/ciclo.mjs
+   Laboratório de Agentes · agentes/ciclo.mjs
 
    O ciclo dos agentes (Fase 3, sem IA), uma vez por hora:
      1. recebe as pools prontas (filtro da varredura + 7 dias de velas);
@@ -119,8 +119,8 @@ export function metricasPool(pool, prep, cfg = CONFIG) {
 /** Simula uma estratégia (modelo × N) na pool: números idênticos ao caça-estratégias. */
 export function simular(prep, px, modelo, n, cfg = CONFIG) {
   const d = build(modelo, n, prep.cap, prep.lo, prep.hi, prep.M.p0);
-  const st = statsOf(evalStrat(d, cfg.rebalancear, px, prep.M), prep.M.days);
-  return { modelo, n, posicoes: d, st };
+  const R = evalStrat(d, cfg.rebalancear, px, prep.M);
+  return { modelo, n, posicoes: d, st: statsOf(R, prep.M.days), R };
 }
 
 /** Estatísticas na moeda da cotação → dólar. */
@@ -128,6 +128,24 @@ export function emDolar(st, cot) {
   const o = { ...st };
   for (const k of EM_DOLAR) o[k] = st[k] * cot;
   return o;
+}
+
+
+/**
+ * Tokens no fim de cada cenário (valor da posição + taxas − gás, ÷ preço
+ * final), em mediana, contra comprar tudo agora e contra esperar com o
+ * dinheiro parado e comprar no fim. Tudo em unidades do token.
+ */
+export function tokensNoFim(R, px, p0) {
+  const W = px.steps + 1, fim = [], esperar = [];
+  for (let s = 0; s < R.n; s++) {
+    const pe = px.data[s * W + px.steps];
+    fim.push((R.pnl[s] + R.cap) / pe);
+    esperar.push(R.cap / pe);
+  }
+  const mediana_ = mediana(fim), agora = R.cap / p0, esp = mediana(esperar);
+  return { mediana: mediana_, comprar_agora: agora, esperar_com_dolar: esp,
+    ganho_pct: (mediana_ / Math.max(agora, esp) - 1) * 100 };
 }
 
 /** Meia-largura relativa da faixa do meio das Aninhadas (para a regra do Concentrador). */
@@ -153,15 +171,20 @@ export function analisarPool(pool, candles, cfg = CONFIG) {
   const ref = simular(prep, px, "single", 1, cfg);
   const achados = [];
   for (const a of trabalham) {
+    const porTokens = a.objetivo === "tokens";
     let melhor = null;
     for (const n of a.faixas) {
       const r = a.modelo === "single" ? ref : simular(prep, px, a.modelo, n, cfg);
-      if (!melhor || r.st.mean > melhor.st.mean) melhor = r;
+      // Concentrador: só conta o N cuja faixa do meio aguenta uma semana típica.
+      if (a.id === "concentrador" && aplicarRegra(a.id, m, { meiaLarguraCentral: meiaLarguraCentral(r.posicoes, prep.p0) }).descarta) continue;
+      if (porTokens) r.tok = tokensNoFim(r.R, px, prep.M.p0);
+      if (!melhor || (porTokens ? r.tok.mediana > melhor.tok.mediana : r.st.mean > melhor.st.mean)) melhor = r;
     }
     const an = analises.find((x) => x.agente === a.id);
     if (a.id === "concentrador") {
-      const meia = meiaLarguraCentral(melhor.posicoes, prep.p0);
-      const r2 = aplicarRegra(a.id, m, { meiaLarguraCentral: meia });
+      // Nenhum N coube: descarta com o mais largo (2 faixas) como prova.
+      const largo = melhor ?? simular(prep, px, a.modelo, a.faixas[0], cfg);
+      const r2 = aplicarRegra(a.id, m, { meiaLarguraCentral: meiaLarguraCentral(largo.posicoes, prep.p0) });
       Object.assign(an, r2);
       if (r2.descarta) continue;
     }
@@ -169,7 +192,9 @@ export function analisarPool(pool, candles, cfg = CONFIG) {
     an.media_usd = melhor.st.mean * prep.cot;
     an.faixas = melhor.n;
     const ganho = melhor.st.mean - ref.st.mean;
-    const venceu = a.modelo === "single" ? melhor.st.mean > 0 : ganho > 0 && melhor.st.mean > 0;
+    const venceu = porTokens ? melhor.tok.ganho_pct > 0
+      : a.modelo === "single" ? melhor.st.mean > 0 : ganho > 0 && melhor.st.mean > 0;
+    if (porTokens) an.tokens = melhor.tok;
     an.achado = venceu;
     if (!venceu) continue;
     const st = emDolar(melhor.st, prep.cot);
@@ -202,7 +227,7 @@ export function analisarPool(pool, candles, cfg = CONFIG) {
       ref_media_usd: ref.st.mean * prep.cot,
       ganho_vs_ref_usd: ganho * prep.cot,
       mercado: { ...prep.M, cotacao_usd: prep.cot, mu_historico: prep.muHistorico ?? null },
-      metricas: { ...m, regra: an.motivo },
+      metricas: { ...m, regra: an.motivo, ...(porTokens ? { tokens: melhor.tok } : {}) },
       conc_estimada: prep.origem.concEstimada,
     });
   }
