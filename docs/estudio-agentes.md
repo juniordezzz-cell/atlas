@@ -182,3 +182,18 @@ mercado calibrado do SOL/USDC (velas reais de 11/11), 27 estratégias iguais às
 dos agentes até a quarta casa.
 
 Plano completo e relatório da Fase 0 ficam com o dono (fora do repositório).
+
+## Tendência (13/11/2026)
+
+Medição com 60 dias de preço por hora (DeFiLlama) de 20 tokens da lista de
+compra e 5 pares contra SOL: o μ de 30 dias levado para "por ano" tinha margem
+de erro de ±130% a ±400%, parava no teto do simulador (−60% ou +80% ao ano) em
+84% das medições e marcava "tendência forte" (|μ| ≥ 0,4) em 90% delas. Isso
+gerava ~100 conflitos por rodada e simulava quase toda pool com queda de 60%
+ou alta de 80% ao ano.
+
+- A simulação dos agentes roda com **μ = 0** (cenário neutro). O μ calibrado
+  continua gravado em `mercado.mu_historico` e `metricas.mu`.
+- A regra da Curva descarta quando `metricas.tendencia` — ln(último ÷ primeiro
+  preço da janela de 30 dias) ÷ (σ·√(dias/365)) — passa de ±1,5. Na mesma
+  medição isso aconteceu em 4% dos dias.

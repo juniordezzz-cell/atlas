@@ -11,7 +11,7 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { cacar, caminhos, MODELOS } from "../motor/simulador.mjs";
 import { AGENTES, aplicarRegra, naListaDeCompra } from "./regras.mjs";
-import { analisarPool, prepararPool, simular, volumesDiarios, rodarAgentes, emDolar } from "./ciclo.mjs";
+import { analisarPool, prepararPool, simular, volumesDiarios, rodarAgentes, emDolar, tendencia, metricasPool } from "./ciclo.mjs";
 import { relatorioDoDia } from "./supervisor.mjs";
 
 const VELAS = JSON.parse(readFileSync(new URL("../motor/fixtures/gt_ohlcv_sol_usdc_orca_20261111.json", import.meta.url), "utf8"))
@@ -98,9 +98,27 @@ test("par cotado em outro token: simula na cotação e devolve em dólar", () =>
   assert.equal(prepararPool({ ...SOL_USDC, preco_usd: null, cotacao: "XYZ" }, VELAS).erro, "sem preço da cotação em dólar");
 });
 
+test("simulação com tendência zero e tendência medida em oscilações normais", () => {
+  const prep = prepararPool(SOL_USDC, VELAS);
+  assert.equal(prep.M.mu, 0);
+  assert.ok(Number.isFinite(prep.muHistorico));
+  // série sintética: 30 dias de 1h subindo 20% com volatilidade conhecida
+  const H = 3600, t0 = 1_700_000_000, n = 30 * 24;
+  const c = Array.from({ length: n + 1 }, (_, i) => { const p = 100 * Math.exp((0.2 * i) / n + 0.01 * Math.sin(i)); return [t0 + i * H, p, p, p, p, 0]; });
+  const t = tendencia(c, 0.5);
+  // janela de 30 dias = da 2ª à última vela (n − 1 horas)
+  const esperado = Math.log(c[n][4] / c[1][4]) / (0.5 * Math.sqrt((n - 1) / 24 / 365));
+  assert.ok(Math.abs(t - esperado) < 1e-9);
+  assert.ok(t > 1 && t < 1.5);    // +20% no mês com 50% de volatilidade: ainda não é tendência forte
+  assert.ok(tendencia(c, 0.3) > 1.5); // o mesmo +20% num token calmo é
+  assert.equal(tendencia(c, null), null);
+  const m = metricasPool(SOL_USDC, prep);
+  assert.ok(Number.isFinite(m.tendencia) && m.mu === prep.muHistorico);
+});
+
 test("regras dos agentes", () => {
   const m = { dias: 30, giro: 2, giroEstavel: true, volumeCaindo3d: false, lateral: 0.7, sigma30: 0.7, sigma7: 0.5,
-    kappa: 10, mu: 0.1, diasHistorico: 40, naLista: true, acimaDaMinima30: 0.05 };
+    kappa: 10, mu: 0.8, tendencia: 0.3, diasHistorico: 40, naLista: true, acimaDaMinima30: 0.05 };
   const ok = (id, x = m, e) => { const r = aplicarRegra(id, x, e); return r.procura && r.descarta !== true; };
   assert.ok(ok("base"));
   assert.ok(!ok("base", { ...m, volumeCaindo3d: true }));
@@ -109,7 +127,8 @@ test("regras dos agentes", () => {
   assert.ok(!ok("concentrador", m, { meiaLarguraCentral: 0.01 }));   // σ7·√(30/365) ≈ 14% > 1%
   assert.ok(!ok("concentrador", { ...m, lateral: 0.5 }));
   assert.ok(ok("curva"));
-  assert.ok(!ok("curva", { ...m, mu: -0.45 }));
+  assert.ok(!ok("curva", { ...m, tendencia: -1.6 }));       // queda maior que 1,5 oscilação normal
+  assert.ok(ok("curva", { ...m, tendencia: 1.4 }));          // μ alto ao ano não descarta mais sozinho
   assert.ok(!ok("curva", { ...m, kappa: 2 }));
   assert.ok(ok("pontas"));
   assert.ok(!ok("pontas", { ...m, sigma7: 0.1 }));
