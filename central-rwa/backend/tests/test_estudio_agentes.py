@@ -65,6 +65,7 @@ def test_rodada_grava_achados_status_e_relatorio(dsns):
         r = rodada(store, AGORA)
         assert r["estado"] == "ok" and r["pools"] == 1          # só a pool com 7+ dias de velas está pronta
         assert r["achados"] > 0
+        assert sum(r["conflitos_por_regra"].values()) == r["conflitos"]
         # menos de 55 min depois: pulada; forçada: roda de novo
         assert rodada(store, AGORA + timedelta(minutes=20))["estado"] == "pulada"
         r2 = rodada(store, AGORA + timedelta(minutes=30), forcar=True)
@@ -115,3 +116,12 @@ def test_falha_no_motor_marca_erro_e_nao_bloqueia_a_proxima(dsns, monkeypatch):
         assert store.ultima_rodada() is None
     finally:
         store.close()
+
+
+def test_conflitos_por_regra():
+    from central_rwa.estudio.agentes import conflitos_por_regra
+    c = [{"nome": "Curva", "nome_contra": "Grade", "motivo": "giro baixo"},
+         {"nome": "Acumulador", "nome_contra": "Grade", "motivo": "giro baixo"},
+         {"nome": "Curva", "nome_contra": "Base", "motivo": "volume caindo há 3 dias"}]
+    assert conflitos_por_regra(c) == {"Grade · giro baixo": 2, "Base · volume caindo há 3 dias": 1}
+    assert list(conflitos_por_regra(c))[0] == "Grade · giro baixo"
