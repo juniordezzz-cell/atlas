@@ -14,10 +14,20 @@ Regras que valem para todos:
 - Nenhuma chave de carteira. Os agentes só simulam e registram.
 - **Achado** = a estratégia do agente, na média, ganha da faixa única (Base)
   na mesma pool e fecha no lucro.
-- **Boletim** (novo): depois de 7 e de 30 dias, cada achado é refeito com os
-  preços e o volume que aconteceram de verdade. O boletim de cada agente diz
-  quantas vezes acertou o sinal, quanto errou em dólar e quantas vezes ganhou
-  da Base de verdade.
+- **Boletim** (no ar desde 14/11/2026, `estudio/agentes/boletim.mjs`): depois
+  de 7 e de 30 dias, o primeiro achado de cada agente, pool e dia é refeito
+  com os preços de 1h que aconteceram de verdade (volume = média real do
+  período, TVL = média real dos snapshots), com as mesmas faixas e o mesmo
+  motor. Compara com o previsto **para o mesmo prazo** (refeito com o mercado
+  gravado no achado) e grava em `estudio.boletim`:
+  - real × previsto (erro em dólar) e se caiu entre o cenário ruim e o bom;
+  - se ganhou da Faixa única no mesmo período real;
+  - **acertou**: Base = fechou no lucro; demais = lucro e ganhou da Faixa
+    única; Acumulador Token = mais token que comprar tudo no início e que
+    esperar com dólar parado.
+  A nota de cada agente (últimos 30 dias, só achados depois de 13/11/2026
+  20:00 UTC, "método atual") fica em `estudio.agentes_status.boletim`.
+  Primeiras notas de 7 dias por volta de 20/11; de 30 dias, por volta de 13/12.
 - **Na cidade**, cada agente aparece na sala da plataforma (Raydium, Orca,
   Meteora, Aerodrome...) da pool em que está trabalhando.
 
@@ -123,7 +133,7 @@ quanto arrisca e quanto dinheiro usa):
 
 1. Ajustes nos agentes: correção do Concentrador, divisão do Acumulador e
    nome "Laboratório de Agentes" no que é visível.
-2. Boletim (conferência com o que aconteceu de verdade).
+2. Boletim (conferência com o que aconteceu de verdade) — no ar.
 3. Fase 4, a cidade: dados privados pelo login do Atlas → cidade → casa por
    dentro → sala com os agentes.
 4. Perfis e redes novas, cada um numa fase própria.
