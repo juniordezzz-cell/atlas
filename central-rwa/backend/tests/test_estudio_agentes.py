@@ -125,3 +125,39 @@ def test_conflitos_por_regra():
          {"nome": "Curva", "nome_contra": "Base", "motivo": "volume caindo há 3 dias"}]
     assert conflitos_por_regra(c) == {"Grade · giro baixo": 2, "Base · volume caindo há 3 dias": 1}
     assert list(conflitos_por_regra(c))[0] == "Grade · giro baixo"
+
+
+def test_boletim_da_nota_ao_achado_de_8_dias(dsns):
+    """Um achado de 8 dias atrás ganha nota de 7 dias com as velas reais; a segunda vez não repete."""
+    uri, agente = dsns
+    from central_rwa.estudio.agentes import boletim
+    cols = ("agente, pool_id, rede, dex, par, ativo_simbolo, cotacao, modelo, faixas, preco, faixa_min, faixa_max, posicoes, "
+            "capital_usd, dias, media_usd, p10_usd, p90_usd, taxas_usd, il_usd, custo_usd, em_faixa_pct, ret_risco, "
+            "prob_perda_pct, apr_taxas_pct, ref_media_usd, ganho_vs_ref_usd, mercado, metricas, conc_estimada")
+    with psycopg.connect(uri, autocommit=True) as c:
+        n0 = c.execute("select count(*) from estudio.achados").fetchone()[0]
+        if n0 == 0:   # roda sozinho: cria achados primeiro
+            st = PostgresAgentes(agente)
+            try:
+                rodada(st, AGORA, forcar=True)
+            finally:
+                st.close()
+        c.execute(f"insert into estudio.achados (rodada, {cols}) select %s, {cols} from estudio.achados "
+                  "order by id limit 2 on conflict do nothing", (AGORA - timedelta(days=8),))
+    store = PostgresAgentes(agente)
+    try:
+        b = boletim(store, AGORA)
+        assert b["avaliados"] == 2 and b["pulados"] == 0, b
+        assert boletim(store, AGORA)["avaliados"] == 0          # já tem nota: não repete
+    finally:
+        store.close()
+    with psycopg.connect(uri) as c:
+        rows = c.execute("select horizonte_dias, metodo, horas, real_usd, previsto_p10_usd <= previsto_p90_usd, acertou "
+                         "from estudio.boletim").fetchall()
+        # antes de 13/11/2026 20:00 UTC o método é o antigo e não entra na nota dos agentes
+        metodo = "antigo" if AGORA - timedelta(days=8) < datetime(2026, 11, 13, 20, tzinfo=timezone.utc) else "atual"
+        assert len(rows) == 2 and all(r[0] == 7 and r[1] == metodo and r[2] >= 151 and r[4] for r in rows)
+        bol = dict(c.execute("select agente, boletim from estudio.agentes_status where boletim is not null").fetchall())
+        if metodo == "atual":
+            assert bol and all(v["7d"]["avaliados"] >= 1 for v in bol.values())
+        assert not c.execute("select has_table_privilege('anon', 'estudio.boletim', 'select')").fetchone()[0]
