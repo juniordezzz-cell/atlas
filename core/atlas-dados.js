@@ -10,7 +10,7 @@
      alguns minutos, combinado entre as abas pelo localStorage), pedido
      igual simultâneo vira um só. A rede em si é o AtlasHttp.
    - Cima: um método por tipo de dado (precos, variacoes24h, buscar, ficha, velas,
-     historico, cambio, serieBcb, pools). Cada um tenta as fontes na
+     historico, cambio, serieBcb, pools, velasLongas, medoGanancia). Cada um tenta as fontes na
      ordem combinada e guarda o último dado bom, com a hora, para quando
      tudo falhar. A CoinGecko vem por último em tudo que outra fonte
      entrega.
@@ -30,7 +30,8 @@
     coingecko:     { nome: 'CoinGecko',      intervalo: 6000 },
     geckoterminal: { nome: 'GeckoTerminal',  intervalo: 2500 },
     erapi:         { nome: 'open.er-api',    intervalo: 1000 },
-    bcb:           { nome: 'Banco Central',  intervalo: 200 }
+    bcb:           { nome: 'Banco Central',  intervalo: 200 },
+    alternative:   { nome: 'alternative.me', intervalo: 1000 }
   };
   var PAUSA_LIMITE = 3 * 60 * 1000;   // depois de um 429
   var PAUSA_QUEDA = 60 * 1000;        // depois de rede fora / erro 5xx
@@ -472,6 +473,53 @@
       });
     }
 
+    /* Velas longas: a Binance entrega até 1000 por pedido; aqui vai página por
+       página a partir de "desde" (ms) até hoje. Só Binance: é o único lugar com
+       OHLC e volume de anos em 15m a 1w. Usado pela ferramenta Medo e Ganância. */
+    function velasLongas(sym, intervalo, desde, op) {
+      sym = String(sym || '').toUpperCase(); op = op || {};
+      var passo = MS[intervalo], maxPag = op.maxPaginas || 25;
+      if (!symOk(sym) || STABLES[sym] || !passo) return Promise.reject(new Error('Par sem velas na Binance: ' + sym));
+      var inicio = Math.max(0, Math.floor(+desde || 0));
+      return guardado('vl:' + sym + ':' + intervalo + ':' + Math.floor(inicio / 864e5), 10 * 60000, function () {
+        var todas = [];
+        function pagina(de, n) {
+          var u = BN + '/klines?symbol=' + sym + 'USDT&interval=' + intervalo + '&startTime=' + de + '&limit=1000';
+          return pedir('binance', u, { timeout: 15000 }).then(function (d) {
+            var cs = (d || []).map(function (k) { return { t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[7] || 0 }; })
+              .filter(function (c) { return c.c > 0; });
+            todas = todas.concat(cs);
+            if (cs.length < 1000 || n + 1 >= maxPag) return null;
+            return pagina(cs[cs.length - 1].t + passo, n + 1);
+          });
+        }
+        return pagina(inicio, 0).then(function () {
+          if (todas.length < 3) throw new Error('Sem velas para ' + sym);
+          return { velas: todas, fonte: 'Binance' };
+        });
+      });
+    }
+
+    /* Medo e ganância, histórico inteiro (diário, desde 02/2018). Fonte única;
+       se cair, devolve a última série boa guardada, com a data em que foi lida. */
+    var CHAVE_FNG = 'atlas.dados.fng.v1';
+    function medoGanancia() {
+      return guardado('fng:todos', 60 * 60000, function () {
+        return pedir('alternative', 'https://api.alternative.me/fng/?limit=0&format=json', { timeout: 15000 }).then(function (d) {
+          var serie = ((d && d.data) || []).map(function (x) { return { t: (+x.timestamp) * 1000, v: parseInt(x.value, 10) }; })
+            .filter(function (p) { return isFinite(p.t) && isFinite(p.v); })
+            .sort(function (a, b) { return a.t - b.t; });
+          if (serie.length < 30) throw new Error('Série do índice vazia');
+          gravar(CHAVE_FNG, JSON.stringify({ t: agora(), s: serie.map(function (p) { return [Math.round(p.t / 1000), p.v]; }) }));
+          return { serie: serie, fonte: 'alternative.me', quando: agora() };
+        }).catch(function (e) {
+          var g = null; try { g = JSON.parse(ler(CHAVE_FNG) || 'null'); } catch (x) { g = null; }
+          if (!g || !g.s || !g.s.length) throw e;
+          return { serie: g.s.map(function (p) { return { t: p[0] * 1000, v: p[1] }; }), fonte: 'alternative.me', quando: g.t, guardado: true };
+        });
+      });
+    }
+
     function quandoTexto(ms) {
       if (!ms) return '';
       var d = new Date(ms);
@@ -482,6 +530,7 @@
     return {
       pedir: pedir, precos: precos, preco: preco, variacoes24h: variacoes24h, buscar: buscar, doCatalogo: doCatalogo, ficha: ficha,
       velas: velas, historico: historico, cambio: cambio, serieBcb: serieBcb, pools: pools,
+      velasLongas: velasLongas, medoGanancia: medoGanancia,
       quandoTexto: quandoTexto, fontes: FONTES
     };
   }

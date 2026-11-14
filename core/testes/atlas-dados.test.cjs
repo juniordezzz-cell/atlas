@@ -192,3 +192,38 @@ test('historico ignora a Binance quando o preço não bate', async () => {
   const r = await D.historico('x', 'XYZ', 365, 1);
   assert.equal(r.fonte, 'DefiLlama');
 });
+
+/* ── velas longas e medo e ganância (ferramenta Medo e Ganância, 14/11) ── */
+test('velasLongas pagina a Binance até a última página', async () => {
+  const k = (t) => [t, '1', '2', '0.5', '1.5', '0', 0, '100'];
+  const { D, http } = montar([['klines', u => {
+    const de = +/startTime=(\d+)/.exec(u)[1];
+    const n = de === 0 ? 1000 : 10;
+    return Array.from({ length: n }, (_, i) => k(de + i * 864e5));
+  }]]);
+  const r = await D.velasLongas('BTC', '1d', 0);
+  assert.equal(r.velas.length, 1010);
+  assert.equal(conta(http, 'klines'), 2);
+  assert.equal(r.velas[0].v, 100, 'volume em dólar vem do campo 7');
+  assert.equal(r.fonte, 'Binance');
+});
+
+test('velasLongas recusa stablecoin sem ir à rede', async () => {
+  const { D, http } = montar([]);
+  await assert.rejects(D.velasLongas('USDT', '1d', 0));
+  assert.equal(http.chamadas.length, 0);
+});
+
+test('medoGanancia ordena a série e guarda a última boa', async () => {
+  const dados = { data: [{ value: '20', timestamp: '1700086400' }, { value: '10', timestamp: '1700000000' }]
+    .concat(Array.from({ length: 40 }, (_, i) => ({ value: '50', timestamp: String(1600000000 + i * 86400) }))) };
+  const arm = memoria();
+  const a = montar([['alternative.me', dados]], { armazenamento: arm });
+  const r = await a.D.medoGanancia();
+  assert.equal(r.serie[r.serie.length - 1].v, 20);
+  assert.ok(r.serie[0].t < r.serie[1].t);
+  const b = montar([['alternative.me', ERRO(500)]], { armazenamento: arm });
+  const g = await b.D.medoGanancia();
+  assert.equal(g.guardado, true);
+  assert.equal(g.serie.length, r.serie.length);
+});

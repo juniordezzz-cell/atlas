@@ -9,7 +9,7 @@ resposta está aqui.
 > novo, atualizou a versão de um ou tirou algum? Atualize este arquivo
 > no mesmo commit.
 
-Última revisão: **21/10/2026**.
+Última revisão: **14/11/2026**.
 
 ---
 
@@ -150,6 +150,7 @@ Registro completo: [docs/visual-ferramentas-2026-10-15.md](../docs/visual-ferram
 | Atropos | ver 1.2 | 2.0.2 | Cards 3D. |
 | Three.js | ver 1.4 | 0.170.0 | Cenas 3D do Academy. |
 | GSAP + ScrollTrigger | ver 1.5 | 3.13.0 | Animação ligada à rolagem no Academy. |
+| TradingView Lightweight Charts (build *standalone*, licença Apache 2.0 em `assets/vendor/lightweight-charts-4.2.0/LICENSE`) | <https://github.com/tradingview/lightweight-charts> | 4.2.0 | Gráfico de velas com o índice de medo e ganância em painel próprio, na ferramenta Medo e Ganância (14/11/2026). A licença pede que a atribuição ao TradingView fique visível: o logo pequeno no canto do gráfico é essa atribuição e não deve ser escondido. |
 
 **Fontes** servidas pelo próprio ATLAS (`assets/fonts/`, via
 `themes/atlas-fonts.css`): **Inter** (<https://github.com/rsms/inter>) e

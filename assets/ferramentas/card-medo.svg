@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 1080" width="720" height="1080">
+  <!-- Capa provisória da ferramenta Medo e Ganância (docs/ferramenta-medo-ganancia-2026-11-14.md). Trocar por card-medo.webp quando o dono mandar a arte. -->
+  <defs>
+    <linearGradient id="f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1120"/><stop offset="1" stop-color="#0A1122"/></linearGradient>
+    <radialGradient id="l" cx="0.5" cy="0.3" r="0.55"><stop offset="0" stop-color="#F0556A" stop-opacity="0.16"/><stop offset="0.6" stop-color="#3B82F6" stop-opacity="0.06"/><stop offset="1" stop-color="#0B1120" stop-opacity="0"/></radialGradient>
+    <linearGradient id="arco" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F0556A"/><stop offset="0.35" stop-color="#F5B942"/><stop offset="0.5" stop-color="#7D8AA0"/><stop offset="0.7" stop-color="#8FC65A"/><stop offset="1" stop-color="#2EC785"/></linearGradient>
+  </defs>
+  <rect width="720" height="1080" fill="url(#f)"/>
+  <rect width="720" height="1080" fill="url(#l)"/>
+  <!-- velocímetro: medo à esquerda, ganância à direita, ponteiro no medo extremo -->
+  <path d="M170 420 A190 190 0 0 1 550 420" fill="none" stroke="url(#arco)" stroke-width="26" stroke-linecap="round" opacity="0.92"/>
+  <line x1="360" y1="420" x2="222" y2="318" stroke="#E6ECF5" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="360" cy="420" r="18" fill="#E6ECF5"/>
+  <!-- velas embaixo, caindo e depois subindo -->
+  <g stroke-linecap="round">
+    <line x1="190" y1="560" x2="190" y2="660" stroke="#F0556A" stroke-width="4" opacity="0.8"/><rect x="176" y="580" width="28" height="60" rx="4" fill="#F0556A" opacity="0.8"/>
+    <line x1="250" y1="600" x2="250" y2="720" stroke="#F0556A" stroke-width="4" opacity="0.8"/><rect x="236" y="625" width="28" height="75" rx="4" fill="#F0556A" opacity="0.8"/>
+    <line x1="310" y1="660" x2="310" y2="770" stroke="#F0556A" stroke-width="4" opacity="0.8"/><rect x="296" y="690" width="28" height="60" rx="4" fill="#F0556A" opacity="0.8"/>
+    <line x1="370" y1="640" x2="370" y2="760" stroke="#2EC785" stroke-width="4" opacity="0.8"/><rect x="356" y="660" width="28" height="80" rx="4" fill="#2EC785" opacity="0.8"/>
+    <line x1="430" y1="580" x2="430" y2="700" stroke="#2EC785" stroke-width="4" opacity="0.8"/><rect x="416" y="600" width="28" height="80" rx="4" fill="#2EC785" opacity="0.8"/>
+    <line x1="490" y1="500" x2="490" y2="630" stroke="#2EC785" stroke-width="4" opacity="0.8"/><rect x="476" y="520" width="28" height="90" rx="4" fill="#2EC785" opacity="0.8"/>
+  </g>
+</svg>

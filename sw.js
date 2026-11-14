@@ -163,7 +163,11 @@
 /* v99 = roteador de dados (core/atlas-dados.js) para as 8 ferramentas da
    bancada: reserva por tipo de dado, pausa da fonte que der limite e último
    valor guardado. Mapa das fontes: docs/apis/. */
-var VERSAO = "atlas-v99";
+/* v100 = entrou a ferramenta Medo e Ganância (Ferramentas/medo-e-ganancia/), na
+   seção "Estudar o mercado": gráfico com o índice como indicador (Lightweight
+   Charts em assets/vendor/) e 7 abas de estudo. O roteador ganhou velasLongas
+   e medoGanancia. Registro: docs/ferramenta-medo-ganancia-2026-11-14.md */
+var VERSAO = "atlas-v100";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

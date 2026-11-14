@@ -79,7 +79,8 @@ Resumo de quanto cada uma aparecia no código da página em 08/11, antes do rote
   market cap.
 - **Quem usa (página):** `core/providers/binance.js` (Mercado, reserva da
   faixa de preços), Escada e Estratégia de Pool (velas), Comparador (histórico
-  longo), Simulador de Trade (velas).
+  longo), Simulador de Trade (velas), Medo e Ganância (`velasLongas`: diário
+  desde 2018 de 7 tokens ao abrir, cerca de 28 pedidos; intradiário sob demanda).
 
 ## CoinPaprika — `api.coinpaprika.com/v1`
 
@@ -124,8 +125,10 @@ Resumo de quanto cada uma aparecia no código da página em 08/11, antes do rote
 
 ## alternative.me — índice de medo e ganância
 
-- **Entrega:** o índice diário. **Chave:** não.
-- **Quem usa:** `core/providers/feargreed.js` (Mercado).
+- **Entrega:** o índice diário; com `limit=0`, o histórico inteiro desde 02/2018. **Chave:** não.
+- **Quem usa:** `core/providers/feargreed.js` (Mercado, só o valor de hoje) e o
+  roteador `core/atlas-dados.js` (`medoGanancia`, histórico inteiro, para a
+  ferramenta Medo e Ganância).
 
 ---
 

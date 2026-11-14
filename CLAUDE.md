@@ -13,3 +13,4 @@ Academy (abas + curso Nível 1 em iframe): [registro de 20/10](docs/academy-2026
 Finanças "lançar falando" (Oráculo, centavos, só o lançado): [registro de 23/10](docs/financas-2026-10-23.md).
 Bancada de Ferramentas (8 calculadoras do site antigo, `_comum/`, build do quadro): [registro de 08/11](docs/ferramentas-bancada-2026-11-08.md).
 APIs do site e roteador de dados (`core/atlas-dados.js`): [docs/apis/](docs/apis/README.md).
+Ferramenta Medo e Ganância (gráfico com o índice + 7 abas de estudo, Lightweight Charts): [registro de 14/11](docs/ferramenta-medo-ganancia-2026-11-14.md).

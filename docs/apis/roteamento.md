@@ -32,6 +32,8 @@ símbolo (`SOLUSDT`); CoinPaprika e CoinLore usam o tradutor que já existe em
 | **Pools e APR** | DefiLlama Yields | — | — | — | 30 min | último valor com data; APR editável |
 | **Categorias/setores** | CoinGecko *(já existe, guardado em `atlas-setores.js`)* | — | — | — | 7 dias | categoria guardada |
 | **Medo e ganância** | alternative.me *(já existe)* | — | — | — | 1 h | último valor com data |
+| **Medo e ganância, histórico inteiro** (`medoGanancia`) | alternative.me (`limit=0`, diário desde 02/2018) | — | — | — | 1 h | última série guardada (`atlas.dados.fng.v1`), com a data |
+| **Velas longas** (`velasLongas`, anos de 15m a 1w, OHLC + volume) | Binance, página por página (1000 velas por pedido, até 25 páginas) | — | — | — | 10 min | sem gráfico daquele tempo; o resto da tela segue |
 
 ### Ajustes feitos na construção (em relação à proposta)
 - **Busca:** CoinGecko antes da CoinPaprika — os ids da CoinGecko servem direto
@@ -76,6 +78,7 @@ símbolo (`SOLUSDT`); CoinPaprika e CoinLore usam o tradutor que já existe em
 | Scanner Pools | ✔ | | | | | | | | ✔ (servidor) |
 | Hold, Trade, RWA, DeFi, Dashboard, Carteiras | ✔ *(já pela cadeia)* | ✔ | | ✔ (autocomplete) | | | ✔ | | |
 | Mercado | ✔ | ✔ | ✔ | ✔ | ✔ | | | | |
+| Medo e Ganância | | | | | ✔ (`velasLongas`) | ✔ (`velasLongas` diário desde 2018) | | | |
 
 ## 3. Antes × depois (onde a CoinGecko saiu da frente)
 
