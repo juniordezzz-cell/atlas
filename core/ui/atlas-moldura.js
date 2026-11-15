@@ -120,8 +120,8 @@
     trilho.innerHTML =
       '<div class="atm-topo">' +
         '<a class="atm-marca" href="' + esc(RAIZ + "pages/dashboard.html") + '" title="ATLAS">' +
-          '<img src="' + esc(RAIZ + "assets/iconeatlas.png") + '" alt="" width="30" height="30">' +
-          '<span class="atm-rot">ATLAS</span></a>' +
+          '<img src="' + esc(RAIZ + "assets/iconeatlas.png") + '" alt="" width="44" height="44">' +
+          '<span class="atm-rot atm-marca__txt"><b>ATLAS</b><small>seu mapa de investimentos</small></span></a>' +
         '<button type="button" class="atm-alternar" aria-controls="atlasMoldura">' + svg(IC_RECOLHER) + "</button>" +
       "</div>" +
       '<nav class="atm-nav">' + partes + "</nav>" +
