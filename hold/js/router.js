@@ -201,6 +201,10 @@
              capital: custo, saldo: valor, valorAtual: valor, assets: [] };
   }
 
+  function caixaDaCarteira(walletId) {
+    return window.AtlasCaixa ? (Number(window.AtlasCaixa.saldo(walletId)) || 0) : 0;
+  }
+
   function buildWalletSelector() {
     /* Delegado 100% ao componente compartilhado (/wallets). O Hold não
        monta markup, não liga clique e não tem CSS de seletor: o host é
@@ -214,6 +218,9 @@
     window.WalletSelector.render(wrap, {
       module: "hold", scope: "module",
       balanceModule: "hold",
+      /* a pílula mostra o MESMO patrimônio do card "Patrimônio no Hold"
+         (posições + caixa pelo AtlasCaixa, como em S.wallets.caixa) */
+      caixaDe: caixaDaCarteira,
       /* o Hold guarda a carteira em uso no estado dele, porque é por
          ela que a partição dos dados do módulo é feita */
       getActive: S.wallets.real,
@@ -224,7 +231,8 @@
         ativo: S.wallets.todas,
         saldo: function () {
           return window.AtlasWallets.forModule("hold").reduce(function (s, w) {
-            var t = totaisDe(w.id); return s + (t ? Number(t.valorAtual) || 0 : 0);
+            var t = totaisDe(w.id);
+            return s + (t ? Number(t.valorAtual) || 0 : 0) + caixaDaCarteira(w.id);
           }, 0);
         },
         selecionar: function () { S.wallets.setTodas(true); }

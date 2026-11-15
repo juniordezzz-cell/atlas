@@ -127,8 +127,17 @@
        A FATIA DE UM MÓDULO (balanceModule) não soma caixa: dinheiro
        parado não é de nenhum módulo, e somá-lo em cada um o contaria
        várias vezes. Por isso o caixa entra só na visão da carteira
-       inteira (sem balanceModule). */
-    if (!opts.balanceModule) {
+       inteira (sem balanceModule).
+
+       EXCEÇÃO PEDIDA PELO MÓDULO (caixaDe): o Hold mostra no Painel o
+       "Patrimônio no Hold" = posições + caixa da carteira. Com a pílula
+       só nas posições, a mesma carteira aparecia com US$ 61,52 no topo
+       e US$ 93 no card (15/11/2026). O módulo que passa caixaDe(id)
+       soma o caixa pela MESMA função que o painel dele usa, então os
+       dois números saem da mesma conta. */
+    if (opts.balanceModule && typeof opts.caixaDe === "function") {
+      try { base += Number(opts.caixaDe(id)) || 0; } catch (e) { erro(e); }
+    } else if (!opts.balanceModule) {
       /* Caixa a PREÇO DE MERCADO pela fonte central (AtlasConsolidation),
          para bater com o Dashboard e a tela de Carteiras. Onde a
          consolidação não está carregada (páginas de módulo), cai no
