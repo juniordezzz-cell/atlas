@@ -19,6 +19,7 @@ e cresceu até 7 abas. Em 14/11 ele pediu para trazer para o site, porque vê
 | `Ferramentas/medo-e-ganancia/app.js` | Dados, desenho e controles das 7 abas |
 | `Ferramentas/medo-e-ganancia/estatistica.js` | Contas puras: retornos por prazo, ondas de medo, queda depois da onda, marcos de lucro (+50%, 2×, 3×, 5×, 10×) e simulação de aportes. `window.AtlasMedoGanancia` / `require` |
 | `Ferramentas/medo-e-ganancia/estatistica.test.cjs` | Testes das contas |
+| `Ferramentas/medo-e-ganancia/aba-agora.js` | Desenho da aba Agora (`window.AbaAgora.render(ctx, el)`). O mesmo arquivo roda no painel do Laboratório de Sentimento: recebe os ajudantes da página num objeto `ctx` |
 | `Ferramentas/medo-e-ganancia/estilo.css` | Só o visual desta ferramenta, sobre `../_comum/ferramenta.css` |
 | `Ferramentas/medo-e-ganancia/dados-luna.js` | Velas diárias fixas da LUNA original até 13/05/2022 |
 | `assets/vendor/lightweight-charts-4.2.0/` | Biblioteca de gráfico do TradingView (Apache 2.0), com a licença |
@@ -26,18 +27,24 @@ e cresceu até 7 abas. Em 14/11 ele pediu para trazer para o site, porque vê
 
 ## As abas
 
+Em 15/11 o painel passou de 8 para 5 abas, porque o dono não achava a resposta
+direta ("a SOL está 50% abaixo do topo desde janeiro: quem comprou assim, o que
+aconteceu?"). Cada aba abre com um "Como ler" recolhível; o glossário fica no
+rodapé, valendo para todas.
+
 | Aba | Pergunta que responde |
 |---|---|
+| Agora (abre primeiro) | O token está caindo: quem comprou no mesmo cenário, o que aconteceu? Situação de hoje (queda desde o topo de 12 meses e de 90 dias, há quantos dias); placar (voltou ao topo, no lucro em 1 e 2 anos, chegou ao alvo em até 1 ano); tabela com um ciclo por linha (3m, 6m, 1 ano, 2 anos, volta ao topo, alvo, pior queda); o mesmo placar nos 8 tokens; quedas de 10% a 50% e quanto demoraram para voltar |
 | Gráfico | Como preço e índice andaram juntos? Velas de 15m a semanal, índice em painel próprio sincronizado, faixas nos dias de medo, setas no começo de cada onda |
-| Retornos | Comprando com o índice em tal faixa, quanto rendeu em 7 dias a 2 anos? Mapa de calor (mediana, chance de lucro ou pior caso) e distribuição do pior ao melhor caso |
-| Tokens | O medo funcionou em todos os tokens ou só no Bitcoin? Mapa de calor dos 8 tokens e placar medo × dia qualquer em 2 anos |
-| Ondas de pânico | Depois que o medo começa, quanto o preço ainda cai e em quanto tempo faz fundo? |
-| Medo → Lucro | Quantos dias de medo, e em quantos dias depois da compra veio +50%, 2×, 3×, 5×, 10×? Compra no 1º dia, no preço médio da onda ou no último dia |
+| Estudo | Comprar com o índice em tal faixa rendeu quanto, e em quais tokens? Mapa de calor por faixa × prazo, distribuição do pior ao melhor caso, mapa dos 8 tokens e placar medo × dia qualquer |
+| Ondas de pânico | Depois que o medo começa, quanto ainda cai e em quantos dias dobra? Ondas com queda extra e dias até o fundo, e os marcos de +50% a 10× (antiga aba Medo → Lucro) |
 | Aportes | Fixo, reserva para o medo, calibrado e calibrado com realização (vende 3% com índice ≥ 80). Valor, frequência, ano de início e multiplicador no medo são escolhas do usuário |
-| Guia | O que cada quadro mostra, como ler, e um glossário |
+
+Endereços antigos continuam funcionando: `#retornos` e `#tokens` abrem Estudo,
+`#lucro` abre Ondas de pânico, `#guia` abre Agora.
 
 O token e o limiar de medo (5 a 45, padrão 25) valem para todas as abas. Cada
-aba só calcula quando é aberta. A aba aberta vai para o endereço (`#lucro`, etc.)
+aba só calcula quando é aberta. A aba aberta vai para o endereço (`#agora`, etc.)
 e as escolhas ficam em `localStorage` (`atlas.medoGanancia.v1`).
 
 ## Dados
@@ -71,6 +78,21 @@ As duas funções novas do roteador estão em `docs/apis/roteamento.md` e
 - **Aportes:** compra no fechamento a cada 7, 14 ou 30 dias, sem taxas. Reserva
   gasta o caixa inteiro no primeiro período de medo. Caixa não gasto conta pelo
   valor nominal. Token morto: depois do fim, o aporte vira caixa.
+- **Aba Agora (cenário por ciclo, `cenario` em estatistica.js).** Momento
+  parecido: queda desde o topo dos 365 dias anteriores dentro de ±margem (5, 10
+  ou 15 pontos) da queda de hoje e, no critério "Medo + mesma queda", índice ≤
+  limiar. **Ciclo = a mesma queda:** começa no primeiro momento parecido e dura
+  até o preço voltar ao topo de onde aquela queda foi medida; momentos antes da
+  volta são o mesmo ciclo. A linha do ciclo é a compra no primeiro momento dele.
+  O ciclo que não voltou e chega até hoje é a queda atual: aparece marcado
+  "agora" e fica fora do placar. Ciclo que começa nos últimos 10 dias não vira
+  linha. A busca começa no 90º dia do token. O alvo vira um múltiplo do preço de
+  hoje, aplicado ao preço de cada compra. Contar ciclos e não dias foi decisão do
+  dono, depois de ler "7 de 9 momentos" como "80% de chance": os momentos de um
+  mesmo tombo não são casos independentes. "Voltou ao topo" e "no lucro 1 ano
+  depois" ficam lado a lado de propósito, porque o preço pode voltar e cair de novo.
+- **Quedas e recuperação (aba Agora):** X% abaixo do topo dos 90 dias anteriores;
+  depois que volta ao topo, a contagem recomeça no dia seguinte.
 - O índice é diário: em 15m, 1h e 4h ele aparece em degraus; no semanal é a
   média da semana.
 

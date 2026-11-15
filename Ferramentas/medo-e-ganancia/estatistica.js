@@ -131,8 +131,124 @@
     return { estrategias: s, investido: inv };
   }
 
-  var api = { resumo: resumo, mediana: mediana, retornos: retornos, episodios: episodios, depoisDaOnda: depoisDaOnda,
-    entrada: entrada, marcos: marcos, simularAportes: simularAportes };
+  /* ---------- aba Agora: situação de hoje e momentos parecidos ----------
+     Trabalha sobre a série diária contínua P (P[i] = fechamento do dia d0 + i,
+     dias sem vela repetem o anterior). */
+
+  /* máximo móvel: para cada i, o maior P[k] com i - janela < k <= i, e onde foi */
+  function maxMovel(P, janela) {
+    var out = new Array(P.length), fila = [];
+    for (var i = 0; i < P.length; i++) {
+      while (fila.length && P[fila[fila.length - 1]] <= P[i]) fila.pop();
+      fila.push(i);
+      while (fila[0] <= i - janela) fila.shift();
+      out[i] = fila[0];
+    }
+    return out;
+  }
+
+  /* onde o preço está hoje: queda desde o topo de 1 ano e de 90 dias */
+  function situacao(P, d0) {
+    var n = P.length - 1, m365 = maxMovel(P, 365), m90 = maxMovel(P, 90);
+    return { dia: d0 + n, preco: P[n],
+      topo365: { dia: d0 + m365[n], preco: P[m365[n]], queda: P[n] / P[m365[n]] - 1, dias: n - m365[n] },
+      topo90: { dia: d0 + m90[n], preco: P[m90[n]], queda: P[n] / P[m90[n]] - 1, dias: n - m90[n] } };
+  }
+
+  /* quedas de X (0.2 = 20%) a partir do topo da janela: quando aconteceram,
+     em quantos dias voltaram ao topo e quanto caíram no caminho. Depois que uma
+     queda volta ao topo, a busca recomeça do dia seguinte. */
+  function quedas(P, d0, X, janela) {
+    janela = janela || 90;
+    var m = maxMovel(P, janela), ev = [], i = 0;
+    while (i < P.length) {
+      var topo = P[m[i]];
+      if (P[i] <= topo * (1 - X)) {
+        var rec = null, mn = P[i], mnd = i;
+        for (var j = i + 1; j < P.length; j++) {
+          if (P[j] < mn) { mn = P[j]; mnd = j; }
+          if (P[j] >= topo) { rec = j; break; }
+        }
+        ev.push({ dia: d0 + i, topo: topo, diaTopo: d0 + m[i], preco: P[i], voltou: rec == null ? null : rec - i,
+          pior: mn / P[i] - 1, diaPior: d0 + mnd, aberta: rec == null });
+        if (rec == null) break;
+        i = rec + 1; continue;
+      }
+      i++;
+    }
+    return ev;
+  }
+
+  /* momentos parecidos com hoje: queda desde o topo de 1 ano dentro de
+     ±tolerancia da queda de hoje e, se usarMedo, índice <= limiar.
+     Dias próximos (folga) viram um momento só. Para cada um: em quantos dias
+     chegou ao alvo (alvoRel = alvo / preço de hoje, aplicado ao preço daquele
+     dia), a +20%, a pior queda antes disso e o resultado de 1 ano. O momento
+     que encosta em hoje (dentro da folga) é a situação atual e não entra. */
+  function analogos(P, d0, indice, o) {
+    var n = P.length - 1, m365 = maxMovel(P, 365), quedaHoje = P[n] / P[m365[n]] - 1;
+    var tol = o.tolerancia == null ? 0.1 : o.tolerancia, folga = o.folga == null ? 10 : o.folga;
+    var grupos = [], cur = null;
+    /* começa no dia 90: nos primeiros meses do token o topo é o maior preço desde a listagem */
+    for (var i = 90; i <= n; i++) {
+      var dd = P[i] / P[m365[i]] - 1;
+      if (Math.abs(dd - quedaHoje) > tol) continue;
+      var v = indice(d0 + i);
+      if (o.usarMedo && (v == null || v > o.limiar)) continue;
+      if (cur && i - cur.fim <= folga) { cur.fim = i; cur.dias++; }
+      else { cur = { ini: i, fim: i, dias: 1, indice: v, queda: dd }; grupos.push(cur); }
+    }
+    /* o momento que chega até hoje é a própria situação atual: fica de fora */
+    if (grupos.length && grupos[grupos.length - 1].fim >= n - folga) grupos.pop();
+    return grupos.map(function (g) {
+      var p0 = P[g.ini], alvo = p0 * o.alvoRel, hit = null, hit20 = null, mn = p0;
+      for (var j = g.ini + 1; j <= n; j++) {
+        if (hit == null && P[j] < mn) mn = P[j];
+        if (hit20 == null && P[j] >= p0 * 1.2) hit20 = j - g.ini;
+        if (P[j] >= alvo) { hit = j - g.ini; break; }
+      }
+      return { dia: d0 + g.ini, preco: p0, diasNaZona: g.dias, indice: g.indice, queda: g.queda,
+        alvo: hit, mais20: hit20, pior: mn / p0 - 1, ano: g.ini + 365 <= n ? P[g.ini + 365] / p0 - 1 : null, desde: n - g.ini };
+    });
+  }
+
+  /* cenário de hoje, um ciclo por linha.
+     Momento parecido: queda desde o topo dos 365 dias anteriores dentro de
+     ±tolerancia da queda de hoje (e índice <= limiar, se usarMedo).
+     Ciclo = a mesma queda: começa no primeiro momento parecido e dura até o
+     preço voltar ao topo de onde aquela queda foi medida. Momentos antes da
+     volta pertencem ao mesmo ciclo. A linha do ciclo é a compra no primeiro
+     momento dele. O ciclo que ainda não voltou ao topo e chega até hoje é a
+     queda atual (atual: true). Prazos: 90, 182, 365 e 730 dias. */
+  function cenario(P, d0, indice, o) {
+    var n = P.length - 1, m365 = maxMovel(P, 365), quedaHoje = P[n] / P[m365[n]] - 1;
+    var tol = o.tolerancia == null ? 0.1 : o.tolerancia, alvoRel = o.alvoRel || null, ciclos = [], cur = null;
+    var parecido = function (i) {
+      if (Math.abs(P[i] / P[m365[i]] - 1 - quedaHoje) > tol) return false;
+      if (!o.usarMedo) return true;
+      var v = indice(d0 + i); return v != null && v <= o.limiar;
+    };
+    for (var i = 90; i <= n; i++) {
+      if (cur && cur.volta == null && P[i] >= cur.topo) { cur.volta = i; cur = null; }
+      if (!parecido(i)) continue;
+      if (cur) { cur.momentos++; continue; }
+      cur = { ini: i, topo: P[m365[i]], diaTopo: m365[i], momentos: 1, volta: null };
+      ciclos.push(cur);
+    }
+    var H = function (c, h) { return c.ini + h <= n ? P[c.ini + h] / P[c.ini] - 1 : null; };
+    return ciclos.filter(function (c) { return c.volta != null || c.ini < n - 10; }).map(function (c) {
+      var fim = c.volta == null ? n : c.volta, mn = P[c.ini], alvo = null;
+      for (var j = c.ini; j <= fim; j++) if (P[j] < mn) mn = P[j];
+      if (alvoRel) for (var k = c.ini + 1; k <= n; k++) if (P[k] >= P[c.ini] * alvoRel) { alvo = k - c.ini; break; }
+      return { dia: d0 + c.ini, preco: P[c.ini], topo: c.topo, diaTopo: d0 + c.diaTopo, queda: P[c.ini] / c.topo - 1, momentos: c.momentos,
+        r90: H(c, 90), r182: H(c, 182), r365: H(c, 365), r730: H(c, 730),
+        voltou: c.volta == null ? null : c.volta - c.ini, pior: mn / P[c.ini] - 1, alvo: alvo, atual: c.volta == null, desde: n - c.ini };
+    });
+  }
+
+  var api = { cenario: cenario, resumo: resumo, mediana: mediana, retornos: retornos, episodios: episodios, depoisDaOnda: depoisDaOnda,
+    entrada: entrada, marcos: marcos, simularAportes: simularAportes,
+    maxMovel: maxMovel, situacao: situacao, quedas: quedas, analogos: analogos };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.AtlasMedoGanancia = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

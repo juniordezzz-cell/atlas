@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
 <link rel="stylesheet" href="../../core/ui/atlas-shell.css">
 <link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
-<link rel="stylesheet" href="estilo.css?v=1">
+<link rel="stylesheet" href="estilo.css?v=4">
 <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
 <script src="../../core/atlas-auth.js"></script>
 <script src="../../core/atlas-secure.js"></script>
@@ -40,8 +40,13 @@
   </div>
 </div>
 
+<!-- ============ AGORA ============ -->
+<section class="tab" id="t-agora">
+  <div id="ag" class="tab"><div class="card"><p>Carregando…</p></div></div>
+</section>
+
 <!-- ============ GRÁFICO ============ -->
-<section class="tab" id="t-grafico">
+<section class="tab" id="t-grafico" hidden>
   <div class="row">
     <div class="seg" id="tf" role="group" aria-label="Tempo gráfico"></div>
     <label class="chk"><input type="checkbox" id="o-log" checked>Log</label>
@@ -69,8 +74,8 @@
   </div>
 </section>
 
-<!-- ============ RETORNOS ============ -->
-<section class="tab" id="t-retornos" hidden>
+<!-- ============ ESTUDO (retornos + tokens) ============ -->
+<section class="tab" id="t-estudo" hidden>
   <div class="card">
     <div class="card-head">
       <span class="eyebrow">Mapa de calor · <span class="tok-echo">BTC</span></span>
@@ -89,10 +94,7 @@
     </div>
     <div class="dist" id="dist"></div>
   </div>
-</section>
 
-<!-- ============ TOKENS ============ -->
-<section class="tab" id="t-tokens" hidden>
   <div class="card">
     <div class="card-head">
       <span class="eyebrow">Comparativo · medo ≤ <span class="thr-echo">25</span></span>
@@ -113,7 +115,7 @@
   </div>
 </section>
 
-<!-- ============ ONDAS ============ -->
+<!-- ============ ONDAS (ondas + medo → lucro) ============ -->
 <section class="tab" id="t-ondas" hidden>
   <div class="kpis k5" id="ep-kpis"></div>
   <div class="card">
@@ -125,10 +127,7 @@
     <div class="row"><span class="lbl">Ordenar</span><div class="seg" id="ep-sort" role="group" aria-label="Ordem dos episódios"></div></div>
     <div class="scroll"><div class="eps" id="eps"></div></div>
   </div>
-</section>
 
-<!-- ============ MEDO → LUCRO ============ -->
-<section class="tab" id="t-lucro" hidden>
   <div class="card">
     <div class="card-head">
       <span class="eyebrow">Resposta direta · <span class="tok-echo">BTC</span> · medo ≤ <span class="thr-echo">25</span></span>
@@ -198,19 +197,10 @@
   </div>
 </section>
 
-<!-- ============ GUIA ============ -->
-<section class="tab" id="t-guia" hidden>
-  <div class="card">
-    <div class="card-head">
-      <span class="eyebrow">Sumário</span>
-      <h2>O que cada quadro responde</h2>
-      <p>O token (barra do topo) e o limiar de medo valem para todas as abas. Mude um deles e todos os quadros recalculam.</p>
-    </div>
-    <div class="guide" id="guide"></div>
-  </div>
-  <div class="card">
-    <div class="card-head"><span class="eyebrow">Glossário</span><h2>Termos usados no painel</h2></div>
-    <dl class="gloss">
+<!-- ============ GLOSSÁRIO (vale para todas as abas) ============ -->
+<details class="card mg-gloss">
+  <summary>Glossário: termos usados no painel</summary>
+  <dl class="gloss">
       <div><dt>Índice de Medo &amp; Ganância</dt><dd>Número diário de 0 a 100 que resume o humor do mercado cripto (volatilidade, volume, redes sociais, dominância do Bitcoin). Até 25 é medo extremo; de 75 para cima, ganância extrema.</dd></div>
       <div><dt>Limiar de medo</dt><dd>O valor do índice que você considera "medo" para fins de compra. O controle "Medo ≤" define isso para o painel inteiro.</dd></div>
       <div><dt>Onda ou episódio</dt><dd>Sequência de dias com índice no limiar ou abaixo. Dias de medo separados por até 10 dias de respiro contam como a mesma onda. Só entram ondas com 3 dias de medo ou mais.</dd></div>
@@ -221,8 +211,7 @@
       <div><dt>Múltiplo</dt><dd>Quantas vezes o valor investido. 2× é dobrar, o mesmo que +100%.</dd></div>
       <div><dt>Escala log</dt><dd>No eixo logarítmico, distâncias iguais são multiplicações iguais. Ir de 10 a 20 ocupa o mesmo espaço que ir de 100 a 200.</dd></div>
     </dl>
-  </div>
-</section>
+</details>
 
 
 <footer><p class="mg-fontes"><b>Fontes.</b> Velas: Binance, pares USDT, pelo roteador de dados do ATLAS (15m: últimos 30 dias; 1h: últimos 180 dias; 4h: últimos 2 anos; diário e semanal: desde 2018). Índice: alternative.me, diário desde fev/2018; se a fonte cair, vale a última série guardada, com a data. O índice do CMC usa metodologia parecida e costuma diferir alguns pontos. No semanal, o índice é a média da semana. LUNA é a original, com velas fixas até 13/05/2022, quando colapsou (virou LUNC); prazos além dessa data usam o último preço. Retornos sem taxas. Dados até <span id="last-date">–</span>.</p></footer>
@@ -235,8 +224,9 @@
 <script src="../../core/atlas-dados.js?v=2"></script>
 <script src="../../assets/vendor/lightweight-charts-4.2.0/lightweight-charts.standalone.production.js"></script>
 <script src="dados-luna.js?v=1"></script>
-<script src="estatistica.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<script src="estatistica.js?v=3"></script>
+<script src="aba-agora.js?v=3"></script>
+<script src="app.js?v=3"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

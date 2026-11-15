@@ -167,7 +167,11 @@
    seção "Estudar o mercado": gráfico com o índice como indicador (Lightweight
    Charts em assets/vendor/) e 7 abas de estudo. O roteador ganhou velasLongas
    e medoGanancia. Registro: docs/ferramenta-medo-ganancia-2026-11-14.md */
-var VERSAO = "atlas-v100";
+/* v101 = Medo e Ganância ganha a aba Agora (situação do token hoje, momentos
+   parecidos e tempo até o alvo; Ferramentas/medo-e-ganancia/aba-agora.js). */
+/* v102 = Medo e Ganância com 5 abas (Agora, Gráfico, Estudo, Ondas de pânico,
+   Aportes) e a aba Agora contando ciclos de queda, com 3m/6m/1a/2a por ciclo. */
+var VERSAO = "atlas-v102";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

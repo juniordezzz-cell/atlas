@@ -185,3 +185,49 @@
 .mg-tip b{font-family:var(--mono)}
 .mg-fontes{font-size:12px;color:var(--mut2);max-width:none}
 @media (prefers-reduced-motion:reduce){.mg *{transition:none!important}}
+
+/* aba Agora */
+.ag-frase{font-size:15px;line-height:1.65;color:var(--ink2);max-width:92ch}
+.ag-frase b{color:var(--ink)}
+.ag-barra{display:flex;height:26px;border-radius:7px;overflow:hidden;gap:2px}
+.ag-barra span{display:grid;place-items:center;font:600 12px var(--mono);color:#0a0e17;min-width:24px}
+.ag-leg{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--muted)}
+.ag-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.ag-aviso{font-size:12px;color:var(--mut2)}
+.ag-rows{min-width:900px}
+.lu.ag-lu{grid-template-columns:120px 150px minmax(300px,1fr) 104px 84px 76px}
+.ag-placar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:820px){.ag-placar{grid-template-columns:repeat(2,1fr)}}
+.ag-placa{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;background:var(--panel2);border-top-width:3px}
+.ag-placa b{font:700 26px var(--mono);line-height:1.1}
+.ag-placa span{font-weight:600;font-size:13px;color:var(--ink)}
+.ag-placa small{font-size:12px;color:var(--muted)}
+.ag-p-total{border-top-color:var(--accent)}.ag-p-ok{border-top-color:var(--up)}.ag-p-lento{border-top-color:var(--amber)}.ag-p-nao{border-top-color:var(--base)}
+.ag-ciclos{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border:1px solid var(--line);border-radius:10px}
+.ag-ciclos p{font-size:12.5px}
+.ag-ciclos ul{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column}
+.ag-ciclos li{display:grid;grid-template-columns:80px minmax(0,1.3fr) minmax(0,1.2fr) minmax(0,1fr);gap:12px;align-items:baseline;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.ag-ciclos li:first-child{border-top:0}
+.ag-ciclos li b{font:700 13px var(--mono)}
+.ag-ciclos li span{color:var(--ink2)}
+.ag-ciclos li span.neg{color:var(--red)}
+.ag-ciclos .ag-c-ok{color:var(--up);font-weight:600}.ag-ciclos .ag-c-lento{color:var(--amber);font-weight:600}.ag-ciclos .ag-c-nao{color:var(--muted);font-weight:600}
+@media (max-width:700px){.ag-ciclos li{grid-template-columns:70px 1fr}}
+
+.lu.ag-lu small{display:block}
+.kpi .k span{font-size:inherit;color:inherit}
+.kpi .k span.neg{color:var(--red)}
+.kpi .k span.pos{color:var(--green)}
+
+/* 5 abas: "Como ler" e glossário recolhíveis */
+.como-ler{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--panel2)}
+.como-ler summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--ink)}
+.como-ler p{font-size:12.5px;margin-top:8px}
+.como-ler p b{color:var(--ink)}
+.mg-gloss{margin-top:4px}
+.mg-gloss summary{cursor:pointer;font-weight:600;font-size:13px}
+.mg-gloss .gloss{margin-top:12px}
+.ag-atual{font-size:13px;color:var(--ink2);border-left:3px solid var(--fear);padding:4px 10px}
+.ag-atual b{color:var(--ink)}
+.hm tr.ag-agora td.rl b::after{content:"agora"}
+.ag-tab td{min-width:84px}

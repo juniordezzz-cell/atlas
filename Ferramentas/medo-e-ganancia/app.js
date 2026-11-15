@@ -28,7 +28,7 @@
   var rgba = function (h, a) { h = h.replace('#', ''); return 'rgba(' + parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) + ',' + parseInt(h.slice(4, 6), 16) + ',' + a + ')'; };
   var usd = function (x) { return '$' + Math.round(x).toLocaleString('en-US'); };
 
-  var st = { tok: 'BTC', tf: '1d', thr: 25, log: true, vol: true, band: true, mk: true, tab: 'grafico', hmM: 'med', tkM: 'win', epSort: 'rec',
+  var st = { tok: 'BTC', tf: '1d', thr: 25, log: true, vol: true, band: true, mk: true, tab: 'agora', agAlvo: {}, agModo: 'medo', agTol: 0.1, hmM: 'med', tkM: 'win', epSort: 'rec',
     luEntry: 'first', luMin: 3, dcaAmt: 100, dcaFreq: 7, dcaFrom: 2018, dcaMult: 2, dcaView: 'val' };
   try { var sv = JSON.parse(localStorage.getItem('atlas.medoGanancia.v1') || '{}'); for (var k in st) if (k in sv) st[k] = sv[k]; if (!TOK[st.tok]) st.tok = 'BTC'; } catch (e) { /* sem armazenamento */ }
   var save = function () { try { localStorage.setItem('atlas.medoGanancia.v1', JSON.stringify(st)); } catch (e) { /* cheio ou bloqueado */ } };
@@ -451,12 +451,17 @@
   }
   function scales() { var n = []; for (var i = 0; i <= 10; i++) n.push(divColor(i / 5 - 1).bg); var g = 'linear-gradient(90deg,' + n.join(',') + ')'; $('sc-ret').style.background = g; $('sc-win').style.background = g; }
 
+  /* ---------- aba Agora (arquivo compartilhado com o Laboratório) ---------- */
+  var CTX = { E: E, series: series, fng: function (d) { return fng(d); }, get fLast() { return fLast; }, st: st, save: save, put: put,
+    fmtD: fmtD, fmtP: fmtP, pct: pct, cls: cls, zone: zone, divColor: divColor, retT: retT, css: css, get TOK() { return TOK; } };
+
   /* ---------- abas ---------- */
-  var TABS = [['grafico', 'Gráfico'], ['retornos', 'Retornos'], ['tokens', 'Tokens'], ['ondas', 'Ondas de pânico'], ['lucro', 'Medo → Lucro'], ['aportes', 'Aportes'], ['guia', 'Guia']];
-  var RENDER = { grafico: function () { kpis(); drawChart(); }, retornos: function () { hmBucket(); dist(); }, tokens: function () { hmTokens(); tkRank(); }, ondas: eps, lucro: lucro, aportes: dca, guia: function () {} };
+  var TABS = [['agora', 'Agora'], ['grafico', 'Gráfico'], ['estudo', 'Estudo'], ['ondas', 'Ondas de pânico'], ['aportes', 'Aportes']];
+  var ALIAS = { retornos: 'estudo', tokens: 'estudo', lucro: 'ondas', guia: 'agora' };
+  var RENDER = { agora: function () { if (window.AbaAgora) window.AbaAgora.render(CTX, $('ag')); }, grafico: function () { kpis(); drawChart(); }, estudo: function () { hmBucket(); dist(); hmTokens(); tkRank(); }, ondas: function () { eps(); lucro(); }, aportes: dca };
   var dirty = new Set(TABS.map(function (t) { return t[0]; })), READY = false;
   function show(tab, push) {
-    if (!RENDER[tab]) tab = 'grafico'; st.tab = tab;
+    tab = ALIAS[tab] || tab; if (!RENDER[tab]) tab = 'agora'; st.tab = tab;
     TABS.forEach(function (t) { $('t-' + t[0]).hidden = t[0] !== tab; });
     document.querySelectorAll('#tabs button').forEach(function (b) { if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     if (READY && dirty.has(tab)) { dirty.delete(tab); RENDER[tab](); }
@@ -466,7 +471,7 @@
   function invalidate() { memoKey(); dirty = new Set(TABS.map(function (t) { return t[0]; })); show(st.tab); }
   put($('tabs'), TABS.map(function (t) { return '<button type="button" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join(''));
   $('tabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) show(b.dataset.tab, true); });
-  addEventListener('hashchange', function () { var h = location.hash.slice(1); if (RENDER[h] && h !== st.tab) show(h); });
+  addEventListener('hashchange', function () { var h = location.hash.slice(1); h = ALIAS[h] || h; if (RENDER[h] && h !== st.tab) show(h); });
   document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-go]'); if (b) { show(b.dataset.go, true); window.scrollTo({ top: 0 }); } });
 
   function seg(id, opts, key, tab) {
@@ -475,11 +480,11 @@
     var sync = function () { el.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(st[key]) === b.dataset.v); }); }; sync();
     el.addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; var o = opts.filter(function (x) { return String(x[0]) === b.dataset.v; })[0]; st[key] = o[0]; sync(); save(); dirty.add(tab); show(st.tab); });
   }
-  seg('hm-m', [['med', 'Retorno mediano'], ['win', 'Chance de lucro'], ['min', 'Pior caso']], 'hmM', 'retornos');
-  seg('tk-m', [['win', 'Chance de lucro'], ['med', 'Retorno mediano'], ['edge', 'Vantagem sobre dia qualquer']], 'tkM', 'tokens');
+  seg('hm-m', [['med', 'Retorno mediano'], ['win', 'Chance de lucro'], ['min', 'Pior caso']], 'hmM', 'estudo');
+  seg('tk-m', [['win', 'Chance de lucro'], ['med', 'Retorno mediano'], ['edge', 'Vantagem sobre dia qualquer']], 'tkM', 'estudo');
   seg('ep-sort', [['rec', 'Mais recentes'], ['len', 'Mais longas'], ['dd', 'Maior queda']], 'epSort', 'ondas');
-  seg('lu-entry', [['first', '1º dia de medo'], ['avg', 'Preço médio da onda'], ['last', 'Último dia de medo']], 'luEntry', 'lucro');
-  seg('lu-min', [[3, '3+ dias'], [7, '7+'], [14, '14+'], [30, '30+']], 'luMin', 'lucro');
+  seg('lu-entry', [['first', '1º dia de medo'], ['avg', 'Preço médio da onda'], ['last', 'Último dia de medo']], 'luEntry', 'ondas');
+  seg('lu-min', [[3, '3+ dias'], [7, '7+'], [14, '14+'], [30, '30+']], 'luMin', 'ondas');
   seg('dca-freq', [[7, 'Semanal'], [14, 'Quinzenal'], [30, 'Mensal']], 'dcaFreq', 'aportes');
   seg('dca-from', [[2018, '2018'], [2020, '2020'], [2022, '2022'], [2024, '2024']], 'dcaFrom', 'aportes');
   seg('dca-mult', [[2, '2×'], [3, '3×'], [5, '5×']], 'dcaMult', 'aportes');
@@ -488,14 +493,9 @@
   var ta; $('dca-amt').addEventListener('input', function (e) { var v = +e.target.value; if (!(v >= 1)) return; st.dcaAmt = v; clearTimeout(ta); ta = setTimeout(function () { save(); dirty.add('aportes'); show(st.tab); }, 250); });
 
   /* ---------- guia ---------- */
-  var GUIDE = [
-    ['grafico', 'Gráfico', 'Como o preço e o humor do mercado andaram juntos?', 'Velas do token em cima e o índice embaixo, no mesmo eixo de tempo, de 15 minutos a semanal. As faixas vermelhas são os dias de medo e as setas marcam o começo de cada onda.', 'Use para ver onde o medo apareceu: em fundos, no meio de quedas ou em sustos passageiros.'],
-    ['retornos', 'Retornos', 'Comprando com o índice em tal faixa, quanto rendeu depois?', 'Um mapa de calor com as faixas do índice nas linhas e os prazos de hold nas colunas. Embaixo, a distribuição do pior ao melhor caso, comparando o medo com um dia qualquer.', 'Verde forte nas linhas de cima e nas colunas da direita quer dizer que o medo pagou para quem segurou. A linha marcada "hoje" é a faixa atual.'],
-    ['tokens', 'Tokens', 'O medo funcionou em todos os tokens ou só no Bitcoin?', 'A mesma regra de compra aplicada aos 8 tokens, com chance de lucro, retorno mediano ou vantagem sobre um dia qualquer. O placar compara as duas barras para 2 anos.', 'Se a barra vermelha (medo) não passa a cinza (dia qualquer), o índice não ajudou naquele token.'],
-    ['ondas', 'Ondas de pânico', 'Depois que o medo começa, quanto o preço ainda cai?', 'Cada onda de medo em uma linha: duração, minigráfico do preço, queda extra depois do primeiro dia, dias até o fundo e retorno em 3 meses, 1 ano e 2 anos.', 'Mostra o custo emocional do hold: quase nunca o primeiro dia de medo é o fundo.'],
-    ['lucro', 'Medo → Lucro', 'Quantos dias de medo, e quanto tempo até dobrar ou triplicar?', 'Frases diretas para as ondas mais marcantes, uma régua de dias com os marcos de +50%, 2×, 3×, 5× e 10×, e tabelas por duração da onda e por token.', 'Troque o ponto de compra (1º dia, preço médio ou último dia) para ver quanto a paciência dentro da onda muda o resultado.'],
-    ['aportes', 'Aportes', 'Vale a pena usar o índice para decidir o tamanho do aporte?', 'Simulador com quatro estratégias de aporte recorrente: valor, frequência, ano de início e multiplicador no medo. Mostra valor, resultado em %, pior momento e preço médio por ano.', 'Compare o múltiplo com o tempo no prejuízo e o caixa parado: a estratégia que rende mais nem sempre é a mais fácil de aguentar.']];
-  put($('guide'), GUIDE.map(function (g) { return '<div class="gd"><span class="eyebrow">Aba ' + g[1] + '</span><h3>' + g[2] + '</h3><p><b>O que mostra.</b> ' + g[3] + '</p><p><b>Como ler.</b> ' + g[4] + '</p><button type="button" class="go" data-go="' + g[0] + '">Abrir ' + g[1] + ' →</button></div>'; }).join(''));
+  /* "Como ler" no topo de cada aba (substitui a antiga aba Guia) */
+  var GUIA = [['agora','Responde: o token está caindo; quem comprou neste mesmo cenário, o que aconteceu?','No topo, onde o preço está: queda desde o topo de 12 meses e de 90 dias, e há quantos dias. Depois, o placar e a tabela: cada linha é um ciclo de queda diferente, com o resultado de quem comprou na primeira vez que o cenário de hoje apareceu naquele ciclo (3 meses, 6 meses, 1 ano, 2 anos), se voltou ao topo e quanto caiu antes. A linha "agora" é a queda atual, ainda em aberto.','"Voltou ao topo" e "no lucro 1 ano depois" são perguntas diferentes: o preço pode voltar e cair de novo. Conte ciclos, não dias. Troque o critério e a margem para ver se a resposta muda muito; se muda, a amostra é frágil.'],['grafico','Responde: como o preço e o humor do mercado andaram juntos?','Velas do token em cima e o índice embaixo, no mesmo eixo de tempo, de 15 minutos a semanal. As faixas vermelhas são os dias de medo e as setas marcam o começo de cada onda.','Use para ver onde o medo apareceu: em fundos, no meio de quedas ou em sustos passageiros.'],['estudo','Responde: comprar com o índice em tal faixa rendeu quanto, e em quais tokens?','Mapa de calor com as faixas do índice nas linhas e os prazos nas colunas; a distribuição do pior ao melhor caso; e a mesma regra aplicada aos 8 tokens.','Aqui cada dia conta como uma compra, então os números são mais suaves que os da aba Agora. Serve para comparar faixas e tokens, não para responder "e agora?".'],['ondas','Responde: depois que o medo começa, quanto ainda cai, e em quantos dias dobra?','Cada onda de medo com duração, queda extra, dias até o fundo e retornos; depois, os marcos de +50%, 2×, 3×, 5× e 10× a partir da compra no 1º dia, no preço médio ou no último dia da onda.','Mostra o custo emocional do hold: quase nunca o primeiro dia de medo é o fundo.'],['aportes','Responde: vale a pena usar o índice para decidir o tamanho do aporte?','Quatro estratégias de aporte recorrente com valor, frequência, ano de início e multiplicador no medo. Mostra valor, resultado em %, pior momento e preço médio por ano.','Compare o múltiplo com o tempo no prejuízo e o caixa parado: a que rende mais nem sempre é a mais fácil de aguentar.']];
+  GUIA.forEach(function (g) { var sec = $('t-' + g[0]); if (sec) sec.insertAdjacentHTML('afterbegin', '<details class="como-ler"><summary>' + g[1] + '</summary><p><b>O que mostra.</b> ' + g[2] + '</p><p><b>Como ler.</b> ' + g[3] + '</p></details>'); });
 
   /* ---------- controles ---------- */
   put($('tf'), TFS.map(function (t) { return '<button type="button" data-tf="' + t[0] + '">' + t[1] + '</button>'; }).join(''));
@@ -507,7 +507,7 @@
 
   /* ---------- início ---------- */
   var status = $('mg-status');
-  var h0 = location.hash.slice(1); show(RENDER[h0] ? h0 : st.tab);
+  var h0 = location.hash.slice(1); h0 = ALIAS[h0] || h0; show(RENDER[h0] ? h0 : st.tab);
   if (!E || !D) { status.textContent = 'Faltou carregar uma peça da página. Recarregue.'; return; }
   var vivos = Object.keys(TOK).filter(function (t) { return t !== 'LUNA'; });
   Promise.all([

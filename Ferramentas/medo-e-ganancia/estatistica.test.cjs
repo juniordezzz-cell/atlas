@@ -90,3 +90,69 @@ test('simularAportes: depois do fim da compra o aporte vira caixa', () => {
   assert.equal(r.estrategias.fixo.cash, 200);
   assert.equal(r.estrategias.fixo.q, 20);
 });
+
+/* ── aba Agora ── */
+test('maxMovel acha o topo dentro da janela', () => {
+  const P = [1, 5, 3, 2, 4, 1];
+  assert.deepEqual(E.maxMovel(P, 3), [0, 1, 1, 1, 4, 4]);
+});
+
+test('situacao mede a queda desde o topo de 90 dias', () => {
+  const P = Array.from({ length: 400 }, (_, i) => (i === 350 ? 200 : 100));
+  const s = E.situacao(P, 1000);
+  assert.equal(s.topo90.preco, 200);
+  assert.equal(s.topo90.dias, 49);
+  assert.equal(s.topo90.queda, -0.5);
+  assert.equal(s.topo365.dia, 1350);
+});
+
+test('quedas conta a recuperação e a queda que ainda não voltou', () => {
+  const P = [100, 85, 80, 95, 101, 100, 70, 60];
+  const ev = E.quedas(P, 0, 0.1, 90);
+  assert.equal(ev.length, 2);
+  assert.equal(ev[0].dia, 1);
+  assert.equal(ev[0].voltou, 3, 'do dia 1 até o dia 4');
+  assert.ok(Math.abs(ev[0].pior - (80 / 85 - 1)) < 1e-9);
+  assert.equal(ev[1].aberta, true);
+  assert.equal(ev[1].topo, 101);
+});
+
+test('analogos junta dias parecidos e mede o tempo até o alvo', () => {
+  // 365 dias em 100, depois cai a 50 (-50%), volta a 80, cai de novo a 50 e fica
+  const P = Array(365).fill(100).concat([50, 50, 60, 80, 80], Array(30).fill(80), [50, 50]);
+  const r = E.analogos(P, 0, () => 10, { alvoRel: 1.5, usarMedo: true, limiar: 25, tolerancia: 0.05 });
+  assert.equal(r.length, 1, 'a queda que encosta em hoje é a situação atual e não entra');
+  assert.equal(r[0].dia, 365);
+  assert.equal(r[0].diasNaZona, 2);
+  assert.equal(r[0].alvo, 3, '50 -> 75 (alvo +50%) no dia 368');
+  assert.equal(r[0].mais20, 2);
+  assert.equal(r[0].pior, 0);
+});
+
+test('analogos com usarMedo ignora dias sem medo', () => {
+  const P = Array(365).fill(100).concat([50, 50], Array(20).fill(90), [50, 50]);
+  const r = E.analogos(P, 0, () => 60, { alvoRel: 1.2, usarMedo: true, limiar: 25 });
+  assert.equal(r.length, 0);
+  const r2 = E.analogos(P, 0, () => 60, { alvoRel: 1.2, usarMedo: false, limiar: 25 });
+  assert.equal(r2.length, 1);
+});
+
+test('cenario: um ciclo por queda, até voltar ao topo', () => {
+  // topo 100; cai a 50 (dia 365), volta a 100 (dia 400); sobe a 200 e cai a 100 (queda atual, hoje)
+  const P = Array(365).fill(100).concat(Array(35).fill(50), Array(30).fill(100), Array(30).fill(200), Array(30).fill(100));
+  const r = E.cenario(P, 0, () => 10, { usarMedo: true, limiar: 25, tolerancia: 0.05, alvoRel: 1.5 });
+  assert.equal(r.length, 2);
+  assert.equal(r[0].dia, 365);
+  assert.equal(r[0].voltou, 35);
+  assert.equal(r[0].momentos, 35, 'todos os dias a 50 antes da volta são o mesmo ciclo');
+  assert.equal(r[0].atual, false);
+  assert.equal(r[0].alvo, 35, '50 -> 75 só quando volta a 100');
+  assert.equal(r[1].atual, true, 'a queda de hoje fica marcada');
+  assert.equal(r[1].voltou, null);
+});
+
+test('cenario: queda que começa nos últimos dias não vira linha', () => {
+  const P = Array(400).fill(100).concat([50, 50, 50]);
+  const r = E.cenario(P, 0, () => 10, { usarMedo: true, limiar: 25 });
+  assert.equal(r.length, 0);
+});
