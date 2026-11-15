@@ -57,8 +57,29 @@ dia** com o valor escolhido no topo (US$ 100, 500, 1.000, 5.000 ou outro):
 
 Atualiza sozinha ao fim de cada rodada (`/api/eventos`).
 
+## A cidade (laboratorio/pagina/cidade.js, 15/11/2026)
+
+Three.js r170 (cópia em `pagina/vendor/`, licença MIT ao lado; funciona sem
+internet). A tela fica dividida: a cidade à esquerda, o quadro à direita.
+
+- **Cidade:** uma casa por rede, com lado e andares pela raiz do TVL das
+  pools do Scanner; janelas acesas na proporção de pools com oportunidade.
+  Ethereum, BNB Chain e Arbitrum com andaime ("em obra"). Torre do
+  Supervisor no centro com achados, disputas e conflitos da rodada.
+- **Casa:** uma sala por plataforma ("Aero" e "Aerodrome" viram uma sala só),
+  com miniaturas das mesas e a melhor oportunidade da sala.
+- **Sala:** uma mesa por pool. Lâmpada âmbar = tem oportunidade (mais forte
+  quanto mais rende por dia com o valor escolhido); apagada = olharam e
+  nada ganhou da faixa única; azulada = ainda sem 7 dias de preços.
+- **Agentes:** bonecos de blocos com cor e ferramenta própria. Andam até as
+  pools que olharam na última rodada (`analises`): comemoram e soltam um
+  cartão onde acharam, balançam a cabeça onde descartaram (passar o mouse
+  mostra o motivo). Entre rodadas ficam 80% do tempo nas pools onde acharam;
+  durante a rodada correm o dobro.
+- Clique na linha do quadro leva a câmera até a mesa; clique na mesa abre a
+  linha. Arrastar gira, a roda aproxima, Esc volta um nível. A animação
+  pausa com a aba escondida e respeita "reduzir movimento" do sistema.
+
 ## Próximos passos
 
-3. A cidade 3D com os agentes andando, em volta deste quadro (os dados de
-   quem olhou cada pool já estão em `analises`).
 4. Perfis e redes novas.

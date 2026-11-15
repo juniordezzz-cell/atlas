@@ -10,120 +10,127 @@
 <style>
   /* Planta noturna: azul de prancheta, papel claro, âmbar só para dinheiro. */
   :root {
-    --tinta: #0f1c2e;      /* fundo, azul de planta */
-    --tinta-2: #16273d;    /* superfícies */
-    --linha: #2a3f5c;      /* traços */
-    --papel: #e8e3d6;      /* texto */
-    --apagado: #93a0b4;    /* texto secundário */
-    --ambar: #f2b33d;      /* dólares por dia */
-    --sol: #5ec4b6;        /* Solana */
-    --base: #8b98ff;       /* Base */
-    --ruim: #e98a6f;       /* cenário ruim */
+    --tinta: #0f1c2e; --tinta-2: #16273d; --linha: #2a3f5c; --papel: #e8e3d6; --apagado: #93a0b4;
+    --ambar: #f2b33d; --sol: #5ec4b6; --base: #8b98ff; --ruim: #e98a6f;
     --fonte-titulo: "Bricolage Grotesque", system-ui, sans-serif;
     --fonte-texto: "Atkinson Hyperlegible", system-ui, sans-serif;
+    --topo: 112px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--tinta); color: var(--papel); font: 16px/1.5 var(--fonte-texto); }
-  body {
-    background-image: linear-gradient(var(--tinta-2) 1px, transparent 1px), linear-gradient(90deg, var(--tinta-2) 1px, transparent 1px);
-    background-size: 48px 48px; background-attachment: fixed; min-height: 100vh;
-  }
   button, input, select { font: inherit; color: inherit; }
   :focus-visible { outline: 2px solid var(--ambar); outline-offset: 2px; }
-  .casca { max-width: 1180px; margin: 0 auto; padding: 28px 20px 64px; }
 
-  header.topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px 32px; margin-bottom: 28px; }
-  h1 { font: 800 clamp(30px, 4.2vw, 46px)/1 var(--fonte-titulo); letter-spacing: -0.02em; margin: 0; }
-  h1 small { display: block; font: 400 15px/1.4 var(--fonte-texto); color: var(--apagado); letter-spacing: 0; margin-top: 8px; }
+  header.topo { height: var(--topo); padding: 14px 20px 0; border-bottom: 1px solid var(--linha); }
+  .linha-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  h1 { font: 800 28px/1 var(--fonte-titulo); letter-spacing: -0.02em; margin: 0; }
   .ciclo { display: flex; align-items: center; gap: 10px; color: var(--apagado); font-size: 14px; }
   .pulso { width: 10px; height: 10px; border-radius: 50%; background: var(--apagado); flex: none; }
   .ciclo[data-ativo="1"] .pulso { background: var(--ambar); animation: pulsar 1.4s ease-in-out infinite; }
   .ciclo[data-erro="1"] .pulso { background: var(--ruim); }
   @keyframes pulsar { 50% { opacity: .25; } }
   @media (prefers-reduced-motion: reduce) { .ciclo[data-ativo="1"] .pulso { animation: none; } }
-
-  .controles { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; padding: 16px 0; border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); margin-bottom: 18px; }
-  .grupo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .controles { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; padding: 12px 0; }
+  .grupo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .grupo > span { color: var(--apagado); font-size: 14px; }
-  .chip { background: transparent; border: 1px solid var(--linha); border-radius: 999px; padding: 5px 13px; cursor: pointer; font-size: 14px; }
+  .chip { background: transparent; border: 1px solid var(--linha); border-radius: 999px; padding: 3px 12px; cursor: pointer; font-size: 14px; }
   .chip[aria-pressed="true"] { background: var(--papel); color: var(--tinta); border-color: var(--papel); font-weight: 700; }
-  .valor { width: 96px; background: var(--tinta-2); border: 1px solid var(--linha); border-radius: 8px; padding: 5px 10px; }
-  select { background: var(--tinta-2); border: 1px solid var(--linha); border-radius: 8px; padding: 5px 10px; }
+  .valor { width: 84px; background: var(--tinta-2); border: 1px solid var(--linha); border-radius: 8px; padding: 3px 8px; font-size: 14px; }
+  select { background: var(--tinta-2); border: 1px solid var(--linha); border-radius: 8px; padding: 3px 8px; font-size: 14px; }
 
-  .agentes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 26px; }
-  .agente { border-left: 3px solid var(--linha); padding: 4px 0 4px 12px; }
-  .agente b { display: block; font: 700 15px/1.3 var(--fonte-titulo); }
-  .agente span { color: var(--apagado); font-size: 13px; }
-  .agente[data-achou="1"] { border-left-color: var(--ambar); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 440px; height: calc(100vh - var(--topo)); }
+  .palco { position: relative; overflow: hidden; }
+  .palco canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .trilha { position: absolute; top: 14px; left: 16px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .trilha button { background: rgba(15, 28, 46, .85); border: 1px solid var(--linha); border-radius: 8px; padding: 4px 12px; cursor: pointer; font: 700 15px/1.3 var(--fonte-titulo); }
+  .trilha button[aria-current="page"] { border-color: var(--papel); cursor: default; }
+  .trilha .sep { color: var(--apagado); }
+  .ajuda { position: absolute; left: 16px; bottom: 12px; color: var(--apagado); font-size: 13px; background: rgba(15, 28, 46, .75); padding: 4px 10px; border-radius: 8px; }
+  .dica { position: fixed; pointer-events: none; background: var(--papel); color: var(--tinta); font-size: 14px; padding: 6px 10px; border-radius: 8px; max-width: 320px; z-index: 5; display: none; }
+  .sem3d { display: grid; place-items: center; height: 100%; color: var(--apagado); padding: 24px; text-align: center; }
+
+  .lado { border-left: 1px solid var(--linha); overflow-y: auto; padding: 16px 16px 40px; }
+  .agentes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin-bottom: 18px; }
+  .agente { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.35; }
+  .agente i { width: 12px; height: 12px; border-radius: 3px; flex: none; margin-top: 3px; }
+  .agente b { display: block; font: 700 14px/1.3 var(--fonte-titulo); }
+  .agente span { color: var(--apagado); }
 
   .quadro { display: flex; flex-direction: column; gap: 2px; }
-  .linha { display: grid; grid-template-columns: 170px minmax(0, 1.4fr) minmax(0, 1.2fr) 150px; gap: 18px; align-items: center;
-    background: var(--tinta-2); padding: 14px 18px; cursor: pointer; border: 1px solid transparent; text-align: left; width: 100%; }
+  .linha { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 6px 14px; align-items: start;
+    background: var(--tinta-2); padding: 12px 14px; cursor: pointer; border: 1px solid transparent; text-align: left; width: 100%; }
   .linha:first-child { border-radius: 10px 10px 0 0; }
   .linha:last-child { border-radius: 0 0 10px 10px; }
   .linha:hover, .linha[aria-expanded="true"] { border-color: var(--linha); }
-  .dia { font: 800 30px/1 var(--fonte-titulo); color: var(--ambar); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .dia { font: 800 26px/1 var(--fonte-titulo); color: var(--ambar); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; grid-row: span 2; }
   .dia small { display: block; font: 400 12px/1.4 var(--fonte-texto); color: var(--apagado); letter-spacing: 0; margin-top: 4px; }
-  .dia.tokens { font-size: 24px; }
-  .par { font: 700 18px/1.2 var(--fonte-titulo); }
-  .onde { font-size: 14px; color: var(--apagado); }
+  .dia.tokens { font-size: 22px; }
+  .par { font: 700 17px/1.2 var(--fonte-titulo); }
+  .onde { font-size: 13px; color: var(--apagado); }
   .rede { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 1px; }
   .rede.Solana { background: var(--sol); } .rede.Base { background: var(--base); }
-  .faixa { font-size: 15px; font-variant-numeric: tabular-nums; }
-  .faixa span { display: block; color: var(--apagado); font-size: 13px; }
-  .ruim { font-size: 15px; font-variant-numeric: tabular-nums; color: var(--ruim); text-align: right; }
-  .ruim span { display: block; color: var(--apagado); font-size: 12px; }
-  .detalhe { background: var(--tinta); border: 1px solid var(--linha); border-top: 0; padding: 16px 18px 18px; display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 28px; font-size: 14px; }
+  .faixa { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--apagado); }
+  .faixa b { color: var(--papel); font-weight: 400; }
+  .faixa .ruim { color: var(--ruim); }
+  .detalhe { background: var(--tinta); border: 1px solid var(--linha); border-top: 0; padding: 14px; display: grid;
+    grid-template-columns: 1fr 1fr; gap: 12px 20px; font-size: 13px; margin: 0; }
   .detalhe dt { color: var(--apagado); }
   .detalhe dd { margin: 0 0 2px; font-variant-numeric: tabular-nums; }
-  .posicoes { grid-column: 1 / -1; display: flex; gap: 3px; align-items: flex-end; height: 56px; }
+  .posicoes { grid-column: 1 / -1; display: flex; gap: 3px; align-items: flex-end; height: 48px; }
   .posicoes i { flex: 1; background: var(--ambar); opacity: .8; border-radius: 2px 2px 0 0; min-height: 2px; }
-  .vazio { padding: 40px 24px; text-align: center; color: var(--apagado); background: var(--tinta-2); border-radius: 10px; }
-  .vazio b { display: block; color: var(--papel); font: 700 20px/1.3 var(--fonte-titulo); margin-bottom: 6px; }
+  .vazio { padding: 32px 20px; text-align: center; color: var(--apagado); background: var(--tinta-2); border-radius: 10px; }
+  .vazio b { display: block; color: var(--papel); font: 700 18px/1.3 var(--fonte-titulo); margin-bottom: 6px; }
 
-  footer { margin-top: 36px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; color: var(--apagado); font-size: 14px; }
-  footer h2 { font: 700 16px/1.3 var(--fonte-titulo); color: var(--papel); margin: 0 0 8px; }
-  footer table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-  footer td { padding: 3px 8px 3px 0; border-bottom: 1px solid var(--tinta-2); }
+  .rodape { margin-top: 28px; display: grid; gap: 18px; color: var(--apagado); font-size: 13px; }
+  .rodape h2 { font: 700 15px/1.3 var(--fonte-titulo); color: var(--papel); margin: 0 0 6px; }
+  .rodape p { margin: 0; }
+  .rodape table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  .rodape td { padding: 2px 8px 2px 0; border-bottom: 1px solid var(--tinta-2); }
   .aviso { color: var(--ruim); }
 
-  @media (max-width: 760px) {
-    .linha { grid-template-columns: 1fr 1fr; gap: 10px 14px; }
-    .linha .faixa { grid-column: 1; } .linha .ruim { grid-column: 2; }
+  @media (max-width: 900px) {
+    :root { --topo: auto; }
+    header.topo { height: auto; }
+    main { grid-template-columns: 1fr; height: auto; }
+    .palco { height: 60vh; }
+    .lado { border-left: 0; border-top: 1px solid var(--linha); overflow: visible; }
   }
 </style>
 </head>
 <body>
-<div class="casca">
-  <header class="topo">
-    <h1>Laboratório de Agentes<small>As melhores pools da Solana e da Base, achadas pelos agentes a partir do Scanner Pulse.</small></h1>
+<header class="topo">
+  <div class="linha-topo">
+    <h1>Laboratório de Agentes</h1>
     <div class="ciclo" id="ciclo" role="status" aria-live="polite"><i class="pulso"></i><span id="ciclo-texto">ligando…</span></div>
-  </header>
-
+  </div>
   <section class="controles" aria-label="Filtros">
     <div class="grupo" id="capital"><span>Quanto colocar</span></div>
     <div class="grupo" id="redes"><span>Rede</span></div>
-    <div class="grupo">
-      <span>Agente</span>
-      <select id="agente"><option value="">Todos</option></select>
-    </div>
-    <div class="grupo">
-      <button class="chip" id="por-pool" aria-pressed="true" title="Mostra só o agente que mais rende em cada pool">Uma linha por pool</button>
-    </div>
+    <div class="grupo"><span>Agente</span><select id="agente"><option value="">Todos</option></select></div>
+    <div class="grupo"><button class="chip" id="por-pool" aria-pressed="true" title="Mostra só o agente que mais rende em cada pool">Uma linha por pool</button></div>
   </section>
+</header>
 
-  <section class="agentes" id="agentes" aria-label="Agentes"></section>
-  <section class="quadro" id="quadro" aria-label="Oportunidades"></section>
+<main>
+  <section class="palco" id="palco" aria-label="Cidade dos agentes">
+    <nav class="trilha" id="trilha" aria-label="Onde você está"></nav>
+    <p class="ajuda">Clique numa casa, sala ou mesa para entrar. Arraste para girar, use a roda do mouse para aproximar e Esc para voltar.</p>
+  </section>
+  <aside class="lado">
+    <section class="agentes" id="agentes" aria-label="Agentes"></section>
+    <section class="quadro" id="quadro" aria-label="Oportunidades"></section>
+    <div class="rodape">
+      <div><h2>Últimas rodadas</h2><table id="registro"></table></div>
+      <div><h2>Pools</h2><p id="pools"></p><p id="erro" class="aviso"></p></div>
+      <div><h2>Como ler</h2><p>"Por dia" é a média de 300 simulações de 30 dias com o motor do simulador, já tirando o gás de entrar e sair. O cenário ruim é o pior entre os 10% piores. Não é garantia: confira a nota do agente no boletim.</p></div>
+    </div>
+  </aside>
+</main>
+<div class="dica" id="dica" role="tooltip"></div>
 
-  <footer>
-    <div><h2>Últimas rodadas</h2><table id="registro"></table></div>
-    <div><h2>Pools</h2><p id="pools"></p><p id="erro" class="aviso"></p></div>
-    <div><h2>Como ler</h2><p>"Por dia" é a média de 300 simulações de 30 dias com o motor do simulador, já tirando o gás de entrar e sair. O cenário ruim é o pior entre os 10% piores. Não é garantia: confira a nota do agente no boletim.</p></div>
-  </footer>
-</div>
+<script type="module">
+import { criarCidade, AGENTES as CORES } from "./cidade.js";
 
-<script>
 const CAPITAIS = [100, 500, 1000, 5000];
 const ETAPAS = { ligando: "ligando…", scanner: "lendo o Scanner Pulse", precos: "buscando preços", agentes: "agentes trabalhando",
   boletim: "conferindo o boletim", pronto: "rodada pronta", esperando: "esperando a próxima rodada", erro: "erro" };
@@ -139,6 +146,7 @@ const usd = (v, casas = 2) => v == null || !isFinite(v) ? "—" :
 const preco = (v) => v == null ? "—" : v.toLocaleString("pt-BR", { maximumSignificantDigits: 5 });
 const horaBR = (t) => t ? new Date(t * 1000).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }) : "—";
 const dataBR = (t) => new Date(t * 1000).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const corHex = (n) => "#" + n.toString(16).padStart(6, "0");
 
 /** Resultado com outro capital: taxas e perda crescem junto com o dinheiro; o gás é fixo. */
 function porDia(v, a) {
@@ -153,6 +161,51 @@ function el(tag, attrs = {}, ...filhos) {
   return e;
 }
 
+// ---------- cidade ----------
+const dica = document.getElementById("dica");
+let cidade = null;
+try {
+  await document.fonts.ready;
+  cidade = criarCidade(document.getElementById("palco"), {
+    porDia,
+    aoEscolherPool: (id) => abrirPool(id),
+    aoMudarNivel: desenharTrilha,
+    aoPassar: (d) => {
+      if (!d || !d.texto) { dica.style.display = "none"; return; }
+      dica.textContent = d.texto; dica.style.display = "block";
+      dica.style.left = Math.min(innerWidth - 330, d.x + 14) + "px"; dica.style.top = (d.y + 14) + "px";
+    },
+  });
+} catch (e) {
+  document.getElementById("palco").replaceChildren(el("div", { class: "sem3d" }, "A cidade em 3D não abriu neste navegador (sem WebGL). O quadro ao lado continua funcionando."));
+  console.error(e);
+}
+function desenharTrilha({ nivel, rede, dex }) {
+  const t = document.getElementById("trilha");
+  if (!t) return;
+  const passos = [["Cidade", () => cidade.ir("cidade")]];
+  if (rede) passos.push([rede, () => cidade.ir("casa", rede)]);
+  if (dex) passos.push([dex, null]);
+  t.replaceChildren(...passos.flatMap(([nome, fn], i) => {
+    const atual = i === passos.length - 1;
+    const b = el("button", atual ? { "aria-current": "page" } : { onclick: fn }, nome);
+    return i ? [el("span", { class: "sep" }, "›"), b] : [b];
+  }));
+}
+addEventListener("keydown", (e) => { if (e.key === "Escape" && cidade) cidade.voltar(); });
+
+/** Clicou numa mesa: abre no quadro a melhor oportunidade daquela pool. */
+function abrirPool(id) {
+  const d = estado.dados;
+  const da = (d?.achados || []).filter((a) => a.pool_id === id).sort((x, y) => porDia(y.media_usd, y) - porDia(x.media_usd, x));
+  if (!da.length) return;
+  estado.rede = ""; estado.agente = ""; document.getElementById("agente").value = "";
+  estado.aberto = `${da[0].agente}|${id}`;
+  desenhar();
+  document.querySelector('.linha[aria-expanded="true"]')?.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+// ---------- controles e quadro ----------
 function montarControles() {
   const cap = document.getElementById("capital");
   for (const c of CAPITAIS) cap.append(el("button", { class: "chip", "data-v": c, onclick: () => mudarCapital(c) }, usd(c, 0)));
@@ -180,6 +233,7 @@ function desenharCiclo(etapa) {
   if (etapa === "erro" && d?.ciclo?.ultimo_erro) t = "erro: " + d.ciclo.ultimo_erro.mensagem;
   if (!ATIVAS.has(etapa) && d?.ciclo?.proxima) t += ` · próxima às ${horaBR(d.ciclo.proxima)}`;
   document.getElementById("ciclo-texto").textContent = t;
+  cidade?.etapa(etapa);
 }
 
 function desenhar() {
@@ -189,14 +243,15 @@ function desenhar() {
   document.getElementById("por-pool").setAttribute("aria-pressed", String(estado.porPool));
   if (!d) return;
   desenharCiclo(d.ciclo.etapa);
+  cidade?.atualizar(d, String(estado.capital));
 
   const sel = document.getElementById("agente");
   if (sel.options.length === 1) for (const a of d.agentes) sel.append(el("option", { value: a.id }, a.nome));
 
   const porId = Object.fromEntries(d.agentes.map((a) => [a.id, a]));
   document.getElementById("agentes").replaceChildren(...d.agentes.map((a) =>
-    el("div", { class: "agente", "data-achou": a.achados ? "1" : "0", title: a.mensagem || "" },
-      el("b", {}, a.nome), el("span", {}, `${a.achados} ${a.achados === 1 ? "achado" : "achados"} · ${notaBoletim(a)}`))));
+    el("div", { class: "agente", title: a.mensagem || "" }, el("i", { style: `background:${corHex(CORES[a.id]?.cor ?? 0x999999)}` }),
+      el("div", {}, el("b", {}, a.nome), el("span", {}, `${a.achados} ${a.achados === 1 ? "achado" : "achados"} · ${notaBoletim(a)}`)))));
 
   let lista = d.achados.filter((a) => (!estado.rede || a.rede === estado.rede) && (!estado.agente || a.agente === estado.agente));
   const contagem = {};
@@ -205,6 +260,7 @@ function desenhar() {
     const melhor = new Map();
     for (const a of lista) if (a.agente !== "acumulador_token" && (!melhor.has(a.pool_id) || a.media_usd > melhor.get(a.pool_id).media_usd)) melhor.set(a.pool_id, a);
     for (const a of lista) if (!melhor.has(a.pool_id)) melhor.set(a.pool_id, a);
+    if (estado.aberto) { const [ag, id] = estado.aberto.split("|"); const a = lista.find((x) => x.agente === ag && x.pool_id === id); if (a) melhor.set(id, a); }
     lista = [...melhor.values()];
   }
   lista.sort((x, y) => porDia(y.media_usd, y) - porDia(x.media_usd, x));
@@ -220,7 +276,7 @@ function desenhar() {
     quadro.replaceChildren(...lista.flatMap((a) => linha(a, porId[a.agente], contagem[a.pool_id])));
   }
 
-  document.getElementById("registro").replaceChildren(...d.registro.slice(0, 8).map((r) =>
+  document.getElementById("registro").replaceChildren(...d.registro.slice(0, 6).map((r) =>
     el("tr", {}, el("td", {}, dataBR(r.rodada)), el("td", {}, `${r.achados} achados`), el("td", {}, `${r.pools} pools`),
       el("td", {}, `${Math.round(r.duracao_s)} s`))));
   const prontas = d.pools.filter((p) => p.pronta).length;
@@ -235,14 +291,15 @@ function linha(a, ag, outros) {
   const id = `${a.agente}|${a.pool_id}`, aberto = estado.aberto === id;
   const dia = porDia(a.media_usd, a), ruim = porDia(a.p10_usd, a);
   const tok = a.agente === "acumulador_token" && a.tokens;
-  const btn = el("button", { class: "linha", "aria-expanded": String(aberto), onclick: () => { estado.aberto = aberto ? null : id; desenhar(); } },
+  const btn = el("button", { class: "linha", "aria-expanded": String(aberto),
+      onclick: () => { estado.aberto = aberto ? null : id; desenhar(); if (!aberto) cidade?.focarPool(a.pool_id); } },
     tok ? el("div", { class: "dia tokens" }, `+${a.tokens.ganho_pct.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`, el("small", {}, "mais tokens em 30 dias"))
         : el("div", { class: "dia" }, usd(dia), el("small", {}, `por dia · ${usd(dia * (a.dias || 30), 0)} em 30 dias`)),
     el("div", {}, el("div", { class: "par" }, a.par),
-      el("div", { class: "onde" }, el("i", { class: `rede ${a.rede}` }), `${a.dex} · ${a.rede} · ${a.nome}` + (estado.porPool && outros > 1 ? ` e mais ${outros - 1}` : ""))),
-    el("div", { class: "faixa" }, `${preco(a.faixa_min)} a ${preco(a.faixa_max)}`,
-      el("span", {}, `${MODELO[a.modelo] || a.modelo}, ${a.faixas} ${a.faixas === 1 ? "faixa" : "faixas"} · preço agora ${preco(a.preco)} ${a.cotacao || ""}`)),
-    el("div", { class: "ruim" }, usd(ruim), el("span", {}, "por dia no cenário ruim")));
+      el("div", { class: "onde" }, el("i", { class: `rede ${a.rede}` }), `${a.dex} · ${a.nome}` + (estado.porPool && outros > 1 ? ` e mais ${outros - 1}` : ""))),
+    el("div", { class: "faixa" }, el("b", {}, `${preco(a.faixa_min)} a ${preco(a.faixa_max)}`),
+      ` · ${MODELO[a.modelo] || a.modelo}, ${a.faixas} ${a.faixas === 1 ? "faixa" : "faixas"}`,
+      tok ? null : el("div", { class: "ruim" }, `cenário ruim ${usd(ruim)} por dia`)));
   if (!aberto) return [btn];
   const maxCap = Math.max(...a.posicoes.map((p) => p.cap));
   const k = estado.capital / (a.capital_usd || 1000);
@@ -251,8 +308,8 @@ function linha(a, ag, outros) {
       a.posicoes.map((p) => el("i", { style: `height:${Math.max(4, 100 * p.cap / maxCap)}%`, title: `${preco(p.a)} a ${preco(p.b)}: ${usd(p.cap * k)}` }))),
     el("div", {}, el("dt", {}, "Faixas (de baixo para cima)"),
       a.posicoes.map((p) => el("dd", {}, `${preco(p.a)} a ${preco(p.b)}: ${usd(p.cap * k, 0)}`))),
-    el("div", {}, el("dt", {}, "Em 30 dias, na média"), el("dd", {}, `taxas ${usd((a.taxas_usd) * k)}`), el("dd", {}, `gás ${usd(a.custo_usd)}`),
-      el("dd", {}, `ganho sobre a faixa única ${usd(a.ganho_vs_ref_usd * k)}`)),
+    el("div", {}, el("dt", {}, "Em 30 dias, na média"), el("dd", {}, `taxas ${usd(a.taxas_usd * k)}`), el("dd", {}, `gás ${usd(a.custo_usd)}`),
+      el("dd", {}, `ganho sobre a faixa única ${usd(a.ganho_vs_ref_usd * k)}`), el("dd", {}, `preço agora ${preco(a.preco)} ${a.cotacao || ""}`)),
     el("div", {}, el("dt", {}, "Risco"), el("dd", {}, `chance de fechar no prejuízo ${Math.round(a.prob_perda_pct)}%`),
       el("dd", {}, `tempo dentro da faixa ${Math.round(a.em_faixa_pct)}%`), el("dd", {}, `cenário bom ${usd(porDia(a.p90_usd, a))} por dia`)),
     el("div", {}, el("dt", {}, a.nome), el("dd", {}, a.motivo ? `entrou porque: ${a.motivo}` : ""), el("dd", {}, notaBoletim(ag))));

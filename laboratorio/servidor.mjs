@@ -16,7 +16,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
+import { resolve, dirname, extname, sep } from "node:path";
 import { Banco } from "./banco.mjs";
 import { passo, INTERVALOS } from "./rodada.mjs";
 import { AGENTES } from "../estudio/agentes/regras.mjs";
@@ -27,6 +27,9 @@ const ABRIR = !args.includes("--sem-navegador");
 const URL_LOCAL = `http://localhost:${PORTA}`;
 const DADOS = fileURLToPath(new URL("./dados/laboratorio.db", import.meta.url));
 const PAGINA = fileURLToPath(new URL("./pagina/index.html", import.meta.url));
+const PASTA_PAGINA = dirname(PAGINA);
+const TIPOS = { ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
+  ".svg": "image/svg+xml", ".png": "image/png", ".txt": "text/plain; charset=utf-8" };
 const NOME = Object.fromEntries(AGENTES.map((a) => [a.id, a.nome]));
 
 const agora = () => Math.floor(Date.now() / 1000);
@@ -116,6 +119,16 @@ async function iniciar() {
         ouvintes.add(res);
         req.on("close", () => ouvintes.delete(res));
         return;
+      }
+      // Arquivos da tela (cidade.js, vendor/three...), só de dentro de pagina/.
+      const arquivo = resolve(PASTA_PAGINA, "." + decodeURIComponent(url.pathname));
+      const tipo = TIPOS[extname(arquivo)];
+      if (tipo && arquivo.startsWith(PASTA_PAGINA + sep)) {
+        try {
+          const corpo = await readFile(arquivo);
+          res.writeHead(200, { "Content-Type": tipo, "Cache-Control": "no-store" });
+          return res.end(corpo);
+        } catch { /* não existe: 404 abaixo */ }
       }
       res.writeHead(404).end("não encontrado");
     } catch (e) {
