@@ -89,7 +89,7 @@ gráfico, favoritos, cenários), `atlas.conversor.cripto.<id>`,
 
 ## Capas
 
-Os 8 cards novos usam capa provisória em SVG (`assets/ferramentas/card-*.svg`).
+Os 8 cards novos usaram capa provisória em SVG até 15/11/2026 (ver "Artes finais" abaixo).
 O dono gera as artes no ChatGPT, no mesmo guia das capas de 15/10: foto de
 estúdio fotorrealista, retrato 2:3, assunto nos 60% de cima, 40% de baixo vazios
 e escuros terminando em `#0A1122`, sem texto, sem logos, sem neon. Quando
@@ -124,8 +124,12 @@ ChatGPT e mandou pelo chat. Convertidas para WebP 720×1080 (q82):
 | Lucro Cripto | `card-lucro.webp` | 50% 20% |
 | Estratégia de Pool | `card-pool.webp` | 50% 20% (a arte ocupa a altura toda: a base fica atrás do texto) |
 | Juros Compostos | `card-juros.webp` | 50% 20% |
+| Conversor e Câmbio | `card-conv.webp` | 50% 20% |
+| Simulador de Trade | `card-trade.webp` | 50% 20% |
+| Staking | `card-stake.webp` | 50% 20% |
+| Comparador de Ativos | `card-comp.webp` | 50% 20% |
 
-Faltam Conversor, Simulador de Trade, Staking e Comparador (seguem em SVG).
+As 8 capas provisórias em SVG foram apagadas (nada mais as usava).
 
 ## Ficou para depois
 
@@ -133,7 +137,6 @@ Faltam Conversor, Simulador de Trade, Staking e Comparador (seguem em SVG).
   antigo; decidir onde entra (talvez no Academy).
 - Ligar as ferramentas aos dados da carteira (ex.: preço médio do Hold no
   Lucro Cripto). Hoje nenhuma lê nem grava a carteira.
-- Artes finais das 8 capas.
 
 ## Verificação feita (08/11/2026, navegador do Claude, modo dev)
 
