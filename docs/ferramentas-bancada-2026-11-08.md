@@ -152,3 +152,18 @@ As 8 capas provisórias em SVG foram apagadas (nada mais as usava).
   (`atlas-auth.js` + `atlas-secure.js`). O redirecionamento para o login não
   foi testado sem sessão (havia sessão aberta no navegador e não se encerra a
   sessão do dono).
+
+## Fonte e nomes (15/11/2026)
+
+- **Fonte:** botões, campos e listas de seleção não herdavam a fonte da página
+  e saíam em Arial (abas e filtros do Scanner, chips do Oráculo, botões das
+  calculadoras). Regra geral em `core/ui/atlas-shell.css`, que todo o site
+  carrega: `button, input, select, textarea, optgroup { font-family: inherit; }`.
+  Medido depois em 12 telas: nenhum elemento fora do Inter/JetBrains Mono.
+- **Nomes:** "Scanner Pools" virou **Scanner de Pools de Liquidez** (título da
+  aba, marca no topo, rodapé, rótulos do backup em `core/atlas-backup.js`) e
+  "Estratégia de Pool" virou **Estratégias de Pools de Liquidez** (`build.js` e
+  `quadro-src.html`, inclusive o título da imagem exportada; link no Juros
+  Compostos). Pastas, chaves de armazenamento e comentários mantêm o nome antigo.
+  Com o nome maior, o cabeçalho da Estratégia quebra em duas linhas a 1440 px:
+  fica para o redesenho dessa página.

@@ -125,6 +125,13 @@ html[data-atlas-shell="on"] #oraculo-root .oraculo {
    módulos; qualquer regra solta de um deles podia empurrar o botão
    e fazê-lo rolar junto com a página. Aqui a posição é lei.
    =================================================================== */
+/* Campos e botões herdam a fonte da página (15/11/2026). O navegador dá
+   a eles a fonte do sistema (Arial no Windows) e várias ferramentas não
+   corrigiam: abas e filtros do Scanner, chips do Oráculo e botões das
+   calculadoras apareciam em Arial no meio do Inter. Todo o site carrega
+   este arquivo, então a regra vale para todos. */
+button, input, select, textarea, optgroup { font-family: inherit; }
+
 /* As Ferramentas não carregam atlas-theme.css. O componente precisa
    fornecer seus próprios tokens; sem --atlas-sp-6, right/bottom viram
    auto e o botão acaba fora da área visível. */
