@@ -160,7 +160,9 @@
    (Conversor e Câmbio, Escada, Lucro Cripto, Simulador de Trade, Estratégia
    de Pool, Staking, Juros Compostos, Comparador de Ativos) em 4 seções.
    Registro: docs/ferramentas-bancada-2026-11-08.md */
-/* v99 = roteador de dados (core/atlas-dados.js) para as 8 ferramentas da
+/* v99 (na main) = a Central RWA saiu (o backend deixou o Supabase): a página
+   RWA perdeu as abas Central RWA, Eventos e Agentes e abre no Dashboard. */
+/* v99 (nesta branch) = roteador de dados (core/atlas-dados.js) para as 8 ferramentas da
    bancada: reserva por tipo de dado, pausa da fonte que der limite e último
    valor guardado. Mapa das fontes: docs/apis/. */
 /* v100 = entrou a ferramenta Medo e Ganância (Ferramentas/medo-e-ganancia/), na
@@ -171,7 +173,11 @@
    parecidos e tempo até o alvo; Ferramentas/medo-e-ganancia/aba-agora.js). */
 /* v102 = Medo e Ganância com 5 abas (Agora, Gráfico, Estudo, Ondas de pânico,
    Aportes) e a aba Agora contando ciclos de queda, com 3m/6m/1a/2a por ciclo. */
-var VERSAO = "atlas-v102";
+/* v103 = junção da main (saída da Central RWA, Laboratório de Agentes,
+   Estúdio) com as Ferramentas pelo roteador e a pílula do Hold com caixa.
+   As duas linhas tinham usado "v99"; o número novo garante cache limpo
+   para quem estava em qualquer uma delas. */
+var VERSAO = "atlas-v103";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

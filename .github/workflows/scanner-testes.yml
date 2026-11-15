@@ -1,0 +1,42 @@
+name: Scanner Pools · testes
+
+# Era "Central RWA · testes". A Central RWA saiu em 11/11/2026; ficam os testes
+# do Scanner (JS da tela, função scanner-chat e o coletor Python) e o motor
+# do Estúdio de Agentes de Pools (estudio/motor).
+on:
+  push:
+    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "estudio/**", "core/atlas-storage.js", ".github/workflows/scanner-testes.yml"]
+  pull_request:
+    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "estudio/**", "core/atlas-storage.js"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scanner-js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: node --test Ferramentas/scanner-pools/*.test.cjs
+      - run: node --test central-rwa/supabase/functions/scanner-chat/handler.test.mjs
+      - run: node --test estudio/motor/*.test.mjs   # Estúdio de Agentes: motor = simulador
+      - run: node --test estudio/agentes/*.test.mjs # Estúdio de Agentes: agentes = caça-estratégias
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: central-rwa/backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: central-rwa/backend/pyproject.toml
+      - run: pip install -e ".[dev]"
+      - run: python -m pytest -q
