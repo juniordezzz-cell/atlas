@@ -283,7 +283,7 @@ empilhadas formavam fileiras de 2, 3, 4 e 2 cards.
   Pool" → "Estratégias de Pools de Liquidez" (só no card; as páginas das
   ferramentas mantêm o título antigo até a rodada de melhorias).
 - **Abas:** `js/ferramentas-abas.js` monta as abas a partir das
-  `<section class="tools-sec" id="gerir|planejar|defi|mercado">` (nome,
+  `<section class="tools-sec" id="sec-…" data-aba="gerir|planejar|defi|mercado">` (id com prefixo desde 15/11: com o mesmo nome da aba, o navegador rolava até a seção; ver docs/moldura-2026-11-15.md) (nome,
   contador e frase de apoio vêm do cabeçalho da seção, que some com
   `html.tools-com-abas`). A aba fica no endereço (`#defi`) e a última aberta é
   lembrada em `atlas.ferramentas.aba`. Setas ← → trocam de aba. Sem JS, as

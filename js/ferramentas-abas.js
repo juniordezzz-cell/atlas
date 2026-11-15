@@ -7,6 +7,9 @@
    frase de apoio do .tools-sec__sub. Só a seção da aba ativa aparece.
 
    - O endereço guarda a aba (#defi), então dá para mandar o link direto.
+     A seção se chama "sec-defi", não "defi": com o mesmo nome, o
+     navegador rolava a página até ela ao terminar de carregar
+     (aparecia no celular, onde a página é longa).
    - Sem hash, volta à última aba aberta neste navegador.
    - Setas ← → trocam de aba quando o foco está nelas.
    - Sem JS, nada se esconde: as seções aparecem uma embaixo da outra.
@@ -18,7 +21,7 @@
   var CHAVE = "atlas.ferramentas.aba";
   var barra = document.querySelector(".tools-tabs");
   var legenda = document.querySelector(".tools-tabs__sub");
-  var secoes = Array.prototype.slice.call(document.querySelectorAll(".tools-sec[id]"));
+  var secoes = Array.prototype.slice.call(document.querySelectorAll(".tools-sec[data-aba]"));
   if (!barra || secoes.length < 2) return;
 
   function texto(sec, sel) {
@@ -30,10 +33,10 @@
     var b = document.createElement("button");
     b.type = "button";
     b.className = "tools-tab";
-    b.id = "aba-" + sec.id;
+    b.id = "aba-" + sec.dataset.aba;
     b.setAttribute("role", "tab");
     b.setAttribute("aria-controls", sec.id);
-    b.dataset.alvo = sec.id;
+    b.dataset.alvo = sec.dataset.aba;
 
     var nome = document.createElement("span");
     nome.textContent = texto(sec, ".tools-sec__title");
@@ -54,10 +57,10 @@
   });
 
   function ativar(id, foco) {
-    var achou = secoes.some(function (s) { return s.id === id; });
-    if (!achou) id = secoes[0].id;
+    var achou = secoes.some(function (s) { return s.dataset.aba === id; });
+    if (!achou) id = secoes[0].dataset.aba;
 
-    secoes.forEach(function (s) { s.hidden = s.id !== id; });
+    secoes.forEach(function (s) { s.hidden = s.dataset.aba !== id; });
     abas.forEach(function (b) {
       var on = b.dataset.alvo === id;
       b.setAttribute("aria-selected", on ? "true" : "false");
@@ -66,7 +69,7 @@
     });
 
     if (legenda) {
-      var sec = document.getElementById(id);
+      var sec = document.querySelector('.tools-sec[data-aba="' + id + '"]');
       legenda.textContent = texto(sec, ".tools-sec__sub");
     }
 
