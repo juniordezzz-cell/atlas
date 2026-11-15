@@ -125,6 +125,13 @@ html[data-atlas-shell="on"] #oraculo-root .oraculo {
    módulos; qualquer regra solta de um deles podia empurrar o botão
    e fazê-lo rolar junto com a página. Aqui a posição é lei.
    =================================================================== */
+/* Campos e botões herdam a fonte da página (15/11/2026). O navegador dá
+   a eles a fonte do sistema (Arial no Windows) e várias ferramentas não
+   corrigiam: abas e filtros do Scanner, chips do Oráculo e botões das
+   calculadoras apareciam em Arial no meio do Inter. Todo o site carrega
+   este arquivo, então a regra vale para todos. */
+button, input, select, textarea, optgroup { font-family: inherit; }
+
 /* As Ferramentas não carregam atlas-theme.css. O componente precisa
    fornecer seus próprios tokens; sem --atlas-sp-6, right/bottom viram
    auto e o botão acaba fora da área visível. */
@@ -1389,3 +1396,299 @@ button.atlas-voz__mic:disabled { opacity: .5; cursor: not-allowed; }
 .atlas-oraculo__review-fields input,.atlas-oraculo__review-fields select { width:100%; box-sizing:border-box; display:block; margin-top:4px; background:#0b1422; border:1px solid #33435c; border-radius:8px; color:#dbe4f2; padding:8px; }
 .atlas-oraculo__review-dialog button { margin:12px 8px 0 0; padding:9px 12px; border-radius:8px; border:1px solid #33435c; background:#1b314d; color:#dbe4f2; cursor:pointer; }
 @media(max-width:440px) { .atlas-oraculo__review-fields { grid-template-columns:1fr; } }
+
+/* ===================================================================
+   MOLDURA ÚNICA (15/11/2026) — trilho recolhível + submenu central
+   -------------------------------------------------------------------
+   Comportamento em core/ui/atlas-moldura.js (carregado pelo shell).
+   Tudo aqui só vale com html.atlas-moldura, que o script põe: sem JS
+   o site continua com os menus antigos. NENHUMA regra deste bloco
+   pinta fundo de página — o trilho e a faixa do submenu são vidro
+   translúcido por cima do cenário de cada tela.
+   Registro: docs/moldura-2026-11-15.md
+   =================================================================== */
+html.atlas-moldura {
+  --atm-fechado: 68px;
+  --atm-aberto: 236px;
+  --atm-w: var(--atm-fechado);
+  --atm-vidro: rgba(6, 10, 20, 0.74);
+  --atm-linha: rgba(160, 185, 230, 0.11);
+  --atm-texto: #E6F1FF;
+  --atm-suave: rgba(230, 241, 255, 0.66);
+  --atm-apagado: #7A86A6;
+  --atm-acento: #00BFFF;
+  --atm-acento-suave: rgba(0, 191, 255, 0.14);
+}
+html.atlas-moldura[data-moldura="aberta"] { --atm-w: var(--atm-aberto); }
+
+/* a página anda para o lado do trilho */
+html.atlas-moldura body { padding-left: var(--atm-w); transition: padding-left .22s ease; }
+
+/* ---------- o trilho ---------- */
+.atm-trilho {
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  z-index: 70;
+  width: var(--atm-w);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 10px calc(12px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(10px, env(safe-area-inset-left, 0px));
+  background: var(--atm-vidro);
+  border-right: 1px solid var(--atm-linha);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  transition: width .22s ease, transform .22s ease;
+}
+.atm-trilho::-webkit-scrollbar { display: none; }
+.atm-ic { width: 19px; height: 19px; flex: none; }
+.atm-rot { white-space: nowrap; transition: opacity .15s ease; }
+
+.atm-topo { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 44px; margin-bottom: 8px; }
+.atm-marca { display: flex; align-items: center; gap: 10px; padding: 0 7px; color: var(--atm-texto); text-decoration: none; min-width: 0; }
+.atm-marca img { width: 30px; height: 30px; flex: none; object-fit: contain; }
+.atm-marca .atm-rot { font-weight: 700; font-size: 15px; letter-spacing: .18em; }
+.atm-alternar {
+  display: grid; place-items: center;
+  width: 32px; height: 32px; flex: none;
+  border: 1px solid var(--atm-linha); border-radius: 9px;
+  background: transparent; color: var(--atm-apagado);
+  cursor: pointer;
+  transition: color .15s ease, background .15s ease, transform .22s ease;
+}
+.atm-alternar:hover { color: var(--atm-texto); background: rgba(148, 170, 215, 0.08); }
+.atm-alternar .atm-ic { width: 16px; height: 16px; }
+
+.atm-nav { display: flex; flex-direction: column; gap: 2px; }
+.atm-item {
+  display: flex; align-items: center; gap: 13px;
+  height: 40px; padding: 0 14px;
+  border: 0; border-radius: 10px;
+  background: transparent; color: var(--atm-suave);
+  font: inherit; font-size: 14px; font-weight: 500;
+  text-decoration: none; text-align: left;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.atm-item:hover { background: rgba(148, 170, 215, 0.08); color: var(--atm-texto); }
+.atm-item.is-on { background: var(--atm-acento-suave); color: var(--atm-acento); }
+.atm-item:focus-visible, .atm-grupo__cab:focus-visible, .atm-alternar:focus-visible,
+.atm-sub__item:focus-visible, .atm-menu-cel:focus-visible { outline: 2px solid var(--atm-acento); outline-offset: 2px; }
+.atm-item kbd {
+  margin-left: auto;
+  font: 500 10.5px/1 "JetBrains Mono", monospace;
+  padding: 4px 6px; border-radius: 6px;
+  border: 1px solid var(--atm-linha); color: var(--atm-apagado);
+}
+
+/* grupos com setinha */
+.atm-grupo { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; }
+.atm-grupo__cab {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  height: 30px; padding: 0 10px 0 14px;
+  border: 0; border-radius: 8px; background: transparent;
+  color: var(--atm-apagado);
+  font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+  cursor: pointer;
+}
+.atm-grupo__cab:hover { color: var(--atm-texto); }
+.atm-seta { width: 15px; height: 15px; flex: none; transition: transform .2s ease; }
+.atm-grupo:not(.is-aberto) .atm-seta { transform: rotate(-90deg); }
+.atm-grupo__itens { display: flex; flex-direction: column; gap: 2px; }
+.atm-grupo:not(.is-aberto) .atm-grupo__itens { display: none; }
+
+.atm-pe { margin-top: auto; display: flex; flex-direction: column; gap: 2px; padding-top: 10px; border-top: 1px solid var(--atm-linha); }
+
+/* trilho FECHADO no PC: só ícones; grupos viram uma linha fina e
+   mostram todos os ícones (a setinha volta quando o trilho abre) */
+@media (min-width: 861px) {
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-rot { opacity: 0; pointer-events: none; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-item { padding: 0; justify-content: center; gap: 0; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-item .atm-rot,
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-item kbd { width: 0; overflow: hidden; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-marca { padding: 0; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-marca .atm-rot { width: 0; overflow: hidden; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-topo { flex-direction: column; gap: 10px; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-alternar { transform: rotate(180deg); }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--atm-linha); }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo__cab { display: none; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo .atm-grupo__itens { display: flex; }
+}
+
+/* ---------- submenu central (pílulas, estilo DeFi) ---------- */
+.atm-sub {
+  display: flex; align-items: center; gap: 4px;
+  margin-inline: auto;
+  padding: 4px;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border: 1px solid var(--atm-linha);
+  border-radius: 12px;
+  background: rgba(7, 11, 21, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+.atm-sub::-webkit-scrollbar { display: none; }
+.atm-sub__item {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 14px;
+  border: 0; border-radius: 9px;
+  background: transparent; color: var(--atm-apagado);
+  font: inherit; font-size: 13.5px; font-weight: 600; white-space: nowrap;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.atm-sub__item:hover { color: var(--atm-texto); }
+.atm-sub__item[aria-current="page"] { background: var(--atm-acento-suave); color: var(--atm-acento); }
+.atm-sub__n {
+  min-width: 20px; padding: 1px 6px; border-radius: 999px;
+  font-size: 11.5px; text-align: center; font-variant-numeric: tabular-nums;
+  background: rgba(140, 170, 225, 0.1);
+}
+/* no celular (ou onde não há barra de topo) vira uma faixa própria */
+.atm-sub.atm-sub--faixa {
+  margin: 0 0 14px;
+  border-radius: 12px;
+  justify-content: flex-start;
+}
+
+/* botão de menu no celular */
+.atm-menu-cel {
+  display: none;
+  place-items: center;
+  width: 38px; height: 38px; flex: none;
+  border: 1px solid var(--atm-linha); border-radius: 10px;
+  background: rgba(7, 11, 21, 0.55); color: var(--atm-suave);
+  cursor: pointer;
+}
+.atm-menu-cel .atm-ic { width: 18px; height: 18px; }
+.atm-menu-cel--solto {
+  position: fixed; z-index: 69;
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  left: max(10px, env(safe-area-inset-left, 0px));
+}
+
+.atm-veu { position: fixed; inset: 0; z-index: 69; background: rgba(2, 4, 9, 0.55); opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+
+@media (max-width: 860px) {
+  html.atlas-moldura { --atm-w: 0px; }
+  html.atlas-moldura[data-moldura="aberta"] { --atm-w: 0px; }
+  /* no celular a gaveta passa por cima das barras de topo dos módulos
+     (DeFi usa 100) e do Oráculo (950), e fica abaixo dos diálogos (1200+) */
+  .atm-trilho { z-index: 1100; width: var(--atm-aberto); transform: translateX(-100%); box-shadow: 24px 0 60px -20px rgba(0, 0, 0, .8); }
+  .atm-veu { z-index: 1099; }
+  html.atlas-moldura[data-moldura="aberta"] .atm-trilho { transform: none; }
+  html.atlas-moldura[data-moldura="aberta"] .atm-veu { opacity: 1; pointer-events: auto; }
+  .atm-alternar { display: none; }
+  html.atlas-moldura .atm-menu-cel { display: grid; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atm-trilho, .atm-rot, .atm-seta, .atm-veu, html.atlas-moldura body { transition: none; }
+}
+
+/* ===================================================================
+   O QUE SAI DE CENA com a moldura ligada
+   (os elementos continuam no DOM: o submenu espelhado clica neles)
+   =================================================================== */
+html.atlas-moldura .app > .sidebar,
+html.atlas-moldura #app > aside.sidebar,
+html.atlas-moldura #shell > #sidebar,
+html.atlas-moldura .nav-toggle,
+html.atlas-moldura .nav-scrim,
+html.atlas-moldura .atlas-backfoot { display: none !important; }
+
+/* páginas da raiz, Academy, Hold, RWA: a coluna do menu antigo some */
+html.atlas-moldura .app,
+html.atlas-moldura #app.app,
+html.atlas-moldura .app.collapsed,
+html.atlas-moldura .app-shell { grid-template-columns: minmax(0, 1fr) !important; }
+
+/* Trade: grade com áreas "brand topbar / nav view". No PC o submenu
+   mora dentro da barra; no celular ele ocupa a faixa do menu antigo. */
+html.atlas-moldura[data-moldura-mod="trade"] .app {
+  grid-template-rows: var(--topbar-h, 64px) 1fr !important;
+  grid-template-areas: "topbar" "view" !important;
+}
+@media (max-width: 860px) {
+  html.atlas-moldura[data-moldura-mod="trade"] .app {
+    grid-template-rows: var(--topbar-h, 64px) auto 1fr !important;
+    grid-template-areas: "topbar" "nav" "view" !important;
+  }
+  html.atlas-moldura[data-moldura-mod="trade"] .app > .atm-sub { grid-area: nav; margin: 8px 12px 4px; }
+}
+
+/* Com o submenu no topo, o subtítulo da barra (ex.: "Cursos, artigos,
+   links e papers") repetia as abas e espremia o submenu */
+html.atlas-moldura[data-moldura-sub="on"] .main > .topbar .greet p { display: none; }
+html.atlas-moldura .main > .topbar .greet { flex: none; }
+html.atlas-moldura[data-moldura-mod="trade"] .app > .brand-cell,
+html.atlas-moldura[data-moldura-mod="trade"] .app > nav.nav { display: none !important; }
+
+/* DeFi: a barra de topo é fixa e já tem o submenu; perde só a marca */
+html.atlas-moldura[data-moldura-mod="defi"] header.topnav { left: var(--atm-w); transition: left .22s ease; }
+html.atlas-moldura[data-moldura-mod="defi"] header.topnav .brand { display: none !important; }
+
+/* Mercado: a volta e a marca próprias saem (o trilho faz esse papel) */
+html.atlas-moldura[data-moldura-mod="mercado"] .main > header.topbar .ac-back { display: none !important; }
+
+/* abas originais escondidas só quando o espelho existe */
+html.atlas-moldura[data-moldura-sub="on"] .cc-tabs,
+html.atlas-moldura[data-moldura-sub="on"] .ac-tabs,
+html.atlas-moldura[data-moldura-sub="on"] .tools-tabs,
+html.atlas-moldura[data-moldura-sub="on"] .fx-subnav { display: none !important; }
+
+/* DeFi: o submenu dele (nav-links) ganha o mesmo desenho e o centro */
+html.atlas-moldura[data-moldura-mod="defi"] header.topnav .nav-links {
+  margin-inline: auto;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--atm-linha);
+  border-radius: 12px;
+  background: rgba(7, 11, 21, 0.55);
+}
+html.atlas-moldura[data-moldura-mod="defi"] header.topnav .nav-link {
+  height: 32px; padding: 0 14px; border-radius: 9px;
+  display: inline-flex; align-items: center;
+  font-size: 13.5px; font-weight: 600;
+}
+html.atlas-moldura[data-moldura-mod="defi"] header.topnav .nav-link::after { display: none !important; }
+html.atlas-moldura[data-moldura-mod="defi"] header.topnav .nav-link.active {
+  background: var(--atm-acento-suave); color: var(--atm-acento);
+}
+
+/* Scanner: o cabeçalho de ponta a ponta desconta o trilho */
+html.atlas-moldura.atlas-com-cenario .wrap > header.topbar {
+  margin-left: calc(50% - 50vw + var(--atm-w) / 2);
+  margin-right: calc(50% - 50vw + var(--atm-w) / 2);
+  padding-left: calc(50vw - 50% - var(--atm-w) / 2);
+  padding-right: calc(50vw - 50% - var(--atm-w) / 2);
+}
+html.atlas-moldura[data-moldura-mod="defi"] header.topnav .nav-spacer { display: none !important; }
+/* Finanças: o "Voltar ao Atlas" próprio sai (o trilho já leva de volta) */
+html.atlas-moldura .fx-back-atlas { display: none !important; }
+html.atlas-moldura[data-moldura-sub="on"] .cx-guias { display: none !important; }
+/* Scanner: a volta própria sai e as abas não quebram em duas linhas */
+html.atlas-moldura .back-atlas { display: none !important; }
+html.atlas-moldura[data-moldura-mod="tools"] nav.tabs .tab { white-space: nowrap; }
+/* Scanner: as abas dele ganham o mesmo desenho de pílula do submenu */
+html.atlas-moldura[data-moldura-mod="tools"] .wrap > header.topbar nav.tabs {
+  gap: 4px; padding: 4px; align-self: center;
+  border: 1px solid var(--atm-linha); border-radius: 12px;
+  background: rgba(7, 11, 21, 0.55);
+}
+html.atlas-moldura[data-moldura-mod="tools"] .wrap > header.topbar nav.tabs .tab {
+  height: 32px; padding: 0 14px; border: 0; border-radius: 9px;
+  font-size: 13.5px; display: inline-flex; align-items: center;
+}
+html.atlas-moldura[data-moldura-mod="tools"] .wrap > header.topbar nav.tabs .tab.on {
+  background: var(--atm-acento-suave); color: var(--atm-acento); border-bottom-color: transparent;
+}

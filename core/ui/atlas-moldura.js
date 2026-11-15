@@ -1,0 +1,372 @@
+/* ============================================================
+   ATLAS · core/ui/atlas-moldura.js — a moldura única (15/11/2026)
+   ------------------------------------------------------------
+   Modelo A, escolhido pelo dono no protótipo de navegação:
+
+     · um TRILHO à esquerda, igual em todo o site: fechado mostra só
+       os ícones (68 px); aberto mostra os nomes (236 px) e empurra a
+       página. O estado fica lembrado neste navegador.
+     · os destinos em grupos que abrem e fecham pela setinha:
+       Investimentos (Hold, Trade, DeFi, RWA, Carteiras) e
+       Mercado e estudos (Mercado, Academy, Ferramentas, Relatórios).
+     · o SUBMENU de cada módulo no centro da barra de topo.
+
+   Por que espelhar em vez de reescrever os módulos
+   ------------------------------------------------
+   Cada módulo tem roteamento próprio (Hold/Trade/RWA por #hash,
+   DeFi e Finanças por páginas, Mercado/Academy/Ferramentas por
+   abas em JS). O submenu aqui é um ESPELHO: cada botão clica no
+   item original, que continua no DOM (só escondido). Assim nenhum
+   roteador muda, e a marcação "ativo" vem do próprio módulo.
+
+   O que esta peça NÃO faz: não toca em fundo nenhum (cenário das
+   Ferramentas, efeitos do Academy, fundos dos módulos). Ela só
+   acrescenta o trilho e reorganiza a navegação.
+
+   CSS: bloco "MOLDURA" em core/ui/atlas-shell.css, que todas as
+   páginas carregam no <head>. As regras só valem com
+   html.atlas-moldura, que este arquivo põe.
+   Registro: docs/moldura-2026-11-15.md
+   ============================================================ */
+(function () {
+  "use strict";
+  if (window.AtlasMoldura) return;
+  if (!window.AtlasShell) return;
+
+  var html = document.documentElement;
+  var MODULE = AtlasShell.module();
+  var RAIZ = AtlasShell.raiz();
+  var CAMINHO = location.pathname.toLowerCase();
+
+  /* Páginas sem moldura: entrada, login, testes. */
+  if (/\/(index|login|landing|boas-vindas|offline|testes[^/]*)\.html$/.test(CAMINHO) &&
+      !/\/(hold|trade|defi|rwa|mercado|academy|ferramentas)\//.test(CAMINHO)) return;
+  if (/\/$/.test(CAMINHO) && MODULE === "atlas") return;
+
+  var CHAVE_ABERTA = "atlas.moldura.aberta";
+  var CHAVE_GRUPOS = "atlas.moldura.grupos";
+  var CELULAR = 860;
+
+  function ler(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function gravar(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* sem storage */ } }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function svg(path, cls) {
+    return '<svg class="' + (cls || "atm-ic") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + path + "</svg>";
+  }
+  var IC_SETA = '<path d="m6 9 6 6 6-6"/>';
+  var IC_MENU = '<path d="M4 7h16M4 12h16M4 17h16"/>';
+  var IC_RECOLHER = '<path d="M15 6l-6 6 6 6"/><path d="M4 4v16"/>';
+  var IC_BUSCA = '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>';
+
+  /* ---------- destinos e grupos ---------- */
+  var DEST = {};
+  AtlasShell.destinos().forEach(function (d) { DEST[d.id] = d; });
+  var MENU = [
+    { item: "dashboard" },
+    { grupo: "investimentos", nome: "Investimentos", itens: ["hold", "trade", "defi", "rwa", "carteiras"] },
+    { grupo: "mercado", nome: "Mercado e estudos", itens: ["mercado", "academy", "ferramentas", "relatorios"] }
+  ];
+
+  /* qual destino é a página atual */
+  function atual() {
+    if (MODULE === "tools") return "ferramentas";
+    if (MODULE !== "atlas") return MODULE;
+    var m = CAMINHO.match(/\/pages\/([a-z-]+)\.html$/);
+    return m ? m[1] : "dashboard";
+  }
+  var ATUAL = atual();
+
+  /* ---------- trilho ---------- */
+  var trilho, veu, botaoCel;
+
+  function linkDestino(id) {
+    var d = DEST[id];
+    if (!d) return "";
+    var on = id === ATUAL;
+    return '<a class="atm-item' + (on ? " is-on" : "") + '" href="' + esc(RAIZ + d.href) + '"' +
+      (on ? ' aria-current="page"' : "") + ' title="' + esc(d.label) + '">' +
+      svg(d.icon) + '<span class="atm-rot">' + esc(d.label) + "</span></a>";
+  }
+
+  function lerGrupos() {
+    var g = {};
+    try { g = JSON.parse(ler(CHAVE_GRUPOS) || "{}") || {}; } catch (e) { g = {}; }
+    return g;
+  }
+
+  function montarTrilho() {
+    var grupos = lerGrupos();
+    var partes = MENU.map(function (bloco) {
+      if (bloco.item) return linkDestino(bloco.item);
+      var temAtual = bloco.itens.indexOf(ATUAL) !== -1;
+      var aberto = (bloco.grupo in grupos) ? !!grupos[bloco.grupo] : true;
+      if (temAtual) aberto = true;
+      return '<div class="atm-grupo' + (aberto ? " is-aberto" : "") + '" data-grupo="' + bloco.grupo + '">' +
+        '<button type="button" class="atm-grupo__cab" aria-expanded="' + aberto + '" aria-controls="atm-g-' + bloco.grupo + '">' +
+        '<span class="atm-rot">' + esc(bloco.nome) + "</span>" + svg(IC_SETA, "atm-seta") + "</button>" +
+        '<div class="atm-grupo__itens" id="atm-g-' + bloco.grupo + '">' + bloco.itens.map(linkDestino).join("") + "</div></div>";
+    }).join("");
+
+    trilho = document.createElement("aside");
+    trilho.className = "atm-trilho";
+    trilho.id = "atlasMoldura";
+    trilho.setAttribute("aria-label", "Menu do ATLAS");
+    trilho.setAttribute("data-atlas-ui", "moldura");
+    trilho.innerHTML =
+      '<div class="atm-topo">' +
+        '<a class="atm-marca" href="' + esc(RAIZ + "pages/dashboard.html") + '" title="ATLAS">' +
+          '<img src="' + esc(RAIZ + "assets/iconeatlas.png") + '" alt="" width="30" height="30">' +
+          '<span class="atm-rot">ATLAS</span></a>' +
+        '<button type="button" class="atm-alternar" aria-controls="atlasMoldura">' + svg(IC_RECOLHER) + "</button>" +
+      "</div>" +
+      '<nav class="atm-nav">' + partes + "</nav>" +
+      '<div class="atm-pe">' +
+        '<button type="button" class="atm-item atm-busca" title="Buscar (Ctrl+K)">' + svg(IC_BUSCA) +
+          '<span class="atm-rot">Buscar</span><kbd class="atm-rot">Ctrl K</kbd></button>' +
+        linkDestino("configuracoes") +
+      "</div>";
+    document.body.insertBefore(trilho, document.body.firstChild);
+
+    veu = document.createElement("div");
+    veu.className = "atm-veu";
+    document.body.appendChild(veu);
+
+    trilho.querySelector(".atm-alternar").addEventListener("click", function () { alternar(); });
+    trilho.querySelector(".atm-busca").addEventListener("click", function () {
+      if (window.AtlasPalette && AtlasPalette.open) AtlasPalette.open();
+    });
+    trilho.addEventListener("click", function (ev) {
+      var cab = ev.target.closest(".atm-grupo__cab");
+      if (!cab) return;
+      /* com o trilho fechado no PC, a setinha abre o trilho primeiro */
+      if (!aberto() && !celular()) { definir(true); return; }
+      var g = cab.parentNode;
+      var abrir = !g.classList.contains("is-aberto");
+      g.classList.toggle("is-aberto", abrir);
+      cab.setAttribute("aria-expanded", abrir ? "true" : "false");
+      var mapa = lerGrupos();
+      mapa[g.getAttribute("data-grupo")] = abrir;
+      gravar(CHAVE_GRUPOS, JSON.stringify(mapa));
+    });
+    veu.addEventListener("click", function () { definir(false); });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && celular() && aberto()) definir(false);
+    });
+  }
+
+  /* só mexe na classe se ela muda: o observador abaixo reage a
+     atributos, e um add/remove "à toa" o faria rodar sem parar */
+  function classe(el, nome, ligar) {
+    if (el.classList.contains(nome) !== ligar) el.classList.toggle(nome, ligar);
+  }
+
+  function celular() { return window.innerWidth <= CELULAR; }
+  function aberto() { return html.getAttribute("data-moldura") === "aberta"; }
+  function definir(abrir) {
+    html.setAttribute("data-moldura", abrir ? "aberta" : "fechada");
+    var rot = abrir ? "Recolher menu" : "Abrir menu";
+    var b = trilho.querySelector(".atm-alternar");
+    b.setAttribute("aria-label", rot);
+    b.setAttribute("aria-expanded", abrir ? "true" : "false");
+    b.title = rot;
+    if (botaoCel) botaoCel.setAttribute("aria-expanded", abrir ? "true" : "false");
+    if (!celular()) gravar(CHAVE_ABERTA, abrir ? "1" : "0");
+  }
+  function alternar() { definir(!aberto()); }
+
+  /* ============================================================
+     SUBMENU — espelho do menu de cada módulo
+     ------------------------------------------------------------
+     itens:   onde estão os links/abas originais do módulo
+     esconde: o que sai da tela (o original continua no DOM)
+     topo:    a barra onde o submenu entra
+     ============================================================ */
+  var ADAPTA = {
+    hold:    { itens: "#app > aside.sidebar nav a.nav-item", topo: "#topbar" },
+    trade:   { itens: ".app nav.nav a.nav__item:not(.nav__back):not(.atlas-backfoot)", topo: ".app > header.topbar" },
+    rwa:     { itens: "#sidebar a.nav-item", topo: "#shell .main > header.topbar" },
+    defi:    { itens: null, topo: "header.topnav .topnav-inner" },
+    mercado: { itens: ".cc-tabs .cc-tab", topo: ".main > header.topbar" },
+    academy: { itens: ".ac-tabs .ac-tab", topo: ".main > header.topbar" },
+    atlas:   { itens: ".tools-tabs .tools-tab, .cx-guias .cx-guia", topo: ".main > header.topbar" },
+    tools:   { itens: ".fx-subnav .fx-pill", topo: ".fx-topbar, .wrap > header.topbar, .wrap > header.top" }
+  };
+  var CONF = ADAPTA[MODULE] || ADAPTA.atlas;
+  var sub = null, assinatura = "";
+
+  function ativo(el) {
+    return el.matches(".active, .is-active, .on, [aria-selected='true'], [aria-current='page'], [aria-current='true']");
+  }
+
+  function originais() {
+    if (!CONF.itens) return [];
+    return Array.prototype.slice.call(document.querySelectorAll(CONF.itens));
+  }
+
+  function rotulo(el) {
+    var c = el.cloneNode(true);
+    Array.prototype.forEach.call(c.querySelectorAll("svg, img, .sr-only"), function (n) { n.remove(); });
+    var spans = c.querySelectorAll("span");
+    /* contador (ex.: "Gerir o dinheiro 2") vira um selo discreto */
+    if (spans.length > 1) {
+      var nome = spans[0].textContent.trim();
+      var resto = Array.prototype.slice.call(spans, 1).map(function (s) { return s.textContent.trim(); }).join(" ");
+      return esc(nome) + (resto ? ' <span class="atm-sub__n">' + esc(resto) + "</span>" : "");
+    }
+    return esc(c.textContent.replace(/\s+/g, " ").trim());
+  }
+
+  function lugarDoSub() {
+    var topo = CONF.topo ? document.querySelector(CONF.topo) : null;
+    return topo;
+  }
+
+  function sincronizar() {
+    var lista = originais();
+    if (!lista.length) {
+      if (sub) { sub.remove(); sub = null; assinatura = ""; }
+      if (html.hasAttribute("data-moldura-sub")) html.removeAttribute("data-moldura-sub");
+      return;
+    }
+    if (!html.hasAttribute("data-moldura-sub")) html.setAttribute("data-moldura-sub", "on");
+    var assin = lista.map(function (el) { return el.textContent.trim(); }).join("|");
+    var topo = lugarDoSub();
+
+    if (!sub || assin !== assinatura) {
+      assinatura = assin;
+      if (!sub) {
+        sub = document.createElement("nav");
+        sub.className = "atm-sub";
+        sub.setAttribute("aria-label", "Seções desta página");
+        sub.addEventListener("click", function (ev) {
+          var b = ev.target.closest(".atm-sub__item");
+          if (!b) return;
+          ev.preventDefault();
+          var alvo = originais()[+b.getAttribute("data-i")];
+          if (alvo) alvo.click();
+          requestAnimationFrame(marcar);
+        });
+      }
+      sub.innerHTML = lista.map(function (el, i) {
+        return '<button type="button" class="atm-sub__item" data-i="' + i + '">' + rotulo(el) + "</button>";
+      }).join("");
+    }
+
+    /* põe no lugar certo: dentro da barra de topo no PC, logo abaixo
+       dela no celular (no topo não há largura para as abas) */
+    if (topo) {
+      if (celular()) {
+        if (sub.parentNode !== topo.parentNode || sub.previousElementSibling !== topo) {
+          topo.parentNode.insertBefore(sub, topo.nextSibling);
+        }
+        classe(sub, "atm-sub--faixa", true);
+      } else {
+        if (sub.parentNode !== topo) {
+          var depois = topo.firstElementChild;
+          /* entra depois do primeiro item VISÍVEL da barra (o título ou
+             a marca); botões escondidos, como o menu antigo, não contam */
+          while (depois && (/atm-menu-cel/.test(depois.className) || getComputedStyle(depois).display === "none")) {
+            depois = depois.nextElementSibling;
+          }
+          topo.insertBefore(sub, depois ? depois.nextSibling : null);
+        }
+        classe(sub, "atm-sub--faixa", false);
+      }
+    } else if (sub.parentNode !== document.body) {
+      document.body.insertBefore(sub, trilho.nextSibling);
+      classe(sub, "atm-sub--faixa", true);
+    }
+    marcar();
+  }
+
+  function marcar() {
+    if (!sub) return;
+    var lista = originais();
+    Array.prototype.forEach.call(sub.children, function (b, i) {
+      var v = (lista[i] && ativo(lista[i])) ? "page" : "false";
+      if (b.getAttribute("aria-current") !== v) b.setAttribute("aria-current", v);
+    });
+  }
+
+  /* botão de menu no celular: entra no começo da barra de topo */
+  function montarBotaoCel() {
+    botaoCel = document.createElement("button");
+    botaoCel.type = "button";
+    botaoCel.className = "atm-menu-cel";
+    botaoCel.setAttribute("aria-label", "Abrir menu");
+    botaoCel.setAttribute("aria-controls", "atlasMoldura");
+    botaoCel.setAttribute("aria-expanded", "false");
+    botaoCel.innerHTML = svg(IC_MENU);
+    botaoCel.addEventListener("click", function () { alternar(); });
+    posicionarBotaoCel();
+  }
+  function posicionarBotaoCel() {
+    var topo = document.querySelector(".atm-topo-alvo") || (CONF.topo ? document.querySelector(CONF.topo) : null);
+    if (topo) {
+      if (botaoCel.parentNode !== topo) topo.insertBefore(botaoCel, topo.firstChild);
+      classe(botaoCel, "atm-menu-cel--solto", false);
+    } else if (botaoCel.parentNode !== document.body) {
+      document.body.appendChild(botaoCel);
+      classe(botaoCel, "atm-menu-cel--solto", true);
+    }
+  }
+
+  /* ---------- liga tudo ---------- */
+  function iniciar() {
+    if (document.querySelector('[data-atlas-ui="moldura"]')) return;
+    html.classList.add("atlas-moldura");
+    /* o estilo mora em atlas-shell.css; com uma cópia antiga dele em
+       cache (o GitHub Pages guarda 10 min), o trilho apareceria cru.
+       Sem o estilo, a moldura não liga e o menu antigo fica. */
+    if (!getComputedStyle(html).getPropertyValue("--atm-fechado").trim()) {
+      html.classList.remove("atlas-moldura");
+      return;
+    }
+    html.setAttribute("data-moldura-mod", MODULE);
+    montarTrilho();
+    montarBotaoCel();
+    definir(celular() ? false : ler(CHAVE_ABERTA) === "1");
+    sincronizar();
+
+    /* módulos que redesenham o próprio topo ou as abas (Trade, Mercado)
+       tiram o submenu do lugar: um observador o devolve */
+    var pendente = false;
+    new MutationObserver(function () {
+      if (pendente) return;
+      pendente = true;
+      requestAnimationFrame(function () {
+        pendente = false;
+        posicionarBotaoCel();
+        sincronizar();
+      });
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-selected", "aria-current"] });
+
+    window.addEventListener("hashchange", function () { requestAnimationFrame(marcar); });
+    var eraCel = celular();
+    window.addEventListener("resize", function () {
+      var agora = celular();
+      if (agora === eraCel) return;
+      eraCel = agora;
+      definir(agora ? false : ler(CHAVE_ABERTA) === "1");
+      sincronizar();
+    }, { passive: true });
+    trilho.addEventListener("click", function (ev) {
+      if (celular() && ev.target.closest("a.atm-item")) definir(false);
+    });
+  }
+
+  window.AtlasMoldura = {
+    abrir: function () { definir(true); },
+    fechar: function () { definir(false); },
+    alternar: alternar,
+    sincronizar: sincronizar
+  };
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar);
+  else iniciar();
+})();

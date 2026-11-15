@@ -174,7 +174,8 @@
 /* v102 = Medo e Ganância com 5 abas (Agora, Gráfico, Estudo, Ondas de pânico,
    Aportes) e a aba Agora contando ciclos de queda, com 3m/6m/1a/2a por ciclo. */
 /* v103 = junção da main (saída da Central RWA, Laboratório de Agentes,
-   Estúdio) com as Ferramentas pelo roteador e a pílula do Hold com caixa.
+   Estúdio, moldura única do menu, capas finais das Ferramentas) com as
+   Ferramentas pelo roteador e a pílula do Hold com caixa.
    As duas linhas tinham usado "v99"; o número novo garante cache limpo
    para quem estava em qualquer uma delas. */
 var VERSAO = "atlas-v103";

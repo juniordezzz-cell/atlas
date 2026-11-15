@@ -2007,6 +2007,14 @@
     } else {
       anchorGuard(existing);
     }
+    /* Moldura única (trilho recolhível + submenu central), 15/11/2026.
+       Ver core/ui/atlas-moldura.js e docs/moldura-2026-11-15.md. */
+    if (!document.querySelector('script[data-atlas-moldura]')) {
+      var mold = document.createElement('script');
+      mold.setAttribute('data-atlas-moldura', '');
+      mold.src = RAIZ + 'core/ui/atlas-moldura.js?v=1';
+      document.head.appendChild(mold);
+    }
     if (!document.querySelector('script[data-atlas-voz]')) {
       var voz = document.createElement('script');
       voz.setAttribute('data-atlas-voz', '');

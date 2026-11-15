@@ -395,3 +395,118 @@ html .tools-grid .tool-card--art:hover {
   html .tools-grid .tool-card--art,
   .tools-grid .tool-card--soon { min-height: 500px; }
 }
+
+/* ============================================================
+   ABAS + CARDS PADRONIZADOS (15/11/2026)
+   Pedido do dono: sem o botão "Abrir ferramenta" (o card inteiro é o
+   link), o nome de toda ferramenta na mesma altura e os grupos em abas
+   no lugar das seções empilhadas. Abas: js/ferramentas-abas.js.
+   ============================================================ */
+
+/* --- abas dos grupos --- */
+.tools-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 4px;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-radius: 14px;
+  background: rgba(7, 11, 21, 0.55);
+  border: 1px solid var(--atlas-border, rgba(140, 170, 225, 0.13));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.tools-tabs::-webkit-scrollbar { display: none; }
+.tools-tabs[hidden], .tools-tabs__sub[hidden] { display: none; }
+.tools-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--atlas-text-faint, #7A86A6);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.tools-tab:hover { color: var(--texto, #E6F1FF); }
+.tools-tab[aria-selected="true"] {
+  background: var(--atlas-accent-soft, rgba(0, 191, 255, 0.14));
+  color: var(--atlas-accent-text, #00BFFF);
+}
+.tools-tab:focus-visible {
+  outline: 2px solid var(--atlas-accent-text, #00BFFF);
+  outline-offset: 1px;
+}
+.tools-tab__count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  background: rgba(140, 170, 225, 0.1);
+}
+.tools-tabs__sub {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--atlas-text-faint, #7A86A6);
+}
+
+/* com as abas ligadas, o cabeçalho de cada seção vira a própria aba */
+html.tools-com-abas .tools-sec__head { display: none; }
+.tools-sec[hidden] { display: none; }
+
+/* --- grade: uma fileira, cards da mesma largura em todas as abas --- */
+.tools-grid {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  max-width: calc(4 * 300px + 3 * 18px);
+}
+
+/* --- card: altura fixa e texto em posição fixa --- */
+html .tools-grid .tool-card--art {
+  height: 520px;
+  min-height: 0;
+}
+.tool-card--art .tool-card__body {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  gap: 10px;
+  padding: 20px 20px 20px;
+}
+.tool-card--art .tool-card__title {
+  font-size: 19px;
+  line-height: 1.25;
+}
+.tool-card--art .tool-card__desc {
+  font-size: 13.5px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tool-card--art .tool-card__chips { margin-top: auto; }
+.tool-card__veil {
+  background: linear-gradient(180deg,
+    rgba(10, 17, 34, 0) 30%,
+    rgba(10, 17, 34, 0.72) 44%,
+    rgba(10, 17, 34, 0.97) 54%,
+    #0A1122 100%);
+}
+
+@media (max-width: 560px) {
+  .tools-tabs { width: auto; }
+  html .tools-grid .tool-card--art { height: 470px; }
+}

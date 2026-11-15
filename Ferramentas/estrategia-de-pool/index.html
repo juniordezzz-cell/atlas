@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Estratégia de Pool do ATLAS: monte a faixa de uma pool concentrada para comprar na descida, vender na subida, ter renda em dólar ou escolher a proporção.">
-<title>Estratégia de Pool — ATLAS</title>
+<meta name="description" content="Estratégias de Pools de Liquidez do ATLAS: monte a faixa de uma pool concentrada para comprar na descida, vender na subida, ter renda em dólar ou escolher a proporção.">
+<title>Estratégias de Pools de Liquidez — ATLAS</title>
 <link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
 <!-- Inter e JetBrains Mono servidas pelo próprio ATLAS -->
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
@@ -184,7 +184,7 @@ body.present .kv b{font-size:19px}
 <div class="app">
   <header>
     <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
-    <h1>Estratégia de <span>Pool</span></h1>
+    <h1>Estratégias de <span>Pools de Liquidez</span></h1>
     <div class="grp">
       <span class="lbl">Tempo</span>
       <div class="seg" id="tf">
@@ -296,7 +296,7 @@ body.present .kv b{font-size:19px}
           <div class="sub" id="pStrat">
             <button data-ps="buy">Comprar na descida</button><button data-ps="sell">Vender na subida</button><button data-ps="yield">Renda em dólar</button><button data-ps="ratio">Proporção</button><button data-ps="full">Faixa cheia (V2)</button>
           </div>
-          <p class="note">Procurando uma pool? Abra o <a href="../scanner-pools/index.html" style="color:var(--accent)">Scanner Pools</a>.</p>
+          <p class="note">Procurando uma pool? Abra o <a href="../scanner-pools/index.html" style="color:var(--accent)">Scanner de Pools de Liquidez</a>.</p>
           <p class="note" id="pIntro"></p>
           <div class="row" id="pQuick"></div>
           <div class="fgrid">
@@ -1201,7 +1201,7 @@ $('#imgBtn').onclick=async()=>{
   const old=S.card,om=S.mouse;S.card=true;S.mouse=null;draw();const d=devicePixelRatio||1,band=38;
   const oc=document.createElement('canvas');oc.width=cv.width;oc.height=cv.height+band*d;const o=oc.getContext('2d');
   o.fillStyle=COL.bg;o.fillRect(0,0,oc.width,oc.height);o.setTransform(d,0,0,d,0,0);o.textBaseline='middle';
-  o.font='700 17px '+C('--f-display');o.fillStyle=COL.fg;const T1=TOOL==='pool'?'Estratégia de ':'Escada ',T2=TOOL==='pool'?'Pool':'· DCA e preço médio';o.fillText(T1,12,band/2);const w1=o.measureText(T1).width;o.fillStyle=COL.avg;o.fillText(T2,12+w1,band/2);
+  o.font='700 17px '+C('--f-display');o.fillStyle=COL.fg;const T1=TOOL==='pool'?'Estratégias de ':'Escada ',T2=TOOL==='pool'?'Pools de Liquidez':'· DCA e preço médio';o.fillText(T1,12,band/2);const w1=o.measureText(T1).width;o.fillStyle=COL.avg;o.fillText(T2,12+w1,band/2);
   o.font='13px '+FB;o.fillStyle=COL.muted;o.textAlign='right';o.fillText(`${S.asset} · ${new Date().toLocaleDateString('pt-BR')}`,W-12,band/2);
   o.setTransform(1,0,0,1,0,0);o.drawImage(cv,0,band*d);S.card=old;S.mouse=om;draw();
   const blob=await new Promise(r=>oc.toBlob(r,'image/png'));if(blob)await saveFile(`quadro-${String(S.asset).toLowerCase()}-${dstr(Date.now())}.png`,blob);

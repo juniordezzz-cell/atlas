@@ -41,3 +41,5 @@ Bancada de Ferramentas (08/11/2026): as 8 calculadoras vindas do site antigo, as
 APIs e roteador de dados (08/11/2026): antes de colocar qualquer chamada de rede, leia [docs/apis/](docs/apis/README.md). As ferramentas da bancada só buscam dados por `core/atlas-dados.js` (`window.AtlasDados`); a CoinGecko é a última reserva. Validar com `node --test core/testes/atlas-dados.test.cjs`.
 
 Ferramenta Medo e Ganância (14/11/2026): `Ferramentas/medo-e-ganancia/`, contas puras em `estatistica.js`, dados só por `AtlasDados.velasLongas` e `AtlasDados.medoGanancia`, gráfico em `assets/vendor/lightweight-charts-4.2.0/`. LUNA fica fixa em `dados-luna.js` (o par LUNAUSDT de hoje é outro token). Ver [o registro](docs/ferramenta-medo-ganancia-2026-11-14.md). Validar com `node --test Ferramentas/medo-e-ganancia/estatistica.test.cjs core/testes/atlas-dados.test.cjs`.
+
+Moldura única (15/11/2026): o menu lateral e o submenu do topo de TODAS as áreas vêm de `core/ui/atlas-moldura.js` + bloco "MOLDURA ÚNICA" em `core/ui/atlas-shell.css`. Antes de mexer na navegação de qualquer área, leia [o registro](docs/moldura-2026-11-15.md). Não tocar em fundos de página ao mexer na moldura.

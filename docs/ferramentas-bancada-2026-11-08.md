@@ -98,7 +98,7 @@ gráfico, favoritos, cenários), `atlas.conversor.cripto.<id>`,
 
 ## Capas
 
-Os 8 cards novos usam capa provisória em SVG (`assets/ferramentas/card-*.svg`).
+Os 8 cards novos usaram capa provisória em SVG até 15/11/2026 (ver "Artes finais" abaixo).
 O dono gera as artes no ChatGPT, no mesmo guia das capas de 15/10: foto de
 estúdio fotorrealista, retrato 2:3, assunto nos 60% de cima, 40% de baixo vazios
 e escuros terminando em `#0A1122`, sem texto, sem logos, sem neon. Quando
@@ -121,13 +121,31 @@ Modelo de prompt (troque assunto e cores pela linha da tabela):
 
 > Photorealistic studio product photograph, vertical 2:3 portrait. [ASSUNTO, em inglês], with realistic materials, reflections and fine surface detail. Key light from the upper right, [COR PRINCIPAL] rim light, soft [COR DE APOIO] reflection. Shallow depth of field, 85mm lens, 3/4 view from slightly above. Deep midnight navy background (#0B1120) with a soft vignette. Subject fills the upper 60% of the frame; the lower 40% is empty, dark and smooth, fading to solid #0A1122 at the very bottom edge. No text, no logos, no frame or card behind the objects, no neon glow, no illustration or cartoon style.
 
+### Artes finais (15/11/2026)
+
+Prompts refeitos na receita da Calculadora (objeto premium grande, de perto, em
+3/4 + painéis de vidro flutuando com o gráfico da ferramenta); o dono gerou no
+ChatGPT e mandou pelo chat. Convertidas para WebP 720×1080 (q82):
+
+| Card | Arquivo | `object-position` |
+|---|---|---|
+| Escada | `card-escada.webp` | 50% 0% |
+| Lucro Cripto | `card-lucro.webp` | 50% 20% |
+| Estratégia de Pool | `card-pool.webp` | 50% 20% (a arte ocupa a altura toda: a base fica atrás do texto) |
+| Juros Compostos | `card-juros.webp` | 50% 20% |
+| Conversor e Câmbio | `card-conv.webp` | 50% 20% |
+| Simulador de Trade | `card-trade.webp` | 50% 20% |
+| Staking | `card-stake.webp` | 50% 20% |
+| Comparador de Ativos | `card-comp.webp` | 50% 20% |
+
+As 8 capas provisórias em SVG foram apagadas (nada mais as usava).
+
 ## Ficou para depois
 
 - **IMD** (diagnóstico do investidor): depende do Firebase e do painel do site
   antigo; decidir onde entra (talvez no Academy).
 - Ligar as ferramentas aos dados da carteira (ex.: preço médio do Hold no
   Lucro Cripto). Hoje nenhuma lê nem grava a carteira.
-- Artes finais das 8 capas.
 
 ## Verificação feita (08/11/2026, navegador do Claude, modo dev)
 
@@ -143,3 +161,18 @@ Modelo de prompt (troque assunto e cores pela linha da tabela):
   (`atlas-auth.js` + `atlas-secure.js`). O redirecionamento para o login não
   foi testado sem sessão (havia sessão aberta no navegador e não se encerra a
   sessão do dono).
+
+## Fonte e nomes (15/11/2026)
+
+- **Fonte:** botões, campos e listas de seleção não herdavam a fonte da página
+  e saíam em Arial (abas e filtros do Scanner, chips do Oráculo, botões das
+  calculadoras). Regra geral em `core/ui/atlas-shell.css`, que todo o site
+  carrega: `button, input, select, textarea, optgroup { font-family: inherit; }`.
+  Medido depois em 12 telas: nenhum elemento fora do Inter/JetBrains Mono.
+- **Nomes:** "Scanner Pools" virou **Scanner de Pools de Liquidez** (título da
+  aba, marca no topo, rodapé, rótulos do backup em `core/atlas-backup.js`) e
+  "Estratégia de Pool" virou **Estratégias de Pools de Liquidez** (`build.js` e
+  `quadro-src.html`, inclusive o título da imagem exportada; link no Juros
+  Compostos). Pastas, chaves de armazenamento e comentários mantêm o nome antigo.
+  Com o nome maior, o cabeçalho da Estratégia quebra em duas linhas a 1440 px:
+  fica para o redesenho dessa página.

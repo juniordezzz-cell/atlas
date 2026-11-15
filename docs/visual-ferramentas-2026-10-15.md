@@ -264,3 +264,32 @@ módulos (`hold/`, `trade/`, `defi/`, `RWA/`, `wallets/`, `academy/`,
 `mercado/`) e conferir, módulo a módulo, as cascas que pintam fundo
 opaco (como o `.fx-app` do Finanças). Depois disso, atualizar a spec do
 visual sereno.
+
+## Abas e cards padronizados (15/11/2026)
+
+Pedido do dono, com as 11 capas finais já no lugar: os nomes ficavam cada um
+numa altura (o corpo do card era colado na base e o texto tinha tamanhos
+diferentes), o botão "Abrir ferramenta" era desnecessário e as quatro seções
+empilhadas formavam fileiras de 2, 3, 4 e 2 cards.
+
+- **Sem "Abrir ferramenta":** o card inteiro continua sendo o link.
+- **Card de altura fixa (520 px; 470 no celular)** e corpo em posição fixa,
+  começando em 50% da altura: o título fica na mesma linha em todos os cards.
+  Descrição limitada a 3 linhas e chips presos na base. O véu escurece mais
+  cedo (30% → 54%) porque o texto agora começa no meio.
+- **Textos dos cards encurtados** para uma frase objetiva cada; no máximo 3
+  chips (o Scanner perdeu "Guia").
+- **Nomes:** "Scanner Pools" → "Scanner de Pools de Liquidez" e "Estratégia de
+  Pool" → "Estratégias de Pools de Liquidez" (só no card; as páginas das
+  ferramentas mantêm o título antigo até a rodada de melhorias).
+- **Abas:** `js/ferramentas-abas.js` monta as abas a partir das
+  `<section class="tools-sec" id="sec-…" data-aba="gerir|planejar|defi|mercado">` (id com prefixo desde 15/11: com o mesmo nome da aba, o navegador rolava até a seção; ver docs/moldura-2026-11-15.md) (nome,
+  contador e frase de apoio vêm do cabeçalho da seção, que some com
+  `html.tools-com-abas`). A aba fica no endereço (`#defi`) e a última aberta é
+  lembrada em `atlas.ferramentas.aba`. Setas ← → trocam de aba. Sem JS, as
+  seções aparecem empilhadas como antes.
+- **Grade:** `minmax(250px, 1fr)` com `auto-fill` e largura máxima de 4 cards,
+  então o card tem a mesma largura em todas as abas.
+
+Conferido (navegador do Claude, modo dev): nas 4 abas, a 1440 px e a 390 px,
+todos os títulos na mesma altura e sem rolagem horizontal.
