@@ -5,9 +5,9 @@ name: Scanner Pools · testes
 # do Estúdio de Agentes de Pools (estudio/motor).
 on:
   push:
-    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "estudio/**", "core/atlas-storage.js", ".github/workflows/scanner-testes.yml"]
+    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "estudio/**", "laboratorio/**", "core/atlas-storage.js", ".github/workflows/scanner-testes.yml"]
   pull_request:
-    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "estudio/**", "core/atlas-storage.js"]
+    paths: ["central-rwa/**", "Ferramentas/scanner-pools/**", "estudio/**", "laboratorio/**", "core/atlas-storage.js"]
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,7 @@ jobs:
       - run: node --test central-rwa/supabase/functions/scanner-chat/handler.test.mjs
       - run: node --test estudio/motor/*.test.mjs   # Estúdio de Agentes: motor = simulador
       - run: node --test estudio/agentes/*.test.mjs # Estúdio de Agentes: agentes = caça-estratégias
+      - run: node --test laboratorio/*.test.mjs     # Laboratório de Agentes no PC (fontes, banco e ciclo)
   pytest:
     runs-on: ubuntu-latest
     timeout-minutes: 10
