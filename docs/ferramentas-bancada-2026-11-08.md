@@ -112,6 +112,21 @@ Modelo de prompt (troque assunto e cores pela linha da tabela):
 
 > Photorealistic studio product photograph, vertical 2:3 portrait. [ASSUNTO, em inglês], with realistic materials, reflections and fine surface detail. Key light from the upper right, [COR PRINCIPAL] rim light, soft [COR DE APOIO] reflection. Shallow depth of field, 85mm lens, 3/4 view from slightly above. Deep midnight navy background (#0B1120) with a soft vignette. Subject fills the upper 60% of the frame; the lower 40% is empty, dark and smooth, fading to solid #0A1122 at the very bottom edge. No text, no logos, no frame or card behind the objects, no neon glow, no illustration or cartoon style.
 
+### Artes finais (15/11/2026)
+
+Prompts refeitos na receita da Calculadora (objeto premium grande, de perto, em
+3/4 + painéis de vidro flutuando com o gráfico da ferramenta); o dono gerou no
+ChatGPT e mandou pelo chat. Convertidas para WebP 720×1080 (q82):
+
+| Card | Arquivo | `object-position` |
+|---|---|---|
+| Escada | `card-escada.webp` | 50% 0% |
+| Lucro Cripto | `card-lucro.webp` | 50% 20% |
+| Estratégia de Pool | `card-pool.webp` | 50% 20% (a arte ocupa a altura toda: a base fica atrás do texto) |
+| Juros Compostos | `card-juros.webp` | 50% 20% |
+
+Faltam Conversor, Simulador de Trade, Staking e Comparador (seguem em SVG).
+
 ## Ficou para depois
 
 - **IMD** (diagnóstico do investidor): depende do Firebase e do painel do site
