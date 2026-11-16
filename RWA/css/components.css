@@ -301,8 +301,9 @@ select.rinput { appearance: none; }
 textarea.rinput { resize: vertical; min-height: 90px; }
 
 .rbtn { border: 1px solid transparent; border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: filter var(--fast, .15s), background var(--fast, .15s); }
-.rbtn-primary { background: #4F8CFF; color: #0B0F1A; }
-.rbtn-primary:hover { filter: brightness(1.12); }
+/* cor de ação única do ATLAS (themes/atlas-theme.css) */
+.rbtn-primary { background: var(--atlas-acao, #00BFFF); color: var(--atlas-acao-tinta, #04121C); }
+.rbtn-primary:hover { background: var(--atlas-acao-hover, #33CCFF); color: var(--atlas-acao-tinta, #04121C); }
 .rbtn-ghost { background: transparent; color: var(--text-2, #9CA3AF); border-color: rgba(255,255,255,0.12); }
 .rbtn-ghost:hover { color: var(--text, #E5E7EB); background: var(--atlas-inner); }
 .rbtn-danger { background: rgba(239,68,68,0.14); color: #EF4444; border-color: rgba(239,68,68,0.3); }

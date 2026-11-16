@@ -129,7 +129,7 @@
      definição só — com descrições e grupos aqui. */
   var APP_DESC = {
     dashboard: "Visão geral do patrimônio", hold: "Carteira de longo prazo",
-    trade: "Operações e processo", defi: "Pools, staking e lending",
+    trade: "Operações e processo", defi: "Pools, staking e empréstimos",
     rwa: "Ativos do mundo real", carteiras: "Carteiras e movimentações",
     mercado: "Cripto e RWA em tempo real", academy: "Cursos e aulas", ferramentas: "A bancada de utilidades",
     relatorios: "Relatórios do patrimônio", configuracoes: "Preferências e dados"

@@ -86,8 +86,8 @@
       ? k.medidos + (k.medidos === 1 ? " operação encerrada" : " operações encerradas")
       : "sem operação encerrada";
     return '<div class="dash__kpis">' +
-      kpiCard("Winrate", k.medidos ? k.winrate + "%" : "—", sub, null, k.winrate >= 55, 0.10) +
-      kpiCard("Profit factor", pf, "lucro / prejuízo", null, k.profitFactor >= 1.5, 0.14) +
+      kpiCard("Taxa de acerto", k.medidos ? k.winrate + "%" : "—", sub, null, k.winrate >= 55, 0.10) +
+      kpiCard("Fator de lucro", pf, "lucro / prejuízo", null, k.profitFactor >= 1.5, 0.14) +
       kpiCard("Encerradas", String(k.trades), "com resultado em dólar", null, true, 0.18) +
       kpiCard("Tempo médio", k.avgHold, "por operação", null, true, 0.22) +
       '</div>';
@@ -103,10 +103,10 @@
         '<div class="list__body"><b>' + u.escape(t.asset) + ' · ' + (t.side === "long" ? "Long" : "Short") + (t.leverage ? ' ' + u.escape(t.leverage) : '') + '</b>' +
         '<span>entrada ' + u.escape(String(num0(t.entry))) + ' · há ' + u.dur(age) + '</span></div>' +
         '<div class="list__meta"><span class="mono ' + (up ? 'up' : 'down') + '">' + u.pct(t.pnl) + '</span></div></div>';
-    }).join("") : '<div class="list__item"><span style="color:var(--text-mut)">Nenhum trade aberto.</span></div>';
+    }).join("") : '<div class="list__item"><span style="color:var(--text-mut)">Nenhuma operação aberta.</span></div>';
 
     return '<div class="card reveal" style="animation-delay:.30s"><div class="card__head">' +
-      '<span class="card__title">Trades abertos</span>' +
+      '<span class="card__title">Operações abertas</span>' +
       '<button class="btn btn--ghost" data-go="trades">Ver todos</button></div>' +
       '<div class="list">' + body + '</div></div>';
   }
@@ -115,11 +115,11 @@
   function deriveAlerts() {
     var app = ATLAS.app, u = ATLAS.util, out = [];
     app.tradesToReview(app.pref("tradeReviewH") || 24).forEach(function (t) {
-      out.push({ level: "warn", text: "Trade de " + t.asset + " aberto há " + u.dur(app.tradeAgeHours(t)) + " sem revisão.", ref: "Trades", go: "trades" });
+      out.push({ level: "warn", text: "Operação de " + t.asset + " aberta há " + u.dur(app.tradeAgeHours(t)) + " sem revisão.", ref: "Trades", go: "trades" });
     });
     var pendRev = app.tradesAwaitingReview();
     if (pendRev.length)
-      out.push({ level: "azure", text: pendRev.length + " trade(s) encerrado(s) aguardando pós-análise.", ref: "Analytics", go: "analytics" });
+      out.push({ level: "azure", text: pendRev.length + " operação(ões) encerrada(s) aguardando pós-análise.", ref: "Análises", go: "analytics" });
     return out.concat(app.walletData().alerts || []);
   }
 
@@ -169,7 +169,7 @@
     });
   }
 
-  ATLAS.router.register("dashboard", { label: "Dashboard", icon: "dashboard", render: render });
+  ATLAS.router.register("dashboard", { label: "Painel", icon: "dashboard", render: render });
 
   // Re-renderiza a home quando a carteira muda (se estiver visível)
   ATLAS.app.subscribe(function () {

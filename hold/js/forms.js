@@ -129,10 +129,10 @@
       }
       U.closeModal(); afterChange();
       if (comprar) return trade(a.id, "buy");
-      U.toast("Ativo adicionado", a.ticker + " entrou na watchlist.", "success");
+      U.toast("Ativo adicionado", a.ticker + " entrou na lista de observação.", "success");
     }
     var save = U.button("Adicionar e comprar", { variant: "primary", icon: "plus", onClick: function () { salvar(true); } });
-    var soWatch = U.button("Só watchlist", { variant: "secondary", icon: "eye", onClick: function () { salvar(false); } });
+    var soWatch = U.button("Só observar", { variant: "secondary", icon: "eye", onClick: function () { salvar(false); } });
 
     U.modal({ eyebrow: "Novo registro", title: "Adicionar ativo", body: body,
       footer: [U.button("Cancelar", { variant: "ghost", onClick: U.closeModal }), U.el("div", { class: "spacer" }), soWatch, save] });

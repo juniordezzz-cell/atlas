@@ -290,6 +290,17 @@ html[data-theme="light"] {
    RWA   → verde esmeralda / lima (ativos reais)
    =================================================================== */
 
+/* COR DE AÇÃO ÚNICA (15/11/2026, pedido do dono): o botão principal de
+   TODOS os módulos usa o ciano do ATLAS, sem degradê e sem brilho. A cor de
+   marca de cada módulo (abaixo) continua valendo para detalhes, gráficos e
+   selos — não para o botão de ação. As Ferramentas não carregam este
+   arquivo: lá as regras usam o mesmo valor como reserva (var(…, #00BFFF)). */
+:root {
+  --atlas-acao:        #00BFFF;
+  --atlas-acao-hover:  #33CCFF;
+  --atlas-acao-tinta:  #04121C;
+}
+
 /* Padrão (dashboard, login, boas-vindas, academy): identidade ATLAS */
 :root {
   --atlas-accent:      #00BFFF;

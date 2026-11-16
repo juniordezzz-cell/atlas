@@ -58,7 +58,7 @@
         '<p class="est__card-texto">' + u.escape(r.rationale || "Sem racional registrado.") + '</p>' +
         '<div class="est__card-foot">' +
           '<span class="est__meta">' + u.icon("dot", 13) + u.escape(u.ago(r.createdAt)) + '</span>' +
-          (r.status === "convertido" ? '<span class="badge badge--azure badge--dot">Virou trade</span>' : '') +
+          (r.status === "convertido" ? '<span class="badge badge--azure badge--dot">Virou operação</span>' : '') +
         '</div>' +
       '</button>';
     }).join("") :
@@ -120,7 +120,7 @@
           '</div>' +
           '<div class="est__detail-badges">' +
             '<span class="badge ' + DECISION[r.decision].badge + '">' + DECISION[r.decision].label + '</span>' +
-            (r.status === "convertido" ? '<span class="badge badge--azure badge--dot">Virou trade</span>' : '') +
+            (r.status === "convertido" ? '<span class="badge badge--azure badge--dot">Virou operação</span>' : '') +
           '</div>' +
         '</div>' +
 
@@ -139,7 +139,7 @@
         '</div>' +
 
         '<div class="est__actions">' +
-          (r.decision === "entrar" ? '<button class="btn btn--profit" data-trade>' + u.icon("trades", 15) + ' Executar trade</button>' : '') +
+          (r.decision === "entrar" ? '<button class="btn btn--profit" data-trade>' + u.icon("trades", 15) + ' Executar operação</button>' : '') +
           '<button class="btn" data-edit>' + u.icon("edit", 15) + ' Editar</button>' +
           '<button class="btn btn--ghost est__danger" data-del>' + u.icon("trash", 15) + ' Excluir</button>' +
         '</div>' +
@@ -273,7 +273,7 @@
     return renderList(mount);
   }
 
-  ATLAS.router.register("rd", { label: "Registro de Decisão", icon: "rd", render: render });
+  ATLAS.router.register("rd", { label: "Registro de decisão", icon: "rd", render: render });
 
   // Pedido externo: abrir o formulário ou um registro direto
   ATLAS.rd = {

@@ -77,13 +77,13 @@
       '</button>';
     }).join("") :
       '<div class="empty" style="min-height:34vh"><div class="empty__glyph">' + u.icon("trades", 28) + '</div>' +
-      '<h2 style="font-size:1.2rem">Nenhum trade aqui</h2><p>Todo trade nasce de um Registro de Decisão. Aprove um RD "Entrar" e execute a partir dele.</p></div>';
+      '<h2 style="font-size:1.2rem">Nenhuma operação aqui</h2><p>Toda operação nasce de um Registro de Decisão. Aprove um RD "Entrar" e execute a partir dele.</p></div>';
 
     mount.innerHTML =
       '<div class="estudos">' +
         '<div class="est__head reveal">' +
-          '<div><span class="eyebrow">Execução</span><h1>Trades</h1></div>' +
-          '<button class="btn btn--accent" data-new>' + u.icon("plus", 16) + ' Novo trade</button>' +
+          '<div><span class="eyebrow">Execução</span><h1>Operações</h1></div>' +
+          '<button class="btn btn--accent" data-new>' + u.icon("plus", 16) + ' Nova operação</button>' +
         '</div>' + banner +
         '<div class="est__filters reveal">' + tabs + '</div>' +
         '<div class="est__list reveal">' + cards + '</div>' +
@@ -134,7 +134,7 @@
         '<div class="tr__manage-row"><input class="input" data-note placeholder="Anotação de acompanhamento…"><button class="btn" data-add-note>Anotar</button></div>' +
         '<div class="tr__manage-row"><input class="input" data-p-price placeholder="Preço"><input class="input" data-p-portion placeholder="Porção (ex.: 50%)"><button class="btn" data-add-partial>Registrar parcial</button></div>' +
         '<div class="tr__manage-row"><input class="input" data-stop placeholder="Novo stop"><button class="btn" data-move-stop>Mover stop</button></div>' +
-        '<button class="btn btn--profit tr__close" data-close>' + u.icon("check", 15) + ' Encerrar trade</button>' +
+        '<button class="btn btn--profit tr__close" data-close>' + u.icon("check", 15) + ' Encerrar operação</button>' +
       '</div>' : "";
 
     var ADH = { total: "Seguiu o plano", parcial: "Seguiu parcialmente", nenhuma: "Não seguiu o plano" };
@@ -153,14 +153,14 @@
         '</div>';
       } else {
         review = '<div class="card tr__review-cta"><span class="rd__field-lbl">Pós-análise pendente</span>' +
-          '<p class="kpi__sub">Avalie este trade para alimentar suas métricas e o aprendizado do Oráculo.</p>' +
+          '<p class="kpi__sub">Avalie esta operação para alimentar suas métricas e o aprendizado do Oráculo.</p>' +
           '<button class="btn btn--accent" data-review>' + u.icon("spark", 15) + ' Fazer pós-análise</button></div>';
       }
     }
 
     mount.innerHTML =
       '<div class="estudos est__detail reveal">' +
-        '<button class="est__back" data-back>' + u.icon("back", 16) + ' Trades</button>' +
+        '<button class="est__back" data-back>' + u.icon("back", 16) + ' Operações</button>' +
         '<div class="est__detail-head">' +
           '<div class="est__detail-title"><span class="est__ticker est__ticker--lg">' + u.escape(t.asset) + '</span>' +
             '<div><h1>' + (t.side === "long" ? "Long" : "Short") + ' · ' + u.escape(t.asset) + '</h1>' +
@@ -168,7 +168,7 @@
           '<div class="est__detail-badges"><span class="tr__pnl-big mono ' + (up ? 'up' : 'down') + '">' + u.pct(t.pnl) + '</span>' +
             '<span class="badge ' + STATUS[t.status].badge + '">' + STATUS[t.status].label + '</span></div>' +
         '</div>' +
-        (stale ? '<div class="est__flag">' + u.icon("alert", 16) + ' Trade aberto há ' + u.dur(age) + '. O Oráculo recomenda revisar a operação.</div>' : '') +
+        (stale ? '<div class="est__flag">' + u.icon("alert", 16) + ' Operação aberta há ' + u.dur(age) + '. O Oráculo recomenda revisar a operação.</div>' : '') +
 
         '<div class="tr__stats">' +
           statCell("Entrada", num(t.entry)) +
@@ -193,7 +193,7 @@
     mount.querySelector("[data-back]").addEventListener("click", function () { show("list"); });
     mount.querySelector("[data-del]").addEventListener("click", function () {
       ATLAS.util.perguntar({
-        title: "Excluir este trade?",
+        title: "Excluir esta operação?",
         message: "As parciais, as notas e o histórico da operação vão junto. Não há como desfazer.",
         confirmLabel: "Excluir",
         danger: true
@@ -247,7 +247,7 @@
           '<label class="field"><span>Disciplina na execução</span><span class="conf conf--edit">' + dots + '</span></label>' +
           '<label class="field"><span>O que funcionou</span><textarea class="textarea" data-f="worked" placeholder="Acertos desta operação…">' + u.escape(rv.worked) + '</textarea></label>' +
           '<label class="field"><span>O que falhou</span><textarea class="textarea" data-f="failed" placeholder="Erros ou desvios…">' + u.escape(rv.failed) + '</textarea></label>' +
-          '<label class="field"><span>Lição aprendida</span><textarea class="textarea" data-f="lesson" placeholder="O que levar para os próximos trades…">' + u.escape(rv.lesson) + '</textarea></label>' +
+          '<label class="field"><span>Lição aprendida</span><textarea class="textarea" data-f="lesson" placeholder="O que levar para as próximas operações…">' + u.escape(rv.lesson) + '</textarea></label>' +
           '<label class="field"><span>Tags <small>(separadas por vírgula)</small></span><input class="input" data-f="tags" placeholder="ex.: disciplina, antecipação" value="' + u.escape((rv.tags || []).join(", ")) + '"></label>' +
           '<div class="form-actions"><button class="btn btn--accent" data-save>' + u.icon("check", 15) + ' Salvar pós-análise</button>' +
             '<button class="btn btn--ghost" data-cancel>Cancelar</button></div>' +
@@ -306,7 +306,7 @@
     mount.innerHTML =
       '<div class="estudos est__form reveal">' +
         '<button class="est__back" data-back>' + u.icon("back", 16) + ' Voltar</button>' +
-        '<div class="est__head"><div><span class="eyebrow">Execução</span><h1>Abrir trade</h1></div></div>' +
+        '<div class="est__head"><div><span class="eyebrow">Execução</span><h1>Abrir operação</h1></div></div>' +
         '<div class="card est__form-card">' +
           '<div class="field-row">' +
             '<label class="field"><span>RD de origem</span><select class="input" data-f="rdId">' + rdOpts + '</select></label>' +
@@ -341,7 +341,7 @@
             '<label class="field field--sm"><span>Alavancagem</span><input class="input" data-f="leverage" value="' + u.escape(pre.leverage) + '" placeholder="2x"></label>' +
             '<label class="field"><span>Nota de abertura</span><input class="input" data-f="note" placeholder="Contexto da entrada"></label>' +
           '</div>' +
-          '<div class="form-actions"><button class="btn btn--accent" data-save>' + u.icon("check", 15) + ' Abrir trade</button>' +
+          '<div class="form-actions"><button class="btn btn--accent" data-save>' + u.icon("check", 15) + ' Abrir operação</button>' +
             '<button class="btn btn--ghost" data-cancel>Cancelar</button></div>' +
         '</div></div>';
 
@@ -405,7 +405,7 @@
       var capital = parseFloat(String(val("sizeUSD")).replace(",", "."));
       if (!(capital > 0)) {
         return ATLAS.util.invalido(mount.querySelector('[data-f="sizeUSD"]'),
-          "Informe quanto capital sai do caixa. É ele que volta quando o trade fecha.");
+          "Informe quanto capital sai do caixa. É ele que volta quando a operação fecha.");
       }
 
       /* O capital sai do caixa da carteira escolhida; o que faltar
@@ -441,7 +441,7 @@
     mount.innerHTML =
       '<div class="estudos est__form reveal">' +
         '<button class="est__back" data-back>' + u.icon("back", 16) + ' Voltar</button>' +
-        '<div class="est__head"><div><span class="eyebrow">' + u.escape(t.asset) + ' · ' + (t.side === "long" ? "Long" : "Short") + '</span><h1>Encerrar trade</h1></div></div>' +
+        '<div class="est__head"><div><span class="eyebrow">' + u.escape(t.asset) + ' · ' + (t.side === "long" ? "Long" : "Short") + '</span><h1>Encerrar operação</h1></div></div>' +
         '<div class="card est__form-card">' +
           '<div class="field-row">' +
             '<label class="field"><span>Preço de saída</span><input class="input" data-f="exit" placeholder="Preço"></label>' +
@@ -476,7 +476,7 @@
     return renderList(mount);
   }
 
-  ATLAS.router.register("trades", { label: "Trades", icon: "trades", render: render });
+  ATLAS.router.register("trades", { label: "Operações", icon: "trades", render: render });
 
   // Pedido externo (ex.: "Executar trade" no RD)
   ATLAS.trades = {

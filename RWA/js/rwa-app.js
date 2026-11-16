@@ -38,12 +38,12 @@
   var NAV = [
     /* Central RWA, Eventos e Agentes saíram em 11/11/2026 (o backend deixou o Supabase).
        Links antigos (#/central, #/eventos, #/agentes) caem no Dashboard. */
-    { id: "dashboard", label: "Dashboard",   icon: "grid",      route: "#/dashboard" },
-    { id: "portfolio", label: "Portfolio",   icon: "portfolio", route: "#/portfolio" },
+    { id: "dashboard", label: "Painel",      icon: "grid",      route: "#/dashboard" },
+    { id: "portfolio", label: "Portfólio",   icon: "portfolio", route: "#/portfolio" },
     { id: "macro",     label: "Macro",       icon: "macro",     route: "#/macro" },
-    { id: "risk",      label: "Risk Engine", icon: "risk",      route: "#/risk" },
-    { id: "narrative", label: "Narrative",   icon: "narrative", route: "#/narrative" },
-    { id: "journal",   label: "Journal",     icon: "journal",   route: "#/journal" }
+    { id: "risk",      label: "Risco",       icon: "risk",      route: "#/risk" },
+    { id: "narrative", label: "Narrativas",  icon: "narrative", route: "#/narrative" },
+    { id: "journal",   label: "Diário",      icon: "journal",   route: "#/journal" }
   ];
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
 
@@ -87,7 +87,7 @@
             '<div class="tb-spacer"></div>' +
             '<div class="tb-wallet" id="tbWallet"></div>' +
             '<div class="tb-sep hide-sm"></div>' +
-            '<div class="tb-metric hide-sm"><span class="k">Regime</span><span id="tbRegime"></span></div>' +
+            '<div class="tb-metric hide-sm"><span class="k">Cenário</span><span id="tbRegime"></span></div>' +
             '<div class="tb-sep hide-sm"></div>' +
             '<div class="tb-metric"><span class="k">Patrimônio</span><span class="v" id="tbTotal" data-atlas-flash="rwa:total">—</span></div>' +
           '</header>' +
@@ -350,7 +350,7 @@
           '<label class="rfield"><span>Valor atual (US$)</span><input class="rinput" data-rf="current" type="number" step="any" min="0" value="' + (a.current != null ? a.current : "") + '" placeholder="0" /></label>' +
         '</div>' +
         '<div class="rrow">' +
-          '<label class="rfield"><span>Score (0–100)</span><input class="rinput" data-rf="score" type="number" min="0" max="100" value="' + (a.score != null ? a.score : 70) + '" /></label>' +
+          '<label class="rfield"><span>Nota (0–100)</span><input class="rinput" data-rf="score" type="number" min="0" max="100" value="' + (a.score != null ? a.score : 70) + '" /></label>' +
           '<label class="rfield"><span>Sensibilidade a regime</span><select class="rinput" data-rf="regimeSens">' + opt(SENS, a.regimeSens || "Neutral") + '</select></label>' +
           '<label class="rfield"><span>Status</span><select class="rinput" data-rf="status">' +
             '<option value="core"' + (a.status === "core" || !a.status ? " selected" : "") + '>Core</option>' +
@@ -561,7 +561,7 @@
     }
 
     app.innerHTML =
-      '<div class="view-head"><div><div class="eyebrow">Terminal</div><h1 class="view-title">Dashboard</h1>' +
+      '<div class="view-head"><div><div class="eyebrow">Visão geral</div><h1 class="view-title">Painel</h1>' +
         '<div class="view-sub">Leitura macro + fluxo global do seu patrimônio RWA.</div></div>' +
         '<div class="vh-right">' + U.regime(k.regime) +
           (hasAssets ? ' <button class="rbtn rbtn-ghost" id="btnPrecos">Atualizar preços</button>' : '') +
@@ -569,10 +569,10 @@
       '</div>' +
 
       '<div class="grid g-4">' +
-        UI.kpi({ k: "Total Portfolio Value", v: U.money0(k.total), icon: "wallet", foot: U.delta(k.pnlPct) + '<span class="sub"> retorno total</span>' }) +
-        UI.kpi({ k: "PnL", v: U.signed(k.pnlAbs), icon: "trend", accent: k.pnlAbs >= 0 ? "apos" : "", foot: '<span class="sub">custo vs. atual</span>' }) +
-        UI.kpi({ k: "Risk Score", v: k.riskScore + '<span style="font-size:14px;color:var(--text-3)"> /100</span>', icon: "shield", accent: "awarn", foot: '<span style="color:' + riskColor + '">' + riskWord + '</span>' }) +
-        UI.kpi({ k: "Macro Regime", v: '<span style="font-size:17px">' + reg.label + '</span>', icon: "pulse", accent: "a2", foot: '<span class="sub">' + reg.tag + '</span>' }) +
+        UI.kpi({ k: "Valor do portfólio", v: U.money0(k.total), icon: "wallet", foot: U.delta(k.pnlPct) + '<span class="sub"> retorno total</span>' }) +
+        UI.kpi({ k: "Resultado", v: U.signed(k.pnlAbs), icon: "trend", accent: k.pnlAbs >= 0 ? "apos" : "", foot: '<span class="sub">custo vs. atual</span>' }) +
+        UI.kpi({ k: "Nota de risco", v: k.riskScore + '<span style="font-size:14px;color:var(--text-3)"> /100</span>', icon: "shield", accent: "awarn", foot: '<span style="color:' + riskColor + '">' + riskWord + '</span>' }) +
+        UI.kpi({ k: "Cenário macro", v: '<span style="font-size:17px">' + reg.label + '</span>', icon: "pulse", accent: "a2", foot: '<span class="sub">' + reg.tag + '</span>' }) +
       '</div>' +
 
       (hasAssets
@@ -587,7 +587,7 @@
            Menos de dois pontos não é curva — é uma linha reta com
            moldura de gráfico. A versão anterior desenhava 90 zeros
            gerados por um pseudoaleatório e chamava de Equity Curve. */
-        UI.panel("Equity Curve",
+        UI.panel("Evolução do patrimônio",
           ((curves.rwa || []).length > 1
             ? '<div class="chart-box h-lg"><canvas id="chartEquity"></canvas></div>'
             : '<p class="t2" style="font-size:13px;line-height:1.6;margin:0">' +
@@ -596,7 +596,7 @@
                 : 'Sem histórico ainda. O ATLAS mede o patrimônio do RWA uma vez por dia, ' +
                   'a cada vez que você abre o módulo.') + '</p>'),
           '<div class="t3" style="font-size:11.5px">' +
-            ((curves.rwa || []).length + ' dia(s) medidos') + '</div>', "Performance") +
+            ((curves.rwa || []).length + ' dia(s) medidos') + '</div>', "Desempenho") +
       '</div>' +
 
       '<div class="section"><div class="grid g-4">' +
@@ -605,7 +605,7 @@
       '</div></div>' +
 
       '<div class="section">' +
-        UI.panel("Alertas do Risk Engine",
+        UI.panel("Alertas de risco",
           '<div class="alerts">' + risk.alerts.map(function (al) {
             var c = al.level === "neg" ? "var(--neg)" : al.level === "warn" ? "var(--warn)" : "var(--pos)";
             return '<div class="alert-row" style="border-left:3px solid ' + c + '">' + al.text + '</div>';
@@ -701,21 +701,21 @@
     var classes = uniq(S.assets().map(function (a) { return a.type; }));
 
     app.innerHTML =
-      '<div class="view-head"><div><div class="eyebrow">Carteira</div><h1 class="view-title">Portfolio</h1>' +
+      '<div class="view-head"><div><div class="eyebrow">Carteira</div><h1 class="view-title">Portfólio</h1>' +
         '<div class="view-sub">Ativos do mundo real — clique numa linha para abrir a análise.</div></div>' +
         '<div class="vh-right"><button class="rbtn rbtn-primary" id="btnAdd">+ Adicionar ativo</button></div></div>' +
       '<div class="filters">' +
         '<select class="select" id="fClass"><option value="">Todas as classes</option>' + classes.map(function (c) { return '<option value="' + c + '">' + c + '</option>'; }).join("") + '</select>' +
-        '<select class="select" id="fScore"><option value="">Qualquer score</option><option value="85">Score ≥ 85</option><option value="70">Score ≥ 70</option><option value="50">Score ≥ 50</option></select>' +
+        '<select class="select" id="fScore"><option value="">Qualquer nota</option><option value="85">Nota ≥ 85</option><option value="70">Nota ≥ 70</option><option value="50">Nota ≥ 50</option></select>' +
         '<select class="select" id="fSort"><option value="weight">Ordenar: Peso</option><option value="pnlPct">Ordenar: PnL %</option><option value="score">Ordenar: Score</option><option value="current">Ordenar: Valor</option></select>' +
         '<div class="grow"></div>' +
         (state.q ? '<span class="tag tag-accent">busca: "' + esc(state.q) + '" <button class="btn-ghost btn-sm" id="clearQ" style="padding:0 4px">✕</button></span>' : '') +
       '</div>' +
       '<div class="panel"><div class="table-wrap"><table class="dtable"><thead><tr>' +
-        '<th>Asset</th><th>Type</th><th class="num">Entry</th><th class="num">Current</th>' +
-        '<th class="num sortable" data-s="pnlPct">PnL <span class="arr" id="arrPnl"></span></th>' +
-        '<th class="num sortable" data-s="weight">Weight <span class="arr" id="arrW"></span></th>' +
-        '<th class="num">Score</th><th>Regime Sens.</th>' +
+        '<th>Ativo</th><th>Tipo</th><th class="num">Entrada</th><th class="num">Atual</th>' +
+        '<th class="num sortable" data-s="pnlPct">Resultado <span class="arr" id="arrPnl"></span></th>' +
+        '<th class="num sortable" data-s="weight">Peso <span class="arr" id="arrW"></span></th>' +
+        '<th class="num">Nota</th><th>Sens. ao cenário</th>' +
       '</tr></thead><tbody id="tbody"></tbody></table></div></div>';
 
     function draw() {
@@ -784,12 +784,12 @@
       '<div class="grid g-4">' +
         UI.kpi({ k: "Valor atual", v: U.money0(a.current), icon: "wallet" }) +
         UI.kpi({ k: "Investido", v: U.money0(a.entry), icon: "coins" }) +
-        UI.kpi({ k: "PnL", v: '<span class="' + pcls + '">' + U.pct(a.pnlPct, true) + '</span>', icon: "trend", foot: '<span class="sub">' + U.signed(a.pnlAbs) + '</span>' }) +
+        UI.kpi({ k: "Resultado", v: '<span class="' + pcls + '">' + U.pct(a.pnlPct, true) + '</span>', icon: "trend", foot: '<span class="sub">' + U.signed(a.pnlAbs) + '</span>' }) +
         UI.kpi({ k: "Peso na carteira", v: U.pct(a.weight), icon: "gauge" }) +
       '</div>' +
       '<div class="grid g-2 section">' +
-        UI.panel("Qualidade", '<div style="padding:6px 0">' + U.score(a.score) + '</div><p class="t2" style="font-size:12.5px;margin-top:8px">Score interno de qualidade/convicção (0–100).</p>', '', "Score") +
-        UI.panel("Sensibilidade a regime", '<div style="padding:6px 0">' + U.sens(a.regimeSens) + '</div><p class="t2" style="font-size:12.5px;margin-top:8px">Como o ativo tende a reagir ao regime macro vigente.</p>', '', "Macro") +
+        UI.panel("Qualidade", '<div style="padding:6px 0">' + U.score(a.score) + '</div><p class="t2" style="font-size:12.5px;margin-top:8px">Nota interna de qualidade/convicção (0–100).</p>', '', "Score") +
+        UI.panel("Sensibilidade ao cenário", '<div style="padding:6px 0">' + U.sens(a.regimeSens) + '</div><p class="t2" style="font-size:12.5px;margin-top:8px">Como o ativo tende a reagir ao regime macro vigente.</p>', '', "Macro") +
       '</div>';
 
     U.qs("#btnEdit").addEventListener("click", function () { openAssetModal(a); });
@@ -837,7 +837,7 @@
     var rooPct = (roo + 100) / 2;
 
     app.innerHTML =
-      '<div class="view-head"><div><div class="eyebrow">Macro</div><h1 class="view-title">Leitura Macro</h1>' +
+      '<div class="view-head"><div><div class="eyebrow">Macro</div><h1 class="view-title">Leitura macro</h1>' +
         '<div class="view-sub">Indicadores de referência do regime vigente.</div></div>' +
         '<div>' + U.regime(k.regime) + '</div></div>' +
 
@@ -874,7 +874,7 @@
     var word = r.totalRisk >= 66 ? "Elevado" : r.totalRisk >= 40 ? "Moderado" : "Controlado";
 
     app.innerHTML =
-      '<div class="view-head"><div><div class="eyebrow">Risco</div><h1 class="view-title">Risk Engine</h1>' +
+      '<div class="view-head"><div><div class="eyebrow">Risco</div><h1 class="view-title">Risco</h1>' +
         '<div class="view-sub">Concentração, qualidade e alertas do portfólio.</div></div></div>' +
       '<div class="grid g-3">' +
         UI.kpi({ k: "Risco total", v: '<span style="color:' + color + '">' + r.totalRisk + '</span><span style="font-size:14px;color:var(--text-3)"> /100</span>', icon: "shield", foot: '<span style="color:' + color + '">' + word + '</span>' }) +
@@ -916,7 +916,7 @@
     var temNarrativa = !!n.current;
 
     app.innerHTML =
-      '<div class="view-head"><div><div class="eyebrow">Narrativa</div><h1 class="view-title">Narrative Engine</h1>' +
+      '<div class="view-head"><div><div class="eyebrow">Narrativa</div><h1 class="view-title">Narrativas</h1>' +
         '<div class="view-sub">Qual história o mercado está contando agora.</div></div></div>' +
       '<div class="section">' + UI.panel("Narrativa dominante",
         (temNarrativa
@@ -928,7 +928,7 @@
             'código ("AI Expansion Cycle", 82% de confiança, fluxo institucional de US$ 1,8B por semana), ' +
             'que não vinha de lugar nenhum e não mudava nunca.<br><br>' +
             'Enquanto não houver fonte, o lugar de registrar a sua leitura de mercado é o ' +
-            '<b>Journal</b> — que é seu, datado e registrado.</p>'),
+            '<b>Diário</b> — que é seu, datado e registrado.</p>'),
         '', "Atual") + '</div>' +
       '<div class="grid g-2 section">' +
         cyc("Ciclo de liquidez", n.liquidityCycle) + cyc("Demanda por hedge", n.hedgeCycle) +
@@ -942,7 +942,7 @@
     var list = S.journal();
 
     app.innerHTML =
-      '<div class="view-head"><div><div class="eyebrow">Processo</div><h1 class="view-title">Journal</h1>' +
+      '<div class="view-head"><div><div class="eyebrow">Processo</div><h1 class="view-title">Diário</h1>' +
         '<div class="view-sub">Registro de decisões e leituras — a memória do seu processo.</div></div>' +
         '<div class="vh-right"><button class="rbtn rbtn-primary" id="btnNew">+ Nova entrada</button></div></div>' +
       '<div id="jList">' +
@@ -953,11 +953,11 @@
               '<span class="t3" style="font-size:11.5px">' + U.date(e.date) + ' <button class="btn-ghost btn-sm jdel" data-i="' + i + '" title="Excluir">✕</button></span></div>' +
               '<p class="t2" style="font-size:13px;margin-top:8px;white-space:pre-wrap">' + esc(e.text || "") + '</p></div>';
           }).join("")
-        : UI.empty({ icon: "journal", title: "Journal vazio", text: "Registre a primeira decisão ou leitura de mercado." })) +
+        : UI.empty({ icon: "journal", title: "Diário vazio", text: "Registre a primeira decisão ou leitura de mercado." })) +
       '</div>';
 
     U.qs("#btnNew").addEventListener("click", function () {
-      var m = openModal("Nova entrada no Journal",
+      var m = openModal("Nova entrada no Diário",
         '<div class="rform">' +
           '<div class="rrow">' +
             '<label class="rfield rfield-sm"><span>Tag</span><select class="rinput" data-rf="tag"><option>Decisão</option><option>Leitura</option><option>Alerta</option><option>Nota</option></select></label>' +

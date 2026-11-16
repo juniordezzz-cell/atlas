@@ -17,7 +17,7 @@ a{color:var(--accent)}
 .voltar{display:inline-block;color:var(--mut);text-decoration:none;font-size:13px;margin-bottom:10px}
 .voltar:hover{color:var(--txt)}
 .top h1{font-size:24px;margin:0;font-weight:700}
-.top h1 span{color:var(--accent)}
+.top h1 span{color:inherit}
 .sub{color:var(--mut);margin:4px 0 0}
 .estudo{color:var(--mut2);font-size:12.5px;margin:6px 0 0}
 

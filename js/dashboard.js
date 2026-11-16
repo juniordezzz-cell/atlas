@@ -76,7 +76,7 @@ const PASSOS = [
   { href: 'trade/index.html',   modulo: 'Trade', titulo: 'Documente suas operações',
     texto: 'Estudo, registro de decisão e trade — o ciclo completo.' },
   { href: 'defi/index.html',    modulo: 'DeFi',  titulo: 'Acompanhe suas posições',
-    texto: 'Pools, staking e lending, com APR e resultado real.' },
+    texto: 'Pools, staking e empréstimos, com APR e resultado real.' },
   { href: 'RWA/index.html',     modulo: 'RWA',   titulo: 'Mapeie os ativos reais',
     texto: 'Portfólio, ambiente macro e motor de risco.' }
 ];

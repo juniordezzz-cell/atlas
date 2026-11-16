@@ -53,8 +53,9 @@
 .btn.sm { height: 30px; padding: 0 10px; font-size: 12px; border-radius: 7px; }
 .btn.block { width: 100%; }
 
-.btn.primary { background: var(--primary); color: #06121f; font-weight: 650; }
-.btn.primary:hover { filter: brightness(1.08); box-shadow: 0 6px 20px -8px var(--primary); }
+/* cor de ação única do ATLAS (themes/atlas-theme.css) */
+.btn.primary { background: var(--atlas-acao, #00BFFF); color: var(--atlas-acao-tinta, #04121C); font-weight: 650; }
+.btn.primary:hover { background: var(--atlas-acao-hover, #33CCFF); color: var(--atlas-acao-tinta, #04121C); }
 
 .btn.secondary { background: var(--surface-alt); color: var(--text); border-color: var(--border); }
 .btn.secondary:hover { border-color: var(--primary-24); color: var(--primary-text); }

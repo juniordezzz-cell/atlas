@@ -194,12 +194,13 @@ img.brand__mark { object-fit: contain; border-radius: 0; display: block; }
 }
 .btn:hover { border-color: rgba(76,154,255,0.4); background: var(--azure-soft); color: var(--text-hi); }
 .btn--ghost { color: var(--text-mut); }
+/* cor de ação única do ATLAS (themes/atlas-theme.css): sem degradê nem brilho */
 .btn--accent {
-  color: #05101f; border-color: transparent;
-  background: linear-gradient(135deg, var(--cyan), var(--azure));
-  box-shadow: 0 6px 18px -8px rgba(76,154,255,0.8);
+  border-color: transparent;
+  background: var(--atlas-acao, #00BFFF); color: var(--atlas-acao-tinta, #04121C);
+  box-shadow: none;
 }
-.btn--accent:hover { color: #05101f; filter: brightness(1.06); background: linear-gradient(135deg, var(--cyan), var(--azure)); }
+.btn--accent:hover { background: var(--atlas-acao-hover, #33CCFF); color: var(--atlas-acao-tinta, #04121C); }
 .btn--profit { color: #04140f; border-color: transparent; background: linear-gradient(135deg, #4be3c8, var(--profit)); }
 .btn--profit:hover { color: #04140f; filter: brightness(1.06); }
 .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
