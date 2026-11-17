@@ -1507,6 +1507,25 @@ html.atlas-moldura body { padding-left: var(--atm-w); transition: padding-left .
 .atm-grupo__itens { display: flex; flex-direction: column; gap: 2px; }
 .atm-grupo:not(.is-aberto) .atm-grupo__itens { display: none; }
 
+/* Grupo Ferramentas (17/11/2026): o nome é link para o hub (todas as
+   ferramentas) e a setinha é um botão à parte que abre e fecha a lista. */
+.atm-grupo__cab--hub { cursor: default; padding: 0 4px 0 0; }
+.atm-grupo__link {
+  flex: 1; min-width: 0; display: flex; align-items: center;
+  height: 30px; padding: 0 0 0 14px; border-radius: 8px;
+  color: inherit; text-decoration: none;
+}
+.atm-grupo__link:hover, .atm-grupo__link.is-on { color: var(--atm-acento); }
+.atm-grupo__seta {
+  display: grid; place-items: center; width: 28px; height: 26px; flex: none;
+  border: 0; border-radius: 7px; background: transparent; color: inherit; cursor: pointer;
+}
+.atm-grupo__seta:hover { background: rgba(148, 170, 215, 0.08); color: var(--atm-texto); }
+.atm-grupo__link:focus-visible, .atm-grupo__seta:focus-visible { outline: 2px solid var(--atm-acento); outline-offset: 2px; }
+.atm-item--ferr { height: 36px; font-size: 13.5px; }
+.atm-item--ferr .atm-ic { width: 17px; height: 17px; }
+.atm-hub-ic { display: none; }
+
 .atm-pe { margin-top: auto; display: flex; flex-direction: column; gap: 2px; padding-top: 10px; border-top: 1px solid var(--atm-linha); }
 
 /* trilho FECHADO no PC: só ícones; grupos viram uma linha fina e
@@ -1526,6 +1545,8 @@ html.atlas-moldura body { padding-left: var(--atm-w); transition: padding-left .
   html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--atm-linha); }
   html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo__cab { display: none; }
   html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo .atm-grupo__itens { display: flex; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo--hub .atm-grupo__itens { display: none; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo--hub .atm-hub-ic { display: flex; }
 }
 
 /* ---------- submenu central (pílulas, estilo DeFi) ---------- */

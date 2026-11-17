@@ -29,7 +29,21 @@
     return el ? el.textContent.trim() : "";
   }
 
-  var abas = secoes.map(function (sec) {
+  /* Aba "Todas" (17/11/2026): o hub. Mostra todas as seções, cada uma
+     com o seu título. É a aba que o grupo Ferramentas do menu lateral
+     abre (#todas) e a de quem chega sem endereço nem aba guardada. */
+  var TODAS = "todas";
+  var total = document.querySelectorAll(".tools-sec[data-aba] .tool-card").length;
+  var bTodas = document.createElement("button");
+  bTodas.type = "button";
+  bTodas.className = "tools-tab";
+  bTodas.id = "aba-" + TODAS;
+  bTodas.setAttribute("role", "tab");
+  bTodas.dataset.alvo = TODAS;
+  bTodas.innerHTML = '<span>Todas</span>' + (total ? '<span class="tools-tab__count">' + total + "</span>" : "");
+  barra.appendChild(bTodas);
+
+  var abas = [bTodas].concat(secoes.map(function (sec) {
     var b = document.createElement("button");
     b.type = "button";
     b.className = "tools-tab";
@@ -54,13 +68,15 @@
     sec.setAttribute("aria-labelledby", b.id);
     barra.appendChild(b);
     return b;
-  });
+  }));
 
   function ativar(id, foco) {
-    var achou = secoes.some(function (s) { return s.dataset.aba === id; });
-    if (!achou) id = secoes[0].dataset.aba;
+    var achou = id === TODAS || secoes.some(function (s) { return s.dataset.aba === id; });
+    if (!achou) id = TODAS;
+    var todas = id === TODAS;
 
-    secoes.forEach(function (s) { s.hidden = s.dataset.aba !== id; });
+    secoes.forEach(function (s) { s.hidden = !todas && s.dataset.aba !== id; });
+    document.documentElement.classList.toggle("tools-todas", todas);
     abas.forEach(function (b) {
       var on = b.dataset.alvo === id;
       b.setAttribute("aria-selected", on ? "true" : "false");
@@ -70,7 +86,7 @@
 
     if (legenda) {
       var sec = document.querySelector('.tools-sec[data-aba="' + id + '"]');
-      legenda.textContent = texto(sec, ".tools-sec__sub");
+      legenda.textContent = todas ? "Todas as ferramentas do ATLAS, por grupo." : texto(sec, ".tools-sec__sub");
     }
 
     try { localStorage.setItem(CHAVE, id); } catch (e) { /* sem storage: tudo bem */ }

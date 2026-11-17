@@ -69,8 +69,41 @@
   var MENU = [
     { item: "dashboard" },
     { grupo: "investimentos", nome: "Investimentos", itens: ["hold", "trade", "defi", "rwa", "carteiras"] },
-    { grupo: "mercado", nome: "Mercado e estudos", itens: ["mercado", "academy", "ferramentas", "relatorios"] }
+    { grupo: "mercado", nome: "Mercado e estudos", itens: ["mercado", "academy", "relatorios"] },
+    { grupo: "ferramentas", nome: "Ferramentas", hub: "pages/ferramentas.html#todas" }
   ];
+
+  /* Ferramentas (17/11/2026): grupo próprio no trilho. O nome leva ao hub
+     (todas as ferramentas); a setinha abre e fecha a lista. Trilho fechado
+     no PC: um ícone só, que leva ao hub. Ordem = abas da página. */
+  var FERRAMENTAS = [
+    { slug: "entradas-saidas", nome: "Finanças", href: "Ferramentas/entradas-saidas/financas/index.html",
+      icon: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14.5h2"/>' },
+    { slug: "conversor", nome: "Conversor e Câmbio", href: "Ferramentas/conversor/index.html",
+      icon: '<path d="M4 8h14l-3-3"/><path d="M20 16H6l3 3"/>' },
+    { slug: "escada-dca", nome: "Escada · DCA", href: "Ferramentas/escada-dca/index.html",
+      icon: '<path d="M4 20h4v-4h4v-4h4V8h4V4"/>' },
+    { slug: "lucro-cripto", nome: "Lucro Cripto", href: "Ferramentas/lucro-cripto/index.html",
+      icon: '<path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/>' },
+    { slug: "simulador-de-trade", nome: "Simulador de Trade", href: "Ferramentas/simulador-de-trade/index.html",
+      icon: '<path d="M8 3v18M16 3v18"/><rect x="6" y="7" width="4" height="8" rx="1"/><rect x="14" y="9" width="4" height="7" rx="1"/>' },
+    { slug: "scanner-pools", nome: "Scanner de Pools", href: "Ferramentas/scanner-pools/index.html",
+      icon: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m12 12 6-6"/>' },
+    { slug: "estrategia-de-pool", nome: "Estratégias de Pools", href: "Ferramentas/estrategia-de-pool/index.html",
+      icon: '<path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/>' },
+    { slug: "staking", nome: "Staking", href: "Ferramentas/staking/index.html",
+      icon: '<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>' },
+    { slug: "juros-compostos", nome: "Juros Compostos", href: "Ferramentas/juros-compostos/index.html",
+      icon: '<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>' },
+    { slug: "calculadora-market-cap", nome: "Market Cap", href: "Ferramentas/calculadora-market-cap/index.html",
+      icon: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/>' },
+    { slug: "comparador-de-ativos", nome: "Comparador de Ativos", href: "Ferramentas/comparador-de-ativos/index.html",
+      icon: '<path d="M12 4v16M5 8h14"/><path d="m5 8-3 6h6zM19 8l-3 6h6z"/>' }
+  ];
+  var FERR_ATUAL = (function () {
+    var m = CAMINHO.match(/\/ferramentas\/([a-z0-9-]+)\//);
+    return m ? m[1] : "";
+  })();
 
   /* qual destino é a página atual */
   function atual() {
@@ -99,10 +132,37 @@
     return g;
   }
 
+  function grupoFerramentas(bloco, grupos) {
+    var noHub = ATUAL === "ferramentas" && !FERR_ATUAL;
+    var temAtual = ATUAL === "ferramentas";
+    /* fechado por padrão (a lista é longa); aberto quando a página é dele */
+    var aberto = (bloco.grupo in grupos) ? !!grupos[bloco.grupo] : false;
+    if (temAtual) aberto = true;
+    var hub = esc(RAIZ + bloco.hub);
+    var itens = FERRAMENTAS.map(function (f) {
+      var on = f.slug === FERR_ATUAL;
+      return '<a class="atm-item atm-item--ferr' + (on ? " is-on" : "") + '" href="' + esc(RAIZ + f.href) + '"' +
+        (on ? ' aria-current="page"' : "") + ' title="' + esc(f.nome) + '">' +
+        svg(f.icon) + '<span class="atm-rot">' + esc(f.nome) + "</span></a>";
+    }).join("");
+    return '<div class="atm-grupo atm-grupo--hub' + (aberto ? " is-aberto" : "") + '" data-grupo="' + bloco.grupo + '">' +
+      '<div class="atm-grupo__cab atm-grupo__cab--hub">' +
+        '<a class="atm-grupo__link' + (noHub ? " is-on" : "") + '" href="' + hub + '"' + (noHub ? ' aria-current="page"' : "") +
+          ' title="Todas as ferramentas"><span class="atm-rot">' + esc(bloco.nome) + "</span></a>" +
+        '<button type="button" class="atm-grupo__seta" aria-expanded="' + aberto + '" aria-controls="atm-g-' + bloco.grupo + '"' +
+          ' aria-label="Mostrar ou esconder a lista de ferramentas">' + svg(IC_SETA, "atm-seta") + "</button>" +
+      "</div>" +
+      /* só aparece com o trilho fechado no PC */
+      '<a class="atm-item atm-hub-ic' + (temAtual ? " is-on" : "") + '" href="' + hub + '" title="Ferramentas">' +
+        svg(DEST.ferramentas ? DEST.ferramentas.icon : IC_MENU) + '<span class="atm-rot">Ferramentas</span></a>' +
+      '<div class="atm-grupo__itens" id="atm-g-' + bloco.grupo + '">' + itens + "</div></div>";
+  }
+
   function montarTrilho() {
     var grupos = lerGrupos();
     var partes = MENU.map(function (bloco) {
       if (bloco.item) return linkDestino(bloco.item);
+      if (bloco.hub) return grupoFerramentas(bloco, grupos);
       var temAtual = bloco.itens.indexOf(ATUAL) !== -1;
       var aberto = (bloco.grupo in grupos) ? !!grupos[bloco.grupo] : true;
       if (temAtual) aberto = true;
@@ -141,11 +201,11 @@
       if (window.AtlasPalette && AtlasPalette.open) AtlasPalette.open();
     });
     trilho.addEventListener("click", function (ev) {
-      var cab = ev.target.closest(".atm-grupo__cab");
+      var cab = ev.target.closest("button.atm-grupo__cab, .atm-grupo__seta");
       if (!cab) return;
       /* com o trilho fechado no PC, a setinha abre o trilho primeiro */
       if (!aberto() && !celular()) { definir(true); return; }
-      var g = cab.parentNode;
+      var g = cab.closest(".atm-grupo");
       var abrir = !g.classList.contains("is-aberto");
       g.classList.toggle("is-aberto", abrir);
       cab.setAttribute("aria-expanded", abrir ? "true" : "false");
