@@ -176,3 +176,83 @@ As 8 capas provisórias em SVG foram apagadas (nada mais as usava).
   Compostos). Pastas, chaves de armazenamento e comentários mantêm o nome antigo.
   Com o nome maior, o cabeçalho da Estratégia quebra em duas linhas a 1440 px:
   fica para o redesenho dessa página.
+
+## Atualização 17/11/2026 — Escada vira "DCA · Preço Médio"
+
+Pedido do dono (proposta com 5 nomes e 3 layouts; escolhido o Layout A).
+
+- **Nome:** "DCA · Preço Médio" (`build.js`, card em `pages/ferramentas.html`,
+  menu lateral, link no Lucro Cripto, título da imagem exportada). A pasta
+  continua `Ferramentas/escada-dca/` para não quebrar links e cenários
+  salvos. Linha no topo explica a sigla (Dollar-Cost Averaging).
+- **Três colunas (só no DCA):** tokens à esquerda, gráfico no meio,
+  Preço médio / DCA no tempo / Venda à direita. O `<aside>` vira
+  `display: contents` e os cartões entram na grade de `.main`. As regras de
+  `aside` foram presas a `.main>aside` para não atingir o menu lateral do
+  site. A Estratégia de Pools mantém o layout antigo.
+- **Comparar 1 compra × em etapas:** botão no topo da aba Preço médio. O
+  painel (`#cmpp`) ocupa a célula do gráfico com uma entrada que vem da
+  direita. Tem valor total, preço da compra única (padrão: o preço da
+  primeira etapa), 2 a 5 etapas de valor igual e cenários "E se o preço
+  cair / andar de lado / subir direto". Também tem "Usar o gráfico" (entre
+  máxima e mínima), "Trazer da aba Preço médio", preço médio, tokens,
+  quanto vale hoje, um mini-gráfico (preços, médias e tokens por compra) e
+  uma frase de conclusão, inclusive quando a compra única ganha. Esc ou ×
+  fecham.
+- O antigo chip "Comparar" (todas as estratégias no gráfico) virou
+  "Ver todas".
+- **Celular:** abas Tokens · Gráfico · Preço médio (`.mtabs`, `data-mview`).
+  Escolher um token volta ao gráfico. O painel abre como folha de baixo.
+
+## Atualização 17/11/2026 — Estratégias de Pools, parte 1 (Layout A)
+
+Proposta aprovada pelo dono (Layout A com as recomendações). Essa ferramenta
+**ensina** o conceito de pool. Para simular uma pool real e ver em qual
+plataforma ela está, existe o botão "Simulador de pool", que abre o
+Scanner de Pools de Liquidez. O dono quer deixar o Scanner no nível da
+Metrix Finance mais adiante.
+
+- **Mesmo esqueleto do DCA**, nas duas ferramentas: três colunas e abas no
+  celular. **Identidade:** borda de cima do gráfico dourada no DCA e roxa
+  nas Pools; botões, chips e painel das Pools em roxo.
+- **Coluna do PAR** (`.parbox`): token A (o da lista) e token B (USDC, USDT,
+  SOL, ETH, BTC, ação tokenizada, original do derivado). O selo do tipo de
+  par (`tipoPar()`/`TIPOS`) diz o risco: stable×stable, token×stable,
+  token×RWA, blue chip×blue chip, projeto×blue chip, derivado×original.
+  Também tem "Pares para estudar" (SOL/USDC, SOL/ETH, PENDLE/ETH, mSOL/SOL…).
+  **Limite atual:** com B diferente de stable, as contas ainda medem B em
+  dólar (aviso no selo). A conta pela relação entre os preços fica na parte 2.
+- **Passo a passo** na direita: 1 · objetivo → 2 · faixa e depósito →
+  3 · o que acontece. "Renda em dólar" virou "Renda com taxas".
+- **Cenários embaixo do gráfico** (`#cenbar`): −30%, −10%, entrada, +10%,
+  +30%, com o valor da pool (sem taxa) e a diferença para a alternativa
+  do objetivo (comprar tudo hoje, segurar o token ou segurar os dois).
+- **Pool × Segurar** (`#poolp`): painel sobre o gráfico, como no DCA. Mostra
+  a curva de valor por preço final (pool sem e com taxa, alternativa e
+  ficar em dólar), a faixa marcada e os dias dentro da faixa × APR. Também
+  tem uma tabela de −50% a +50% e uma frase que diz em que preços a pool
+  vence e em quais perde.
+- Celular: o cabeçalho abre espaço para o botão do menu do site.
+
+### Parte 2 (17/11/2026)
+
+- **Pares entre dois voláteis:** com SOL, ETH, BTC ou "o original deste
+  token" (mSOL→SOL, stETH→ETH) no seletor, `selectLive` busca as velas dos
+  dois e monta a **relação A ÷ B** (`mergeRatio`: abertura e fechamento
+  exatos; máxima e mínima aproximadas pelas extremas da mesma vela). O
+  gráfico, as contas, os cenários e o painel passam a medir em unidades do
+  segundo token (`S.quote`, `fv()`, `Q()`), e o depósito é convertido para
+  os mesmos ~US$ 1.000. A troca de tempo gráfico e a atualização a cada 2
+  minutos mantêm a relação. O selo mostra a correlação e quanto cada um e a
+  relação mudaram (`parStats`). Exemplos simulados e ação tokenizada seguem
+  em dólar, com aviso. A busca de APR na DeFi Llama exige os dois tokens.
+- **Raio-X do APR** (`renderRx`): APR anunciado × tempo com o fechamento
+  dentro da faixa no histórico do gráfico = APR na prática. Também mostra
+  quantos dias de taxa cobrem a perda contra segurar se o preço andar 20%,
+  e um alerta para APR acima de 100%.
+- **Aumentar a posição** (`S.pos`, `renderPos`): guarda até 6 faixas e
+  soma com a atual. Mostra o depósito total, o preço médio de compra
+  combinado (média harmônica de √(mín×máx) ponderada pelo depósito), o
+  preço médio de venda combinado (ponderado pelos tokens) e o valor somado
+  em −30% a +30%. As faixas guardadas aparecem mais claras no gráfico e são
+  apagadas quando muda o ativo.

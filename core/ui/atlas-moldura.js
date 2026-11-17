@@ -99,7 +99,7 @@
       icon: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14.5h2"/>' },
     { slug: "conversor", nome: "Conversor e Câmbio", href: "Ferramentas/conversor/index.html",
       icon: '<path d="M4 8h14l-3-3"/><path d="M20 16H6l3 3"/>' },
-    { slug: "escada-dca", nome: "Escada · DCA", href: "Ferramentas/escada-dca/index.html",
+    { slug: "escada-dca", nome: "DCA · Preço Médio", href: "Ferramentas/escada-dca/index.html",
       icon: '<path d="M4 20h4v-4h4v-4h4V8h4V4"/>' },
     { slug: "lucro-cripto", nome: "Lucro Cripto", href: "Ferramentas/lucro-cripto/index.html",
       icon: '<path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/>' },
@@ -207,6 +207,8 @@
       });
       var link = g.querySelector(".atm-grupo__link");
       classe(link, "is-on", !chave);
+      if (!chave) { if (link.getAttribute("aria-current") !== "page") link.setAttribute("aria-current", "page"); }
+      else if (link.hasAttribute("aria-current")) link.removeAttribute("aria-current");
     });
   }
 
@@ -455,6 +457,9 @@
         pendente = false;
         posicionarBotaoCel();
         sincronizar();
+        /* o Academy troca de aba com replaceState, que não dispara
+           hashchange: a mudança de aria-selected chega por aqui */
+        marcarGrupos();
       });
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-selected", "aria-current"] });
 
@@ -468,7 +473,7 @@
       sincronizar();
     }, { passive: true });
     trilho.addEventListener("click", function (ev) {
-      if (celular() && ev.target.closest("a.atm-item")) definir(false);
+      if (celular() && ev.target.closest("a.atm-item, a.atm-grupo__link")) definir(false);
     });
   }
 

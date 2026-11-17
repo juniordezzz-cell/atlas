@@ -39,7 +39,7 @@
               U.icon("search") + '<span class="lbl">Buscar</span><kbd>Ctrl</kbd><kbd>K</kbd>' +
             '</button>' +
             '<div id="wsel"></div>' +
-            '<a class="nav-back" href="../pages/dashboard.html" title="Voltar ao Atlas">' +
+            '<a class="nav-back" href="../mercado/index.html" title="Voltar ao Atlas">' +
               U.icon("back") + '<span>Voltar ao Atlas</span>' +
             '</a>' +
           '</div>' +

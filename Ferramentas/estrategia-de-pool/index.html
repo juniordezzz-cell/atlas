@@ -66,7 +66,7 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:6px;pa
 .cwrap{position:relative;flex:1;min-height:0}
 .cwrap canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
 .txtin{position:absolute;z-index:3;background:var(--bg);border:1px solid var(--test);border-radius:4px;padding:3px 6px;font-weight:600;width:200px}
-aside{width:400px;flex:none;display:flex;flex-direction:column;gap:10px;min-height:0}
+.main>aside{width:400px;flex:none;display:flex;flex-direction:column;gap:10px;min-height:0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
 .wl{flex:0 1 auto;max-height:38%}
 .wlh{display:flex;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);position:relative}
@@ -167,16 +167,100 @@ body.present header,body.present .wl{display:none!important}
 body.present .pane{font-size:15px}
 body.present .note{font-size:14.5px}
 body.present .kv b{font-size:19px}
-@media (max-width:1100px){aside{width:350px}}
+/* ---------- Três colunas, nas duas ferramentas (DCA 17/11; Pools 17/11) ----------
+   Tokens à esquerda, gráfico no meio, Preço médio / DCA no tempo / Venda à
+   direita. O <aside> some como caixa (display:contents) e os dois cartões
+   dele viram colunas da grade. Na Estratégia de Pools a coluna da esquerda monta o PAR. */
+@media (min-width:901px){
+  body[data-tool] .main{display:grid;grid-template-columns:clamp(220px,17vw,270px) minmax(0,1fr) clamp(330px,25vw,390px);grid-template-rows:minmax(0,1fr)}
+  body[data-tool] .main>aside{display:contents}
+  body[data-tool] .wl{grid-column:1;grid-row:1;max-height:none}
+  body[data-tool] .board{grid-column:2;grid-row:1}
+  body[data-tool] .calc{grid-column:3;grid-row:1}
+  body[data-tool] .wrow{grid-template-columns:18px minmax(0,1fr) auto 18px}
+  body[data-tool] .wrow .ch,body[data-tool] .wrow .s small{display:none}
+}
+.mtabs{display:none}
+/* Identidade: dourado no DCA, roxo nas Pools, para ninguém confundir as duas */
+body[data-tool="dca"] .board{border-top:2px solid var(--avg)}
+body[data-tool="pool"] .board{border-top:2px solid var(--pool)}
+body[data-tool="pool"] .sub button[aria-pressed="true"]{border-color:var(--pool);color:var(--pool)}
+body[data-tool="pool"] .wrow.on{border-left-color:var(--pool)}
+body[data-tool="pool"] .cmpgo{border-color:var(--pool)}
+body[data-tool="pool"] .cmpgo svg{color:var(--pool)}
+body[data-tool="pool"] .cmpp{border-color:var(--pool)}
+/* coluna do PAR */
+.parbox{display:flex;flex-direction:column;gap:8px;padding:10px;border-bottom:1px solid var(--line)}
+.parsl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 8px;align-items:center}
+.parsl .tk{font-weight:600;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.parsl select{width:100%;min-width:0}
+.ptipo{border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.45;display:flex;flex-direction:column;gap:4px;background:var(--bg);border:1px solid var(--line)}
+.ptipo b{font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.ptipo.v b{color:var(--up)} .ptipo.a b{color:var(--avg)} .ptipo.r b{color:var(--down)}
+.ptipo span{color:var(--muted)}
+.pprontos{display:flex;flex-wrap:wrap;gap:4px}
+.pprontos button{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer;color:var(--muted);font-size:12px}
+.pprontos button:hover{border-color:var(--pool);color:var(--fg)}
+.passo{display:flex;align-items:center;gap:8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-top:4px}
+.passo i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--pool) 18%,transparent);color:var(--pool);font-size:11px}
+.simbtn{display:flex;align-items:center;justify-content:space-between;gap:8px;text-decoration:none;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.simbtn:hover{border-color:var(--pool)}
+.simbtn small{color:var(--muted);display:block;font-size:11.5px}
+/* cenários embaixo do gráfico (Pools) */
+.cenbar{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:4px;padding:6px 8px;border-top:1px solid var(--line);font-size:11.5px;align-items:stretch}
+.cenbar>span{display:flex;flex-direction:column;justify-content:center;color:var(--muted);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding-right:4px}
+.cenbar div{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 6px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.cenbar div.hj{border-color:var(--pool)}
+.cenbar small{color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cenbar b{font-family:var(--f-mono);font-weight:500;font-size:12px}
+.cenbar em{font-style:normal;font-family:var(--f-mono);font-size:10.5px}
+.cmpgo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--raise);border:1px solid var(--test);color:var(--fg);border-radius:8px;padding:8px 10px;cursor:pointer;font-weight:500}
+.cmpgo:hover{background:var(--line)}
+.cmpgo svg{width:16px;height:16px;color:var(--test)}
+/* painel de comparação: sai da coluna da direita e cobre o gráfico */
+.cmpp{grid-column:2;grid-row:1;position:relative;margin:6px;z-index:9;min-height:0;display:flex;flex-direction:column;gap:10px;padding:14px 16px;overflow-y:auto;
+  background:var(--panel);border:1px solid var(--test);border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+.cmpp.abrindo{animation:cmpSai .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes cmpSai{from{transform:translateX(56px);opacity:0}to{transform:none;opacity:1}}
+.board.cmp-on .cwrap,.board.cmp-on .tools,.board.cmp-on .hintbar{filter:blur(2px) brightness(.55)}
+.cmph{display:flex;align-items:center;gap:10px}
+.cmph h2{margin:0;font-size:15px;font-weight:600}
+.cmph .x{margin-left:auto;font-size:20px;width:30px;height:30px;border:1px solid var(--line);border-radius:7px}
+.cmpgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:12px}
+.cmpcol{display:flex;flex-direction:column;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
+.cmpcol.et{border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
+.cmpcol h3{display:flex;justify-content:space-between;gap:8px}
+.cmpcol .inp{width:100%}
+.cmpres{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmpres .kv b{font-size:15px}
+.cmpcv{width:100%;height:210px;display:block;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+.cmpfim{border-radius:8px;padding:9px 12px;font-size:13.5px;line-height:1.5}
+.cmpfim.ganha{background:color-mix(in srgb,var(--up) 13%,transparent);color:var(--fg)}
+.cmpfim.perde{background:color-mix(in srgb,var(--avg) 13%,transparent);color:var(--fg)}
+@media (max-width:1100px){.main>aside{width:350px}}
 @media (max-width:900px){
+  /* Celular: três abas (Tokens/Par · Gráfico · Preço médio/Montar) */
+  body[data-tool] .mtabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .mtabs button{flex:1;background:none;border:0;border-radius:7px;padding:8px 4px;color:var(--muted);cursor:pointer;font-weight:500}
+  .mtabs button[aria-pressed="true"]{background:var(--raise);color:var(--fg)}
+  body[data-tool][data-mview="tok"] .board,body[data-tool][data-mview="tok"] .calc,
+  body[data-tool][data-mview="graf"] .wl,body[data-tool][data-mview="graf"] .calc,
+  body[data-tool][data-mview="calc"] .wl,body[data-tool][data-mview="calc"] .board{display:none}
+  body[data-tool][data-mview="tok"] .wl{max-height:none}
+  .cmpp{position:fixed;inset:auto 0 0 0;max-height:90vh;border-radius:14px 14px 0 0;
+    padding-bottom:max(14px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  @keyframes cmpSai{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  .cmpgrid{grid-template-columns:1fr}
   .app{height:auto}
+  /* o botão do menu do site fica no canto: o cabeçalho abre espaço para ele */
+  html.atlas-moldura .app>header{padding-left:46px}
   .main{flex-direction:column}
   .board{height:66vh;min-height:400px;flex:none}
-  aside{width:100%}
+  .main>aside{width:100%}
   .wl{max-height:300px}
   .status{max-width:none}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.cmpp.abrindo{animation:none}}
 </style>
 </head>
 <body>
@@ -212,8 +296,12 @@ body.present .kv b{font-size:19px}
       <label class="lbl" for="lo">Mín</label><input class="inp" id="lo" inputmode="decimal">
       <button class="btn sm" id="hlReset" title="Coloca as linhas na máxima e na mínima do gráfico">↺</button>
     </div>
-    <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
+    <p class="estudo"><span class="only-dca"><b style="color:var(--muted);font-weight:600">DCA</b> = Dollar-Cost Averaging, "média do custo em dólar": dividir a compra em partes iguais para chegar a um preço médio melhor. </span>Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
   </header>
+
+  <nav class="mtabs" id="mtabs" aria-label="Partes da ferramenta">
+    <button data-v="tok" aria-pressed="false"><span class="only-dca">Tokens</span><span class="only-pool">Par</span></button><button data-v="graf" aria-pressed="true">Gráfico</button><button data-v="calc" aria-pressed="false"><span class="only-dca">Preço médio</span><span class="only-pool">Montar</span></button>
+  </nav>
 
   <div class="main">
     <section class="board">
@@ -258,13 +346,31 @@ body.present .kv b{font-size:19px}
         <button class="btn sm sell" id="rSell">Vender tudo</button>
         <button class="btn sm" id="rExit" style="margin-left:auto">Sair do replay</button>
       </div>
+      <div class="cenbar only-pool" id="cenbar" aria-live="polite"></div>
       <div class="hintbar" id="hint"></div>
     </section>
 
     <aside>
       <section class="card wl">
+        <!-- PAR (Estratégias de Pools, 17/11/2026): token A = o escolhido na lista;
+             token B no seletor. O selo diz o tipo de par e o risco dele. -->
+        <div class="parbox only-pool">
+          <h3>Par</h3>
+          <div class="parsl">
+            <span class="lbl">Token</span><span class="tk" id="parA">—</span>
+            <label class="lbl" for="parB">Com</label>
+            <select id="parB">
+              <optgroup label="Stablecoins"><option value="USDC" selected>USDC</option><option value="USDT">USDT</option></optgroup>
+              <optgroup label="Blue chips"><option value="SOL">SOL</option><option value="ETH">ETH</option><option value="BTC">BTC</option></optgroup>
+              <optgroup label="Outros"><option value="rwa">Ação tokenizada (RWA)</option><option value="deriv">O original deste token (ex.: SOL para mSOL)</option></optgroup>
+            </select>
+          </div>
+          <div class="ptipo" id="ptipo"></div>
+          <span class="lbl">Pares para estudar</span>
+          <div class="pprontos" id="pprontos"></div>
+        </div>
         <div class="wlh">
-          <input class="inp" id="q" placeholder="Buscar entre 500 tokens (ex.: jup, pepe, aave)" autocomplete="off" aria-label="Buscar token">
+          <input class="inp" id="q" placeholder="Buscar token (ex.: jup, aave)" autocomplete="off" aria-label="Buscar token">
           <div class="seg" id="wtab"><button data-w="top" aria-pressed="true">Top 500</button><button data-w="fav" aria-pressed="false">★ Favoritos</button></div>
           <span class="note" id="wcount"></span>
           <div class="wres" id="wres" hidden></div>
@@ -281,41 +387,54 @@ body.present .kv b{font-size:19px}
         </div>
 
         <div class="pane" id="pane-dca">
+          <button class="cmpgo only-dca" id="cmpOpen" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>Comparar 1 compra × em etapas</button>
           <div class="row">
             <label class="lbl" for="cap">Capital</label><span>$</span><input class="inp" id="cap" value="1000" inputmode="decimal" style="width:80px">
             <span class="note" id="capNote"></span>
           </div>
           <div class="sub" id="sub">
-            <button data-s="1">1 compra</button><button data-s="2">2 compras</button><button data-s="3">3 compras</button><button data-s="4">4 compras</button><button data-s="5">5 compras</button><button data-s="L">Livre</button><button data-s="C">Comparar</button>
+            <button data-s="1">1 compra</button><button data-s="2">2 compras</button><button data-s="3">3 compras</button><button data-s="4">4 compras</button><button data-s="5">5 compras</button><button data-s="L">Livre</button><button data-s="C">Ver todas</button>
           </div>
           <div id="stratBody" class="stack"></div>
           <div id="res" class="stack"></div>
         </div>
 
         <div class="pane" id="pane-pool" hidden>
+          <a class="simbtn" href="../scanner-pools/index.html"><span><b>Simulador de pool</b><small>Ache a pool real de um token e veja em qual plataforma ela está</small></span><span aria-hidden="true">→</span></a>
+          <button class="cmpgo" id="poolCmpOpen" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>Pool × Segurar: quem ganha?</button>
+          <h3 class="passo"><i>1</i>O que você quer fazer?</h3>
           <div class="sub" id="pStrat">
-            <button data-ps="buy">Comprar na descida</button><button data-ps="sell">Vender na subida</button><button data-ps="yield">Renda em dólar</button><button data-ps="ratio">Proporção</button><button data-ps="full">Faixa cheia (V2)</button>
+            <button data-ps="buy">Comprar na descida</button><button data-ps="sell">Vender na subida</button><button data-ps="yield">Renda com taxas</button><button data-ps="ratio">Proporção</button><button data-ps="full">Faixa cheia (V2)</button>
           </div>
-          <p class="note">Procurando uma pool? Abra o <a href="../scanner-pools/index.html" style="color:var(--accent)">Scanner de Pools de Liquidez</a>.</p>
           <p class="note" id="pIntro"></p>
+          <h3 class="passo"><i>2</i>Faixa e depósito</h3>
           <div class="row" id="pQuick"></div>
           <div class="fgrid">
             <div class="f"><label class="lbl" for="pa">Mín da faixa</label><input class="inp" id="pa" inputmode="decimal"></div>
             <div class="f"><label class="lbl" for="pb">Máx da faixa</label><input class="inp" id="pb" inputmode="decimal"></div>
             <div class="f"><label class="lbl" for="p0">Preço na entrada</label><input class="inp" id="p0" inputmode="decimal"></div>
-            <div class="f"><label class="lbl" for="dep">Depósito ($)</label><input class="inp" id="dep" inputmode="decimal"></div>
+            <div class="f"><label class="lbl" for="dep" id="depL">Depósito ($)</label><input class="inp" id="dep" inputmode="decimal"></div>
           </div>
           <div class="f"><label class="lbl" for="pRatio">Proporção na entrada: <span id="pRatioL" style="color:var(--pool)"></span></label><input type="range" id="pRatio" min="0" max="100" step="1"></div>
+          <h3 class="passo"><i>3</i>O que acontece</h3>
           <div id="poolRes" class="stack"></div>
           <h3>Taxas da pool</h3>
           <div class="row"><label class="lbl" for="phApr">APR da posição (%)</label><input class="inp" id="phApr" value="25" inputmode="decimal" style="width:70px"><button class="btn sm" id="phFetch">Buscar APR real (DeFi Llama)</button></div>
           <div id="phPools" class="stack" style="gap:4px"></div>
+          <h3>Raio-X do APR</h3>
+          <p class="note">Viu um APR alto num vídeo ou num painel? Coloque aqui. A ferramenta mostra o que ele vale com a sua faixa, no histórico do gráfico.</p>
+          <div class="row"><label class="lbl" for="rxApr">APR anunciado (%)</label><input class="inp" id="rxApr" inputmode="decimal" placeholder="ex.: 300" style="width:90px"></div>
+          <div id="rxRes" class="stack"></div>
           <h3>Simular no histórico do gráfico</h3>
           <label class="row note" for="phOn"><input type="checkbox" id="phOn"> Entrar na pool numa vela do passado e ver o que aconteceu até hoje</label>
           <div id="phBox" class="stack" hidden>
             <div class="f"><label class="lbl" for="phIdx">Entrada na pool: <span id="phDate" style="color:var(--pool)"></span></label><input type="range" id="phIdx" min="0" max="10" value="0"></div>
             <div id="phRes" class="stack"></div>
           </div>
+          <h3>Aumentar a posição</h3>
+          <p class="note">Já tem uma pool e quer colocar mais? Guarde a faixa atual e monte a próxima. A ferramenta soma as posições e mostra o novo preço médio.</p>
+          <div class="row"><button class="btn sm" id="posAdd" type="button">Guardar esta faixa como posição</button></div>
+          <div id="posRes" class="stack"></div>
         </div>
 
         <div class="pane" id="pane-cal" hidden>
@@ -353,6 +472,46 @@ body.present .kv b{font-size:19px}
         </div>
       </section>
     </aside>
+      <!-- Comparação 1 compra × em etapas (17/11/2026): fica na célula do gráfico da grade e cobre o quadro (no celular, folha de baixo) -->
+      <section class="cmpp only-dca" id="cmpp" role="dialog" aria-modal="false" aria-labelledby="cmpT" hidden>
+        <div class="cmph"><h2 id="cmpT">Comparar: 1 compra × em etapas</h2><span class="note" id="cmpAsset"></span><button class="x" id="cmpX" aria-label="Fechar a comparação" title="Fechar (Esc)">×</button></div>
+        <div class="row">
+          <label class="lbl" for="cmpVal">Valor total</label><span>$</span><input class="inp" id="cmpVal" inputmode="decimal" style="width:90px">
+          <span class="lbl" style="margin-left:8px">E se o preço…</span>
+          <div class="sub" id="cmpCen"><button data-c="cai">cair</button><button data-c="lat">andar de lado</button><button data-c="sobe">subir direto</button></div>
+        </div>
+        <div class="cmpgrid">
+          <div class="cmpcol">
+            <h3><span>1 compra</span></h3>
+            <div class="f"><label class="lbl" for="cmpUni">Preço da compra</label><input class="inp" id="cmpUni" inputmode="decimal"></div>
+            <div class="cmpres" id="cmpResU"></div>
+          </div>
+          <div class="cmpcol et">
+            <h3><span>Em etapas</span><span class="sub" id="cmpN"><button data-n="2">2</button><button data-n="3">3</button><button data-n="4">4</button><button data-n="5">5</button></span></h3>
+            <p class="note" id="cmpPer" style="margin:0"></p>
+            <div id="cmpRows" class="stack" style="gap:6px"></div>
+            <div class="row"><button class="btn sm" id="cmpGraf" title="Espalha as compras entre a máxima e a mínima do gráfico, preços que o ativo tocou">Usar o gráfico</button><button class="btn sm" id="cmpAba">Trazer da aba Preço médio</button></div>
+            <div class="cmpres" id="cmpResE"></div>
+          </div>
+        </div>
+        <canvas class="cmpcv" id="cmpCv" aria-label="Gráfico da comparação: preços das compras e tokens comprados em cada uma"></canvas>
+        <div class="legend"><span><i style="background:var(--down)"></i>1 compra</span><span><i style="background:var(--up)"></i>compras em etapas</span><span><i style="background:var(--avg)"></i>preço médio em etapas</span><span><i style="background:var(--test)"></i>preço de hoje</span></div>
+        <div class="cmpfim" id="cmpFim"></div>
+      </section>
+      <!-- Pool × Segurar (17/11/2026): mesmo lugar e entrada do painel do DCA -->
+      <section class="cmpp only-pool" id="poolp" role="dialog" aria-modal="false" aria-labelledby="poolpT" hidden>
+        <div class="cmph"><h2 id="poolpT">Pool × Segurar: quem ganha?</h2><span class="note" id="poolpSub"></span><button class="x" id="poolpX" aria-label="Fechar a comparação" title="Fechar (Esc)">×</button></div>
+        <p class="note" id="poolpIntro"></p>
+        <div class="row">
+          <label class="lbl" for="ppDias">Dias com o preço dentro da faixa</label><input class="inp" id="ppDias" value="30" inputmode="numeric" style="width:64px">
+          <label class="lbl" for="ppApr" style="margin-left:6px">APR (%)</label><input class="inp" id="ppApr" inputmode="decimal" style="width:70px">
+          <span class="note" id="ppTaxa"></span>
+        </div>
+        <canvas class="cmpcv" id="ppCv" style="height:240px" aria-label="Valor da posição na pool e do jeito alternativo, para cada preço final"></canvas>
+        <div class="legend"><span><i style="background:var(--pool)"></i>pool, sem taxas</span><span><i style="background:var(--pool);opacity:.5"></i>pool, com taxas</span><span><i style="background:var(--muted)"></i><span id="ppBaseNome">segurar</span></span><span><i style="background:var(--up)"></i>ficar em dólar</span></div>
+        <div id="ppTab"></div>
+        <div class="cmpfim" id="ppFim"></div>
+      </section>
   </div>
 </div>
 
@@ -478,7 +637,7 @@ function setAsset(o,keepStrats){
   const newAsset=o.key!==S.key;Object.assign(S,o);
   if(PHS.idx>n()-2)PHS.idx=Math.max(0,n()-2);if(PHS.on)S.pool.p0=S.candles[PHS.idx].c;
   const e=extent();S.hi=e.hi;S.lo=e.lo;
-  if(newAsset&&!keepStrats){S.test=S.now;defaultStrats();S.strats.L=[];S.pool={a:rnd(S.lo),b:rnd(S.hi),p0:rnd(S.now),dep:S.pool.dep||1000};S.undo=[]}
+  if(newAsset&&!keepStrats){S.test=S.now;defaultStrats();S.strats.L=[];S.pos=[];S.pool={a:rnd(S.lo),b:rnd(S.hi),p0:rnd(S.now),dep:S.pool.dep||1000};S.undo=[]}
   ['1','2','3','4','5','L'].forEach(k=>(S.strats[k]||[]).forEach(b=>{if(b.t==null||iOf(b.t)<-5||iOf(b.t)>n()+60)b.t=placeT(b.p)}));
   fitView();syncHeader();syncPool();renderWatch();renderStrat();renderAll();
   if(S.tab==='cal')ensureDaily();
@@ -487,6 +646,7 @@ function setAsset(o,keepStrats){
 function defaultStrats(){[1,2,3,4,5].forEach(k=>{S.strats[k]=Array.from({length:k},(_,j)=>{const p=rnd(k===1?S.hi:S.hi-(S.hi-S.lo)*j/(k-1));return{p,t:placeT(p)}})});S.slot=0}
 
 function loadSim(key,seed){
+  if(S.quote&&S.quote.ratio){S.quote={sym:'USDC',ratio:false};S.parStats=null;S.pool.dep=1000}
   const p=PRESETS[key];const sd=seed??p.seed;
   const cs=gen(p.pattern,Math.min(.97,Math.max(.03,(p.now-p.lo)/(p.hi-p.lo))),sd,p.lo,p.hi);
   const last=cs[cs.length-1];last.c=p.now;last.h=Math.max(last.h,last.c);last.l=Math.min(last.l,last.c);
@@ -497,12 +657,25 @@ function loadSim(key,seed){
   $('#regen').hidden=false;setStatus('Exemplo simulado · preços inventados para a aula');
 }
 async function selectLive(id){
+  if(document.body.dataset.mview==='tok')setMview('graf');
   S.pending=id;const m=S.market[id]||{};const sym=m.sym||id;
+  /* par com dois voláteis: as velas do segundo token já vêm em paralelo */
+  const qaPre=TOOL==='pool'?(()=>{const sv=S.asset;S.asset=m.sym||id.toUpperCase();const q=quoteAlvo();S.asset=sv;return q})():null;
+  const pB=qaPre&&S.live?fetchCandles(qaPre.id,S.tf).catch(()=>null):null;S.quoteFalhou=false;
   if(S.live){
     setStatus('Carregando '+sym+'…');
     try{const{src,cs}=await fetchCandles(id,S.tf);if(S.pending!==id)return;if(cs.length<3)throw new Error('Poucos dados para '+sym);
       S.id=id;S.src=src;
-      setAsset({mode:'live',key:'live:'+id,asset:m.sym||id.toUpperCase(),name:m.name||id,candles:cs,now:m.price||cs[cs.length-1].c});
+      if(TOOL==='pool'){const ant=S.quote&&S.quote.ratio;S.asset=m.sym||id.toUpperCase();const qa=quoteAlvo();let feito=false;
+        if(qa){try{const rb=(qaPre&&qaPre.id===qa.id&&pB?await pB:null)||await fetchCandles(qa.id,S.tf);if(S.pending!==id)return;const rc=mergeRatio(cs,rb.cs);
+          if(rc.length>=3){const usdB=(S.market[qa.id]||{}).price||rb.cs[rb.cs.length-1].c;const pa=m.price||cs[cs.length-1].c;
+            S.quote={sym:qa.sym,ratio:true,usd:usdB,id:qa.id};S.parStats=parStats(cs,rb.cs);
+            /* depósito: os mesmos ~US$ 1.000, agora em unidades do segundo token */
+            S.pool.dep=+(1000/usdB).toPrecision(3);
+            setAsset({mode:'live',key:'live:'+id+'/'+qa.sym+':'+S.tf,asset:m.sym||id.toUpperCase(),name:m.name||id,candles:rc,now:pa/usdB});feito=true}}catch(e){/* sem velas do segundo token: fica em dólar */}}
+        if(!feito){S.quoteFalhou=!!qa;S.quote={sym:Q(),ratio:false};S.parStats=null;if(ant)S.pool.dep=1000;
+          setAsset({mode:'live',key:'live:'+id,asset:m.sym||id.toUpperCase(),name:m.name||id,candles:cs,now:m.price||cs[cs.length-1].c})}}
+      else setAsset({mode:'live',key:'live:'+id,asset:m.sym||id.toUpperCase(),name:m.name||id,candles:cs,now:m.price||cs[cs.length-1].c});
       ls.set('asset',id);$('#sim').value='';$('#regen').hidden=true;
       setStatus(`${src} · atualizado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`);return;
     }catch(e){if(S.pending!==id)return;if(!(m.spark&&m.spark.length>10)){setStatus('Não foi possível carregar '+sym+' agora. Tente de novo em instantes.',true);return}
@@ -571,6 +744,8 @@ function draw(){
     dline(a,COL.pool,1.5,[6,4]);dline(b,COL.pool,1.5,[6,4]);const g=Math.sqrt(a*b);dline(g,COL.pool,1,[2,3]);rlabel(g,'preço médio da pool √(mín×máx)',COL.pool);
     if(PHS.on){ctx.strokeStyle=COL.pool;ctx.setLineDash([4,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(px0,0);ctx.lineTo(px0,H-BOT);ctx.stroke();ctx.setLineDash([]);ctx.font='600 11px '+FB;ctx.fillStyle=COL.pool;ctx.fillText('entrada na pool',px0+5,TOP+8)}
     tags.push({p:b,c:COL.pool},{p:a,c:COL.pool},{p:g,c:COL.pool})}
+  /* posições guardadas em "Aumentar a posição": faixas mais claras */
+  if(S.showPool&&S.pos&&S.pos.length){S.pos.forEach(q=>{ctx.fillStyle=COL.pool;ctx.globalAlpha=.05;ctx.fillRect(0,Y(q.b),Rr,Y(q.a)-Y(q.b));ctx.globalAlpha=1;dline(q.a,COL.pool,1,[2,4]);dline(q.b,COL.pool,1,[2,4])})}
   // candles
   const w=Math.max(1,Math.min(14,bw()*.66));const a0=Math.max(0,Math.floor(S.vx0)-1),a1=Math.min(visN()-1,Math.ceil(S.vx1)+1);
   for(let k=a0;k<=a1;k++){const c=S.candles[k];const col=c.c>=c.o?COL.up:COL.down;const x=X(k);
@@ -620,7 +795,7 @@ function drawChrome(tags,m,st,tstep,ts0,Rr){
   const N=visN();
   // legenda
   const hi=m&&m.x<Rr?Math.round(I(m.x)):N-1;const c=S.candles[Math.max(0,Math.min(N-1,hi))];
-  ctx.textBaseline='middle';ctx.font='600 13px '+FB;ctx.fillStyle=COL.fg;const head=`${S.asset} · ${S.mode==='sim'?'4h':TF[S.tf].lbl} · ${S.src||''}`;ctx.fillText(head,10,15);
+  ctx.textBaseline='middle';ctx.font='600 13px '+FB;ctx.fillStyle=COL.fg;const head=`${S.asset}${RATIO()?' ÷ '+S.quote.sym:''} · ${S.mode==='sim'?'4h':TF[S.tf].lbl} · ${S.src||''}`;ctx.fillText(head,10,15);
   let x=16+ctx.measureText(head).width;ctx.font='11.5px '+FM;
   [['Abr',c.o],['Máx',c.h],['Mín',c.l],['Fch',c.c]].forEach(([k,v])=>{ctx.fillStyle=COL.muted;ctx.fillText(k,x,15);x+=ctx.measureText(k+' ').width;ctx.fillStyle=c.c>=c.o?COL.up:COL.down;const s=fp(v);ctx.fillText(s,x,15);x+=ctx.measureText(s).width+10});
   // eixo do tempo
@@ -740,7 +915,7 @@ function buyAt(q){
   if(S.tab==='sell'){const a=SL.ps[SL.n];a[SL.slot%a.length]={p:rnd(p),t};SL.slot=(SL.slot+1)%a.length;renderSellBody();renderAll();return}
   if(S.tab==='cal'){setHint('No DCA no tempo as compras acontecem por data, não por clique. Mude a frequência e as datas no painel.');return}
   if(S.tab==='pool'){setHint('Na pool, arraste as linhas roxas para mudar a faixa.');return}
-  if(S.active==='C'){setHint('Na aba Comparar não dá para comprar. Escolha 1, 2, 3, 4 compras ou Livre.');return}
+  if(S.active==='C'){setHint('Em Ver todas não dá para comprar. Escolha 1, 2, 3, 4 compras ou Livre.');return}
   if(S.active==='L'){const usd=num($('#perBuy')?.value);if(!(usd>0))return;S.strats.L.push({p:rnd(p),usd,t})}
   else{const a=S.strats[S.active];a[S.slot%a.length]={p:rnd(p),t};S.slot=(S.slot+1)%a.length}
   renderStrat();renderAll();
@@ -862,13 +1037,254 @@ function renderCompare(el){
 document.querySelectorAll('#sub button').forEach(b=>b.onclick=()=>{S.active=b.dataset.s;S.slot=0;setTool(S.tool);renderAll()});
 $('#cap').addEventListener('input',()=>{const v=num($('#cap').value);if(v>0){S.cap=v;renderStrat();renderAll()}});
 
+/* ---------- Comparação 1 compra × em etapas (17/11/2026) ----------
+   Painel que abre sobre o gráfico. Mesmo dinheiro nos dois cenários; nas
+   etapas, valor igual em cada compra. Mostra preço médio, tokens, quanto
+   vale hoje e uma frase de conclusão, com um mini-gráfico próprio. */
+const CP={open:false,val:0,uni:0,n:4,ps:[],cen:''};
+/* tokens no painel: 4 casas abaixo de 100 (1,0000 · 0,3333), 2 até 1.000, nenhuma acima */
+const fqc=q=>!isFinite(q)?'—':q>=1000?fq(q):q>=100?q.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):q>=1?q.toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4}):q.toLocaleString('pt-BR',{maximumSignificantDigits:4});
+function cpStats(){const v=CP.val,u=CP.uni,ps=CP.ps.slice(0,CP.n).filter(p=>p>0);
+  if(!(v>0&&u>0&&ps.length===CP.n))return null;
+  const one={inv:v,tok:v/u,avg:u};const et=stats(ps.map(p=>({p,usd:v/CP.n})));return{one,et,ps}}
+function cpSpread(){const hi=S.hi,lo=S.lo;CP.ps=Array.from({length:CP.n},(_,j)=>rnd(hi-(hi-lo)*j/(CP.n-1)))}
+function cpCenario(c){const u=CP.uni||S.now;const k=CP.n;const f={cai:j=>1-.1*j,lat:j=>[1,.93,1.04,.96,1.02][j],sobe:j=>1+.1*j}[c];
+  CP.ps=Array.from({length:k},(_,j)=>rnd(u*f(j)));CP.cen=c}
+function cpFromAba(){const k=S.active;const a=(S.strats[k]||[]).map(b=>b.p).filter(p=>p>0);
+  if(a.length<2){setHint('A aba Preço médio está com 1 compra. Escolha 2 a 5 compras lá para trazer os preços.');return false}
+  CP.n=Math.min(5,a.length);CP.ps=a.slice(0,CP.n).map(rnd);return true}
+function cpOpen(){if(TOOL!=='dca')return;
+  CP.val=S.cap;CP.cen='';
+  if(!cpFromAba()){CP.n=4;cpSpread()}
+  /* a compra única acontece no mesmo dia da primeira etapa, no mesmo preço */
+  CP.uni=CP.ps[0];
+  CP.open=true;const p=$('#cmpp');p.hidden=false;p.classList.remove('abrindo');void p.offsetWidth;p.classList.add('abrindo');
+  $('.board').classList.add('cmp-on');cpSync();cpRender();setTimeout(()=>$('#cmpX').focus(),0)}
+function cpClose(){if(!CP.open)return;CP.open=false;$('#cmpp').hidden=true;$('.board').classList.remove('cmp-on');$('#cmpOpen').focus()}
+function cpSync(){const ativo=document.activeElement;
+  if(ativo!==$('#cmpVal'))$('#cmpVal').value=fnum(CP.val);if(ativo!==$('#cmpUni'))$('#cmpUni').value=fnum(CP.uni);$('#cmpAsset').textContent=S.asset+' · hoje '+fp(S.now);
+  document.querySelectorAll('#cmpN button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.n===CP.n));
+  document.querySelectorAll('#cmpCen button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===CP.cen));
+  const u=CP.val/CP.n;$('#cmpPer').textContent=`${CP.n} compras de ${fu(u)}. Preço de cada uma → tokens comprados:`;
+  setHTML($('#cmpRows'),CP.ps.slice(0,CP.n).map((p,j)=>`<div class="row" style="flex-wrap:nowrap"><span class="lbl" style="width:18px">${j+1}</span><input class="inp" id="cmpP${j}" data-j="${j}" value="${fnum(p)}" inputmode="decimal" aria-label="Preço da compra ${j+1}" style="flex:1;width:auto"><span class="note num" style="white-space:nowrap;min-width:0">→ <span id="cmpQ${j}">${fqc(p>0?u/p:NaN)}</span></span></div>`).join(''));
+  $('#cmpRows').querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{const v=num(inp.value),j=+inp.dataset.j;if(!(v>0))return;CP.ps[j]=v;CP.cen='';
+    document.querySelectorAll('#cmpCen button').forEach(b=>b.setAttribute('aria-pressed','false'));$('#cmpQ'+j).textContent=fqc(CP.val/CP.n/v);cpRender()}))}
+function cpRender(){const r=cpStats(),A=esc(S.asset);
+  if(!r){setHTML($('#cmpResU'),'');setHTML($('#cmpResE'),'');setHTML($('#cmpFim'),'Preencha o valor e os preços das compras.');$('#cmpFim').className='cmpfim';cpDraw(null);return}
+  const {one,et}=r,hoje=S.now,vU=one.tok*hoje,vE=et.tok*hoje,d=et.tok-one.tok,dp=(et.tok/one.tok-1)*100;
+  setHTML($('#cmpResU'),`<div class="kv"><span class="lbl">Preço médio</span><b>${fp(one.avg)}</b></div><div class="kv"><span class="lbl">Tokens</span><b>${fqc(one.tok)}</b></div><div class="kv" style="grid-column:1/-1"><span class="lbl">Vale hoje</span><b>${fu(vU)}</b>${plSpan(vU,one.inv)}</div>`);
+  setHTML($('#cmpResE'),`<div class="kv hl"><span class="lbl">Preço médio</span><b>${fp(et.avg)}</b></div><div class="kv"><span class="lbl">Tokens</span><b class="${sgn(d)}">${fqc(et.tok)}</b><em class="${sgn(d)}">${fpct(dp)}</em></div><div class="kv" style="grid-column:1/-1"><span class="lbl">Vale hoje</span><b>${fu(vE)}</b>${plSpan(vE,et.inv)}</div>`);
+  const fim=$('#cmpFim');
+  if(Math.abs(dp)<.05){fim.className='cmpfim';setHTML(fim,`Os dois cenários terminam com a mesma quantidade de ${A}.`)}
+  else if(d>0){fim.className='cmpfim ganha';setHTML(fim,`Em etapas, o mesmo ${fu(CP.val)} comprou <strong class="up">+${fqc(d)} ${A}</strong> (${fpct(dp)}). O preço médio (${fp(et.avg)}) ficou abaixo da média simples dos preços (${fp(et.simple)}) porque cada compra barata trouxe mais tokens. No preço de hoje, a diferença vale <strong>${fu(d*hoje)}</strong>.`)}
+  else{fim.className='cmpfim perde';setHTML(fim,`Aqui a compra única levou <strong>${fqc(-d)} ${A}</strong> a mais (${fpct(-dp)}), porque foi feita num preço abaixo da maioria das compras em etapas. Fracionar protege de comprar tudo no topo, mas perde quando o preço só sobe depois da primeira compra.`)}
+  cpDraw(r)}
+function cpDraw(r){const cv=$('#cmpCv');const b=cv.getBoundingClientRect();if(!b.width)return;const d=devicePixelRatio||1;cv.width=b.width*d;cv.height=b.height*d;
+  const g=cv.getContext('2d');g.setTransform(d,0,0,d,0,0);const w=b.width,h=b.height;g.clearRect(0,0,w,h);if(!r)return;
+  const {one,et,ps}=r,n=ps.length,hoje=S.now;
+  const base=[...ps,one.avg,et.avg];const bmx=Math.max(...base),bmn=Math.min(...base);
+  /* "hoje" só entra no gráfico se estiver perto dos preços digitados */
+  const comHoje=hoje>=bmn*.5&&hoje<=bmx*2;const vals=comHoje?[...base,hoje]:base;let mx=Math.max(...vals),mn=Math.min(...vals);const pad=(mx-mn)*.18||mx*.05;mx+=pad;mn-=pad;
+  const L=12,R=w-74,top=12,chartH=h*.58,barTop=top+chartH+16,barH=h-barTop-20;
+  const X=j=>L+30+(R-L-60)*(n>1?j/(n-1):.5),Y=p=>top+(mx-p)/(mx-mn)*chartH;
+  g.font='11px '+FM;g.textBaseline='middle';
+  const usados=[];
+  const hl=(p,c,dash,txt)=>{g.strokeStyle=c;g.lineWidth=1.4;g.setLineDash(dash);g.beginPath();g.moveTo(L,Y(p));g.lineTo(R,Y(p));g.stroke();g.setLineDash([]);
+    /* rótulos à direita não se encostam: empurra 13 px quando colidem */
+    let y=Y(p);while(usados.some(u=>Math.abs(u-y)<13))y+=13;usados.push(y);g.fillStyle=c;g.fillText(txt+' '+fp(p),R+6,y)};
+  hl(one.avg,COL.down,[5,4],'1×');hl(et.avg,COL.avg,[],'méd');if(comHoje)hl(hoje,COL.test,[2,3],'hoje');
+  g.strokeStyle=COL.up;g.lineWidth=1.6;g.beginPath();ps.forEach((p,j)=>j?g.lineTo(X(j),Y(p)):g.moveTo(X(j),Y(p)));g.stroke();
+  ps.forEach((p,j)=>{g.fillStyle=COL.up;g.beginPath();g.arc(X(j),Y(p),5,0,7);g.fill();g.fillStyle=COL.bg;g.font='600 9px '+FB;g.textAlign='center';g.fillText(j+1,X(j),Y(p)+.5);g.textAlign='left';g.font='11px '+FM});
+  g.fillStyle=COL.down;g.beginPath();g.arc(L+10,Y(one.avg),5,0,7);g.fill();
+  /* barras: tokens de cada compra (verde) contra a compra única dividida igual (vermelho) */
+  const tk=ps.map(p=>CP.val/n/p),uni=CP.val/n/one.avg,tmax=Math.max(...tk,uni);
+  g.fillStyle=COL.muted;g.font='10.5px '+FB;g.fillText('Tokens por compra',L,barTop-6);
+  ps.forEach((p,j)=>{const bw=Math.min(36,(R-L-60)/n*.45),x=X(j)-bw/2,hh=tk[j]/tmax*barH;g.fillStyle=COL.up;g.globalAlpha=.85;g.fillRect(x,barTop+barH-hh,bw,hh);g.globalAlpha=1;
+    g.fillStyle=COL.fg;g.font='10.5px '+FM;g.textAlign='center';g.fillText(fqc(tk[j]),X(j),barTop+barH+10);g.textAlign='left'});
+  const yU=barTop+barH-uni/tmax*barH;g.strokeStyle=COL.down;g.setLineDash([4,3]);g.beginPath();g.moveTo(L,yU);g.lineTo(R,yU);g.stroke();g.setLineDash([]);
+  g.fillStyle=COL.down;g.font='10.5px '+FM;g.fillText('1× '+fqc(uni),R+6,yU)}
+$('#cmpOpen').onclick=cpOpen;$('#cmpX').onclick=cpClose;
+addEventListener('keydown',e=>{if(e.key==='Escape'&&CP.open){e.preventDefault();cpClose()}});
+$('#cmpVal').addEventListener('input',()=>{const v=num($('#cmpVal').value);if(v>0){CP.val=v;cpSync();cpRender()}});
+$('#cmpUni').addEventListener('input',()=>{const v=num($('#cmpUni').value);if(v>0){CP.uni=v;if(CP.cen)cpCenario(CP.cen);cpSyncRows();cpRender()}});
+function cpSyncRows(){const keep=document.activeElement&&document.activeElement.id;cpSync();if(keep&&$('#'+keep))$('#'+keep).focus()}
+document.querySelectorAll('#cmpN button').forEach(b=>b.onclick=()=>{const k=+b.dataset.n;if(k===CP.n)return;CP.n=k;if(CP.cen)cpCenario(CP.cen);else cpSpread();cpSync();cpRender()});
+document.querySelectorAll('#cmpCen button').forEach(b=>b.onclick=()=>{cpCenario(b.dataset.c);cpSync();cpRender()});
+$('#cmpGraf').onclick=()=>{CP.cen='';cpSpread();cpSync();cpRender()};
+$('#cmpAba').onclick=()=>{if(cpFromAba()){CP.cen='';cpSync();cpRender()}};
+new ResizeObserver(()=>{if(CP.open)cpDraw(cpStats())}).observe($('#cmpCv'));
+
+/* ---------- celular: abas Tokens · Gráfico · Preço médio ---------- */
+function setMview(v){document.body.dataset.mview=v;document.querySelectorAll('#mtabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));if(v==='graf')requestAnimationFrame(resize)}
+document.querySelectorAll('#mtabs button').forEach(b=>b.onclick=()=>setMview(b.dataset.v));
+setMview('graf');
+
+/* ---------- Segundo token do par (parte 2, 17/11/2026) ----------
+   Com stable, tudo é medido em dólar. Com SOL, ETH, BTC ou o original de
+   um derivado, o gráfico passa a ser a RELAÇÃO entre os dois preços
+   (A ÷ B) e os valores saem em unidades do segundo token. */
+const QID={SOL:'solana',ETH:'ethereum',BTC:'bitcoin'};
+function quoteAlvo(){const A=String(S.asset||'').toUpperCase(),B=$('#parB')?$('#parB').value:'USDC';
+  if(B==='rwa'||STABLES.test(B))return null;
+  let sym=B;if(B==='deriv'){const m=A.match(DERIV);if(!m)return null;sym=m[2]}
+  if(sym===A||!QID[sym])return null;return{sym,id:QID[sym]}}
+const Q=()=>S.quote&&S.quote.ratio?S.quote.sym:(()=>{const B=$('#parB')?$('#parB').value:'USDC';return STABLES.test(B)?B:'USDC'})();
+const RATIO=()=>!!(S.quote&&S.quote.ratio&&TOOL==='pool');
+const minus=t=>String(t).charAt(0).toLowerCase()+String(t).slice(1);
+const fv=v=>{if(!RATIO())return fu(v);if(!isFinite(v))return'—';const a=Math.abs(v);return(v<-1e-12?'−':'')+(a>=1?a.toLocaleString('pt-BR',{maximumFractionDigits:a>=100?2:4}):a.toLocaleString('pt-BR',{maximumSignificantDigits:4}))+' '+S.quote.sym};
+/* As velas de A e B podem vir de fontes diferentes (Binance, CoinGecko,
+   DeFi Llama), com horários deslocados: casa pela vela do tempo gráfico. */
+const balde=t=>Math.round(t/TF[S.tf].ms);
+function mergeRatio(ca,cb){const mb=new Map(cb.map(c=>[balde(c.t),c]));const out=[];
+  ca.forEach(c=>{const d=mb.get(balde(c.t));if(!d||!(d.o>0&&d.c>0&&d.h>0&&d.l>0))return;const o=c.o/d.o,cl=c.c/d.c;
+    /* máxima e mínima da relação: aproximação pelas extremas da mesma vela */
+    out.push({t:c.t,o,c:cl,h:Math.max(o,cl,c.h/d.h),l:Math.min(o,cl,c.l/d.l)})});return out}
+function parStats(ca,cb){const mb=new Map(cb.map(c=>[balde(c.t),c.c]));const pa=[],pb=[];ca.forEach(c=>{const v=mb.get(balde(c.t));if(v>0&&c.c>0){pa.push(c.c);pb.push(v)}});
+  if(pa.length<10)return null;const ra=[],rb=[];for(let i=1;i<pa.length;i++){ra.push(Math.log(pa[i]/pa[i-1]));rb.push(Math.log(pb[i]/pb[i-1]))}
+  const m=x=>x.reduce((s,v)=>s+v,0)/x.length,ma=m(ra),mb2=m(rb);let cv=0,va=0,vb=0;ra.forEach((v,i)=>{cv+=(v-ma)*(rb[i]-mb2);va+=(v-ma)**2;vb+=(rb[i]-mb2)**2});
+  const corr=va&&vb?cv/Math.sqrt(va*vb):0;const n0=pa.length-1;
+  return{corr,movA:(pa[n0]/pa[0]-1)*100,movB:(pb[n0]/pb[0]-1)*100,movR:(pa[n0]/pb[n0]/(pa[0]/pb[0])-1)*100}}
+
+/* ---------- PAR: tipo de par e risco (17/11/2026) ---------- */
+const STABLES=/^(USDC|USDT|DAI|USDE|USDS|FDUSD|PYUSD|USD1|USDG|TUSD)$/;
+const BLUE=/^(W?BTC|W?ETH|SOL|BNB)$/;
+const DERIV=/^(M|JITO|J|B|INF|ST|WST|R|CB|ME|EZ|WE)(SOL|ETH)$/;
+const TIPOS={
+  ss:['v','Stable × stable · risco menor','Rende pouco. O risco é uma das duas moedas perder a paridade com o dólar.'],
+  ts:['a','Token × stable · risco de preço','O resultado em dólar depende do preço do token. É o par certo para comprar na descida ou vender na subida.'],
+  rwa:['r','Token × ação tokenizada · risco especial','A bolsa fecha à noite e no fim de semana, o preço pode abrir com salto, a liquidez costuma ser fina e o emissor pode pausar a negociação. Fora do horário da bolsa, o preço da pool fica sem referência.'],
+  bb:['v','Blue chip × blue chip · risco menor','O que importa é a relação entre os dois preços. Se andarem juntos, a pool perde pouco para quem só segurou.'],
+  pb:['r','Token de projeto × blue chip · risco duplo','Exposição aos dois ao mesmo tempo. Se o projeto cair contra o outro, a pool vai enchendo do token que caiu.'],
+  der:['a','Derivado × original · risco de descolar','Enquanto o derivado acompanha o original, a perda é quase zero. Se ele descolar, a pool compra o que descolou, como o stETH em 2022.']
+};
+function tipoPar(){const A=String(S.asset||'').toUpperCase(),B=$('#parB').value;
+  if(B==='rwa')return'rwa';if(B==='deriv')return'der';
+  if(STABLES.test(B))return STABLES.test(A)?'ss':'ts';
+  if(DERIV.test(A)&&A.endsWith(B))return'der';
+  return BLUE.test(A)?'bb':'pb'}
+function renderPar(){if(TOOL!=='pool')return;const A=String(S.asset||'—').toUpperCase(),B=$('#parB').value;$('#parA').textContent=A;
+  const t=TIPOS[tipoPar()],el=$('#ptipo');el.className='ptipo '+t[0];
+  const igual=!/^(rwa|deriv)$/.test(B)&&A===B;
+  let extra='';
+  if(RATIO()){const ps=S.parStats,q=esc(S.quote.sym);extra=`<span>Gráfico e contas medidos na <strong>relação ${esc(A)} ÷ ${q}</strong>. Valores em ${q} (1 ${q} = ${fu(S.quote.usd)} hoje).</span>`;
+    if(ps){const f=ps.corr>=.8?'muito juntos':ps.corr>=.5?'juntos, com folga':ps.corr>=.2?'pouco juntos':'quase independentes';
+      extra+=`<span>No período do gráfico, os dois andaram <strong>${f}</strong> (correlação ${ps.corr.toLocaleString('pt-BR',{maximumFractionDigits:2})}). ${esc(A)} mudou ${fpct(ps.movA)} em dólar, ${q} ${fpct(ps.movB)}, e a relação entre eles ${fpct(ps.movR)}. É essa relação que a pool sente.</span>`}}
+  else if(!/^(rwa)$/.test(B)&&!STABLES.test(B)){extra=S.mode==='sim'?'<span>Nos exemplos simulados o segundo token é sempre dólar. Escolha um token real na lista para medir pela relação entre os dois.</span>':(quoteAlvo()&&!S.quoteFalhou?'<span>Carregando a relação entre os dois preços…</span>':'<span class="dn">Não deu para montar a relação com esse segundo token agora. As contas seguem em dólar.</span>')}
+  else if(B==='rwa')extra='<span>Para ações tokenizadas, as contas usam o dólar como segundo token: o preço da ação vem da bolsa, fora do gráfico.</span>';
+  setHTML(el,`<b>${esc(t[1])}</b><span>${esc(t[2])}</span>${igual?'<span class="dn">Escolha um segundo token diferente do primeiro.</span>':''}${extra}`)}
+const PRONTOS=[['SOL/USDC','solana','USDC'],['ETH/USDC','ethereum','USDC'],['SOL/ETH','solana','ETH'],['PENDLE/ETH','pendle','ETH'],['UNI/ETH','uniswap','ETH'],['mSOL/SOL','msol','SOL'],['SOL/ação','solana','rwa']];
+setHTML($('#pprontos'),PRONTOS.map((p,i)=>`<button type="button" data-i="${i}">${esc(p[0])}</button>`).join(''));
+$('#pprontos').querySelectorAll('button').forEach(b=>b.onclick=()=>{const p=PRONTOS[+b.dataset.i];$('#parB').value=p[2];renderPar();if(S.live)selectLive(p[1]);else setHint('Sem preços ao vivo agora. O par fica marcado e o gráfico continua com o exemplo.')});
+$('#parB').addEventListener('change',()=>{renderPar();if(S.mode==='live'&&S.id&&S.live)selectLive(S.id);else renderAll()});
+
+/* ---------- cenários embaixo do gráfico ---------- */
+function poolCore(){const{a,b,p0,dep}=S.pool;if(!(a>0&&b>a&&p0>0&&dep>0))return null;
+  const u=clAmt(1,a,b,p0),L=dep/(u.x*p0+u.y),e=clAmt(L,a,b,p0);
+  /* com o que comparar: depende do objetivo */
+  const st=S.pstrat,A=S.asset;
+  const base=st==='buy'?{nome:'Comprar tudo hoje',curto:'comprar hoje',v:p=>dep/p0*p}:st==='sell'?{nome:'Segurar o '+A,curto:'segurar',v:p=>dep/p0*p}:{nome:'Segurar os dois',curto:'segurar',v:p=>e.x*p+e.y};
+  return{a,b,p0,dep,L,e,base,val:p=>{const t=clAmt(L,a,b,p);return t.x*p+t.y}}}
+function renderCen(){const el=$('#cenbar');if(TOOL!=='pool'){return}const c=poolCore();if(!c){el.replaceChildren();return}
+  const ms=[-.3,-.1,0,.1,.3];
+  setHTML(el,`<span>Se o preço<br>terminar em</span>${ms.map(m=>{const p=c.p0*(1+m),v=c.val(p),h=c.base.v(p),d=v-h;
+    return`<div class="${m?'':'hj'}"><small>${m?fpct(m*100):'entrada'} · ${fp(p)}</small><b>${fv(v)}</b><em class="${sgn(d)}">${d>=0?'+':'−'}${fv(Math.abs(d)).replace('−','')} vs ${c.base.curto}</em></div>`}).join('')}`);
+  el.title='Valor da posição na pool, sem taxas, comparado com: '+c.base.nome}
+
+/* ---------- Pool × Segurar (painel sobre o gráfico) ---------- */
+const PP={open:false,dias:30,apr:null};
+function ppOpen(){if(TOOL!=='pool')return;PP.open=true;if(PP.apr==null)PP.apr=PHS.apr||0;$('#ppApr').value=fnum(PP.apr);$('#ppDias').value=PP.dias;
+  const p=$('#poolp');p.hidden=false;p.classList.remove('abrindo');void p.offsetWidth;p.classList.add('abrindo');$('.board').classList.add('cmp-on');ppRender();setTimeout(()=>$('#poolpX').focus(),0)}
+function ppClose(){if(!PP.open)return;PP.open=false;$('#poolp').hidden=true;$('.board').classList.remove('cmp-on');$('#poolCmpOpen').focus()}
+function ppRender(){if(!PP.open)return;const c=poolCore();const A=esc(S.asset);
+  if(!c){setHTML($('#ppFim'),'Confira a faixa e o depósito na coluna da direita.');return}
+  const taxa=c.dep*(PP.apr||0)/100*PP.dias/365;
+  $('#poolpSub').textContent=`${S.asset} · faixa ${fp(c.a)} a ${fp(c.b)} · ${fv(c.dep)}`;
+  $('#ppBaseNome').textContent=minus(c.base.nome);
+  $('#ppTaxa').textContent=`= ${fv(taxa)} de taxa`;
+  setHTML($('#poolpIntro'),`Comparação no fim do período, para cada preço final de ${A}. A pool está contra <strong>${esc(minus(c.base.nome))}</strong>${S.pstrat==='buy'?' (o mesmo dinheiro em '+A+' no preço de entrada)':S.pstrat==='sell'?' (ficar com os tokens sem fazer nada)':' (guardar os tokens que entraram na pool)'} e contra ficar em dólar. As taxas só entram nos dias em que o preço fica dentro da faixa.`);
+  /* faixa de preços do gráfico */
+  const full=S.pstrat==='full';const lo=full?c.p0*.4:Math.min(c.a,c.p0)*.7,hi=full?c.p0*2:Math.max(c.b,c.p0)*1.3;
+  const N=120,xs=Array.from({length:N+1},(_,i)=>lo+(hi-lo)*i/N);
+  const pool=xs.map(c.val),poolT=pool.map(v=>v+taxa),base=xs.map(c.base.v);
+  /* onde a pool com taxas vence */
+  let ini=null,fim=null;xs.forEach((p,i)=>{if(poolT[i]>=base[i]){if(ini==null)ini=p;fim=p}});
+  const ganha=xs.filter((p,i)=>poolT[i]>=base[i]).length;
+  const fimEl=$('#ppFim');
+  if(!ganha){fimEl.className='cmpfim perde';setHTML(fimEl,`Com ${PP.dias} dias de taxa, a pool não vence <strong>${esc(minus(c.base.nome))}</strong> em nenhum preço entre ${fp(lo)} e ${fp(hi)}. A taxa não paga a troca de tokens que a faixa faz.`)}
+  else if(ganha===xs.length){fimEl.className='cmpfim ganha';setHTML(fimEl,`Com ${PP.dias} dias de taxa, a pool fica à frente de <strong>${esc(minus(c.base.nome))}</strong> em todo o intervalo do gráfico (${fp(lo)} a ${fp(hi)}). Confira se o APR é realista: ele muda todo dia e só vale dentro da faixa.`)}
+  else{fimEl.className='cmpfim '+(ganha>xs.length/2?'ganha':'perde');setHTML(fimEl,`Com ${PP.dias} dias de taxa, a pool vence <strong>${esc(minus(c.base.nome))}</strong> se o preço terminar ${ini<=lo+1e-12?`abaixo de <strong>${fp(fim)}</strong>`:fim>=hi-1e-12?`acima de <strong>${fp(ini)}</strong>`:`entre <strong>${fp(ini)}</strong> e <strong>${fp(fim)}</strong>`}. Fora disso, ${esc(minus(c.base.nome))} rende mais. A pool não é ganho garantido: ela troca a alta (ou a queda) do token por taxa.`)}
+  const ms=[-.5,-.3,-.1,0,.1,.3,.5];
+  setHTML($('#ppTab'),`<table><thead><tr><th>Preço final</th><th>Pool + taxa</th><th>${esc(c.base.nome)}</th><th>Em dólar</th></tr></thead><tbody>${ms.map(m=>{const p=c.p0*(1+m),v=c.val(p)+taxa,h=c.base.v(p);return`<tr><td>${m?fpct(m*100):'entrada'} · ${fp(p)}</td><td class="${v>=h?'up':'dn'}">${fv(v)}</td><td>${fv(h)}</td><td>${fv(c.dep)}</td></tr>`}).join('')}</tbody></table>`);
+  ppDraw(xs,pool,poolT,base,c,lo,hi)}
+function ppDraw(xs,pool,poolT,base,c,lo,hi){const cv=$('#ppCv');const bb=cv.getBoundingClientRect();if(!bb.width)return;const d=devicePixelRatio||1;cv.width=bb.width*d;cv.height=bb.height*d;
+  const g=cv.getContext('2d');g.setTransform(d,0,0,d,0,0);const w=bb.width,h=bb.height;g.clearRect(0,0,w,h);
+  const all=[...pool,...poolT,...base,c.dep];let mx=Math.max(...all),mn=Math.min(...all);const pd=(mx-mn)*.08||1;mx+=pd;mn-=pd;
+  const L=58,R=w-30,T=10,B=h-24,X=p=>L+(p-lo)/(hi-lo)*(R-L),Y=v=>T+(mx-v)/(mx-mn)*(B-T);
+  /* faixa da pool */
+  if(S.pstrat!=='full'){g.fillStyle=COL.pool;g.globalAlpha=.1;g.fillRect(X(Math.max(lo,c.a)),T,X(Math.min(hi,c.b))-X(Math.max(lo,c.a)),B-T);g.globalAlpha=1}
+  g.font='10.5px '+FM;g.fillStyle=COL.muted;g.textBaseline='middle';
+  for(let k=0;k<=4;k++){const v=mn+(mx-mn)*k/4;g.fillText(fv(v).replace(',00',''),4,Y(v));g.strokeStyle=COL.line;g.beginPath();g.moveTo(L,Y(v));g.lineTo(R,Y(v));g.stroke()}
+  g.textAlign='center';for(let k=0;k<=4;k++){const p=lo+(hi-lo)*k/4;g.fillText(fp(p),X(p),h-10)}g.textAlign='left';
+  const line=(ys,c2,dash,a2)=>{g.strokeStyle=c2;g.setLineDash(dash);g.globalAlpha=a2;g.lineWidth=2;g.beginPath();xs.forEach((p,i)=>i?g.lineTo(X(p),Y(ys[i])):g.moveTo(X(p),Y(ys[i])));g.stroke();g.setLineDash([]);g.globalAlpha=1};
+  g.strokeStyle=COL.up;g.setLineDash([4,4]);g.lineWidth=1.2;g.beginPath();g.moveTo(L,Y(c.dep));g.lineTo(R,Y(c.dep));g.stroke();g.setLineDash([]);
+  line(base,COL.muted,[],1);line(poolT,COL.pool,[5,4],.6);line(pool,COL.pool,[],1);
+  g.strokeStyle=COL.test;g.setLineDash([2,3]);g.beginPath();g.moveTo(X(c.p0),T);g.lineTo(X(c.p0),B);g.stroke();g.setLineDash([]);g.fillStyle=COL.test;g.fillText('entrada',X(c.p0)+4,T+8)}
+$('#poolCmpOpen').onclick=ppOpen;$('#poolpX').onclick=ppClose;
+addEventListener('keydown',e=>{if(e.key==='Escape'&&PP.open){e.preventDefault();ppClose()}});
+$('#ppDias').addEventListener('input',()=>{const v=Math.round(num($('#ppDias').value));if(v>=0&&v<=3650){PP.dias=v;ppRender()}});
+$('#ppApr').addEventListener('input',()=>{const v=num($('#ppApr').value);if(v>=0){PP.apr=v;ppRender()}});
+new ResizeObserver(()=>{if(PP.open)ppRender()}).observe($('#ppCv'));
+
+/* ---------- Raio-X do APR (parte 2) ---------- */
+function renderRx(){if(TOOL!=='pool')return;const el=$('#rxRes');const c=poolCore();const apr=num($('#rxApr').value);
+  if(!(apr>0)){setHTML(el,'<div class="empty">Digite o APR que você viu para ver o raio-X.</div>');return}
+  if(!c||!n()){setHTML(el,'<div class="empty">Confira a faixa e o depósito.</div>');return}
+  const cs=S.candles;let dentro=0;cs.forEach(k=>{if(k.c>=c.a&&k.c<=c.b)dentro++});const pct=dentro/cs.length,ef=apr*pct;
+  const dias=Math.max(1,Math.round(cs.length*dt()/864e5));
+  /* perda contra a alternativa do objetivo se o preço andar 20% para o lado pior */
+  const alt=c.base.v,perda=Math.max(alt(c.p0*.8)-c.val(c.p0*.8),alt(c.p0*1.2)-c.val(c.p0*1.2),0);
+  const diaTaxa=c.dep*ef/100/365,dPag=diaTaxa>0?Math.ceil(perda/diaTaxa):Infinity;
+  setHTML(el,`<div class="big">
+    <div class="kv"><span class="lbl">Anunciado</span><b>${apr.toLocaleString('pt-BR',{maximumFractionDigits:1})}%</b><span class="lbl">ao ano, se ficasse sempre na faixa</span></div>
+    <div class="kv"><span class="lbl">Dentro da faixa</span><b>${Math.round(pct*100)}%</b><span class="lbl">do tempo, em ${dias} dias de gráfico</span></div>
+    <div class="kv pv"><span class="lbl">Na prática</span><b>≈ ${ef.toLocaleString('pt-BR',{maximumFractionDigits:1})}%</b><span class="lbl">ao ano com esta faixa</span></div>
+    <div class="kv"><span class="lbl">Para cobrir a troca de tokens</span><b>${perda<=0?'0 dia':isFinite(dPag)?dPag.toLocaleString('pt-BR')+' dias':'—'}</b><span class="lbl">contra ${esc(minus(c.base.curto))}, se o preço andar 20%</span></div></div>
+  <p class="note">O APR anunciado é anual e costuma ser calculado num dia de volume bom, como se a posição ficasse dentro da faixa o ano inteiro. Com a faixa de ${fp(c.a)} a ${fp(c.b)}, o preço passou <strong>${Math.round(pct*100)}%</strong> do tempo dentro dela, e é só nesse tempo que a taxa entra. Se o preço andar 20% para o lado ruim, a pool fica <strong class="dn">${fv(perda)}</strong> atrás de <strong>${esc(minus(c.base.nome))}</strong>, e esse ritmo de taxa leva ${isFinite(dPag)?'<strong>'+dPag.toLocaleString('pt-BR')+' dias</strong>':'tempo demais'} para cobrir.</p>
+  ${apr>=100?'<p class="note dn">Desconfie de APR acima de 100% ao ano: em geral vem de volume de um dia só, de incentivo em token que cai de preço ou de pool com pouca liquidez.</p>':''}`)}
+$('#rxApr').addEventListener('input',renderRx);
+
+/* ---------- Aumentar a posição (parte 2) ---------- */
+S.pos=[];
+function posVal(q,p){const u=clAmt(1,q.a,q.b,q.p0),L=q.dep/(u.x*q.p0+u.y),t=clAmt(L,q.a,q.b,p);return t.x*p+t.y}
+function renderPos(){if(TOOL!=='pool')return;const el=$('#posRes');const atual=poolCore();
+  if(!S.pos.length){setHTML(el,'');return}
+  const todas=[...S.pos,...(atual?[{a:atual.a,b:atual.b,p0:atual.p0,dep:atual.dep,st:S.pstrat,nova:true}]:[])];
+  const nome={buy:'compra',sell:'venda',yield:'renda',ratio:'proporção',full:'faixa cheia'};
+  const compras=todas.filter(q=>q.st==='buy'),vendas=todas.filter(q=>q.st==='sell');
+  const mCompra=compras.length?compras.reduce((s,q)=>s+q.dep,0)/compras.reduce((s,q)=>s+q.dep/Math.sqrt(q.a*q.b),0):null;
+  const tv=vendas.map(q=>{const u=clAmt(1,q.a,q.b,q.p0),L=q.dep/(u.x*q.p0+u.y),e=clAmt(L,q.a,q.b,q.p0);return e.x+e.y/q.p0}),mVenda=vendas.length?vendas.reduce((s,q,i)=>s+tv[i]*Math.sqrt(q.a*q.b),0)/tv.reduce((s,v)=>s+v,0):null;
+  const tot=todas.reduce((s,q)=>s+q.dep,0),p0=atual?atual.p0:S.now;
+  setHTML(el,`<table><thead><tr><th>#</th><th>Faixa</th><th>Depósito</th><th>Objetivo</th><th></th></tr></thead><tbody>
+    ${todas.map((q,k)=>`<tr><td>${q.nova?'nova':k+1}</td><td>${fp(q.a)}–${fp(q.b)}</td><td>${fv(q.dep)}</td><td style="font-family:var(--f-body)">${nome[q.st]||'—'}</td><td>${q.nova?'':`<button class="x" data-k="${k}" aria-label="Remover posição ${k+1}">×</button>`}</td></tr>`).join('')}</tbody></table>
+  <div class="big">
+    <div class="kv"><span class="lbl">Depósito total</span><b>${fv(tot)}</b><span class="lbl">${todas.length} posições</span></div>
+    ${mCompra?`<div class="kv pv"><span class="lbl">Preço médio de compra</span><b>${fp(mCompra)}</b><span class="lbl">somando as faixas de compra</span></div>`:''}
+    ${mVenda?`<div class="kv pv"><span class="lbl">Preço médio de venda</span><b>${fp(mVenda)}</b><span class="lbl">somando as faixas de venda</span></div>`:''}
+  </div>
+  ${cmpRows([-.3,-.1,0,.1,.3].map(m=>{const p=p0*(1+m);return[`${m?fpct(m*100):'entrada'} · ${fp(p)}`,todas.reduce((s,q)=>s+posVal(q,p),0)]}),tot)}
+  <p class="note">Valor das posições somadas, sem taxas, em cada preço final, contra o total depositado. As faixas guardadas aparecem mais claras no gráfico.</p>`);
+  el.querySelectorAll('.x[data-k]').forEach(b=>b.onclick=()=>{S.pos.splice(+b.dataset.k,1);renderAll()})}
+$('#posAdd').onclick=()=>{const c=poolCore();if(!c){setHint('Confira a faixa e o depósito antes de guardar.');return}
+  if(S.pos.length>=6){setHint('Até 6 posições guardadas. Remova uma para guardar outra.');return}
+  S.pos.push({a:c.a,b:c.b,p0:c.p0,dep:c.dep,st:S.pstrat});setHint('Posição guardada. Monte a próxima faixa: a soma aparece em "Aumentar a posição".');renderAll()};
+
 /* ---------- pool concentrada ---------- */
 function clAmt(L,a,b,p){const sa=Math.sqrt(a),sb=Math.sqrt(b),sp=Math.sqrt(Math.min(Math.max(p,a),b));return{x:L*(1/sp-1/sb),y:L*(sp-sa)}}
 /* ---------- Estratégia de pool ---------- */
 const PSTRAT={
   buy:{name:'Comprar na descida',intro:'A faixa fica toda abaixo do preço de hoje e você deposita só USDC. Se o preço cair, a pool compra o token aos poucos, como um DCA automático, e ainda cobra taxas de quem negocia.',quick:[['−5% a −20%',[-.05,-.2]],['−10% a −30%',[-.1,-.3]],['−20% a −50%',[-.2,-.5]]],def:1},
   sell:{name:'Vender na subida',intro:'A faixa fica toda acima do preço de hoje e você deposita só o token. Se o preço subir, a pool vende aos poucos e você recebe USDC, ganhando taxas enquanto espera.',quick:[['+5% a +20%',[.05,.2]],['+10% a +40%',[.1,.4]],['+25% a +100%',[.25,1]]],def:1},
-  yield:{name:'Renda em dólar',intro:'A faixa fica em volta do preço de hoje. Enquanto o preço ficar dentro dela, a posição rende taxas. Quanto mais estreita a faixa, mais taxa por dólar, e mais fácil o preço sair dela.',quick:[['±5%',.05],['±10%',.1],['±20%',.2],['±50%',.5]],def:1},
+  yield:{name:'Renda com taxas',intro:'A faixa fica em volta do preço de hoje. Enquanto o preço ficar dentro dela, a posição rende taxas. Quanto mais estreita a faixa, mais taxa por dólar, e mais fácil o preço sair dela.',quick:[['±5%',.05],['±10%',.1],['±20%',.2],['±50%',.5]],def:1},
   ratio:{name:'Proporção',intro:'Na pool concentrada quem decide quanto fica em token e quanto em USDC é a posição do preço dentro da faixa. Escolha a proporção e a ferramenta calcula a faixa (com largura de ±20%), ou arraste o controle abaixo.',quick:[['80/20',.8],['70/30',.7],['50/50',.5],['30/70',.3],['20/80',.2]],def:2}
 };
 PSTRAT.full={name:'Faixa cheia (V2)',intro:'A pool clássica (Uniswap V2, Raydium padrão, Balancer): a liquidez cobre todos os preços, então a posição nunca sai da faixa e sempre rende taxas. Em troca, cada dólar rende bem menos taxa que numa faixa concentrada, e a perda contra quem só segurou (impermanent loss) continua existindo.',quick:[['50/50 · faixa cheia',0]],def:0};
@@ -889,7 +1305,7 @@ function applyQuick(st,i){
   S.pool.a=rnd(a);S.pool.b=rnd(b);syncPool();renderAll();
 }
 function setPStrat(st,quick=true){
-  S.pstrat=st;document.querySelectorAll('#pStrat button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ps===st));$('#pIntro').textContent=PSTRAT[st].intro;
+  S.pstrat=st;document.querySelectorAll('#pStrat button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ps===st));$('#pIntro').textContent=PSTRAT[st].intro.replace(/USDC/g,Q());
   setHTML($('#pQuick'),PSTRAT[st].quick.map((q,i)=>`<button class="btn sm" data-q="${i}">${q[0]}</button>`).join(''));
   $('#pQuick').querySelectorAll('button').forEach(b=>b.onclick=()=>applyQuick(st,+b.dataset.q));
   if(quick)applyQuick(st,PSTRAT[st].def);else renderAll();
@@ -900,21 +1316,21 @@ function renderPool(){
   const{a,b,p0,dep}=S.pool;const el=$('#poolRes');const A=esc(S.asset);
   if(!(a>0&&b>a&&p0>0&&dep>0)){setHTML(el,'<div class="empty">Confira os campos: o mínimo precisa ser menor que o máximo, e todos maiores que zero.</div>');return}
   const u=clAmt(1,a,b,p0),L=dep/(u.x*p0+u.y),e=clAmt(L,a,b,p0),geo=Math.sqrt(a*b),share=tokShare(a,b,p0),sh=Math.round(share*100);
-  $('#pRatio').value=sh;$('#pRatioL').textContent=`${sh}% ${S.asset} · ${100-sh}% USDC`;
+  $('#pRatio').value=sh;$('#pRatioL').textContent=`${sh}% ${S.asset} · ${100-sh}% ${Q()}`;
   const pos=p0>=b?'usdc':p0<=a?'token':'in',apr=PHS.apr||0,day=dep*apr/100/365;
   const atA=clAmt(L,a,b,a),atB=clAmt(L,a,b,b),vA=atA.x*a,vB=atB.y,holdA=e.x*a+e.y,holdB=e.x*b+e.y;
   const warn=t=>`<p class="note dn">${t}</p>`;let head='';
   if(S.pstrat==='buy'){const tokNow=dep/p0;
-    head=`${pos!=='usdc'?warn(`A faixa precisa ficar toda abaixo de ${fp(p0)} para a posição ser só USDC. Hoje ${sh}% já entra como ${A}.`):''}
+    head=`${pos!=='usdc'?warn(`A faixa precisa ficar toda abaixo de ${fp(p0)} para a posição ser só ${Q()}. Hoje ${sh}% já entra como ${A}.`):''}
     <div class="big"><div class="kv pv"><span class="lbl">Preço médio de compra</span><b>${fp(geo)}</b><em class="up">${fpct((geo/p0-1)*100)} vs hoje</em></div>
     <div class="kv"><span class="lbl">Se o preço cair até ${fp(a)}</span><b>${fq(atA.x)}</b><span class="lbl">${A}</span></div></div>
-    <p class="note">Comprando tudo hoje a ${fp(p0)}, os mesmos ${fu(dep)} dariam ${fq(tokNow)} ${A}. Se o preço atravessar a faixa inteira, a pool entrega <strong class="up">${fpct((atA.x/tokNow-1)*100)}</strong> de tokens, comprando em degraus de ${fp(b)} até ${fp(a)}.</p>
+    <p class="note">Comprando tudo hoje a ${fp(p0)}, os mesmos ${fv(dep)} dariam ${fq(tokNow)} ${A}. Se o preço atravessar a faixa inteira, a pool entrega <strong class="up">${fpct((atA.x/tokNow-1)*100)}</strong> de tokens, comprando em degraus de ${fp(b)} até ${fp(a)}.</p>
     <p class="note">Atenção: se o preço cair até o meio da faixa e voltar a subir, a pool vende de volta o que comprou. Para ficar com os tokens, retire a liquidez quando o preço chegar perto do mínimo.</p>`}
   else if(S.pstrat==='sell'){const tok=e.x+e.y/p0;
-    head=`${pos!=='token'?warn(`A faixa precisa ficar toda acima de ${fp(p0)} para a posição ser só ${A}. Hoje ${100-sh}% já entra como USDC.`):''}
+    head=`${pos!=='token'?warn(`A faixa precisa ficar toda acima de ${fp(p0)} para a posição ser só ${A}. Hoje ${100-sh}% já entra como ${Q()}.`):''}
     <div class="big"><div class="kv pv"><span class="lbl">Preço médio de venda</span><b>${fp(geo)}</b><em class="up">${fpct((geo/p0-1)*100)} vs hoje</em></div>
-    <div class="kv"><span class="lbl">Se o preço subir até ${fp(b)}</span><b>${fu(vB)}</b><span class="lbl">em USDC</span></div></div>
-    <p class="note">Vendendo tudo hoje, ${fq(tok)} ${A} dariam ${fu(dep)}. Pela pool, se o preço atravessar a faixa, você recebe <strong class="up">${fu(vB-dep)}</strong> a mais, vendendo em degraus de ${fp(a)} até ${fp(b)}.</p>
+    <div class="kv"><span class="lbl">Se o preço subir até ${fp(b)}</span><b>${fv(vB)}</b><span class="lbl">em ${Q()}</span></div></div>
+    <p class="note">Vendendo tudo hoje, ${fq(tok)} ${A} dariam ${fv(dep)}. Pela pool, se o preço atravessar a faixa, você recebe <strong class="up">${fv(vB-dep)}</strong> a mais, vendendo em degraus de ${fp(a)} até ${fp(b)}.</p>
     <p class="note">Atenção: se o preço subir até o meio da faixa e cair de novo, a pool recompra o token. Para garantir o lucro, retire a liquidez perto do máximo.</p>`}
   else if(S.pstrat==='full'){
     const il=(r,w)=>Math.pow(r,w)/(w*r+1-w)-1;
@@ -922,9 +1338,9 @@ function renderPool(){
     const days=v=>day>0?Math.ceil(Math.abs(v)/day).toLocaleString('pt-BR')+' dias':'—';
     const e10=1/(1-Math.pow(1/1.21,1/4)),e20=1/(1-Math.pow(1/1.44,1/4));
     head=`<div class="big">
-      <div class="kv"><span class="lbl">${A} na entrada</span><b>${fq(dep/2/p0)}</b><span class="lbl">${fu(dep/2)}</span></div>
-      <div class="kv"><span class="lbl">USDC na entrada</span><b>${fu(dep/2)}</b></div>
-      <div class="kv pv"><span class="lbl">Renda estimada</span><b>${fu(day*30)}/mês</b><span class="lbl">${fu(day)} por dia, sem sair da faixa</span></div>
+      <div class="kv"><span class="lbl">${A} na entrada</span><b>${fq(dep/2/p0)}</b><span class="lbl">${fv(dep/2)}</span></div>
+      <div class="kv"><span class="lbl">${Q()} na entrada</span><b>${fv(dep/2)}</b></div>
+      <div class="kv pv"><span class="lbl">Renda estimada</span><b>${fv(day*30)}/mês</b><span class="lbl">${fv(day)} por dia, sem sair da faixa</span></div>
     </div>
     <h3>Perda contra só segurar (impermanent loss)</h3>
     <p class="note">Quanto a posição fica abaixo de quem só guardou os tokens, se o preço de ${A} variar. A coluna 80/20 é a pool com pesos diferentes (Balancer), que perde menos. A última coluna diz quantos dias de taxa, pelo APR de cima, pagam a perda da pool 50/50.</p>
@@ -932,24 +1348,24 @@ function renderPool(){
     ${moves.map(m=>{const r=1+m,l5=il(r,.5),l8=il(r,.8),hold=dep/2*r+dep/2;return `<tr><td>${fpct(m*100)} (${fp(p0*r)})</td><td class="dn">${fpct(l5*100)}</td><td class="dn">${fpct(l8*100)}</td><td>${days(l5*hold)}</td></tr>`}).join('')}
     </tbody></table>
     <p class="note">Comparando: uma faixa de ±10% concentra o capital <strong>${e10.toLocaleString('pt-BR',{maximumFractionDigits:1})}×</strong> e uma de ±20% <strong>${e20.toLocaleString('pt-BR',{maximumFractionDigits:1})}×</strong>. Com o mesmo volume de negociação, elas rendem esse múltiplo de taxa por dólar, mas param de render quando o preço sai da faixa. A faixa cheia rende pouco, porém nunca para.</p>
-    <p class="note">Par de stablecoins (USDC/USDT): o preço quase não muda, então a perda fica perto de zero. O risco ali é uma das moedas perder o pareamento com o dólar.</p>`}
+    <p class="note">Par de stablecoins (${Q()}/USDT): o preço quase não muda, então a perda fica perto de zero. O risco ali é uma das moedas perder o pareamento com o dólar.</p>`}
   else{const eff=1/(1-Math.pow(a/b,1/4)),ilA=vA-holdA,ilB=vB-holdB,days=v=>day>0?Math.ceil(Math.abs(v)/day)+' dias':'—';
     head=`${pos!=='in'?warn('O preço de entrada está fora da faixa: a posição só rende taxas quando o preço voltar para dentro.'):''}
     <div class="big">
-      <div class="kv"><span class="lbl">${A} na entrada</span><b>${fq(e.x)}</b><span class="lbl">${fu(e.x*p0)}</span></div>
-      <div class="kv"><span class="lbl">USDC na entrada</span><b>${fu(e.y)}</b></div>
-      <div class="kv pv"><span class="lbl">Renda estimada</span><b>${fu(day*30)}/mês</b><span class="lbl">${fu(day)} por dia dentro da faixa</span></div>
+      <div class="kv"><span class="lbl">${A} na entrada</span><b>${fq(e.x)}</b><span class="lbl">${fv(e.x*p0)}</span></div>
+      <div class="kv"><span class="lbl">${Q()} na entrada</span><b>${fv(e.y)}</b></div>
+      <div class="kv pv"><span class="lbl">Renda estimada</span><b>${fv(day*30)}/mês</b><span class="lbl">${fv(day)} por dia dentro da faixa</span></div>
       <div class="kv"><span class="lbl">Concentração</span><b>${eff.toLocaleString('pt-BR',{maximumFractionDigits:1})}×</b><span class="lbl">capital vs faixa infinita</span></div>
     </div>
-    <p class="note">Se o preço sair por baixo (${fp(a)}), você fica 100% em ${A} valendo ${fu(vA)}: <strong class="dn">${fu(ilA)}</strong> contra quem só segurou. Pela renda estimada, isso equivale a <strong>${days(ilA)}</strong> de taxa.</p>
-    <p class="note">Se sair por cima (${fp(b)}), você fica 100% em USDC com ${fu(vB)}: <strong class="dn">${fu(ilB)}</strong> contra segurar, ou <strong>${days(ilB)}</strong> de taxa.</p>`}
+    <p class="note">Se o preço sair por baixo (${fp(a)}), você fica 100% em ${A} valendo ${fv(vA)}: <strong class="dn">${fv(ilA)}</strong> contra quem só segurou. Pela renda estimada, isso equivale a <strong>${days(ilA)}</strong> de taxa.</p>
+    <p class="note">Se sair por cima (${fp(b)}), você fica 100% em ${Q()} com ${fv(vB)}: <strong class="dn">${fv(ilB)}</strong> contra segurar, ou <strong>${days(ilB)}</strong> de taxa.</p>`}
   const t=clAmt(L,a,b,S.test),vPool=t.x*S.test+t.y,vHold=e.x*S.test+e.y;
   setHTML(el,`${head}
   ${S.pstrat==='full'?'':`<h3>Preço médio da faixa</h3>
   <p class="note">A pool troca pelo preço médio <span class="p">√(mín × máx) = ${fp(geo)}</span>, a média geométrica, um pouco abaixo da média simples (${fp((a+b)/2)}).</p>`}
   <h3>No preço de teste (${fp(S.test)})</h3>
-  ${cmpRows([['Posição na pool',vPool],['Só segurar',vHold],['Ficar em USDC',dep]],dep)}
-  <p class="note">Nesse preço a posição tem ${fq(t.x)} ${A} + ${fu(t.y)}. Arraste a <span class="t">linha azul</span>. As taxas não entram aqui; o teste no histórico, mais abaixo, inclui as taxas.</p>`);
+  ${cmpRows([['Posição na pool',vPool],['Só segurar',vHold],['Ficar em '+Q(),dep]],dep)}
+  <p class="note">Nesse preço a posição tem ${fq(t.x)} ${A} + ${fv(t.y)}. Arraste a <span class="t">linha azul</span>. As taxas não entram aqui; o teste no histórico, mais abaixo, inclui as taxas.</p>`);
 }
 ['pa','pb','p0','dep'].forEach(id=>$('#'+id).addEventListener('input',()=>{const v=num($('#'+id).value);if(v>0){S.pool[{pa:'a',pb:'b',p0:'p0',dep:'dep'}[id]]=v;renderAll()}}));
 function syncPool(){$('#pa').value=fnum(S.pool.a);$('#pb').value=fnum(S.pool.b);$('#p0').value=fnum(S.pool.p0);$('#dep').value=fnum(S.pool.dep)}
@@ -1110,23 +1526,23 @@ function renderPH(){
   const r=$('#phIdx');r.max=n()-2;r.value=PHS.idx;const c0=S.candles[PHS.idx];$('#phDate').textContent=`${fmtT(c0.t,true)} a ${fp(c0.c)}`;
   const s=phSim(),el=$('#phRes'),A=esc(S.asset);if(!s){setHTML(el,'<div class="empty">Confira a faixa e o depósito da pool.</div>');return}
   const il=s.vPool-s.vHold;
-  const st=s.state==='below'?`Hoje o preço (${fp(s.pl)}) está <strong>abaixo da faixa</strong>: a posição virou 100% ${A} e parou de render taxas.`:s.state==='above'?`Hoje o preço (${fp(s.pl)}) está <strong>acima da faixa</strong>: a posição virou 100% USDC e parou de render taxas.`:`Hoje o preço (${fp(s.pl)}) está <strong>dentro da faixa</strong>, rendendo taxas.`;
+  const st=s.state==='below'?`Hoje o preço (${fp(s.pl)}) está <strong>abaixo da faixa</strong>: a posição virou 100% ${A} e parou de render taxas.`:s.state==='above'?`Hoje o preço (${fp(s.pl)}) está <strong>acima da faixa</strong>: a posição virou 100% ${Q()} e parou de render taxas.`:`Hoje o preço (${fp(s.pl)}) está <strong>dentro da faixa</strong>, rendendo taxas.`;
   setHTML(el,`
   <div class="big">
     <div class="kv"><span class="lbl">Período</span><b>${Math.max(1,Math.round(s.days))} dias</b><span class="lbl">entrada a ${fp(s.p0)}</span></div>
     <div class="kv"><span class="lbl">Dentro da faixa</span><b>${fpctAbs(s.inPct)}</b><span class="lbl">do tempo</span></div>
-    <div class="kv"><span class="lbl">Taxas ganhas</span><b class="up">${fu(s.fees)}</b></div>
-    <div class="kv"><span class="lbl">Posição sem taxas</span><b>${fu(s.vPool)}</b></div>
-    <div class="kv pv" style="grid-column:1/-1"><span class="lbl">Total com taxas</span><b>${fu(s.total)} <em class="${sgn(s.total-s.dep)}">${fpct((s.total/s.dep-1)*100)}</em></b></div>
+    <div class="kv"><span class="lbl">Taxas ganhas</span><b class="up">${fv(s.fees)}</b></div>
+    <div class="kv"><span class="lbl">Posição sem taxas</span><b>${fv(s.vPool)}</b></div>
+    <div class="kv pv" style="grid-column:1/-1"><span class="lbl">Total com taxas</span><b>${fv(s.total)} <em class="${sgn(s.total-s.dep)}">${fpct((s.total/s.dep-1)*100)}</em></b></div>
   </div>
-  ${cmpRows([['Pool + taxas',s.total],['Só segurar',s.vHold],['Ficar em USDC',s.dep]],s.dep)}
-  <p class="note">${st} ${s.fees+il>=0?'As taxas <strong class="up">cobriram</strong> a perda impermanente.':`As taxas <strong class="dn">não cobriram</strong> a perda impermanente de ${fu(-il)}.`}</p>
+  ${cmpRows([['Pool + taxas',s.total],['Só segurar',s.vHold],['Ficar em '+Q(),s.dep]],s.dep)}
+  <p class="note">${st} ${s.fees+il>=0?'As taxas <strong class="up">cobriram</strong> a perda impermanente.':`As taxas <strong class="dn">não cobriram</strong> a perda impermanente de ${fv(-il)}.`}</p>
   <p class="note">Estimativa: o APR conta só nas velas em que o preço fechou dentro da faixa. O valor real depende do volume da pool no período.</p>`);
 }
 $('#phFetch').onclick=async()=>{
   const el=$('#phPools');setHTML(el,'<div class="note">Baixando as pools da DeFi Llama (uns 10 MB)…</div>');
   try{const d={data:await AtlasDados.pools()};const sym=String(S.asset).toUpperCase();
-    const list=(d.data||[]).filter(p=>{const parts=String(p.symbol).toUpperCase().split(/[-\/ ]/);return parts.length===2&&parts.includes(sym)&&p.tvlUsd>50000&&(p.apyBase??p.apy)>0}).sort((x,y)=>y.tvlUsd-x.tvlUsd).slice(0,6);
+    const list=(d.data||[]).filter(p=>{const parts=String(p.symbol).toUpperCase().split(/[-\/ ]/);const qs=RATIO()?S.quote.sym:null;return parts.length===2&&parts.includes(sym)&&(!qs||parts.includes(qs)||parts.includes('W'+qs))&&p.tvlUsd>50000&&(p.apyBase??p.apy)>0}).sort((x,y)=>y.tvlUsd-x.tvlUsd).slice(0,6);
     if(!list.length){setHTML(el,`<div class="note">Nenhuma pool de ${esc(sym)} com mais de $50 mil na DeFi Llama.</div>`);return}
     setHTML(el,list.map((p,k)=>`<button class="poolbtn" data-k="${k}"><span>${esc(p.project)} · ${esc(p.chain)} · ${esc(p.symbol)}<br><small class="note">TVL ${fu(p.tvlUsd).replace(/,\d\d$/,'')}</small></span><b>${(p.apyBase??p.apy).toLocaleString('pt-BR',{maximumFractionDigits:1})}% a.a.</b></button>`).join(''));
     el.querySelectorAll('.poolbtn').forEach(b=>b.onclick=()=>{const p=list[+b.dataset.k];PHS.apr=+(p.apyBase??p.apy).toFixed(2);$('#phApr').value=fnum(PHS.apr);renderAll()});
@@ -1201,7 +1617,7 @@ $('#imgBtn').onclick=async()=>{
   const old=S.card,om=S.mouse;S.card=true;S.mouse=null;draw();const d=devicePixelRatio||1,band=38;
   const oc=document.createElement('canvas');oc.width=cv.width;oc.height=cv.height+band*d;const o=oc.getContext('2d');
   o.fillStyle=COL.bg;o.fillRect(0,0,oc.width,oc.height);o.setTransform(d,0,0,d,0,0);o.textBaseline='middle';
-  o.font='700 17px '+C('--f-display');o.fillStyle=COL.fg;const T1=TOOL==='pool'?'Estratégias de ':'Escada ',T2=TOOL==='pool'?'Pools de Liquidez':'· DCA e preço médio';o.fillText(T1,12,band/2);const w1=o.measureText(T1).width;o.fillText(T2,12+w1,band/2);
+  o.font='700 17px '+C('--f-display');o.fillStyle=COL.fg;const T1=TOOL==='pool'?'Estratégias de ':'DCA ',T2=TOOL==='pool'?'Pools de Liquidez':'· Preço Médio';o.fillText(T1,12,band/2);const w1=o.measureText(T1).width;o.fillText(T2,12+w1,band/2);
   o.font='13px '+FB;o.fillStyle=COL.muted;o.textAlign='right';o.fillText(`${S.asset} · ${new Date().toLocaleDateString('pt-BR')}`,W-12,band/2);
   o.setTransform(1,0,0,1,0,0);o.drawImage(cv,0,band*d);S.card=old;S.mouse=om;draw();
   const blob=await new Promise(r=>oc.toBlob(r,'image/png'));if(blob)await saveFile(`quadro-${String(S.asset).toLowerCase()}-${dstr(Date.now())}.png`,blob);
@@ -1250,7 +1666,10 @@ document.querySelectorAll('#tf button').forEach(b=>b.onclick=()=>{
     if(!SNAP_TF.includes(b.dataset.tf)){setStatus(`Sem preços ao vivo, só os tempos de 1h, 4h e diário estão disponíveis.`,true);return}
     S.tf=b.dataset.tf;ls.set('tf',S.tf);syncHeader();selectLive(S.id);return}
   S.tf=b.dataset.tf;ls.set('tf',S.tf);syncHeader();
-  if(S.mode==='live'&&S.id){const id=S.id;S.key='';S.pending=id;setStatus('Carregando…');fetchCandles(id,S.tf).then(({src,cs})=>{if(S.pending!==id)return;S.src=src;setAsset({key:'live:'+id,candles:cs},true);setStatus(`${src} · atualizado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`)}).catch(()=>setStatus('Não foi possível atualizar os preços agora. Tente de novo em instantes.',true))}
+  if(S.mode==='live'&&S.id&&RATIO()){const id=S.id,q=S.quote;S.key='';S.pending=id;setStatus('Carregando…');
+    Promise.all([fetchCandles(id,S.tf),fetchCandles(q.id,S.tf)]).then(([A,B])=>{if(S.pending!==id)return;const rc=mergeRatio(A.cs,B.cs);if(rc.length<3)throw new Error('poucos dados');S.src=A.src;S.parStats=parStats(A.cs,B.cs);
+      setAsset({key:'live:'+id+'/'+q.sym+':'+S.tf,candles:rc},true);setStatus(`${A.src} · relação ${S.asset} ÷ ${q.sym}`)}).catch(()=>setStatus('Não foi possível atualizar os preços agora. Tente de novo em instantes.',true))}
+  else if(S.mode==='live'&&S.id){const id=S.id;S.key='';S.pending=id;setStatus('Carregando…');fetchCandles(id,S.tf).then(({src,cs})=>{if(S.pending!==id)return;S.src=src;setAsset({key:'live:'+id,candles:cs},true);setStatus(`${src} · atualizado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`)}).catch(()=>setStatus('Não foi possível atualizar os preços agora. Tente de novo em instantes.',true))}
   else setStatus('Exemplos simulados usam velas de 4h. O tempo vale para ativos reais.')});
 $('#sim').onchange=()=>{const v=$('#sim').value;if(v)loadSim(v)};
 $('#regen').onclick=()=>{if(S.simKey)loadSim(S.simKey,(Math.random()*1e9)|0)};
@@ -1258,6 +1677,10 @@ $('#regen').onclick=()=>{if(S.simKey)loadSim(S.simKey,(Math.random()*1e9)|0)};
 $('#hlReset').onclick=()=>{const e=extent();S.hi=e.hi;S.lo=e.lo;syncHeader();renderAll()};
 
 function renderAll(){if(!n())return;
+  if(CP.open){$('#cmpAsset').textContent=S.asset+' · hoje '+fp(S.now);cpRender()}
+  if(TOOL==='pool'){renderPar();renderCen();
+    /* painéis mais pesados: uma vez depois que o arraste para */
+    clearTimeout(S.tPool);S.tPool=setTimeout(()=>{ppRender();renderRx();renderPos()},90);$('#depL').textContent=RATIO()?`Depósito (${S.quote.sym})`:'Depósito ($)'}
   if(RP.on)renderReplay();else if(S.tab==='dca')renderRes();else if(S.tab==='pool'){renderPool();renderPH()}else if(S.tab==='cal')renderCal();else if(S.tab==='sell')renderSell();
   draw()}
 
@@ -1270,7 +1693,7 @@ const favMissing=()=>S.watch.filter(i=>!S.topSet.has(i));
   renderWatch();
   const saved=ls.get('asset','ethena');await selectLive(S.market[saved]?saved:'ethena');
 })();
-setInterval(()=>{if(!S.live||document.hidden)return;fetchTop().then(()=>favMissing().length?fetchMarkets(favMissing()):0).then(()=>{if(!$('#q').value)renderWatch();if(S.mode==='live'&&S.market[S.id]){S.now=S.market[S.id].price;renderAll()}}).catch(()=>{})},120000);
+setInterval(()=>{if(!S.live||document.hidden)return;fetchTop().then(()=>favMissing().length?fetchMarkets(favMissing()):0).then(()=>{if(!$('#q').value)renderWatch();if(S.mode==='live'&&S.market[S.id]){if(RATIO()){const qb=S.market[S.quote.id];if(qb&&qb.price>0)S.quote.usd=qb.price;S.now=S.market[S.id].price/S.quote.usd}else S.now=S.market[S.id].price;renderAll()}}).catch(()=>{})},120000);
 document.fonts&&document.fonts.ready.then(draw);
 })();
 </script>

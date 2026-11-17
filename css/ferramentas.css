@@ -464,7 +464,21 @@ html .tools-grid .tool-card--art:hover {
 
 /* com as abas ligadas, o cabeçalho de cada seção vira a própria aba */
 html.tools-com-abas .tools-sec__head { display: none; }
-html.tools-com-abas.tools-todas .tools-sec__head { display: flex; }
+/* Aba "Todas" (17/11/2026): uma grade única com os 11 cards, 5 por
+   fileira no PC, sem títulos de grupo. As seções e as grades de cada
+   grupo viram "display: contents" e os cards sobem para .tools-lista. */
+html.tools-com-abas.tools-todas .tools-lista {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+}
+html.tools-com-abas.tools-todas .tools-sec,
+html.tools-com-abas.tools-todas .tools-grid { display: contents; }
+html.tools-com-abas.tools-todas .tools-grid .tool-card--art { height: 470px; }
+@media (max-width: 1320px) { html.tools-com-abas.tools-todas .tools-lista { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 1080px) { html.tools-com-abas.tools-todas .tools-lista { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 820px)  { html.tools-com-abas.tools-todas .tools-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px)  { html.tools-com-abas.tools-todas .tools-lista { grid-template-columns: 1fr; } }
 .tools-sec[hidden] { display: none; }
 
 /* --- grade: uma fileira, cards da mesma largura em todas as abas --- */

@@ -1449,9 +1449,10 @@ html.atlas-moldura body { padding-left: var(--atm-w); transition: padding-left .
 .atm-ic { width: 19px; height: 19px; flex: none; }
 .atm-rot { white-space: nowrap; transition: opacity .15s ease; }
 
-/* Área da marca com 60 px de altura: assim o item "Dashboard" fica na
-   mesma linha do "Patrimônio Total" do painel principal (pedido do dono,
-   15/11/2026). Mexeu nesta altura? Confira o alinhamento no Dashboard. */
+/* Área da marca com 60 px de altura: alinha o primeiro item do trilho
+   com a primeira linha de conteúdo da página (pedido do dono, 15/11/2026;
+   desde 17/11 o primeiro item é o Mercado). Mexeu nesta altura? Confira
+   o alinhamento no Mercado e no Dashboard. */
 .atm-topo { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 60px; margin-bottom: 8px; flex: none; }
 .atm-marca { display: flex; align-items: center; gap: 10px; padding: 0 2px; color: var(--atm-texto); text-decoration: none; min-width: 0; }
 .atm-marca img { width: 42px; height: 42px; flex: none; object-fit: contain; transition: width .22s ease, height .22s ease; }
