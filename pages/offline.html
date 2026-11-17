@@ -17,7 +17,8 @@
     /trade/ e a página chegava sem estilo e sem script. URL de um
     módulo, conteúdo de outro, aparência de nada.
 
-    Aqui o CSS é inline e o único link é absoluto. Não há como quebrar.
+    Aqui o CSS é inline e o único link sai do escopo do service worker
+    (a raiz do ATLAS, seja / ou /atlas/). Não há como quebrar.
   -->
   <style>
     :root { color-scheme: dark; }
@@ -61,7 +62,19 @@
     <h1>Esta tela ainda não foi aberta offline</h1>
     <p>O ATLAS funciona sem internet — mas só nas telas que você já visitou pelo menos uma vez com conexão. Esta ainda não foi.</p>
     <p class="fraco">Seus dados estão intactos. Eles vivem neste navegador e não dependem de rede.</p>
-    <a class="botao" href="/mercado/index.html">Ir para o Mercado</a>
+    <a class="botao" id="irMercado" href="/mercado/index.html">Ir para o Mercado</a>
   </div>
+  <script>
+    /* O site mora em /atlas/ no GitHub Pages: um "/" fixo cairia fora
+       dele. O escopo do service worker é a raiz do ATLAS, onde quer que
+       ele esteja publicado; sem service worker, fica o link acima. */
+    (function () {
+      var a = document.getElementById("irMercado");
+      if (!a || !navigator.serviceWorker || !navigator.serviceWorker.getRegistration) return;
+      navigator.serviceWorker.getRegistration().then(function (r) {
+        if (r && r.scope) a.href = r.scope + "mercado/index.html";
+      }).catch(function () {});
+    })();
+  </script>
 </body>
 </html>

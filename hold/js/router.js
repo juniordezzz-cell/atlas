@@ -65,7 +65,7 @@
     })();
 
     /* voltar ao Atlas */
-    var back = U.el("a", { class: "nav-back", href: "../pages/dashboard.html", title: "Voltar ao Atlas" });
+    var back = U.el("a", { class: "nav-back", href: "../mercado/index.html", title: "Voltar ao Atlas" });
     back.innerHTML = U.icon("chevron");
     back.appendChild(U.el("span", { class: "label", text: "Voltar ao Atlas" }));
     sidebar.appendChild(back);

@@ -76,7 +76,7 @@
             NAV.map(function (n) { return '<a class="nav-item" href="' + n.route + '" data-id="' + n.id + '">' + U.icon(n.icon) + '<span>' + n.label + '</span></a>'; }).join("") +
           '</nav>' +
           '<div class="side-foot">' +
-            '<a class="side-back" href="../pages/dashboard.html">' + U.icon("back") + '<span>Voltar ao Atlas</span></a>' +
+            '<a class="side-back" href="../mercado/index.html">' + U.icon("back") + '<span>Voltar ao Atlas</span></a>' +
           '</div>' +
         '</aside>' +
         '<div class="scrim" id="scrim"></div>' +

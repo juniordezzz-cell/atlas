@@ -207,6 +207,8 @@
       });
       var link = g.querySelector(".atm-grupo__link");
       classe(link, "is-on", !chave);
+      if (!chave) { if (link.getAttribute("aria-current") !== "page") link.setAttribute("aria-current", "page"); }
+      else if (link.hasAttribute("aria-current")) link.removeAttribute("aria-current");
     });
   }
 
@@ -455,6 +457,9 @@
         pendente = false;
         posicionarBotaoCel();
         sincronizar();
+        /* o Academy troca de aba com replaceState, que não dispara
+           hashchange: a mudança de aria-selected chega por aqui */
+        marcarGrupos();
       });
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-selected", "aria-current"] });
 
@@ -468,7 +473,7 @@
       sincronizar();
     }, { passive: true });
     trilho.addEventListener("click", function (ev) {
-      if (celular() && ev.target.closest("a.atm-item")) definir(false);
+      if (celular() && ev.target.closest("a.atm-item, a.atm-grupo__link")) definir(false);
     });
   }
 

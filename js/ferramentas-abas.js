@@ -40,6 +40,7 @@
   bTodas.id = "aba-" + TODAS;
   bTodas.setAttribute("role", "tab");
   bTodas.dataset.alvo = TODAS;
+  bTodas.setAttribute("aria-controls", secoes.map(function (s) { return s.id; }).join(" "));
   bTodas.innerHTML = '<span>Todas</span>' + (total ? '<span class="tools-tab__count">' + total + "</span>" : "");
   barra.appendChild(bTodas);
 
