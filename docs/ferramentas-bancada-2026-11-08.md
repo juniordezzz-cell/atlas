@@ -225,6 +225,25 @@ Metrix Finance mais adiante.
   vence e em quais perde.
 - Celular: o cabeçalho abre espaço para o botão do menu do site.
 
-**Parte 2 (pendente):** Raio-X do APR (tempo dentro da faixa no histórico),
-aumentar a posição (somar posições e novo preço médio) e pares entre
-dois voláteis medidos pela relação entre os preços.
+### Parte 2 (17/11/2026)
+
+- **Pares entre dois voláteis:** com SOL, ETH, BTC ou "o original deste
+  token" (mSOL→SOL, stETH→ETH) no seletor, `selectLive` busca as velas dos
+  dois e monta a **relação A ÷ B** (`mergeRatio`: abertura e fechamento
+  exatos; máxima e mínima aproximadas pelas extremas da mesma vela). O
+  gráfico, as contas, os cenários e o painel passam a medir em unidades do
+  segundo token (`S.quote`, `fv()`, `Q()`), e o depósito é convertido para
+  os mesmos ~US$ 1.000. A troca de tempo gráfico e a atualização a cada 2
+  minutos mantêm a relação. O selo mostra a correlação e quanto cada um e a
+  relação mudaram (`parStats`). Exemplos simulados e ação tokenizada seguem
+  em dólar, com aviso. A busca de APR na DeFi Llama exige os dois tokens.
+- **Raio-X do APR** (`renderRx`): APR anunciado × tempo com o fechamento
+  dentro da faixa no histórico do gráfico = APR na prática. Também mostra
+  quantos dias de taxa cobrem a perda contra segurar se o preço andar 20%,
+  e um alerta para APR acima de 100%.
+- **Aumentar a posição** (`S.pos`, `renderPos`): guarda até 6 faixas e
+  soma com a atual. Mostra o depósito total, o preço médio de compra
+  combinado (média harmônica de √(mín×máx) ponderada pelo depósito), o
+  preço médio de venda combinado (ponderado pelos tokens) e o valor somado
+  em −30% a +30%. As faixas guardadas aparecem mais claras no gráfico e são
+  apagadas quando muda o ativo.
