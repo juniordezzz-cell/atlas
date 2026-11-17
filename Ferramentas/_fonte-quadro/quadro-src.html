@@ -669,18 +669,21 @@ function loadSim(key,seed){
 async function selectLive(id){
   if(document.body.dataset.mview==='tok')setMview('graf');
   S.pending=id;const m=S.market[id]||{};const sym=m.sym||id;
+  /* par com dois voláteis: as velas do segundo token já vêm em paralelo */
+  const qaPre=TOOL==='pool'?(()=>{const sv=S.asset;S.asset=m.sym||id.toUpperCase();const q=quoteAlvo();S.asset=sv;return q})():null;
+  const pB=qaPre&&S.live?fetchCandles(qaPre.id,S.tf).catch(()=>null):null;S.quoteFalhou=false;
   if(S.live){
     setStatus('Carregando '+sym+'…');
     try{const{src,cs}=await fetchCandles(id,S.tf);if(S.pending!==id)return;if(cs.length<3)throw new Error('Poucos dados para '+sym);
       S.id=id;S.src=src;
       if(TOOL==='pool'){const ant=S.quote&&S.quote.ratio;S.asset=m.sym||id.toUpperCase();const qa=quoteAlvo();let feito=false;
-        if(qa){try{const rb=await fetchCandles(qa.id,S.tf);if(S.pending!==id)return;const rc=mergeRatio(cs,rb.cs);
+        if(qa){try{const rb=(qaPre&&qaPre.id===qa.id&&pB?await pB:null)||await fetchCandles(qa.id,S.tf);if(S.pending!==id)return;const rc=mergeRatio(cs,rb.cs);
           if(rc.length>=3){const usdB=(S.market[qa.id]||{}).price||rb.cs[rb.cs.length-1].c;const pa=m.price||cs[cs.length-1].c;
             S.quote={sym:qa.sym,ratio:true,usd:usdB,id:qa.id};S.parStats=parStats(cs,rb.cs);
             /* depósito: os mesmos ~US$ 1.000, agora em unidades do segundo token */
             S.pool.dep=+(1000/usdB).toPrecision(3);
             setAsset({mode:'live',key:'live:'+id+'/'+qa.sym+':'+S.tf,asset:m.sym||id.toUpperCase(),name:m.name||id,candles:rc,now:pa/usdB});feito=true}}catch(e){/* sem velas do segundo token: fica em dólar */}}
-        if(!feito){S.quote={sym:Q(),ratio:false};S.parStats=null;if(ant)S.pool.dep=1000;
+        if(!feito){S.quoteFalhou=!!qa;S.quote={sym:Q(),ratio:false};S.parStats=null;if(ant)S.pool.dep=1000;
           setAsset({mode:'live',key:'live:'+id,asset:m.sym||id.toUpperCase(),name:m.name||id,candles:cs,now:m.price||cs[cs.length-1].c})}}
       else setAsset({mode:'live',key:'live:'+id,asset:m.sym||id.toUpperCase(),name:m.name||id,candles:cs,now:m.price||cs[cs.length-1].c});
       ls.set('asset',id);$('#sim').value='';$('#regen').hidden=true;
@@ -1139,11 +1142,14 @@ const Q=()=>S.quote&&S.quote.ratio?S.quote.sym:(()=>{const B=$('#parB')?$('#parB
 const RATIO=()=>!!(S.quote&&S.quote.ratio&&TOOL==='pool');
 const minus=t=>String(t).charAt(0).toLowerCase()+String(t).slice(1);
 const fv=v=>{if(!RATIO())return fu(v);if(!isFinite(v))return'—';const a=Math.abs(v);return(v<-1e-12?'−':'')+(a>=1?a.toLocaleString('pt-BR',{maximumFractionDigits:a>=100?2:4}):a.toLocaleString('pt-BR',{maximumSignificantDigits:4}))+' '+S.quote.sym};
-function mergeRatio(ca,cb){const mb=new Map(cb.map(c=>[c.t,c]));const out=[];
-  ca.forEach(c=>{const d=mb.get(c.t);if(!d||!(d.o>0&&d.c>0&&d.h>0&&d.l>0))return;const o=c.o/d.o,cl=c.c/d.c;
+/* As velas de A e B podem vir de fontes diferentes (Binance, CoinGecko,
+   DeFi Llama), com horários deslocados: casa pela vela do tempo gráfico. */
+const balde=t=>Math.round(t/TF[S.tf].ms);
+function mergeRatio(ca,cb){const mb=new Map(cb.map(c=>[balde(c.t),c]));const out=[];
+  ca.forEach(c=>{const d=mb.get(balde(c.t));if(!d||!(d.o>0&&d.c>0&&d.h>0&&d.l>0))return;const o=c.o/d.o,cl=c.c/d.c;
     /* máxima e mínima da relação: aproximação pelas extremas da mesma vela */
     out.push({t:c.t,o,c:cl,h:Math.max(o,cl,c.h/d.h),l:Math.min(o,cl,c.l/d.l)})});return out}
-function parStats(ca,cb){const mb=new Map(cb.map(c=>[c.t,c.c]));const pa=[],pb=[];ca.forEach(c=>{const v=mb.get(c.t);if(v>0&&c.c>0){pa.push(c.c);pb.push(v)}});
+function parStats(ca,cb){const mb=new Map(cb.map(c=>[balde(c.t),c.c]));const pa=[],pb=[];ca.forEach(c=>{const v=mb.get(balde(c.t));if(v>0&&c.c>0){pa.push(c.c);pb.push(v)}});
   if(pa.length<10)return null;const ra=[],rb=[];for(let i=1;i<pa.length;i++){ra.push(Math.log(pa[i]/pa[i-1]));rb.push(Math.log(pb[i]/pb[i-1]))}
   const m=x=>x.reduce((s,v)=>s+v,0)/x.length,ma=m(ra),mb2=m(rb);let cv=0,va=0,vb=0;ra.forEach((v,i)=>{cv+=(v-ma)*(rb[i]-mb2);va+=(v-ma)**2;vb+=(rb[i]-mb2)**2});
   const corr=va&&vb?cv/Math.sqrt(va*vb):0;const n0=pa.length-1;
@@ -1173,7 +1179,7 @@ function renderPar(){if(TOOL!=='pool')return;const A=String(S.asset||'—').toUp
   if(RATIO()){const ps=S.parStats,q=esc(S.quote.sym);extra=`<span>Gráfico e contas medidos na <strong>relação ${esc(A)} ÷ ${q}</strong>. Valores em ${q} (1 ${q} = ${fu(S.quote.usd)} hoje).</span>`;
     if(ps){const f=ps.corr>=.8?'muito juntos':ps.corr>=.5?'juntos, com folga':ps.corr>=.2?'pouco juntos':'quase independentes';
       extra+=`<span>No período do gráfico, os dois andaram <strong>${f}</strong> (correlação ${ps.corr.toLocaleString('pt-BR',{maximumFractionDigits:2})}). ${esc(A)} mudou ${fpct(ps.movA)} em dólar, ${q} ${fpct(ps.movB)}, e a relação entre eles ${fpct(ps.movR)}. É essa relação que a pool sente.</span>`}}
-  else if(!/^(rwa)$/.test(B)&&!STABLES.test(B)){extra=S.mode==='sim'?'<span>Nos exemplos simulados o segundo token é sempre dólar. Escolha um token real na lista para medir pela relação entre os dois.</span>':(quoteAlvo()?'<span>Carregando a relação entre os dois preços…</span>':'<span>Não deu para montar a relação com esse segundo token. As contas seguem em dólar.</span>')}
+  else if(!/^(rwa)$/.test(B)&&!STABLES.test(B)){extra=S.mode==='sim'?'<span>Nos exemplos simulados o segundo token é sempre dólar. Escolha um token real na lista para medir pela relação entre os dois.</span>':(quoteAlvo()&&!S.quoteFalhou?'<span>Carregando a relação entre os dois preços…</span>':'<span class="dn">Não deu para montar a relação com esse segundo token agora. As contas seguem em dólar.</span>')}
   else if(B==='rwa')extra='<span>Para ações tokenizadas, as contas usam o dólar como segundo token: o preço da ação vem da bolsa, fora do gráfico.</span>';
   setHTML(el,`<b>${esc(t[1])}</b><span>${esc(t[2])}</span>${igual?'<span class="dn">Escolha um segundo token diferente do primeiro.</span>':''}${extra}`)}
 const PRONTOS=[['SOL/USDC','solana','USDC'],['ETH/USDC','ethereum','USDC'],['SOL/ETH','solana','ETH'],['PENDLE/ETH','pendle','ETH'],['UNI/ETH','uniswap','ETH'],['mSOL/SOL','msol','SOL'],['SOL/ação','solana','rwa']];
@@ -1240,20 +1246,20 @@ $('#ppApr').addEventListener('input',()=>{const v=num($('#ppApr').value);if(v>=0
 new ResizeObserver(()=>{if(PP.open)ppRender()}).observe($('#ppCv'));
 
 /* ---------- Raio-X do APR (parte 2) ---------- */
-function renderRx(){if(TOOL!=='pool')return;const el=$('#rxRes');const c=poolCore();const aprIn=num($('#rxApr').value);const apr=aprIn>0?aprIn:(PHS.apr||0);
-  if(!c||!(apr>0)||!n()){setHTML(el,apr>0?'':'<div class="empty">Digite um APR para ver o raio-X.</div>');return}
+function renderRx(){if(TOOL!=='pool')return;const el=$('#rxRes');const c=poolCore();const apr=num($('#rxApr').value);
+  if(!(apr>0)){setHTML(el,'<div class="empty">Digite o APR que você viu para ver o raio-X.</div>');return}
+  if(!c||!n()){setHTML(el,'<div class="empty">Confira a faixa e o depósito.</div>');return}
   const cs=S.candles;let dentro=0;cs.forEach(k=>{if(k.c>=c.a&&k.c<=c.b)dentro++});const pct=dentro/cs.length,ef=apr*pct;
   const dias=Math.max(1,Math.round(cs.length*dt()/864e5));
-  /* perda contra segurar os dois se o preço andar 20% para o lado pior */
-  const u=clAmt(1,c.a,c.b,c.p0),L=c.dep/(u.x*c.p0+u.y),e=clAmt(L,c.a,c.b,c.p0),hold=p=>e.x*p+e.y;
-  const perda=Math.max(hold(c.p0*.8)-c.val(c.p0*.8),hold(c.p0*1.2)-c.val(c.p0*1.2),0);
+  /* perda contra a alternativa do objetivo se o preço andar 20% para o lado pior */
+  const alt=c.base.v,perda=Math.max(alt(c.p0*.8)-c.val(c.p0*.8),alt(c.p0*1.2)-c.val(c.p0*1.2),0);
   const diaTaxa=c.dep*ef/100/365,dPag=diaTaxa>0?Math.ceil(perda/diaTaxa):Infinity;
   setHTML(el,`<div class="big">
     <div class="kv"><span class="lbl">Anunciado</span><b>${apr.toLocaleString('pt-BR',{maximumFractionDigits:1})}%</b><span class="lbl">ao ano, se ficasse sempre na faixa</span></div>
     <div class="kv"><span class="lbl">Dentro da faixa</span><b>${Math.round(pct*100)}%</b><span class="lbl">do tempo, em ${dias} dias de gráfico</span></div>
     <div class="kv pv"><span class="lbl">Na prática</span><b>≈ ${ef.toLocaleString('pt-BR',{maximumFractionDigits:1})}%</b><span class="lbl">ao ano com esta faixa</span></div>
-    <div class="kv"><span class="lbl">Para cobrir a troca de tokens</span><b>${isFinite(dPag)?dPag.toLocaleString('pt-BR')+' dias':'—'}</b><span class="lbl">se o preço andar 20%</span></div></div>
-  <p class="note">O APR anunciado é anual e costuma ser calculado num dia de volume bom, como se a posição ficasse dentro da faixa o ano inteiro. Com a faixa de ${fp(c.a)} a ${fp(c.b)}, o preço passou <strong>${Math.round(pct*100)}%</strong> do tempo dentro dela, e é só nesse tempo que a taxa entra. Se o preço andar 20%, a pool perde <strong class="dn">${fv(perda)}</strong> para quem só segurou os dois tokens, e esse ritmo de taxa leva ${isFinite(dPag)?'<strong>'+dPag.toLocaleString('pt-BR')+' dias</strong>':'tempo demais'} para cobrir.</p>
+    <div class="kv"><span class="lbl">Para cobrir a troca de tokens</span><b>${perda<=0?'0 dia':isFinite(dPag)?dPag.toLocaleString('pt-BR')+' dias':'—'}</b><span class="lbl">contra ${esc(minus(c.base.curto))}, se o preço andar 20%</span></div></div>
+  <p class="note">O APR anunciado é anual e costuma ser calculado num dia de volume bom, como se a posição ficasse dentro da faixa o ano inteiro. Com a faixa de ${fp(c.a)} a ${fp(c.b)}, o preço passou <strong>${Math.round(pct*100)}%</strong> do tempo dentro dela, e é só nesse tempo que a taxa entra. Se o preço andar 20% para o lado ruim, a pool fica <strong class="dn">${fv(perda)}</strong> atrás de <strong>${esc(minus(c.base.nome))}</strong>, e esse ritmo de taxa leva ${isFinite(dPag)?'<strong>'+dPag.toLocaleString('pt-BR')+' dias</strong>':'tempo demais'} para cobrir.</p>
   ${apr>=100?'<p class="note dn">Desconfie de APR acima de 100% ao ano: em geral vem de volume de um dia só, de incentivo em token que cai de preço ou de pool com pouca liquidez.</p>':''}`)}
 $('#rxApr').addEventListener('input',renderRx);
 
@@ -1266,7 +1272,7 @@ function renderPos(){if(TOOL!=='pool')return;const el=$('#posRes');const atual=p
   const nome={buy:'compra',sell:'venda',yield:'renda',ratio:'proporção',full:'faixa cheia'};
   const compras=todas.filter(q=>q.st==='buy'),vendas=todas.filter(q=>q.st==='sell');
   const mCompra=compras.length?compras.reduce((s,q)=>s+q.dep,0)/compras.reduce((s,q)=>s+q.dep/Math.sqrt(q.a*q.b),0):null;
-  const tv=vendas.map(q=>q.dep/q.p0),mVenda=vendas.length?vendas.reduce((s,q,i)=>s+tv[i]*Math.sqrt(q.a*q.b),0)/tv.reduce((s,v)=>s+v,0):null;
+  const tv=vendas.map(q=>{const u=clAmt(1,q.a,q.b,q.p0),L=q.dep/(u.x*q.p0+u.y),e=clAmt(L,q.a,q.b,q.p0);return e.x+e.y/q.p0}),mVenda=vendas.length?vendas.reduce((s,q,i)=>s+tv[i]*Math.sqrt(q.a*q.b),0)/tv.reduce((s,v)=>s+v,0):null;
   const tot=todas.reduce((s,q)=>s+q.dep,0),p0=atual?atual.p0:S.now;
   setHTML(el,`<table><thead><tr><th>#</th><th>Faixa</th><th>Depósito</th><th>Objetivo</th><th></th></tr></thead><tbody>
     ${todas.map((q,k)=>`<tr><td>${q.nova?'nova':k+1}</td><td>${fp(q.a)}–${fp(q.b)}</td><td>${fv(q.dep)}</td><td style="font-family:var(--f-body)">${nome[q.st]||'—'}</td><td>${q.nova?'':`<button class="x" data-k="${k}" aria-label="Remover posição ${k+1}">×</button>`}</td></tr>`).join('')}</tbody></table>
@@ -1689,7 +1695,9 @@ $('#hlReset').onclick=()=>{const e=extent();S.hi=e.hi;S.lo=e.lo;syncHeader();ren
 
 function renderAll(){if(!n())return;
   if(CP.open){$('#cmpAsset').textContent=S.asset+' · hoje '+fp(S.now);cpRender()}
-  if(TOOL==='pool'){renderPar();renderCen();ppRender();renderRx();renderPos();$('#depL').textContent=RATIO()?`Depósito (${S.quote.sym})`:'Depósito ($)'}
+  if(TOOL==='pool'){renderPar();renderCen();
+    /* painéis mais pesados: uma vez depois que o arraste para */
+    clearTimeout(S.tPool);S.tPool=setTimeout(()=>{ppRender();renderRx();renderPos()},90);$('#depL').textContent=RATIO()?`Depósito (${S.quote.sym})`:'Depósito ($)'}
   if(RP.on)renderReplay();else if(S.tab==='dca')renderRes();else if(S.tab==='pool'){renderPool();renderPH()}else if(S.tab==='cal')renderCal();else if(S.tab==='sell')renderSell();
   draw()}
 
