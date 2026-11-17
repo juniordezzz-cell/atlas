@@ -528,7 +528,7 @@
     lerMarcas: function () { return lerJSON(MARCAS_KEY, {}); },
     gravarMarcas: function (m) { gravarJSON(MARCAS_KEY, m); },
     lerTokens: function () { var t = lerJSON(TOKENS_KEY, {}); return { aprovados: t.aprovados || [], bloqueados: t.bloqueados || [], bloqueadosEnd: t.bloqueadosEnd || [] }; },
-    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco, semDuplicatas: semDuplicatas, linkPool: linkPool, linkSeguro: seguro, emissorToken: emissorToken, emissoresDaPool: emissoresDaPool, rotuloEmissor: rotuloEmissor,
+    bloqueiosDaPool: bloqueiosDaPool, chaveEndereco: chaveEndereco, enderecoPool: enderecoPool, semDuplicatas: semDuplicatas, linkPool: linkPool, linkSeguro: seguro, emissorToken: emissorToken, emissoresDaPool: emissoresDaPool, rotuloEmissor: rotuloEmissor,
     categoriaToken: categoriaToken, categoriasDaPool: categoriasDaPool, rotuloCategoria: rotuloCategoria,
     gravarTokens: function (t) { gravarJSON(TOKENS_KEY, t); },
     lerDecisoes: function () { return lerJSON(DECISOES_KEY, {}); },
