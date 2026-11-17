@@ -234,7 +234,7 @@
           /* Recarrega em vez de repintar: os stores dos módulos guardam
              estado em memória, e uma tela que continua exibindo o que
              acabou de ser apagado é a pior confirmação possível. */
-          setTimeout(function () { location.replace("dashboard.html"); }, 700);
+          setTimeout(function () { location.replace("../mercado/index.html"); }, 700);
         });
       });
     }

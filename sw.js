@@ -178,7 +178,11 @@
    Ferramentas pelo roteador e a pílula do Hold com caixa.
    As duas linhas tinham usado "v99"; o número novo garante cache limpo
    para quem estava em qualquer uma delas. */
-var VERSAO = "atlas-v103";
+/* v100 (na main) = Mercado vira a página principal; Ferramentas e Academy
+   ganham grupo próprio no menu e Relatórios vai para as Configurações. */
+/* v104 = junção desta branch (v103) com a v100 da main. Número acima das
+   duas para limpar o cache de quem estava em qualquer uma. */
+var VERSAO = "atlas-v104";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
@@ -187,6 +191,7 @@ var CACHE = VERSAO;
    DeFi e não deveria pagar o download dele. */
 var CASCA = [
   "./",
+  "mercado/index.html",   /* página principal desde 17/11/2026 */
   "pages/dashboard.html",
   "pages/offline.html",
   "manifest.webmanifest",

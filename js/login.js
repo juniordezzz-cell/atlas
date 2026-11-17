@@ -21,7 +21,7 @@
   }
   function limpaErro() { if (erroEl) { erroEl.hidden = true; erroEl.textContent = ""; } }
 
-  function irParaApp() { window.location.href = "dashboard.html"; }
+  function irParaApp() { window.location.href = "../mercado/index.html"; }  /* Mercado é a página principal (17/11/2026) */
 
   // Já autenticado? (sessão persistida) → entra direto.
   function checaSessao() {

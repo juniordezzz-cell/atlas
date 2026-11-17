@@ -64,8 +64,8 @@
     if (i >= 0) return src.slice(0, i);
     return (MODULE === "atlas") ? "" : "../";   // rede de segurança
   })();
-  // O Dashboard mora em pages/ agora; daqui até ele é RAIZ + "pages/…".
-  var BACK_HREF  = RAIZ + "pages/dashboard.html";
+  // "Voltar ao ATLAS" leva à página principal: o Mercado (17/11/2026).
+  var BACK_HREF  = RAIZ + "mercado/index.html";
   var ORACULO_AVATAR = RAIZ + "assets/atena.webp";
   var toolResponder = null;
   var motorOperacoes;
@@ -2012,7 +2012,7 @@
     if (!document.querySelector('script[data-atlas-moldura]')) {
       var mold = document.createElement('script');
       mold.setAttribute('data-atlas-moldura', '');
-      mold.src = RAIZ + 'core/ui/atlas-moldura.js?v=2';
+      mold.src = RAIZ + 'core/ui/atlas-moldura.js?v=4';
       document.head.appendChild(mold);
     }
     if (!document.querySelector('script[data-atlas-voz]')) {

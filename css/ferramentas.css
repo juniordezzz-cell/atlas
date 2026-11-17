@@ -464,6 +464,7 @@ html .tools-grid .tool-card--art:hover {
 
 /* com as abas ligadas, o cabeçalho de cada seção vira a própria aba */
 html.tools-com-abas .tools-sec__head { display: none; }
+html.tools-com-abas.tools-todas .tools-sec__head { display: flex; }
 .tools-sec[hidden] { display: none; }
 
 /* --- grade: uma fileira, cards da mesma largura em todas as abas --- */

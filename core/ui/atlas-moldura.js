@@ -6,9 +6,10 @@
      · um TRILHO à esquerda, igual em todo o site: fechado mostra só
        os ícones (68 px); aberto mostra os nomes (236 px) e empurra a
        página. O estado fica lembrado neste navegador.
-     · os destinos em grupos que abrem e fecham pela setinha:
-       Investimentos (Hold, Trade, DeFi, RWA, Carteiras) e
-       Mercado e estudos (Mercado, Academy, Ferramentas, Relatórios).
+     · Mercado no topo (página principal) e os destinos em grupos
+       que abrem e fecham pela setinha: Investimentos (Dashboard, Hold,
+       Trade, DeFi, RWA, Carteiras), Academy e Ferramentas. Relatórios
+       fica nas Configurações. (Organização de 17/11/2026.)
      · o SUBMENU de cada módulo no centro da barra de topo.
 
    Por que espelhar em vez de reescrever os módulos
@@ -66,15 +67,66 @@
   /* ---------- destinos e grupos ---------- */
   var DEST = {};
   AtlasShell.destinos().forEach(function (d) { DEST[d.id] = d; });
+  /* Organização de 17/11/2026 (pedido do dono): o Mercado é a página
+     principal e abre o trilho; o Dashboard entra em Investimentos;
+     Academy e Ferramentas são grupos próprios (o nome leva à página,
+     a setinha abre a lista de dentro); Relatórios mora nas
+     Configurações (fica marcada quando a página aberta é Relatórios). */
   var MENU = [
-    { item: "dashboard" },
-    { grupo: "investimentos", nome: "Investimentos", itens: ["hold", "trade", "defi", "rwa", "carteiras"] },
-    { grupo: "mercado", nome: "Mercado e estudos", itens: ["mercado", "academy", "ferramentas", "relatorios"] }
+    { item: "mercado" },
+    { grupo: "investimentos", nome: "Investimentos", itens: ["dashboard", "hold", "trade", "defi", "rwa", "carteiras"] },
+    { grupo: "academy", nome: "Academy", destino: "academy", hub: "academy/index.html#inicio", rotuloHub: "Início do Academy" },
+    { grupo: "ferramentas", nome: "Ferramentas", destino: "ferramentas", hub: "pages/ferramentas.html#todas", rotuloHub: "Todas as ferramentas" }
   ];
+
+  /* Academy: as abas da página (academy/js/academy-hub.js lê o #hash). */
+  var ACADEMY = [
+    { slug: "cursos", nome: "Cursos", href: "academy/index.html#cursos",
+      icon: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/>' },
+    { slug: "artigos", nome: "Artigos", href: "academy/index.html#artigos",
+      icon: '<path d="M6 3h12v18H6z"/><path d="M9 7h6M9 11h6M9 15h4"/>' },
+    { slug: "papers", nome: "Papers", href: "academy/index.html#papers",
+      icon: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7M8 11h7"/>' },
+    { slug: "links", nome: "Links", href: "academy/index.html#links",
+      icon: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>' }
+  ];
+
+  /* Ferramentas (17/11/2026): grupo próprio no trilho. O nome leva ao hub
+     (todas as ferramentas); a setinha abre e fecha a lista. Trilho fechado
+     no PC: um ícone só, que leva ao hub. Ordem = abas da página. */
+  var FERRAMENTAS = [
+    { slug: "entradas-saidas", nome: "Finanças", href: "Ferramentas/entradas-saidas/financas/index.html",
+      icon: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14.5h2"/>' },
+    { slug: "conversor", nome: "Conversor e Câmbio", href: "Ferramentas/conversor/index.html",
+      icon: '<path d="M4 8h14l-3-3"/><path d="M20 16H6l3 3"/>' },
+    { slug: "escada-dca", nome: "Escada · DCA", href: "Ferramentas/escada-dca/index.html",
+      icon: '<path d="M4 20h4v-4h4v-4h4V8h4V4"/>' },
+    { slug: "lucro-cripto", nome: "Lucro Cripto", href: "Ferramentas/lucro-cripto/index.html",
+      icon: '<path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/>' },
+    { slug: "simulador-de-trade", nome: "Simulador de Trade", href: "Ferramentas/simulador-de-trade/index.html",
+      icon: '<path d="M8 3v18M16 3v18"/><rect x="6" y="7" width="4" height="8" rx="1"/><rect x="14" y="9" width="4" height="7" rx="1"/>' },
+    { slug: "scanner-pools", nome: "Scanner de Pools", href: "Ferramentas/scanner-pools/index.html",
+      icon: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m12 12 6-6"/>' },
+    { slug: "estrategia-de-pool", nome: "Estratégias de Pools", href: "Ferramentas/estrategia-de-pool/index.html",
+      icon: '<path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/>' },
+    { slug: "staking", nome: "Staking", href: "Ferramentas/staking/index.html",
+      icon: '<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>' },
+    { slug: "juros-compostos", nome: "Juros Compostos", href: "Ferramentas/juros-compostos/index.html",
+      icon: '<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/>' },
+    { slug: "calculadora-market-cap", nome: "Market Cap", href: "Ferramentas/calculadora-market-cap/index.html",
+      icon: '<circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/>' },
+    { slug: "comparador-de-ativos", nome: "Comparador de Ativos", href: "Ferramentas/comparador-de-ativos/index.html",
+      icon: '<path d="M12 4v16M5 8h14"/><path d="m5 8-3 6h6zM19 8l-3 6h6z"/>' }
+  ];
+  var FERR_ATUAL = (function () {
+    var m = CAMINHO.match(/\/ferramentas\/([a-z0-9-]+)\//);
+    return m ? m[1] : "";
+  })();
 
   /* qual destino é a página atual */
   function atual() {
     if (MODULE === "tools") return "ferramentas";
+    if (/\/pages\/relatorios\.html$/.test(CAMINHO)) return "configuracoes";
     if (MODULE !== "atlas") return MODULE;
     var m = CAMINHO.match(/\/pages\/([a-z-]+)\.html$/);
     return m ? m[1] : "dashboard";
@@ -99,10 +151,70 @@
     return g;
   }
 
+  /* qual item de dentro do grupo é a página atual ("" = a página do grupo) */
+  function chaveAtual(bloco) {
+    if (bloco.destino === "ferramentas") return FERR_ATUAL;
+    if (bloco.destino === "academy") {
+      if (/\/academy\/nivel-/.test(CAMINHO)) return "cursos";
+      var h = location.hash.slice(1);
+      return ACADEMY.some(function (a) { return a.slug === h; }) ? h : "";
+    }
+    return "";
+  }
+  function listaDo(bloco) { return bloco.destino === "academy" ? ACADEMY : FERRAMENTAS; }
+
+  /* grupo com página própria: nome = link para a página; setinha = abre a lista */
+  function grupoHub(bloco, grupos) {
+    var temAtual = ATUAL === bloco.destino;
+    var chave = temAtual ? chaveAtual(bloco) : null;
+    var noHub = temAtual && !chave;
+    /* fechado por padrão; aberto quando a página é dele */
+    var aberto = (bloco.grupo in grupos) ? !!grupos[bloco.grupo] : false;
+    if (temAtual) aberto = true;
+    var hub = esc(RAIZ + bloco.hub);
+    var d = DEST[bloco.destino];
+    var itens = listaDo(bloco).map(function (f) {
+      var on = f.slug === chave;
+      return '<a class="atm-item atm-item--sub' + (on ? " is-on" : "") + '" data-chave="' + f.slug + '" href="' + esc(RAIZ + f.href) + '"' +
+        (on ? ' aria-current="page"' : "") + ' title="' + esc(f.nome) + '">' +
+        svg(f.icon) + '<span class="atm-rot">' + esc(f.nome) + "</span></a>";
+    }).join("");
+    return '<div class="atm-grupo atm-grupo--hub' + (aberto ? " is-aberto" : "") + '" data-grupo="' + bloco.grupo + '" data-destino="' + bloco.destino + '">' +
+      '<div class="atm-grupo__cab atm-grupo__cab--hub">' +
+        '<a class="atm-grupo__link' + (noHub ? " is-on" : "") + '" href="' + hub + '"' + (noHub ? ' aria-current="page"' : "") +
+          ' title="' + esc(bloco.rotuloHub) + '"><span class="atm-rot">' + esc(bloco.nome) + "</span></a>" +
+        '<button type="button" class="atm-grupo__seta" aria-expanded="' + aberto + '" aria-controls="atm-g-' + bloco.grupo + '"' +
+          ' aria-label="Mostrar ou esconder a lista de ' + esc(bloco.nome) + '">' + svg(IC_SETA, "atm-seta") + "</button>" +
+      "</div>" +
+      /* só aparece com o trilho fechado no PC */
+      '<a class="atm-item atm-hub-ic' + (temAtual ? " is-on" : "") + '" href="' + hub + '" title="' + esc(bloco.nome) + '">' +
+        svg(d ? d.icon : IC_MENU) + '<span class="atm-rot">' + esc(bloco.nome) + "</span></a>" +
+      '<div class="atm-grupo__itens" id="atm-g-' + bloco.grupo + '">' + itens + "</div></div>";
+  }
+
+  /* Academy troca de aba pelo #hash sem recarregar: acompanha no trilho */
+  function marcarGrupos() {
+    if (!trilho) return;
+    Array.prototype.forEach.call(trilho.querySelectorAll(".atm-grupo--hub"), function (g) {
+      var bloco = MENU.filter(function (b) { return b.grupo === g.getAttribute("data-grupo"); })[0];
+      if (!bloco || ATUAL !== bloco.destino) return;
+      var chave = chaveAtual(bloco);
+      Array.prototype.forEach.call(g.querySelectorAll(".atm-item--sub"), function (a) {
+        var on = a.getAttribute("data-chave") === chave;
+        classe(a, "is-on", on);
+        if (on) { if (a.getAttribute("aria-current") !== "page") a.setAttribute("aria-current", "page"); }
+        else if (a.hasAttribute("aria-current")) a.removeAttribute("aria-current");
+      });
+      var link = g.querySelector(".atm-grupo__link");
+      classe(link, "is-on", !chave);
+    });
+  }
+
   function montarTrilho() {
     var grupos = lerGrupos();
     var partes = MENU.map(function (bloco) {
       if (bloco.item) return linkDestino(bloco.item);
+      if (bloco.hub) return grupoHub(bloco, grupos);
       var temAtual = bloco.itens.indexOf(ATUAL) !== -1;
       var aberto = (bloco.grupo in grupos) ? !!grupos[bloco.grupo] : true;
       if (temAtual) aberto = true;
@@ -119,7 +231,7 @@
     trilho.setAttribute("data-atlas-ui", "moldura");
     trilho.innerHTML =
       '<div class="atm-topo">' +
-        '<a class="atm-marca" href="' + esc(RAIZ + "pages/dashboard.html") + '" title="ATLAS">' +
+        '<a class="atm-marca" href="' + esc(RAIZ + "mercado/index.html") + '" title="ATLAS · Mercado">' +
           '<img src="' + esc(RAIZ + "assets/iconeatlas.png") + '" alt="" width="44" height="44">' +
           '<span class="atm-rot atm-marca__txt"><b>ATLAS</b><small>seu mapa de investimentos</small></span></a>' +
         '<button type="button" class="atm-alternar" aria-controls="atlasMoldura">' + svg(IC_RECOLHER) + "</button>" +
@@ -141,11 +253,11 @@
       if (window.AtlasPalette && AtlasPalette.open) AtlasPalette.open();
     });
     trilho.addEventListener("click", function (ev) {
-      var cab = ev.target.closest(".atm-grupo__cab");
+      var cab = ev.target.closest("button.atm-grupo__cab, .atm-grupo__seta");
       if (!cab) return;
       /* com o trilho fechado no PC, a setinha abre o trilho primeiro */
       if (!aberto() && !celular()) { definir(true); return; }
-      var g = cab.parentNode;
+      var g = cab.closest(".atm-grupo");
       var abrir = !g.classList.contains("is-aberto");
       g.classList.toggle("is-aberto", abrir);
       cab.setAttribute("aria-expanded", abrir ? "true" : "false");
@@ -346,7 +458,7 @@
       });
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-selected", "aria-current"] });
 
-    window.addEventListener("hashchange", function () { requestAnimationFrame(marcar); });
+    window.addEventListener("hashchange", function () { requestAnimationFrame(function () { marcar(); marcarGrupos(); }); });
     var eraCel = celular();
     window.addEventListener("resize", function () {
       var agora = celular();
