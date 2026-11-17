@@ -22,7 +22,7 @@
     form.onsubmit=e=>{e.preventDefault();let json;try{json=JSON.parse(estrategia.value);}catch(_e){status.textContent='Corrija o JSON antes de salvar.';return;}run(()=>g.ScannerIA.salvarMemoria({evitarMemes:meme.checked,redes:split(redes.value),pares:split(pares.value),notas:notas.value,estrategia:json}),'Preferências e estratégia salvas na sua conta.',true);};
     reset.onclick=()=>run(()=>{if(!base)throw Error('JSON inicial indisponível; restauração cancelada.');return g.ScannerIA.salvarMemoria({evitarMemes:true,redes:[],pares:[],notas:'',estrategia:base});},'Preferências restauradas; critérios pessoais anteriores removidos.',true);
     load.onclick=()=>run(()=>g.ScannerIA.memoria(),'Memória carregada da sua conta.');
-    forget.onclick=async()=>{forget.disabled=true;try{await g.ScannerIA.apagarAvaliacoes();status.textContent='Avaliações anteriores apagadas. Preferências preservadas.';}catch(e){status.textContent=e.message;}finally{forget.disabled=false;}};
+    forget.onclick=async()=>{forget.disabled=true;try{await g.ScannerIA.apagarAvaliacoes();status.textContent='Avaliações anteriores apagadas. Preferências preservadas.';}catch(e){status.textContent=(/fetch|network|load failed/i.test(String(e&&e.message))?'Sem conexão com o servidor agora. Tente de novo em instantes.':e.message);}finally{forget.disabled=false;}};
     return {carregar:()=>run(()=>g.ScannerIA.memoria(),'Memória carregada da sua conta.'),combinar:async p=>{await baseReady;return combinar(p);}};
   }
   g.ScannerMemoria={montar};

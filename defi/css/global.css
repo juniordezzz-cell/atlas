@@ -226,8 +226,9 @@ h1, h2, h3, h4 { font-family: var(--font-display); color: var(--text-hi); font-w
    CLARAS. Texto branco em cima dava contraste 1,8, no botão principal
    do módulo. --atlas-on-accent é a tinta escura que o tema reserva para
    ficar SOBRE o acento, e dá 10,7 aqui. */
-.btn-primary { background: var(--grad-brand); box-shadow: 0 8px 22px -10px var(--blue-glow); color: var(--atlas-on-accent); }
-.btn-primary:hover { box-shadow: 0 12px 28px -10px var(--blue-glow); transform: translateY(-1px); }
+/* cor de ação única do ATLAS (themes/atlas-theme.css): sem degradê nem brilho */
+.btn-primary { background: var(--atlas-acao, #00BFFF); color: var(--atlas-acao-tinta, #04121C); box-shadow: none; }
+.btn-primary:hover { background: var(--atlas-acao-hover, #33CCFF); color: var(--atlas-acao-tinta, #04121C); box-shadow: none; }
 
 .btn-secondary { background: var(--surface-hi); border-color: var(--glass-border); color: var(--text-hi); }
 .btn-secondary:hover { border-color: var(--glass-border-hi); background: rgba(31,44,74,0.9); }

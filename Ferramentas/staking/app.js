@@ -101,10 +101,10 @@
       $('sk-sym').value = t.sym;
       AtlasBuscaToken.mercado(t.id, t.sym).then(function (m) {
         $('sk-preco').value = C.numeroCampo(m.preco);
-        status(m.salvo ? 'Preço guardado de ' + AtlasDados.quandoTexto(m.quando) + ': ' + usd(m.preco) + ' (sem fonte no ar agora).'
+        status(m.salvo ? 'Preço guardado em ' + AtlasDados.quandoTexto(m.quando) + ': ' + usd(m.preco) + ' (fontes indisponíveis no momento).'
                        : 'Preço de hoje: ' + usd(m.preco) + ' · ' + m.fonte + '.');
         calcular();
-      }).catch(function () { status('Nenhuma fonte tem o preço deste token agora. Digite o preço à mão.'); });
+      }).catch(function () { status('Não foi possível obter o preço deste token agora. Digite o preço manualmente.'); });
     }
   });
 

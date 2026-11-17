@@ -90,8 +90,8 @@
           label: "Restaurar arquivados",
           desc: function () {
             var n = tradeArchiveCount();
-            return n ? (n + " trade(s) no arquivo. Voltam para a lista ativa.")
-                     : "Nenhum trade arquivado no momento.";
+            return n ? (n + " operação(ões) no arquivo. Voltam para a lista ativa.")
+                     : "Nenhuma operação arquivada no momento.";
           },
           enabled: function () { return tradeArchiveCount() > 0; },
           run: function () {
@@ -104,7 +104,7 @@
     {
       id: "defi",
       label: "DeFi",
-      desc: "Pools, staking e lending",
+      desc: "Pools, staking e empréstimos",
       icon: '<path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5"/>',
       storage: null,
       fields: [],

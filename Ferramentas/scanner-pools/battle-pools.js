@@ -215,7 +215,7 @@
     const topo = `<div class="btl-escolha">${seletor("a")}
       <button type="button" class="btl-vs" onclick="BattlePools.trocar()" title="Trocar A e B" aria-label="Trocar A e B">⚔</button>${seletor("b")}</div>`;
     if (!pa || !pb) {
-      el.innerHTML = topo + `<div class="radar-empty">Escolha duas pools para a batalha — por exemplo, a mesma ação em DEXs concorrentes (SPCX/SOL na Raydium × SPCXB/WBNB na PancakeSwap) ou duas SOL/USDC na mesma DEX. Também dá para mandar uma pool para cá pelo ⚔ do Descobrir ou do Radar.</div>`;
+      el.innerHTML = topo + `<div class="radar-empty">Escolha duas pools para comparar, por exemplo a mesma ação em DEXs concorrentes (SPCX/SOL na Raydium e SPCXB/WBNB na PancakeSwap) ou duas SOL/USDC na mesma DEX. Também é possível enviar uma pool para cá pelo botão de comparar em Descobrir ou no Radar.</div>`;
       return;
     }
     el.innerHTML = topo + `<div class="radar-empty">Carregando o histórico das duas pools…</div>`;

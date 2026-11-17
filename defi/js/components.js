@@ -8,11 +8,11 @@
   var U = window.U;
 
   var NAV = [
-    { id: "dashboard", label: "Dashboard", href: "index.html" },
+    { id: "dashboard", label: "Painel", href: "index.html" },
     { id: "pools", label: "Pools", href: "pools.html" },
     { id: "staking", label: "Staking", href: "staking.html" },
-    { id: "lending", label: "Lending", href: "lending.html" },
-    { id: "analytics", label: "Analytics", href: "analytics.html" },
+    { id: "lending", label: "Empréstimos", href: "lending.html" },
+    { id: "analytics", label: "Análises", href: "analytics.html" },
     { id: "historico", label: "Histórico", href: "historico.html" }
   ];
 

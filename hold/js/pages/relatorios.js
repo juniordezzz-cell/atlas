@@ -76,7 +76,7 @@
     row(dl, "Posições ativas", String(c.posicoes));
     row(dl, "Resultado realizado em vendas",
         U.money(S.get.realizado ? S.get.realizado() : 0, 0));
-    row(dl, "Watchlist", String(c.watchlist));
+    row(dl, "Em observação", String(c.watchlist));
     var summaryCard = U.card({ eyebrow: "Resumo executivo", title: "Panorama do portfólio", body: [dl] });
     view.appendChild(summaryCard);
 
@@ -84,7 +84,7 @@
     var posCols = [
       { head: "Ativo", render: function (p) { return U.assetCell(S.get.asset(p.ativo_id)); } },
       { head: "Valor", right: true, render: function (p) { return U.el("span", { class: "num", text: U.money(S.get.positionValue(p), 0) }); } },
-      { head: "PnL", right: true, render: function (p) { var v = S.get.positionPnL(p); return U.el("span", { class: "num " + U.signClass(v), text: U.money(v, 0) }); } },
+      { head: "Resultado", right: true, render: function (p) { var v = S.get.positionPnL(p); return U.el("span", { class: "num " + U.signClass(v), text: U.money(v, 0) }); } },
       { head: "Peso", right: true, render: function (p) { return U.el("span", { class: "num", text: S.get.positionWeight(p).toFixed(0) + "%" }); } }
     ];
     var posCard = U.card({ eyebrow: "Detalhamento", title: "Posições", tight: true,

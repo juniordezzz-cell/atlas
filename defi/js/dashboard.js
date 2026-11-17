@@ -112,14 +112,34 @@
     });
   });
 
+  /* ---- Primeiros passos (15/11/2026) ----
+     Sem nenhuma posição (pool, staking ou empréstimo), o painel continua
+     inteiro e zerado e ganha só esta faixa por cima, com um botão.
+     Estilo em core/ui/atlas-shell.css. */
+  function abertas(lista) { return lista.filter(function (p) { return p.status !== "encerrada"; }).length; }
+  var semNada = !S.activePools().length &&
+    !abertas(S.staking ? S.staking() : []) && !abertas(S.lending ? S.lending() : []);
+  if (semNada) {
+    var faixa = document.createElement("section");
+    faixa.className = "atlas-passos";
+    faixa.innerHTML =
+      '<div class="atlas-passos__txt"><span class="atlas-passos__olho">Primeiros passos</span>' +
+      '<h2>Registre sua primeira posição</h2>' +
+      '<p>Cadastre uma pool de liquidez, um staking ou um empréstimo. O painel passa a acompanhar valor, resultado, APR e distribuição.</p></div>' +
+      '<a class="atlas-passos__acao" href="pools.html?new=1">Nova posição</a>';
+    var kpisEl = U.qs("#kpis");
+    if (kpisEl && kpisEl.parentNode) kpisEl.parentNode.insertBefore(faixa, kpisEl);
+  }
+
   /* ---- Posições ---- */
   var active = S.activePools();
   var host = U.qs("#positions");
   if (!active.length) {
     host.outerHTML = C.empty({
-      icon: "pools", title: "Nenhuma posição ainda",
-      text: "Crie sua primeira posição para começar a acompanhar seu patrimônio DeFi.",
-      actionLabel: "Nova posição", actionHref: "pools.html?new=1"
+      icon: "pools", title: "Nenhuma pool aberta",
+      text: semNada ? "As pools abertas aparecem aqui, com valor, faixa de preço e resultado."
+                    : "Crie uma pool para acompanhá-la aqui.",
+      actionLabel: semNada ? null : "Nova posição", actionHref: semNada ? null : "pools.html?new=1"
     });
   } else {
     host.innerHTML = active.map(C.poolCard).join("");

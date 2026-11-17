@@ -691,7 +691,7 @@
     host.innerHTML =
       '<div class="cx-assets-table">' +
         '<div class="cx-assets-head">' +
-          '<span>Asset</span><span>Value/Balance</span><span>Price</span><span>Allocation</span><span>Actions</span>' +
+          '<span>Ativo</span><span>Valor/Saldo</span><span>Preço</span><span>Alocação</span><span>Ações</span>' +
         '</div>' +
         lista.map(function (a) {
           var temQtd = Math.abs(a.qtd) > 1e-8;

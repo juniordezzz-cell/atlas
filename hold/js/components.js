@@ -139,7 +139,7 @@
   /* ---------- Badges ---------- */
   var STATUS_BADGE = {
     invested:  { cls: "invested",  label: "Investido" },
-    watchlist: { cls: "watchlist", label: "Watchlist" },
+    watchlist: { cls: "watchlist", label: "Em observação" },
     sold:      { cls: "sold",      label: "Vendido" }
   };
   function badge(status, textOverride) {

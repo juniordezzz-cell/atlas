@@ -2012,7 +2012,7 @@
     if (!document.querySelector('script[data-atlas-moldura]')) {
       var mold = document.createElement('script');
       mold.setAttribute('data-atlas-moldura', '');
-      mold.src = RAIZ + 'core/ui/atlas-moldura.js?v=1';
+      mold.src = RAIZ + 'core/ui/atlas-moldura.js?v=2';
       document.head.appendChild(mold);
     }
     if (!document.querySelector('script[data-atlas-voz]')) {

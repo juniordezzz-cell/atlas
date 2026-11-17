@@ -41,9 +41,9 @@
     var body = h("div","hpanel-body");
     p.appendChild(head); p.appendChild(body);
     p.setState=function(n){ while(body.firstChild)body.removeChild(body.firstChild); body.appendChild(n); };
-    p.loading=function(){ p.setState(h("div","hloading","carregando…")); };
-    p.unavailable=function(retry){ var b=h("div","hempty"); b.appendChild(h("span",null,"indisponível"));
-      var r=h("button","hretry","tentar de novo"); r.type="button"; r.addEventListener("click",retry); b.appendChild(r); p.setState(b); };
+    p.loading=function(){ p.setState(h("div","hloading","Carregando…")); };
+    p.unavailable=function(retry){ var b=h("div","hempty"); b.appendChild(h("span",null,"Dados indisponíveis no momento."));
+      var r=h("button","hretry","Tentar de novo"); r.type="button"; r.addEventListener("click",retry); b.appendChild(r); p.setState(b); };
     p.loading();
     return p;
   }
@@ -51,20 +51,23 @@
 
   /* ---------- barra de abas + status ---------- */
   var TABS = ["Mercado Geral","DeFi","RWA","Analytics","Yields","Alertas 24/7"];
+  /* O nome interno da aba continua o mesmo (o código compara com ele);
+     só o rótulo na tela sai em português. */
+  var ROTULO_ABA = { "Mercado Geral": "Mercado geral", "Analytics": "Análises", "Yields": "Rendimentos", "Alertas 24/7": "Alertas 24h" };
   var goToTab = null;   // trocador de aba (setado no renderDashboard)
   function topBar(active, onTab) {
     var bar = h("div","cc-topbar");
     var left = h("div","cc-brand");
-    left.appendChild(h("span","cc-title","GLOBAL CRYPTO & RWA COMMAND CENTER"));
+    left.appendChild(h("span","cc-title","PANORAMA GLOBAL · CRIPTO E RWA"));
     var nav = h("nav","cc-tabs");
     TABS.forEach(function(t){
-      var b=h("button","cc-tab"+(t===active?" active":""),t); b.type="button";
+      var b=h("button","cc-tab"+(t===active?" active":""),ROTULO_ABA[t]||t); b.type="button";
       b.addEventListener("click",function(){ onTab(t); });
       nav.appendChild(b);
     });
     left.appendChild(nav);
     var right = h("div","cc-status");
-    var live=h("span","cc-live"); live.appendChild(h("span","cc-dot")); live.appendChild(h("span",null,"LIVE"));
+    var live=h("span","cc-live"); live.appendChild(h("span","cc-dot")); live.appendChild(h("span",null,"AO VIVO"));
     var clock=h("span","cc-clock"); var utc=h("span","cc-utc");
     function tick(){ var d=new Date();
       clock.textContent=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)+":"+("0"+d.getSeconds()).slice(-2);
@@ -288,7 +291,7 @@
 
   // alertas ao vivo (cripto + DeFi/RWA)
   function alertsPanel(big_) {
-    var p=panelFrame("Alertas 24/7","ver todos ›");
+    var p=panelFrame("Alertas 24h","ver todos ›");
     if (big_) p.classList.add("hpanel-tall");
     function load(){ p.loading();
       Promise.all([AcademyData.markets(),AcademyData.feargreed().catch(function(){return null;}),
@@ -388,7 +391,7 @@
 
   // tabela de yields (top pools por APY)
   function yieldsPanel(wide) {
-    var p=panelFrame("Melhores yields","APY · pools grandes");
+    var p=panelFrame("Melhores rendimentos","APY · pools grandes");
     function load(){ p.loading(); AcademyData.defiYields().then(function(y){
       if(!y||!y.pools||!y.pools.length)return p.unavailable(load);
       var list=h("div","yield-list"+(wide?" yield-wide":""));
@@ -506,7 +509,7 @@
 
   function alertsTab(mount) {
     var head=h("div","alerts-tab-head");
-    head.appendChild(h("h2","alerts-tab-title","Alertas 24/7"));
+    head.appendChild(h("h2","alerts-tab-title","Alertas 24h"));
     head.appendChild(h("p","alerts-tab-sub","Todos os sinais do mercado, separados por tópico — clique num alerta para abrir o ativo."));
     mount.appendChild(head);
     var grid=h("div","alerts-grid");

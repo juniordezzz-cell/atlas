@@ -35,7 +35,7 @@ button,input,select{font:inherit;color:inherit}
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
 h1{font-family:var(--f-display);font-weight:700;font-size:20px;margin:0;letter-spacing:-.01em;text-wrap:balance}
-h1 span{color:var(--accent)}
+h1 span{color:inherit}
 .voltar{color:var(--muted);text-decoration:none;font-size:13px;white-space:nowrap}
 .voltar:hover{color:var(--fg)}
 .estudo{color:#556074;font-size:12px;flex-basis:100%;margin:-6px 0 0}
@@ -505,17 +505,17 @@ async function selectLive(id){
       setAsset({mode:'live',key:'live:'+id,asset:m.sym||id.toUpperCase(),name:m.name||id,candles:cs,now:m.price||cs[cs.length-1].c});
       ls.set('asset',id);$('#sim').value='';$('#regen').hidden=true;
       setStatus(`${src} · atualizado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`);return;
-    }catch(e){if(S.pending!==id)return;if(!(m.spark&&m.spark.length>10)){setStatus(e.message||'Não consegui carregar '+sym,true);return}
-      setStatus((e.message||'Erro na API.')+' Mostrando a foto de 7 dias.',true)}
+    }catch(e){if(S.pending!==id)return;if(!(m.spark&&m.spark.length>10)){setStatus('Não foi possível carregar '+sym+' agora. Tente de novo em instantes.',true);return}
+      setStatus('Preços ao vivo indisponíveis no momento. Mostrando os últimos 7 dias guardados.',true)}
   }
-  if(!(m.spark&&m.spark.length>10)){setStatus(`Sem acesso à API aqui e sem dados guardados de ${sym}.`,true);return}
+  if(!(m.spark&&m.spark.length>10)){setStatus(`Preços ao vivo indisponíveis e sem dados guardados de ${sym}.`,true);return}
   const len=m.spark.length;const pr=m.spark.map((p,k)=>[SNAP.t-(len-1-k)*36e5,p]).filter(x=>x[1]>0);
   if(!SNAP_TF.includes(S.tf)){S.tf='4h';syncHeader()}
   const cs=S.tf==='1h'?fromCloses(pr):bucket(pr,TF[S.tf].ms);
   S.id=id;S.src='foto de '+fmtSnap;
   setAsset({mode:'live',key:'live:'+id,asset:m.sym,name:m.name,candles:cs,now:m.price});
   ls.set('asset',id);$('#sim').value='';$('#regen').hidden=true;
-  if(!S.live)setStatus(`Nenhuma fonte de preço no ar agora: foto de ${fmtSnap} com 7 dias (1h, 4h ou diário). Os outros tempos voltam junto com a rede.`);
+  if(!S.live)setStatus(`Preços ao vivo indisponíveis. Mostrando dados guardados em ${fmtSnap} (últimos 7 dias; tempos de 1h, 4h e diário).`);
 }
 function setStatus(t,err){const el=$('#status');el.textContent=t;el.classList.toggle('err',!!err)}
 
@@ -790,7 +790,7 @@ async function search(v){
     el.querySelectorAll('img').forEach(i=>i.onerror=()=>i.remove());
     el.querySelectorAll('button').forEach(b=>b.onclick=async()=>{const id=b.dataset.id;el.hidden=true;$('#q').value='';if(!S.watch.includes(id)){S.watch.unshift(id);ls.set('watch',S.watch)}S.wtab='fav';
       try{await fetchMarkets([id])}catch(e){}renderWatch();selectLive(id)});
-  }catch(e){setStatus(e.message,true)}
+  }catch(e){setStatus('Busca de tokens indisponível no momento. Tente de novo em instantes.',true)}
 }
 
 /* ---------- DCA ---------- */
@@ -976,9 +976,9 @@ async function ensureDaily(){
   if(CAL.key===S.key&&(CAL.ser||CAL.loading||CAL.err))return;
   CAL.key=S.key;CAL.ser=null;CAL.err=null;CAL.res=null;
   if(S.mode==='sim'){CAL.ser=S.candles.map(c=>[c.t,c.c]);CAL.src='exemplo simulado (velas de 4h)';calDefaults();renderAll();return}
-  if(!S.live){CAL.err='O DCA no tempo precisa do histórico diário, e nenhuma fonte de preço respondeu agora. Tente de novo em alguns minutos.';renderAll();return}
+  if(!S.live){CAL.err='O DCA no tempo precisa do histórico diário de preços, que está indisponível no momento. Tente de novo mais tarde.';renderAll();return}
   CAL.loading=true;renderAll();const key=S.key;
-  try{const r=await fetchDaily(S.id);if(CAL.key!==key)return;CAL.ser=r.ser;CAL.src=r.src}catch(e){if(CAL.key!==key)return;CAL.err=e.message||'Não consegui buscar o histórico diário.'}
+  try{const r=await fetchDaily(S.id);if(CAL.key!==key)return;CAL.ser=r.ser;CAL.src=r.src}catch(e){if(CAL.key!==key)return;CAL.err='O histórico diário está indisponível no momento. Tente de novo mais tarde.'}
   CAL.loading=false;calDefaults();renderAll();
 }
 function calDefaults(){
@@ -1130,7 +1130,7 @@ $('#phFetch').onclick=async()=>{
     if(!list.length){setHTML(el,`<div class="note">Nenhuma pool de ${esc(sym)} com mais de $50 mil na DeFi Llama.</div>`);return}
     setHTML(el,list.map((p,k)=>`<button class="poolbtn" data-k="${k}"><span>${esc(p.project)} · ${esc(p.chain)} · ${esc(p.symbol)}<br><small class="note">TVL ${fu(p.tvlUsd).replace(/,\d\d$/,'')}</small></span><b>${(p.apyBase??p.apy).toLocaleString('pt-BR',{maximumFractionDigits:1})}% a.a.</b></button>`).join(''));
     el.querySelectorAll('.poolbtn').forEach(b=>b.onclick=()=>{const p=list[+b.dataset.k];PHS.apr=+(p.apyBase??p.apy).toFixed(2);$('#phApr').value=fnum(PHS.apr);renderAll()});
-  }catch(e){setHTML(el,'<div class="note dn">Nenhuma fonte de pools respondeu agora. Digite o APR da posição à mão.</div>')}
+  }catch(e){setHTML(el,'<div class="note dn">Nenhuma fonte de pools está disponível no momento. Informe o APR da posição manualmente.</div>')}
 };
 
 /* ---------- replay ---------- */
@@ -1201,7 +1201,7 @@ $('#imgBtn').onclick=async()=>{
   const old=S.card,om=S.mouse;S.card=true;S.mouse=null;draw();const d=devicePixelRatio||1,band=38;
   const oc=document.createElement('canvas');oc.width=cv.width;oc.height=cv.height+band*d;const o=oc.getContext('2d');
   o.fillStyle=COL.bg;o.fillRect(0,0,oc.width,oc.height);o.setTransform(d,0,0,d,0,0);o.textBaseline='middle';
-  o.font='700 17px '+C('--f-display');o.fillStyle=COL.fg;const T1=TOOL==='pool'?'Estratégias de ':'Escada ',T2=TOOL==='pool'?'Pools de Liquidez':'· DCA e preço médio';o.fillText(T1,12,band/2);const w1=o.measureText(T1).width;o.fillStyle=COL.avg;o.fillText(T2,12+w1,band/2);
+  o.font='700 17px '+C('--f-display');o.fillStyle=COL.fg;const T1=TOOL==='pool'?'Estratégias de ':'Escada ',T2=TOOL==='pool'?'Pools de Liquidez':'· DCA e preço médio';o.fillText(T1,12,band/2);const w1=o.measureText(T1).width;o.fillText(T2,12+w1,band/2);
   o.font='13px '+FB;o.fillStyle=COL.muted;o.textAlign='right';o.fillText(`${S.asset} · ${new Date().toLocaleDateString('pt-BR')}`,W-12,band/2);
   o.setTransform(1,0,0,1,0,0);o.drawImage(cv,0,band*d);S.card=old;S.mouse=om;draw();
   const blob=await new Promise(r=>oc.toBlob(r,'image/png'));if(blob)await saveFile(`quadro-${String(S.asset).toLowerCase()}-${dstr(Date.now())}.png`,blob);
@@ -1247,10 +1247,10 @@ function setTab(t){if(TOOL==='pool')t='pool';else if(t==='pool')t='dca';S.tab=t;
 TABS.forEach(k=>$('#tab-'+k).onclick=()=>setTab(k));
 document.querySelectorAll('#tf button').forEach(b=>b.onclick=()=>{
   if(S.mode==='live'&&!S.live){
-    if(!SNAP_TF.includes(b.dataset.tf)){setStatus(`Sem fonte de preço no ar agora: só dá 1h, 4h e diário (foto de 7 dias). 15m e semanal voltam junto com a rede.`,true);return}
+    if(!SNAP_TF.includes(b.dataset.tf)){setStatus(`Sem preços ao vivo, só os tempos de 1h, 4h e diário estão disponíveis.`,true);return}
     S.tf=b.dataset.tf;ls.set('tf',S.tf);syncHeader();selectLive(S.id);return}
   S.tf=b.dataset.tf;ls.set('tf',S.tf);syncHeader();
-  if(S.mode==='live'&&S.id){const id=S.id;S.key='';S.pending=id;setStatus('Carregando…');fetchCandles(id,S.tf).then(({src,cs})=>{if(S.pending!==id)return;S.src=src;setAsset({key:'live:'+id,candles:cs},true);setStatus(`${src} · atualizado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`)}).catch(e=>setStatus(e.message,true))}
+  if(S.mode==='live'&&S.id){const id=S.id;S.key='';S.pending=id;setStatus('Carregando…');fetchCandles(id,S.tf).then(({src,cs})=>{if(S.pending!==id)return;S.src=src;setAsset({key:'live:'+id,candles:cs},true);setStatus(`${src} · atualizado ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`)}).catch(()=>setStatus('Não foi possível atualizar os preços agora. Tente de novo em instantes.',true))}
   else setStatus('Exemplos simulados usam velas de 4h. O tempo vale para ativos reais.')});
 $('#sim').onchange=()=>{const v=$('#sim').value;if(v)loadSim(v)};
 $('#regen').onclick=()=>{if(S.simKey)loadSim(S.simKey,(Math.random()*1e9)|0)};

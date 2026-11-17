@@ -138,7 +138,7 @@
     selicFonte = r.salvo ? 'valor guardado de ' + AtlasDados.quandoTexto(r.quando) + ', Banco Central fora do ar' : 'Banco Central, ' + d[0].data;
     if (!$('jz-resultado').hidden) calcular();
   }).catch(function () {
-    $('jz-cmp-nota').textContent = 'Não consegui buscar a Selic agora. A comparação com CDI e poupança volta quando o Banco Central responder.';
+    if (!selic) $('jz-cmp-nota').textContent = 'Não foi possível obter a Selic agora. A comparação com CDI e poupança volta quando o Banco Central responder.';
   });
 
   // eventos

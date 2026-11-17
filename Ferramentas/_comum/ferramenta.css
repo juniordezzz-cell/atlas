@@ -28,7 +28,7 @@ a{color:var(--accent)}
 .voltar{display:inline-block;color:var(--mut);text-decoration:none;font-size:13px;margin-bottom:10px}
 .voltar:hover{color:var(--txt)}
 .top h1{font-size:24px;margin:0;font-weight:700}
-.top h1 span{color:var(--accent)}
+.top h1 span{color:inherit} /* título numa cor só (15/11/2026) */
 .sub{color:var(--mut);margin:4px 0 0}
 .estudo{color:var(--mut2);font-size:12.5px;margin:6px 0 0}
 
@@ -53,8 +53,9 @@ a{color:var(--accent)}
 .acoes{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
 .btn{background:transparent;border:1px solid var(--line);color:var(--txt2);border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
 .btn:hover{border-color:var(--accent-line);color:var(--txt)}
-.btn--principal{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
-.btn--principal:hover{background:#4a7bf0;border-color:#4a7bf0;color:#fff}
+/* cor de ação única do ATLAS (ver themes/atlas-theme.css) */
+.btn--principal{background:#00BFFF;border-color:#00BFFF;color:#04121C;font-weight:600}
+.btn--principal:hover{background:#33CCFF;border-color:#33CCFF;color:#04121C}
 .btn--link{border:0;padding:4px 2px;color:var(--mut);text-decoration:underline;text-underline-offset:3px}
 .btn--link:hover{color:var(--txt)}
 

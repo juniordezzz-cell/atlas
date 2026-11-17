@@ -30,7 +30,7 @@
   function carregarToken(id, sym) {
     status('');
     return AtlasBuscaToken.mercado(id, sym).then(mostrarFicha)
-      .catch(function () { if (token) { token.preco = null; $('lc-ficha-preco').textContent = 'sem preço agora'; } status('Nenhuma fonte tem o preço deste token agora. Digite os preços à mão.'); });
+      .catch(function () { if (token) { token.preco = null; $('lc-ficha-preco').textContent = 'sem preço agora'; } status('Não foi possível obter o preço deste token agora. Digite os preços manualmente.'); });
   }
   AtlasBuscaToken.ligar({
     input: $('lc-busca'), lista: $('lc-sugestoes'), aoErro: status,

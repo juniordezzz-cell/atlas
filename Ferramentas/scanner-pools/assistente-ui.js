@@ -193,7 +193,7 @@
         const note=document.createElement('textarea');note.maxLength=800;note.rows=2;note.placeholder='O que deve melhorar? Este feedback não altera suas regras.';note.hidden=true;
         const send=el('button','sp-mini','Salvar avaliação');send.type='button';send.hidden=true;
         const msg=el('span','sp-mini-status',m.feedbackStatus||'');msg.setAttribute('role','status');
-        async function evaluate(rating,comment){useful.disabled=send.disabled=true;msg.textContent='Salvando…';try{await g.ScannerIA.avaliar({rating,question:m.question.slice(0,1200),answer:m.text.slice(0,2000),comment});m.feedbackStatus='Avaliação registrada.';msg.textContent=m.feedbackStatus;}catch(e){msg.textContent=e.message||'Falha ao salvar avaliação.';}finally{useful.disabled=send.disabled=false;}}
+        async function evaluate(rating,comment){useful.disabled=send.disabled=true;msg.textContent='Salvando…';try{await g.ScannerIA.avaliar({rating,question:m.question.slice(0,1200),answer:m.text.slice(0,2000),comment});m.feedbackStatus='Avaliação registrada.';msg.textContent=m.feedbackStatus;}catch(e){msg.textContent=(/fetch|network|load failed/i.test(String(e&&e.message))?'Sem conexão com o servidor agora. Tente de novo em instantes.':(e.message||'Não foi possível salvar a avaliação.'));}finally{useful.disabled=send.disabled=false;}}
         useful.onclick=()=>evaluate('util','');correct.onclick=()=>{note.hidden=send.hidden=false;note.focus();};send.onclick=()=>evaluate('corrigir',note.value);
         acoes.append(useful,correct,msg,note,send);body.append(acoes);
       }
@@ -255,7 +255,7 @@
       }
       messages.push(m);
       return m.text;
-    }catch(e){const text='Não consegui concluir a consulta. Tente novamente; nenhuma favorita ou decisão foi alterada.';messages.push({role:'assistant',text});return text;}finally{busy=false;persistir();render();}}
+    }catch(e){const text='Não foi possível concluir a consulta. Tente novamente; nenhuma favorita ou decisão foi alterada.';messages.push({role:'assistant',text});return text;}finally{busy=false;persistir();render();}}
     /* a cada minuto: a temporária vencida some (e a tela volta a uma nova) */
     setInterval(()=>{
       if(!CV||busy)return;

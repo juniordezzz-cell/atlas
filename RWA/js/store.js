@@ -10,11 +10,11 @@
 
   /* ---------- Regimes de mercado (core) ---------- */
   var REGIMES = {
-    riskon:  { id: "riskon",  label: "Risk-On", tag: "Tech Expansion",        cls: "regime-riskon" },
-    riskoff: { id: "riskoff", label: "Risk-Off", tag: "Hedge Mode",            cls: "regime-riskoff" },
-    liqexp:  { id: "liqexp",  label: "Liquidity Expansion", tag: "Easing",     cls: "regime-liqexp" },
-    liqcon:  { id: "liqcon",  label: "Liquidity Contraction", tag: "Tightening", cls: "regime-liqcon" },
-    trans:   { id: "trans",   label: "Transition Phase", tag: "Uncertain",     cls: "regime-trans" },
+    riskon:  { id: "riskon",  label: "Risk-on", tag: "Expansão em tecnologia",        cls: "regime-riskon" },
+    riskoff: { id: "riskoff", label: "Risk-off", tag: "Modo proteção",            cls: "regime-riskoff" },
+    liqexp:  { id: "liqexp",  label: "Expansão de liquidez", tag: "Afrouxamento",     cls: "regime-liqexp" },
+    liqcon:  { id: "liqcon",  label: "Contração de liquidez", tag: "Aperto", cls: "regime-liqcon" },
+    trans:   { id: "trans",   label: "Fase de transição", tag: "Incerto",     cls: "regime-trans" },
     /* Sem provedor de macro, o ATLAS não tem como afirmar regime
        nenhum. "Risk-On · Tech Expansion" era o valor fixo que vinha na
        semente e aparecia como KPI no Dashboard, com selo verde — uma

@@ -47,7 +47,7 @@
       espera = setTimeout(function () {
         AtlasDados.buscar(q).then(function (l) {
           itens = l; foco = -1; desenhar();
-          if (!l.length) erro('Não achei "' + q + '". Confira a sigla ou digite o preço à mão.');
+          if (!l.length) erro('Nenhum token encontrado para "' + q + '". Confira a sigla ou digite o preço manualmente.');
         });
       }, 250);
     });

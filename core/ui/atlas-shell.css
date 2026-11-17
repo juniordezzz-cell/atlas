@@ -1449,13 +1449,18 @@ html.atlas-moldura body { padding-left: var(--atm-w); transition: padding-left .
 .atm-ic { width: 19px; height: 19px; flex: none; }
 .atm-rot { white-space: nowrap; transition: opacity .15s ease; }
 
-.atm-topo { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 44px; margin-bottom: 8px; }
-.atm-marca { display: flex; align-items: center; gap: 10px; padding: 0 7px; color: var(--atm-texto); text-decoration: none; min-width: 0; }
-.atm-marca img { width: 30px; height: 30px; flex: none; object-fit: contain; }
-.atm-marca .atm-rot { font-weight: 700; font-size: 15px; letter-spacing: .18em; }
+/* Área da marca com 60 px de altura: assim o item "Dashboard" fica na
+   mesma linha do "Patrimônio Total" do painel principal (pedido do dono,
+   15/11/2026). Mexeu nesta altura? Confira o alinhamento no Dashboard. */
+.atm-topo { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 60px; margin-bottom: 8px; flex: none; }
+.atm-marca { display: flex; align-items: center; gap: 10px; padding: 0 2px; color: var(--atm-texto); text-decoration: none; min-width: 0; }
+.atm-marca img { width: 42px; height: 42px; flex: none; object-fit: contain; transition: width .22s ease, height .22s ease; }
+.atm-marca__txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.atm-marca__txt b { font-size: 21px; font-weight: 700; letter-spacing: .16em; line-height: 1; }
+.atm-marca__txt small { font: 500 10px/1.2 "Inter", "Segoe UI", system-ui, sans-serif; color: var(--atm-apagado); letter-spacing: .01em; white-space: nowrap; }
 .atm-alternar {
   display: grid; place-items: center;
-  width: 32px; height: 32px; flex: none;
+  width: 28px; height: 28px; flex: none;
   border: 1px solid var(--atm-linha); border-radius: 9px;
   background: transparent; color: var(--atm-apagado);
   cursor: pointer;
@@ -1513,7 +1518,10 @@ html.atlas-moldura body { padding-left: var(--atm-w); transition: padding-left .
   html.atlas-moldura:not([data-moldura="aberta"]) .atm-item kbd { width: 0; overflow: hidden; }
   html.atlas-moldura:not([data-moldura="aberta"]) .atm-marca { padding: 0; }
   html.atlas-moldura:not([data-moldura="aberta"]) .atm-marca .atm-rot { width: 0; overflow: hidden; }
-  html.atlas-moldura:not([data-moldura="aberta"]) .atm-topo { flex-direction: column; gap: 10px; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-topo { flex-direction: column; justify-content: center; gap: 6px; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-marca img { width: 36px; height: 36px; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-alternar { width: 28px; height: 22px; border-radius: 7px; }
+  html.atlas-moldura:not([data-moldura="aberta"]) .atm-alternar .atm-ic { width: 14px; height: 14px; }
   html.atlas-moldura:not([data-moldura="aberta"]) .atm-alternar { transform: rotate(180deg); }
   html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--atm-linha); }
   html.atlas-moldura:not([data-moldura="aberta"]) .atm-grupo__cab { display: none; }
@@ -1691,4 +1699,49 @@ html.atlas-moldura[data-moldura-mod="tools"] .wrap > header.topbar nav.tabs .tab
 }
 html.atlas-moldura[data-moldura-mod="tools"] .wrap > header.topbar nav.tabs .tab.on {
   background: var(--atm-acento-suave); color: var(--atm-acento); border-bottom-color: transparent;
+}
+
+/* ===================================================================
+   PRIMEIROS PASSOS (15/11/2026) — faixa das telas vazias
+   -------------------------------------------------------------------
+   Hold, DeFi, RWA e Trade, enquanto não há nenhum registro. O painel
+   continua inteiro e zerado (decisão do dono de 08/10/2026); esta
+   faixa só aponta o próximo passo e some depois do primeiro registro.
+   Marcação (cada módulo monta a sua):
+     <section class="atlas-passos">
+       <div class="atlas-passos__txt"><span class="atlas-passos__olho">…</span>
+         <h2>…</h2><p>…</p></div>
+       <button class="atlas-passos__acao">…</button>
+     </section>
+   =================================================================== */
+.atlas-passos {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  margin: 0 0 22px;
+  padding: 18px 22px;
+  border: 1px solid rgba(0, 191, 255, 0.28);
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(0, 191, 255, 0.09), rgba(0, 191, 255, 0.02));
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+.atlas-passos__txt { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.atlas-passos__olho {
+  font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--atlas-acao, #00BFFF);
+}
+.atlas-passos h2 { margin: 0; font-size: 17px; font-weight: 650; color: #E6F1FF; letter-spacing: 0; }
+.atlas-passos p { margin: 0; font-size: 13.5px; line-height: 1.5; color: rgba(230, 241, 255, 0.7); max-width: 72ch; }
+.atlas-passos__acao {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 18px;
+  border: 0; border-radius: 10px;
+  background: var(--atlas-acao, #00BFFF); color: var(--atlas-acao-tinta, #04121C);
+  font: inherit; font-size: 13.5px; font-weight: 700; white-space: nowrap;
+  text-decoration: none; cursor: pointer;
+}
+.atlas-passos__acao:hover { background: var(--atlas-acao-hover, #33CCFF); }
+.atlas-passos__acao:focus-visible { outline: 2px solid #00BFFF; outline-offset: 2px; }
+@media (max-width: 640px) {
+  .atlas-passos { flex-direction: column; align-items: stretch; padding: 16px; }
+  .atlas-passos__acao { justify-content: center; }
 }

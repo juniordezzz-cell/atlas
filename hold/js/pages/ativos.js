@@ -249,7 +249,7 @@
        mesma célula os três números se confundiam. */
     var cq = U.el("td", { class: "m-qtd num" });
     if (p) cq.appendChild(U.el("span", { text: fmtQtd(p.quantidade) }));
-    else cq.appendChild(U.el("span", { class: "dim", text: st === "watchlist" ? "watchlist" : "—" }));
+    else cq.appendChild(U.el("span", { class: "dim", text: st === "watchlist" ? "em observação" : "—" }));
     tr.appendChild(cq);
     var c2 = U.el("td", { class: "m-preco num" });
     c2.appendChild(U.el("span", { text: fmtPreco(a.preco_atual) }));
@@ -371,9 +371,9 @@
     view.appendChild(U.el("div", { class: "view-head" }, [
       U.el("div", { class: "row" }, [
         U.el("div", { class: "grow" }, [U.el("h1", { text: "Ativos" }),
-          U.el("p", { text: "Posições e watchlist para operar, e uma ficha por ativo." })]),
+          U.el("p", { text: "Posições e ativos em observação, e uma ficha por ativo." })]),
         botaoPrecos(),
-        U.button("Watchlist", { variant: "ghost", icon: "eye", onClick: F.newAsset }),
+        U.button("Observar ativo", { variant: "ghost", icon: "eye", onClick: F.newAsset }),
         U.button("Registrar compra", { variant: "primary", icon: "plus", onClick: function () { F.novaCompra(); } })
       ])
     ]));
@@ -384,7 +384,7 @@
     S.state.ativos.forEach(function (a) { porStatus[S.get.statusDe(a)]++; });
 
     var seg = U.el("div", { class: "segmented" });
-    [["all", "Todos"], ["invested", "Investidos"], ["watchlist", "Watchlist"], ["sold", "Vendidos"]].forEach(function (o) {
+    [["all", "Todos"], ["invested", "Investidos"], ["watchlist", "Em observação"], ["sold", "Vendidos"]].forEach(function (o) {
       var b = U.el("button", { class: filterState === o[0] ? "on" : "" });
       b.appendChild(document.createTextNode(o[1]));
       b.appendChild(U.el("span", { class: "seg-count", text: String(porStatus[o[0]] || 0) }));
@@ -448,14 +448,14 @@
         corpoMesa = U.el("div", {}, [corpoMesa, U.el("div", { class: "small dim mesa-aviso" }, [
           document.createTextNode("Variações de 24h e 7d indisponíveis agora. "), deNovo])]);
       }
-      var mesa = U.card({ eyebrow: "Ativos", title: "Posições e watchlist", body: [corpoMesa] });
+      var mesa = U.card({ eyebrow: "Ativos", title: "Posições e observação", body: [corpoMesa] });
       mesa.classList.add("col-7");
 
       /* ---- fichas: só posições abertas, seguindo a busca ---- */
       var corpoFichas;
       if (filterState === "watchlist" || filterState === "sold") {
         corpoFichas = U.el("div", { class: "small dim",
-          text: filterState === "watchlist" ? "Watchlist não tem ficha: ainda não há posição." : "Ativos vendidos não têm posição aberta." });
+          text: filterState === "watchlist" ? "Ativo em observação não tem ficha: ainda não há posição." : "Ativos vendidos não têm posição aberta." });
       } else {
         var abertas = S.get.walletPositions().filter(function (p) {
           return busca.some(function (a) { return a.id === p.ativo_id; });
@@ -489,7 +489,7 @@
     searchInput.addEventListener("input", function () { render(searchInput.value); });
     render(termoBusca);
 
-    return { title: "Ativos", crumb: "Posições e watchlist", node: view };
+    return { title: "Ativos", crumb: "Posições e observação", node: view };
   }
 
   /* Barra de peso na carteira dentro da célula de valor: "US$ 4.000" não

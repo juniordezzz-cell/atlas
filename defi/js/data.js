@@ -1974,8 +1974,11 @@
          arredondavam para 9 e 9, e o donut passava a mostrar uma
          distribuição que não é a dos dados. O arredondamento é
          trabalho da camada de exibição, não da de cálculo. */
+      /* As categorias ficam gravadas como "Lending"/"Yield" (o valor salvo
+         não muda); só o rótulo da legenda sai em português. */
+      var ROTULO_CAT = { Lending: "Empréstimos", Yield: "Rendimento" };
       var arr = Object.keys(map).map(function (k) {
-        return { label: k, value: map[k], color: colorOf(kind, k) };
+        return { label: kind === "category" ? (ROTULO_CAT[k] || k) : k, value: map[k], color: colorOf(kind, k) };
       }).sort(function (a, b) { return b.value - a.value; });
       var tot = arr.reduce(function (a, x) { return a + x.value; }, 0) || 1;
       arr.forEach(function (x) { x.pct = (x.value / tot) * 100; });

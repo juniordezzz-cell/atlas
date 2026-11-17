@@ -23,8 +23,8 @@
 
       if (/trade|opera|revis|encerr|parad|atras|tempo demais/.test(q)) {
         var tr = brain.reviewTrades();
-        if (!tr.length) return "Nenhum trade aberto exige revisão agora.";
-        return tr.length + " trade(s) para reavaliar: " +
+        if (!tr.length) return "Nenhuma operação aberta exige revisão agora.";
+        return tr.length + " operação(ões) para reavaliar: " +
           tr.map(function (t) { return t.asset + " " + t.side + " (" + u.dur(app.tradeAgeHours(t)) + ", " + u.pct(t.pnl) + ")"; }).join(", ") + ".";
       }
       if (/\brd\b|decis|registr/.test(q)) {
@@ -32,29 +32,29 @@
         var semTrade = rds.filter(function (r) { return r.decision === "entrar" && r.status !== "convertido"; });
         if (!rds.length) return "Nenhum Registro de Decisão na carteira " + w.name + " ainda.";
         return rds.length + " registro(s) de decisão na carteira " + w.name +
-          (semTrade.length ? "; " + semTrade.length + " com decisão de entrar ainda sem trade: " +
+          (semTrade.length ? "; " + semTrade.length + " com decisão de entrar ainda sem operação: " +
             semTrade.map(function (r) { return r.asset; }).join(", ") + "." : "; todos os de entrada já viraram trade.");
       }
       if (/desempenh|winrate|m[eé]tric|analytic|result|profit|lucro no per/.test(q)) {
         if (!ATLAS.metrics) return brain.summaryText();
         var m = ATLAS.metrics.summary();
-        if (!m.count) return "Ainda não há trades encerrados nesta carteira para calcular desempenho.";
+        if (!m.count) return "Ainda não há operações encerradas nesta carteira para calcular desempenho.";
         var pf = m.profitFactor === Infinity ? "∞" : m.profitFactor.toFixed(2);
         var first = ATLAS.metrics.insights()[0];
         return "Nesta carteira: winrate " + m.winrate + "%, profit factor " + pf + ", resultado líquido " + ATLAS.util.pct(m.net) +
-          " em " + m.count + " trades encerrados." + (first ? " " + first.text : "");
+          " em " + m.count + " operações encerradas." + (first ? " " + first.text : "");
       }
       if (/p[oó]s.?an[aá]lis|avalia|revis[aã]o de trade/.test(q)) {
         var pr = ATLAS.app.tradesAwaitingReview();
-        if (!pr.length) return "Nenhum trade encerrado sem pós-análise. Aprendizado em dia.";
-        return pr.length + " trade(s) encerrado(s) sem pós-análise: " +
+        if (!pr.length) return "Nenhuma operação encerrada sem pós-análise. Aprendizado em dia.";
+        return pr.length + " operação(ões) encerrada(s) sem pós-análise: " +
           pr.map(function (t) { return t.asset + " (" + ATLAS.util.pct(t.pnl) + ")"; }).join(", ") + ".";
       }
       if (/resum|evolu|como estou|banca|patrim/.test(q)) {
         return brain.summaryText();
       }
       // fallback com orientação
-      return "Posso responder sobre esta carteira: registros de decisão, trades a revisar, " +
+      return "Posso responder sobre esta carteira: registros de decisão, operações a revisar, " +
         "desempenho e o resumo da banca. Toque numa sugestão abaixo.";
     },
 
@@ -68,8 +68,8 @@
          sobre o depositado — o texto tinha de acompanhar, senão o
          número certo continua contando a história errada. */
       parts.push("Banca em " + u.money(app.balance()) + " (" + u.pct(chg) + " do depositado, realizado).");
-      if (tr) parts.push(tr + " trade(s) aguardando revisão.");
-      if (pr) parts.push(pr + " trade(s) aguardando pós-análise.");
+      if (tr) parts.push(tr + " operação(ões) aguardando revisão.");
+      if (pr) parts.push(pr + " operação(ões) aguardando pós-análise.");
       if (!tr && !pr) parts.push("Nenhuma pendência crítica — processo em dia.");
       return parts.join(" ");
     }
@@ -78,7 +78,7 @@
   var CHIPS = [
     { q: "Como estão meus registros de decisão?",      label: "Decisões" },
     { q: "Como está meu desempenho?",                    label: "Desempenho" },
-    { q: "Quais trades preciso revisar?",                label: "Revisar trades" }
+    { q: "Quais operações preciso revisar?",            label: "Revisar operações" }
   ];
 
   function el(html) { var d = document.createElement("div"); d.innerHTML = html; return d.firstElementChild; }

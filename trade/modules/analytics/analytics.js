@@ -32,7 +32,7 @@
     if (!s.count) {
       mount.innerHTML = '<div class="empty reveal"><div class="empty__glyph">' + u.icon("analytics", 30) + '</div>' +
         '<span class="eyebrow">Métricas</span><h2>Sem dados ainda</h2>' +
-        '<p>Encerre e faça a pós-análise de trades para o ATLAS medir seu desempenho e o Oráculo aprender com os dados.</p></div>';
+        '<p>Encerre e faça a pós-análise de operações para o ATLAS medir seu desempenho e o Oráculo aprender com os dados.</p></div>';
       return;
     }
 
@@ -57,7 +57,7 @@
     var pend = app.tradesAwaitingReview();
     var banner = pend.length ?
       '<div class="rd__banner">' + u.icon("alert", 16) + '<span>' + pend.length +
-      ' trade(s) encerrado(s) aguardando pós-análise. A avaliação alimenta as métricas.</span>' +
+      ' operação(ões) encerrada(s) aguardando pós-análise. A avaliação alimenta as métricas.</span>' +
       '<button class="btn btn--accent" data-open="' + pend[0].id + '">Analisar</button></div>' : "";
 
     // Insights (Oráculo)
@@ -78,20 +78,20 @@
 
     mount.innerHTML =
       '<div class="estudos">' +
-        '<div class="est__head reveal"><div><span class="eyebrow">Desempenho e aprendizado</span><h1>Analytics</h1></div></div>' +
+        '<div class="est__head reveal"><div><span class="eyebrow">Desempenho e aprendizado</span><h1>Análises</h1></div></div>' +
         banner +
         '<div class="an__kpis reveal">' +
-          kpi("Winrate", s.winrate + "%", s.wins + "V · " + s.losses + "D", s.winrate >= 50 ? "up" : "down") +
-          kpi("Profit factor", pf, "lucro / prejuízo", s.profitFactor >= 1.5 ? "up" : "") +
+          kpi("Taxa de acerto", s.winrate + "%", s.wins + "V · " + s.losses + "D", s.winrate >= 50 ? "up" : "down") +
+          kpi("Fator de lucro", pf, "lucro / prejuízo", s.profitFactor >= 1.5 ? "up" : "") +
           /* s.net é a SOMA DOS PERCENTUAIS dos trades encerrados — não
              um retorno de carteira. A soma só equivale ao retorno real
              se todas as posições tiverem o mesmo tamanho; com tamanhos
              diferentes, um +50% numa posição minúscula pesa igual a um
              −50% na maior. O rótulo diz o que o número é, em vez de
              deixar "Resultado líq." sugerir dinheiro. */
-          kpi("Resultado líq.", u.pct(s.net), "soma dos % por trade", netCls) +
-          kpi("Trades", String(s.count), "encerrados") +
-          kpi("Tempo médio", u.dur(Math.round(s.avgHoldH)), "por trade") +
+          kpi("Resultado líq.", u.pct(s.net), "soma dos % por operação", netCls) +
+          kpi("Operações", String(s.count), "encerradas") +
+          kpi("Tempo médio", u.dur(Math.round(s.avgHoldH)), "por operação") +
           kpi("Disciplina", s.reviewed ? s.avgDiscipline.toFixed(1) + "/5" : "—", s.reviewed + " avaliados") +
         '</div>' +
 
@@ -108,9 +108,9 @@
           '<div class="card"><div class="card__head"><span class="card__title">Long vs Short</span></div>' +
             '<div class="an__sides">' +
               '<div class="an__side"><span class="an__side-h">Long</span><b class="mono up">' + lw + '%</b>' +
-                '<span class="kpi__sub">' + L.n + ' trades · ' + u.pct(L.sum) + '</span></div>' +
+                '<span class="kpi__sub">' + L.n + ' operações · ' + u.pct(L.sum) + '</span></div>' +
               '<div class="an__side"><span class="an__side-h">Short</span><b class="mono ' + (sw >= 50 ? "up" : "down") + '">' + sw + '%</b>' +
-                '<span class="kpi__sub">' + S.n + ' trades · ' + u.pct(S.sum) + '</span></div>' +
+                '<span class="kpi__sub">' + S.n + ' operações · ' + u.pct(S.sum) + '</span></div>' +
               '<div class="an__side"><span class="an__side-h">Melhor / Pior</span><b class="mono"><span class="up">' + u.pct(s.best) + '</span> · <span class="down">' + u.pct(s.worst) + '</span></b>' +
                 '<span class="kpi__sub">aderência ao plano ' + s.adherenceRate + '%</span></div>' +
             '</div></div>' +
@@ -119,7 +119,7 @@
         '</div>' +
 
         '<div class="card reveal"><div class="card__head"><span class="card__title">Encerrados recentes</span>' +
-          '<button class="btn btn--ghost" data-go="trades">Ver trades</button></div>' +
+          '<button class="btn btn--ghost" data-go="trades">Ver operações</button></div>' +
           '<div class="list">' + recent + '</div></div>' +
       '</div>';
 
@@ -134,7 +134,7 @@
     });
   }
 
-  ATLAS.router.register("analytics", { label: "Analytics", icon: "analytics", render: render });
+  ATLAS.router.register("analytics", { label: "Análises", icon: "analytics", render: render });
 
   ATLAS.app.subscribe(function () {
     if (ATLAS.router.current() === "analytics" && mountRef) render(mountRef);

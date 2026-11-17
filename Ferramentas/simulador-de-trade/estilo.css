@@ -40,7 +40,7 @@ a:hover{text-decoration:underline}
 .hero{padding:40px 0 14px;animation:fadeUp .5s ease both}
 .hero .eyebrow{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ciano);font-weight:600}
 .hero h1{font-size:1.9rem;font-weight:700;letter-spacing:-.02em;margin:.5rem 0 .4rem;line-height:1.2}
-.hero h1 span{color:var(--verde)}
+.hero h1 span{color:inherit}
 .hero p{color:var(--muted);font-size:.95rem;max-width:680px}
 
 /* ===== Selo PRO ===== */

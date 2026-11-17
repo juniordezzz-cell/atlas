@@ -28,7 +28,7 @@
     if (!points || points.length < 2) {
       var empty = document.createElement("div");
       empty.className = "chart-empty";
-      empty.textContent = "indisponível";
+      empty.textContent = "Dados indisponíveis no momento.";
       container.appendChild(empty);
       return;
     }
@@ -83,7 +83,7 @@
     while (container.firstChild) container.removeChild(container.firstChild);
     var total = 0;
     (segments || []).forEach(function (s) { total += Math.max(0, s.value || 0); });
-    if (!total) { var e = document.createElement("div"); e.className = "chart-empty"; e.textContent = "indisponível"; container.appendChild(e); return; }
+    if (!total) { var e = document.createElement("div"); e.className = "chart-empty"; e.textContent = "Dados indisponíveis no momento."; container.appendChild(e); return; }
 
     var size = 180, cx = size / 2, cy = size / 2, r = 68, rin = 44;
     var svg = el("svg", { viewBox: "0 0 " + size + " " + size, width: "100%", height: "100%" });

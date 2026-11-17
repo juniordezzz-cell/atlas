@@ -33,12 +33,12 @@
       vazioTxt: "Registre o que você tem rendendo — o capital sai do caixa da carteira e volta quando você encerrar."
     },
     lending: {
-      titulo: "Lending", eyebrow: "Empréstimo",
+      titulo: "Empréstimos", eyebrow: "Empréstimo",
       taxa: "APY", campoTaxa: "apy",
       rendimento: "Juros", rendimentoSing: "juros",
       kpiTotal: "Total Fornecido", icone: "lend", acento: "cyan",
-      novo: "Nova posição de lending",
-      vazio: "Nenhuma posição de lending",
+      novo: "Nova posição de empréstimo",
+      vazio: "Nenhuma posição de empréstimo",
       vazioTxt: "Registre o que você forneceu — o capital sai do caixa da carteira e volta quando você encerrar."
     }
   };
