@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" role="img" aria-label="">
+  <!-- Arte PROVISÓRIA do Simulador de Pools (17/11/2026), até a capa definitiva. -->
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1440"/><stop offset=".55" stop-color="#0d1530"/><stop offset="1" stop-color="#0a1122"/>
+    </linearGradient>
+    <radialGradient id="brilho" cx=".55" cy=".28" r=".55">
+      <stop offset="0" stop-color="#b197fc" stop-opacity=".45"/><stop offset="1" stop-color="#b197fc" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="faixa" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b197fc" stop-opacity=".34"/><stop offset="1" stop-color="#7c5cf0" stop-opacity=".16"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="800" fill="url(#fundo)"/>
+  <rect width="600" height="800" fill="url(#brilho)"/>
+  <g stroke="#ffffff" stroke-opacity=".06">
+    <path d="M0 120H600M0 200H600M0 280H600M0 360H600"/>
+  </g>
+  <rect x="0" y="150" width="600" height="150" fill="url(#faixa)"/>
+  <path d="M0 150H600M0 300H600" stroke="#c9b8ff" stroke-width="3" stroke-dasharray="14 9"/>
+  <g stroke-width="3">
+    <path d="M60 110V190M110 150V250M160 170V270M210 120V230M260 200V320M310 180V280M360 140V240M410 100V200M460 130V220M510 90V180" stroke="#9aa6c4" stroke-opacity=".7"/>
+  </g>
+  <g>
+    <rect x="50" y="125" width="20" height="50" rx="3" fill="#2ec785"/>
+    <rect x="100" y="170" width="20" height="60" rx="3" fill="#f0556a"/>
+    <rect x="150" y="190" width="20" height="55" rx="3" fill="#f0556a"/>
+    <rect x="200" y="140" width="20" height="70" rx="3" fill="#2ec785"/>
+    <rect x="250" y="220" width="20" height="75" rx="3" fill="#f0556a"/>
+    <rect x="300" y="195" width="20" height="60" rx="3" fill="#2ec785"/>
+    <rect x="350" y="160" width="20" height="55" rx="3" fill="#2ec785"/>
+    <rect x="400" y="120" width="20" height="60" rx="3" fill="#2ec785"/>
+    <rect x="450" y="150" width="20" height="50" rx="3" fill="#f0556a"/>
+    <rect x="500" y="105" width="20" height="55" rx="3" fill="#2ec785"/>
+  </g>
+  <path d="M40 380 C140 360, 200 330, 290 320 S470 280, 560 250" fill="none" stroke="#b197fc" stroke-width="5" stroke-linecap="round"/>
+  <path d="M40 380 C140 372, 230 352, 320 350 S480 330, 560 318" fill="none" stroke="#8a94a8" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 10"/>
+  <circle cx="560" cy="250" r="9" fill="#b197fc"/>
+</svg>

@@ -1,15 +1,34 @@
-/* Simulador de Pool (17/11/2026) — aba do Scanner no esqueleto das
-   Estratégias: pools do par | gráfico da pool com a faixa | simulação.
-   Registro: docs/scanner-pools-2026-09-26.md (seção Simulador). */
-#tab-sim{max-width:1380px; margin:0 auto}
-.sim-grade{display:grid; grid-template-columns:minmax(220px,260px) minmax(0,1fr) minmax(300px,360px); gap:12px; align-items:start}
+/* Simulador de Pools de Liquidez — ferramenta própria (17/11/2026).
+   Três colunas: pools | gráfico + tabelas | simulação. Tela inteira.
+   Registro: docs/simulador-de-pool-2026-11-17.md */
+:root{--bg:#0a0e17; --panel:rgba(14,20,34,.92); --panel2:#141c2e; --txt:#e6ecf5; --mut:#8a97ad; color-scheme:dark}
+html,body{margin:0}
+body{background:var(--bg); color:var(--txt); font-family:Inter,"Segoe UI",system-ui,sans-serif; font-size:14px}
+*{box-sizing:border-box}
+a{color:#7ea6ff}
+.sim-app{display:flex; flex-direction:column; gap:12px; padding-block:14px 28px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sim-topo{display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:6px 18px; align-items:center}
+.sim-voltar{color:var(--mut); text-decoration:none; font-size:13px; white-space:nowrap}
+.sim-voltar:hover{color:var(--txt)}
+.sim-titulo h1{margin:0; font-size:22px; font-weight:700; letter-spacing:-.01em}
+.sim-titulo p{margin:2px 0 0; color:var(--mut); font-size:13px; max-width:90ch}
+.sim-topo-dir{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+.sim-estudo{grid-column:1/-1; margin:0; color:#5d6a80; font-size:12px}
+.sim-grade{display:grid; grid-template-columns:minmax(230px,270px) minmax(0,1fr) minmax(320px,390px); gap:12px; align-items:start}
+.sim-meio section:empty{display:none}
+.sim-meio section{display:flex; flex-direction:column; gap:8px}
+.sim-passos{margin:0; padding-left:18px; color:var(--mut); line-height:1.6; display:grid; gap:4px}
+.sim-tag{font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:2px 6px; border-radius:6px; background:rgba(46,199,133,.15); color:#2ec785; margin-left:4px}
+.pend{color:#f5b942}
 .sim-col{background:var(--panel); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px; min-width:0}
+@media (min-width:1101px){.sim-esq{position:sticky; top:12px}}
 .sim-col h3{margin:0; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--mut); font-weight:600}
 .sim-busca,.sim-campos input{background:var(--panel2); border:1px solid rgba(148,170,215,.16); border-radius:8px; color:var(--txt); font:inherit; outline:none}
 .sim-busca:focus,.sim-campos input:focus{border-color:#5b8cff}
 .sim-campos input:disabled{opacity:.75; color:var(--mut)}
 .sim-busca{width:100%; box-sizing:border-box; padding:8px 10px; font-size:13px}
-.sim-lista{display:flex; flex-direction:column; gap:3px; max-height:560px; overflow:auto}
+.sim-lista{display:flex; flex-direction:column; gap:3px; max-height:calc(100vh - 290px); min-height:240px; overflow:auto}
 .sim-pool{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 8px; text-align:left; background:transparent; border:1px solid transparent; border-radius:9px; padding:7px 9px; color:var(--txt); cursor:pointer}
 .sim-pool:hover,.sim-pool:focus-visible{background:rgba(148,170,215,.08)}
 .sim-pool.on{border-color:#5b8cff; background:rgba(91,140,255,.10)}
@@ -22,7 +41,7 @@
 .sim-cab b{font-size:16px}
 .sim-cab span{font-size:12px; color:var(--mut)}
 .sim-cab a,.sim-nota a{font-size:12px; color:#7ea6ff}
-.sim-chart{position:relative; height:360px; border-radius:10px; background:var(--panel2); overflow:hidden; touch-action:none}
+.sim-chart{position:relative; height:clamp(380px,56vh,640px); border-radius:10px; background:var(--panel2); overflow:hidden; touch-action:none}
 .sim-chart canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
 .sim-seg{display:inline-flex; flex-wrap:wrap; gap:2px; padding:3px; border-radius:10px; background:var(--panel2)}
 .sim-seg button{background:transparent; border:0; color:var(--mut); border-radius:7px; padding:5px 10px; font-size:12.5px; font-weight:600; cursor:pointer}
@@ -47,9 +66,9 @@
 .sim-btn{background:var(--panel2); border:1px solid rgba(148,170,215,.18); color:var(--txt); border-radius:9px; padding:7px 11px; font-size:12.5px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px}
 .sim-btn:hover{border-color:#b197fc}
 .sim-btn.prim{border-color:#5b8cff}
-.sim-mini{width:100%; height:150px; display:block; border-radius:10px; background:var(--panel2)}
+.sim-mini{width:100%; height:170px; display:block; border-radius:10px; background:var(--panel2)}
 .sim-rank{width:100%; border-collapse:collapse; font-size:12.5px; font-variant-numeric:tabular-nums}
-.sim-rank th,.sim-rank td{padding:7px 8px; border-bottom:1px solid #161e2b; text-align:right}
+.sim-rank th,.sim-rank td{padding:7px 8px; border-bottom:1px solid #161e2b; text-align:right; white-space:nowrap}
 .sim-rank th:first-child,.sim-rank td:first-child{text-align:left}
 .sim-rank th{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--mut); font-weight:600}
 .sim-rank tr.on td{background:rgba(91,140,255,.08)}
@@ -59,9 +78,13 @@
 @media (max-width:1100px){
   .sim-grade{grid-template-columns:minmax(0,1fr) minmax(280px,340px)}
   .sim-grade>.sim-esq{grid-column:1/-1}
-  .sim-esq .sim-lista{max-height:220px}
+  .sim-esq .sim-lista{max-height:240px; min-height:0}
 }
 @media (max-width:760px){
   .sim-grade{grid-template-columns:1fr}
-  .sim-chart{height:280px}
+  .sim-chart{height:300px}
+  .sim-topo{grid-template-columns:1fr}
+  .sim-topo-dir{justify-content:flex-start}
+  /* o botão do menu do site fica no canto: o topo abre espaço para ele */
+  html.atlas-moldura .sim-topo{padding-left:46px}
 }

@@ -206,6 +206,10 @@ Pedido do dono: o Supabase fica só com o Scanner Pools e o Estúdio de Agentes 
 
 ## Simulador de Pool (17/11/2026)
 
+> **Atualização do mesmo dia:** o Simulador saiu do Scanner e virou ferramenta própria em
+> `Ferramentas/simulador-de-pool/` (registro: [simulador-de-pool-2026-11-17.md](simulador-de-pool-2026-11-17.md)).
+> O Scanner ficou só com o link de simular em cada linha. O texto abaixo descreve a versão em aba.
+
 Pedido do dono: um simulador "no nível da Metrix Finance", para saber em qual
 plataforma montar a pool. As Estratégias de Pools ensinam o conceito, e o
 Simulador usa a pool real. Proposta aprovada: Layout A (aba no Scanner, três

@@ -722,7 +722,6 @@
   <script src="../../core/atlas-secure.js"></script>
 <link rel="stylesheet" href="assistente.css?v=oraculo-20">
 <link rel="stylesheet" href="battle-pools.css?v=btl-1">
-<link rel="stylesheet" href="simulador.css?v=sim-2">
 <!-- Cenário de fundo do ATLAS (piloto 15/10/2026, Paper Shaders).
      Registro: docs/visual-ferramentas-2026-10-15.md -->
 <link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
@@ -743,7 +742,6 @@
       <button class="tab on" data-tab="dash" onclick="switchTab('dash')">Descobrir</button>
       <button class="tab" data-tab="hist" onclick="switchTab('hist')">Radar<span class="tabbadge" id="radarBadge" style="display:none"></span></button>
       <button class="tab" data-tab="battle" onclick="switchTab('battle')">Comparar pools</button>
-      <button class="tab" data-tab="sim" onclick="switchTab('sim')">Simulador</button>
       <button class="tab" data-tab="mine" onclick="switchTab('mine')">Minhas pools</button>
       <button class="tab" data-tab="assistente" onclick="switchTab('assistente')">Oráculo</button>
       <button class="tab" data-tab="learn" onclick="switchTab('learn')">Guia</button>
@@ -842,9 +840,6 @@
   <!-- Battle Pools: duas pools lado a lado; desenhada por battle-pools.js (11/10/2026) -->
   <section id="tab-battle" style="display:none"></section>
 
-  <!-- Simulador de Pool: pool real + faixa + teste no histórico + qual plataforma rende mais;
-       desenhado por simulador.js (17/11/2026) -->
-  <section id="tab-sim" style="display:none"></section>
   <section id="tab-mine" style="display:none">
     <div class="scan-hero">
       <h2>Minhas pools</h2>
@@ -1367,7 +1362,7 @@
 <script src="../../defi/js/data.js"></script>
 <!-- pools do coletor (visões scanner_* no Supabase) -->
 <script src="../../core/atlas-supabase-config.js"></script>
-<script src="servidor.js?v=sim-1"></script>
+<script src="servidor.js?v=sim-2"></script>
 <script src="assistente-dados.js?v=oraculo-17"></script>
 <script src="assistente-api.js?v=oraculo-17"></script>
 <script src="assistente-conversa.js?v=oraculo-17"></script>
@@ -1980,7 +1975,7 @@ function rowHTML(p, rank){
         ${p.servidor ? "" : `<button class="iconbtn" onclick="openForm(${idx})" title="Editar esta pool" aria-label="Editar esta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>`}
         <button class="iconbtn" onclick="goToHistory(${p.id})" title="Ver o histórico desta pool" aria-label="Ver o histórico desta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg></button>
         <button class="iconbtn" onclick="BattlePools.adicionar(${p.id})" title="Comparar esta pool com outra" aria-label="Comparar esta pool com outra">⚔</button>
-        <button class="iconbtn" onclick="SimuladorPool.abrir(${p.id})" title="Simular uma posição nesta pool" aria-label="Simular uma posição nesta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 3 8-8"/><path d="M3 21h18"/></svg></button>
+        ${p.servidor && p.sid ? `<a class="iconbtn" href="../simulador-de-pool/index.html?pool=${esc(encodeURIComponent(p.sid))}" title="Simular uma posição nesta pool (Simulador de Pools)" aria-label="Simular uma posição nesta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 3 8-8"/><path d="M3 21h18"/></svg></a>` : ""}
         ${tokenBtns(p)}
       </span>
     </td>
@@ -3206,16 +3201,14 @@ function switchTab(t){
   document.getElementById("tab-mine").style.display  = (t==="mine") ? "" : "none";
   document.getElementById("tab-hist").style.display  = (t==="hist") ? "" : "none";
   document.getElementById("tab-battle").style.display = (t==="battle") ? "" : "none";
-  document.getElementById("tab-sim").style.display = (t==="sim") ? "" : "none";
   document.getElementById("tab-learn").style.display = (t==="learn")? "" : "none";
   document.getElementById("tab-assistente").style.display = t==="assistente" ? "" : "none";
-  document.querySelector(".wrap").classList.toggle("wrap-larga", t==="dash" || t==="sim");
+  document.querySelector(".wrap").classList.toggle("wrap-larga", t==="dash");
   document.querySelector(".wrap").dataset.aba = t;   // o rodapé acompanha a largura da aba (visual-cenario.css)
   if(scannerChat) scannerChat.abaAtiva(t);
   document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===t));
   if(t==="hist") renderRadar();
   if(t==="battle" && window.BattlePools) BattlePools.render();
-  if(t==="sim" && window.SimuladorPool) SimuladorPool.render();
   if(t==="mine") renderMinhas();
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -3243,23 +3236,7 @@ window.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 <script src="battle-pools.js?v=btl-1"></script>
-<script src="simulador.js?v=sim-2"></script>
-<script>
-/* ?simular=SOL (vem do botão "Simulador de pool" das Estratégias): abre o
-   Simulador já filtrado pelo token, assim que as pools do Scanner chegarem. */
-(function(){
-  var q = new URLSearchParams(location.search).get("simular");
-  if(!q || !window.SimuladorPool) return;
-  var token = String(q).toUpperCase().replace(/[^A-Z0-9\/\-]/g,"").slice(0,24);
-  if(!token) return;
-  function tentar(n){
-    var ok = false; try { ok = Array.isArray(state.pools) && state.pools.some(function(p){ return p.servidor; }); } catch(e){}
-    if(ok || n<=0){ switchTab("sim"); SimuladorPool.buscar(token); return; }
-    setTimeout(function(){ tentar(n-1); }, 500);
-  }
-  window.addEventListener("load", function(){ tentar(30); });
-})();
-</script>
+
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

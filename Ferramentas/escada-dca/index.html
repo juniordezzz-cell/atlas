@@ -400,7 +400,7 @@ body[data-tool="pool"] .cmpp{border-color:var(--pool)}
         </div>
 
         <div class="pane" id="pane-pool" hidden>
-          <a class="simbtn" id="simLink" href="../scanner-pools/index.html"><span><b>Simulador de pool</b><small>Ache a pool real de um token e veja em qual plataforma ela está</small></span><span aria-hidden="true">→</span></a>
+          <a class="simbtn" id="simLink" href="../simulador-de-pool/index.html"><span><b>Simulador de pool</b><small>Monte esta ideia numa pool real e veja em qual plataforma rende mais</small></span><span aria-hidden="true">→</span></a>
           <button class="cmpgo" id="poolCmpOpen" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>Pool × Segurar: quem ganha?</button>
           <h3 class="passo"><i>1</i>O que você quer fazer?</h3>
           <div class="sub" id="pStrat">
@@ -1174,7 +1174,7 @@ function tipoPar(){const A=String(S.asset||'').toUpperCase(),B=$('#parB').value;
   return BLUE.test(A)?'bb':'pb'}
 function renderPar(){if(TOOL!=='pool')return;const A=String(S.asset||'—').toUpperCase(),B=$('#parB').value;$('#parA').textContent=A;
   /* o Simulador do Scanner abre já filtrado pelo token (e pelo par, se o segundo for um token de verdade) */
-  const qs=STABLES.test(B)||/^(SOL|ETH|BTC)$/.test(B)?A+'/'+B:A;$('#simLink').href='../scanner-pools/index.html?simular='+encodeURIComponent(S.mode==='sim'?'':qs);
+  const qs=STABLES.test(B)||/^(SOL|ETH|BTC)$/.test(B)?A+'/'+B:A;$('#simLink').href='../simulador-de-pool/index.html?simular='+encodeURIComponent(S.mode==='sim'?'':qs);
   const t=TIPOS[tipoPar()],el=$('#ptipo');el.className='ptipo '+t[0];
   const igual=!/^(rwa|deriv)$/.test(B)&&A===B;
   let extra='';
