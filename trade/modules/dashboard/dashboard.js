@@ -138,6 +138,20 @@
       '<div class="list">' + body + '</div></div>';
   }
 
+  /* Primeiros passos (15/11/2026): sem nenhum registro de decisão nem
+     operação, o painel continua inteiro e zerado e ganha só esta faixa.
+     Estilo em core/ui/atlas-shell.css. */
+  function passosCard() {
+    var app = ATLAS.app;
+    if ((app.rds() || []).length || (app.trades() || []).length) return "";
+    return '<section class="atlas-passos reveal"><div class="atlas-passos__txt">' +
+      '<span class="atlas-passos__olho">Primeiros passos</span>' +
+      '<h2>Registre sua primeira decisão</h2>' +
+      '<p>Toda operação começa num registro de decisão: o ativo, a tese, a entrada e o plano de saída. ' +
+      'Aprovada a entrada, ela vira operação e o painel passa a medir banca, taxa de acerto e resultado.</p></div>' +
+      '<button class="atlas-passos__acao" type="button" data-passos>Novo registro de decisão</button></section>';
+  }
+
   function render(mount) {
     mountRef = mount;
     mount.innerHTML =
@@ -147,6 +161,7 @@
           '<h1>Estado atual</h1></div>' +
           '<button class="btn" data-oraculo>' + ATLAS.util.icon("spark", 16) + ' Perguntar ao Oráculo</button>' +
         '</div>' +
+        passosCard() +
         oraculoSummaryCard() +
         '<div class="dash__top">' + bancaCard() + kpisBlock() + '</div>' +
         '<div class="dash__row">' + tradesCard() + alertsCard() + '</div>' +
@@ -156,6 +171,16 @@
     mount.querySelectorAll("[data-go]").forEach(function (b) {
       b.addEventListener("click", function () {
         ATLAS.router.go(b.dataset.go);
+      });
+    });
+    mount.querySelectorAll("[data-passos]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        ATLAS.router.go("rd");
+        /* abre direto o formulário de novo registro */
+        setTimeout(function () {
+          var novo = document.querySelector("[data-new]");
+          if (novo) novo.click();
+        }, 60);
       });
     });
     mount.querySelectorAll("[data-oraculo]").forEach(function (b) {

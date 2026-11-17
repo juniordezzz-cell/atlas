@@ -46,7 +46,7 @@
       espera = setTimeout(function () {
         AtlasHttp.getJSON(API + '/search?query=' + encodeURIComponent(q), { ttl: 300000 }).then(function (d) {
           itens = ((d && d.coins) || []).slice(0, 8); foco = -1; desenhar();
-        }).catch(function (e) { erro('Busca indisponível agora (' + e.message + ').'); });
+        }).catch(function (e) { erro('Busca de tokens indisponível no momento. Tente de novo em instantes.'); });
       }, 350);
     });
     inp.addEventListener('keydown', function (ev) {

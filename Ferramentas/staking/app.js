@@ -102,7 +102,7 @@
       AtlasBuscaToken.mercado(t.id).then(function (m) {
         $('sk-preco').value = C.numeroCampo(m.preco);
         status('Preço de hoje: ' + usd(m.preco) + '.'); calcular();
-      }).catch(function (e) { status('Não consegui buscar o preço (' + e.message + '). Digite o preço à mão.'); });
+      }).catch(function (e) { status('Não foi possível buscar o preço agora. Digite o preço manualmente.'); });
     }
   });
 

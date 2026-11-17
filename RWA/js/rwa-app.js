@@ -568,6 +568,14 @@
           ' <button class="rbtn rbtn-primary" id="btnAdd">+ Adicionar ativo</button></div>' +
       '</div>' +
 
+      /* Primeiros passos (15/11/2026): o painel continua inteiro e zerado,
+         só ganha esta faixa enquanto não há ativo. Estilo em atlas-shell.css. */
+      (hasAssets ? '' :
+        '<section class="atlas-passos"><div class="atlas-passos__txt"><span class="atlas-passos__olho">Primeiros passos</span>' +
+        '<h2>Registre seu primeiro ativo do mundo real</h2>' +
+        '<p>Títulos públicos, ações e imóveis tokenizados. Informe o ativo, o valor investido e o preço atual; o painel calcula resultado, risco e alocação.</p></div>' +
+        '<button class="atlas-passos__acao" type="button" id="btnPassos">Adicionar ativo</button></section>') +
+
       '<div class="grid g-4">' +
         UI.kpi({ k: "Valor do portfólio", v: U.money0(k.total), icon: "wallet", foot: U.delta(k.pnlPct) + '<span class="sub"> retorno total</span>' }) +
         UI.kpi({ k: "Resultado", v: U.signed(k.pnlAbs), icon: "trend", accent: k.pnlAbs >= 0 ? "apos" : "", foot: '<span class="sub">custo vs. atual</span>' }) +
@@ -580,7 +588,7 @@
             UI.panel("Alocação por classe", '<div class="donut-flex"><div class="chart-box donut-hold" style="height:160px"><canvas id="chartClass"></canvas><div class="donut-center"><div class="dc-v">' + byClass.length + '</div><div class="dc-k">classes</div></div></div>' + UI.legend(byClass) + '</div>', '', "Asset Class") +
             UI.panel("Alocação por setor", '<div class="donut-flex"><div class="chart-box donut-hold" style="height:160px"><canvas id="chartSector"></canvas><div class="donut-center"><div class="dc-v">' + bySector.length + '</div><div class="dc-k">setores</div></div></div>' + UI.legend(bySector) + '</div>', '', "Sector") +
           '</div>'
-        : '<div class="section">' + UI.panel("Portfólio", UI.empty({ icon: "portfolio", title: "Nenhum ativo ainda", text: 'Clique em "+ Adicionar ativo" para registrar sua primeira posição RWA.' }), '', "Começar") + '</div>') +
+        : '<div class="section">' + UI.panel("Portfólio", UI.empty({ icon: "portfolio", title: "Nenhum ativo ainda", text: "Os ativos registrados aparecem aqui, com valor, resultado e peso na carteira." }), '', "Portfólio") + '</div>') +
 
       '<div class="section">' +
         /* A curva é MEDIDA, um ponto por dia em que o módulo é aberto.
@@ -613,6 +621,7 @@
       '</div>';
 
     U.qs("#btnAdd").addEventListener("click", function () { openAssetModal(); });
+    if (U.qs("#btnPassos")) U.qs("#btnPassos").addEventListener("click", function () { openAssetModal(); });
     var btnP = U.qs("#btnPrecos");
     if (btnP) btnP.addEventListener("click", function () { atualizarPrecos(btnP); });
 

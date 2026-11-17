@@ -41,9 +41,9 @@
     var body = h("div","hpanel-body");
     p.appendChild(head); p.appendChild(body);
     p.setState=function(n){ while(body.firstChild)body.removeChild(body.firstChild); body.appendChild(n); };
-    p.loading=function(){ p.setState(h("div","hloading","carregando…")); };
-    p.unavailable=function(retry){ var b=h("div","hempty"); b.appendChild(h("span",null,"indisponível"));
-      var r=h("button","hretry","tentar de novo"); r.type="button"; r.addEventListener("click",retry); b.appendChild(r); p.setState(b); };
+    p.loading=function(){ p.setState(h("div","hloading","Carregando…")); };
+    p.unavailable=function(retry){ var b=h("div","hempty"); b.appendChild(h("span",null,"Dados indisponíveis no momento."));
+      var r=h("button","hretry","Tentar de novo"); r.type="button"; r.addEventListener("click",retry); b.appendChild(r); p.setState(b); };
     p.loading();
     return p;
   }

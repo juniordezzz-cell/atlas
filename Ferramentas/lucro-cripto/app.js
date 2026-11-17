@@ -29,7 +29,7 @@
   function carregarToken(id) {
     status('');
     return AtlasBuscaToken.mercado(id).then(mostrarFicha)
-      .catch(function (e) { status('Não consegui buscar o preço agora (' + e.message + '). Digite os preços à mão.'); });
+      .catch(function (e) { status('Não foi possível buscar o preço agora. Digite os preços manualmente.'); });
   }
   AtlasBuscaToken.ligar({
     input: $('lc-busca'), lista: $('lc-sugestoes'), aoErro: status,

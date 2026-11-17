@@ -90,7 +90,7 @@
     }).catch(function (err) {
       if (minha !== seq) return;
       fecharSugestoes();
-      aviso((err && err.message) || "Não consegui buscar agora. Tente em instantes.");
+      aviso("Busca de tokens indisponível no momento. Tente de novo em instantes.");
     });
   }
 
@@ -126,8 +126,8 @@
     $("bt-busca").value = "";
     var sim = String(s.symbol || "").toUpperCase();
     var repetido = estado.itens.some(function (i) { return i.id === s.id || (sim && String(i.symbol).toUpperCase() === sim); });
-    if (repetido) { aviso(sim + " já está na batalha."); return; }
-    if (estado.itens.length >= MAX) { aviso("A batalha tem no máximo " + MAX + " tokens. Tire um para colocar outro."); return; }
+    if (repetido) { aviso(sim + " já está na comparação."); return; }
+    if (estado.itens.length >= MAX) { aviso("A comparação aceita no máximo " + MAX + " tokens. Remova um para incluir outro."); return; }
     aviso("");
     var item = { id: s.id, symbol: s.symbol || "", name: s.name || "", fonte: s.fonte || "coingecko", alvoProprio: "", coin: null, erro: null };
     estado.itens.push(item);
@@ -171,7 +171,7 @@
   }
 
   function termoB(id, rotulo) {
-    return '<a class="termo" href="#gb-' + id + '" title="O que é isso? Ver no dicionário">' + rotulo + "</a>";
+    return '<a class="termo" href="#gb-' + id + '" title="O que é isso? Ver no glossário">' + rotulo + "</a>";
   }
 
   function renderFichas() {
@@ -181,10 +181,10 @@
         : !i.coin ? '<span class="bt-ficha__st">carregando…</span>' : "";
       return '<span class="bt-ficha">' + A.iconeHTML(c.name || i.name, c.symbol || i.symbol, c.image) +
         "<b>" + esc(c.symbol || i.symbol) + "</b>" + status +
-        '<button type="button" class="bt-ficha__x" data-remover="' + esc(i.id) + '" aria-label="Tirar ' + esc(c.symbol || i.symbol) + ' da batalha">×</button></span>';
+        '<button type="button" class="bt-ficha__x" data-remover="' + esc(i.id) + '" aria-label="Remover ' + esc(c.symbol || i.symbol) + ' da comparação">×</button></span>';
     }).join("");
     $("bt-busca").disabled = estado.itens.length >= MAX;
-    $("bt-busca").placeholder = estado.itens.length >= MAX ? "Batalha cheia (4 tokens)" : "Ex.: JUP, ONDO, MET";
+    $("bt-busca").placeholder = estado.itens.length >= MAX ? "Limite de 4 tokens atingido" : "Ex.: JUP, ONDO, MET";
   }
 
   /* O alvo de cada coluna: o comum, ou o próprio (✎). vista separa a
@@ -248,7 +248,7 @@
     var el = $("bt-resultado");
     if (prontos.length < 2) {
       el.innerHTML = '<p class="nota">' + (estado.itens.length < 2
-        ? "Escolha pelo menos 2 tokens para começar a batalha."
+        ? "Escolha pelo menos 2 tokens para comparar."
         : "Carregando os tokens…") + "</p>";
       return;
     }
@@ -282,7 +282,7 @@
       }).join("") + "</div>";
 
     var frases = C.vereditoBatalha(linhas);
-    var veredito = frases.length ? '<div class="resumo"><p class="resumo__titulo">Veredito da batalha</p>' +
+    var veredito = frases.length ? '<div class="resumo"><p class="resumo__titulo">Conclusão da comparação</p>' +
       frases.map(function (f, i) { return "<p" + (i === 0 ? ' class="resumo__forte"' : "") + ">" + esc(f) + "</p>"; }).join("") + "</div>" : "";
 
     var velhos = prontos.filter(function (i) { return i.velho; }).map(function (i) { return i.symbol; });
@@ -295,7 +295,7 @@
     var el = $("bt-dicionario");
     if (el.getAttribute("data-pronto")) return;
     el.setAttribute("data-pronto", "1");
-    el.innerHTML = '<h2 class="dic__titulo">Dicionário</h2><p class="nota">Os termos sublinhados na tabela levam até aqui.</p>' +
+    el.innerHTML = '<h2 class="dic__titulo">Glossário</h2><p class="nota">Os termos sublinhados na tabela levam até aqui.</p>' +
       '<dl class="dic">' + C.glossario(null).map(function (t) {
         return '<div class="dic__item" id="gb-' + t.id + '"><dt>' + esc(t.termo) + "</dt><dd>" + esc(t.texto) + "</dd></div>";
       }).join("") + "</dl>";

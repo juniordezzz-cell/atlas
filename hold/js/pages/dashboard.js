@@ -102,7 +102,20 @@
 
     /* Carteira vazia mostra o painel inteiro ZERADO, não instruções:
        pedido do dono (08/10/2026) — os números e os gráficos ficam no
-       lugar e se preenchem conforme as compras entram. */
+       lugar e se preenchem conforme as compras entram. Desde 15/11/2026
+       entra só uma faixa curta de "Primeiros passos" por cima, com um
+       botão (estilo em core/ui/atlas-shell.css). Some na primeira compra. */
+    if (!c.posicoes) {
+      view.appendChild(U.el("section", { class: "atlas-passos" }, [
+        U.el("div", { class: "atlas-passos__txt" }, [
+          U.el("span", { class: "atlas-passos__olho", text: "Primeiros passos" }),
+          U.el("h2", { text: "Registre sua primeira compra" }),
+          U.el("p", { text: "Informe o ativo, a quantidade e o preço pago. A partir daí o painel calcula patrimônio, resultado e alocação." })
+        ]),
+        U.el("button", { class: "atlas-passos__acao", type: "button", text: "Registrar compra",
+          onClick: function () { F.novaCompra(); } })
+      ]));
+    }
 
     /* ------------------------------------------------------------
        OS QUATRO NÚMEROS, EXATOS
@@ -200,7 +213,7 @@
       }
       function vazio(dados) {
         var semTudo = dados.semPreco.length || (dados.semPrecoNomes || []).length;
-        return U.el("div", { class: "aloc-vazio small dim", text: semTudo ? "Posições sem preço" : "Sem posições" });
+        return U.el("div", { class: "aloc-vazio small dim", text: semTudo ? "Posições sem preço" : "A alocação aparece depois da primeira compra." });
       }
 
       function cartaoToken(dados, o) {

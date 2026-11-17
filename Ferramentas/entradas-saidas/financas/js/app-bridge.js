@@ -60,8 +60,8 @@ const TEXTO_NUVEM = {
   local: "Sem login neste aparelho: os lançamentos ficam só aqui.",
   conectando: "Conectando à sua conta…",
   ok: "Sincronizado com a sua conta: o que você lança aqui aparece no outro aparelho.",
-  erro: "Não consegui falar com a nuvem agora. Os lançamentos continuam salvos aqui e sobem quando voltar.",
-  cheio: "Seus dados passaram do tamanho que a nuvem aceita num documento. Exporte um backup e me avise."
+  erro: "Sem conexão com a nuvem no momento. Os lançamentos continuam salvos neste aparelho e sobem quando a conexão voltar.",
+  cheio: "Seus dados passaram do tamanho que a nuvem aceita num documento. Exporte um backup para não perder nenhum lançamento."
 };
 function mostrarNuvem(situacao) {
   const el = document.getElementById("nuvemStatus");

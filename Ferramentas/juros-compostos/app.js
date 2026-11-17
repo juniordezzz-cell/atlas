@@ -144,7 +144,7 @@
     try { localStorage.setItem(CHAVE_SELIC, JSON.stringify({ v: v, t: Date.now() })); } catch (e) {}
     if (!$('jz-resultado').hidden) calcular();
   }).catch(function () {
-    if (!selic) $('jz-cmp-nota').textContent = 'Não consegui buscar a Selic agora. A comparação com CDI e poupança volta quando o Banco Central responder.';
+    if (!selic) $('jz-cmp-nota').textContent = 'Não foi possível obter a Selic agora. A comparação com CDI e poupança volta quando o Banco Central responder.';
   });
 
   // eventos

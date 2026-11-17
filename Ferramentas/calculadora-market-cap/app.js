@@ -60,7 +60,7 @@
   /* Termo difícil sublinhado com pontinhos: o clique desce até o
      dicionário no fim da página. rotulo já vem escapado ou é fixo. */
   function termo(id, rotulo) {
-    return '<a class="termo" href="#g-' + id + '" title="O que é isso? Ver no dicionário">' + rotulo + "</a>";
+    return '<a class="termo" href="#g-' + id + '" title="O que é isso? Ver no glossário">' + rotulo + "</a>";
   }
 
   function aviso(texto) {
@@ -136,7 +136,7 @@
     }).catch(function (err) {
       if (minha !== seqBusca) return;
       fecharSugestoes();
-      aviso((err && err.message) || "Não consegui buscar agora. Tente em instantes.");
+      aviso("Busca de tokens indisponível no momento. Tente de novo em instantes.");
     });
   }
 
@@ -527,10 +527,10 @@
     el.innerHTML =
       (pergunta ? "<h2>A pergunta que todo mundo faz</h2>" + pergunta : "") +
       "<h2>Como ler estes números</h2>" +
-      "<h3>O tamanho da pizza, não o preço da fatia</h3>" +
+      "<h3>Valor de mercado, não preço da unidade</h3>" +
       "<p>O preço de um token, sozinho, não diz se ele está barato ou caro. O que diz é o valor de mercado: " +
       "<b>preço × quantidade de tokens</b>. Um token de centavos pode valer mais que um de centenas de dólares, " +
-      "porque cada projeto fatia a sua pizza em um número diferente de pedaços.</p>" + exemplo +
+      "porque cada projeto divide o seu valor em uma quantidade diferente de tokens.</p>" + exemplo +
       "<h3>Os tokens que ainda vão entrar (FDV)</h3>" +
       "<p>Muitos projetos ainda vão liberar tokens para equipe, investidores e comunidade. O FDV é o valor de mercado " +
       "se todos os tokens já existissem. Quando a coluna \"quando tudo desbloquear\" é bem maior que a de hoje, há " +
@@ -543,7 +543,7 @@
       "<p>Um projeto pequeno precisa de menos dinheiro para dobrar, e por isso mesmo pode cair ou sumir com " +
       "pouco dinheiro saindo. O que manda é a liquidez: quanto dinheiro existe de verdade para comprar e vender.</p>" +
       '<p class="nota">Antes de sonhar com um preço, multiplique pela quantidade de tokens e pergunte: esse projeto vale isso?</p>' +
-      '<h2 class="dic__titulo">Dicionário</h2><p class="nota">Os termos sublinhados na página levam até aqui.</p>' +
+      '<h2 class="dic__titulo">Glossário</h2><p class="nota">Os termos sublinhados na página levam até aqui.</p>' +
       '<dl class="dic">' + dic + "</dl>";
   }
 

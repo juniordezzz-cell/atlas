@@ -1700,3 +1700,48 @@ html.atlas-moldura[data-moldura-mod="tools"] .wrap > header.topbar nav.tabs .tab
 html.atlas-moldura[data-moldura-mod="tools"] .wrap > header.topbar nav.tabs .tab.on {
   background: var(--atm-acento-suave); color: var(--atm-acento); border-bottom-color: transparent;
 }
+
+/* ===================================================================
+   PRIMEIROS PASSOS (15/11/2026) — faixa das telas vazias
+   -------------------------------------------------------------------
+   Hold, DeFi, RWA e Trade, enquanto não há nenhum registro. O painel
+   continua inteiro e zerado (decisão do dono de 08/10/2026); esta
+   faixa só aponta o próximo passo e some depois do primeiro registro.
+   Marcação (cada módulo monta a sua):
+     <section class="atlas-passos">
+       <div class="atlas-passos__txt"><span class="atlas-passos__olho">…</span>
+         <h2>…</h2><p>…</p></div>
+       <button class="atlas-passos__acao">…</button>
+     </section>
+   =================================================================== */
+.atlas-passos {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  margin: 0 0 22px;
+  padding: 18px 22px;
+  border: 1px solid rgba(0, 191, 255, 0.28);
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(0, 191, 255, 0.09), rgba(0, 191, 255, 0.02));
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+.atlas-passos__txt { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.atlas-passos__olho {
+  font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--atlas-acao, #00BFFF);
+}
+.atlas-passos h2 { margin: 0; font-size: 17px; font-weight: 650; color: #E6F1FF; letter-spacing: 0; }
+.atlas-passos p { margin: 0; font-size: 13.5px; line-height: 1.5; color: rgba(230, 241, 255, 0.7); max-width: 72ch; }
+.atlas-passos__acao {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 18px;
+  border: 0; border-radius: 10px;
+  background: var(--atlas-acao, #00BFFF); color: var(--atlas-acao-tinta, #04121C);
+  font: inherit; font-size: 13.5px; font-weight: 700; white-space: nowrap;
+  text-decoration: none; cursor: pointer;
+}
+.atlas-passos__acao:hover { background: var(--atlas-acao-hover, #33CCFF); }
+.atlas-passos__acao:focus-visible { outline: 2px solid #00BFFF; outline-offset: 2px; }
+@media (max-width: 640px) {
+  .atlas-passos { flex-direction: column; align-items: stretch; padding: 16px; }
+  .atlas-passos__acao { justify-content: center; }
+}

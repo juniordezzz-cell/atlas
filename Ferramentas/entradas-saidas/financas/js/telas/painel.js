@@ -304,16 +304,18 @@ function ultimos(lancs) {
    uma faixa curta de "comece por aqui". Antes era um cartão grande com o
    personagem e exemplos, e no celular parecia a aba Oráculo (24/10/2026). */
 function comeceAqui() {
+  /* o rótulo vem entre aspas e com maiúscula; o campo recebe o texto
+     como a pessoa digitaria (o interpretador não liga para maiúsculas) */
   const exemplo = (t) => el("button", {
-    type: "button", class: "fp-sug", text: t,
+    type: "button", class: "fp-sug", text: "“" + t.charAt(0).toUpperCase() + t.slice(1) + "”",
     on: { click: () => { const i = barra.querySelector("textarea, input"); i.value = t; i.focus(); } }
   });
   const sincronizando = situacaoNuvem() === "conectando";
   return el("article", { class: "fp-card fp-comece" },
     el("div", { class: "fp-comece-txt" },
-      el("h2", { text: sincronizando ? "Buscando seus lançamentos na nuvem…" : "Nenhum lançamento neste aparelho ainda" }),
-      el("p", { class: "fp-sub", style: { margin: 0 }, text: "Diga ao Oráculo, aqui embaixo, quanto você tem em caixa, ou importe o extrato do banco. Com login, o que você lança no computador aparece aqui também." })),
-    el("div", { class: "fp-sugs" }, exemplo("tenho 800 em caixa"), exemplo("recebi 500"), botaoImportar("fp-sug")));
+      el("h2", { text: sincronizando ? "Buscando seus lançamentos na nuvem…" : "Comece registrando o seu caixa" }),
+      el("p", { class: "fp-sub", style: { margin: 0 }, text: "Escreva ou fale no campo abaixo quanto você tem hoje, ou importe o extrato do banco. Com login, seus lançamentos aparecem em todos os seus aparelhos." })),
+    el("div", { class: "fp-sugs" }, el("span", { class: "fp-sub", text: "Exemplos:" }), exemplo("tenho 800 em caixa"), exemplo("recebi 500"), botaoImportar("fp-sug")));
 }
 
 /* ---------------- montagem ---------------- */

@@ -741,7 +741,7 @@
     <nav class="tabs">
       <button class="tab on" data-tab="dash" onclick="switchTab('dash')">Descobrir</button>
       <button class="tab" data-tab="hist" onclick="switchTab('hist')">Radar<span class="tabbadge" id="radarBadge" style="display:none"></span></button>
-      <button class="tab" data-tab="battle" onclick="switchTab('battle')">Battle Pools</button>
+      <button class="tab" data-tab="battle" onclick="switchTab('battle')">Comparar pools</button>
       <button class="tab" data-tab="mine" onclick="switchTab('mine')">Minhas pools</button>
       <button class="tab" data-tab="assistente" onclick="switchTab('assistente')">Oráculo</button>
       <button class="tab" data-tab="learn" onclick="switchTab('learn')">Guia</button>
@@ -1292,7 +1292,7 @@
       <!-- desbloqueio discreto: a lista fica oculta e só abre por aqui (10/10/2026) -->
       <button class="linkbtn" onclick="const l=document.getElementById('tokLista'); l.hidden=!l.hidden; if(!l.hidden) switchTab('dash');">Bloqueados</button>
     </div>
-    <div class="foot-note">Scanner de Pools de Liquidez · dados em USD · coleta a cada 4 h · suas decisões por pool, ★, níveis, notas, lista de tokens e pools manuais ficam no navegador — faça <b>Exportar</b> para ter backup.</div>
+    <div class="foot-note">Valores em dólar, atualizados a cada 4 horas. Suas marcações e pools manuais ficam salvas neste navegador; use <b>Exportar</b> para guardar uma cópia.</div>
   </footer>
 </div>
 
@@ -1595,7 +1595,7 @@ function renderStatus(){
   if(!srv.carregado){
     el.className = "srv-status" + (srv.erro ? " ruim" : "");
     el.textContent = srv.erro
-      ? `Não consegui ler as pools do servidor (${srv.erro}). Mostrando só as suas pools manuais.`
+      ? `Não foi possível carregar as pools do servidor agora. Mostrando só as suas pools manuais.`
       : "Carregando pools do servidor…";
     return;
   }
@@ -1974,7 +1974,7 @@ function rowHTML(p, rank){
       <span class="rowact">
         ${p.servidor ? "" : `<button class="iconbtn" onclick="openForm(${idx})" title="Editar esta pool" aria-label="Editar esta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>`}
         <button class="iconbtn" onclick="goToHistory(${p.id})" title="Ver o histórico desta pool" aria-label="Ver o histórico desta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg></button>
-        <button class="iconbtn" onclick="BattlePools.adicionar(${p.id})" title="Comparar esta pool com outra no Battle Pools" aria-label="Comparar esta pool com outra no Battle Pools">⚔</button>
+        <button class="iconbtn" onclick="BattlePools.adicionar(${p.id})" title="Comparar esta pool com outra" aria-label="Comparar esta pool com outra">⚔</button>
         ${tokenBtns(p)}
       </span>
     </td>
@@ -2595,7 +2595,7 @@ function radarPoolCard(p){
       <div class="rm"><span>Taxa</span><b>${feeHTML(p)}</b></div>
       <div class="rm"><span>${p.servidor ? "vs. ontem" : "vs. última"}</span><b class="trend ${aTvl.cls}">${aTvl.arrow} ${dTvl==null?'—':fPctSigned(dTvl)}</b></div>
     </div>
-    <div class="rc-foot">${levelSelectHTML(p)}${cmpBtnHTML(p)}<button class="cmpbtn" onclick="event.stopPropagation(); BattlePools.adicionar(${p.id})" title="Levar para o Battle Pools">⚔</button></div>
+    <div class="rc-foot">${levelSelectHTML(p)}${cmpBtnHTML(p)}<button class="cmpbtn" onclick="event.stopPropagation(); BattlePools.adicionar(${p.id})" title="Comparar esta pool com outra">⚔</button></div>
   </div>`;
 }
 
