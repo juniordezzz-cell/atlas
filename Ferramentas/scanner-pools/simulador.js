@@ -25,7 +25,10 @@
   var REDE = { "Solana": "solana", "Base": "base", "Arbitrum": "arbitrum", "BNB Chain": "bsc", "Ethereum": "eth",
     "Optimism": "optimism", "Polygon": "polygon_pos", "Avalanche": "avax", "Sui": "sui-network",
     "HyperEVM": "hyperevm", "Robinhood": "robinhood", "Robinhood Chain": "robinhood" };
-  var EMBRULHADO = { WETH: "ETH", WSOL: "SOL", WBTC: "BTC", CBBTC: "BTC", WBNB: "BNB", WAVAX: "AVAX", WPOL: "POL", WMATIC: "POL", WHYPE: "HYPE" };
+  var EMBRULHADO = { WETH: "ETH", WSOL: "SOL", WBTC: "BTC", CBBTC: "BTC", WBNB: "BNB", WAVAX: "AVAX", WPOL: "POL", WMATIC: "POL", WHYPE: "HYPE",
+    /* versões em ponte da mesma moeda: mesmo mercado para quem monta a pool */
+    "USDC.E": "USDC", USDBC: "USDC", "USDT.E": "USDT", USDT0: "USDT", "WETH.E": "ETH" };
+  function normSym(t) { t = String(t || "").toUpperCase(); return EMBRULHADO[t] || t; }
   var PERIODOS = [7, 30, 90];
 
   var SIM = { id: null, busca: "", a: 0, b: 0, dep: 1000, dias: 30, dados: null, carregando: false, erro: "", rank: null, rankCarregando: false, pedido: 0 };
@@ -56,7 +59,7 @@
   function tokens(p) {
     return String(p.pool || "").replace(/\s+\d[\d.,]*\s*%.*$/, "").split(/[\/\-]/)
       .map(function (t) { return t.trim().split(/\s+/)[0].toUpperCase(); }).filter(Boolean)
-      .map(function (t) { return EMBRULHADO[t] || t; });
+      .map(normSym);
   }
   function chavePar(p) { return tokens(p).slice().sort().join("/"); }
   function feeDe(p) { return Number(p.fee) > 0 ? Number(p.fee) : 0; }
@@ -96,7 +99,7 @@
       });
       linhas.sort(function (a, b) { return a.t - b.t; });
       var base = String(((meta.base || {}).symbol) || "").toUpperCase(), quote = String(((meta.quote || {}).symbol) || "").toUpperCase();
-      var d = { linhas: linhas, base: EMBRULHADO[base] || base || tokens(p)[0] || "A", quote: EMBRULHADO[quote] || quote || tokens(p)[1] || "B" };
+      var d = { linhas: linhas, base: normSym(base) || tokens(p)[0] || "A", quote: normSym(quote) || tokens(p)[1] || "B" };
       if (linhas.length < 8) throw new Error("poucos-dados");
       cache[k] = { t: Date.now(), d: d };
       return d;
@@ -172,7 +175,7 @@
     var q = SIM.busca.trim().toUpperCase().replace(/\s+/g, "");
     var ps = todas().filter(function (p) { return elegivel(p) && simulavel(p); });
     if (q) {
-      var partes = q.split(/[\/\-]/).filter(Boolean).map(function (t) { return EMBRULHADO[t] || t; });
+      var partes = q.split(/[\/\-]/).filter(Boolean).map(normSym);
       ps = ps.filter(function (p) { var t = tokens(p); return partes.every(function (x) { return t.indexOf(x) !== -1; }); });
     }
     return ps.sort(function (a, b) { return (Number(b.tvl) || 0) - (Number(a.tvl) || 0); }).slice(0, 80);
@@ -190,6 +193,8 @@
 
   function escolher(id) {
     var p = poolPorId(id); if (!p) return;
+    /* a mesma pool de novo: mantém a faixa que a pessoa montou */
+    if (id === SIM.id && SIM.dados && !SIM.erro) { renderLista(); desenharTudo(); return; }
     SIM.id = id; SIM.dados = null; SIM.erro = ""; SIM.rank = null; SIM.carregando = true;
     var meu = ++SIM.pedido;
     renderLista(); desenharTudo();
@@ -310,7 +315,7 @@
       '<p class="sim-nota">Ordem pelo resultado com taxas no histórico, não pelo APR anunciado. Pools com a ordem dos tokens trocada (USDC/SOL) foram convertidas para a mesma faixa.</p>';
   }
   function comparar(p, outras) {
-    var d0 = SIM.dados, meu = SIM.pedido; SIM.rankCarregando = true; renderRank(p);
+    var d0 = SIM.dados, meu = SIM.pedido, chave = [SIM.a, SIM.b, SIM.dep, SIM.dias].join("|"); SIM.rankCarregando = true; renderRank(p);
     var res = [{ p: p, t: testar(p, d0, SIM.a, SIM.b, SIM.dep, SIM.dias) }];
     /* uma pool por vez: a GeckoTerminal limita as chamadas por minuto */
     outras.reduce(function (cadeia, q) {
@@ -321,8 +326,11 @@
         }).catch(function () { res.push({ p: q, t: null, erro: "histórico indisponível" }); });
       });
     }, Promise.resolve()).then(function () {
+      SIM.rankCarregando = false;
       if (meu !== SIM.pedido) return;
-      SIM.rankCarregando = false; SIM.rank = res; renderRank(p);
+      /* faixa, depósito ou período mudaram durante a comparação: não mostra o ranking velho */
+      if (chave !== [SIM.a, SIM.b, SIM.dep, SIM.dias].join("|")) { renderRank(p); return; }
+      SIM.rank = res; renderRank(p);
     });
   }
 
