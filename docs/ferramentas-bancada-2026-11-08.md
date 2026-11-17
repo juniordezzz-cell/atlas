@@ -167,3 +167,30 @@ As 8 capas provisórias em SVG foram apagadas (nada mais as usava).
   Compostos). Pastas, chaves de armazenamento e comentários mantêm o nome antigo.
   Com o nome maior, o cabeçalho da Estratégia quebra em duas linhas a 1440 px:
   fica para o redesenho dessa página.
+
+## Atualização 17/11/2026 — Escada vira "DCA · Preço Médio"
+
+Pedido do dono (proposta com 5 nomes e 3 layouts; escolhido o Layout A).
+
+- **Nome:** "DCA · Preço Médio" (`build.js`, card em `pages/ferramentas.html`,
+  menu lateral, link no Lucro Cripto, título da imagem exportada). A pasta
+  continua `Ferramentas/escada-dca/` para não quebrar links e cenários
+  salvos. Linha no topo explica a sigla (Dollar-Cost Averaging).
+- **Três colunas (só no DCA):** tokens à esquerda, gráfico no meio,
+  Preço médio / DCA no tempo / Venda à direita. O `<aside>` vira
+  `display: contents` e os cartões entram na grade de `.main`. As regras de
+  `aside` foram presas a `.main>aside` para não atingir o menu lateral do
+  site. A Estratégia de Pools mantém o layout antigo.
+- **Comparar 1 compra × em etapas:** botão no topo da aba Preço médio. O
+  painel (`#cmpp`) ocupa a célula do gráfico com uma entrada que vem da
+  direita. Tem valor total, preço da compra única (padrão: o preço da
+  primeira etapa), 2 a 5 etapas de valor igual e cenários "E se o preço
+  cair / andar de lado / subir direto". Também tem "Usar o gráfico" (entre
+  máxima e mínima), "Trazer da aba Preço médio", preço médio, tokens,
+  quanto vale hoje, um mini-gráfico (preços, médias e tokens por compra) e
+  uma frase de conclusão, inclusive quando a compra única ganha. Esc ou ×
+  fecham.
+- O antigo chip "Comparar" (todas as estratégias no gráfico) virou
+  "Ver todas".
+- **Celular:** abas Tokens · Gráfico · Preço médio (`.mtabs`, `data-mview`).
+  Escolher um token volta ao gráfico. O painel abre como folha de baixo.

@@ -1,4 +1,4 @@
-// ATLAS · gera a Escada e as Estratégias de Pools de Liquidez a partir da mesma fonte:
+// ATLAS · gera o DCA · Preço Médio (pasta escada-dca/) e as Estratégias de Pools de Liquidez a partir da mesma fonte:
 //   node Ferramentas/_fonte-quadro/build.js
 // Saída: Ferramentas/escada-dca/index.html e Ferramentas/estrategia-de-pool/index.html
 // Registro: docs/ferramentas-bancada-2026-11-08.md
@@ -7,8 +7,8 @@ const dir = __dirname;
 const src = fs.readFileSync(path.join(dir, 'quadro-src.html'), 'utf8');
 const snap = fs.readFileSync(path.join(dir, 'snap.json'), 'utf8');
 const tools = [
-  { tool: 'dca', pasta: 'escada-dca', title: 'Escada · DCA e Preço Médio', h1: 'Escada <span>· DCA e preço médio</span>',
-    desc: 'Escada do ATLAS: divida a entrada em 2 a 5 compras, veja o preço médio no gráfico real e compare com comprar tudo de uma vez.' },
+  { tool: 'dca', pasta: 'escada-dca', title: 'DCA · Preço Médio', h1: 'DCA <span>· Preço Médio</span>',
+    desc: 'DCA · Preço Médio do ATLAS: divida a entrada em 2 a 5 compras, veja o preço médio no gráfico real e compare uma compra só com compras em etapas.' },
   { tool: 'pool', pasta: 'estrategia-de-pool', title: 'Estratégias de Pools de Liquidez', h1: 'Estratégias de <span>Pools de Liquidez</span>',
     desc: 'Estratégias de Pools de Liquidez do ATLAS: monte a faixa de uma pool concentrada para comprar na descida, vender na subida, ter renda em dólar ou escolher a proporção.' },
 ];

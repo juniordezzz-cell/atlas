@@ -66,7 +66,7 @@ select{background:var(--panel);border:1px solid var(--line);border-radius:6px;pa
 .cwrap{position:relative;flex:1;min-height:0}
 .cwrap canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
 .txtin{position:absolute;z-index:3;background:var(--bg);border:1px solid var(--test);border-radius:4px;padding:3px 6px;font-weight:600;width:200px}
-aside{width:400px;flex:none;display:flex;flex-direction:column;gap:10px;min-height:0}
+.main>aside{width:400px;flex:none;display:flex;flex-direction:column;gap:10px;min-height:0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
 .wl{flex:0 1 auto;max-height:38%}
 .wlh{display:flex;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);position:relative}
@@ -167,16 +167,65 @@ body.present header,body.present .wl{display:none!important}
 body.present .pane{font-size:15px}
 body.present .note{font-size:14.5px}
 body.present .kv b{font-size:19px}
-@media (max-width:1100px){aside{width:350px}}
+/* ---------- DCA · Preço Médio: três colunas (17/11/2026) ----------
+   Tokens à esquerda, gráfico no meio, Preço médio / DCA no tempo / Venda à
+   direita. O <aside> some como caixa (display:contents) e os dois cartões
+   dele viram colunas da grade. A Estratégia de Pools mantém o layout antigo. */
+@media (min-width:901px){
+  body[data-tool="dca"] .main{display:grid;grid-template-columns:clamp(220px,17vw,270px) minmax(0,1fr) clamp(330px,25vw,390px);grid-template-rows:minmax(0,1fr)}
+  body[data-tool="dca"] .main>aside{display:contents}
+  body[data-tool="dca"] .wl{grid-column:1;grid-row:1;max-height:none}
+  body[data-tool="dca"] .board{grid-column:2;grid-row:1}
+  body[data-tool="dca"] .calc{grid-column:3;grid-row:1}
+  body[data-tool="dca"] .wrow{grid-template-columns:18px minmax(0,1fr) auto 18px}
+  body[data-tool="dca"] .wrow .ch,body[data-tool="dca"] .wrow .s small{display:none}
+}
+.mtabs{display:none}
+.cmpgo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--raise);border:1px solid var(--test);color:var(--fg);border-radius:8px;padding:8px 10px;cursor:pointer;font-weight:500}
+.cmpgo:hover{background:var(--line)}
+.cmpgo svg{width:16px;height:16px;color:var(--test)}
+/* painel de comparação: sai da coluna da direita e cobre o gráfico */
+.cmpp{grid-column:2;grid-row:1;position:relative;margin:6px;z-index:9;min-height:0;display:flex;flex-direction:column;gap:10px;padding:14px 16px;overflow-y:auto;
+  background:var(--panel);border:1px solid var(--test);border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+.cmpp.abrindo{animation:cmpSai .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes cmpSai{from{transform:translateX(56px);opacity:0}to{transform:none;opacity:1}}
+.board.cmp-on .cwrap,.board.cmp-on .tools,.board.cmp-on .hintbar{filter:blur(2px) brightness(.55)}
+.cmph{display:flex;align-items:center;gap:10px}
+.cmph h2{margin:0;font-size:15px;font-weight:600}
+.cmph .x{margin-left:auto;font-size:20px;width:30px;height:30px;border:1px solid var(--line);border-radius:7px}
+.cmpgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:12px}
+.cmpcol{display:flex;flex-direction:column;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
+.cmpcol.et{border-color:color-mix(in srgb,var(--up) 45%,var(--line))}
+.cmpcol h3{display:flex;justify-content:space-between;gap:8px}
+.cmpcol .inp{width:100%}
+.cmpres{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmpres .kv b{font-size:15px}
+.cmpcv{width:100%;height:210px;display:block;background:var(--bg);border:1px solid var(--line);border-radius:8px}
+.cmpfim{border-radius:8px;padding:9px 12px;font-size:13.5px;line-height:1.5}
+.cmpfim.ganha{background:color-mix(in srgb,var(--up) 13%,transparent);color:var(--fg)}
+.cmpfim.perde{background:color-mix(in srgb,var(--avg) 13%,transparent);color:var(--fg)}
+@media (max-width:1100px){.main>aside{width:350px}}
 @media (max-width:900px){
+  /* DCA no celular: três abas (Tokens · Gráfico · Preço médio) */
+  body[data-tool="dca"] .mtabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .mtabs button{flex:1;background:none;border:0;border-radius:7px;padding:8px 4px;color:var(--muted);cursor:pointer;font-weight:500}
+  .mtabs button[aria-pressed="true"]{background:var(--raise);color:var(--fg)}
+  body[data-tool="dca"][data-mview="tok"] .board,body[data-tool="dca"][data-mview="tok"] .calc,
+  body[data-tool="dca"][data-mview="graf"] .wl,body[data-tool="dca"][data-mview="graf"] .calc,
+  body[data-tool="dca"][data-mview="calc"] .wl,body[data-tool="dca"][data-mview="calc"] .board{display:none}
+  body[data-tool="dca"][data-mview="tok"] .wl{max-height:none}
+  .cmpp{position:fixed;inset:auto 0 0 0;max-height:90vh;border-radius:14px 14px 0 0;
+    padding-bottom:max(14px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  @keyframes cmpSai{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+  .cmpgrid{grid-template-columns:1fr}
   .app{height:auto}
   .main{flex-direction:column}
   .board{height:66vh;min-height:400px;flex:none}
-  aside{width:100%}
+  .main>aside{width:100%}
   .wl{max-height:300px}
   .status{max-width:none}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.cmpp.abrindo{animation:none}}
 </style>
 </head>
 <body>
@@ -212,8 +261,12 @@ body.present .kv b{font-size:19px}
       <label class="lbl" for="lo">Mín</label><input class="inp" id="lo" inputmode="decimal">
       <button class="btn sm" id="hlReset" title="Coloca as linhas na máxima e na mínima do gráfico">↺</button>
     </div>
-    <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
+    <p class="estudo"><span class="only-dca"><b style="color:var(--muted);font-weight:600">DCA</b> = Dollar-Cost Averaging, "média do custo em dólar": dividir a compra em partes iguais para chegar a um preço médio melhor. </span>Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
   </header>
+
+  <nav class="mtabs only-dca" id="mtabs" aria-label="Partes da ferramenta">
+    <button data-v="tok" aria-pressed="false">Tokens</button><button data-v="graf" aria-pressed="true">Gráfico</button><button data-v="calc" aria-pressed="false">Preço médio</button>
+  </nav>
 
   <div class="main">
     <section class="board">
@@ -264,7 +317,7 @@ body.present .kv b{font-size:19px}
     <aside>
       <section class="card wl">
         <div class="wlh">
-          <input class="inp" id="q" placeholder="Buscar entre 500 tokens (ex.: jup, pepe, aave)" autocomplete="off" aria-label="Buscar token">
+          <input class="inp" id="q" placeholder="Buscar token (ex.: jup, aave)" autocomplete="off" aria-label="Buscar token">
           <div class="seg" id="wtab"><button data-w="top" aria-pressed="true">Top 500</button><button data-w="fav" aria-pressed="false">★ Favoritos</button></div>
           <span class="note" id="wcount"></span>
           <div class="wres" id="wres" hidden></div>
@@ -281,12 +334,13 @@ body.present .kv b{font-size:19px}
         </div>
 
         <div class="pane" id="pane-dca">
+          <button class="cmpgo only-dca" id="cmpOpen" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>Comparar 1 compra × em etapas</button>
           <div class="row">
             <label class="lbl" for="cap">Capital</label><span>$</span><input class="inp" id="cap" value="1000" inputmode="decimal" style="width:80px">
             <span class="note" id="capNote"></span>
           </div>
           <div class="sub" id="sub">
-            <button data-s="1">1 compra</button><button data-s="2">2 compras</button><button data-s="3">3 compras</button><button data-s="4">4 compras</button><button data-s="5">5 compras</button><button data-s="L">Livre</button><button data-s="C">Comparar</button>
+            <button data-s="1">1 compra</button><button data-s="2">2 compras</button><button data-s="3">3 compras</button><button data-s="4">4 compras</button><button data-s="5">5 compras</button><button data-s="L">Livre</button><button data-s="C">Ver todas</button>
           </div>
           <div id="stratBody" class="stack"></div>
           <div id="res" class="stack"></div>
@@ -353,6 +407,32 @@ body.present .kv b{font-size:19px}
         </div>
       </section>
     </aside>
+      <!-- Comparação 1 compra × em etapas (17/11/2026): fica na célula do gráfico da grade e cobre o quadro (no celular, folha de baixo) -->
+      <section class="cmpp only-dca" id="cmpp" role="dialog" aria-modal="false" aria-labelledby="cmpT" hidden>
+        <div class="cmph"><h2 id="cmpT">Comparar: 1 compra × em etapas</h2><span class="note" id="cmpAsset"></span><button class="x" id="cmpX" aria-label="Fechar a comparação" title="Fechar (Esc)">×</button></div>
+        <div class="row">
+          <label class="lbl" for="cmpVal">Valor total</label><span>$</span><input class="inp" id="cmpVal" inputmode="decimal" style="width:90px">
+          <span class="lbl" style="margin-left:8px">E se o preço…</span>
+          <div class="sub" id="cmpCen"><button data-c="cai">cair</button><button data-c="lat">andar de lado</button><button data-c="sobe">subir direto</button></div>
+        </div>
+        <div class="cmpgrid">
+          <div class="cmpcol">
+            <h3><span>1 compra</span></h3>
+            <div class="f"><label class="lbl" for="cmpUni">Preço da compra</label><input class="inp" id="cmpUni" inputmode="decimal"></div>
+            <div class="cmpres" id="cmpResU"></div>
+          </div>
+          <div class="cmpcol et">
+            <h3><span>Em etapas</span><span class="sub" id="cmpN"><button data-n="2">2</button><button data-n="3">3</button><button data-n="4">4</button><button data-n="5">5</button></span></h3>
+            <p class="note" id="cmpPer" style="margin:0"></p>
+            <div id="cmpRows" class="stack" style="gap:6px"></div>
+            <div class="row"><button class="btn sm" id="cmpGraf" title="Espalha as compras entre a máxima e a mínima do gráfico, preços que o ativo tocou">Usar o gráfico</button><button class="btn sm" id="cmpAba">Trazer da aba Preço médio</button></div>
+            <div class="cmpres" id="cmpResE"></div>
+          </div>
+        </div>
+        <canvas class="cmpcv" id="cmpCv" aria-label="Gráfico da comparação: preços das compras e tokens comprados em cada uma"></canvas>
+        <div class="legend"><span><i style="background:var(--down)"></i>1 compra</span><span><i style="background:var(--up)"></i>compras em etapas</span><span><i style="background:var(--avg)"></i>preço médio em etapas</span><span><i style="background:var(--test)"></i>preço de hoje</span></div>
+        <div class="cmpfim" id="cmpFim"></div>
+      </section>
   </div>
 </div>
 
@@ -507,6 +587,7 @@ function loadSim(key,seed){
   $('#regen').hidden=false;setStatus('Exemplo simulado · preços inventados para a aula');
 }
 async function selectLive(id){
+  if(TOOL==='dca'&&document.body.dataset.mview==='tok')setMview('graf');
   S.pending=id;const m=S.market[id]||{};const sym=m.sym||id;
   if(S.live){
     setStatus('Carregando '+sym+'…');
@@ -750,7 +831,7 @@ function buyAt(q){
   if(S.tab==='sell'){const a=SL.ps[SL.n];a[SL.slot%a.length]={p:rnd(p),t};SL.slot=(SL.slot+1)%a.length;renderSellBody();renderAll();return}
   if(S.tab==='cal'){setHint('No DCA no tempo as compras acontecem por data, não por clique. Mude a frequência e as datas no painel.');return}
   if(S.tab==='pool'){setHint('Na pool, arraste as linhas roxas para mudar a faixa.');return}
-  if(S.active==='C'){setHint('Na aba Comparar não dá para comprar. Escolha 1, 2, 3, 4 compras ou Livre.');return}
+  if(S.active==='C'){setHint('Em Ver todas não dá para comprar. Escolha 1, 2, 3, 4 compras ou Livre.');return}
   if(S.active==='L'){const usd=num($('#perBuy')?.value);if(!(usd>0))return;S.strats.L.push({p:rnd(p),usd,t})}
   else{const a=S.strats[S.active];a[S.slot%a.length]={p:rnd(p),t};S.slot=(S.slot+1)%a.length}
   renderStrat();renderAll();
@@ -871,6 +952,88 @@ function renderCompare(el){
 }
 document.querySelectorAll('#sub button').forEach(b=>b.onclick=()=>{S.active=b.dataset.s;S.slot=0;setTool(S.tool);renderAll()});
 $('#cap').addEventListener('input',()=>{const v=num($('#cap').value);if(v>0){S.cap=v;renderStrat();renderAll()}});
+
+/* ---------- Comparação 1 compra × em etapas (17/11/2026) ----------
+   Painel que abre sobre o gráfico. Mesmo dinheiro nos dois cenários; nas
+   etapas, valor igual em cada compra. Mostra preço médio, tokens, quanto
+   vale hoje e uma frase de conclusão, com um mini-gráfico próprio. */
+const CP={open:false,val:0,uni:0,n:4,ps:[],cen:''};
+/* tokens no painel: 4 casas abaixo de 100 (1,0000 · 0,3333), 2 até 1.000, nenhuma acima */
+const fqc=q=>!isFinite(q)?'—':q>=1000?fq(q):q>=100?q.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):q>=1?q.toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4}):q.toLocaleString('pt-BR',{maximumSignificantDigits:4});
+function cpStats(){const v=CP.val,u=CP.uni,ps=CP.ps.slice(0,CP.n).filter(p=>p>0);
+  if(!(v>0&&u>0&&ps.length===CP.n))return null;
+  const one={inv:v,tok:v/u,avg:u};const et=stats(ps.map(p=>({p,usd:v/CP.n})));return{one,et,ps}}
+function cpSpread(){const hi=S.hi,lo=S.lo;CP.ps=Array.from({length:CP.n},(_,j)=>rnd(hi-(hi-lo)*j/(CP.n-1)))}
+function cpCenario(c){const u=CP.uni||S.now;const k=CP.n;const f={cai:j=>1-.1*j,lat:j=>[1,.93,1.04,.96,1.02][j],sobe:j=>1+.1*j}[c];
+  CP.ps=Array.from({length:k},(_,j)=>rnd(u*f(j)));CP.cen=c}
+function cpFromAba(){const k=S.active;const a=(S.strats[k]||[]).map(b=>b.p).filter(p=>p>0);
+  if(a.length<2){setHint('A aba Preço médio está com 1 compra. Escolha 2 a 5 compras lá para trazer os preços.');return false}
+  CP.n=Math.min(5,a.length);CP.ps=a.slice(0,CP.n).map(rnd);return true}
+function cpOpen(){if(TOOL!=='dca')return;
+  CP.val=S.cap;CP.cen='';
+  if(!cpFromAba()){CP.n=4;cpSpread()}
+  /* a compra única acontece no mesmo dia da primeira etapa, no mesmo preço */
+  CP.uni=CP.ps[0];
+  CP.open=true;const p=$('#cmpp');p.hidden=false;p.classList.remove('abrindo');void p.offsetWidth;p.classList.add('abrindo');
+  $('.board').classList.add('cmp-on');cpSync();cpRender();setTimeout(()=>$('#cmpX').focus(),0)}
+function cpClose(){if(!CP.open)return;CP.open=false;$('#cmpp').hidden=true;$('.board').classList.remove('cmp-on');$('#cmpOpen').focus()}
+function cpSync(){const ativo=document.activeElement;
+  if(ativo!==$('#cmpVal'))$('#cmpVal').value=fnum(CP.val);if(ativo!==$('#cmpUni'))$('#cmpUni').value=fnum(CP.uni);$('#cmpAsset').textContent=S.asset+' · hoje '+fp(S.now);
+  document.querySelectorAll('#cmpN button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.n===CP.n));
+  document.querySelectorAll('#cmpCen button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.c===CP.cen));
+  const u=CP.val/CP.n;$('#cmpPer').textContent=`${CP.n} compras de ${fu(u)}. Preço de cada uma → tokens comprados:`;
+  setHTML($('#cmpRows'),CP.ps.slice(0,CP.n).map((p,j)=>`<div class="row" style="flex-wrap:nowrap"><span class="lbl" style="width:18px">${j+1}</span><input class="inp" id="cmpP${j}" data-j="${j}" value="${fnum(p)}" inputmode="decimal" aria-label="Preço da compra ${j+1}" style="flex:1;width:auto"><span class="note num" style="white-space:nowrap;min-width:0">→ <span id="cmpQ${j}">${fqc(p>0?u/p:NaN)}</span></span></div>`).join(''));
+  $('#cmpRows').querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{const v=num(inp.value),j=+inp.dataset.j;if(!(v>0))return;CP.ps[j]=v;CP.cen='';
+    document.querySelectorAll('#cmpCen button').forEach(b=>b.setAttribute('aria-pressed','false'));$('#cmpQ'+j).textContent=fqc(CP.val/CP.n/v);cpRender()}))}
+function cpRender(){const r=cpStats(),A=esc(S.asset);
+  if(!r){setHTML($('#cmpResU'),'');setHTML($('#cmpResE'),'');setHTML($('#cmpFim'),'Preencha o valor e os preços das compras.');$('#cmpFim').className='cmpfim';cpDraw(null);return}
+  const {one,et}=r,hoje=S.now,vU=one.tok*hoje,vE=et.tok*hoje,d=et.tok-one.tok,dp=(et.tok/one.tok-1)*100;
+  setHTML($('#cmpResU'),`<div class="kv"><span class="lbl">Preço médio</span><b>${fp(one.avg)}</b></div><div class="kv"><span class="lbl">Tokens</span><b>${fqc(one.tok)}</b></div><div class="kv" style="grid-column:1/-1"><span class="lbl">Vale hoje</span><b>${fu(vU)}</b>${plSpan(vU,one.inv)}</div>`);
+  setHTML($('#cmpResE'),`<div class="kv hl"><span class="lbl">Preço médio</span><b>${fp(et.avg)}</b></div><div class="kv"><span class="lbl">Tokens</span><b class="${sgn(d)}">${fqc(et.tok)}</b><em class="${sgn(d)}">${fpct(dp)}</em></div><div class="kv" style="grid-column:1/-1"><span class="lbl">Vale hoje</span><b>${fu(vE)}</b>${plSpan(vE,et.inv)}</div>`);
+  const fim=$('#cmpFim');
+  if(Math.abs(dp)<.05){fim.className='cmpfim';setHTML(fim,`Os dois cenários terminam com a mesma quantidade de ${A}.`)}
+  else if(d>0){fim.className='cmpfim ganha';setHTML(fim,`Em etapas, o mesmo ${fu(CP.val)} comprou <strong class="up">+${fqc(d)} ${A}</strong> (${fpct(dp)}). O preço médio (${fp(et.avg)}) ficou abaixo da média simples dos preços (${fp(et.simple)}) porque cada compra barata trouxe mais tokens. No preço de hoje, a diferença vale <strong>${fu(d*hoje)}</strong>.`)}
+  else{fim.className='cmpfim perde';setHTML(fim,`Aqui a compra única levou <strong>${fqc(-d)} ${A}</strong> a mais (${fpct(-dp)}), porque foi feita num preço abaixo da maioria das compras em etapas. Fracionar protege de comprar tudo no topo, mas perde quando o preço só sobe depois da primeira compra.`)}
+  cpDraw(r)}
+function cpDraw(r){const cv=$('#cmpCv');const b=cv.getBoundingClientRect();if(!b.width)return;const d=devicePixelRatio||1;cv.width=b.width*d;cv.height=b.height*d;
+  const g=cv.getContext('2d');g.setTransform(d,0,0,d,0,0);const w=b.width,h=b.height;g.clearRect(0,0,w,h);if(!r)return;
+  const {one,et,ps}=r,n=ps.length,hoje=S.now;
+  const base=[...ps,one.avg,et.avg];const bmx=Math.max(...base),bmn=Math.min(...base);
+  /* "hoje" só entra no gráfico se estiver perto dos preços digitados */
+  const comHoje=hoje>=bmn*.5&&hoje<=bmx*2;const vals=comHoje?[...base,hoje]:base;let mx=Math.max(...vals),mn=Math.min(...vals);const pad=(mx-mn)*.18||mx*.05;mx+=pad;mn-=pad;
+  const L=12,R=w-74,top=12,chartH=h*.58,barTop=top+chartH+16,barH=h-barTop-20;
+  const X=j=>L+30+(R-L-60)*(n>1?j/(n-1):.5),Y=p=>top+(mx-p)/(mx-mn)*chartH;
+  g.font='11px '+FM;g.textBaseline='middle';
+  const usados=[];
+  const hl=(p,c,dash,txt)=>{g.strokeStyle=c;g.lineWidth=1.4;g.setLineDash(dash);g.beginPath();g.moveTo(L,Y(p));g.lineTo(R,Y(p));g.stroke();g.setLineDash([]);
+    /* rótulos à direita não se encostam: empurra 13 px quando colidem */
+    let y=Y(p);while(usados.some(u=>Math.abs(u-y)<13))y+=13;usados.push(y);g.fillStyle=c;g.fillText(txt+' '+fp(p),R+6,y)};
+  hl(one.avg,COL.down,[5,4],'1×');hl(et.avg,COL.avg,[],'méd');if(comHoje)hl(hoje,COL.test,[2,3],'hoje');
+  g.strokeStyle=COL.up;g.lineWidth=1.6;g.beginPath();ps.forEach((p,j)=>j?g.lineTo(X(j),Y(p)):g.moveTo(X(j),Y(p)));g.stroke();
+  ps.forEach((p,j)=>{g.fillStyle=COL.up;g.beginPath();g.arc(X(j),Y(p),5,0,7);g.fill();g.fillStyle=COL.bg;g.font='600 9px '+FB;g.textAlign='center';g.fillText(j+1,X(j),Y(p)+.5);g.textAlign='left';g.font='11px '+FM});
+  g.fillStyle=COL.down;g.beginPath();g.arc(L+10,Y(one.avg),5,0,7);g.fill();
+  /* barras: tokens de cada compra (verde) contra a compra única dividida igual (vermelho) */
+  const tk=ps.map(p=>CP.val/n/p),uni=CP.val/n/one.avg,tmax=Math.max(...tk,uni);
+  g.fillStyle=COL.muted;g.font='10.5px '+FB;g.fillText('Tokens por compra',L,barTop-6);
+  ps.forEach((p,j)=>{const bw=Math.min(36,(R-L-60)/n*.45),x=X(j)-bw/2,hh=tk[j]/tmax*barH;g.fillStyle=COL.up;g.globalAlpha=.85;g.fillRect(x,barTop+barH-hh,bw,hh);g.globalAlpha=1;
+    g.fillStyle=COL.fg;g.font='10.5px '+FM;g.textAlign='center';g.fillText(fqc(tk[j]),X(j),barTop+barH+10);g.textAlign='left'});
+  const yU=barTop+barH-uni/tmax*barH;g.strokeStyle=COL.down;g.setLineDash([4,3]);g.beginPath();g.moveTo(L,yU);g.lineTo(R,yU);g.stroke();g.setLineDash([]);
+  g.fillStyle=COL.down;g.font='10.5px '+FM;g.fillText('1× '+fqc(uni),R+6,yU)}
+$('#cmpOpen').onclick=cpOpen;$('#cmpX').onclick=cpClose;
+addEventListener('keydown',e=>{if(e.key==='Escape'&&CP.open){e.preventDefault();cpClose()}});
+$('#cmpVal').addEventListener('input',()=>{const v=num($('#cmpVal').value);if(v>0){CP.val=v;cpSync();cpRender()}});
+$('#cmpUni').addEventListener('input',()=>{const v=num($('#cmpUni').value);if(v>0){CP.uni=v;if(CP.cen)cpCenario(CP.cen);cpSyncRows();cpRender()}});
+function cpSyncRows(){const keep=document.activeElement&&document.activeElement.id;cpSync();if(keep&&$('#'+keep))$('#'+keep).focus()}
+document.querySelectorAll('#cmpN button').forEach(b=>b.onclick=()=>{const k=+b.dataset.n;if(k===CP.n)return;CP.n=k;if(CP.cen)cpCenario(CP.cen);else cpSpread();cpSync();cpRender()});
+document.querySelectorAll('#cmpCen button').forEach(b=>b.onclick=()=>{cpCenario(b.dataset.c);cpSync();cpRender()});
+$('#cmpGraf').onclick=()=>{CP.cen='';cpSpread();cpSync();cpRender()};
+$('#cmpAba').onclick=()=>{if(cpFromAba()){CP.cen='';cpSync();cpRender()}};
+new ResizeObserver(()=>{if(CP.open)cpDraw(cpStats())}).observe($('#cmpCv'));
+
+/* ---------- celular: abas Tokens · Gráfico · Preço médio ---------- */
+function setMview(v){document.body.dataset.mview=v;document.querySelectorAll('#mtabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v));if(v==='graf')requestAnimationFrame(resize)}
+document.querySelectorAll('#mtabs button').forEach(b=>b.onclick=()=>setMview(b.dataset.v));
+setMview('graf');
 
 /* ---------- pool concentrada ---------- */
 function clAmt(L,a,b,p){const sa=Math.sqrt(a),sb=Math.sqrt(b),sp=Math.sqrt(Math.min(Math.max(p,a),b));return{x:L*(1/sp-1/sb),y:L*(sp-sa)}}
@@ -1218,7 +1381,7 @@ $('#imgBtn').onclick=async()=>{
   const old=S.card,om=S.mouse;S.card=true;S.mouse=null;draw();const d=devicePixelRatio||1,band=38;
   const oc=document.createElement('canvas');oc.width=cv.width;oc.height=cv.height+band*d;const o=oc.getContext('2d');
   o.fillStyle=COL.bg;o.fillRect(0,0,oc.width,oc.height);o.setTransform(d,0,0,d,0,0);o.textBaseline='middle';
-  o.font='700 17px '+C('--f-display');o.fillStyle=COL.fg;const T1=TOOL==='pool'?'Estratégias de ':'Escada ',T2=TOOL==='pool'?'Pools de Liquidez':'· DCA e preço médio';o.fillText(T1,12,band/2);const w1=o.measureText(T1).width;o.fillText(T2,12+w1,band/2);
+  o.font='700 17px '+C('--f-display');o.fillStyle=COL.fg;const T1=TOOL==='pool'?'Estratégias de ':'DCA ',T2=TOOL==='pool'?'Pools de Liquidez':'· Preço Médio';o.fillText(T1,12,band/2);const w1=o.measureText(T1).width;o.fillText(T2,12+w1,band/2);
   o.font='13px '+FB;o.fillStyle=COL.muted;o.textAlign='right';o.fillText(`${S.asset} · ${new Date().toLocaleDateString('pt-BR')}`,W-12,band/2);
   o.setTransform(1,0,0,1,0,0);o.drawImage(cv,0,band*d);S.card=old;S.mouse=om;draw();
   const blob=await new Promise(r=>oc.toBlob(r,'image/png'));if(blob)await saveFile(`quadro-${String(S.asset).toLowerCase()}-${dstr(Date.now())}.png`,blob);
@@ -1275,6 +1438,7 @@ $('#regen').onclick=()=>{if(S.simKey)loadSim(S.simKey,(Math.random()*1e9)|0)};
 $('#hlReset').onclick=()=>{const e=extent();S.hi=e.hi;S.lo=e.lo;syncHeader();renderAll()};
 
 function renderAll(){if(!n())return;
+  if(CP.open){$('#cmpAsset').textContent=S.asset+' · hoje '+fp(S.now);cpRender()}
   if(RP.on)renderReplay();else if(S.tab==='dca')renderRes();else if(S.tab==='pool'){renderPool();renderPH()}else if(S.tab==='cal')renderCal();else if(S.tab==='sell')renderSell();
   draw()}
 
