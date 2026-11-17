@@ -29,8 +29,8 @@
     return el ? el.textContent.trim() : "";
   }
 
-  /* Aba "Todas" (17/11/2026): o hub. Mostra todas as seções, cada uma
-     com o seu título. É a aba que o grupo Ferramentas do menu lateral
+  /* Aba "Todas" (17/11/2026): o hub. Mostra os 11 cards numa grade só,
+     sem separação por grupo (css/ferramentas.css, html.tools-todas). É a aba que o grupo Ferramentas do menu lateral
      abre (#todas) e a de quem chega sem endereço nem aba guardada. */
   var TODAS = "todas";
   var total = document.querySelectorAll(".tools-sec[data-aba] .tool-card").length;
@@ -87,7 +87,7 @@
 
     if (legenda) {
       var sec = document.querySelector('.tools-sec[data-aba="' + id + '"]');
-      legenda.textContent = todas ? "Todas as ferramentas do ATLAS, por grupo." : texto(sec, ".tools-sec__sub");
+      legenda.textContent = todas ? "Todas as ferramentas do ATLAS." : texto(sec, ".tools-sec__sub");
     }
 
     try { localStorage.setItem(CHAVE, id); } catch (e) { /* sem storage: tudo bem */ }
