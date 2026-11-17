@@ -194,3 +194,37 @@ Pedido do dono (proposta com 5 nomes e 3 layouts; escolhido o Layout A).
   "Ver todas".
 - **Celular:** abas Tokens · Gráfico · Preço médio (`.mtabs`, `data-mview`).
   Escolher um token volta ao gráfico. O painel abre como folha de baixo.
+
+## Atualização 17/11/2026 — Estratégias de Pools, parte 1 (Layout A)
+
+Proposta aprovada pelo dono (Layout A com as recomendações). Essa ferramenta
+**ensina** o conceito de pool. Para simular uma pool real e ver em qual
+plataforma ela está, existe o botão "Simulador de pool", que abre o
+Scanner de Pools de Liquidez. O dono quer deixar o Scanner no nível da
+Metrix Finance mais adiante.
+
+- **Mesmo esqueleto do DCA**, nas duas ferramentas: três colunas e abas no
+  celular. **Identidade:** borda de cima do gráfico dourada no DCA e roxa
+  nas Pools; botões, chips e painel das Pools em roxo.
+- **Coluna do PAR** (`.parbox`): token A (o da lista) e token B (USDC, USDT,
+  SOL, ETH, BTC, ação tokenizada, original do derivado). O selo do tipo de
+  par (`tipoPar()`/`TIPOS`) diz o risco: stable×stable, token×stable,
+  token×RWA, blue chip×blue chip, projeto×blue chip, derivado×original.
+  Também tem "Pares para estudar" (SOL/USDC, SOL/ETH, PENDLE/ETH, mSOL/SOL…).
+  **Limite atual:** com B diferente de stable, as contas ainda medem B em
+  dólar (aviso no selo). A conta pela relação entre os preços fica na parte 2.
+- **Passo a passo** na direita: 1 · objetivo → 2 · faixa e depósito →
+  3 · o que acontece. "Renda em dólar" virou "Renda com taxas".
+- **Cenários embaixo do gráfico** (`#cenbar`): −30%, −10%, entrada, +10%,
+  +30%, com o valor da pool (sem taxa) e a diferença para a alternativa
+  do objetivo (comprar tudo hoje, segurar o token ou segurar os dois).
+- **Pool × Segurar** (`#poolp`): painel sobre o gráfico, como no DCA. Mostra
+  a curva de valor por preço final (pool sem e com taxa, alternativa e
+  ficar em dólar), a faixa marcada e os dias dentro da faixa × APR. Também
+  tem uma tabela de −50% a +50% e uma frase que diz em que preços a pool
+  vence e em quais perde.
+- Celular: o cabeçalho abre espaço para o botão do menu do site.
+
+**Parte 2 (pendente):** Raio-X do APR (tempo dentro da faixa no histórico),
+aumentar a posição (somar posições e novo preço médio) e pares entre
+dois voláteis medidos pela relação entre os preços.

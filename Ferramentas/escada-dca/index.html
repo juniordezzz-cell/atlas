@@ -167,20 +167,53 @@ body.present header,body.present .wl{display:none!important}
 body.present .pane{font-size:15px}
 body.present .note{font-size:14.5px}
 body.present .kv b{font-size:19px}
-/* ---------- DCA · Preço Médio: três colunas (17/11/2026) ----------
+/* ---------- Três colunas, nas duas ferramentas (DCA 17/11; Pools 17/11) ----------
    Tokens à esquerda, gráfico no meio, Preço médio / DCA no tempo / Venda à
    direita. O <aside> some como caixa (display:contents) e os dois cartões
-   dele viram colunas da grade. A Estratégia de Pools mantém o layout antigo. */
+   dele viram colunas da grade. Na Estratégia de Pools a coluna da esquerda monta o PAR. */
 @media (min-width:901px){
-  body[data-tool="dca"] .main{display:grid;grid-template-columns:clamp(220px,17vw,270px) minmax(0,1fr) clamp(330px,25vw,390px);grid-template-rows:minmax(0,1fr)}
-  body[data-tool="dca"] .main>aside{display:contents}
-  body[data-tool="dca"] .wl{grid-column:1;grid-row:1;max-height:none}
-  body[data-tool="dca"] .board{grid-column:2;grid-row:1}
-  body[data-tool="dca"] .calc{grid-column:3;grid-row:1}
-  body[data-tool="dca"] .wrow{grid-template-columns:18px minmax(0,1fr) auto 18px}
-  body[data-tool="dca"] .wrow .ch,body[data-tool="dca"] .wrow .s small{display:none}
+  body[data-tool] .main{display:grid;grid-template-columns:clamp(220px,17vw,270px) minmax(0,1fr) clamp(330px,25vw,390px);grid-template-rows:minmax(0,1fr)}
+  body[data-tool] .main>aside{display:contents}
+  body[data-tool] .wl{grid-column:1;grid-row:1;max-height:none}
+  body[data-tool] .board{grid-column:2;grid-row:1}
+  body[data-tool] .calc{grid-column:3;grid-row:1}
+  body[data-tool] .wrow{grid-template-columns:18px minmax(0,1fr) auto 18px}
+  body[data-tool] .wrow .ch,body[data-tool] .wrow .s small{display:none}
 }
 .mtabs{display:none}
+/* Identidade: dourado no DCA, roxo nas Pools, para ninguém confundir as duas */
+body[data-tool="dca"] .board{border-top:2px solid var(--avg)}
+body[data-tool="pool"] .board{border-top:2px solid var(--pool)}
+body[data-tool="pool"] .sub button[aria-pressed="true"]{border-color:var(--pool);color:var(--pool)}
+body[data-tool="pool"] .wrow.on{border-left-color:var(--pool)}
+body[data-tool="pool"] .cmpgo{border-color:var(--pool)}
+body[data-tool="pool"] .cmpgo svg{color:var(--pool)}
+body[data-tool="pool"] .cmpp{border-color:var(--pool)}
+/* coluna do PAR */
+.parbox{display:flex;flex-direction:column;gap:8px;padding:10px;border-bottom:1px solid var(--line)}
+.parsl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 8px;align-items:center}
+.parsl .tk{font-weight:600;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.parsl select{width:100%;min-width:0}
+.ptipo{border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.45;display:flex;flex-direction:column;gap:4px;background:var(--bg);border:1px solid var(--line)}
+.ptipo b{font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.ptipo.v b{color:var(--up)} .ptipo.a b{color:var(--avg)} .ptipo.r b{color:var(--down)}
+.ptipo span{color:var(--muted)}
+.pprontos{display:flex;flex-wrap:wrap;gap:4px}
+.pprontos button{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer;color:var(--muted);font-size:12px}
+.pprontos button:hover{border-color:var(--pool);color:var(--fg)}
+.passo{display:flex;align-items:center;gap:8px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-top:4px}
+.passo i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--pool) 18%,transparent);color:var(--pool);font-size:11px}
+.simbtn{display:flex;align-items:center;justify-content:space-between;gap:8px;text-decoration:none;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.simbtn:hover{border-color:var(--pool)}
+.simbtn small{color:var(--muted);display:block;font-size:11.5px}
+/* cenários embaixo do gráfico (Pools) */
+.cenbar{display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:4px;padding:6px 8px;border-top:1px solid var(--line);font-size:11.5px;align-items:stretch}
+.cenbar>span{display:flex;flex-direction:column;justify-content:center;color:var(--muted);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding-right:4px}
+.cenbar div{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 6px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.cenbar div.hj{border-color:var(--pool)}
+.cenbar small{color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cenbar b{font-family:var(--f-mono);font-weight:500;font-size:12px}
+.cenbar em{font-style:normal;font-family:var(--f-mono);font-size:10.5px}
 .cmpgo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--raise);border:1px solid var(--test);color:var(--fg);border-radius:8px;padding:8px 10px;cursor:pointer;font-weight:500}
 .cmpgo:hover{background:var(--line)}
 .cmpgo svg{width:16px;height:16px;color:var(--test)}
@@ -206,19 +239,21 @@ body.present .kv b{font-size:19px}
 .cmpfim.perde{background:color-mix(in srgb,var(--avg) 13%,transparent);color:var(--fg)}
 @media (max-width:1100px){.main>aside{width:350px}}
 @media (max-width:900px){
-  /* DCA no celular: três abas (Tokens · Gráfico · Preço médio) */
-  body[data-tool="dca"] .mtabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px}
+  /* Celular: três abas (Tokens/Par · Gráfico · Preço médio/Montar) */
+  body[data-tool] .mtabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px}
   .mtabs button{flex:1;background:none;border:0;border-radius:7px;padding:8px 4px;color:var(--muted);cursor:pointer;font-weight:500}
   .mtabs button[aria-pressed="true"]{background:var(--raise);color:var(--fg)}
-  body[data-tool="dca"][data-mview="tok"] .board,body[data-tool="dca"][data-mview="tok"] .calc,
-  body[data-tool="dca"][data-mview="graf"] .wl,body[data-tool="dca"][data-mview="graf"] .calc,
-  body[data-tool="dca"][data-mview="calc"] .wl,body[data-tool="dca"][data-mview="calc"] .board{display:none}
-  body[data-tool="dca"][data-mview="tok"] .wl{max-height:none}
+  body[data-tool][data-mview="tok"] .board,body[data-tool][data-mview="tok"] .calc,
+  body[data-tool][data-mview="graf"] .wl,body[data-tool][data-mview="graf"] .calc,
+  body[data-tool][data-mview="calc"] .wl,body[data-tool][data-mview="calc"] .board{display:none}
+  body[data-tool][data-mview="tok"] .wl{max-height:none}
   .cmpp{position:fixed;inset:auto 0 0 0;max-height:90vh;border-radius:14px 14px 0 0;
     padding-bottom:max(14px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   @keyframes cmpSai{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
   .cmpgrid{grid-template-columns:1fr}
   .app{height:auto}
+  /* o botão do menu do site fica no canto: o cabeçalho abre espaço para ele */
+  html.atlas-moldura .app>header{padding-left:46px}
   .main{flex-direction:column}
   .board{height:66vh;min-height:400px;flex:none}
   .main>aside{width:100%}
@@ -264,8 +299,8 @@ body.present .kv b{font-size:19px}
     <p class="estudo"><span class="only-dca"><b style="color:var(--muted);font-weight:600">DCA</b> = Dollar-Cost Averaging, "média do custo em dólar": dividir a compra em partes iguais para chegar a um preço médio melhor. </span>Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
   </header>
 
-  <nav class="mtabs only-dca" id="mtabs" aria-label="Partes da ferramenta">
-    <button data-v="tok" aria-pressed="false">Tokens</button><button data-v="graf" aria-pressed="true">Gráfico</button><button data-v="calc" aria-pressed="false">Preço médio</button>
+  <nav class="mtabs" id="mtabs" aria-label="Partes da ferramenta">
+    <button data-v="tok" aria-pressed="false"><span class="only-dca">Tokens</span><span class="only-pool">Par</span></button><button data-v="graf" aria-pressed="true">Gráfico</button><button data-v="calc" aria-pressed="false"><span class="only-dca">Preço médio</span><span class="only-pool">Montar</span></button>
   </nav>
 
   <div class="main">
@@ -311,11 +346,29 @@ body.present .kv b{font-size:19px}
         <button class="btn sm sell" id="rSell">Vender tudo</button>
         <button class="btn sm" id="rExit" style="margin-left:auto">Sair do replay</button>
       </div>
+      <div class="cenbar only-pool" id="cenbar" aria-live="polite"></div>
       <div class="hintbar" id="hint"></div>
     </section>
 
     <aside>
       <section class="card wl">
+        <!-- PAR (Estratégias de Pools, 17/11/2026): token A = o escolhido na lista;
+             token B no seletor. O selo diz o tipo de par e o risco dele. -->
+        <div class="parbox only-pool">
+          <h3>Par</h3>
+          <div class="parsl">
+            <span class="lbl">Token</span><span class="tk" id="parA">—</span>
+            <label class="lbl" for="parB">Com</label>
+            <select id="parB">
+              <optgroup label="Stablecoins"><option value="USDC" selected>USDC</option><option value="USDT">USDT</option></optgroup>
+              <optgroup label="Blue chips"><option value="SOL">SOL</option><option value="ETH">ETH</option><option value="BTC">BTC</option></optgroup>
+              <optgroup label="Outros"><option value="rwa">Ação tokenizada (RWA)</option><option value="deriv">O original deste token (ex.: SOL para mSOL)</option></optgroup>
+            </select>
+          </div>
+          <div class="ptipo" id="ptipo"></div>
+          <span class="lbl">Pares para estudar</span>
+          <div class="pprontos" id="pprontos"></div>
+        </div>
         <div class="wlh">
           <input class="inp" id="q" placeholder="Buscar token (ex.: jup, aave)" autocomplete="off" aria-label="Buscar token">
           <div class="seg" id="wtab"><button data-w="top" aria-pressed="true">Top 500</button><button data-w="fav" aria-pressed="false">★ Favoritos</button></div>
@@ -347,11 +400,14 @@ body.present .kv b{font-size:19px}
         </div>
 
         <div class="pane" id="pane-pool" hidden>
+          <a class="simbtn" href="../scanner-pools/index.html"><span><b>Simulador de pool</b><small>Ache a pool real de um token e veja em qual plataforma ela está</small></span><span aria-hidden="true">→</span></a>
+          <button class="cmpgo" id="poolCmpOpen" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>Pool × Segurar: quem ganha?</button>
+          <h3 class="passo"><i>1</i>O que você quer fazer?</h3>
           <div class="sub" id="pStrat">
-            <button data-ps="buy">Comprar na descida</button><button data-ps="sell">Vender na subida</button><button data-ps="yield">Renda em dólar</button><button data-ps="ratio">Proporção</button><button data-ps="full">Faixa cheia (V2)</button>
+            <button data-ps="buy">Comprar na descida</button><button data-ps="sell">Vender na subida</button><button data-ps="yield">Renda com taxas</button><button data-ps="ratio">Proporção</button><button data-ps="full">Faixa cheia (V2)</button>
           </div>
-          <p class="note">Procurando uma pool? Abra o <a href="../scanner-pools/index.html" style="color:var(--accent)">Scanner de Pools de Liquidez</a>.</p>
           <p class="note" id="pIntro"></p>
+          <h3 class="passo"><i>2</i>Faixa e depósito</h3>
           <div class="row" id="pQuick"></div>
           <div class="fgrid">
             <div class="f"><label class="lbl" for="pa">Mín da faixa</label><input class="inp" id="pa" inputmode="decimal"></div>
@@ -360,6 +416,7 @@ body.present .kv b{font-size:19px}
             <div class="f"><label class="lbl" for="dep">Depósito ($)</label><input class="inp" id="dep" inputmode="decimal"></div>
           </div>
           <div class="f"><label class="lbl" for="pRatio">Proporção na entrada: <span id="pRatioL" style="color:var(--pool)"></span></label><input type="range" id="pRatio" min="0" max="100" step="1"></div>
+          <h3 class="passo"><i>3</i>O que acontece</h3>
           <div id="poolRes" class="stack"></div>
           <h3>Taxas da pool</h3>
           <div class="row"><label class="lbl" for="phApr">APR da posição (%)</label><input class="inp" id="phApr" value="25" inputmode="decimal" style="width:70px"><button class="btn sm" id="phFetch">Buscar APR real (DeFi Llama)</button></div>
@@ -432,6 +489,20 @@ body.present .kv b{font-size:19px}
         <canvas class="cmpcv" id="cmpCv" aria-label="Gráfico da comparação: preços das compras e tokens comprados em cada uma"></canvas>
         <div class="legend"><span><i style="background:var(--down)"></i>1 compra</span><span><i style="background:var(--up)"></i>compras em etapas</span><span><i style="background:var(--avg)"></i>preço médio em etapas</span><span><i style="background:var(--test)"></i>preço de hoje</span></div>
         <div class="cmpfim" id="cmpFim"></div>
+      </section>
+      <!-- Pool × Segurar (17/11/2026): mesmo lugar e entrada do painel do DCA -->
+      <section class="cmpp only-pool" id="poolp" role="dialog" aria-modal="false" aria-labelledby="poolpT" hidden>
+        <div class="cmph"><h2 id="poolpT">Pool × Segurar: quem ganha?</h2><span class="note" id="poolpSub"></span><button class="x" id="poolpX" aria-label="Fechar a comparação" title="Fechar (Esc)">×</button></div>
+        <p class="note" id="poolpIntro"></p>
+        <div class="row">
+          <label class="lbl" for="ppDias">Dias com o preço dentro da faixa</label><input class="inp" id="ppDias" value="30" inputmode="numeric" style="width:64px">
+          <label class="lbl" for="ppApr" style="margin-left:6px">APR (%)</label><input class="inp" id="ppApr" inputmode="decimal" style="width:70px">
+          <span class="note" id="ppTaxa"></span>
+        </div>
+        <canvas class="cmpcv" id="ppCv" style="height:240px" aria-label="Valor da posição na pool e do jeito alternativo, para cada preço final"></canvas>
+        <div class="legend"><span><i style="background:var(--pool)"></i>pool, sem taxas</span><span><i style="background:var(--pool);opacity:.5"></i>pool, com taxas</span><span><i style="background:var(--muted)"></i><span id="ppBaseNome">segurar</span></span><span><i style="background:var(--up)"></i>ficar em dólar</span></div>
+        <div id="ppTab"></div>
+        <div class="cmpfim" id="ppFim"></div>
       </section>
   </div>
 </div>
@@ -587,7 +658,7 @@ function loadSim(key,seed){
   $('#regen').hidden=false;setStatus('Exemplo simulado · preços inventados para a aula');
 }
 async function selectLive(id){
-  if(TOOL==='dca'&&document.body.dataset.mview==='tok')setMview('graf');
+  if(document.body.dataset.mview==='tok')setMview('graf');
   S.pending=id;const m=S.market[id]||{};const sym=m.sym||id;
   if(S.live){
     setStatus('Carregando '+sym+'…');
@@ -1035,13 +1106,98 @@ function setMview(v){document.body.dataset.mview=v;document.querySelectorAll('#m
 document.querySelectorAll('#mtabs button').forEach(b=>b.onclick=()=>setMview(b.dataset.v));
 setMview('graf');
 
+/* ---------- PAR: tipo de par e risco (17/11/2026) ---------- */
+const STABLES=/^(USDC|USDT|DAI|USDE|USDS|FDUSD|PYUSD|USD1|USDG|TUSD)$/;
+const BLUE=/^(W?BTC|W?ETH|SOL|BNB)$/;
+const DERIV=/^(M|JITO|J|B|INF|ST|WST|R|CB|ME|EZ|WE)(SOL|ETH)$/;
+const TIPOS={
+  ss:['v','Stable × stable · risco menor','Rende pouco. O risco é uma das duas moedas perder a paridade com o dólar.'],
+  ts:['a','Token × stable · risco de preço','O resultado em dólar depende do preço do token. É o par certo para comprar na descida ou vender na subida.'],
+  rwa:['r','Token × ação tokenizada · risco especial','A bolsa fecha à noite e no fim de semana, o preço pode abrir com salto, a liquidez costuma ser fina e o emissor pode pausar a negociação. Fora do horário da bolsa, o preço da pool fica sem referência.'],
+  bb:['v','Blue chip × blue chip · risco menor','O que importa é a relação entre os dois preços. Se andarem juntos, a pool perde pouco para quem só segurou.'],
+  pb:['r','Token de projeto × blue chip · risco duplo','Exposição aos dois ao mesmo tempo. Se o projeto cair contra o outro, a pool vai enchendo do token que caiu.'],
+  der:['a','Derivado × original · risco de descolar','Enquanto o derivado acompanha o original, a perda é quase zero. Se ele descolar, a pool compra o que descolou, como o stETH em 2022.']
+};
+function tipoPar(){const A=String(S.asset||'').toUpperCase(),B=$('#parB').value;
+  if(B==='rwa')return'rwa';if(B==='deriv')return'der';
+  if(STABLES.test(B))return STABLES.test(A)?'ss':'ts';
+  if(DERIV.test(A)&&A.endsWith(B))return'der';
+  return BLUE.test(A)?'bb':'pb'}
+function renderPar(){if(TOOL!=='pool')return;const A=String(S.asset||'—').toUpperCase(),B=$('#parB').value;$('#parA').textContent=A;
+  const t=TIPOS[tipoPar()],el=$('#ptipo');el.className='ptipo '+t[0];
+  const igual=!/^(rwa|deriv)$/.test(B)&&A===B;
+  const dolar=!STABLES.test(B);
+  setHTML(el,`<b>${esc(t[1])}</b><span>${esc(t[2])}</span>${igual?'<span class="dn">Escolha um segundo token diferente do primeiro.</span>':''}${dolar?'<span>Nesta versão, as contas ao lado medem o segundo token em dólar. A medição pela relação entre os dois preços chega na próxima etapa.</span>':''}`)}
+const PRONTOS=[['SOL/USDC','solana','USDC'],['ETH/USDC','ethereum','USDC'],['SOL/ETH','solana','ETH'],['PENDLE/ETH','pendle','ETH'],['UNI/ETH','uniswap','ETH'],['mSOL/SOL','msol','SOL'],['SOL/ação','solana','rwa']];
+setHTML($('#pprontos'),PRONTOS.map((p,i)=>`<button type="button" data-i="${i}">${esc(p[0])}</button>`).join(''));
+$('#pprontos').querySelectorAll('button').forEach(b=>b.onclick=()=>{const p=PRONTOS[+b.dataset.i];$('#parB').value=p[2];renderPar();if(S.live)selectLive(p[1]);else setHint('Sem preços ao vivo agora. O par fica marcado e o gráfico continua com o exemplo.')});
+$('#parB').addEventListener('change',renderPar);
+
+/* ---------- cenários embaixo do gráfico ---------- */
+function poolCore(){const{a,b,p0,dep}=S.pool;if(!(a>0&&b>a&&p0>0&&dep>0))return null;
+  const u=clAmt(1,a,b,p0),L=dep/(u.x*p0+u.y),e=clAmt(L,a,b,p0);
+  /* com o que comparar: depende do objetivo */
+  const st=S.pstrat,A=S.asset;
+  const base=st==='buy'?{nome:'Comprar tudo hoje',curto:'comprar hoje',v:p=>dep/p0*p}:st==='sell'?{nome:'Segurar o '+A,curto:'segurar',v:p=>dep/p0*p}:{nome:'Segurar os dois',curto:'segurar',v:p=>e.x*p+e.y};
+  return{a,b,p0,dep,L,e,base,val:p=>{const t=clAmt(L,a,b,p);return t.x*p+t.y}}}
+function renderCen(){const el=$('#cenbar');if(TOOL!=='pool'){return}const c=poolCore();if(!c){el.replaceChildren();return}
+  const ms=[-.3,-.1,0,.1,.3];
+  setHTML(el,`<span>Se o preço<br>terminar em</span>${ms.map(m=>{const p=c.p0*(1+m),v=c.val(p),h=c.base.v(p),d=v-h;
+    return`<div class="${m?'':'hj'}"><small>${m?fpct(m*100):'entrada'} · ${fp(p)}</small><b>${fu(v)}</b><em class="${sgn(d)}">${d>=0?'+':'−'}${fu(Math.abs(d)).replace('−','')} vs ${c.base.curto}</em></div>`}).join('')}`);
+  el.title='Valor da posição na pool, sem taxas, comparado com: '+c.base.nome}
+
+/* ---------- Pool × Segurar (painel sobre o gráfico) ---------- */
+const PP={open:false,dias:30,apr:null};
+function ppOpen(){if(TOOL!=='pool')return;PP.open=true;if(PP.apr==null)PP.apr=PHS.apr||0;$('#ppApr').value=fnum(PP.apr);$('#ppDias').value=PP.dias;
+  const p=$('#poolp');p.hidden=false;p.classList.remove('abrindo');void p.offsetWidth;p.classList.add('abrindo');$('.board').classList.add('cmp-on');ppRender();setTimeout(()=>$('#poolpX').focus(),0)}
+function ppClose(){if(!PP.open)return;PP.open=false;$('#poolp').hidden=true;$('.board').classList.remove('cmp-on');$('#poolCmpOpen').focus()}
+function ppRender(){if(!PP.open)return;const c=poolCore();const A=esc(S.asset);
+  if(!c){setHTML($('#ppFim'),'Confira a faixa e o depósito na coluna da direita.');return}
+  const taxa=c.dep*(PP.apr||0)/100*PP.dias/365;
+  $('#poolpSub').textContent=`${S.asset} · faixa ${fp(c.a)} a ${fp(c.b)} · ${fu(c.dep)}`;
+  $('#ppBaseNome').textContent=c.base.nome.toLowerCase();
+  $('#ppTaxa').textContent=`= ${fu(taxa)} de taxa`;
+  setHTML($('#poolpIntro'),`Comparação no fim do período, para cada preço final de ${A}. A pool está contra <strong>${esc(c.base.nome.toLowerCase())}</strong>${S.pstrat==='buy'?' (o mesmo dinheiro em '+A+' no preço de entrada)':S.pstrat==='sell'?' (ficar com os tokens sem fazer nada)':' (guardar os tokens que entraram na pool)'} e contra ficar em dólar. As taxas só entram nos dias em que o preço fica dentro da faixa.`);
+  /* faixa de preços do gráfico */
+  const full=S.pstrat==='full';const lo=full?c.p0*.4:Math.min(c.a,c.p0)*.7,hi=full?c.p0*2:Math.max(c.b,c.p0)*1.3;
+  const N=120,xs=Array.from({length:N+1},(_,i)=>lo+(hi-lo)*i/N);
+  const pool=xs.map(c.val),poolT=pool.map(v=>v+taxa),base=xs.map(c.base.v);
+  /* onde a pool com taxas vence */
+  let ini=null,fim=null;xs.forEach((p,i)=>{if(poolT[i]>=base[i]){if(ini==null)ini=p;fim=p}});
+  const ganha=xs.filter((p,i)=>poolT[i]>=base[i]).length;
+  const fimEl=$('#ppFim');
+  if(!ganha){fimEl.className='cmpfim perde';setHTML(fimEl,`Com ${PP.dias} dias de taxa, a pool não vence <strong>${esc(c.base.nome.toLowerCase())}</strong> em nenhum preço entre ${fp(lo)} e ${fp(hi)}. A taxa não paga a troca de tokens que a faixa faz.`)}
+  else if(ganha===xs.length){fimEl.className='cmpfim ganha';setHTML(fimEl,`Com ${PP.dias} dias de taxa, a pool fica à frente de <strong>${esc(c.base.nome.toLowerCase())}</strong> em todo o intervalo do gráfico (${fp(lo)} a ${fp(hi)}). Confira se o APR é realista: ele muda todo dia e só vale dentro da faixa.`)}
+  else{fimEl.className='cmpfim '+(ganha>xs.length/2?'ganha':'perde');setHTML(fimEl,`Com ${PP.dias} dias de taxa, a pool vence <strong>${esc(c.base.nome.toLowerCase())}</strong> se o preço terminar ${ini<=lo+1e-12?`abaixo de <strong>${fp(fim)}</strong>`:fim>=hi-1e-12?`acima de <strong>${fp(ini)}</strong>`:`entre <strong>${fp(ini)}</strong> e <strong>${fp(fim)}</strong>`}. Fora disso, ${esc(c.base.nome.toLowerCase())} rende mais. A pool não é ganho garantido: ela troca a alta (ou a queda) do token por taxa.`)}
+  const ms=[-.5,-.3,-.1,0,.1,.3,.5];
+  setHTML($('#ppTab'),`<table><thead><tr><th>Preço final</th><th>Pool + taxa</th><th>${esc(c.base.nome)}</th><th>Em dólar</th></tr></thead><tbody>${ms.map(m=>{const p=c.p0*(1+m),v=c.val(p)+taxa,h=c.base.v(p);return`<tr><td>${m?fpct(m*100):'entrada'} · ${fp(p)}</td><td class="${v>=h?'up':'dn'}">${fu(v)}</td><td>${fu(h)}</td><td>${fu(c.dep)}</td></tr>`}).join('')}</tbody></table>`);
+  ppDraw(xs,pool,poolT,base,c,lo,hi)}
+function ppDraw(xs,pool,poolT,base,c,lo,hi){const cv=$('#ppCv');const bb=cv.getBoundingClientRect();if(!bb.width)return;const d=devicePixelRatio||1;cv.width=bb.width*d;cv.height=bb.height*d;
+  const g=cv.getContext('2d');g.setTransform(d,0,0,d,0,0);const w=bb.width,h=bb.height;g.clearRect(0,0,w,h);
+  const all=[...pool,...poolT,...base,c.dep];let mx=Math.max(...all),mn=Math.min(...all);const pd=(mx-mn)*.08||1;mx+=pd;mn-=pd;
+  const L=58,R=w-30,T=10,B=h-24,X=p=>L+(p-lo)/(hi-lo)*(R-L),Y=v=>T+(mx-v)/(mx-mn)*(B-T);
+  /* faixa da pool */
+  if(S.pstrat!=='full'){g.fillStyle=COL.pool;g.globalAlpha=.1;g.fillRect(X(Math.max(lo,c.a)),T,X(Math.min(hi,c.b))-X(Math.max(lo,c.a)),B-T);g.globalAlpha=1}
+  g.font='10.5px '+FM;g.fillStyle=COL.muted;g.textBaseline='middle';
+  for(let k=0;k<=4;k++){const v=mn+(mx-mn)*k/4;g.fillText(fu(v).replace(',00',''),4,Y(v));g.strokeStyle=COL.line;g.beginPath();g.moveTo(L,Y(v));g.lineTo(R,Y(v));g.stroke()}
+  g.textAlign='center';for(let k=0;k<=4;k++){const p=lo+(hi-lo)*k/4;g.fillText(fp(p),X(p),h-10)}g.textAlign='left';
+  const line=(ys,c2,dash,a2)=>{g.strokeStyle=c2;g.setLineDash(dash);g.globalAlpha=a2;g.lineWidth=2;g.beginPath();xs.forEach((p,i)=>i?g.lineTo(X(p),Y(ys[i])):g.moveTo(X(p),Y(ys[i])));g.stroke();g.setLineDash([]);g.globalAlpha=1};
+  g.strokeStyle=COL.up;g.setLineDash([4,4]);g.lineWidth=1.2;g.beginPath();g.moveTo(L,Y(c.dep));g.lineTo(R,Y(c.dep));g.stroke();g.setLineDash([]);
+  line(base,COL.muted,[],1);line(poolT,COL.pool,[5,4],.6);line(pool,COL.pool,[],1);
+  g.strokeStyle=COL.test;g.setLineDash([2,3]);g.beginPath();g.moveTo(X(c.p0),T);g.lineTo(X(c.p0),B);g.stroke();g.setLineDash([]);g.fillStyle=COL.test;g.fillText('entrada',X(c.p0)+4,T+8)}
+$('#poolCmpOpen').onclick=ppOpen;$('#poolpX').onclick=ppClose;
+addEventListener('keydown',e=>{if(e.key==='Escape'&&PP.open){e.preventDefault();ppClose()}});
+$('#ppDias').addEventListener('input',()=>{const v=Math.round(num($('#ppDias').value));if(v>=0&&v<=3650){PP.dias=v;ppRender()}});
+$('#ppApr').addEventListener('input',()=>{const v=num($('#ppApr').value);if(v>=0){PP.apr=v;ppRender()}});
+new ResizeObserver(()=>{if(PP.open)ppRender()}).observe($('#ppCv'));
+
 /* ---------- pool concentrada ---------- */
 function clAmt(L,a,b,p){const sa=Math.sqrt(a),sb=Math.sqrt(b),sp=Math.sqrt(Math.min(Math.max(p,a),b));return{x:L*(1/sp-1/sb),y:L*(sp-sa)}}
 /* ---------- Estratégia de pool ---------- */
 const PSTRAT={
   buy:{name:'Comprar na descida',intro:'A faixa fica toda abaixo do preço de hoje e você deposita só USDC. Se o preço cair, a pool compra o token aos poucos, como um DCA automático, e ainda cobra taxas de quem negocia.',quick:[['−5% a −20%',[-.05,-.2]],['−10% a −30%',[-.1,-.3]],['−20% a −50%',[-.2,-.5]]],def:1},
   sell:{name:'Vender na subida',intro:'A faixa fica toda acima do preço de hoje e você deposita só o token. Se o preço subir, a pool vende aos poucos e você recebe USDC, ganhando taxas enquanto espera.',quick:[['+5% a +20%',[.05,.2]],['+10% a +40%',[.1,.4]],['+25% a +100%',[.25,1]]],def:1},
-  yield:{name:'Renda em dólar',intro:'A faixa fica em volta do preço de hoje. Enquanto o preço ficar dentro dela, a posição rende taxas. Quanto mais estreita a faixa, mais taxa por dólar, e mais fácil o preço sair dela.',quick:[['±5%',.05],['±10%',.1],['±20%',.2],['±50%',.5]],def:1},
+  yield:{name:'Renda com taxas',intro:'A faixa fica em volta do preço de hoje. Enquanto o preço ficar dentro dela, a posição rende taxas. Quanto mais estreita a faixa, mais taxa por dólar, e mais fácil o preço sair dela.',quick:[['±5%',.05],['±10%',.1],['±20%',.2],['±50%',.5]],def:1},
   ratio:{name:'Proporção',intro:'Na pool concentrada quem decide quanto fica em token e quanto em USDC é a posição do preço dentro da faixa. Escolha a proporção e a ferramenta calcula a faixa (com largura de ±20%), ou arraste o controle abaixo.',quick:[['80/20',.8],['70/30',.7],['50/50',.5],['30/70',.3],['20/80',.2]],def:2}
 };
 PSTRAT.full={name:'Faixa cheia (V2)',intro:'A pool clássica (Uniswap V2, Raydium padrão, Balancer): a liquidez cobre todos os preços, então a posição nunca sai da faixa e sempre rende taxas. Em troca, cada dólar rende bem menos taxa que numa faixa concentrada, e a perda contra quem só segurou (impermanent loss) continua existindo.',quick:[['50/50 · faixa cheia',0]],def:0};
@@ -1439,6 +1595,7 @@ $('#hlReset').onclick=()=>{const e=extent();S.hi=e.hi;S.lo=e.lo;syncHeader();ren
 
 function renderAll(){if(!n())return;
   if(CP.open){$('#cmpAsset').textContent=S.asset+' · hoje '+fp(S.now);cpRender()}
+  if(TOOL==='pool'){renderPar();renderCen();ppRender()}
   if(RP.on)renderReplay();else if(S.tab==='dca')renderRes();else if(S.tab==='pool'){renderPool();renderPH()}else if(S.tab==='cal')renderCal();else if(S.tab==='sell')renderSell();
   draw()}
 
