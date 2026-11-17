@@ -1522,8 +1522,8 @@ html.atlas-moldura body { padding-left: var(--atm-w); transition: padding-left .
 }
 .atm-grupo__seta:hover { background: rgba(148, 170, 215, 0.08); color: var(--atm-texto); }
 .atm-grupo__link:focus-visible, .atm-grupo__seta:focus-visible { outline: 2px solid var(--atm-acento); outline-offset: 2px; }
-.atm-item--ferr { height: 36px; font-size: 13.5px; }
-.atm-item--ferr .atm-ic { width: 17px; height: 17px; }
+.atm-item--sub { height: 36px; font-size: 13.5px; }
+.atm-item--sub .atm-ic { width: 17px; height: 17px; }
 .atm-hub-ic { display: none; }
 
 .atm-pe { margin-top: auto; display: flex; flex-direction: column; gap: 2px; padding-top: 10px; border-top: 1px solid var(--atm-linha); }

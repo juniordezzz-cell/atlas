@@ -162,7 +162,7 @@
    Registro: docs/ferramentas-bancada-2026-11-08.md */
 /* v99 = a Central RWA saiu (o backend deixou o Supabase): a página RWA perdeu
    as abas Central RWA, Eventos e Agentes e abre no Dashboard. */
-var VERSAO = "atlas-v99";
+var VERSAO = "atlas-v100";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
@@ -171,6 +171,7 @@ var CACHE = VERSAO;
    DeFi e não deveria pagar o download dele. */
 var CASCA = [
   "./",
+  "mercado/index.html",   /* página principal desde 17/11/2026 */
   "pages/dashboard.html",
   "pages/offline.html",
   "manifest.webmanifest",

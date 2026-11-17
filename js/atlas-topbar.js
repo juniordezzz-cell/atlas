@@ -135,10 +135,11 @@
     relatorios: "Relatórios do patrimônio", configuracoes: "Preferências e dados"
   };
   var APP_GRUPOS = [
-    { nome: "Módulos", ids: ["hold", "trade", "defi", "rwa"] },
-    { nome: "Painéis", ids: ["dashboard", "carteiras", "mercado"] },
-    { nome: "Aprender", ids: ["academy"] },
-    { nome: "Sistema", ids: ["ferramentas", "relatorios", "configuracoes"] }
+    /* mesma ordem do menu lateral (17/11/2026) */
+    { nome: "Principal", ids: ["mercado"] },
+    { nome: "Investimentos", ids: ["dashboard", "hold", "trade", "defi", "rwa", "carteiras"] },
+    { nome: "Estudo e ferramentas", ids: ["academy", "ferramentas"] },
+    { nome: "Sistema", ids: ["relatorios", "configuracoes"] }
   ];
 
   function svgDeInner(inner) {
