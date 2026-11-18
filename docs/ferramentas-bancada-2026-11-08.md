@@ -76,6 +76,16 @@ o Chart.js de CDN (agora `assets/vendor/chart-4.4.1.min.js`).
   cerca de 1 ano de histórico (a CoinGecko pública dá 365 dias). **Prata saiu.**
 - **Conversor, Lucro, Staking, Comparador:** dólar em reais pela cotação do
   USDT na CoinGecko (antes exchangerate-api / CoinPaprika).
+  **Conversor e Câmbio mudaram em 18/11/2026:** a fonte principal agora é a
+  **Coinbase** (`api.coinbase.com/v2/exchange-rates`, pública, sem chave) e a
+  CoinGecko ficou de reserva. Cripto: só as moedas de `COINBASE_SIMBOLOS`
+  (ticker conferido) usam a Coinbase; as demais seguem na CoinGecko. Se a
+  Coinbase falhar ou não listar a moeda, cai na CoinGecko. Variação 24h,
+  estatísticas e gráfico continuam da CoinGecko e, se ela falhar, a tela mostra
+  "—" e "Gráfico indisponível agora." sem derrubar a cotação. A leitura da
+  resposta fica em `_comum/calculos.js` (`precosDeCoinbase`,
+  `valoresEmDolarDeCoinbase`), com testes. **Pendente:** Lucro, Staking e
+  Comparador ainda usam só a CoinGecko e devem passar pela mesma revisão.
 - **Staking:** saiu a leitura de print por OCR (Tesseract vinha de CDN).
 - **Simulador:** velas pela `data-api.binance.vision`, depois `api.binance.com`,
   depois CoinGecko.

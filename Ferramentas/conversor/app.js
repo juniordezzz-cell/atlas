@@ -227,20 +227,96 @@ function montarChips() {
 }
 
 // ---------- dados de mercado ----------
+/* Fonte do preço (18/11/2026): Coinbase primeiro, CoinGecko em segundo plano.
+   A Coinbase é pública, sem chave e aguenta bem a rotina de abrir a página;
+   a CoinGecko gratuita limitava requisições e deixava a cotação "indisponível".
+   Só entram na Coinbase as criptos desta lista (ticker conferido): para as
+   demais, e sempre que a Coinbase falhar ou não listar a moeda, vale a CoinGecko.
+   Ticker igual não é a mesma moeda, por isso nada de adivinhar pela lista de 500. */
+const COINBASE = 'https://api.coinbase.com/v2';
+const COINBASE_SIMBOLOS = {
+  bitcoin:'BTC', ethereum:'ETH', solana:'SOL', ripple:'XRP', dogecoin:'DOGE', aave:'AAVE',
+  cardano:'ADA', chainlink:'LINK', litecoin:'LTC', polkadot:'DOT', 'avalanche-2':'AVAX',
+  stellar:'XLM', uniswap:'UNI', near:'NEAR', sui:'SUI', 'shiba-inu':'SHIB',
+  'bitcoin-cash':'BCH', 'hedera-hashgraph':'HBAR', tron:'TRX', tether:'USDT', 'usd-coin':'USDC',
+};
+const NOMES_CONHECIDOS = {
+  bitcoin:'Bitcoin', ethereum:'Ethereum', solana:'Solana', ripple:'XRP', dogecoin:'Dogecoin', aave:'Aave',
+  cardano:'Cardano', chainlink:'Chainlink', litecoin:'Litecoin', polkadot:'Polkadot', 'avalanche-2':'Avalanche',
+  stellar:'Stellar', uniswap:'Uniswap', near:'NEAR Protocol', sui:'Sui', 'shiba-inu':'Shiba Inu',
+  'bitcoin-cash':'Bitcoin Cash', 'hedera-hashgraph':'Hedera', tron:'TRON', tether:'Tether', 'usd-coin':'USD Coin',
+};
+
+async function precosCoinbase(id) {
+  const sym = COINBASE_SIMBOLOS[id];
+  if (!sym) return null;
+  try {
+    const d = await AtlasHttp.getJSON(`${COINBASE}/exchange-rates?currency=${sym}`, { ttl: 30000, timeout: 8000, retries: 1 });
+    return window.AtlasCalculos.precosDeCoinbase(d);
+  } catch (e) { return null; }
+}
+
+async function precosCoinGecko(id) {
+  const r = await cgFetch(`${API}/simple/price?ids=${id}&vs_currencies=brl,usd,eur`);
+  if (!r.ok) return null;
+  const d = (await r.json() || {})[id];
+  return d && d.brl && d.usd && d.eur ? { brl: d.brl, usd: d.usd, eur: d.eur } : null;
+}
+
+async function buscarPrecos(id) {
+  const cb = await precosCoinbase(id);
+  if (cb) return { precos: cb, fonte: 'Coinbase' };
+  const cg = await precosCoinGecko(id);
+  if (cg) return { precos: cg, fonte: 'CoinGecko' };
+  throw new Error('sem cotação em nenhuma fonte');
+}
+
 async function carregarDados() {
-  // 1 chamada: preço do token nas três moedas (alimenta o conversor e a linha tri-fiat)
-  const rSimple = await cgFetch(`${API}/simple/price?ids=${moedaAtual.id}&vs_currencies=brl,usd,eur`);
-  if (!rSimple.ok) throw new Error('simple ' + rSimple.status);
-  const dSimple = (await rSimple.json())[moedaAtual.id];
-  if (!dSimple) throw new Error('sem preço');
-  precosFiat = { brl: dSimple.brl, usd: dSimple.usd, eur: dSimple.eur };
+  const { precos, fonte } = await buscarPrecos(moedaAtual.id);
+  precosFiat = precos;
   try { localStorage.setItem('atlas.conversor.cripto.' + moedaAtual.id, JSON.stringify({ p: precosFiat, t: Date.now() })); } catch (e) {}
 
-  // 1 chamada: estatísticas completas no fiat selecionado
-  const rMkt = await cgFetch(`${API}/coins/markets?vs_currency=${fiatAtual}&ids=${moedaAtual.id}&price_change_percentage=24h`);
-  if (!rMkt.ok) throw new Error('markets ' + rMkt.status);
-  const [d] = await rMkt.json();
-  if (!d) throw new Error('sem dados');
+  // nome e ticker de moeda conhecida, sem depender da CoinGecko
+  if (COINBASE_SIMBOLOS[moedaAtual.id]) {
+    moedaAtual.sym = COINBASE_SIMBOLOS[moedaAtual.id];
+    moedaAtual.nome = NOMES_CONHECIDOS[moedaAtual.id] || moedaAtual.nome;
+    atualizarRotulos();
+    montarChips();
+  }
+
+  const preco = precosFiat[fiatAtual];
+  document.getElementById('taxa-valor').textContent = fmtMoeda(preco);
+  document.getElementById('tri-fiat').innerHTML =
+    `1 ${esc(moedaAtual.sym)} = <b>${fmtMoeda(precosFiat.brl,'brl')}</b><span class="sep">·</span>` +
+    `<b>${fmtMoeda(precosFiat.usd,'usd')}</b><span class="sep">·</span>` +
+    `<b>${fmtMoeda(precosFiat.eur,'eur')}</b>`;
+  document.getElementById('atualizado').textContent =
+    'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }) + ' · ' + fonte;
+  document.getElementById('taxa-inversa').textContent =
+    `${FIATS[fiatAtual].simbolo} 1 ≈ ${fmtNum(1 / preco, decCripto(1 / preco))} ${moedaAtual.sym}`;
+  montarTabelas();
+  recalcular();
+
+  // variação e estatísticas vêm da CoinGecko: se ela falhar, o preço continua valendo
+  await carregarEstatisticas(preco);
+}
+
+function semEstatisticas() {
+  const varEl = document.getElementById('taxa-var');
+  varEl.textContent = ''; varEl.className = 'variacao';
+  ['st-min','st-max','st-var','st-mcap','st-vol','st-supply','st-ath','st-ath-dist'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '—'; el.className = 'valor';
+  });
+}
+
+async function carregarEstatisticas(preco) {
+  let d = null;
+  try {
+    const rMkt = await cgFetch(`${API}/coins/markets?vs_currency=${fiatAtual}&ids=${moedaAtual.id}&price_change_percentage=24h`);
+    if (rMkt.ok) [d] = await rMkt.json();
+  } catch (e) { console.error(e); }
+  if (!d) { semEstatisticas(); return; }
 
   // hidrata identidade do token a partir desta mesma resposta (sem chamada extra)
   moedaAtual.sym  = (d.symbol || moedaAtual.sym).toUpperCase();
@@ -249,24 +325,11 @@ async function carregarDados() {
   atualizarRotulos();
   montarChips();
 
-  const preco = precosFiat[fiatAtual];
-
-  // hero
-  document.getElementById('taxa-valor').textContent = fmtMoeda(preco);
   const varEl = document.getElementById('taxa-var');
   const v = d.price_change_percentage_24h ?? 0;
   varEl.textContent = ` ${v >= 0 ? '▲' : '▼'} ${fmtNum(Math.abs(v), 2)}% (24h)`;
   varEl.className = 'variacao ' + (v >= 0 ? 'up' : 'down');
-  document.getElementById('tri-fiat').innerHTML =
-    `1 ${esc(moedaAtual.sym)} = <b>${fmtMoeda(precosFiat.brl,'brl')}</b><span class="sep">·</span>` +
-    `<b>${fmtMoeda(precosFiat.usd,'usd')}</b><span class="sep">·</span>` +
-    `<b>${fmtMoeda(precosFiat.eur,'eur')}</b>`;
-  document.getElementById('atualizado').textContent =
-    'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
-  document.getElementById('taxa-inversa').textContent =
-    `${FIATS[fiatAtual].simbolo} 1 ≈ ${fmtNum(1 / preco, decCripto(1 / preco))} ${moedaAtual.sym}`;
 
-  // estatísticas
   document.getElementById('st-min').textContent  = fmtMoeda(d.low_24h);
   document.getElementById('st-max').textContent  = fmtMoeda(d.high_24h);
   const stVar = document.getElementById('st-var');
@@ -280,9 +343,6 @@ async function carregarDados() {
   const athEl = document.getElementById('st-ath-dist');
   athEl.textContent = `${fmtNum(dist, 1)}%`;
   athEl.className = 'valor ' + (dist >= 0 ? 'up' : 'down');
-
-  montarTabelas();
-  recalcular();
 }
 
 // ---------- tabelas dinâmicas ----------
@@ -389,7 +449,7 @@ document.querySelectorAll('.periodos button').forEach(btn => {
     document.querySelectorAll('.periodos button').forEach(b => b.classList.remove('ativo'));
     btn.classList.add('ativo');
     diasGrafico = Number(btn.dataset.dias);
-    carregarGrafico().catch(mostrarErro);
+    carregarGrafico().catch(e => { console.error(e); document.getElementById('grafico-wrap').innerHTML = '<p class="grafico-vazio">Gráfico indisponível agora.</p>'; });
   });
 });
 
@@ -406,6 +466,8 @@ function mostrarErro(e) {
   if (/atualizando…$/.test(at.textContent)) at.textContent = at.textContent.replace('atualizando…', 'sem conexão agora');
   /* sem cotação salva: troca o "Carregando cotação…" que ficaria para sempre (18/11/2026) */
   else if (/^Carregando/.test(at.textContent)) at.textContent = 'Cotação indisponível agora.';
+  const gw = document.getElementById('grafico-wrap');
+  if (/Carregando/.test(gw.textContent)) gw.innerHTML = '<p class="grafico-vazio">Gráfico indisponível agora.</p>';
   document.getElementById('erro-api').style.display = 'block';
 }
 
@@ -416,7 +478,11 @@ async function iniciar() {
     // A lista de tokens carrega sob demanda (ao focar na busca),
     // evitando o bloqueio por excesso de requisições da CoinGecko grátis.
     await carregarDados();
-    await carregarGrafico();
+    try { await carregarGrafico(); }
+    catch (e) {
+      console.error(e);
+      document.getElementById('grafico-wrap').innerHTML = '<p class="grafico-vazio">Gráfico indisponível agora.</p>';
+    }
   } catch (e) {
     mostrarErro(e);
   }
@@ -454,16 +520,28 @@ const CB = (function () {
   const fmtCampo = v => (v === null || !isFinite(v)) ? '' : v.toLocaleString('pt-BR', { maximumFractionDigits: Math.abs(v) < 1 && v !== 0 ? 6 : 2 });
   const conv = (v, a, b) => window.AtlasCalculos.converterMoeda(v, valorUSD[a], valorUSD[b]);
 
-  async function carregar() {
+  async function valoresCoinbase() {
+    const d = await AtlasHttp.getJSON(`${COINBASE}/exchange-rates?currency=USD`, { ttl: 30000, timeout: 8000, retries: 1 });
+    return window.AtlasCalculos.valoresEmDolarDeCoinbase(d);
+  }
+  async function valoresCoinGecko() {
     const r = await cgFetch(`${API}/simple/price?ids=tether,usd-coin&vs_currencies=usd,brl,eur,gbp`);
-    if (!r.ok) throw new Error('cotacao');
-    const d = await r.json(), t = d['tether'], c = d['usd-coin'];
-    if (!t || !c) throw new Error('dados');
+    if (!r.ok) return null;
+    const d = await r.json(), t = d && d['tether'], c = d && d['usd-coin'];
+    if (!t || !c) return null;
     const FC = window.AtlasCalculos;
-    valorUSD = { usd: 1, brl: FC.valorEmDolar(t.usd, t.brl), eur: FC.valorEmDolar(t.usd, t.eur),
-                 gbp: FC.valorEmDolar(t.usd, t.gbp), usdt: t.usd, usdc: c.usd };
+    return { usd: 1, brl: FC.valorEmDolar(t.usd, t.brl), eur: FC.valorEmDolar(t.usd, t.eur),
+             gbp: FC.valorEmDolar(t.usd, t.gbp), usdt: t.usd, usdc: c.usd };
+  }
+  /* Coinbase primeiro; CoinGecko só se a Coinbase falhar (18/11/2026) */
+  async function carregar() {
+    let v = null, fonte = 'Coinbase';
+    try { v = await valoresCoinbase(); } catch (e) {}
+    if (!v) { fonte = 'CoinGecko'; try { v = await valoresCoinGecko(); } catch (e) {} }
+    if (!v) throw new Error('cotacao');
+    valorUSD = v;
     try { localStorage.setItem(CHAVE, JSON.stringify({ v: valorUSD, t: Date.now() })); } catch (e) {}
-    $('cb-atualizado').textContent = 'Atualizado às ' + hora(Date.now());
+    $('cb-atualizado').textContent = 'Atualizado às ' + hora(Date.now()) + ' · ' + fonte;
   }
   function recalc(origem) {
     if (!valorUSD) return;

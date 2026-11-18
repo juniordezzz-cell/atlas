@@ -498,6 +498,39 @@
     return num(precoCompra) * (1 + t) / (1 - t);
   };
 
+  /* ══════════════════════════════════════════════════════════════
+     COTAÇÃO DA COINBASE (exchange-rates, sem chave)
+     Quem busca é a página; aqui só se lê a resposta.
+     ══════════════════════════════════════════════════════════════ */
+
+  function taxaPositiva(rates, codigo) {
+    var n = Number(rates && rates[codigo]);
+    return isFinite(n) && n > 0 ? n : null;
+  }
+
+  /* Resposta de exchange-rates?currency=BTC: quanto vale 1 BTC em cada
+     moeda. Devolve { brl, usd, eur } ou null se faltar qualquer uma
+     (moeda que a Coinbase não lista cai na outra fonte). */
+  F.precosDeCoinbase = function (resposta) {
+    var rates = resposta && resposta.data && resposta.data.rates;
+    var brl = taxaPositiva(rates, 'BRL'), usd = taxaPositiva(rates, 'USD'), eur = taxaPositiva(rates, 'EUR');
+    if (brl === null || usd === null || eur === null) return null;
+    return { brl: brl, usd: usd, eur: eur };
+  };
+
+  /* Resposta de exchange-rates?currency=USD: quanto de cada moeda vale 1
+     dólar. O que o câmbio precisa é o contrário (quanto vale 1 de cada
+     moeda em dólar), por isso 1 / taxa. null se faltar alguma. */
+  F.valoresEmDolarDeCoinbase = function (resposta) {
+    var rates = resposta && resposta.data && resposta.data.rates;
+    var cod = ['BRL', 'EUR', 'GBP', 'USDT', 'USDC'], t = {};
+    for (var i = 0; i < cod.length; i++) {
+      t[cod[i]] = taxaPositiva(rates, cod[i]);
+      if (t[cod[i]] === null) return null;
+    }
+    return { usd: 1, brl: 1 / t.BRL, eur: 1 / t.EUR, gbp: 1 / t.GBP, usdt: 1 / t.USDT, usdc: 1 / t.USDC };
+  };
+
   /* ══════════════════════════════════════════════════════════════ */
   if (typeof module !== 'undefined' && module.exports) module.exports = F;
   raiz.AtlasCalculos = F;

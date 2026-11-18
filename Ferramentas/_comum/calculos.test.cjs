@@ -434,3 +434,31 @@ test('numeroCampo escreve sem notação científica e volta igual pelo lerNumero
   [1.2e-9, 0.001, 0.123, 74526, 12345.5, 6988.5521, 0.14309116].forEach(v =>
     assert.equal(C.lerNumero(C.numeroCampo(v)), v));
 });
+
+sec('Coinbase: preço de uma cripto');
+/* resposta de exchange-rates?currency=BTC: valores são "quanto vale 1 BTC" */
+const respBtc = { data: { currency: 'BTC', rates: { BRL: '510000.5', USD: '95000', EUR: '85000.25', GBP: '72000' } } };
+const pBtc = F.precosDeCoinbase(respBtc);
+eq('BRL como número', pBtc.brl, 510000.5);
+eq('USD como número', pBtc.usd, 95000);
+eq('EUR como número', pBtc.eur, 85000.25);
+eqv('moeda que falta: null (cai na outra fonte)', F.precosDeCoinbase({ data: { rates: { BRL: '1', USD: '1' } } }), null);
+eqv('taxa zero: null', F.precosDeCoinbase({ data: { rates: { BRL: '0', USD: '1', EUR: '1' } } }), null);
+eqv('texto no lugar do número: null', F.precosDeCoinbase({ data: { rates: { BRL: 'x', USD: '1', EUR: '1' } } }), null);
+eqv('resposta vazia: null', F.precosDeCoinbase({}), null);
+eqv('sem resposta: null', F.precosDeCoinbase(undefined), null);
+
+sec('Coinbase: câmbio em dólar');
+/* 1 USD = 5,3721 BRL  ->  1 BRL vale 1/5,3721 USD (e não 5,37) */
+const respUsd = { data: { currency: 'USD', rates: { BRL: '5.3721', EUR: '0.8950555092760567', GBP: '0.7494046489174207', USDT: '1.0015825003505539', USDC: '1' } } };
+const vCb = F.valoresEmDolarDeCoinbase(respUsd);
+eq('o dólar vale 1', vCb.usd, 1);
+eq('1 BRL em dólar', vCb.brl, 1 / 5.3721, 1e-12);
+eqv('1 BRL vale menos que 1 dólar', vCb.brl < 1, true);
+eqv('1 EUR vale mais que 1 dólar', vCb.eur > 1, true);
+eqv('1 GBP vale mais que 1 dólar', vCb.gbp > 1, true);
+eq('1 USDT em dólar', vCb.usdt, 1 / 1.0015825003505539, 1e-12);
+eq('1 USDC em dólar', vCb.usdc, 1, 1e-12);
+eq('100 USD em real fecha com a taxa', F.converterMoeda(100, vCb.usd, vCb.brl), 537.21, 1e-9);
+eqv('falta uma moeda: null', F.valoresEmDolarDeCoinbase({ data: { rates: { BRL: '5', EUR: '1', GBP: '1', USDT: '1' } } }), null);
+eqv('resposta vazia: null', F.valoresEmDolarDeCoinbase(null), null);
