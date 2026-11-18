@@ -107,6 +107,8 @@
       icon: '<path d="M8 3v18M16 3v18"/><rect x="6" y="7" width="4" height="8" rx="1"/><rect x="14" y="9" width="4" height="7" rx="1"/>' },
     { slug: "scanner-pools", nome: "Scanner de Pools", href: "Ferramentas/scanner-pools/index.html",
       icon: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m12 12 6-6"/>' },
+    { slug: "simulador-de-pool", nome: "Simulador de Pools", href: "Ferramentas/simulador-de-pool/index.html",
+      icon: '<path d="M3 17l5-5 4 3 8-8"/><path d="M3 21h18"/><path d="M3 7h18" stroke-dasharray="3 3"/>' },
     { slug: "estrategia-de-pool", nome: "Estratégias de Pools", href: "Ferramentas/estrategia-de-pool/index.html",
       icon: '<path d="M12 3s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/>' },
     { slug: "staking", nome: "Staking", href: "Ferramentas/staking/index.html",

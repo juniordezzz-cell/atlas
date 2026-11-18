@@ -58,7 +58,7 @@ export function avisarMudanca() {
   window.dispatchEvent(new CustomEvent("financas:mudou"));
 }
 
-export const AVATAR = "../../../assets/atena.webp";
+export const AVATAR = "../../../assets/atena-160.webp";
 export const dentroDoAtlas = /\/Ferramentas\//i.test(location.pathname);
 export const LINK_CARTEIRAS = "../../../pages/dashboard.html";
 

@@ -202,3 +202,50 @@ Pedido do dono: o Supabase fica só com o Scanner Pools e o Estúdio de Agentes 
 - Workflows: saíram `central-rwa-daily`, `-backfill` e `-tier-a`. `central-rwa-tests` virou `scanner-testes`, sem o job `deploy` (as migrações continuam aplicadas pelo `scanner-pools.yml`).
 - Site: a página RWA perdeu Central RWA, Eventos e Agentes e abre no Dashboard; `RWA/js/central.js` saiu; `sw.js` v99.
 - Documentação da Central RWA (`docs/central-rwa/`) saiu; o último estado está na tag `central-rwa-final`.
+
+
+## Simulador de Pool (17/11/2026)
+
+> **Atualização do mesmo dia:** o Simulador saiu do Scanner e virou ferramenta própria em
+> `Ferramentas/simulador-de-pool/` (registro: [simulador-de-pool-2026-11-17.md](simulador-de-pool-2026-11-17.md)).
+> O Scanner ficou só com o link de simular em cada linha. O texto abaixo descreve a versão em aba.
+
+Pedido do dono: um simulador "no nível da Metrix Finance", para saber em qual
+plataforma montar a pool. As Estratégias de Pools ensinam o conceito, e o
+Simulador usa a pool real. Proposta aprovada: Layout A (aba no Scanner, três
+colunas) mais o botão de simular em cada linha da lista.
+
+- **Aba "Simulador"** (`simulador.js`, `simulador.css`, `#tab-sim`): à
+  esquerda as pools para simular (busca por token ou par); no meio as velas
+  diárias da pool com a faixa arrastável e o início do teste marcado; à
+  direita depósito, faixa, atalhos (±5/10/20%, "1 semana" e "1 mês" pela
+  volatilidade real, cheia), taxa estimada de hoje e APR, teste de 7/30/90
+  dias (taxas, tempo na faixa, posição sem taxa, só segurar, resultado) com
+  mini gráfico, "Acompanhar no Radar" (★, usa `toggleFav`) e link para as
+  Estratégias.
+- **Regras vigentes intactas:** só lê `state.pools` e `trilhoDe()`. Aparece
+  só pool que não é `oculta`, com TVL de no mínimo US$ 100 mil e endereço
+  conhecido. Pendentes aparecem marcadas, com aviso.
+- **Dados:** `GET /networks/{rede}/pools/{endereço}/ohlcv/day` da
+  GeckoTerminal, em `currency=usd` (preço do token base em dólar e volume) e
+  em `currency=token` (preço do token base no token de cotação). Rede pelo
+  mesmo mapa do coletor (`config.GECKO_NET`). Endereço por
+  `ScannerServidor.enderecoPool` (agora exportado). Cache de 10 min.
+- **Conta:** a mesma das Estratégias (`clAmt`). Taxa do dia = fee ×
+  volume do dia × min(1, valor da posição × concentração ÷ TVL) × fração da
+  vela dentro da faixa (pela máxima e mínima). **Limite escrito na tela:**
+  sem a liquidez preço a preço (ticks), a fatia sai do TVL total, que é o de
+  hoje, então pode superestimar em pools muito concentradas.
+- **Em qual plataforma montar:** botão que roda a mesma faixa, depósito e
+  período em até 6 outras pools do mesmo par (`chavePar`: tokens sem o W,
+  em ordem), uma de cada vez por causa do limite da GeckoTerminal. Pools com
+  a ordem dos tokens trocada são invertidas (`inverter`). O ranking é pelo
+  resultado com taxas.
+- **Ponte:** o botão "Simulador de pool" das Estratégias abre
+  `scanner-pools/index.html?simular=TOKEN[/PAR]`, que espera as pools do
+  servidor e abre a aba filtrada.
+- **"Salvar em Minhas pools"** da proposta virou "Acompanhar no Radar":
+  Minhas pools lê as posições reais do módulo DeFi, e uma simulação não deve
+  virar posição da carteira.
+- Testes: `simulador.test.cjs` (5): preço parado sem perda e taxa exata,
+  fora da faixa sem taxa, fatia limitada a 100%, inversão e tokens do par.

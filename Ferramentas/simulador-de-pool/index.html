@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Simulador de Pools de Liquidez do ATLAS: escolha uma pool real, monte a faixa no gráfico e veja quanto ela teria rendido, como outras faixas teriam ido e em qual plataforma do mesmo par renderia mais.">
+<title>Simulador de Pools de Liquidez — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="simulador.css?v=sim-4">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+</head>
+<body>
+<div class="sim-app">
+
+  <header class="sim-topo">
+    <a class="sim-voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <div class="sim-titulo">
+      <h1>Simulador de Pools de Liquidez</h1>
+      <p>Escolha uma pool real, monte a faixa no gráfico e veja quanto ela teria rendido, como outras faixas teriam ido e em qual plataforma do mesmo par renderia mais.</p>
+    </div>
+    <div class="sim-topo-dir">
+      <span class="sim-nota" id="simFonte"></span>
+      <a class="sim-btn" href="../scanner-pools/index.html">Scanner de Pools ↗</a>
+    </div>
+    <p class="sim-estudo">Simulação para estudo sobre o histórico real da pool. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
+  </header>
+
+  <div class="sim-grade">
+    <aside class="sim-col sim-esq" aria-label="Pools para simular">
+      <div class="sim-linha" style="justify-content:space-between"><h3>Pools</h3><span class="sim-nota" id="simContagem"></span></div>
+      <input class="sim-busca" id="simBusca" type="search" placeholder="Token ou par (ex.: SOL, ETH/USDC)" aria-label="Buscar pool por token ou par" autocomplete="off">
+      <div class="sim-lista" id="simLista"></div>
+      <p class="sim-nota">Só aparecem pools que passaram nas regras do Scanner (TVL de pelo menos US$ 100 mil, giro acima de 0,5) e têm endereço conhecido. As de <span class="pend">Pendentes de análise</span> vêm marcadas.</p>
+    </aside>
+
+    <main class="sim-col sim-meio">
+      <div class="sim-cab" id="simCab"></div>
+      <div class="sim-linha">
+        <div class="sim-seg" id="simTempo" aria-label="Tempo gráfico"></div>
+        <span class="sim-nota">Teste</span>
+        <div class="sim-seg" id="simDias" aria-label="Período do teste"></div>
+      </div>
+      <div class="sim-chart" id="simChart"><canvas id="simCv" aria-label="Velas da pool com a faixa da simulação. Arraste as linhas roxas para mudar a faixa."></canvas></div>
+      <section id="simFaixas"></section>
+      <section id="simRank"></section>
+      <section id="simCen"></section>
+    </main>
+
+    <aside class="sim-col sim-dir" id="simDir" aria-label="Simulação"></aside>
+  </div>
+</div>
+
+<script src="../../core/http.js"></script>
+<!-- pools do coletor (visões scanner_* no Supabase) e as regras do Scanner -->
+<script src="../../core/atlas-supabase-config.js"></script>
+<script src="../scanner-pools/servidor.js?v=sim-2"></script>
+<script src="simulador.js?v=sim-4"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>

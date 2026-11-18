@@ -66,7 +66,8 @@
   })();
   // "Voltar ao ATLAS" leva à página principal: o Mercado (17/11/2026).
   var BACK_HREF  = RAIZ + "mercado/index.html";
-  var ORACULO_AVATAR = RAIZ + "assets/atena.webp";
+  /* versão de 160 px (10 KB): o botão do Oráculo mostra no máximo 72 px; a de 720 px tinha 145 KB */
+  var ORACULO_AVATAR = RAIZ + "assets/atena-160.webp";
   var toolResponder = null;
   var motorOperacoes;
   function carregarOperacoes() {
@@ -2012,7 +2013,7 @@
     if (!document.querySelector('script[data-atlas-moldura]')) {
       var mold = document.createElement('script');
       mold.setAttribute('data-atlas-moldura', '');
-      mold.src = RAIZ + 'core/ui/atlas-moldura.js?v=6';
+      mold.src = RAIZ + 'core/ui/atlas-moldura.js?v=7';
       document.head.appendChild(mold);
     }
     if (!document.querySelector('script[data-atlas-voz]')) {

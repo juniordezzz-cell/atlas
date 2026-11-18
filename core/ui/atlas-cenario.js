@@ -18,11 +18,12 @@
    Paleta: <html data-cenario="ambar"> troca a mistura de cores
    (ver PALETAS). Sem o atributo, vale "atlas".
    ============================================================ */
-import {
-  ShaderMount,
-  meshGradientFragmentShader,
-  getShaderColorFromString,
-} from '../../assets/vendor/paper-shaders-0.0.81/index.js';
+/* Só os três módulos usados (18/11/2026). O index.js da biblioteca
+   importava os 30 efeitos dela: ~35 arquivos baixados a cada página
+   para desenhar um só. */
+import { ShaderMount } from '../../assets/vendor/paper-shaders-0.0.81/shader-mount.js';
+import { meshGradientFragmentShader } from '../../assets/vendor/paper-shaders-0.0.81/shaders/mesh-gradient.js';
+import { getShaderColorFromString } from '../../assets/vendor/paper-shaders-0.0.81/get-shader-color-from-string.js';
 
 // Só os azuis do ATLAS (css/variables.css e themes/atlas-theme.css),
 // pedido do dono em 15/10/2026: nada de roxo nem verde-azulado (que

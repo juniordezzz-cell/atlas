@@ -1362,7 +1362,7 @@
 <script src="../../defi/js/data.js"></script>
 <!-- pools do coletor (visões scanner_* no Supabase) -->
 <script src="../../core/atlas-supabase-config.js"></script>
-<script src="servidor.js"></script>
+<script src="servidor.js?v=sim-2"></script>
 <script src="assistente-dados.js?v=oraculo-17"></script>
 <script src="assistente-api.js?v=oraculo-17"></script>
 <script src="assistente-conversa.js?v=oraculo-17"></script>
@@ -1975,6 +1975,7 @@ function rowHTML(p, rank){
         ${p.servidor ? "" : `<button class="iconbtn" onclick="openForm(${idx})" title="Editar esta pool" aria-label="Editar esta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></button>`}
         <button class="iconbtn" onclick="goToHistory(${p.id})" title="Ver o histórico desta pool" aria-label="Ver o histórico desta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></svg></button>
         <button class="iconbtn" onclick="BattlePools.adicionar(${p.id})" title="Comparar esta pool com outra" aria-label="Comparar esta pool com outra">⚔</button>
+        ${p.servidor && p.sid ? `<a class="iconbtn" href="../simulador-de-pool/index.html?pool=${esc(encodeURIComponent(p.sid))}" title="Simular uma posição nesta pool (Simulador de Pools)" aria-label="Simular uma posição nesta pool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 3 8-8"/><path d="M3 21h18"/></svg></a>` : ""}
         ${tokenBtns(p)}
       </span>
     </td>
@@ -3235,6 +3236,7 @@ window.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 <script src="battle-pools.js?v=btl-1"></script>
+
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

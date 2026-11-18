@@ -182,7 +182,10 @@
    ganham grupo próprio no menu e Relatórios vai para as Configurações. */
 /* v104 = junção desta branch (v103) com a v100 da main. Número acima das
    duas para limpar o cache de quem estava em qualquer uma. */
-var VERSAO = "atlas-v104";
+/* v101 (na main) = Simulador de Pools de Liquidez como ferramenta própria e
+   desempenho (ícone de 32 KB, fundo animado enxuto, Oráculo e Finanças leves). */
+/* v105 = junção desta branch (v104) com a v101 da main. */
+var VERSAO = "atlas-v105";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o
