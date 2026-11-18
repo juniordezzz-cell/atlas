@@ -41,8 +41,11 @@
   function calcular() {
     var qtd = ler('lc-qtd'), compra = ler('lc-compra'), venda = ler('lc-venda');
     var taxa = ler('lc-taxa') || 0, dolar = ler('lc-dolar') || 0, outras = ler('lc-outras') || 0;
-    if (!(qtd > 0) || !(compra > 0) || !(venda > 0)) { $('lc-erro').hidden = false; return; }
-    $('lc-erro').hidden = true;
+    if (!(qtd > 0) || !(compra > 0) || !(venda > 0)) {
+      /* ao vivo: sem os três números, o lado do resultado explica o que falta */
+      $('lc-erro').hidden = true; $('lc-resultado').hidden = true; $('lc-vazio').hidden = false; return;
+    }
+    $('lc-erro').hidden = true; $('lc-vazio').hidden = true;
     var R = C.lucroOperacao({ quantidade: qtd, precoCompra: compra, precoVenda: venda, taxaPct: taxa });
     var lucroBRL = R.lucro * dolar;
     var ir = C.impostoCripto({ lucroBRL: lucroBRL, vendasMesBRL: R.recebido * dolar + outras, custodia: $('lc-custodia').value });
@@ -73,7 +76,7 @@
   $('lc-limpar').addEventListener('click', function () {
     ['lc-compra', 'lc-venda', 'lc-busca'].forEach(function (id) { $(id).value = ''; });
     $('lc-qtd').value = '1'; $('lc-taxa').value = '0,1'; $('lc-outras').value = '0';
-    $('lc-resultado').hidden = true; $('lc-ficha').hidden = true; token = null;
+    $('lc-ficha').hidden = true; token = null; calcular();
   });
 
   /* ---------- dólar em reais (cotação do USDT) ---------- */
@@ -94,5 +97,22 @@
   if (qq > 0) campo('lc-qtd', qq);
   var qt = q.get('token');
   if (qt && /^[a-z0-9-]{1,80}$/.test(qt)) carregarToken(qt);
-  if (qc > 0 && qv > 0) calcular();
+  /* sem números vindos do DCA: abre com um exemplo (comprou a 100, vendeu a 130) */
+  if (!(qc > 0) && !(qv > 0)) { campo('lc-compra', 100); campo('lc-venda', 130); }
+  else { var ex0 = $('lc-ex'); if (ex0) ex0.hidden = true; }
+  calcular();
+  /* ---------- conta ao vivo (18/11/2026) ----------
+     O resultado fica à direita e muda enquanto a pessoa digita. A nota de
+     "exemplo" some no primeiro campo que ela mexer. */
+  var tVivo;
+  function aoVivo(ev) {
+    if (ev && ev.isTrusted) { var ex = $('lc-ex'); if (ex) ex.hidden = true; }
+    clearTimeout(tVivo); tVivo = setTimeout(calcular, 180);
+  }
+  document.querySelectorAll('.calc-ent input, .calc-ent select').forEach(function (i) {
+    if (/busca$/.test(i.id)) return;
+    i.addEventListener('input', aoVivo); i.addEventListener('change', aoVivo);
+  });
+  document.querySelectorAll('.calc-ent .toggle button').forEach(function (b) { b.addEventListener('click', aoVivo); });
+  
 })();

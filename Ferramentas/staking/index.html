@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
 <link rel="stylesheet" href="../../core/ui/atlas-shell.css">
-<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=2">
 <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
 <script src="../../core/atlas-auth.js"></script>
 <script src="../../core/atlas-secure.js"></script>
@@ -17,7 +17,7 @@
 <script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap wrap--calc">
 
   <header class="top">
     <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
@@ -26,6 +26,10 @@
     <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
   </header>
 
+  <!-- Duas colunas (18/11/2026): campos à esquerda, resultado à direita,
+       sempre à vista e recalculado enquanto a pessoa digita. -->
+  <div class="calc-grade">
+  <div class="calc-ent">
   <section class="bloco">
     <h2 class="bloco__titulo">Token</h2>
     <div class="busca-token">
@@ -57,8 +61,11 @@
     <p class="dica">Inflação do token: quanto a oferta cresce por ano com tokens novos (Solana ~4%, Ethereum ~0%). Ela é paga justamente com o rendimento do staking, então o ganho de verdade é o que sobra acima dela.</p>
     <div class="acoes"><button type="button" class="btn btn--principal" id="sk-calcular">Simular rendimento</button></div>
   </section>
+  </div>
 
-  <div id="sk-resultado" hidden>
+  <div class="calc-res" aria-live="polite">
+  <div id="sk-resultado">
+    <p class="exemplo-nota" id="sk-ex"><span class="exemplo">exemplo</span> Valores de exemplo. Troque pelos seus números: o resultado muda na hora.</p>
     <div class="toggle" role="tablist" aria-label="Horizonte" id="sk-horizonte" style="margin-bottom:12px">
       <button type="button" role="tab" data-m="6" aria-selected="false">6 meses</button>
       <button type="button" role="tab" data-m="12" aria-selected="true">1 ano</button>
@@ -82,9 +89,11 @@
     <h2 class="secao-titulo">Tokens ao longo de 5 anos</h2>
     <div class="bloco"><div class="grafico"><canvas id="sk-grafico"></canvas></div></div>
   </div>
+  </div>
+  </div>
 
-  <section class="explica">
-    <h2>Como ler</h2>
+  <details class="explica">
+    <summary><h2>Como ler</h2></summary>
     <p><strong>Staking</strong> é travar tokens para ajudar a validar uma rede (Ethereum, Solana, Cardano…) e receber mais tokens em troca. O rendimento vem no próprio token.</p>
     <h3>APR ou APY?</h3>
     <p>O <strong>APR</strong> é a taxa sem reinvestir. O <strong>APY</strong> já conta o rendimento rendendo de novo. Escolha o que a plataforma mostra; a caixa "Taxa equivalente" traduz um no outro.</p>
@@ -92,7 +101,7 @@
     <p>Boa parte do rendimento do staking é paga com tokens novos. Se a rede emite 4% ao ano e o staking paga 7%, sua participação na rede cresce cerca de 3%. Esse é o ganho real.</p>
     <h3>O preço manda</h3>
     <p>Staking aumenta a quantidade de tokens, não protege do preço. A tabela "E se o preço mudar?" mostra que uma queda de 50% apaga anos de rendimento.</p>
-  </section>
+  </details>
 
 </div>
 
@@ -100,7 +109,7 @@
 <script src="../../assets/vendor/chart-4.4.1.min.js"></script>
 <script src="../_comum/calculos.js?v=1"></script>
 <script src="../_comum/busca-token.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=2"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

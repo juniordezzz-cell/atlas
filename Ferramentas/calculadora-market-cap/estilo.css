@@ -178,3 +178,16 @@ a{color:var(--accent)}
   .bt-barra{grid-template-columns:56px 1fr 110px;gap:8px}
 }
 #bt-busca:disabled{opacity:.55;cursor:not-allowed}
+
+/* Recolhíveis e nota de exemplo (18/11/2026) */
+details.recolhe{border-top:1px solid #1e2735;padding-top:14px;margin-top:18px}
+details.recolhe summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+details.recolhe summary::-webkit-details-marker{display:none}
+details.recolhe summary h2{margin:0}
+details.recolhe summary::after{content:"Abrir";font-size:12px;color:#7d8aa0;border:1px solid #1e2735;border-radius:999px;padding:3px 10px}
+details.recolhe[open] summary::after{content:"Fechar"}
+details.recolhe[open] summary{margin-bottom:10px}
+details.recolhe summary:focus-visible{outline:2px solid #5b8cff;outline-offset:3px;border-radius:6px}
+.exemplo-nota{margin:8px 0 0;color:#7d8aa0;font-size:12.5px}
+.exemplo{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:rgba(245,185,66,.12);color:#f5b942;margin-right:6px;vertical-align:middle}
+@media (max-width:860px){ html.atlas-moldura .top{padding-left:46px} }

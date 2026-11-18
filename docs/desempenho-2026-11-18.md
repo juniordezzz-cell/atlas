@@ -38,3 +38,25 @@ ajustes por ferramenta.
   2,3 s → ~1,0 s.
 - A imagem `boot-hero.png` antiga das Finanças (2,1 MB, sem uso desde a
   etapa 1) saiu do repositório.
+
+## Etapa 3 — padrão das calculadoras (18/11/2026)
+
+- **Lucro Cripto, Staking e Juros Compostos** (`.wrap--calc`, `.calc-grade`):
+  campos à esquerda (`.calc-ent`), resultado à direita (`.calc-res`), fixo
+  à vista ao rolar a partir de 1100 px. No celular, empilha.
+- **Conta ao vivo:** cada `app.js` recalcula 180 ms depois de qualquer
+  campo, seletor ou botão de opção. O botão de calcular sumiu (CSS
+  `.wrap--calc .acoes .btn--principal`). "Limpar" volta aos valores padrão e
+  recalcula.
+- **Abre com exemplo:** nota "exemplo" no topo do resultado (`#xx-ex`), que
+  some no primeiro campo que a pessoa mexer. No Lucro, compra a 100 e venda a
+  130, a não ser que venha `?compra=&venda=` do DCA. Sem os três números, o
+  lado do resultado diz o que falta (`#lc-vazio`).
+- **"Como ler" recolhível** (`<details class="explica">`).
+- **Market Cap:** abre com a Solana de exemplo (com nota) quando não há
+  `?token=`. "Como ler estes números" e "Glossário" ficam recolhíveis
+  (`details.recolhe`), e o termo sublinhado abre o glossário antes de pular.
+  Na comparação de tokens, o glossário também fica recolhível.
+- **Celular:** o cabeçalho abre espaço para o botão do menu do site
+  (`html.atlas-moldura .top{padding-left:46px}`), em `_comum/ferramenta.css`
+  e no `estilo.css` do Market Cap.

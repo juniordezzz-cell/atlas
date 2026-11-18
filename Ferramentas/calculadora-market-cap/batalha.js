@@ -295,10 +295,10 @@
     var el = $("bt-dicionario");
     if (el.getAttribute("data-pronto")) return;
     el.setAttribute("data-pronto", "1");
-    el.innerHTML = '<h2 class="dic__titulo">Glossário</h2><p class="nota">Os termos sublinhados na tabela levam até aqui.</p>' +
+    el.innerHTML = '<details class="recolhe"><summary><h2 class="dic__titulo">Glossário</h2></summary><p class="nota">Os termos sublinhados na tabela levam até aqui.</p>' +
       '<dl class="dic">' + C.glossario(null).map(function (t) {
         return '<div class="dic__item" id="gb-' + t.id + '"><dt>' + esc(t.termo) + "</dt><dd>" + esc(t.texto) + "</dd></div>";
-      }).join("") + "</dl>";
+      }).join("") + "</dl></details>";
   }
 
   /* Redesenha guardando o foco: quem está digitando o alvo próprio de

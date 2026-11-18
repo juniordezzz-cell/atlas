@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
 <link rel="stylesheet" href="../../core/ui/atlas-shell.css">
-<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=2">
 <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
 <script src="../../core/atlas-auth.js"></script>
 <script src="../../core/atlas-secure.js"></script>
@@ -17,7 +17,7 @@
 <script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap wrap--calc">
 
   <header class="top">
     <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
@@ -26,6 +26,10 @@
     <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
   </header>
 
+  <!-- Duas colunas (18/11/2026): campos à esquerda, resultado à direita,
+       sempre à vista e recalculado enquanto a pessoa digita. -->
+  <div class="calc-grade">
+  <div class="calc-ent">
   <section class="bloco">
     <h2 class="bloco__titulo">Token</h2>
     <div class="busca-token">
@@ -62,8 +66,12 @@
     </div>
     <p class="aviso aviso--erro" id="lc-erro" hidden>Preencha a quantidade, o preço de compra e o preço de venda.</p>
   </section>
+  </div>
 
-  <div id="lc-resultado" hidden>
+  <div class="calc-res" aria-live="polite">
+  <div class="calc-vazio" id="lc-vazio" hidden>Preencha a quantidade, o preço de compra e o preço de venda para ver o lucro.</div>
+  <div id="lc-resultado">
+    <p class="exemplo-nota" id="lc-ex"><span class="exemplo">exemplo</span> Valores de exemplo. Troque pelos seus números: o resultado muda na hora.</p>
     <div class="resultados">
       <div class="res res--destaque"><div class="res__rotulo">Lucro líquido (US$)</div><div class="res__valor" id="lc-r-lucro">—</div></div>
       <div class="res"><div class="res__rotulo">Lucro em reais</div><div class="res__valor" id="lc-r-lucro-brl">—</div></div>
@@ -77,22 +85,24 @@
     </div>
     <p class="status">Estimativa pela regra em vigor quando a ferramenta foi feita. A lei muda e cada caso tem detalhes (compensação de prejuízo, permutas, custo médio de várias compras). Confirme com um contador antes de pagar.</p>
   </div>
+  </div>
+  </div>
 
-  <section class="explica">
-    <h2>Como ler</h2>
+  <details class="explica">
+    <summary><h2>Como ler</h2></summary>
     <p>O lucro da tela da exchange raramente é o que entra no bolso. A taxa sai <strong>duas vezes</strong>, na compra e na venda, e o custo de verdade é o que você desembolsou: compra mais a taxa da compra.</p>
     <h3>Imposto</h3>
     <p>Exchange brasileira ou carteira própria: <strong>vendas de até R$ 35 mil no mês são isentas</strong>. Acima disso, o lucro paga 15% (até R$ 5 milhões de ganho), por DARF com código 4600 até o último dia útil do mês seguinte. Exchange estrangeira: 15% sobre o lucro, na declaração do ano seguinte, sem a isenção dos R$ 35 mil.</p>
     <h3>Comprou em várias vezes?</h3>
     <p>Use o preço médio. O <a href="../escada-dca/index.html">DCA · Preço Médio</a> calcula o preço médio das suas compras e traz para cá com um clique.</p>
-  </section>
+  </details>
 
 </div>
 
 <script src="../../core/http.js"></script>
 <script src="../_comum/calculos.js?v=1"></script>
 <script src="../_comum/busca-token.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=2"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

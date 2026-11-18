@@ -162,9 +162,23 @@
     [['jz-inicial', '1.000'], ['jz-aporte', '500'], ['jz-taxa', '12'], ['jz-periodo', '10'], ['jz-inflacao', '4,5'], ['jz-meta', ''], ['jz-retirada', '0']]
       .forEach(function (p) { $(p[0]).value = p[1]; });
     $('jz-retirada-campo').hidden = true;
-    $('jz-resultado').hidden = true;
+    calcular();
   });
   document.querySelectorAll('.bloco input').forEach(function (inp) {
     inp.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') calcular(); });
   });
+  /* ---------- conta ao vivo (18/11/2026) ----------
+     O resultado fica à direita e muda enquanto a pessoa digita. A nota de
+     "exemplo" some no primeiro campo que ela mexer. */
+  var tVivo;
+  function aoVivo(ev) {
+    if (ev && ev.isTrusted) { var ex = $('jz-ex'); if (ex) ex.hidden = true; }
+    clearTimeout(tVivo); tVivo = setTimeout(calcular, 180);
+  }
+  document.querySelectorAll('.calc-ent input, .calc-ent select').forEach(function (i) {
+    if (/busca$/.test(i.id)) return;
+    i.addEventListener('input', aoVivo); i.addEventListener('change', aoVivo);
+  });
+  document.querySelectorAll('.calc-ent .toggle button').forEach(function (b) { b.addEventListener('click', aoVivo); });
+  calcular();
 })();

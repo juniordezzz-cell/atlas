@@ -119,3 +119,32 @@ a{color:var(--accent)}
 .ficha-token{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
 .ficha-token img{border-radius:50%}
 .ficha-token .num{color:var(--txt2)}
+
+/* ---------- Calculadoras em duas colunas (18/11/2026) ----------
+   Lucro, Staking e Juros: campos à esquerda (.calc-ent), resultado à
+   direita (.calc-res), fixo à vista ao rolar. A conta roda enquanto a
+   pessoa digita; o botão de calcular some. No celular, empilha. */
+.wrap--calc{max-width:1360px}
+.calc-grade{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start}
+.calc-res:empty{display:none}
+.calc-res .resultados{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.calc-res .secao-titulo:first-of-type{margin-top:6px}
+.wrap--calc .acoes .btn--principal{display:none}
+.exemplo{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:rgba(245,185,66,.12);color:var(--amber);margin-left:6px;vertical-align:middle}
+@media (min-width:1100px){
+  .calc-grade{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}
+  .calc-res{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;padding-right:4px}
+  .calc-ent .grade2{grid-template-columns:1fr 1fr}
+}
+/* "Como ler" recolhível */
+details.explica summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+details.explica summary::-webkit-details-marker{display:none}
+details.explica summary h2{margin:0}
+details.explica summary::after{content:"Abrir";font-size:12px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+details.explica[open] summary::after{content:"Fechar"}
+details.explica[open] summary{margin-bottom:10px}
+details.explica summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+/* celular: o botão do menu do site fica no canto, o cabeçalho abre espaço para ele */
+@media (max-width:860px){ html.atlas-moldura .top{padding-left:46px} }
+.exemplo-nota{margin:0 0 12px;color:var(--mut);font-size:12.5px}
+.calc-vazio{border:1px dashed var(--line);border-radius:12px;padding:18px;color:var(--mut);font-size:13.5px;line-height:1.5;background:var(--panel-a)}
