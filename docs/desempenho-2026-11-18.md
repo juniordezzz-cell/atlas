@@ -23,3 +23,18 @@ guarda a versão anterior do arquivo, se precisar.
 Próximas etapas da revisão: lista de 500 tokens sob demanda no DCA e nas
 Estratégias (HTML de 827 KB); padrão de duas colunas nas calculadoras;
 ajustes por ferramenta.
+
+## Etapa 2 — DCA · Preço Médio e Estratégias de Pools (18/11/2026)
+
+- **Retrato embutido mais leve** (`_fonte-quadro/build.js`): os 500 tokens
+  continuam na lista, mas o gráfico de 7 dias de reserva (usado só quando a
+  cotação ao vivo falha) fica para os 80 maiores e os favoritos padrão
+  (`DEFAULT_WATCH`), com 4 algarismos. O `snap.json` continua completo.
+  HTML: 827 KB → 305 KB.
+- **Lista sob demanda** (`renderWatch` / `maisLinhas`): desenha 60 linhas e
+  mais 60 a cada vez que a pessoa chega perto do fim da lista. Clique, estrela
+  e Enter são tratados uma vez só na lista (`#wlist`), valendo para as linhas
+  que entram depois. Elementos na página: ~4.600 → ~1.150. Abertura do DCA:
+  2,3 s → ~1,0 s.
+- A imagem `boot-hero.png` antiga das Finanças (2,1 MB, sem uso desde a
+  etapa 1) saiu do repositório.

@@ -959,12 +959,25 @@ function renderWatch(){
     else if(!ids.length)extra='<div class="wnote">Nenhum token com esse nome entre os 500 maiores.</div>';
     $('#wcount').textContent=`${ids.length} encontrados`;
   }else{ids=S.wtab==='top'?S.top:S.watch.filter(id=>S.market[id]);$('#wcount').textContent=S.wtab==='top'?`${ids.length} tokens`:`${ids.length} favoritos`}
-  setHTML(el,(ids.map(wrow).join('')+extra)||'<div class="wnote">Nenhum favorito ainda. Toque na ☆ de um token para guardar aqui.</div>');
-  el.querySelectorAll('.wrow').forEach(r=>{const ic=r.querySelector('img');if(ic)ic.onerror=()=>{ic.remove();r.querySelector('.ic').hidden=false};
-    r.onclick=e=>{const f=e.target.dataset.fav;if(f){S.watch=S.watch.includes(f)?S.watch.filter(x=>x!==f):[...S.watch,f];ls.set('watch',S.watch);renderWatch();return}selectLive(r.dataset.id)};
-    r.onkeydown=e=>{if(e.key==='Enter')selectLive(r.dataset.id)}});
+  /* Desenha 60 linhas e o resto conforme a pessoa rola (18/11/2026): os 500
+     tokens de uma vez eram ~4.500 elementos e travavam a abertura. */
+  S.wIds=ids;S.wExtra=extra;S.wShown=Math.min(ids.length,60);
+  setHTML(el,(ids.slice(0,S.wShown).map(wrow).join('')+(S.wShown>=ids.length?extra:''))||'<div class="wnote">Nenhum favorito ainda. Toque na ☆ de um token para guardar aqui.</div>');
+  ligarLinhas(el);
   const mo=$('#wmore');if(mo)mo.onclick=()=>search(q);
 }
+function ligarLinhas(el){el.querySelectorAll('.wrow:not([data-ok])').forEach(r=>{r.dataset.ok='1';const ic=r.querySelector('img');if(ic)ic.onerror=()=>{ic.remove();const i=r.querySelector('.ic');if(i)i.hidden=false}})}
+function maisLinhas(){const el=$('#wlist');if(!S.wIds||S.wShown>=S.wIds.length)return;
+  if(el.scrollTop+el.clientHeight<el.scrollHeight-240)return;
+  const ini=S.wShown;S.wShown=Math.min(S.wIds.length,ini+60);
+  el.insertAdjacentHTML('beforeend',S.wIds.slice(ini,S.wShown).map(wrow).join('')+(S.wShown>=S.wIds.length?S.wExtra:''));
+  ligarLinhas(el);const mo=$('#wmore');if(mo)mo.onclick=()=>search($('#q').value.trim().toLowerCase())}
+/* um clique só para a lista inteira, inclusive as linhas que entram depois */
+$('#wlist').addEventListener('scroll',maisLinhas,{passive:true});
+$('#wlist').addEventListener('click',e=>{const r=e.target.closest('.wrow');if(!r)return;const f=e.target.dataset.fav;
+  if(f){S.watch=S.watch.includes(f)?S.watch.filter(x=>x!==f):[...S.watch,f];ls.set('watch',S.watch);const top=$('#wlist').scrollTop;renderWatch();while(S.wShown<S.wIds.length&&$('#wlist').scrollHeight<top+$('#wlist').clientHeight+300){const ini=S.wShown;S.wShown=Math.min(S.wIds.length,ini+60);$('#wlist').insertAdjacentHTML('beforeend',S.wIds.slice(ini,S.wShown).map(wrow).join(''));ligarLinhas($('#wlist'))}$('#wlist').scrollTop=top;return}
+  selectLive(r.dataset.id)});
+$('#wlist').addEventListener('keydown',e=>{const r=e.target.closest('.wrow');if(r&&e.key==='Enter')selectLive(r.dataset.id)});
 $('#q').addEventListener('input',()=>{$('#wres').hidden=true;renderWatch();$('#wlist').scrollTop=0});
 document.querySelectorAll('#wtab button').forEach(b=>b.onclick=()=>{S.wtab=b.dataset.w;ls.set('wtab',S.wtab);$('#q').value='';renderWatch();$('#wlist').scrollTop=0});
 $('#q').addEventListener('keydown',e=>{if(e.key==='Escape'){$('#wres').hidden=true;$('#q').value=''}});
