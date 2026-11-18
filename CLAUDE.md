@@ -18,3 +18,4 @@ Tom do texto e telas vazias ("Primeiros passos"): [registro de 17/11](docs/tom-e
 Plano de venda **futuro** (não implementado; Grátis + Premium, preços mínimos): [registro de 17/11](docs/plano-de-venda-futuro-2026-11-17.md).
 Pendências adiadas (CSP, auditoria de segurança, depois do domínio próprio): [pendências futuras](docs/pendencias-futuras.md).
 Simulador de Pools de Liquidez (ferramenta própria, lê as pools do Scanner): [registro de 17/11](docs/simulador-de-pool-2026-11-17.md).
+Desempenho do site (ícone de 2,1 MB → 32 KB, fundo animado enxuto, revisão das ferramentas): [registro de 18/11](docs/desempenho-2026-11-18.md).

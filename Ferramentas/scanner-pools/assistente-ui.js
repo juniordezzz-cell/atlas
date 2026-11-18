@@ -21,7 +21,7 @@
      se a imagem não carregar, volta a estrela */
   function avatar(cls){
     const sp=el('span','sp-avatar '+(cls||''));const img=document.createElement('img');
-    img.src='../../assets/atena.webp';img.alt='';img.decoding='async';
+    img.src='../../assets/atena-160.webp';img.alt='';img.decoding='async';
     img.onerror=()=>{img.remove();sp.textContent='✦';sp.classList.add('sp-avatar-sem-img');};
     sp.append(img);return sp;
   }
