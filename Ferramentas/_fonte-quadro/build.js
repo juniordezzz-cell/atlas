@@ -5,7 +5,19 @@
 const fs = require('fs'), path = require('path');
 const dir = __dirname;
 const src = fs.readFileSync(path.join(dir, 'quadro-src.html'), 'utf8');
-const snap = fs.readFileSync(path.join(dir, 'snap.json'), 'utf8');
+/* Retrato embutido (18/11/2026): a lista dos 500 tokens vai inteira, mas o
+   gráfico de 7 dias de reserva (usado só quando a cotação ao vivo falha) fica
+   para os 80 maiores e os favoritos padrão, com 4 algarismos. O HTML caía de
+   827 KB para ~210 KB. O snap.json continua completo. */
+const snapCheio = JSON.parse(fs.readFileSync(path.join(dir, 'snap.json'), 'utf8'));
+const watchPadrao = (src.match(/const DEFAULT_WATCH=\[([^\]]*)\]/) || [, ''])[1].match(/'([^']+)'/g) || [];
+const manter = new Set(watchPadrao.map(s => s.replace(/'/g, '')));
+const sig = v => (typeof v === 'number' && isFinite(v)) ? Number(v.toPrecision(4)) : v;
+const snap = JSON.stringify({ t: snapCheio.t, c: snapCheio.c.map(x => {
+  const [id, sym, nome, img, preco, ch, rank, spark] = x;
+  const guarda = (rank && rank <= 80) || manter.has(id);
+  return [id, sym, nome, img, preco, ch, rank, guarda && Array.isArray(spark) ? spark.map(sig) : []];
+}) });
 const tools = [
   { tool: 'dca', pasta: 'escada-dca', title: 'DCA · Preço Médio', h1: 'DCA <span>· Preço Médio</span>',
     desc: 'DCA · Preço Médio do ATLAS: divida a entrada em 2 a 5 compras, veja o preço médio no gráfico real e compare uma compra só com compras em etapas.' },

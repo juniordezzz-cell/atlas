@@ -185,7 +185,9 @@
 /* v101 (na main) = Simulador de Pools de Liquidez como ferramenta própria e
    desempenho (ícone de 32 KB, fundo animado enxuto, Oráculo e Finanças leves). */
 /* v105 = junção desta branch (v104) com a v101 da main. */
-var VERSAO = "atlas-v105";
+/* v106 = junção com a main das calculadoras em duas colunas (Lucro, Staking…)
+   e do retrato embutido enxuto do DCA e das Estratégias. */
+var VERSAO = "atlas-v106";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
 <link rel="stylesheet" href="../../core/ui/atlas-shell.css">
-<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=2">
 <link rel="stylesheet" href="estilo.css?v=1">
 <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
 <script src="../../core/atlas-auth.js"></script>
@@ -18,7 +18,7 @@
 <script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
 </head>
 <body>
-<div class="wrap">
+<div class="wrap wrap--calc">
 
   <header class="top">
     <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
@@ -27,6 +27,10 @@
     <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
   </header>
 
+  <!-- Duas colunas (18/11/2026): campos à esquerda, resultado à direita,
+       sempre à vista e recalculado enquanto a pessoa digita. -->
+  <div class="calc-grade">
+  <div class="calc-ent">
   <div class="toggle" role="tablist" aria-label="Moeda" id="jz-moeda">
     <button type="button" role="tab" data-cur="BRL" aria-selected="true">Real</button>
     <button type="button" role="tab" data-cur="USD" aria-selected="false">Dólar</button>
@@ -52,8 +56,11 @@
       <button type="button" class="btn btn--link" id="jz-limpar">Limpar</button>
     </div>
   </section>
+  </div>
 
-  <div id="jz-resultado" hidden>
+  <div class="calc-res" aria-live="polite">
+  <div id="jz-resultado">
+    <p class="exemplo-nota" id="jz-ex"><span class="exemplo">exemplo</span> Valores de exemplo. Troque pelos seus números: o resultado muda na hora.</p>
     <div class="resultados">
       <div class="res res--destaque"><div class="res__rotulo">Valor final</div><div class="res__valor" id="jz-r-final">—</div><div class="res__nota" id="jz-r-zerou"></div></div>
       <div class="res"><div class="res__rotulo">Total investido</div><div class="res__valor" id="jz-r-investido">—</div></div>
@@ -81,9 +88,11 @@
       <tbody id="jz-meses"></tbody></table>
     </div>
   </div>
+  </div>
+  </div>
 
-  <section class="explica">
-    <h2>Como ler</h2>
+  <details class="explica">
+    <summary><h2>Como ler</h2></summary>
     <p>Juros compostos são <strong>juros que rendem sobre juros</strong>: a cada mês o rendimento entra no saldo e passa a render também. A distância crescente entre as duas linhas do gráfico é esse efeito.</p>
     <h3>Taxa anual vira mensal como?</h3>
     <p>Pela conta certa, <strong>(1 + taxa)^(1/12) − 1</strong>. Dividir por 12 exagera: 12% ao ano é 0,95% ao mês, não 1%.</p>
@@ -91,7 +100,7 @@
     <p>Com inflação, o mesmo valor compra menos no futuro. "Final em dinheiro de hoje" mostra quanto o resultado vale em poder de compra atual, e o ganho real é o que sobra acima da inflação.</p>
     <h3>Renda fixa</h3>
     <p>A Selic vem do Banco Central. O CDI fica 0,10 ponto abaixo dela e aparece antes do imposto de renda. A poupança rende 0,5% ao mês quando a Selic passa de 8,5% ao ano (senão, 70% da Selic) e é isenta. Para staking e pools, use o <a href="../staking/index.html">Staking</a> e a <a href="../estrategia-de-pool/index.html">Estratégias de Pools de Liquidez</a>.</p>
-  </section>
+  </details>
 
 </div>
 
@@ -99,7 +108,7 @@
 <script src="../../core/atlas-dados.js?v=1"></script>
 <script src="../../assets/vendor/chart-4.4.1.min.js"></script>
 <script src="../_comum/calculos.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=2"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

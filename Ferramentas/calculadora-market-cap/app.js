@@ -165,6 +165,7 @@
   }
 
   function escolher(s) {
+    var ex = $("mc-exemplo"); if (ex) ex.hidden = true;
     if (!s) return;
     fecharSugestoes();
     $("mc-busca").value = s.name + " (" + s.symbol + ")";
@@ -526,7 +527,8 @@
     }).join("");
     el.innerHTML =
       (pergunta ? "<h2>A pergunta que todo mundo faz</h2>" + pergunta : "") +
-      "<h2>Como ler estes números</h2>" +
+      /* explicação e glossário recolhíveis (18/11/2026): a página abre no que importa */
+      '<details class="recolhe"><summary><h2>Como ler estes números</h2></summary>' +
       "<h3>Valor de mercado, não preço da unidade</h3>" +
       "<p>O preço de um token, sozinho, não diz se ele está barato ou caro. O que diz é o valor de mercado: " +
       "<b>preço × quantidade de tokens</b>. Um token de centavos pode valer mais que um de centenas de dólares, " +
@@ -542,9 +544,9 @@
       "<h3>Token pequeno sobe mais fácil e cai mais fácil</h3>" +
       "<p>Um projeto pequeno precisa de menos dinheiro para dobrar, e por isso mesmo pode cair ou sumir com " +
       "pouco dinheiro saindo. O que manda é a liquidez: quanto dinheiro existe de verdade para comprar e vender.</p>" +
-      '<p class="nota">Antes de sonhar com um preço, multiplique pela quantidade de tokens e pergunte: esse projeto vale isso?</p>' +
-      '<h2 class="dic__titulo">Glossário</h2><p class="nota">Os termos sublinhados na página levam até aqui.</p>' +
-      '<dl class="dic">' + dic + "</dl>";
+      '<p class="nota">Antes de sonhar com um preço, multiplique pela quantidade de tokens e pergunte: esse projeto vale isso?</p></details>' +
+      '<details class="recolhe" id="mc-glossario"><summary><h2 class="dic__titulo">Glossário</h2></summary><p class="nota">Os termos sublinhados na página levam até aqui.</p>' +
+      '<dl class="dic">' + dic + "</dl></details>";
   }
 
   /* O que a batalha (batalha.js) reaproveita daqui: a mesma busca com
@@ -563,6 +565,14 @@
     var qs = new URLSearchParams(location.search);
     var id = qs.get("token");
     if (id) carregar(id, qs.get("s"), qs.get("f") === "cp" ? "coinpaprika" : "coingecko");
+    /* sem token no endereço: abre com a Solana de exemplo, para a tela mostrar o que faz (18/11/2026) */
+    else { carregar("solana", "SOL", "coingecko"); var ex = $("mc-exemplo"); if (ex) ex.hidden = false; }
+    /* termo sublinhado → glossário: abre o bloco recolhido antes de pular */
+    document.addEventListener("click", function (ev) {
+      var a = ev.target.closest && ev.target.closest('a[href^="#g"]'); if (!a) return;
+      var alvo = document.getElementById(a.getAttribute("href").slice(1)), d = alvo && alvo.closest("details");
+      if (d) d.open = true;
+    });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar);

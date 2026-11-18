@@ -23,3 +23,40 @@ guarda a versão anterior do arquivo, se precisar.
 Próximas etapas da revisão: lista de 500 tokens sob demanda no DCA e nas
 Estratégias (HTML de 827 KB); padrão de duas colunas nas calculadoras;
 ajustes por ferramenta.
+
+## Etapa 2 — DCA · Preço Médio e Estratégias de Pools (18/11/2026)
+
+- **Retrato embutido mais leve** (`_fonte-quadro/build.js`): os 500 tokens
+  continuam na lista, mas o gráfico de 7 dias de reserva (usado só quando a
+  cotação ao vivo falha) fica para os 80 maiores e os favoritos padrão
+  (`DEFAULT_WATCH`), com 4 algarismos. O `snap.json` continua completo.
+  HTML: 827 KB → 305 KB.
+- **Lista sob demanda** (`renderWatch` / `maisLinhas`): desenha 60 linhas e
+  mais 60 a cada vez que a pessoa chega perto do fim da lista. Clique, estrela
+  e Enter são tratados uma vez só na lista (`#wlist`), valendo para as linhas
+  que entram depois. Elementos na página: ~4.600 → ~1.150. Abertura do DCA:
+  2,3 s → ~1,0 s.
+- A imagem `boot-hero.png` antiga das Finanças (2,1 MB, sem uso desde a
+  etapa 1) saiu do repositório.
+
+## Etapa 3 — padrão das calculadoras (18/11/2026)
+
+- **Lucro Cripto, Staking e Juros Compostos** (`.wrap--calc`, `.calc-grade`):
+  campos à esquerda (`.calc-ent`), resultado à direita (`.calc-res`), fixo
+  à vista ao rolar a partir de 1100 px. No celular, empilha.
+- **Conta ao vivo:** cada `app.js` recalcula 180 ms depois de qualquer
+  campo, seletor ou botão de opção. O botão de calcular sumiu (CSS
+  `.wrap--calc .acoes .btn--principal`). "Limpar" volta aos valores padrão e
+  recalcula.
+- **Abre com exemplo:** nota "exemplo" no topo do resultado (`#xx-ex`), que
+  some no primeiro campo que a pessoa mexer. No Lucro, compra a 100 e venda a
+  130, a não ser que venha `?compra=&venda=` do DCA. Sem os três números, o
+  lado do resultado diz o que falta (`#lc-vazio`).
+- **"Como ler" recolhível** (`<details class="explica">`).
+- **Market Cap:** abre com a Solana de exemplo (com nota) quando não há
+  `?token=`. "Como ler estes números" e "Glossário" ficam recolhíveis
+  (`details.recolhe`), e o termo sublinhado abre o glossário antes de pular.
+  Na comparação de tokens, o glossário também fica recolhível.
+- **Celular:** o cabeçalho abre espaço para o botão do menu do site
+  (`html.atlas-moldura .top{padding-left:46px}`), em `_comum/ferramenta.css`
+  e no `estilo.css` do Market Cap.
