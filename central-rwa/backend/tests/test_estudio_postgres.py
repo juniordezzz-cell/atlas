@@ -92,8 +92,19 @@ def test_varredura_grava_com_o_papel_do_agente(dsns):
                         "where pool_id = %s", (ALVOS[2]["pool_id"],)).fetchone()
         assert est == ("AERO", "USDC", True)
         assert [x[0] for x in c.execute("select estado from estudio.varredura_status order by id")] == ["ok", "ok"]
-        # 48 velas (2 dias) não bastam para os agentes: pools_prontas exige 7 dias
-        assert c.execute("select count(*) from estudio.pools_prontas").fetchone()[0] == 0
+    # 48 velas (2 dias) não bastam para os agentes: pools_prontas exige 7 dias.
+    # A visão compara com o now() do banco, e AGORA é fixo: comparar as velas
+    # gravadas acima deixou de valer quando o relógio real passou de 7 dias
+    # depois de AGORA (16/11/2026). Por isso a regra é testada pelas datas
+    # relativas ao now(), nos dois lados, numa transação desfeita no fim.
+    with psycopg.connect(uri) as c:
+        def prontas(dias):
+            c.execute("update estudio.candles_estado set primeira_vela = now() - make_interval(days => %s), "
+                      "ultima_vela = now()", (dias,))
+            return c.execute("select count(*) from estudio.pools_prontas").fetchone()[0]
+        assert prontas(2) == 0
+        assert prontas(8) == 4
+        c.rollback()
 
 
 def test_manutencao_resume_por_hora_e_apaga_o_vencido(dsns):

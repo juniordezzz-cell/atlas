@@ -2,7 +2,7 @@
    ATLAS · Comparador de Ativos (Ferramentas/comparador-de-ativos/)
    Busca-uma-vez (maior período) + cache + fila por provedor +
    re-tentativa + falha visível. Trocar período/moeda não refaz
-   requisição. Rede só pelo AtlasHttp, sem chave de API no navegador.
+   requisição. Rede só pelo roteador (core/atlas-dados.js), sem chave de API no navegador.
    Cripto: Binance + CoinGecko | Ouro (PAXG) e ações (xStocks): tokens
    na CoinGecko | CDI e IPCA: Banco Central.
    Registro: docs/ferramentas-bancada-2026-11-08.md
@@ -57,9 +57,8 @@ const LOC = {brl:"pt-BR", usd:"en-US"};
 let fxRate = 5.4;                       // USD->BRL (atualizado em loadFx)
 const RAW = {};                         // key -> {status, series, err, promise}  (série canônica em US$ / índice)
 const chartInst = {s1:null,s2:null,s3:null};
-/* Rede só pelo AtlasHttp (timeout, re-tentativa, cache). Séries longas
-   ficam fora do cache em localStorage (ttl 0): o RAW em memória já guarda. */
-const getJ = (u, ttl) => AtlasHttp.getJSON(u, { ttl: ttl || 0, timeout: 15000, retries: 1 });
+/* (todas as chamadas passam pelo roteador core/atlas-dados.js; mapa em docs/apis) */
+let fxNota = '';
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
 /* ════════════════ FORMATAÇÃO ════════════════ */
@@ -76,60 +75,23 @@ function toCur(v,a){ if(a.type==="bacen") return v; return STATE.currency==="brl
 
 /* ════════════════ CÂMBIO ════════════════ */
 async function loadFx(){
-  // dólar em reais pela cotação do USDT (mesmo critério do Conversor)
-  try{ const d=await getJ("https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=brl,usd", 600000); const t=d&&d.tether; if(t&&t.brl>0&&t.usd>0) fxRate=t.brl/t.usd; }catch(e){}
+  // câmbio do roteador: open.er-api, Binance, CoinGecko por último; guardado se tudo cair
+  try{ const c=await AtlasDados.cambio(); fxRate=c.por.brl; fxNota=c.salvo?('guardado de '+AtlasDados.quandoTexto(c.quando)):c.fonte; }
+  catch(e){ fxNota='estimado (sem cotação agora)'; }
 }
 
-/* ════════════════ LIMITE POR PROVEDOR (token bucket) ════════════════
-   Permite um "burst" e repõe devagar — respeita os limites do free tier
-   sem disparar tudo de uma vez (era a causa dos ativos sumirem).        */
-function tokenBucket(max, refillMs){
-  let tokens=max; const q=[];
-  function pump(){ while(tokens>0 && q.length){ tokens--; (q.shift())(); } }
-  setInterval(()=>{ if(tokens<max){ tokens++; pump(); } }, refillMs);
-  return fn => new Promise((res,rej)=>{ q.push(()=>fn().then(res,rej)); pump(); });
-}
-const cgBucket = tokenBucket(5, 4000);   // CoinGecko
-
-async function withRetry(fn, tries){
-  tries=tries||3; let err;
-  for(let i=0;i<tries;i++){
-    try{ return await fn(); }
-    catch(e){ err=e; await sleep(1200*(i+1)); }
-  }
-  throw err;
-}
-
-/* ════════════════ FETCH CANÔNICO (uma vez, maior período) ════════════════ */
-/* Cripto: Binance (histórico longo, grátis, sem chave) + fallback CoinGecko (máx 365d) */
-async function binanceKlines(sym, interval, limit){
-  const u=`https://data-api.binance.vision/api/v3/klines?symbol=${sym}USDT&interval=${interval}&limit=${limit}`;
-  const d=await getJ(u); if(!Array.isArray(d)||!d.length) throw new Error("bnb-vazio");
-  return d.map(k=>({t:k[0], v:parseFloat(k[4])})).filter(p=>isFinite(p.v));
-}
-async function cgFallback(a){
-  const u=`https://api.coingecko.com/api/v3/coins/${a.cg}/market_chart?vs_currency=usd&days=365`;
-  const d=await getJ(u); if(!d||!d.prices||!d.prices.length) throw new Error("cg-vazio");
-  return d.prices.map(p=>({t:p[0], v:p[1]}));
-}
+/* ════════════════ SÉRIES (roteador) ════════════════
+   Cripto e ouro: Binance (histórico longo), DefiLlama, CoinGecko por último.
+   Ações em token (xStocks): sem par na Binance, vão direto à DefiLlama. */
 async function rawCrypto(a){
-  const sym=(a.bn||a.sym||"").toUpperCase();
-  let weekly=[], daily=[];
-  if(sym && !a.cgOnly){
-    try{ weekly=await binanceKlines(sym,"1w",750); }catch(e){}   // ~14 anos semanal
-    try{ daily =await binanceKlines(sym,"1d",1000); }catch(e){}  // ~2,7 anos diário (detalhe recente)
-  }
-  if(weekly.length || daily.length){
-    const dStart = daily.length ? daily[0].t : Infinity;
-    return weekly.filter(p=>p.t<dStart).concat(daily).sort((x,y)=>x.t-y.t);  // US$ (≈USDT)
-  }
-  return await cgFallback(a);                                    // Binance não tem o par → CoinGecko (1 ano)
+  // xStocks existem desde meados de 2025: 500 dias vêm em pontos diários (o máximo da DefiLlama por pedido)
+  const r = await AtlasDados.historico(a.cg, a.cgOnly ? '' : (a.bn || a.sym || ''), a.cgOnly ? 500 : 3650);
+  return r.serie;
 }
 async function rawBacen(a){
   const end=new Date(), start=new Date(Date.now()-3650*864e5);
   const fmt=dt=>`${String(dt.getDate()).padStart(2,"0")}/${String(dt.getMonth()+1).padStart(2,"0")}/${dt.getFullYear()}`;
-  const u=`https://api.bcb.gov.br/dados/serie/bcdata.sgs.${a.sgs}/dados?formato=json&dataInicial=${fmt(start)}&dataFinal=${fmt(end)}`;
-  const d=await getJ(u, 6*3600*1000); if(!Array.isArray(d)||!d.length) throw new Error("bacen-vazio");
+  const d=(await AtlasDados.serieBcb(a.sgs, { dataInicial: fmt(start), dataFinal: fmt(end) })).dados;
   let acc=1; const out=[];
   for(const row of d){ const [dd,mm,yy]=row.data.split("/"); const t=new Date(+yy,+mm-1,+dd).getTime(); const rate=parseFloat(String(row.valor).replace(",","."))/100; acc*=(1+rate); out.push({t,v:acc}); }
   return out;                                            // índice acumulado
@@ -142,8 +104,8 @@ function ensureAsset(key){
   if(cur && (cur.status==="ok"||cur.status==="loading")) return cur.promise||Promise.resolve();
   const entry=RAW[key]={status:"loading",series:null,err:null,promise:null};
   let job;
-  if(a.type==="crypto"||a.type==="tok") job=()=>cgBucket(()=>withRetry(()=>rawCrypto(a)));
-  else                    job=()=>withRetry(()=>rawBacen(a));
+  if(a.type==="crypto"||a.type==="tok") job=()=>rawCrypto(a);
+  else                    job=()=>rawBacen(a);
   entry.promise=job()
     .then(series=>{ entry.series=series; entry.status="ok"; })
     .catch(err=>{ entry.status="error"; entry.err=err; })
@@ -380,7 +342,7 @@ async function doSearch(q){
   const dd=document.getElementById("search-dd"), ql=q.toLowerCase();
   const trad=Object.keys(ASSETS).filter(k=>ASSETS[k].type!=="crypto" && (ASSETS[k].name.toLowerCase().includes(ql)||ASSETS[k].sym.toLowerCase().includes(ql)));
   let coins=[];
-  try{ const d=await getJ("https://api.coingecko.com/api/v3/search?query="+encodeURIComponent(q), 300000); coins=(d.coins||[]).slice(0,8); }catch(e){}
+  try{ coins=(await AtlasDados.buscar(q)).map(c=>({id:c.id, name:c.nome, symbol:c.sym, thumb:c.img})); }catch(e){}
   let html="";
   if(trad.length){ html+=`<div class="sd-group">Mercado tradicional</div>`+trad.map(k=>{const a=ASSETS[k];return sdItem(k,a.name,a.sym,a.color,null,"trad");}).join(""); }
   if(coins.length){ html+=`<div class="sd-group">Criptomoedas</div>`+coins.map(c=>sdItem("cg:"+c.id,c.name,(c.symbol||"").toUpperCase(),"#F5A623",c.thumb,"cripto")).join(""); }
@@ -434,13 +396,13 @@ function renderTdNotice(){
 
 /* ════════════════ TICKER ════════════════ */
 async function loadTicker(){
-  try{ const d=await getJ("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true", 60000); setTick("btc",d.bitcoin); setTick("eth",d.ethereum); }
-  catch(e){
-    /* sem cotação: "indisponível" no lugar de um "carregando…" que nunca acaba (18/11/2026) */
-    ["btc","eth"].forEach(id=>{ const el=document.getElementById("tk-"+id); if(el && /carregando/i.test(el.textContent)) el.textContent="indisponível"; });
-  }
+  // faixa de cima: ficha do roteador (CoinPaprika, CoinGecko por último), guardada se tudo cair
+  const [b,e]=await Promise.all([AtlasDados.ficha('bitcoin','BTC').catch(()=>null), AtlasDados.ficha('ethereum','ETH').catch(()=>null)]);
+  if(b) setTick("btc",{usd:b.usd, usd_24h_change:b.ch24}); if(e) setTick("eth",{usd:e.usd, usd_24h_change:e.ch24});
+  /* sem cotação: "indisponível" no lugar de um "carregando…" que nunca acaba (18/11/2026) */
+  [["btc",b],["eth",e]].forEach(([id,v])=>{ if(v) return; const el=document.getElementById("tk-"+id); if(el && /carregando/i.test(el.textContent)) el.textContent="indisponível"; });
   document.getElementById("tk-usd").textContent="R$ "+fxRate.toFixed(2).replace(".",",");
-  document.getElementById("tk-time").textContent=new Date().toLocaleTimeString("pt-BR");
+  const q=b||e; document.getElementById("tk-time").textContent = (q&&q.salvo ? "guardadas de "+AtlasDados.quandoTexto(q.quando) : "atualizadas "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})) + " · dólar: " + fxNota;
 }
 function setTick(id,o){ if(!o)return; document.getElementById("tk-"+id).textContent="US$ "+o.usd.toLocaleString("en-US"); const c=o.usd_24h_change||0, el=document.getElementById("tk-"+id+"-c"); el.textContent=(c>=0?"▲ +":"▼ ")+c.toFixed(2)+"%"; el.className="ticker-chg "+(c>=0?"up":"down"); }
 

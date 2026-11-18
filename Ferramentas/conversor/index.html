@@ -46,8 +46,11 @@
   </div>
 
   <div class="erro-api" id="erro-api">
-    Não foi possível carregar a cotação agora. Tente de novo em alguns segundos.
-    <button onclick="iniciar()">Tentar de novo</button>
+    Não foi possível carregar a cotação agora e não há cotação guardada deste token.
+    Digite manualmente o preço de 1 <b id="manual-sym">BTC</b> em <span id="manual-fiat">Real (BRL)</span>:
+    <input id="manual-preco" inputmode="decimal" placeholder="0,00" aria-label="Preço digitado">
+    <button type="button" id="manual-usar">Usar este preço</button>
+    <button type="button" onclick="iniciar()">Tentar de novo</button>
   </div>
 
   <!-- ===== CONVERSOR ESTILO TRADUTOR ===== -->
@@ -93,7 +96,7 @@
 
     </div>
     <div class="conversor-rodape">
-      <span>Fonte: CoinGecko · sem taxas, só a cotação de mercado</span>
+      <span>Sem taxas, só a cotação de mercado</span>
       <span id="taxa-inversa">—</span>
     </div>
   </div>
@@ -101,7 +104,7 @@
   <!-- ===== GRÁFICO ===== -->
   <section>
     <h2><span class="ico">📈</span>Gráfico <span id="grafico-titulo">SOL/BRL</span></h2>
-    <p class="sub">Evolução do preço na moeda selecionada, pela CoinGecko.</p>
+    <p class="sub" id="grafico-fonte">Evolução do preço na moeda selecionada.</p>
     <div class="grafico-card">
       <div class="grafico-topo">
         <div>
@@ -123,7 +126,7 @@
   <!-- ===== ESTATÍSTICAS ===== -->
   <section>
     <h2><span class="ico">📊</span>Estatísticas de <span id="stats-nome">Solana</span></h2>
-    <p class="sub">Números das últimas 24 horas e do ativo, na moeda selecionada.</p>
+    <p class="sub" id="stats-fonte">Números das últimas 24 horas e do ativo, na moeda selecionada.</p>
     <div class="stats-grid">
       <div class="stat"><div class="label">Mínima 24h</div><div class="valor" id="st-min">—</div></div>
       <div class="stat"><div class="label">Máxima 24h</div><div class="valor" id="st-max">—</div></div>
@@ -164,7 +167,7 @@
   <!-- ===== MODO CÂMBIO (moeda ⇄ moeda, via stablecoin) ===== -->
   <div id="modo-cambio" hidden>
     <div class="hero">
-      <span class="eyebrow">Câmbio ao vivo · via stablecoin</span>
+      <span class="eyebrow">Câmbio ao vivo</span>
       <h2 class="par-titulo">Converter <span class="par" id="cb-h1-de">Real (BRL)</span> em <span class="par" id="cb-h1-para">Dólar (USD)</span></h2>
       <p class="taxa-viva">1 <span id="cb-taxa-de">BRL</span> vale agora <strong id="cb-taxa-valor">—</strong></p>
       <p class="atualizado" id="cb-atualizado">Carregando cotação…</p>
@@ -186,7 +189,7 @@
         </div>
       </div>
       <div class="conversor-rodape">
-        <span>Cotação de mercado via stablecoins USDT e USDC, sem taxas. Difere do câmbio do banco, que embute spread.</span>
+        <span>Câmbio de referência, sem taxas; USDT e USDC pelo preço de mercado. O banco cobra spread e taxas.</span>
         <span id="cb-taxa-inversa">—</span>
       </div>
     </div>
@@ -207,7 +210,7 @@
     <h3>A conversão tem taxa?</h3>
     <p>Não. Aqui aparece a <strong>cotação pura de mercado</strong>. Numa exchange o valor final muda um pouco por causa da taxa de negociação e do spread de cada plataforma.</p>
     <h3>De onde vêm os preços?</h3>
-    <p>Da <strong>CoinGecko</strong>, que junta as cotações de centenas de exchanges. O preço atualiza sozinho a cada minuto enquanto a página está aberta. Se a busca falhar, a última cotação guardada aparece na hora, com o horário dela.</p>
+    <p>De várias fontes, em ordem: <strong>DefiLlama</strong>, Binance, CoinPaprika e, por último, CoinGecko. Se uma estiver fora ou no limite de uso, a próxima responde. Se todas falharem, aparece a última cotação guardada, com dia e hora. A fonte de cada número aparece embaixo dele. Lista completa: <code>docs/apis</code> do ATLAS.</p>
     <h3>Por que o câmbio é diferente do banco?</h3>
     <p>O modo <strong>Moeda ⇄ Moeda</strong> usa o preço das stablecoins USDT e USDC em cada moeda. É o câmbio que você pega operando no mercado cripto. O banco embute spread e taxas, por isso costuma ser pior.</p>
     <h3>O que é market cap?</h3>
@@ -217,8 +220,10 @@
 </div>
 
 <script src="../../core/http.js"></script>
+<script src="../../core/dados/tokens-top.js"></script>
+<script src="../../core/atlas-dados.js?v=1"></script>
 <script src="../_comum/calculos.js?v=1"></script>
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

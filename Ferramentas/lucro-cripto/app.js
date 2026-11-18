@@ -1,12 +1,12 @@
 /* ATLAS · Lucro Cripto (Ferramentas/lucro-cripto/)
    Contas em ../_comum/calculos.js: lucroOperacao, precoEmpate,
-   impostoCripto. Rede só pelo AtlasHttp: busca e preço na CoinGecko e o
-   dólar em reais pela cotação do USDT. Aceita ?compra=&venda=&qtd=&token=
+   impostoCripto. Dados pelo roteador (core/atlas-dados.js): busca no
+   catálogo local, preço pela cadeia (DefiLlama primeiro) e dólar em reais
+   pelo câmbio (open.er-api, Binance, CoinGecko por último). Aceita ?compra=&venda=&qtd=&token=
    vindo da Escada. Registro: docs/ferramentas-bancada-2026-11-08.md */
 (function () {
   'use strict';
   var C = window.AtlasCalculos;
-  var API = 'https://api.coingecko.com/api/v3';
   var $ = function (id) { return document.getElementById(id); };
   var token = null;
 
@@ -24,16 +24,17 @@
     var img = $('lc-ficha-img'), src = linkSeguro(t.img);
     img.hidden = !src; if (src) img.src = src;
     $('lc-ficha-nome').textContent = t.nome + ' (' + t.sym + ')';
-    $('lc-ficha-preco').textContent = t.preco != null ? usd(t.preco) + ' hoje' : 'buscando preço…';
+    $('lc-ficha-preco').textContent = t.preco == null ? 'buscando preço…'
+      : usd(t.preco) + (t.salvo ? ' · preço guardado de ' + AtlasDados.quandoTexto(t.quando) : ' · ' + t.fonte);
   }
-  function carregarToken(id) {
+  function carregarToken(id, sym) {
     status('');
-    return AtlasBuscaToken.mercado(id).then(mostrarFicha)
-      .catch(function (e) { status('Não foi possível buscar o preço agora. Digite os preços manualmente.'); });
+    return AtlasBuscaToken.mercado(id, sym).then(mostrarFicha)
+      .catch(function () { if (token) { token.preco = null; $('lc-ficha-preco').textContent = 'sem preço agora'; } status('Não foi possível obter o preço deste token agora. Digite os preços manualmente.'); });
   }
   AtlasBuscaToken.ligar({
     input: $('lc-busca'), lista: $('lc-sugestoes'), aoErro: status,
-    aoEscolher: function (t) { t.preco = null; mostrarFicha(t); carregarToken(t.id); }
+    aoEscolher: function (t) { t.preco = null; mostrarFicha(t); carregarToken(t.id, t.sym); }
   });
   $('lc-usar-preco').addEventListener('click', function () { if (token && token.preco != null) { campo('lc-venda', token.preco); calcular(); } });
 
@@ -79,13 +80,15 @@
     $('lc-ficha').hidden = true; token = null; calcular();
   });
 
-  /* ---------- dólar em reais (cotação do USDT) ---------- */
-  AtlasHttp.getJSON(API + '/simple/price?ids=tether&vs_currencies=brl,usd', { ttl: 600000 }).then(function (d) {
-    var t = d && d.tether; if (!t || !(t.brl > 0) || !(t.usd > 0)) return;
+  /* ---------- dólar em reais (câmbio do roteador) ---------- */
+  AtlasDados.cambio().then(function (c) {
+    $('lc-dolar-fonte').textContent = (c.salvo ? 'Cotação guardada de ' : 'Cotação ' + c.fonte + ', ') + AtlasDados.quandoTexto(c.quando) + '.';
     if ($('lc-dolar').dataset.mexido) return;
-    campo('lc-dolar', +(t.brl / t.usd).toFixed(4));
+    campo('lc-dolar', +c.por.brl.toFixed(4));
     if (!$('lc-resultado').hidden) calcular();
-  }).catch(function () {});
+  }).catch(function () {
+    $('lc-dolar-fonte').textContent = 'Sem cotação do dólar agora: confira o valor (R$ 5,50 é só um ponto de partida).';
+  });
   $('lc-dolar').addEventListener('input', function () { this.dataset.mexido = '1'; });
 
   /* ---------- vindo da Escada: ?compra=&venda=&qtd=&token= ---------- */

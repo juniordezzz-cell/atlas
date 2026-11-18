@@ -12,6 +12,8 @@ Ferramentas (cenário + cards 3D): [registro de 15/10](docs/visual-ferramentas-2
 Academy (abas + curso Nível 1 em iframe): [registro de 20/10](docs/academy-2026-10-20.md).
 Finanças "lançar falando" (Oráculo, centavos, só o lançado): [registro de 23/10](docs/financas-2026-10-23.md).
 Bancada de Ferramentas (8 calculadoras do site antigo, `_comum/`, build do quadro): [registro de 08/11](docs/ferramentas-bancada-2026-11-08.md).
+APIs do site e roteador de dados (`core/atlas-dados.js`): [docs/apis/](docs/apis/README.md).
+Ferramenta Medo e Ganância (gráfico com o índice + 5 abas, Agora por ciclo de queda, Lightweight Charts): [registro de 14/11](docs/ferramenta-medo-ganancia-2026-11-14.md).
 Moldura única do site (trilho recolhível, grupos, submenu central espelhado): [registro de 15/11](docs/moldura-2026-11-15.md).
 Interface em português e cor de ação única (`--atlas-acao`): [registro de 15/11](docs/portugues-e-cor-de-acao-2026-11-15.md).
 Tom do texto e telas vazias ("Primeiros passos"): [registro de 17/11](docs/tom-e-telas-vazias-2026-11-17.md).

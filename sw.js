@@ -160,9 +160,36 @@
    (Conversor e Câmbio, Escada, Lucro Cripto, Simulador de Trade, Estratégia
    de Pool, Staking, Juros Compostos, Comparador de Ativos) em 4 seções.
    Registro: docs/ferramentas-bancada-2026-11-08.md */
-/* v99 = a Central RWA saiu (o backend deixou o Supabase): a página RWA perdeu
-   as abas Central RWA, Eventos e Agentes e abre no Dashboard. */
-var VERSAO = "atlas-v101";
+/* v99 (na main) = a Central RWA saiu (o backend deixou o Supabase): a página
+   RWA perdeu as abas Central RWA, Eventos e Agentes e abre no Dashboard. */
+/* v99 (nesta branch) = roteador de dados (core/atlas-dados.js) para as 8 ferramentas da
+   bancada: reserva por tipo de dado, pausa da fonte que der limite e último
+   valor guardado. Mapa das fontes: docs/apis/. */
+/* v100 = entrou a ferramenta Medo e Ganância (Ferramentas/medo-e-ganancia/), na
+   seção "Estudar o mercado": gráfico com o índice como indicador (Lightweight
+   Charts em assets/vendor/) e 7 abas de estudo. O roteador ganhou velasLongas
+   e medoGanancia. Registro: docs/ferramenta-medo-ganancia-2026-11-14.md */
+/* v101 = Medo e Ganância ganha a aba Agora (situação do token hoje, momentos
+   parecidos e tempo até o alvo; Ferramentas/medo-e-ganancia/aba-agora.js). */
+/* v102 = Medo e Ganância com 5 abas (Agora, Gráfico, Estudo, Ondas de pânico,
+   Aportes) e a aba Agora contando ciclos de queda, com 3m/6m/1a/2a por ciclo. */
+/* v103 = junção da main (saída da Central RWA, Laboratório de Agentes,
+   Estúdio, moldura única do menu, capas finais das Ferramentas) com as
+   Ferramentas pelo roteador e a pílula do Hold com caixa.
+   As duas linhas tinham usado "v99"; o número novo garante cache limpo
+   para quem estava em qualquer uma delas. */
+/* v100 (na main) = Mercado vira a página principal; Ferramentas e Academy
+   ganham grupo próprio no menu e Relatórios vai para as Configurações. */
+/* v104 = junção desta branch (v103) com a v100 da main. Número acima das
+   duas para limpar o cache de quem estava em qualquer uma. */
+/* v101 (na main) = Simulador de Pools de Liquidez como ferramenta própria e
+   desempenho (ícone de 32 KB, fundo animado enxuto, Oráculo e Finanças leves). */
+/* v105 = junção desta branch (v104) com a v101 da main. */
+/* v106 = junção com a main das calculadoras em duas colunas (Lucro, Staking…)
+   e do retrato embutido enxuto do DCA e das Estratégias. */
+/* v107 = junção com a main das mensagens sem termos técnicos (Comparador,
+   Conversor e Trade sem "carregando" eterno; abas do Trade no celular). */
+var VERSAO = "atlas-v107";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

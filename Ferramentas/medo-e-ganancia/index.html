@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Medo e Ganância do ATLAS: o índice como indicador no gráfico e a estatística do que aconteceu depois de cada compra no medo, desde 2018.">
+<title>Medo e Ganância — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
+<link rel="stylesheet" href="estilo.css?v=4">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+</head>
+<body>
+<!-- Registro: docs/ferramenta-medo-ganancia-2026-11-14.md -->
+<div class="wrap wrap--larga">
+<div class="mg">
+<header class="mg-top">
+  <div class="top" style="margin:0">
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>Medo e <span>Ganância</span></h1>
+    <p class="sub">O índice como indicador no gráfico e o que aconteceu depois de cada compra no medo, desde 2018.</p>
+    <p class="estudo">Histórico para estudo. Rentabilidade passada não garante retorno futuro, e nada aqui usa os dados da sua carteira.</p>
+  </div>
+  <div class="mg-now"><span class="v" id="now-v">–</span><div><small id="now-label">carregando</small><small id="now-date"></small><small id="now-src"></small></div></div>
+</header>
+<p class="mg-status" id="mg-status" role="status">Carregando o índice e o histórico de 8 tokens…</p>
+
+<div class="toolbar">
+  <div class="tokens" id="tokens" role="group" aria-label="Token"></div>
+  <div class="row" style="justify-content:space-between">
+    <nav class="tabs" id="tabs" aria-label="Seções do painel"></nav>
+    <label class="thr" for="thr">Medo ≤ <input id="thr" type="range" min="5" max="45" value="25"><output id="thr-out">25</output></label>
+  </div>
+</div>
+
+<!-- ============ AGORA ============ -->
+<section class="tab" id="t-agora">
+  <div id="ag" class="tab"><div class="card"><p>Carregando…</p></div></div>
+</section>
+
+<!-- ============ GRÁFICO ============ -->
+<section class="tab" id="t-grafico" hidden>
+  <div class="row">
+    <div class="seg" id="tf" role="group" aria-label="Tempo gráfico"></div>
+    <label class="chk"><input type="checkbox" id="o-log" checked>Log</label>
+    <label class="chk"><input type="checkbox" id="o-vol" checked>Volume</label>
+    <label class="chk"><input type="checkbox" id="o-band" checked>Faixas de medo</label>
+    <label class="chk"><input type="checkbox" id="o-mk" checked>Marcar episódios</label>
+  </div>
+  <div class="chartcard">
+    <div class="chart-head" id="chead"></div>
+    <div id="chart"><div class="loading" id="loading">carregando…</div></div>
+    <div id="chart-fg"><span class="fg-label">MEDO &amp; GANÂNCIA · 0–100 · base 50</span></div>
+    <div class="chart-foot">
+      <div class="lg">
+        <span><i style="background:var(--up)"></i>Velas</span>
+        <span><i style="background:var(--fear-band);outline:1px solid var(--fear)"></i>Medo ≤ <span class="thr-echo">25</span></span>
+        <span><i style="background:linear-gradient(90deg,var(--fear) 50%,var(--greed) 50%)"></i>Índice: vermelho abaixo de 50, verde acima</span>
+      </div>
+      <span id="tf-note">Arraste para mover, role para dar zoom. O índice é diário: em 15m, 1h e 4h ele aparece em degraus.</span>
+    </div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span class="eyebrow">O que os números sustentam</span>
+    <div class="lessons" id="lessons"></div>
+  </div>
+</section>
+
+<!-- ============ ESTUDO (retornos + tokens) ============ -->
+<section class="tab" id="t-estudo" hidden>
+  <div class="card">
+    <div class="card-head">
+      <span class="eyebrow">Mapa de calor · <span class="tok-echo">BTC</span></span>
+      <h2>Retorno por faixa do índice e por prazo de hold</h2>
+      <p>Cada linha agrupa os dias em que o índice estava naquela faixa. Cada coluna é um prazo de hold. Troque a medida para ver o caso do meio, a chance de lucro ou o pior caso.</p>
+    </div>
+    <div class="row"><div class="seg" id="hm-m" role="group" aria-label="Medida do mapa"></div></div>
+    <div class="scroll"><table class="hm" id="hm-bucket"></table></div>
+    <div class="scale"><span id="sc-ret-a">perda</span><span class="bar" id="sc-ret"></span><span id="sc-ret-b">ganho</span></div>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <span class="eyebrow">Distribuição · <span class="tok-echo">BTC</span> · medo ≤ <span class="thr-echo">25</span></span>
+      <h2>Do pior ao melhor caso: medo contra dia qualquer</h2>
+      <p>A linha fina vai do 10º ao 90º percentil, a barra grossa do 25º ao 75º, o traço é a mediana. Quanto mais à direita do zero e mais estreita, mais confiável a compra.</p>
+    </div>
+    <div class="dist" id="dist"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="eyebrow">Comparativo · medo ≤ <span class="thr-echo">25</span></span>
+      <h2>Em quais tokens o medo foi bom ponto de compra</h2>
+      <p>Mesma regra aplicada a todos os tokens: comprar em cada dia com índice no limiar ou abaixo e segurar pelo prazo da coluna.</p>
+    </div>
+    <div class="row"><div class="seg" id="tk-m" role="group" aria-label="Medida do comparativo"></div></div>
+    <div class="scroll"><table class="hm" id="hm-tokens"></table></div>
+    <div class="scale"><span id="sc-win-a">0%</span><span class="bar" id="sc-win"></span><span id="sc-win-b">100%</span></div>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <span class="eyebrow">Placar · hold de 2 anos</span>
+      <h2>Medo contra dia qualquer, token por token</h2>
+      <p>Barra vermelha: fatia das compras no medo que estava no lucro 2 anos depois. Barra cinza: a mesma conta para um dia qualquer. Se a vermelha não passa a cinza, o medo não ajudou naquele token.</p>
+    </div>
+    <div id="tk-rank"></div>
+  </div>
+</section>
+
+<!-- ============ ONDAS (ondas + medo → lucro) ============ -->
+<section class="tab" id="t-ondas" hidden>
+  <div class="kpis k5" id="ep-kpis"></div>
+  <div class="card">
+    <div class="card-head">
+      <span class="eyebrow">Episódios · <span class="tok-echo">BTC</span> · medo ≤ <span class="thr-echo">25</span></span>
+      <h2>Cada onda de pânico: quanto ainda caiu e quanto rendeu</h2>
+      <p>Dias de medo próximos (folga de até 10 dias) viram um episódio. O minigráfico mostra 60 dias antes e 1 ano depois do primeiro dia, com a faixa do episódio em vermelho e o fundo marcado. Os retornos contam a partir do primeiro dia.</p>
+    </div>
+    <div class="row"><span class="lbl">Ordenar</span><div class="seg" id="ep-sort" role="group" aria-label="Ordem dos episódios"></div></div>
+    <div class="scroll"><div class="eps" id="eps"></div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="eyebrow">Resposta direta · <span class="tok-echo">BTC</span> · medo ≤ <span class="thr-echo">25</span></span>
+      <h2>Quantos dias de medo, e quanto tempo até o lucro</h2>
+      <p>Para cada onda de medo: quantos dias ela durou e em quantos dias, depois da compra, o preço chegou a +50%, 2×, 3×, 5× e 10×. Escolha em que ponto da onda a compra acontece.</p>
+    </div>
+    <div class="row">
+      <span class="lbl">Compra</span><div class="seg" id="lu-entry" role="group" aria-label="Ponto de compra"></div>
+      <span class="lbl">Duração mínima</span><div class="seg" id="lu-min" role="group" aria-label="Duração mínima da onda"></div>
+    </div>
+    <div class="phrases" id="lu-phr"></div>
+  </div>
+  <div class="kpis k5" id="lu-kpis"></div>
+  <div class="card">
+    <div class="card-head">
+      <span class="eyebrow">Linha do tempo de cada compra</span>
+      <h2>Do dia da compra até cada marco de lucro</h2>
+      <p>Cada linha é uma onda. A régua conta os dias depois da compra. Os marcos mostram quando o preço bateu cada múltiplo; o triângulo vermelho é o pior momento no caminho.</p>
+    </div>
+    <div class="scroll"><div id="lu-rows"></div></div>
+  </div>
+  <div class="grid">
+    <div class="card c6">
+      <div class="card-head"><span class="eyebrow">Por duração da onda · <span class="tok-echo">BTC</span></span><h2>Ondas mais longas renderam mais?</h2></div>
+      <div class="scroll"><table class="hm" id="lu-dur"></table></div>
+    </div>
+    <div class="card c6">
+      <div class="card-head"><span class="eyebrow">Todos os tokens · mesma regra</span><h2>Quem dobrou depois do medo, e em quanto tempo</h2></div>
+      <div class="scroll"><table class="hm" id="lu-tok"></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ APORTES ============ -->
+<section class="tab" id="t-aportes" hidden>
+  <div class="card">
+    <div class="card-head">
+      <span class="eyebrow">Simulador · <span class="tok-echo">BTC</span> · medo ≤ <span class="thr-echo">25</span></span>
+      <h2>Aportes recorrentes: quatro maneiras de usar o índice</h2>
+      <p><b>Fixo</b> compra sempre o mesmo valor. <b>Reserva</b> guarda o aporte e gasta todo o caixa quando há medo. <b>Calibrado</b> multiplica o aporte no medo e corta pela metade na ganância extrema (≥ 75). <b>Calibrado + realização</b> faz o mesmo e ainda vende 3% da posição a cada período com índice ≥ 80.</p>
+    </div>
+    <div class="row">
+      <label class="lbl" for="dca-amt">Aporte US$</label><input class="inp" id="dca-amt" type="number" min="10" max="100000" step="10" value="100">
+      <span class="lbl">Frequência</span><div class="seg" id="dca-freq" role="group" aria-label="Frequência"></div>
+      <span class="lbl">Início</span><div class="seg" id="dca-from" role="group" aria-label="Ano de início"></div>
+      <span class="lbl">No medo</span><div class="seg" id="dca-mult" role="group" aria-label="Multiplicador no medo"></div>
+    </div>
+    <div class="dca-kpis" id="dca-kpis"></div>
+  </div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 id="dca-title">Valor da carteira ao longo do tempo</h2>
+      <div class="seg" id="dca-view" role="group" aria-label="O que mostrar"></div>
+    </div>
+    <div id="dca-chart"></div>
+    <p style="font-size:12px;color:var(--muted)" id="dca-note"></p>
+  </div>
+  <div class="grid">
+    <div class="card c7">
+      <div class="card-head"><span class="eyebrow">Comparação completa</span><h2>Resultado, risco e caixa de cada estratégia</h2></div>
+      <div class="scroll"><table class="tbl" id="dca-tbl"></table></div>
+    </div>
+    <div class="card c5">
+      <div class="card-head"><span class="eyebrow">Preço médio pago por ano</span><h2>O índice ajudou a comprar mais barato?</h2><p>Cada célula compara o preço médio pago no ano com o preço médio do mercado naquele ano. Verde: comprou abaixo da média.</p></div>
+      <div class="scroll"><table class="hm" id="dca-year"></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GLOSSÁRIO (vale para todas as abas) ============ -->
+<details class="card mg-gloss">
+  <summary>Glossário: termos usados no painel</summary>
+  <dl class="gloss">
+      <div><dt>Índice de Medo &amp; Ganância</dt><dd>Número diário de 0 a 100 que resume o humor do mercado cripto (volatilidade, volume, redes sociais, dominância do Bitcoin). Até 25 é medo extremo; de 75 para cima, ganância extrema.</dd></div>
+      <div><dt>Limiar de medo</dt><dd>O valor do índice que você considera "medo" para fins de compra. O controle "Medo ≤" define isso para o painel inteiro.</dd></div>
+      <div><dt>Onda ou episódio</dt><dd>Sequência de dias com índice no limiar ou abaixo. Dias de medo separados por até 10 dias de respiro contam como a mesma onda. Só entram ondas com 3 dias de medo ou mais.</dd></div>
+      <div><dt>Mediana</dt><dd>O resultado do caso do meio: metade das compras rendeu mais, metade rendeu menos. É mais honesta que a média, que um único caso extremo distorce.</dd></div>
+      <div><dt>Taxa de acerto</dt><dd>A fatia das compras que estava no lucro ao fim do prazo.</dd></div>
+      <div><dt>Percentil</dt><dd>O 10º percentil é um resultado ruim (só 10% foram piores). O 90º é um resultado ótimo (só 10% foram melhores).</dd></div>
+      <div><dt>Queda extra</dt><dd>Quanto o preço ainda caiu depois do primeiro dia da onda, antes de fazer o fundo. É o prejuízo temporário que o comprador precisou aguentar.</dd></div>
+      <div><dt>Múltiplo</dt><dd>Quantas vezes o valor investido. 2× é dobrar, o mesmo que +100%.</dd></div>
+      <div><dt>Escala log</dt><dd>No eixo logarítmico, distâncias iguais são multiplicações iguais. Ir de 10 a 20 ocupa o mesmo espaço que ir de 100 a 200.</dd></div>
+    </dl>
+</details>
+
+
+<footer><p class="mg-fontes"><b>Fontes.</b> Velas: Binance, pares USDT, pelo roteador de dados do ATLAS (15m: últimos 30 dias; 1h: últimos 180 dias; 4h: últimos 2 anos; diário e semanal: desde 2018). Índice: alternative.me, diário desde fev/2018; se a fonte cair, vale a última série guardada, com a data. O índice do CMC usa metodologia parecida e costuma diferir alguns pontos. No semanal, o índice é a média da semana. LUNA é a original, com velas fixas até 13/05/2022, quando colapsou (virou LUNC); prazos além dessa data usam o último preço. Retornos sem taxas. Dados até <span id="last-date">–</span>.</p></footer>
+</div>
+</div>
+
+<div class="mg-tip" id="tip" hidden></div>
+
+<script src="../../core/http.js"></script>
+<script src="../../core/atlas-dados.js?v=2"></script>
+<script src="../../assets/vendor/lightweight-charts-4.2.0/lightweight-charts.standalone.production.js"></script>
+<script src="dados-luna.js?v=1"></script>
+<script src="estatistica.js?v=3"></script>
+<script src="aba-agora.js?v=3"></script>
+<script src="app.js?v=3"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>

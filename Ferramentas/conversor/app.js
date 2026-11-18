@@ -5,25 +5,11 @@
    Estilo tradutor: inverte direção com ⇄
    ========================================================= */
 
-const API = 'https://api.coingecko.com/api/v3';
-
-/* Rede só pelo AtlasHttp (core/http.js): timeout, nova tentativa e
-   cache. O resto do script foi escrito sobre fetch (r.ok / r.json()),
-   então cgFetch devolve um objeto com essa mesma cara. Lista grande de
-   mercado fica 10 min em cache, gráfico 5 min, preço 1 min. */
-function ttlDe(url) {
-  if (/per_page=250/.test(url)) return 600000;
-  if (/market_chart/.test(url)) return 300000;
-  return 60000;
-}
-async function cgFetch(url) {
-  try {
-    const d = await AtlasHttp.getJSON(url, { ttl: ttlDe(url), timeout: 12000 });
-    return { ok: true, status: 200, json: async () => d };
-  } catch (e) {
-    return { ok: false, status: e.status || 0, json: async () => null };
-  }
-}
+/* Dados só pelo roteador do ATLAS (core/atlas-dados.js): preço pela cadeia
+   (DefiLlama, Binance, CoinPaprika e CoinGecko por último), ficha com
+   market cap, velas e câmbio, cada um com reserva e com o último valor bom
+   guardado. Mapa das fontes: docs/apis/roteamento.md */
+const IMG_CG = 'https://coin-images.coingecko.com/coins/images/';
 
 const FIATS = {
   brl: { code:'BRL', simbolo:'R$', nome:'Real (BRL)',  artigo:'Real brasileiro' },
@@ -64,47 +50,15 @@ const decCripto = v => v >= 100 ? 2 : v >= 1 ? 4 : 8;
 const lerInput = el => window.AtlasCalculos.lerNumero(el.value);
 const esc = s => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-// ---------- top 500 (carregada sob demanda + cache) ----------
-const CACHE_LISTA = 'atlas.conversor.top.v1';
-const CACHE_HORAS = 12;
-let listaPromise = null;
-
-// só carrega a lista quando realmente precisa (foco na busca)
+// ---------- lista de tokens: catálogo local do ATLAS (sem rede) ----------
+let EXTRA = [];        // achados fora do catálogo pela busca do roteador
 function garantirLista() {
-  if (LISTA.length) return Promise.resolve();
-  if (!listaPromise) {
-    listaPromise = carregarTop500()
-      .then(() => { montarChips(); })
-      .catch(e => { listaPromise = null; throw e; });
+  if (!LISTA.length) {
+    const cat = (window.ATLAS_TOKENS_TOP && window.ATLAS_TOKENS_TOP.lista) || [];
+    LISTA = cat.map(c => ({ id: c[0], sym: String(c[1]).toUpperCase(), nome: c[2], img: c[3] ? IMG_CG + c[3] : '', rank: c[4] }));
+    montarChips();
   }
-  return listaPromise;
-}
-
-async function carregarTop500() {
-  // 1) tenta o cache do navegador
-  try {
-    const raw = localStorage.getItem(CACHE_LISTA);
-    if (raw) {
-      const { t, lista } = JSON.parse(raw);
-      if (Date.now() - t < CACHE_HORAS * 3600e3 && Array.isArray(lista) && lista.length) {
-        LISTA = lista;
-        return;
-      }
-    }
-  } catch (e) { /* cache inválido: ignora */ }
-
-  // 2) busca na CoinGecko (2 chamadas, só desta vez)
-  const paginas = await Promise.all([1, 2].map(p =>
-    cgFetch(`${API}/coins/markets?vs_currency=brl&order=market_cap_desc&per_page=250&page=${p}&sparkline=false`)
-      .then(r => { if (!r.ok) throw new Error('top500 ' + r.status); return r.json(); })
-  ));
-  LISTA = paginas.flat().map((c, i) => ({
-    id: c.id, sym: (c.symbol || '').toUpperCase(),
-    nome: c.name || c.id, img: c.image || '', rank: c.market_cap_rank || (i + 1),
-  }));
-
-  // 3) guarda em cache pra não buscar de novo nas próximas visitas
-  try { localStorage.setItem(CACHE_LISTA, JSON.stringify({ t: Date.now(), lista: LISTA })); } catch (e) {}
+  return Promise.resolve();
 }
 
 // ---------- busca / autocomplete ----------
@@ -127,8 +81,19 @@ function abrirDropdown(filtro = '') {
   if (!LISTA.length) {
     dropdown.innerHTML = '<div class="vazio">Carregando lista de tokens…</div>';
   } else if (!resultados.length) {
-    dropdown.innerHTML = '<div class="vazio">Nenhum token encontrado.</div>';
+    dropdown.innerHTML = '<div class="vazio">Procurando fora da lista dos 500 maiores…</div>';
+    AtlasDados.buscar(termo).then(l => {
+      if (inputBusca.value.trim().toLowerCase() !== termo) return;
+      EXTRA = l.map(x => ({ id: x.id, sym: x.sym, nome: x.nome, img: x.img, rank: x.rank || '—' }));
+      if (!EXTRA.length) { dropdown.innerHTML = '<div class="vazio">Nenhum token encontrado.</div>'; return; }
+      desenharItens(EXTRA, termo);
+    });
   } else {
+    desenharItens(resultados, termo);
+  }
+  dropdown.classList.add('aberto');
+}
+function desenharItens(resultados, termo) {
     dropdown.innerHTML =
       (!termo ? '<div class="populares">Mais buscados:</div>' : '') +
       resultados.map((c, i) => `
@@ -136,13 +101,12 @@ function abrirDropdown(filtro = '') {
           <img src="${esc(c.img)}" alt="" loading="lazy" onerror="this.style.display='none'">
           <span class="sym">${esc(c.sym)}</span>
           <span class="nome">${esc(c.nome)}</span>
-          <span class="rank">#${c.rank}</span>
+          <span class="rank">#${esc(String(c.rank))}</span>
         </div>`).join('');
     dropdown.querySelectorAll('.item').forEach(el => {
       el.addEventListener('mousedown', e => { e.preventDefault(); selecionarPorId(el.dataset.id); });
     });
-  }
-  dropdown.classList.add('aberto');
+    dropdown.classList.add('aberto');
 }
 function fecharDropdown() { dropdown.classList.remove('aberto'); focoDropdown = -1; }
 
@@ -177,10 +141,10 @@ inputBusca.addEventListener('keydown', e => {
 });
 
 function selecionarPorId(id) {
-  const c = LISTA.find(m => m.id === id);
+  const c = LISTA.find(m => m.id === id) || EXTRA.find(m => m.id === id);
   if (!c) return;
   moedaAtual = c;
-  history.replaceState(null, '', `?fiat=${fiatAtual}&cripto=${c.id}`);
+  history.replaceState(null, '', `?fiat=${fiatAtual}&cripto=${encodeURIComponent(c.id)}`);
   precosFiat = null;
   // zera o valor do ativo anterior e recomeça em "1 [nova cripto]"
   ultimoCampo = 'cripto';
@@ -226,64 +190,85 @@ function montarChips() {
   ).join('');
 }
 
-// ---------- dados de mercado ----------
-async function carregarDados() {
-  // 1 chamada: preço do token nas três moedas (alimenta o conversor e a linha tri-fiat)
-  const rSimple = await cgFetch(`${API}/simple/price?ids=${moedaAtual.id}&vs_currencies=brl,usd,eur`);
-  if (!rSimple.ok) throw new Error('simple ' + rSimple.status);
-  const dSimple = (await rSimple.json())[moedaAtual.id];
-  if (!dSimple) throw new Error('sem preço');
-  precosFiat = { brl: dSimple.brl, usd: dSimple.usd, eur: dSimple.eur };
-  try { localStorage.setItem('atlas.conversor.cripto.' + moedaAtual.id, JSON.stringify({ p: precosFiat, t: Date.now() })); } catch (e) {}
+// ---------- dados de mercado (roteador) ----------
+let ultimaCambio = null;
+const quandoTexto = t => AtlasDados.quandoTexto(t);
 
-  // 1 chamada: estatísticas completas no fiat selecionado
-  const rMkt = await cgFetch(`${API}/coins/markets?vs_currency=${fiatAtual}&ids=${moedaAtual.id}&price_change_percentage=24h`);
-  if (!rMkt.ok) throw new Error('markets ' + rMkt.status);
-  const [d] = await rMkt.json();
-  if (!d) throw new Error('sem dados');
-
-  // hidrata identidade do token a partir desta mesma resposta (sem chamada extra)
-  moedaAtual.sym  = (d.symbol || moedaAtual.sym).toUpperCase();
-  moedaAtual.nome = d.name || moedaAtual.nome;
-  moedaAtual.img  = d.image || moedaAtual.img;
-  atualizarRotulos();
-  montarChips();
-
+function mostrarPreco(p) {
   const preco = precosFiat[fiatAtual];
-
-  // hero
   document.getElementById('taxa-valor').textContent = fmtMoeda(preco);
-  const varEl = document.getElementById('taxa-var');
-  const v = d.price_change_percentage_24h ?? 0;
-  varEl.textContent = ` ${v >= 0 ? '▲' : '▼'} ${fmtNum(Math.abs(v), 2)}% (24h)`;
-  varEl.className = 'variacao ' + (v >= 0 ? 'up' : 'down');
-  document.getElementById('tri-fiat').innerHTML =
-    `1 ${esc(moedaAtual.sym)} = <b>${fmtMoeda(precosFiat.brl,'brl')}</b><span class="sep">·</span>` +
-    `<b>${fmtMoeda(precosFiat.usd,'usd')}</b><span class="sep">·</span>` +
-    `<b>${fmtMoeda(precosFiat.eur,'eur')}</b>`;
-  document.getElementById('atualizado').textContent =
-    'Atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+  const tri = ['brl', 'usd', 'eur'].filter(f => precosFiat[f] != null)
+    .map(f => `<b>${fmtMoeda(precosFiat[f], f)}</b>`).join('<span class="sep">·</span>');
+  document.getElementById('tri-fiat').innerHTML = `1 ${esc(moedaAtual.sym)} = ` + tri;
+  document.getElementById('atualizado').textContent = !p ? 'Preço digitado por você'
+    : p.salvo ? 'Preço guardado de ' + quandoTexto(p.quando) + ' · sem fonte no ar agora'
+    : 'Preço: ' + p.fonte + ' · ' + quandoTexto(p.quando) + (!ultimaCambio || fiatAtual === 'usd' ? ''
+      : ultimaCambio.salvo ? ' · câmbio guardado de ' + quandoTexto(ultimaCambio.quando) : ' · câmbio: ' + ultimaCambio.fonte);
   document.getElementById('taxa-inversa').textContent =
     `${FIATS[fiatAtual].simbolo} 1 ≈ ${fmtNum(1 / preco, decCripto(1 / preco))} ${moedaAtual.sym}`;
-
-  // estatísticas
-  document.getElementById('st-min').textContent  = fmtMoeda(d.low_24h);
-  document.getElementById('st-max').textContent  = fmtMoeda(d.high_24h);
-  const stVar = document.getElementById('st-var');
-  stVar.textContent = `${v >= 0 ? '+' : ''}${fmtNum(v, 2)}%`;
-  stVar.className = 'valor ' + (v >= 0 ? 'up' : 'down');
-  document.getElementById('st-mcap').textContent   = fmtCompacto(d.market_cap);
-  document.getElementById('st-vol').textContent    = fmtCompacto(d.total_volume);
-  document.getElementById('st-supply').textContent = fmtNum(d.circulating_supply, 0) + ' ' + moedaAtual.sym;
-  document.getElementById('st-ath').textContent    = fmtMoeda(d.ath);
-  const dist = ((preco - d.ath) / d.ath) * 100;
-  const athEl = document.getElementById('st-ath-dist');
-  athEl.textContent = `${fmtNum(dist, 1)}%`;
-  athEl.className = 'valor ' + (dist >= 0 ? 'up' : 'down');
-
   montarTabelas();
   recalcular();
 }
+
+/* preço em dólar → nas três moedas, pelo câmbio do roteador */
+function emMoedas(usd) {
+  const por = ultimaCambio && ultimaCambio.por;
+  return { usd: usd, brl: por && por.brl ? usd * por.brl : null, eur: por && por.eur ? usd * por.eur : null };
+}
+
+async function carregarDados() {
+  const m = moedaAtual;
+  const [p, cb] = await Promise.all([AtlasDados.preco(m.id, m.sym), AtlasDados.cambio().catch(() => null)]);
+  if (cb) ultimaCambio = cb;
+  if (!p) throw new Error('nenhuma fonte de preço');
+  const pf = emMoedas(p.usd);
+  if (pf[fiatAtual] == null) throw new Error('sem câmbio para ' + fiatAtual);
+  precosFiat = pf;
+  try { localStorage.setItem('atlas.conversor.cripto.' + m.id, JSON.stringify({ p: precosFiat, t: p.quando || Date.now() })); } catch (e) {}
+  mostrarPreco(p);
+  // estatísticas: não seguram a conversão
+  AtlasDados.ficha(m.id, m.sym).then(preencherFicha, () => preencherFicha(null));
+}
+
+function preencherFicha(f) {
+  const k = precosFiat && precosFiat.usd ? precosFiat[fiatAtual] / precosFiat.usd : 1;
+  const din = v => (v == null || !isFinite(v)) ? 'indisponível' : fmtMoeda(v * k);
+  const set = (id, t) => { document.getElementById(id).textContent = t; };
+  const v = f ? f.ch24 : null;
+  const varEl = document.getElementById('taxa-var');
+  varEl.textContent = v == null ? '' : ` ${v >= 0 ? '▲' : '▼'} ${fmtNum(Math.abs(v), 2)}% (24h)`;
+  varEl.className = 'variacao ' + (v >= 0 ? 'up' : 'down');
+  set('st-min', din(f && f.min24));
+  set('st-max', din(f && f.max24));
+  const stVar = document.getElementById('st-var');
+  stVar.textContent = v == null ? 'indisponível' : `${v >= 0 ? '+' : ''}${fmtNum(v, 2)}%`;
+  stVar.className = 'valor ' + (v >= 0 ? 'up' : 'down');
+  set('st-mcap', f && f.mcap ? fmtCompacto(f.mcap * k) : 'indisponível');
+  set('st-vol', f && f.vol24 ? fmtCompacto(f.vol24 * k) : 'indisponível');
+  set('st-supply', f && f.supply ? fmtNum(f.supply, 0) + ' ' + moedaAtual.sym : 'indisponível');
+  set('st-ath', din(f && f.ath));
+  const athEl = document.getElementById('st-ath-dist');
+  const dist = f && f.ath && precosFiat ? ((precosFiat.usd - f.ath) / f.ath) * 100 : null;
+  athEl.textContent = dist == null ? 'indisponível' : `${fmtNum(dist, 1)}%`;
+  athEl.className = 'valor ' + (dist >= 0 ? 'up' : 'down');
+  const nota = document.getElementById('stats-fonte');
+  if (nota) nota.textContent = !f ? 'Estatísticas indisponíveis agora.'
+    : 'Fonte: ' + f.fonte + (f.salvo ? ' · guardadas de ' + quandoTexto(f.quando) : '') + '.';
+  if (f && f.img && !moedaAtual.img) { moedaAtual.img = f.img; atualizarRotulos(); }
+}
+
+/* sem fonte e sem cotação guardada: a pessoa digita o preço */
+function usarPrecoManual() {
+  const v = window.AtlasCalculos.lerNumero(document.getElementById('manual-preco').value);
+  if (!(v > 0)) return;
+  const por = ultimaCambio && ultimaCambio.por;
+  const usd = fiatAtual === 'usd' ? v : (por && por[fiatAtual] ? v / por[fiatAtual] : null);
+  precosFiat = usd != null ? emMoedas(usd) : { usd: null, brl: null, eur: null };
+  precosFiat[fiatAtual] = v;
+  document.getElementById('erro-api').style.display = 'none';
+  mostrarPreco(null);
+}
+document.getElementById('manual-usar').addEventListener('click', usarPrecoManual);
 
 // ---------- tabelas dinâmicas ----------
 function montarTabelas() {
@@ -340,10 +325,13 @@ document.getElementById('select-fiat').addEventListener('change', e => {
 async function carregarGrafico() {
   const wrap = document.getElementById('grafico-wrap');
   wrap.innerHTML = '<p class="grafico-vazio">Carregando gráfico…</p>';
-  const r = await cgFetch(`${API}/coins/${moedaAtual.id}/market_chart?vs_currency=${fiatAtual}&days=${diasGrafico}`);
-  if (!r.ok) throw new Error('chart ' + r.status);
-  const d = await r.json();
-  const pontos = d.prices;
+  const dias = diasGrafico;
+  const iv = dias <= 1 ? '15m' : dias <= 7 ? '1h' : '4h';
+  const lim = dias <= 1 ? 96 : dias <= 7 ? 168 : 180;
+  const r = await AtlasDados.velas(moedaAtual.id, moedaAtual.sym, iv, lim, precosFiat && precosFiat.usd);
+  const k = precosFiat && precosFiat.usd ? precosFiat[fiatAtual] / precosFiat.usd : 1;
+  const pontos = r.velas.map(v => [v.t, v.c * k]);
+  document.getElementById('grafico-fonte').textContent = 'Fonte do gráfico: ' + r.fonte + '.';
   if (!pontos || pontos.length < 2) { wrap.innerHTML = '<p class="grafico-vazio">Sem dados para este período.</p>'; return; }
 
   const precos = pontos.map(p => p[1]);
@@ -379,8 +367,8 @@ async function carregarGrafico() {
       <path d="${area}" fill="url(#grad)"/>
       <path d="${linha}" fill="none" stroke="${cor}" stroke-width="2.4"
             stroke-linejoin="round" stroke-linecap="round"/>
-      <text x="${PAD}" y="16" fill="#9b9ba6" font-size="12" font-family="Space Grotesk">máx ${fmtMoeda(max)}</text>
-      <text x="${PAD}" y="${H - 12}" fill="#9b9ba6" font-size="12" font-family="Space Grotesk">mín ${fmtMoeda(min)}</text>
+      <text x="${PAD}" y="16" fill="#9b9ba6" font-size="12">máx ${fmtMoeda(max)}</text>
+      <text x="${PAD}" y="${H - 12}" fill="#9b9ba6" font-size="12">mín ${fmtMoeda(min)}</text>
     </svg>`;
 }
 
@@ -406,6 +394,9 @@ function mostrarErro(e) {
   if (/atualizando…$/.test(at.textContent)) at.textContent = at.textContent.replace('atualizando…', 'sem conexão agora');
   /* sem cotação salva: troca o "Carregando cotação…" que ficaria para sempre (18/11/2026) */
   else if (/^Carregando/.test(at.textContent)) at.textContent = 'Cotação indisponível agora.';
+  if (precosFiat && precosFiat[fiatAtual] != null) return;       // há cotação guardada: segue com ela
+  document.getElementById('manual-sym').textContent = moedaAtual.sym;
+  document.getElementById('manual-fiat').textContent = FIATS[fiatAtual].nome;
   document.getElementById('erro-api').style.display = 'block';
 }
 
@@ -416,10 +407,12 @@ async function iniciar() {
     // A lista de tokens carrega sob demanda (ao focar na busca),
     // evitando o bloqueio por excesso de requisições da CoinGecko grátis.
     await carregarDados();
-    await carregarGrafico();
   } catch (e) {
     mostrarErro(e);
   }
+  carregarGrafico().catch(() => {
+    document.getElementById('grafico-wrap').innerHTML = '<p class="grafico-vazio">Gráfico indisponível agora. A conversão continua funcionando.</p>';
+  });
 }
 
 // atualização automática da cotação a cada 60s (sem recarregar gráfico,
@@ -455,15 +448,15 @@ const CB = (function () {
   const conv = (v, a, b) => window.AtlasCalculos.converterMoeda(v, valorUSD[a], valorUSD[b]);
 
   async function carregar() {
-    const r = await cgFetch(`${API}/simple/price?ids=tether,usd-coin&vs_currencies=usd,brl,eur,gbp`);
-    if (!r.ok) throw new Error('cotacao');
-    const d = await r.json(), t = d['tether'], c = d['usd-coin'];
-    if (!t || !c) throw new Error('dados');
-    const FC = window.AtlasCalculos;
-    valorUSD = { usd: 1, brl: FC.valorEmDolar(t.usd, t.brl), eur: FC.valorEmDolar(t.usd, t.eur),
-                 gbp: FC.valorEmDolar(t.usd, t.gbp), usdt: t.usd, usdc: c.usd };
-    try { localStorage.setItem(CHAVE, JSON.stringify({ v: valorUSD, t: Date.now() })); } catch (e) {}
-    $('cb-atualizado').textContent = 'Atualizado às ' + hora(Date.now());
+    const [c, st] = await Promise.all([
+      AtlasDados.cambio(),
+      AtlasDados.precos([{ id: 'tether', sym: 'USDT' }, { id: 'usd-coin', sym: 'USDC' }]).catch(() => null)
+    ]);
+    const por = c.por, sp = (st && st.precos) || {};
+    valorUSD = { usd: 1, brl: 1 / por.brl, eur: por.eur ? 1 / por.eur : null, gbp: por.gbp ? 1 / por.gbp : null,
+                 usdt: sp.tether || 1, usdc: sp['usd-coin'] || 1 };
+    try { localStorage.setItem(CHAVE, JSON.stringify({ v: valorUSD, t: c.quando || Date.now() })); } catch (e) {}
+    $('cb-atualizado').textContent = (c.salvo ? 'Câmbio guardado de ' : 'Câmbio: ' + c.fonte + ' · ') + AtlasDados.quandoTexto(c.quando);
   }
   function recalc(origem) {
     if (!valorUSD) return;
@@ -534,7 +527,11 @@ document.querySelectorAll('[data-modo]').forEach(b => b.addEventListener('click'
   const f = params.get('fiat');
   if (f && FIATS[f]) { fiatAtual = f; document.getElementById('select-fiat').value = f; }
   const id = params.get('cripto');
-  if (id) moedaAtual = { id, sym: id.toUpperCase().slice(0, 6), nome: id, img: '' };
+  if (id) {
+    // o catálogo local sabe a sigla, o nome e a imagem; fora dele, chuta pela própria id
+    const c = AtlasDados.doCatalogo(id);
+    moedaAtual = c ? { id: c.id, sym: c.sym, nome: c.nome, img: c.img } : { id, sym: id.toUpperCase().slice(0, 6), nome: id, img: '' };
+  }
   atualizarRotulos();
   montarChips();
   // abre mostrando "1 [cripto] = preço dela" (sem valor antigo pendurado)

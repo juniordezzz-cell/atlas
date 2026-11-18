@@ -2592,7 +2592,7 @@ export function codigoSite(window, localStorage) {
   function ehCripto(a) { return !a.tipo || a.tipo === "Cripto"; }
   function num(v) { var n = parseFloat(v); return isNaN(n) ? 0 : n; }
   function statusLabel(s) {
-    return { invested: "investido", watchlist: "watchlist", sold: "vendido" }[s] || s;
+    return { invested: "investido", watchlist: "em observação", sold: "vendido" }[s] || s;
   }
   /* Texto que fica GRAVADO no histórico: sempre em dólar e na grafia
      do resto do ATLAS ("US$ 1.234,56"). Era "$1,234" em en-US — a
