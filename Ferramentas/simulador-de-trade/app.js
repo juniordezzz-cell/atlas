@@ -199,7 +199,7 @@ async function fetchPrice(){
     status.style.color = 'var(--verde)';
     calcular();
   }catch(e){
-    status.textContent = 'Erro ao conectar à API. Digite manualmente.';
+    status.textContent = 'Preço ao vivo indisponível agora. Digite o preço manualmente.';
     status.style.color = 'var(--vermelho)';
   }
 }
