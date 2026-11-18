@@ -391,7 +391,9 @@ function quandoFoi(t) {
 function mostrarErro(e) {
   console.error(e);
   const at = document.getElementById('atualizado');
-  if (/atualizando…$/.test(at.textContent)) at.textContent = at.textContent.replace('atualizando…', 'sem fonte no ar agora');
+  if (/atualizando…$/.test(at.textContent)) at.textContent = at.textContent.replace('atualizando…', 'sem conexão agora');
+  /* sem cotação salva: troca o "Carregando cotação…" que ficaria para sempre (18/11/2026) */
+  else if (/^Carregando/.test(at.textContent)) at.textContent = 'Cotação indisponível agora.';
   if (precosFiat && precosFiat[fiatAtual] != null) return;       // há cotação guardada: segue com ela
   document.getElementById('manual-sym').textContent = moedaAtual.sym;
   document.getElementById('manual-fiat').textContent = FIATS[fiatAtual].nome;
@@ -477,7 +479,7 @@ const CB = (function () {
     $('cb-erro-api').style.display = 'none';
     try { await carregar(); recalc(ultimo); }
     catch (e) {
-      if (!valorUSD) { $('cb-erro-api').style.display = 'block'; $('cb-atualizado').textContent = 'Erro ao carregar.'; }
+      if (!valorUSD) { $('cb-erro-api').style.display = 'block'; $('cb-atualizado').textContent = 'Cotação indisponível agora.'; }
       else $('cb-atualizado').textContent = $('cb-atualizado').textContent.replace('atualizando…', 'sem conexão agora');
     }
   }

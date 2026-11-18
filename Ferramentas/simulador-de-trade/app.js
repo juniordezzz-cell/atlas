@@ -202,7 +202,7 @@ async function fetchPrice(){
     status.style.color = p.salvo ? 'var(--dourado)' : 'var(--verde)';
     calcular();
   }catch(e){
-    status.textContent = 'Nenhuma fonte tem o preço deste ativo agora. Digite o preço de entrada.';
+    status.textContent = 'Preço indisponível agora. Digite o preço de entrada manualmente.';
     status.style.color = 'var(--vermelho)';
   }
 }

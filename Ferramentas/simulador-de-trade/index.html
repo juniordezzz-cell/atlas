@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
 <link rel="stylesheet" href="../../core/ui/atlas-shell.css">
 <link rel="stylesheet" href="../_comum/ferramenta.css?v=1">
-<link rel="stylesheet" href="estilo.css?v=1">
+<link rel="stylesheet" href="estilo.css?v=2">
 <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
 <script src="../../core/atlas-auth.js"></script>
 <script src="../../core/atlas-secure.js"></script>
@@ -28,7 +28,11 @@
     <p class="estudo">Simulação para estudo. Não é recomendação de investimento e não usa os dados da sua carteira.</p>
   </header>
 
-  <div class="trade-layout">
+  <!-- celular (18/11/2026): três abas em vez de uma página de 3.400 px -->
+  <nav class="tr-abas" id="trAbas" aria-label="Partes do simulador">
+    <button type="button" data-v="chart" aria-pressed="true">Gráfico</button><button type="button" data-v="params" aria-pressed="false">Operação</button><button type="button" data-v="banca" aria-pressed="false">Banca</button>
+  </nav>
+  <div class="trade-layout" id="trLayout" data-v="chart">
 
     <!-- ===== ESQUERDA: GESTÃO DE BANCA ===== -->
     <div class="tl-banca">
@@ -261,7 +265,19 @@
 <script src="../../core/dados/tokens-top.js"></script>
 <script src="../../core/atlas-dados.js?v=1"></script>
 <script src="../_comum/calculos.js?v=1"></script>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
+<script>
+/* abas do celular: mostram uma coluna por vez; o gráfico se redesenha ao voltar */
+(function(){
+  var nav=document.getElementById('trAbas'), lay=document.getElementById('trLayout'); if(!nav||!lay) return;
+  nav.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-v]'); if(!b) return;
+    lay.dataset.v=b.dataset.v;
+    nav.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x===b)); });
+    window.dispatchEvent(new Event('resize'));
+  });
+})();
+</script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

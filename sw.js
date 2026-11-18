@@ -187,7 +187,9 @@
 /* v105 = junção desta branch (v104) com a v101 da main. */
 /* v106 = junção com a main das calculadoras em duas colunas (Lucro, Staking…)
    e do retrato embutido enxuto do DCA e das Estratégias. */
-var VERSAO = "atlas-v106";
+/* v107 = junção com a main das mensagens sem termos técnicos (Comparador,
+   Conversor e Trade sem "carregando" eterno; abas do Trade no celular). */
+var VERSAO = "atlas-v107";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

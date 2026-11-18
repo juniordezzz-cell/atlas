@@ -391,7 +391,7 @@ function syncPeriodButtons(){
 function renderTdNotice(){
   const el=document.getElementById("td-notice");
   const errs=STATE.set.filter(k=>RAW[k]&&RAW[k].status==="error").map(k=>ASSETS[k].name);
-  el.innerHTML = errs.length ? `<div class="notice info">ℹ️ Não carregou: ${escH([...new Set(errs)].join(", "))}. Pode ser limite momentâneo da API ou símbolo a ajustar. Toque na bolinha do ativo (legenda) pra tentar de novo.</div>` : "";
+  el.innerHTML = errs.length ? `<div class="notice info">ℹ️ Não carregou: ${escH([...new Set(errs)].join(", "))}. A fonte de preços pode estar sobrecarregada agora. Toque na bolinha do ativo (na legenda) para tentar de novo.</div>` : "";
 }
 
 /* ════════════════ TICKER ════════════════ */
@@ -399,6 +399,8 @@ async function loadTicker(){
   // faixa de cima: ficha do roteador (CoinPaprika, CoinGecko por último), guardada se tudo cair
   const [b,e]=await Promise.all([AtlasDados.ficha('bitcoin','BTC').catch(()=>null), AtlasDados.ficha('ethereum','ETH').catch(()=>null)]);
   if(b) setTick("btc",{usd:b.usd, usd_24h_change:b.ch24}); if(e) setTick("eth",{usd:e.usd, usd_24h_change:e.ch24});
+  /* sem cotação: "indisponível" no lugar de um "carregando…" que nunca acaba (18/11/2026) */
+  [["btc",b],["eth",e]].forEach(([id,v])=>{ if(v) return; const el=document.getElementById("tk-"+id); if(el && /carregando/i.test(el.textContent)) el.textContent="indisponível"; });
   document.getElementById("tk-usd").textContent="R$ "+fxRate.toFixed(2).replace(".",",");
   const q=b||e; document.getElementById("tk-time").textContent = (q&&q.salvo ? "guardadas de "+AtlasDados.quandoTexto(q.quando) : "atualizadas "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})) + " · dólar: " + fxNota;
 }

@@ -60,3 +60,20 @@ ajustes por ferramenta.
 - **Celular:** o cabeçalho abre espaço para o botão do menu do site
   (`html.atlas-moldura .top{padding-left:46px}`), em `_comum/ferramenta.css`
   e no `estilo.css` do Market Cap.
+
+## Etapa 4 — ajustes por ferramenta (18/11/2026)
+
+- **Mensagens técnicas reescritas:** Conversor ("A API pode estar limitando
+  requisições" → "Tente de novo em alguns segundos"; "Erro ao carregar." →
+  "Cotação indisponível agora."), Simulador de Trade ("Erro ao conectar à
+  API" → "Preço ao vivo indisponível agora. Digite o preço manualmente.") e
+  Comparador (aviso de "limite momentâneo da API").
+- **Sem "carregando…" eterno:** o indicador de BTC e ETH do Comparador mostra
+  "indisponível" quando a cotação falha, e o Conversor troca o "Carregando
+  cotação…" por "Cotação indisponível agora." quando não há cotação salva.
+- **Simulador de Trade no celular:** abas Gráfico · Operação · Banca
+  (`.tr-abas`, `#trLayout[data-v]`), em vez de uma página de 3.400 px. Até
+  760 px; no PC, as três colunas seguem como antes.
+- Não mudou: a abertura das Finanças (já roda uma vez por sessão) e o
+  Scanner (o desempenho dele fica para quando o dono pedir, por causa das
+  regras da spec de 26/09).

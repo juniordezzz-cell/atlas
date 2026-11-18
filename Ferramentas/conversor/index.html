@@ -46,8 +46,8 @@
   </div>
 
   <div class="erro-api" id="erro-api">
-    Nenhuma fonte de preço respondeu e não há cotação guardada deste token.
-    Digite o preço de 1 <b id="manual-sym">BTC</b> em <span id="manual-fiat">Real (BRL)</span>:
+    Não foi possível carregar a cotação agora e não há cotação guardada deste token.
+    Digite manualmente o preço de 1 <b id="manual-sym">BTC</b> em <span id="manual-fiat">Real (BRL)</span>:
     <input id="manual-preco" inputmode="decimal" placeholder="0,00" aria-label="Preço digitado">
     <button type="button" id="manual-usar">Usar este preço</button>
     <button type="button" onclick="iniciar()">Tentar de novo</button>
@@ -173,7 +173,7 @@
       <p class="atualizado" id="cb-atualizado">Carregando cotação…</p>
     </div>
     <div class="erro-api" id="cb-erro-api">
-      Não foi possível carregar a cotação agora. A API pode estar limitando requisições — aguarde alguns segundos.
+      Não foi possível carregar a cotação agora. Tente de novo em alguns segundos.
       <button type="button" id="cb-retry">Tentar de novo</button>
     </div>
     <div class="conversor-card">
@@ -223,7 +223,7 @@
 <script src="../../core/dados/tokens-top.js"></script>
 <script src="../../core/atlas-dados.js?v=1"></script>
 <script src="../_comum/calculos.js?v=1"></script>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=4"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>
