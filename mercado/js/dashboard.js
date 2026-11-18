@@ -50,15 +50,21 @@
   function assetLink(id,symbol){ return function(){ window.__academyAssetHint={id:id,symbol:symbol}; AcademyRouter.go("/ativo/"+id); }; }
 
   /* ---------- barra de abas + status ---------- */
-  var TABS = ["Mercado Geral","DeFi","RWA","Analytics","Yields","Alertas 24/7"];
+  /* 18/11/2026 (pedido do dono): a aba Mercado é a vitrine do site e deve
+     ser objetiva, sem competir com CoinGecko ou DefiLlama. O Panorama
+     responde três perguntas: em que fase o ciclo está, para onde vai o
+     dinheiro, como estão RWA e ações tokenizadas. Saíram as listas de alta,
+     queda e volume anormal, os alertas de 24 h e as abas Análises e
+     Rendimentos. */
+  var TABS = ["Panorama","DeFi","RWA"];
   /* O nome interno da aba continua o mesmo (o código compara com ele);
      só o rótulo na tela sai em português. */
-  var ROTULO_ABA = { "Mercado Geral": "Mercado geral", "Analytics": "Análises", "Yields": "Rendimentos", "Alertas 24/7": "Alertas 24h" };
+  var ROTULO_ABA = {};
   var goToTab = null;   // trocador de aba (setado no renderDashboard)
   function topBar(active, onTab) {
     var bar = h("div","cc-topbar");
     var left = h("div","cc-brand");
-    left.appendChild(h("span","cc-title","PANORAMA GLOBAL · CRIPTO E RWA"));
+    left.appendChild(h("span","cc-title","MERCADO · CICLO, DINHEIRO E RWA"));
     var nav = h("nav","cc-tabs");
     TABS.forEach(function(t){
       var b=h("button","cc-tab"+(t===active?" active":""),ROTULO_ABA[t]||t); b.type="button";
@@ -219,7 +225,7 @@
 
   // RWAs em alta por TVL (DefiLlama) — barras de volume/TVL
   function rwaTvlPanel() {
-    var p=panelFrame("RWAs em alta","por TVL");
+    var p=panelFrame("Maiores protocolos de RWA","por TVL");
     function load(){ p.loading(); AcademyData.rwaTvl(7).then(function(rows){
       if(!rows||!rows.length)return p.unavailable(load);
       var max=rows[0].tvl||1; var list=h("div","bar-list");
@@ -407,7 +413,7 @@
   // Só o CoinGecko tem a categoria; damos um respiro (dodge do burst) e
   // tentamos de novo se vier vazio (429 keyless), antes de dizer "indisponível".
   function tokenizedStocksPanel() {
-    var p=panelFrame("RWAs em alta","ações tokenizadas");
+    var p=panelFrame("Ações tokenizadas","24h");
     var tries=0;
     function load(){ tries=0; p.loading(); setTimeout(fetchStocks, 1100); }
     function fetchStocks(){
@@ -564,6 +570,133 @@
 
   function col(cls_){ return h("div","cc-col "+cls_); }
 
+  /* ---------- Panorama (18/11/2026) ---------- */
+  function secao(titulo, sub) {
+    var s=h("section","pn-sec"), hd=h("div","pn-head");
+    hd.appendChild(h("h2","pn-title",titulo)); if(sub) hd.appendChild(h("p","pn-sub",sub));
+    s.appendChild(hd); return s;
+  }
+  function cartao(rotulo) {
+    var c=h("div","pn-card"); c.appendChild(h("span","pn-rot",rotulo));
+    var v=h("b","pn-val","…"), chip=h("span","pn-chip",""), n=h("span","pn-nota","");
+    c.appendChild(v); c.appendChild(chip); c.appendChild(n);
+    return { el:c, v:v, chip:chip, n:n };
+  }
+  function marca(c, txt, tom) { c.chip.textContent=txt||""; c.chip.className="pn-chip"+(tom?" pn-"+tom:""); }
+  function semDado(c) { c.v.textContent="indisponível"; marca(c,""); c.n.textContent="A fonte não respondeu agora."; }
+  var MEDO = { "extreme fear":"Medo extremo", "fear":"Medo", "neutral":"Neutro", "greed":"Ganância", "extreme greed":"Ganância extrema" };
+
+  /* 1. Em que fase o ciclo está: Bitcoin contra a média de 200 dias,
+     distância do topo histórico, dominância e sentimento. */
+  function cicloSecao() {
+    var s=secao("Em que fase o ciclo está","Leitura por indicadores de meses, não de horas. Não é previsão.");
+    var fase=h("div","pn-fase"); fase.appendChild(h("span","pn-fase-rot","Fase pelos indicadores")); var faseV=h("b","pn-fase-v","…"); fase.appendChild(faseV); var faseN=h("p","pn-fase-n",""); fase.appendChild(faseN);
+    var grade=h("div","pn-grade");
+    var cMa=cartao("Bitcoin × média de 200 dias"), cTopo=cartao("Distância do topo histórico"), cDom=cartao("Dominância do Bitcoin"), cMed=cartao("Sentimento (medo e ganância)");
+    [cMa,cTopo,cDom,cMed].forEach(function(c){ grade.appendChild(c.el); });
+    var graf=panelFrame("Bitcoin","1 ano · linha tracejada = média de 200 dias");
+    s.appendChild(fase); s.appendChild(grade); s.appendChild(graf);
+    function load(){
+      Promise.all([
+        AcademyData.chart("bitcoin","BTC",365).catch(function(){return null;}),
+        AcademyData.asset("bitcoin","BTC").catch(function(){return null;}),
+        AcademyData.global().catch(function(){return null;}),
+        AcademyData.feargreed()
+      ]).then(function(r){
+        var ch=r[0], at=r[1], g=r[2], fg=r[3];
+        var pts=ch&&ch.points?ch.points:[], mayer=null, dd=null, preco=pts.length?pts[pts.length-1][1]:null;
+        if(pts.length>=200){
+          var ult=pts.slice(-200), ma=ult.reduce(function(t,p){return t+p[1];},0)/200; mayer=preco/ma;
+          cMa.v.textContent=mayer.toFixed(2)+"×";
+          cMa.n.textContent="Preço "+money(preco)+" · média "+money(ma)+". Abaixo de 1×, o preço está abaixo da média de 200 dias.";
+          if(mayer<0.8) marca(cMa,"zona historicamente barata","frio"); else if(mayer<1) marca(cMa,"abaixo da média","frio");
+          else if(mayer<1.5) marca(cMa,"acima da média, tendência de alta","ok"); else if(mayer<2.4) marca(cMa,"bem acima, mercado aquecido","quente"); else marca(cMa,"muito esticado","alerta");
+          /* gráfico de 1 ano com a média de 200 dias */
+          var box=h("div","trend-box pn-trend"); graf.setState(box);
+          var mm=pts.map(function(p,i){ if(i<199) return null; var s2=0; for(var k=i-199;k<=i;k++) s2+=pts[k][1]; return [p[0],s2/200]; }).filter(Boolean);
+          AcademyChart.line(box,pts,{up:mayer>=1, extra:mm});
+        } else { semDado(cMa); graf.unavailable(load); }
+        var ath=at&&at.ath; if(ath&&preco){ dd=(preco/ath-1)*100;
+          cTopo.v.textContent=pctS(dd); cTopo.n.textContent="Topo de "+money(ath)+(at.athDate?" em "+new Date(at.athDate).toLocaleDateString("pt-BR"):"")+".";
+          if(dd>-10) marca(cTopo,"perto do topo","quente"); else if(dd>-30) marca(cTopo,"correção","ok"); else if(dd>-60) marca(cTopo,"mercado de baixa","frio"); else marca(cTopo,"baixa profunda","frio");
+        } else semDado(cTopo);
+        if(g&&g.btcDominance!=null){ var d=g.btcDominance; cDom.v.textContent=d.toFixed(1)+"%";
+          cDom.n.textContent="Fatia do Bitcoin no valor de todo o mercado cripto.";
+          if(d>=58) marca(cDom,"dinheiro concentrado no Bitcoin","frio"); else if(d>=50) marca(cDom,"equilíbrio","ok"); else marca(cDom,"dinheiro girando para altcoins","quente");
+        } else semDado(cDom);
+        if(fg&&fg.value!=null){ var v=+fg.value; cMed.v.textContent=String(v); var rot=MEDO[String(fg.label||"").toLowerCase()]||fg.label||"";
+          cMed.n.textContent="De 0 (medo extremo) a 100 (ganância extrema).";
+          marca(cMed,rot, v<25?"frio":v<45?"frio":v<56?"ok":v<75?"quente":"alerta");
+        } else semDado(cMed);
+        /* fase: média de 200 dias + distância do topo */
+        var f="indisponível", nf="Sem dados suficientes agora.";
+        if(mayer!=null){
+          if(mayer<0.85 && dd!=null && dd<-50){ f="Fundo de ciclo · acumulação"; nf="Preço bem abaixo da média de 200 dias e longe do topo: historicamente, a fase de juntar com calma."; }
+          else if(mayer<1){ f="Baixa ou recuperação"; nf="Preço abaixo da média de 200 dias: tendência ainda fraca."; }
+          else if(mayer<1.5){ f=(dd!=null&&dd>-25)?"Alta saudável":"Recuperação"; nf="Preço acima da média de 200 dias sem exagero."; }
+          else if(mayer<2.4){ f="Alta aquecida"; nf="Preço bem acima da média: hora de pensar em realizar em partes, não de entrar com tudo."; }
+          else { f="Euforia"; nf="Preço muito esticado em relação à média: historicamente, perto de topos."; }
+        }
+        faseV.textContent=f; faseN.textContent=nf;
+      }).catch(function(){ faseV.textContent="indisponível"; });
+    }
+    load(); refreshers.push(load); return s;
+  }
+
+  /* 2. Para onde vai o dinheiro: stablecoins (dinheiro novo), TVL do DeFi,
+     redes e protocolos, e o mapa de liquidez. */
+  function dinheiroSecao() {
+    var s=secao("Para onde vai o dinheiro","Stablecoins são o dinheiro esperando para entrar. TVL é o dinheiro já trabalhando no DeFi.");
+    var grade=h("div","pn-grade pn-grade-2");
+    var cSt=cartao("Stablecoins em circulação"), cTvl=cartao("Dinheiro no DeFi (TVL)");
+    grade.appendChild(cSt.el); grade.appendChild(cTvl.el); s.appendChild(grade);
+    var g=h("div","cc-grid");
+    var L=col("cc-l"); L.appendChild(chainsPanel());
+    var C=col("cc-c"); C.appendChild(globeStage());
+    var R=col("cc-r"); R.appendChild(flowsPanel());
+    g.appendChild(L); g.appendChild(C); g.appendChild(R); s.appendChild(g);
+    function load(){
+      AcademyData.stablecoins(6).then(function(st){
+        if(!st||!st.total){ semDado(cSt); return; }
+        cSt.v.textContent=big(st.total);
+        if(st.totalMesPassado){ var v=(st.total/st.totalMesPassado-1)*100, dif=st.total-st.totalMesPassado;
+          cSt.n.textContent=(dif>=0?"+":"−")+big(Math.abs(dif)).replace("$","US$ ")+" em 30 dias ("+pctS(v)+").";
+          marca(cSt, v>=1?"entrando dinheiro novo":v>-1?"estável":"saindo dinheiro", v>=1?"ok":v>-1?"":"frio");
+        } else cSt.n.textContent="Variação de 30 dias indisponível.";
+      }).catch(function(){ semDado(cSt); });
+      AcademyData.defiTvl().then(function(t){
+        if(!t||!t.current){ semDado(cTvl); return; }
+        cTvl.v.textContent=big(t.current);
+        var sr=t.series||[], ant=sr.length>30?sr[sr.length-31][1]:null;
+        if(ant){ var v=(t.current/ant-1)*100; cTvl.n.textContent=pctS(v)+" em 30 dias (inclui a variação de preço dos tokens).";
+          marca(cTvl, v>=3?"crescendo":v>-3?"estável":"encolhendo", v>=3?"ok":v>-3?"":"frio"); }
+        else cTvl.n.textContent="Variação de 30 dias indisponível.";
+      }).catch(function(){ semDado(cTvl); });
+    }
+    load(); refreshers.push(load); return s;
+  }
+
+  /* 3. RWA e ações tokenizadas */
+  function rwaSecao() {
+    var s=secao("RWA e ações tokenizadas","Ativos do mundo real na blockchain: títulos do Tesouro, ouro, crédito e ações.");
+    var grade=h("div","pn-grade pn-grade-2");
+    var cR=cartao("RWA tokenizado (TVL)"), cP=cartao("Maior emissor");
+    grade.appendChild(cR.el); grade.appendChild(cP.el); s.appendChild(grade);
+    var duas=h("div","pn-duas"); duas.appendChild(rwaTvlPanel()); duas.appendChild(tokenizedStocksPanel()); s.appendChild(duas);
+    function load(){
+      AcademyData.rwaTvl(300).then(function(rs){
+        rs=rs||[]; var tot=rs.reduce(function(t,p){return t+(p.tvl||0);},0);
+        if(!tot){ semDado(cR); semDado(cP); return; }
+        cR.v.textContent=big(tot);
+        var ant=rs.reduce(function(t,p){ return t+(p.change7d!=null?p.tvl/(1+p.change7d/100):p.tvl); },0), v=(tot/ant-1)*100;
+        cR.n.textContent=pctS(v)+" em 7 dias, somando "+rs.length+" protocolos.";
+        marca(cR, v>=1?"crescendo":v>-1?"estável":"encolhendo", v>=1?"ok":v>-1?"":"frio");
+        var top=rs[0]; cP.v.textContent=top.name; cP.n.textContent=big(top.tvl)+" · "+(top.tvl/tot*100).toFixed(0)+"% de todo o RWA tokenizado."; marca(cP,"");
+      }).catch(function(){ semDado(cR); semDado(cP); });
+    }
+    load(); refreshers.push(load); return s;
+  }
+
   /* ---------- montagem por aba ---------- */
   function buildTab(tab, mount) {
     refreshers = [];
@@ -572,57 +705,29 @@
 
     mount.appendChild(tickerTape());   // fita de cotações em todas as abas
 
-    if (tab === "Mercado Geral") {
-      mount.appendChild(metricsBar());
-      var grid=h("div","cc-grid");
-      // esquerda: Criptos -> RWAs (ações tokenizadas) -> Stablecoins
-      var L=col("cc-l"); L.appendChild(cryptosPanel()); L.appendChild(tokenizedStocksPanel()); L.appendChild(stablecoinsPanel());
-      // centro: globo grande + TVL DeFi (com dominância)
-      var C=col("cc-c"); C.appendChild(globeStage()); C.appendChild(tvlDefiPanel());
-      // direita: TVL por rede -> Alertas (caixa maior)
-      var R=col("cc-r"); R.appendChild(chainsPanel()); R.appendChild(alertsPanel(true));
-      grid.appendChild(L); grid.appendChild(C); grid.appendChild(R); mount.appendChild(grid);
-      var mv=h("div","movers-grid movers-grid-3");
-      mv.appendChild(moversPanel("Tokens em alta","24h",function(){return AcademyData.gainers();}));
-      mv.appendChild(moversPanel("Maiores quedas","24h",function(){return AcademyData.losers();}));
-      mv.appendChild(moversPanel("Volume anormal","vol/cap",function(){return AcademyData.abnormalVolume();}));
-      mount.appendChild(mv);
+    if (tab === "Panorama") {
+      mount.appendChild(cicloSecao());
+      mount.appendChild(dinheiroSecao());
+      mount.appendChild(rwaSecao());
 
     } else if (tab === "DeFi") {
       mount.appendChild(metricsBar());
       var g2=h("div","cc-grid");
       var L2=col("cc-l"); L2.appendChild(chainsPanel()); L2.appendChild(flowsPanel());
       var C2=col("cc-c"); C2.appendChild(globeStage()); C2.appendChild(tvlTrendPanel());
-      var R2=col("cc-r"); R2.appendChild(yieldsPanel()); R2.appendChild(alertsPanel());
+      var R2=col("cc-r"); R2.appendChild(stablecoinsPanel()); R2.appendChild(dominancePanel());
       g2.appendChild(L2); g2.appendChild(C2); g2.appendChild(R2); mount.appendChild(g2);
 
     } else if (tab === "RWA") {
-      mount.appendChild(metricsBar());
-      var g3=h("div","cc-grid cc-grid-2");
-      var L3=col("cc-l"); L3.appendChild(rwaTvlPanel());
-      var C3=col("cc-c"); C3.appendChild(moversPanel("RWAs em alta (mercado)","24h",function(){return AcademyData.rwa();}));
-      var R3=col("cc-r"); R3.appendChild(alertsPanel());
-      g3.appendChild(L3); g3.appendChild(C3); g3.appendChild(R3); mount.appendChild(g3);
-
-    } else if (tab === "Analytics") {
-      var g4=h("div","cc-grid");
-      var L4=col("cc-l"); L4.appendChild(dominancePanel()); L4.appendChild(sectorsPanel());
-      var C4=col("cc-c"); C4.appendChild(heatmapPanel());
-      var R4=col("cc-r"); R4.appendChild(btcTrendPanel()); R4.appendChild(tvlTrendPanel());
-      g4.appendChild(L4); g4.appendChild(C4); g4.appendChild(R4); mount.appendChild(g4);
-
-    } else if (tab === "Yields") {
-      mount.appendChild(metricsBar());
-      var yw=h("div","cc-single"); yw.appendChild(yieldsPanel(true)); mount.appendChild(yw);
-
-    } else if (tab === "Alertas 24/7") {
-      alertsTab(mount);
+      var g3=h("div","pn-duas");
+      g3.appendChild(rwaTvlPanel()); g3.appendChild(tokenizedStocksPanel());
+      mount.appendChild(g3);
     }
   }
 
   /* ---------- render principal ---------- */
   window.renderDashboard = function (el) {
-    var current = (window.__academyTab && TABS.indexOf(window.__academyTab)>-1) ? window.__academyTab : "Mercado Geral";
+    var current = (window.__academyTab && TABS.indexOf(window.__academyTab)>-1) ? window.__academyTab : "Panorama";
     var root = h("div","cc-console");
     var content = h("div","cc-content");
 

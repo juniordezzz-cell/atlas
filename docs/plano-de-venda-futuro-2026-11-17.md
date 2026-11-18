@@ -1,5 +1,12 @@
 # Plano de venda do ATLAS (futuro) — 17/11/2026
 
+**Atualização de 18/11/2026 (dono):** o site **não vai ser público**. Quando a
+venda começar, vai ser para poucas pessoas que chegarem até ele por indicação
+("como você estuda cripto?"). Mais adiante, com o curso de economia dele, pode
+haver consultoria pelo site, possivelmente num site novo ou numa versão bem
+mais avançada deste. A tabela de planos abaixo continua como referência de
+preço, não como página de venda aberta.
+
 **Situação:** plano para mais adiante. O ATLAS **não** está à venda agora e
 nada disto foi implementado no site. Serve de ponto de partida quando o dono
 decidir vender.

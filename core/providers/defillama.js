@@ -211,7 +211,7 @@
         .then(function (arr) {
           return (arr || []).filter(function (p) { return /rwa/i.test(p.category || "") && p.tvl; })
             .sort(function (a, b) { return b.tvl - a.tvl; }).slice(0, n)
-            .map(function (p) { return { name: p.name, tvl: p.tvl, change24h: p.change_1d != null ? p.change_1d : null, logo: p.logo || null }; });
+            .map(function (p) { return { name: p.name, tvl: p.tvl, change24h: p.change_1d != null ? p.change_1d : null, change7d: p.change_7d != null ? p.change_7d : null, logo: p.logo || null }; });
         });
     },
 
@@ -243,7 +243,11 @@
         }).filter(function (x) { return x.mcap > 0; }).sort(function (a, b) { return b.mcap - a.mcap; });
         var tot = arr.reduce(function (s, x) { return s + x.mcap; }, 0) || 1;
         arr.forEach(function (x) { x.share = x.mcap / tot * 100; });
-        return { total: tot, list: arr.slice(0, n || 6) };
+        /* total de um mês atrás (circulatingPrevMonth): mostra se está entrando
+           ou saindo dinheiro novo em stablecoins (18/11/2026) */
+        var mes = (d && d.peggedAssets ? d.peggedAssets : []).reduce(function (s, a) {
+          return s + ((a.circulatingPrevMonth && a.circulatingPrevMonth.peggedUSD) || 0); }, 0);
+        return { total: tot, totalMesPassado: mes > 0 ? mes : null, list: arr.slice(0, n || 6) };
       });
     },
 

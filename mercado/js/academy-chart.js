@@ -39,6 +39,9 @@
 
     var xs = points.map(function (p) { return p[0]; });
     var ys = points.map(function (p) { return p[1]; });
+    /* opts.extra: segunda linha tracejada (ex.: média de 200 dias), entra na escala */
+    var extra = Array.isArray(opts.extra) ? opts.extra.filter(function (p) { return p && isFinite(p[1]); }) : [];
+    extra.forEach(function (p) { ys.push(p[1]); });
     var minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
     var minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
     var spanX = (maxX - minX) || 1, spanY = (maxY - minY) || 1;
@@ -72,6 +75,12 @@
     svg.appendChild(el("path", { d: dLine, fill: "none", stroke: stroke,
       "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round",
       "vector-effect": "non-scaling-stroke" }));
+    if (extra.length > 1) {
+      var dEx = "M" + px(extra[0][0]).toFixed(2) + " " + py(extra[0][1]).toFixed(2);
+      for (var j = 1; j < extra.length; j++) dEx += " L" + px(extra[j][0]).toFixed(2) + " " + py(extra[j][1]).toFixed(2);
+      svg.appendChild(el("path", { d: dEx, fill: "none", stroke: "var(--texto-suave, #9fb0c8)", "stroke-width": "1.6",
+        "stroke-dasharray": "6 5", "vector-effect": "non-scaling-stroke" }));
+    }
 
     container.appendChild(svg);
   }
