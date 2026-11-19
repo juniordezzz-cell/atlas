@@ -1,0 +1,21 @@
+name: Moldura · listas do menu
+
+on:
+  push:
+    paths: ["core/ui/atlas-listas*", "core/ui/atlas-moldura.js", "pages/ferramentas.html", "academy/index.html", ".github/workflows/moldura-listas.yml"]
+  pull_request:
+    paths: ["core/ui/atlas-listas*", "core/ui/atlas-moldura.js", "pages/ferramentas.html", "academy/index.html"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  listas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: node --test core/ui/atlas-listas.test.cjs

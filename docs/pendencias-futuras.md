@@ -26,10 +26,10 @@ A revisão de 17/11 cobriu só as mudanças daquele dia
 
 ## Manutenção
 
-- As listas do menu lateral (`FERRAMENTAS` e `ACADEMY` em
-  `core/ui/atlas-moldura.js`) repetem os cards de `pages/ferramentas.html`
-  e as abas de `academy/index.html`. Ao criar ou renomear uma ferramenta,
-  atualize os dois lugares, ou crie um arquivo de lista compartilhado.
+- ~~Listas do menu lateral repetidas à mão.~~ Resolvido em 19/11/2026: as
+  listas moram em `core/ui/atlas-listas.js` e `core/ui/atlas-listas.test.cjs`
+  confere que batem com os cards de `pages/ferramentas.html` e as abas de
+  `academy/index.html`. Ver o fim de [moldura](moldura-2026-11-15.md).
 
 ## Venda
 
