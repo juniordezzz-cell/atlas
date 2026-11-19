@@ -531,6 +531,171 @@
     return { usd: 1, brl: 1 / t.BRL, eur: 1 / t.EUR, gbp: 1 / t.GBP, usdt: 1 / t.USDT, usdc: 1 / t.USDC };
   };
 
+  /* ══════════════════════════════════════════════════════════════
+     COTAÇÃO EM VÁRIAS FONTES (19/11/2026)
+     Ordem pedida pelo dono: CoinGecko só como segunda opção.
+       dólar em reais ... Coinbase → CoinGecko
+       preço do token ... Coinbase (lista conferida) → DefiLlama
+                          (ou CoinPaprika, se o token veio da busca dela)
+                          → CoinGecko
+       busca de token ... CoinPaprika → CoinGecko
+       BTC/ETH 24h ...... Binance → CoinGecko
+       série histórica .. Binance → DefiLlama → CoinGecko
+     A rede fica em _comum/cotacao.js; aqui só a leitura das respostas.
+     Toda leitura devolve null quando a resposta não serve, para a página
+     passar à próxima fonte em vez de mostrar número errado.
+     ══════════════════════════════════════════════════════════════ */
+
+  function positivo(v) { var n = Number(v); return isFinite(n) && n > 0 ? n : null; }
+
+  /* Criptos que entram na Coinbase. Ticker igual não é a mesma moeda:
+     só passa quem está nesta lista, pelo id da CoinGecko ou da CoinPaprika.
+     Um id de CoinPaprika errado aqui só faz o token pular a Coinbase. */
+  F.COINBASE_SIMBOLOS = {
+    bitcoin: 'BTC', ethereum: 'ETH', solana: 'SOL', ripple: 'XRP', dogecoin: 'DOGE', aave: 'AAVE',
+    cardano: 'ADA', chainlink: 'LINK', litecoin: 'LTC', polkadot: 'DOT', 'avalanche-2': 'AVAX',
+    stellar: 'XLM', uniswap: 'UNI', near: 'NEAR', sui: 'SUI', 'shiba-inu': 'SHIB',
+    'bitcoin-cash': 'BCH', 'hedera-hashgraph': 'HBAR', tron: 'TRX', tether: 'USDT', 'usd-coin': 'USDC'
+  };
+  /* id da CoinPaprika → id da CoinGecko, para as mesmas moedas */
+  F.PAPRIKA_PARA_COINGECKO = {
+    'btc-bitcoin': 'bitcoin', 'eth-ethereum': 'ethereum', 'sol-solana': 'solana', 'xrp-xrp': 'ripple',
+    'doge-dogecoin': 'dogecoin', 'aave-new': 'aave', 'ada-cardano': 'cardano', 'link-chainlink': 'chainlink',
+    'ltc-litecoin': 'litecoin', 'dot-polkadot': 'polkadot', 'avax-avalanche': 'avalanche-2',
+    'xlm-stellar': 'stellar', 'uni-uniswap': 'uniswap', 'near-near-protocol': 'near', 'sui-sui': 'sui',
+    'shib-shiba-inu': 'shiba-inu', 'bch-bitcoin-cash': 'bitcoin-cash', 'hbar-hedera-hashgraph': 'hedera-hashgraph',
+    'trx-tron': 'tron', 'usdt-tether': 'tether', 'usdc-usd-coin': 'usd-coin'
+  };
+
+  /* token = { id, fonte: 'coingecko' | 'coinpaprika' }. Sem fonte, o id é
+     da CoinGecko (links antigos e ?token= da Escada). */
+  F.idCoingeckoConhecido = function (token) {
+    if (!token || !token.id) return null;
+    if (token.fonte === 'coinpaprika') return F.PAPRIKA_PARA_COINGECKO[token.id] || null;
+    return String(token.id);
+  };
+  F.simboloCoinbase = function (token) {
+    var cg = F.idCoingeckoConhecido(token);
+    return (cg && F.COINBASE_SIMBOLOS[cg]) || null;
+  };
+
+  /* Executa as fontes em ordem e devolve { valor, fonte } da primeira que
+     responder algo útil. Fonte que falha ou devolve null passa a vez.
+     Se nenhuma servir, rejeita: a página mostra o aviso dela. */
+  F.tentarEmOrdem = function (tentativas) {
+    var lista = (tentativas || []).filter(Boolean), i = 0;
+    function proxima() {
+      if (i >= lista.length) return Promise.reject(new Error('sem resposta em nenhuma fonte'));
+      var t = lista[i++];
+      var p;
+      try { p = Promise.resolve(t.buscar()); } catch (e) { p = Promise.reject(e); }
+      return p.then(function (v) {
+        return v == null ? proxima() : { valor: v, fonte: t.fonte };
+      }, proxima);
+    }
+    return proxima();
+  };
+
+  /* ── dólar em reais ── */
+  /* Coinbase exchange-rates?currency=USD: rates.BRL = reais por 1 dólar */
+  F.dolarEmReaisDeCoinbase = function (resposta) {
+    return taxaPositiva(resposta && resposta.data && resposta.data.rates, 'BRL');
+  };
+  /* CoinGecko simple/price?ids=tether&vs_currencies=brl,usd: pelo USDT */
+  F.dolarEmReaisDeCoingecko = function (resposta) {
+    var t = resposta && resposta.tether;
+    var brl = positivo(t && t.brl), usd = positivo(t && t.usd);
+    return brl && usd ? brl / usd : null;
+  };
+
+  /* ── preço de um token em US$ ── */
+  /* Coinbase exchange-rates?currency=SOL: rates.USD = dólares por 1 SOL */
+  F.precoDeCoinbase = function (resposta) {
+    return taxaPositiva(resposta && resposta.data && resposta.data.rates, 'USD');
+  };
+  /* DefiLlama coins.llama.fi/prices/current/coingecko:<id> */
+  F.precoDeDefiLlama = function (resposta, idCoingecko) {
+    var c = resposta && resposta.coins && resposta.coins['coingecko:' + idCoingecko];
+    return positivo(c && c.price);
+  };
+  /* CoinPaprika /tickers/<id> */
+  F.precoDeCoinpaprika = function (resposta) {
+    var q = resposta && resposta.quotes && resposta.quotes.USD;
+    return positivo(q && q.price);
+  };
+  /* CoinGecko simple/price?ids=<id>&vs_currencies=usd */
+  F.precoDeCoingecko = function (resposta, idCoingecko) {
+    var c = resposta && resposta[idCoingecko];
+    return positivo(c && c.usd);
+  };
+
+  /* ── busca de token ── devolve [{ id, sym, nome, img, rank, fonte }] ou
+     null (lista vazia também passa a vez: a outra fonte pode achar). */
+  function seguraHttps(u) { return /^https:\/\//.test(u || '') ? u : ''; }
+  F.buscaDeCoinpaprika = function (resposta) {
+    var cur = resposta && resposta.currencies;
+    if (!Array.isArray(cur) || !cur.length) return null;
+    var lista = cur.filter(function (c) { return c && c.id && c.is_active !== false; }).slice(0, 8).map(function (c) {
+      return { id: String(c.id), sym: String(c.symbol || '').toUpperCase(), nome: String(c.name || ''),
+        img: 'https://static.coinpaprika.com/coin/' + encodeURIComponent(c.id) + '/logo.png',
+        rank: c.rank || null, fonte: 'coinpaprika' };
+    });
+    return lista.length ? lista : null;
+  };
+  F.buscaDeCoingecko = function (resposta) {
+    var coins = resposta && resposta.coins;
+    if (!Array.isArray(coins) || !coins.length) return null;
+    return coins.filter(function (c) { return c && c.id; }).slice(0, 8).map(function (c) {
+      return { id: String(c.id), sym: String(c.symbol || '').toUpperCase(), nome: String(c.name || ''),
+        img: seguraHttps(c.large || c.thumb), rank: c.market_cap_rank || null, fonte: 'coingecko' };
+    });
+  };
+  /* Token achado na CoinPaprika e preço só na CoinGecko: procura na busca
+     dela o mesmo símbolo E o mesmo nome. Só o símbolo não basta (há dezenas
+     de "SOL"); sem par exato, null — melhor sem preço que preço de outro. */
+  F.idCoingeckoDaBusca = function (resposta, sym, nome) {
+    var coins = (resposta && resposta.coins) || [];
+    var s = String(sym || '').toUpperCase(), n = String(nome || '').trim().toLowerCase();
+    if (!s || !n) return null;
+    for (var i = 0; i < coins.length; i++) {
+      var c = coins[i];
+      if (c && c.id && String(c.symbol || '').toUpperCase() === s && String(c.name || '').trim().toLowerCase() === n) return String(c.id);
+    }
+    return null;
+  };
+
+  /* ── BTC/ETH com variação de 24h ── devolve { usd, var24h } */
+  /* Binance ticker/24hr?symbol=BTCUSDT (números chegam como texto) */
+  F.tickerDeBinance = function (resposta) {
+    var usd = positivo(resposta && resposta.lastPrice);
+    var v = Number(resposta && resposta.priceChangePercent);
+    return usd ? { usd: usd, var24h: isFinite(v) ? v : null } : null;
+  };
+  F.tickerDeCoingecko = function (resposta, idCoingecko) {
+    var c = resposta && resposta[idCoingecko];
+    var usd = positivo(c && c.usd), v = Number(c && c.usd_24h_change);
+    return usd ? { usd: usd, var24h: isFinite(v) ? v : null } : null;
+  };
+
+  /* ── série histórica diária ── devolve [{ t (ms), v }] ou null.
+     `minimo` evita aceitar meia dúzia de pontos como "1 ano". */
+  F.serieDeDefiLlama = function (resposta, idCoingecko, minimo) {
+    var c = resposta && resposta.coins && resposta.coins['coingecko:' + idCoingecko];
+    var p = c && c.prices;
+    if (!Array.isArray(p)) return null;
+    var s = p.map(function (x) { return { t: Number(x && x.timestamp) * 1000, v: Number(x && x.price) }; })
+      .filter(function (x) { return isFinite(x.t) && x.t > 0 && isFinite(x.v) && x.v > 0; })
+      .sort(function (a, b) { return a.t - b.t; });
+    return s.length >= (minimo || 2) ? s : null;
+  };
+  F.serieDeCoingecko = function (resposta, minimo) {
+    var p = resposta && resposta.prices;
+    if (!Array.isArray(p)) return null;
+    var s = p.map(function (x) { return { t: Number(x && x[0]), v: Number(x && x[1]) }; })
+      .filter(function (x) { return isFinite(x.t) && isFinite(x.v) && x.v > 0; });
+    return s.length >= (minimo || 2) ? s : null;
+  };
+
   /* ══════════════════════════════════════════════════════════════ */
   if (typeof module !== 'undefined' && module.exports) module.exports = F;
   raiz.AtlasCalculos = F;

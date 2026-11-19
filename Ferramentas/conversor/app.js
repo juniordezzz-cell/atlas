@@ -234,12 +234,8 @@ function montarChips() {
    demais, e sempre que a Coinbase falhar ou não listar a moeda, vale a CoinGecko.
    Ticker igual não é a mesma moeda, por isso nada de adivinhar pela lista de 500. */
 const COINBASE = 'https://api.coinbase.com/v2';
-const COINBASE_SIMBOLOS = {
-  bitcoin:'BTC', ethereum:'ETH', solana:'SOL', ripple:'XRP', dogecoin:'DOGE', aave:'AAVE',
-  cardano:'ADA', chainlink:'LINK', litecoin:'LTC', polkadot:'DOT', 'avalanche-2':'AVAX',
-  stellar:'XLM', uniswap:'UNI', near:'NEAR', sui:'SUI', 'shiba-inu':'SHIB',
-  'bitcoin-cash':'BCH', 'hedera-hashgraph':'HBAR', tron:'TRX', tether:'USDT', 'usd-coin':'USDC',
-};
+// lista conferida, a mesma de toda a bancada (_comum/calculos.js)
+const COINBASE_SIMBOLOS = window.AtlasCalculos.COINBASE_SIMBOLOS;
 const NOMES_CONHECIDOS = {
   bitcoin:'Bitcoin', ethereum:'Ethereum', solana:'Solana', ripple:'XRP', dogecoin:'Dogecoin', aave:'Aave',
   cardano:'Cardano', chainlink:'Chainlink', litecoin:'Litecoin', polkadot:'Polkadot', 'avalanche-2':'Avalanche',

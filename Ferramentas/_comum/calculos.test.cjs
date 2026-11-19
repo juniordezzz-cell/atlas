@@ -462,3 +462,119 @@ eq('1 USDC em dólar', vCb.usdc, 1, 1e-12);
 eq('100 USD em real fecha com a taxa', F.converterMoeda(100, vCb.usd, vCb.brl), 537.21, 1e-9);
 eqv('falta uma moeda: null', F.valoresEmDolarDeCoinbase({ data: { rates: { BRL: '5', EUR: '1', GBP: '1', USDT: '1' } } }), null);
 eqv('resposta vazia: null', F.valoresEmDolarDeCoinbase(null), null);
+
+/* ══════════════════════════════════════════════════════════════
+   COTAÇÃO EM VÁRIAS FONTES (19/11/2026)
+   Respostas simuladas no formato de cada API: a nuvem não alcança
+   nenhuma delas, então o formato real se confere no navegador.
+   ══════════════════════════════════════════════════════════════ */
+sec('Dólar em reais');
+eq('Coinbase: rates.BRL é o dólar em reais', F.dolarEmReaisDeCoinbase({ data: { currency: 'USD', rates: { BRL: '5.3721' } } }), 5.3721);
+eqv('Coinbase sem BRL: null', F.dolarEmReaisDeCoinbase({ data: { rates: { EUR: '0.9' } } }), null);
+eqv('Coinbase vazia: null', F.dolarEmReaisDeCoinbase(null), null);
+/* USDT a 5,40 BRL e 1,0008 USD -> dólar = 5,40 / 1,0008 */
+eq('CoinGecko pelo USDT', F.dolarEmReaisDeCoingecko({ tether: { brl: 5.40, usd: 1.0008 } }), 5.40 / 1.0008, 1e-12);
+eqv('CoinGecko com usd zero: null', F.dolarEmReaisDeCoingecko({ tether: { brl: 5.4, usd: 0 } }), null);
+eqv('CoinGecko sem tether: null', F.dolarEmReaisDeCoingecko({}), null);
+
+sec('Preço do token');
+eq('Coinbase: rates.USD de exchange-rates?currency=SOL', F.precoDeCoinbase({ data: { currency: 'SOL', rates: { USD: '142.35', BRL: '765' } } }), 142.35);
+eqv('Coinbase sem USD: null', F.precoDeCoinbase({ data: { rates: { BRL: '1' } } }), null);
+eq('DefiLlama pela chave coingecko:<id>', F.precoDeDefiLlama({ coins: { 'coingecko:jupiter-exchange-solana': { symbol: 'JUP', price: 0.4321, timestamp: 1763500000, confidence: 0.99 } } }, 'jupiter-exchange-solana'), 0.4321);
+eqv('DefiLlama sem o token: null', F.precoDeDefiLlama({ coins: {} }, 'xyz'), null);
+eqv('DefiLlama de outro token: null', F.precoDeDefiLlama({ coins: { 'coingecko:bitcoin': { price: 9e4 } } }, 'ethereum'), null);
+eq('CoinPaprika: quotes.USD.price', F.precoDeCoinpaprika({ id: 'sol-solana', quotes: { USD: { price: 141.9 } } }), 141.9);
+eqv('CoinPaprika sem cotação: null', F.precoDeCoinpaprika({ id: 'sol-solana' }), null);
+eq('CoinGecko simple/price', F.precoDeCoingecko({ solana: { usd: 142.1 } }, 'solana'), 142.1);
+eqv('CoinGecko preço nulo: null', F.precoDeCoingecko({ solana: { usd: null } }, 'solana'), null);
+
+sec('Quem entra na Coinbase');
+eqv('id da CoinGecko conferido', F.simboloCoinbase({ id: 'solana', fonte: 'coingecko' }), 'SOL');
+eqv('sem fonte vale como CoinGecko (?token= da Escada)', F.simboloCoinbase({ id: 'avalanche-2' }), 'AVAX');
+eqv('id da CoinPaprika conferido', F.simboloCoinbase({ id: 'sol-solana', fonte: 'coinpaprika' }), 'SOL');
+eqv('token fora da lista: não usa a Coinbase', F.simboloCoinbase({ id: 'jupiter-exchange-solana' }), null);
+eqv('mesmo ticker, outra moeda: não usa a Coinbase', F.simboloCoinbase({ id: 'sol-wrapped-sol', fonte: 'coinpaprika' }), null);
+eqv('CoinPaprika conhecida vira id da CoinGecko', F.idCoingeckoConhecido({ id: 'btc-bitcoin', fonte: 'coinpaprika' }), 'bitcoin');
+eqv('CoinPaprika desconhecida: null', F.idCoingeckoConhecido({ id: 'abc-abc', fonte: 'coinpaprika' }), null);
+eqv('as duas listas cobrem as mesmas moedas',
+  Object.values(F.PAPRIKA_PARA_COINGECKO).sort().join(), Object.keys(F.COINBASE_SIMBOLOS).sort().join());
+
+sec('Busca de token');
+const buscaCp = F.buscaDeCoinpaprika({ currencies: [
+  { id: 'sol-solana', name: 'Solana', symbol: 'SOL', rank: 6, is_new: false, is_active: true, type: 'coin' },
+  { id: 'old-morto', name: 'Morto', symbol: 'MRT', rank: 0, is_active: false }
+] });
+eqv('CoinPaprika: ignora moeda inativa', buscaCp.length, 1);
+eqv('CoinPaprika: id e fonte', buscaCp[0].id + '|' + buscaCp[0].fonte, 'sol-solana|coinpaprika');
+eqv('CoinPaprika: símbolo e nome', buscaCp[0].sym + '|' + buscaCp[0].nome, 'SOL|Solana');
+eqv('CoinPaprika: logo pelo id', buscaCp[0].img, 'https://static.coinpaprika.com/coin/sol-solana/logo.png');
+eqv('CoinPaprika sem resultado: null (tenta a CoinGecko)', F.buscaDeCoinpaprika({ currencies: [] }), null);
+const buscaCg = F.buscaDeCoingecko({ coins: [{ id: 'solana', name: 'Solana', symbol: 'sol', market_cap_rank: 6, thumb: 'https://x/t.png', large: 'javascript:alert(1)' }] });
+eqv('CoinGecko: símbolo em maiúsculas e fonte', buscaCg[0].sym + '|' + buscaCg[0].fonte, 'SOL|coingecko');
+eqv('CoinGecko: imagem que não é https sai vazia', buscaCg[0].img, '');
+eqv('CoinGecko vazia: null', F.buscaDeCoingecko({ coins: [] }), null);
+const buscaPar = { coins: [
+  { id: 'solana-wormhole', symbol: 'SOL', name: 'Wrapped Solana' },
+  { id: 'solana', symbol: 'sol', name: 'Solana' }
+] };
+eqv('par na CoinGecko: mesmo símbolo E nome', F.idCoingeckoDaBusca(buscaPar, 'SOL', 'Solana'), 'solana');
+eqv('só o símbolo igual não basta', F.idCoingeckoDaBusca(buscaPar, 'SOL', 'Solana Classic'), null);
+
+sec('BTC e ETH com variação de 24h');
+const tkB = F.tickerDeBinance({ symbol: 'BTCUSDT', lastPrice: '91234.56000000', priceChangePercent: '-1.234' });
+eq('Binance: preço vem como texto', tkB.usd, 91234.56);
+eq('Binance: variação em %', tkB.var24h, -1.234);
+eqv('Binance sem preço: null', F.tickerDeBinance({ code: -1121, msg: 'Invalid symbol.' }), null);
+const tkG = F.tickerDeCoingecko({ bitcoin: { usd: 91200, usd_24h_change: 2.5 } }, 'bitcoin');
+eq('CoinGecko: preço', tkG.usd, 91200);
+eq('CoinGecko: variação', tkG.var24h, 2.5);
+eqv('CoinGecko sem variação: preço fica, variação null', F.tickerDeCoingecko({ bitcoin: { usd: 1 } }, 'bitcoin').var24h, null);
+
+sec('Série histórica');
+const sDl = F.serieDeDefiLlama({ coins: { 'coingecko:sp500-xstock': { symbol: 'SPYx', prices: [
+  { timestamp: 1700086400, price: 452 }, { timestamp: 1700000000, price: 450 }, { timestamp: 1700172800, price: 0 }
+] } } }, 'sp500-xstock');
+eqv('DefiLlama: ordena e descarta preço zero', sDl.length, 2);
+eqv('DefiLlama: segundos viram milissegundos', sDl[0].t, 1700000000 * 1000);
+eq('DefiLlama: primeiro valor é o mais antigo', sDl[0].v, 450);
+eqv('DefiLlama com menos pontos que o mínimo: null', F.serieDeDefiLlama({ coins: { 'coingecko:a': { prices: [{ timestamp: 1, price: 1 }, { timestamp: 2, price: 1 }] } } }, 'a', 30), null);
+eqv('DefiLlama sem o token: null', F.serieDeDefiLlama({ coins: {} }, 'a'), null);
+const sCg = F.serieDeCoingecko({ prices: [[1700000000000, 450], [1700086400000, 452]] });
+eqv('CoinGecko market_chart: pontos', sCg.length, 2);
+eqv('CoinGecko vazia: null', F.serieDeCoingecko({ prices: [] }), null);
+
+sec('Fontes em ordem');
+test('Fontes em ordem · a primeira que responde vence', async () => {
+  const r = await F.tentarEmOrdem([
+    { fonte: 'Coinbase', buscar: () => 5.37 },
+    { fonte: 'CoinGecko', buscar: () => { throw new Error('não devia chamar'); } }
+  ]);
+  assert.deepEqual(r, { valor: 5.37, fonte: 'Coinbase' });
+});
+test('Fontes em ordem · falha e null passam a vez', async () => {
+  const chamadas = [];
+  const r = await F.tentarEmOrdem([
+    { fonte: 'Coinbase', buscar: () => { chamadas.push('cb'); return Promise.reject(new Error('Limite')); } },
+    { fonte: 'DefiLlama', buscar: () => { chamadas.push('dl'); return null; } },
+    null,
+    { fonte: 'CoinGecko', buscar: () => { chamadas.push('cg'); return Promise.resolve(142); } }
+  ]);
+  assert.deepEqual(chamadas, ['cb', 'dl', 'cg']);
+  assert.deepEqual(r, { valor: 142, fonte: 'CoinGecko' });
+});
+test('Fontes em ordem · erro síncrono não derruba a sequência', async () => {
+  const r = await F.tentarEmOrdem([
+    { fonte: 'A', buscar: () => { throw new TypeError('x'); } },
+    { fonte: 'B', buscar: () => 1 }
+  ]);
+  assert.equal(r.fonte, 'B');
+});
+test('Fontes em ordem · todas falham: rejeita para a tela mostrar o aviso', async () => {
+  await assert.rejects(F.tentarEmOrdem([
+    { fonte: 'A', buscar: () => Promise.reject(new Error('x')) },
+    { fonte: 'B', buscar: () => null }
+  ]), /nenhuma fonte/);
+});
+test('Fontes em ordem · lista vazia rejeita', async () => {
+  await assert.rejects(F.tentarEmOrdem([]), /nenhuma fonte/);
+});

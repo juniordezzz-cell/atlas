@@ -40,7 +40,7 @@ let ultimoLiquidado = false;
 let ultimoPnlSaidaPct = 0;   // retorno alavancado (%) no take profit
 let slInfo = null;           // { mov, pnlPct, resultado, liquidado } | null
 
-let selectedAsset = { id:'bitcoin', symbol:'BTC', name:'Bitcoin', manual:false };
+let selectedAsset = { id:'bitcoin', symbol:'BTC', name:'Bitcoin', fonte:'coingecko', manual:false };
 
 const el = id => document.getElementById(id);
 
@@ -81,7 +81,7 @@ function onLeverageChange(){
 }
 
 /* ══════════════════════════════════════
-   BUSCA DE ATIVO (CoinGecko /search)
+   BUSCA DE ATIVO (CoinPaprika, depois CoinGecko — ../_comum/cotacao.js)
 ══════════════════════════════════════ */
 function applyManualMode(isManual){
   el('btn-fetch').style.display = isManual ? 'none' : 'block';
@@ -126,8 +126,8 @@ function renderAssetResults(coins, query){
     html += '<div class="asr-empty">Nenhum ativo encontrado.</div>';
   } else {
     html += coins.slice(0, 8).map(c => `
-      <div class="asr-item" data-id="${escH(c.id)}" data-symbol="${escH(c.symbol)}" data-name="${escH(c.name)}" data-thumb="${escH(urlSegura(c.thumb))}">
-        ${urlSegura(c.thumb) ? `<img src="${escH(c.thumb)}" alt="">` : '<span class="asr-icon-fallback"></span>'}
+      <div class="asr-item" data-id="${escH(c.id)}" data-symbol="${escH(c.symbol)}" data-name="${escH(c.name)}" data-fonte="${escH(c.fonte)}" data-thumb="${escH(urlSegura(c.thumb))}">
+        ${urlSegura(c.thumb) ? `<img src="${escH(c.thumb)}" alt="" onerror="this.style.visibility='hidden'">` : '<span class="asr-icon-fallback"></span>'}
         <span class="asr-name">${escH(c.name)}</span>
         <span class="asr-sym">${escH(String(c.symbol || '').toUpperCase())}</span>
       </div>`).join('');
@@ -144,6 +144,7 @@ function renderAssetResults(coins, query){
         id: item.dataset.id,
         symbol: item.dataset.symbol,
         name: item.dataset.name,
+        fonte: item.dataset.fonte === 'coinpaprika' ? 'coinpaprika' : 'coingecko',
         manual: false
       });
     });
@@ -163,8 +164,9 @@ const runAssetSearch = debounce(async (query) => {
   }
   renderAssetResults(null, query);
   try{
-    const data = await AtlasHttp.getJSON(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`, { ttl: 300000 });
-    renderAssetResults((data.coins || []).map(c => ({ id:c.id, symbol:c.symbol, name:c.name, thumb:c.thumb })), query);
+    const r = await AtlasCotacao.buscar(query);
+    if(el('asset-search').value !== query) return;   // resposta velha
+    renderAssetResults((r.valor || []).map(c => ({ id:c.id, symbol:c.sym, name:c.nome, thumb:c.img, fonte:c.fonte })), query);
   }catch(e){
     renderAssetResults([], query);
   }
@@ -183,19 +185,24 @@ function initAssetSearch(){
 /* ══════════════════════════════════════
    PREÇO AO VIVO
 ══════════════════════════════════════ */
+function tokenDoAtivo(a){ return { id:a.id, fonte:a.fonte || 'coingecko', sym:String(a.symbol || '').toUpperCase(), nome:a.name }; }
+
 async function fetchPrice(){
   if(selectedAsset.manual || !selectedAsset.id) return;
   const status = el('api-status');
   status.textContent = 'Buscando preço ao vivo…';
   status.style.color = 'var(--ciano)';
   try{
-    const data = await AtlasHttp.getJSON(`https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(selectedAsset.id)}&vs_currencies=usd`, { ttl: 60000 });
-    const preco = data[selectedAsset.id].usd;
+    /* Coinbase (lista conferida) → DefiLlama/CoinPaprika → CoinGecko */
+    const pedido = selectedAsset;
+    const r = await AtlasCotacao.preco(tokenDoAtivo(pedido));
+    if(pedido !== selectedAsset) return;            // a pessoa trocou de ativo no meio
+    const preco = r.valor;
     el('entrada').value = preco;
     if((parseFloat(el('saida').value) || 0) === 0){
       el('saida').value = (preco * 1.05).toFixed(decimalsForPrice(preco));
     }
-    status.textContent = 'Preço atualizado pela CoinGecko.';
+    status.textContent = 'Preço atualizado pela ' + r.fonte + '.';
     status.style.color = 'var(--verde)';
     calcular();
   }catch(e){
@@ -588,7 +595,9 @@ async function fetchKlines(){
       candleData = data.map(k => ({ t:k[0], o:+k[1], h:+k[2], l:+k[3], c:+k[4] }));
     }else{
       const days = {'15m':1,'1h':7,'4h':30,'1d':180}[chartInterval] || 7;
-      const d = await AtlasHttp.getJSON(`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(selectedAsset.id)}/ohlc?vs_currency=usd&days=${days}`, { ttl: 300000 });
+      const idCg = await AtlasCotacao.idCoingecko(tokenDoAtivo(selectedAsset));
+      if(!idCg) throw new Error('sem id na CoinGecko');
+      const d = await AtlasHttp.getJSON(`https://api.coingecko.com/api/v3/coins/${encodeURIComponent(idCg)}/ohlc?vs_currency=usd&days=${days}`, { ttl: 300000 });
       if(!Array.isArray(d) || !d.length) throw new Error('sem dados');
       candleData = d.slice(-100).map(k => ({ t:k[0], o:+k[1], h:+k[2], l:+k[3], c:+k[4] }));
     }

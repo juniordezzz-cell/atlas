@@ -1,12 +1,12 @@
 /* ATLAS · Lucro Cripto (Ferramentas/lucro-cripto/)
    Contas em ../_comum/calculos.js: lucroOperacao, precoEmpate,
-   impostoCripto. Rede só pelo AtlasHttp: busca e preço na CoinGecko e o
-   dólar em reais pela cotação do USDT. Aceita ?compra=&venda=&qtd=&token=
+   impostoCripto. Rede em ../_comum/cotacao.js (19/11/2026): dólar na
+   Coinbase e preço do token na Coinbase/DefiLlama/CoinPaprika, com a
+   CoinGecko só de segunda opção. Aceita ?compra=&venda=&qtd=&token=
    vindo da Escada. Registro: docs/ferramentas-bancada-2026-11-08.md */
 (function () {
   'use strict';
   var C = window.AtlasCalculos;
-  var API = 'https://api.coingecko.com/api/v3';
   var $ = function (id) { return document.getElementById(id); };
   var token = null;
 
@@ -22,18 +22,23 @@
     token = t;
     $('lc-ficha').hidden = false;
     var img = $('lc-ficha-img'), src = linkSeguro(t.img);
+    img.onerror = function () { img.hidden = true; };
     img.hidden = !src; if (src) img.src = src;
-    $('lc-ficha-nome').textContent = t.nome + ' (' + t.sym + ')';
+    $('lc-ficha-nome').textContent = t.sym ? t.nome + ' (' + t.sym + ')' : t.nome;
     $('lc-ficha-preco').textContent = t.preco != null ? usd(t.preco) + ' hoje' : 'buscando preço…';
   }
-  function carregarToken(id) {
+  function carregarToken(t) {
     status('');
-    return AtlasBuscaToken.mercado(id).then(mostrarFicha)
-      .catch(function (e) { status('Não foi possível buscar o preço agora. Digite os preços manualmente.'); });
+    return AtlasBuscaToken.mercado(t).then(mostrarFicha)
+      .catch(function () {
+        /* nenhuma fonte respondeu: a ficha para de dizer "buscando" */
+        if (token && token.id === (t.id || t)) { token.preco = null; $('lc-ficha-preco').textContent = 'preço indisponível agora'; }
+        status('Não foi possível buscar o preço agora. Digite os preços manualmente.');
+      });
   }
   AtlasBuscaToken.ligar({
     input: $('lc-busca'), lista: $('lc-sugestoes'), aoErro: status,
-    aoEscolher: function (t) { t.preco = null; mostrarFicha(t); carregarToken(t.id); }
+    aoEscolher: function (t) { t.preco = null; mostrarFicha(t); carregarToken(t); }
   });
   $('lc-usar-preco').addEventListener('click', function () { if (token && token.preco != null) { campo('lc-venda', token.preco); calcular(); } });
 
@@ -79,14 +84,20 @@
     $('lc-ficha').hidden = true; token = null; calcular();
   });
 
-  /* ---------- dólar em reais (cotação do USDT) ---------- */
-  AtlasHttp.getJSON(API + '/simple/price?ids=tether&vs_currencies=brl,usd', { ttl: 600000 }).then(function (d) {
-    var t = d && d.tether; if (!t || !(t.brl > 0) || !(t.usd > 0)) return;
-    if ($('lc-dolar').dataset.mexido) return;
-    campo('lc-dolar', +(t.brl / t.usd).toFixed(4));
+  /* ---------- dólar em reais: Coinbase, depois CoinGecko ----------
+     Se nenhuma responder, o campo fica com o valor de referência e a nota
+     avisa — antes o R$ 5,50 entrava calado na conta do imposto. */
+  function notaDolar(t) { $('lc-dolar-nota').textContent = t; }
+  notaDolar('Buscando a cotação…');
+  AtlasCotacao.dolarEmReais().then(function (r) {
+    if ($('lc-dolar').dataset.mexido) { notaDolar(''); return; }
+    campo('lc-dolar', +r.valor.toFixed(4));
+    notaDolar('Cotação de agora (' + r.fonte + ').');
     if (!$('lc-resultado').hidden) calcular();
-  }).catch(function () {});
-  $('lc-dolar').addEventListener('input', function () { this.dataset.mexido = '1'; });
+  }).catch(function () {
+    if (!$('lc-dolar').dataset.mexido) notaDolar('Cotação indisponível agora: valor de referência. Confira e ajuste.');
+  });
+  $('lc-dolar').addEventListener('input', function () { this.dataset.mexido = '1'; notaDolar(''); });
 
   /* ---------- vindo da Escada: ?compra=&venda=&qtd=&token= ---------- */
   var q = new URLSearchParams(location.search);

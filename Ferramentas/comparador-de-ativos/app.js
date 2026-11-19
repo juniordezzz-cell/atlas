@@ -3,8 +3,11 @@
    Busca-uma-vez (maior período) + cache + fila por provedor +
    re-tentativa + falha visível. Trocar período/moeda não refaz
    requisição. Rede só pelo AtlasHttp, sem chave de API no navegador.
-   Cripto: Binance + CoinGecko | Ouro (PAXG) e ações (xStocks): tokens
-   na CoinGecko | CDI e IPCA: Banco Central.
+   Fontes em ../_comum/cotacao.js (19/11/2026), CoinGecko só de segunda
+   opção: dólar Coinbase → CoinGecko | BTC/ETH do topo Binance → CoinGecko
+   | busca CoinPaprika → CoinGecko | histórico de cripto Binance →
+   DefiLlama → CoinGecko | ações (xStocks) DefiLlama → CoinGecko |
+   CDI e IPCA: Banco Central.
    Registro: docs/ferramentas-bancada-2026-11-08.md
    ════════════════════════════════════════════════════════════ */
 
@@ -54,7 +57,8 @@ const STATE = {
 };
 const SYM = {brl:"R$", usd:"US$"};
 const LOC = {brl:"pt-BR", usd:"en-US"};
-let fxRate = 5.4;                       // USD->BRL (atualizado em loadFx)
+let fxRate = 5.4;                       // USD->BRL de referência (atualizado em loadFx)
+let fxFonte = "";                       // "" = ainda é o valor de referência
 const RAW = {};                         // key -> {status, series, err, promise}  (série canônica em US$ / índice)
 const chartInst = {s1:null,s2:null,s3:null};
 /* Rede só pelo AtlasHttp (timeout, re-tentativa, cache). Séries longas
@@ -76,8 +80,9 @@ function toCur(v,a){ if(a.type==="bacen") return v; return STATE.currency==="brl
 
 /* ════════════════ CÂMBIO ════════════════ */
 async function loadFx(){
-  // dólar em reais pela cotação do USDT (mesmo critério do Conversor)
-  try{ const d=await getJ("https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=brl,usd", 600000); const t=d&&d.tether; if(t&&t.brl>0&&t.usd>0) fxRate=t.brl/t.usd; }catch(e){}
+  // Coinbase, depois CoinGecko. Sem as duas, fica o valor de referência e a
+  // faixa do topo diz isso (antes o R$ 5,40 entrava calado nas contas em R$).
+  try{ const r=await AtlasCotacao.dolarEmReais(); fxRate=r.valor; fxFonte=r.fonte; }catch(e){}
 }
 
 /* ════════════════ LIMITE POR PROVEDOR (token bucket) ════════════════
@@ -107,10 +112,13 @@ async function binanceKlines(sym, interval, limit){
   const d=await getJ(u); if(!Array.isArray(d)||!d.length) throw new Error("bnb-vazio");
   return d.map(k=>({t:k[0], v:parseFloat(k[4])})).filter(p=>isFinite(p.v));
 }
+/* Sem Binance: 1 ano diário pela DefiLlama e, se ela falhar, pela CoinGecko.
+   Token achado na CoinPaprika precisa do id da CoinGecko (as duas usam ele). */
 async function cgFallback(a){
-  const u=`https://api.coingecko.com/api/v3/coins/${a.cg}/market_chart?vs_currency=usd&days=365`;
-  const d=await getJ(u); if(!d||!d.prices||!d.prices.length) throw new Error("cg-vazio");
-  return d.prices.map(p=>({t:p[0], v:p[1]}));
+  const id = a.cg || await AtlasCotacao.idCoingecko({ id:a.cp, fonte:"coinpaprika", sym:a.sym, nome:a.name });
+  if(!id) throw new Error("sem-id");
+  if(!a.cg) a.cg=id;
+  return (await AtlasCotacao.serieAnual(id)).valor;
 }
 async function rawCrypto(a){
   const sym=(a.bn||a.sym||"").toUpperCase();
@@ -380,10 +388,11 @@ async function doSearch(q){
   const dd=document.getElementById("search-dd"), ql=q.toLowerCase();
   const trad=Object.keys(ASSETS).filter(k=>ASSETS[k].type!=="crypto" && (ASSETS[k].name.toLowerCase().includes(ql)||ASSETS[k].sym.toLowerCase().includes(ql)));
   let coins=[];
-  try{ const d=await getJ("https://api.coingecko.com/api/v3/search?query="+encodeURIComponent(q), 300000); coins=(d.coins||[]).slice(0,8); }catch(e){}
+  try{ coins=(await AtlasCotacao.buscar(q)).valor||[]; }catch(e){}       // CoinPaprika → CoinGecko
+  if(document.getElementById("search-input").value.trim()!==q) return;      // resposta velha
   let html="";
   if(trad.length){ html+=`<div class="sd-group">Mercado tradicional</div>`+trad.map(k=>{const a=ASSETS[k];return sdItem(k,a.name,a.sym,a.color,null,"trad");}).join(""); }
-  if(coins.length){ html+=`<div class="sd-group">Criptomoedas</div>`+coins.map(c=>sdItem("cg:"+c.id,c.name,(c.symbol||"").toUpperCase(),"#F5A623",c.thumb,"cripto")).join(""); }
+  if(coins.length){ html+=`<div class="sd-group">Criptomoedas</div>`+coins.map(c=>sdItem((c.fonte==="coinpaprika"?"cp:":"cg:")+c.id,c.nome,c.sym,"#F5A623",c.img,"cripto")).join(""); }
   dd.innerHTML = html || `<div class="sd-empty">Nada encontrado para "${escH(q)}".</div>`;
 }
 const escH = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -398,6 +407,12 @@ function sdItem(key,name,sym,color,img,tag){
 function caPick(key,name,sym){
   document.getElementById("search-dd").classList.remove("open");
   document.getElementById("search-input").value="";
+  if(key.indexOf("cp:")===0){
+    /* da CoinPaprika: se for moeda conhecida, usa o ativo que já existe */
+    const cp=key.slice(3), cg=window.AtlasCalculos.PAPRIKA_PARA_COINGECKO[cp];
+    if(cg) key="cg:"+cg;
+    else { if(!ASSETS[key]) ASSETS[key]={name,sym,type:"crypto",cp:cp,color:pickColor()}; }
+  }
   if(key.indexOf("cg:")===0){ const id=key.slice(3); if(!ASSETS[id]) ASSETS[id]={name,sym,type:"crypto",cg:id,color:pickColor()}; key=id; }
   setPrimary(key);
 }
@@ -434,15 +449,26 @@ function renderTdNotice(){
 
 /* ════════════════ TICKER ════════════════ */
 async function loadTicker(){
-  try{ const d=await getJ("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true", 60000); setTick("btc",d.bitcoin); setTick("eth",d.ethereum); }
-  catch(e){
-    /* sem cotação: "indisponível" no lugar de um "carregando…" que nunca acaba (18/11/2026) */
-    ["btc","eth"].forEach(id=>{ const el=document.getElementById("tk-"+id); if(el && /carregando/i.test(el.textContent)) el.textContent="indisponível"; });
-  }
-  document.getElementById("tk-usd").textContent="R$ "+fxRate.toFixed(2).replace(".",",");
+  /* Binance, depois CoinGecko; cada moeda por conta própria, para uma
+     falha não apagar a outra. Sem cotação: "indisponível" no lugar de um
+     "carregando…" que nunca acaba. */
+  await Promise.all([["btc","BTC","bitcoin"],["eth","ETH","ethereum"]].map(([id,sym,cg])=>
+    AtlasCotacao.ticker24h(sym,cg).then(r=>setTick(id,r.valor)).catch(()=>{
+      const el=document.getElementById("tk-"+id); if(el && /carregando/i.test(el.textContent)) el.textContent="indisponível";
+    })));
+  if(!fxFonte) await loadFx();                  // tenta de novo a cada minuto enquanto estiver na referência
+  const usdEl=document.getElementById("tk-usd");
+  usdEl.textContent="R$ "+fxRate.toFixed(2).replace(".",",")+(fxFonte?"":" · referência");
+  usdEl.title=fxFonte?"Cotação de agora ("+fxFonte+")":"Cotação indisponível agora: valor de referência nas contas em reais.";
   document.getElementById("tk-time").textContent=new Date().toLocaleTimeString("pt-BR");
 }
-function setTick(id,o){ if(!o)return; document.getElementById("tk-"+id).textContent="US$ "+o.usd.toLocaleString("en-US"); const c=o.usd_24h_change||0, el=document.getElementById("tk-"+id+"-c"); el.textContent=(c>=0?"▲ +":"▼ ")+c.toFixed(2)+"%"; el.className="ticker-chg "+(c>=0?"up":"down"); }
+function setTick(id,o){
+  if(!o)return;
+  document.getElementById("tk-"+id).textContent="US$ "+o.usd.toLocaleString("en-US",{maximumFractionDigits:2});
+  const el=document.getElementById("tk-"+id+"-c");
+  if(o.var24h==null){ el.textContent=""; el.className="ticker-chg"; return; }
+  const c=o.var24h; el.textContent=(c>=0?"▲ +":"▼ ")+c.toFixed(2)+"%"; el.className="ticker-chg "+(c>=0?"up":"down");
+}
 
 
 

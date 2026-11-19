@@ -1,19 +1,20 @@
 /* ATLAS · Ferramentas/_comum/busca-token.js
-   Busca de token da CoinGecko com sugestões, teclado e escape, igual em
-   todas as calculadoras da bancada. Rede só pelo AtlasHttp.
+   Busca de token com sugestões, teclado e escape, igual em todas as
+   calculadoras da bancada. Fontes em _comum/cotacao.js (19/11/2026):
+   busca na CoinPaprika e, se falhar, na CoinGecko; preço na Coinbase,
+   DefiLlama/CoinPaprika e, por último, CoinGecko.
 
    AtlasBuscaToken.ligar({ input, lista, aoEscolher, aoErro })
      input      <input type="search"> com role="combobox"
      lista      <ul role="listbox" hidden> logo abaixo do input
-     aoEscolher function({ id, sym, nome, img })
+     aoEscolher function({ id, sym, nome, img, fonte })
      aoErro     function(mensagem)   (opcional)
-   AtlasBuscaToken.mercado(id) -> Promise<{ id, sym, nome, img, preco }>
-     preço em US$ de /coins/markets (1 min de cache).
+   AtlasBuscaToken.mercado(token) -> Promise<{ id, sym, nome, img, fonte, preco, fontePreco }>
+     token é o objeto de aoEscolher ou só o id da CoinGecko (texto).
 
    Estilo: .busca-token__lista em ../_comum/ferramenta.css. */
 (function () {
   'use strict';
-  var API = 'https://api.coingecko.com/api/v3';
   function seguro(u) { return /^https:\/\//.test(u || '') ? u : ''; }
 
   function ligar(o) {
@@ -25,11 +26,11 @@
       itens.forEach(function (c, i) {
         var li = document.createElement('li');
         li.setAttribute('role', 'option'); li.setAttribute('aria-selected', String(i === foco));
-        var src = seguro(c.thumb);
-        if (src) { var im = document.createElement('img'); im.src = src; im.alt = ''; li.appendChild(im); }
-        var b = document.createElement('b'); b.textContent = String(c.symbol || '').toUpperCase(); li.appendChild(b);
-        var n = document.createElement('span'); n.textContent = c.name; li.appendChild(n);
-        if (c.market_cap_rank) { var r = document.createElement('span'); r.className = 'rank'; r.textContent = '#' + c.market_cap_rank; li.appendChild(r); }
+        var src = seguro(c.img);
+        if (src) { var im = document.createElement('img'); im.src = src; im.alt = ''; im.onerror = function () { this.hidden = true; }; li.appendChild(im); }
+        var b = document.createElement('b'); b.textContent = c.sym; li.appendChild(b);
+        var n = document.createElement('span'); n.textContent = c.nome; li.appendChild(n);
+        if (c.rank) { var r = document.createElement('span'); r.className = 'rank'; r.textContent = '#' + c.rank; li.appendChild(r); }
         li.addEventListener('mousedown', function (ev) { ev.preventDefault(); escolher(i); });
         ul.appendChild(li);
       });
@@ -37,15 +38,16 @@
     }
     function escolher(i) {
       var c = itens[i]; if (!c) return;
-      inp.value = String(c.symbol || '').toUpperCase(); fechar();
-      o.aoEscolher({ id: c.id, sym: String(c.symbol || '').toUpperCase(), nome: c.name, img: seguro(c.large || c.thumb) });
+      inp.value = c.sym; fechar();
+      o.aoEscolher({ id: c.id, sym: c.sym, nome: c.nome, img: seguro(c.img), fonte: c.fonte });
     }
     inp.addEventListener('input', function () {
       var q = inp.value.trim(); clearTimeout(espera);
       if (q.length < 2) { itens = []; desenhar(); return; }
       espera = setTimeout(function () {
-        AtlasHttp.getJSON(API + '/search?query=' + encodeURIComponent(q), { ttl: 300000 }).then(function (d) {
-          itens = ((d && d.coins) || []).slice(0, 8); foco = -1; desenhar();
+        AtlasCotacao.buscar(q).then(function (r) {
+          if (inp.value.trim() !== q) return;          /* resposta velha: a pessoa já digitou outra coisa */
+          itens = r.valor || []; foco = -1; desenhar();
         }).catch(function (e) { erro('Busca de tokens indisponível no momento. Tente de novo em instantes.'); });
       }, 350);
     });
@@ -59,10 +61,11 @@
     inp.addEventListener('blur', function () { setTimeout(fechar, 150); });
   }
 
-  function mercado(id) {
-    return AtlasHttp.getJSON(API + '/coins/markets?vs_currency=usd&ids=' + encodeURIComponent(id), { ttl: 60000 }).then(function (d) {
-      var c = d && d[0]; if (!c) throw new Error('token não encontrado');
-      return { id: c.id, sym: String(c.symbol || '').toUpperCase(), nome: c.name, img: seguro(c.image), preco: c.current_price };
+  function mercado(token) {
+    var t = typeof token === 'string' ? { id: token, fonte: 'coingecko' } : (token || {});
+    return AtlasCotacao.preco(t).then(function (r) {
+      return { id: t.id, sym: t.sym || '', nome: t.nome || t.id, img: seguro(t.img), fonte: t.fonte || 'coingecko',
+        preco: r.valor, fontePreco: r.fonte };
     });
   }
 

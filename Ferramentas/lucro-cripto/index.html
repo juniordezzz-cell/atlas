@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
 <link rel="stylesheet" href="../../themes/atlas-fonts.css">
 <link rel="stylesheet" href="../../core/ui/atlas-shell.css">
-<link rel="stylesheet" href="../_comum/ferramenta.css?v=2">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=3">
 <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
 <script src="../../core/atlas-auth.js"></script>
 <script src="../../core/atlas-secure.js"></script>
@@ -54,7 +54,7 @@
       <div class="campo"><label for="lc-taxa">Taxa da exchange (% por operação)</label><input id="lc-taxa" inputmode="decimal" value="0,1"></div>
       <div class="campo"><label for="lc-compra">Preço de compra (US$)</label><input id="lc-compra" inputmode="decimal" placeholder="Preço pago"></div>
       <div class="campo"><label for="lc-venda">Preço de venda (US$)</label><input id="lc-venda" inputmode="decimal" placeholder="Preço de saída"></div>
-      <div class="campo"><label for="lc-dolar">Dólar em reais (R$)</label><input id="lc-dolar" inputmode="decimal" value="5,50"></div>
+      <div class="campo"><label for="lc-dolar">Dólar em reais (R$)</label><input id="lc-dolar" inputmode="decimal" value="5,50"><small class="campo__nota" id="lc-dolar-nota" aria-live="polite"></small></div>
       <div class="campo"><label for="lc-custodia">Onde a cripto está</label>
         <select id="lc-custodia"><option value="br">Exchange brasileira ou carteira própria</option><option value="ext">Exchange estrangeira</option></select></div>
       <div class="campo"><label for="lc-outras">Outras vendas de cripto no mesmo mês (R$)</label><input id="lc-outras" inputmode="decimal" value="0"></div>
@@ -100,9 +100,10 @@
 </div>
 
 <script src="../../core/http.js"></script>
-<script src="../_comum/calculos.js?v=1"></script>
-<script src="../_comum/busca-token.js?v=1"></script>
-<script src="app.js?v=2"></script>
+<script src="../_comum/calculos.js?v=3"></script>
+<script src="../_comum/cotacao.js?v=1"></script>
+<script src="../_comum/busca-token.js?v=2"></script>
+<script src="app.js?v=3"></script>
 <script src="../../core/ui/atlas-shell.js"></script>
 </body>
 </html>

@@ -33,14 +33,17 @@ mercado). Saiu o card "Próxima ferramenta".
 - `calculos.js` — contas puras (`window.AtlasCalculos` / `require`). Era o
   `ferramentas-core.js` do site, com três funções novas: `lerNumero` (número no
   formato brasileiro), `impostoCripto` e `precoEmpate`.
-  Testes: `node --test Ferramentas/_comum/calculos.test.cjs` (179), também no
+  Testes: `node --test Ferramentas/_comum/calculos.test.cjs` (250 em 19/11), também no
   workflow `.github/workflows/ferramentas-calculos.yml`.
 - `ferramenta.css` — visual comum (paleta da Calculadora de Market Cap,
   cabeçalho com "← Ferramentas", campos, `.toggle`, `.resultados`, `.tabela`,
   `.grafico`, `.explica`, busca de token).
-- `busca-token.js` — busca da CoinGecko com sugestões e teclado
+- `busca-token.js` — busca de token com sugestões e teclado
   (`AtlasBuscaToken.ligar`, `AtlasBuscaToken.mercado`), usada pelo Lucro e pelo
-  Staking.
+  Staking. Desde 19/11 busca e preço passam por `cotacao.js`.
+- `cotacao.js` (19/11/2026) — cotação em várias fontes (`window.AtlasCotacao`):
+  `dolarEmReais`, `buscar`, `preco`, `idCoingecko`, `ticker24h`, `serieAnual`.
+  Ver "Cotação: fonte principal e reserva" abaixo.
 
 Toda página tem o login do ATLAS (`atlas-auth.js` + `atlas-secure.js`), o
 cenário de fundo e `atlas-shell.js` no fim. Rede só por `AtlasHttp`
@@ -84,11 +87,58 @@ o Chart.js de CDN (agora `assets/vendor/chart-4.4.1.min.js`).
   estatísticas e gráfico continuam da CoinGecko e, se ela falhar, a tela mostra
   "—" e "Gráfico indisponível agora." sem derrubar a cotação. A leitura da
   resposta fica em `_comum/calculos.js` (`precosDeCoinbase`,
-  `valoresEmDolarDeCoinbase`), com testes. **Pendente:** Lucro, Staking e
-  Comparador ainda usam só a CoinGecko e devem passar pela mesma revisão.
+  `valoresEmDolarDeCoinbase`), com testes. Lucro, Staking, Comparador e
+  Simulador de Trade passaram pela mesma revisão em 19/11 (seção abaixo).
 - **Staking:** saiu a leitura de print por OCR (Tesseract vinha de CDN).
 - **Simulador:** velas pela `data-api.binance.vision`, depois `api.binance.com`,
   depois CoinGecko.
+
+## Cotação: fonte principal e reserva (19/11/2026)
+
+Pedido do dono: tirar a CoinGecko da frente em toda a bancada; ela fica só
+como segunda opção. Todas as fontes são públicas e sem chave.
+
+| O quê | Principal | Segunda opção (CoinGecko) |
+|---|---|---|
+| Dólar em reais (Lucro, Staking, Comparador) | Coinbase `exchange-rates?currency=USD` | `simple/price?ids=tether` |
+| Preço do token (Lucro, Staking, Simulador de Trade) | Coinbase (só `COINBASE_SIMBOLOS`); depois DefiLlama `prices/current/coingecko:<id>` ou, se o token veio da busca da CoinPaprika, `tickers/<id>` dela | `simple/price` |
+| Busca de token (Lucro, Staking, Comparador, Simulador) | CoinPaprika `search` | `search` |
+| BTC e ETH no topo do Comparador | Binance `data-api.binance.vision/api/v3/ticker/24hr` | `simple/price` com 24h |
+| Histórico sem par na Binance (Comparador: xStocks e tokens buscados) | DefiLlama `chart/coingecko:<id>` (1 ano, diário, mínimo de 30 pontos) | `market_chart?days=365` |
+| Velas do Simulador de Trade | Binance (duas portas), como antes | `ohlc` |
+
+- **Onde mora:** a rede em `_comum/cotacao.js`; a leitura de cada resposta e a
+  sequência de fontes (`tentarEmOrdem`) em `_comum/calculos.js`, com testes
+  feitos sobre respostas simuladas no formato de cada API.
+- **Lista conferida da Coinbase:** `COINBASE_SIMBOLOS` (id da CoinGecko → ticker)
+  saiu do Conversor e foi para `calculos.js`; o Conversor lê de lá.
+  `PAPRIKA_PARA_COINGECKO` liga os ids da CoinPaprika às mesmas moedas. Um id
+  errado nessa lista só faz o token pular a Coinbase, nunca dá preço errado.
+- **Token achado na CoinPaprika:** o preço vem da Coinbase (se conferido) ou
+  da própria CoinPaprika. Para a CoinGecko (preço, velas, histórico), o id é
+  achado na busca dela com o **mesmo símbolo e o mesmo nome**; sem par exato,
+  fica sem preço em vez de pegar o preço de outra moeda com o mesmo ticker.
+- **Falha parcial:** cada dado tem sua sequência. Se nenhuma fonte responder:
+  - Lucro: o dólar fica em R$ 5,50 com a nota "Cotação indisponível agora:
+    valor de referência. Confira e ajuste."; a ficha do token diz "preço
+    indisponível agora" (antes ficava em "buscando preço…" para sempre).
+  - Staking: "dólar indisponível agora" (antes "buscando o dólar…" eterno) e
+    R$ em "—"; o resto da conta segue.
+  - Comparador: o topo mostra "R$ 5,40 · referência" (antes o 5,40 entrava
+    calado nas contas em R$) e tenta de novo a cada minuto; BTC/ETH
+    "indisponível"; ativo sem dado fica "indisponível" com o toque para tentar.
+  - Simulador: "Preço ao vivo indisponível agora. Digite o preço manualmente."
+- **Fonte na tela:** Lucro, Staking e Simulador dizem de onde veio o número
+  ("Cotação de agora (Coinbase).", "Preço atualizado pela CoinPaprika.").
+- **Verificação (19/11):** a nuvem não alcança nenhuma dessas APIs. Testes de
+  leitura no Node e as cinco páginas abertas no Chromium com respostas
+  simuladas em três cenários: só as principais respondem, só a CoinGecko
+  responde e nenhuma responde. Nenhum "carregando" ficou parado e nenhum erro
+  apareceu na tela.
+- **Falta conferir no navegador real:** o formato verdadeiro das respostas da
+  CoinPaprika, DefiLlama (sobretudo se ela tem histórico dos xStocks) e o
+  `ticker/24hr` da Binance; e se a CoinPaprika e a DefiLlama aceitam pedidos
+  vindos do site (CORS).
 
 ## Dados guardados no navegador
 

@@ -47,6 +47,8 @@ a{color:var(--accent)}
 .campo__junto{display:flex;gap:6px}
 .campo__junto input{flex:1 1 auto;min-width:0}
 .campo__junto select{flex:0 0 auto;width:auto}
+.campo__nota{display:block;color:var(--mut2);font-size:11.5px;margin-top:4px;min-height:0}
+.campo__nota:empty{display:none}
 .dica{color:var(--mut2);font-size:12px;margin:6px 0 0}
 
 /* botões */
