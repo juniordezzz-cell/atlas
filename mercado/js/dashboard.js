@@ -629,7 +629,7 @@
           { rot: "Rendimento", num: true, val: function (p) { return p.apr; }, fmt: apy },
           { rot: "TVL", num: true, val: function (p) { return p.tvl; }, fmt: big },
           { rot: "Volume 24h", num: true, val: function (p) { return p.vol24h; }, fmt: big }
-        ], pools, { ordem: 2, aoClicar: function (p) { location.href = "../ferramentas/simulador-de-pool/?pool=" + encodeURIComponent(p.sid); } });
+        ], pools, { ordem: 2, aoClicar: function (p) { location.href = "../Ferramentas/simulador-de-pool/?pool=" + encodeURIComponent(p.sid); } });
         else pTab.indisponivel(carregar, "As pools do Scanner não responderam agora.");
       });
     }

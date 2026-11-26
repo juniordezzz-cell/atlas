@@ -30,6 +30,7 @@
     coingecko:     { nome: 'CoinGecko',      intervalo: 6000 },
     geckoterminal: { nome: 'GeckoTerminal',  intervalo: 2500 },
     erapi:         { nome: 'open.er-api',    intervalo: 1000 },
+    coinbase:      { nome: 'Coinbase',       intervalo: 300 },
     bcb:           { nome: 'Banco Central',  intervalo: 200 },
     alternative:   { nome: 'alternative.me', intervalo: 1000 }
   };
@@ -420,6 +421,15 @@
           return pedir('erapi', 'https://open.er-api.com/v6/latest/USD', { ttl: 3600000 }).then(function (d) {
             var t = d && d.rates; if (!t || !(t.BRL > 0)) return null;
             return { por: { usd: 1, brl: t.BRL, eur: t.EUR, gbp: t.GBP }, fonte: 'open.er-api' };
+          });
+        },
+        /* Coinbase (trazida da main em 26/11/2026, onde era a principal do
+           Conversor desde 18/11): sem chave, CORS aberto, valores em texto. */
+        function () {
+          return pedir('coinbase', 'https://api.coinbase.com/v2/exchange-rates?currency=USD', { ttl: 600000 }).then(function (d) {
+            var t = d && d.data && d.data.rates; var brl = t && num(t.BRL);
+            if (!(brl > 0)) return null;
+            return { por: { usd: 1, brl: brl, eur: num(t.EUR) || null, gbp: num(t.GBP) || null }, fonte: 'Coinbase' };
           });
         },
         function () {

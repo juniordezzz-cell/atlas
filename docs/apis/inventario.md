@@ -86,6 +86,15 @@ Resumo de quanto cada uma aparecia no código da página em 08/11, antes do rote
   cache de 5 min em memória. Entrou porque o volume de perpétuos da DefiLlama
   ficou pago.
 
+## Coinbase — `api.coinbase.com/v2/exchange-rates`
+
+- **Entrega:** câmbio a partir do dólar (`?currency=USD` → `data.rates.BRL`,
+  `EUR`, `GBP`, em texto). **Chave:** não. **CORS:** aberto.
+- **Quem usa:** o roteador `core/atlas-dados.js` (`cambio`), como segunda fonte
+  depois da open.er-api, desde a junção de 26/11/2026. Na `main`, entre 18 e
+  26/11, ela era a principal do Conversor por um `Ferramentas/_comum/cotacao.js`
+  próprio; esse arquivo saiu na junção e as ferramentas voltaram ao roteador.
+
 ## Binance — `data-api.binance.vision` (só cotações) e `api.binance.com`
 
 - **Entrega:** preço e velas (`/api/v3/klines`, 15m a 1w, até 1000 velas,

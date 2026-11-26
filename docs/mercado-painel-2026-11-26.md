@@ -65,7 +65,7 @@ e `propostas/mercado-painel-e-bolhas-2026-11-26.html` (bolhas recusadas pelo don
 - `core/providers/hyperliquid.js` — novo.
 - `mercado/js/academy-globe.js` — apagado. `sw.js` → v108.
 - `mercado/index.html` — inclui `atlas-supabase-config.js` e
-  `ferramentas/scanner-pools/servidor.js` (pools do Scanner).
+  `Ferramentas/scanner-pools/servidor.js` (pools do Scanner).
 
 ## Limitações conhecidas
 

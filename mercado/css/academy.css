@@ -501,3 +501,29 @@ a.chain-addr:hover { color: var(--azul-principal); }
   .topbar-right { width: 100%; }
   .searchbox { min-width: 0; flex: 1; }
 }
+
+/* ===== Panorama (18/11/2026): ciclo, dinheiro e RWA ===== */
+.pn-sec{display:flex;flex-direction:column;gap:10px;margin:18px 0 8px}
+.pn-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.pn-title{margin:0;font-family:var(--fonte-titulo, Inter, sans-serif);font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--texto)}
+.pn-sub{margin:0;color:var(--texto-suave);font-size:12.5px}
+.pn-fase{border:1px solid var(--card-borda-forte, #23324d);border-radius:14px;padding:14px 18px;background:rgba(0,191,255,.05);display:grid;grid-template-columns:auto 1fr;gap:2px 16px;align-items:baseline}
+.pn-fase-rot{grid-column:1/-1;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--texto-suave)}
+.pn-fase-v{font-size:22px;font-weight:700;color:var(--texto)}
+.pn-fase-n{margin:0;color:var(--texto-suave);font-size:13px}
+.pn-grade{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.pn-grade-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pn-card{border:1px solid var(--linha, #1c2a47);border-radius:12px;padding:12px 14px;background:var(--card-fundo, rgba(10,17,34,.82));display:flex;flex-direction:column;gap:4px;min-width:0}
+.pn-rot{font-size:11.5px;color:var(--texto-suave);letter-spacing:.02em}
+.pn-val{font-family:var(--mono, "JetBrains Mono", monospace);font-size:22px;font-weight:600;color:var(--texto);overflow-wrap:anywhere}
+.pn-chip{align-self:flex-start;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:rgba(148,170,215,.10);color:var(--texto-suave)}
+.pn-chip:empty{display:none}
+.pn-chip.pn-ok{background:rgba(0,226,138,.12);color:#3fe0a0}
+.pn-chip.pn-frio{background:rgba(91,140,255,.14);color:#8fb0ff}
+.pn-chip.pn-quente{background:rgba(245,185,66,.14);color:#f5c96a}
+.pn-chip.pn-alerta{background:rgba(255,92,122,.14);color:#ff8fa3}
+.pn-nota{font-size:12px;color:var(--texto-suave);line-height:1.45}
+.pn-trend{height:200px}
+.pn-duas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
+@media (max-width:1100px){ .pn-grade{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:640px){ .pn-grade,.pn-grade-2,.pn-duas{grid-template-columns:1fr} .pn-fase{grid-template-columns:1fr} }

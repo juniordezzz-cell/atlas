@@ -47,7 +47,7 @@ miolo em 3 colunas (lista | mapa de calor | lista ou "O que mudou hoje") ·
 | Ações tokenizadas | CoinGecko categoria `tokenized-stock` (já usada) |
 | RWA por protocolo | DefiLlama `/protocols` categoria RWA (já usado) |
 | Rendimentos | `yields.llama.fi/pools` (já usado); régua = BUIDL ponderado por TVL |
-| Pools do Scanner | `ferramentas/scanner-pools/servidor.js` (o mesmo que o Simulador lê) |
+| Pools do Scanner | `Ferramentas/scanner-pools/servidor.js` (o mesmo que o Simulador lê) |
 
 ## Regras
 
