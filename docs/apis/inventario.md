@@ -66,6 +66,25 @@ Resumo de quanto cada uma aparecia no código da página em 08/11, antes do rote
   série diária e APR das pools).
 - **Quem usa (servidor):** `providers/defillama.py`, `pools/fontes.py`
   (Scanner Pools).
+- **Mercado reformado (26/11/2026):** também `/overview/dexs` (volume de DEX
+  24h, ~3 MB), `/overview/fees` (taxas 24h, ~6 MB) e
+  `stablecoins.llama.fi/stablecoincharts/all` (total de stablecoins). Respostas
+  de vários MB ficam **só em memória** por 5 a 10 min (o `localStorage` não
+  comporta); a tela guarda o resumo em `atlas.mercado.v1`.
+- **Mudanças da fonte vistas em 26/11/2026:** `/overview/derivatives` e
+  `/summary/derivatives/*` passaram a responder **402 (pago)**; e o
+  `/protocols` mostra TVL **zero** para BlackRock BUIDL, Ondo, Paxos Gold,
+  Tether Gold e Circle USYC (RWA do Mercado passou para as categorias da
+  CoinGecko).
+
+## Hyperliquid — `api.hyperliquid.xyz/info` (POST)
+
+- **Entrega:** `{"type":"metaAndAssetCtxs"}` devolve cada mercado de
+  perpétuos com `dayNtlVlm` (volume em dólar 24 h); a soma é o volume da
+  corretora. **Chave:** não. **CORS:** aberto.
+- **Quem usa:** `core/providers/hyperliquid.js` (aba DeFi do Mercado), com
+  cache de 5 min em memória. Entrou porque o volume de perpétuos da DefiLlama
+  ficou pago.
 
 ## Binance — `data-api.binance.vision` (só cotações) e `api.binance.com`
 

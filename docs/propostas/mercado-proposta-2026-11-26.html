@@ -1,0 +1,236 @@
+<title>Reforma do Mercado ATLAS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: documento de uma coluna (~860px), seções abertas; wireframes desenhados com blocos, sem cartões em tudo */
+:root{
+  --bg:#05080F; --raise:#0C1322; --line:#1A2438; --fg:#E6ECF5; --mute:#8A97AD;
+  --acao:#00BFFF; --up:#2FD38A; --down:#FF6B6B; --warn:#F5B941;
+  --wf:#13203A; --wf2:#1C2C4C;
+  --f-disp:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#F6F8FC; --raise:#FFFFFF; --line:#DCE3EE; --fg:#0D1626; --mute:#56637A;
+  --acao:#0086B8; --up:#0F8A57; --down:#C93838; --warn:#9A6B00; --wf:#E4EBF5; --wf2:#CBD7E8; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#F6F8FC; --raise:#FFFFFF; --line:#DCE3EE; --fg:#0D1626; --mute:#56637A;
+  --acao:#0086B8; --up:#0F8A57; --down:#C93838; --warn:#9A6B00; --wf:#E4EBF5; --wf2:#CBD7E8; color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px}
+.wrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--f-disp);text-wrap:balance;margin:0;line-height:1.2}
+h1{font-size:clamp(28px,5vw,40px)}
+h2{font-size:24px}
+h3{font-size:17px}
+p{margin:0;max-width:68ch}
+.eyebrow{font:500 12px/1 var(--f-num);letter-spacing:.12em;text-transform:uppercase;color:var(--acao)}
+.lead{color:var(--mute);font-size:17px}
+section{display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;flex-direction:column;gap:14px;border-bottom:1px solid var(--line);padding-bottom:28px}
+.meta{font:13px var(--f-num);color:var(--mute)}
+ul.clean{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+ul.clean li{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start}
+.dot{width:10px;height:10px;border-radius:50%;margin-top:7px}
+.d-bad{background:var(--down)} .d-ok{background:var(--up)} .d-warn{background:var(--warn)} .d-acao{background:var(--acao)}
+b{font-weight:600}
+.callout{border-left:3px solid var(--acao);padding:14px 18px;background:var(--raise);border-radius:0 8px 8px 0}
+.callout.bad{border-color:var(--down)}
+.callout p+p{margin-top:8px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:14px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 12px var(--f-num);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);background:var(--raise)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{font:500 13px var(--f-body);padding:7px 14px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+.tab.on{background:var(--acao);border-color:var(--acao);color:#04121C}
+.tab s{opacity:.6}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--raise)}
+.opt .tag{font:500 11px var(--f-num);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.opt.pick{border-color:var(--acao)}
+.opt.pick .tag{color:var(--acao)}
+.small{font-size:13.5px;color:var(--mute)}
+/* wireframes */
+.model{display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--line);padding-top:24px}
+.model-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline}
+.wf{background:var(--raise);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px}
+.wf div{background:var(--wf);border-radius:6px;font:500 11px/1.3 var(--f-num);color:var(--mute);display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;min-height:28px}
+.wf .hi{background:var(--wf2);color:var(--fg)}
+.wf .tape{min-height:22px}
+.wf .ac{outline:1.5px dashed var(--acao);outline-offset:-1.5px;color:var(--acao)}
+.wfA{grid-template-columns:1fr 2.4fr 1fr}
+.wfA .full{grid-column:1/-1}
+.wfB{grid-template-columns:repeat(4,1fr)}
+.wfB .full{grid-column:1/-1}
+.wfB .half{grid-column:span 2}
+.wfC{grid-template-columns:2.6fr 1fr}
+.wfC .full{grid-column:1/-1}
+.bubbles{position:relative;min-height:220px!important;overflow:hidden}
+.bubbles span{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;font:600 10px var(--f-num);color:var(--fg)}
+.pros{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;font-size:14px}
+.pros p{max-width:none}
+.pros .lbl{font:500 11px var(--f-num);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:2px}
+ol.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
+@media (max-width:560px){
+  .wfA{grid-template-columns:1fr}.wfC{grid-template-columns:1fr}
+  .wfB{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">Proposta · aba Mercado · 26/11/2026</span>
+  <h1>Mercado: a página que você abre antes do TradingView</h1>
+  <p class="lead">Diagnóstico do que existe hoje, suas ideias organizadas e melhoradas, comparação com os sites que você usa e três caminhos de layout para escolher. Nada foi alterado no site ainda.</p>
+  <p class="meta">Visto em localhost, tela de 1440 px, com dados ao vivo</p>
+</header>
+
+<section>
+  <span class="eyebrow">1 · Como está hoje</span>
+  <h2>O que eu vi abrindo a aba</h2>
+  <ul class="clean">
+    <li><span class="dot d-ok"></span><p><b>A esteira de cotações está boa.</b> Fica como está, no topo.</p></li>
+    <li><span class="dot d-bad"></span><p><b>"Panorama global · Cripto e RWA" fica encostado à esquerda</b>, numa faixa larga e vazia, com o relógio do outro lado. A página não tem um centro, então o olho não sabe por onde começar.</p></li>
+    <li><span class="dot d-bad"></span><p><b>O globo ocupa o meio da página e mostra 7 pontos.</b> Ele não responde nenhuma pergunta que os chips logo abaixo já não respondam melhor (Ethereum $36,9 bi, Solana $4,7 bi…). É o lugar mais nobre da tela entregando o menor conteúdo.</p></li>
+    <li><span class="dot d-bad"></span><p><b>"Cryptos em alta" e "Tokens em alta" são a mesma lista</b>, duas vezes na mesma página. E ela vem com lixo: A7A5 +550% (uma stablecoin de rublo), "B", SKY. Falta um filtro mínimo de valor de mercado e volume.</p></li>
+    <li><span class="dot d-bad"></span><p><b>Abas na ordem errada para o que você quer:</b> Mercado geral, DeFi, RWA, Análises, Rendimentos, Alertas 24h. DeFi é a segunda.</p></li>
+    <li><span class="dot d-warn"></span><p><b>Tudo tem o mesmo peso.</b> São 14 painéis do mesmo tamanho e da mesma cor. Nenhum diz "isto foi o que mudou hoje".</p></li>
+  </ul>
+  <div class="callout bad">
+    <p><b>Erro encontrado de passagem: os horários dos Alertas 24h são inventados.</b> O código pega a hora atual e vai subtraindo 2 min 17 s por linha (19:43, 19:41, 19:39…). Nenhum alerta aconteceu naquela hora. Os selos também estão em inglês (HIGH, MED, LOW).</p>
+    <p class="small">Fica em <span class="num">mercado/js/dashboard.js:318</span>. Entra na reforma, mas dá para corrigir antes, sozinho, se você quiser.</p>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">2 · O que você pediu</span>
+  <h2>Suas ideias, em tópicos e um passo adiante</h2>
+  <ul class="clean">
+    <li><span class="dot d-acao"></span><p><b>Abrir com DeFi.</b> Concordo, e vou além: DeFi é onde o ATLAS já tem vantagem real (Scanner, Simulador de Pools, leitura on-chain da Aero). A aba de entrada deveria levar direto para essas ferramentas: viu uma cadeia subindo, um clique e você está nas pools dela no Scanner.</p></li>
+    <li><span class="dot d-acao"></span><p><b>Centralizar o panorama.</b> Em vez de um título solto, o topo vira uma frase do dia, centralizada, gerada a partir dos números: "DeFi estável em US$ 68,5 bi; Solana puxa entradas; medo em 32". Abaixo dela, uma faixa de 5 números. É o que você leria se tivesse só 10 segundos.</p></li>
+    <li><span class="dot d-acao"></span><p><b>Tirar o globo.</b> Trocar por algo que mostre tamanho e direção de uma vez: um mapa de calor (quadrados proporcionais ao TVL, cor pela variação) ou bolhas no estilo CryptoBubbles. Detalhes na seção 4.</p></li>
+    <li><span class="dot d-acao"></span><p><b>Reorganização completa.</b> Menos painéis, cada um respondendo uma pergunta. Proposta de abas: <b>DeFi · Cripto · RWA · Rendimentos</b>. "Análises" se espalha pelas outras; "Alertas" deixa de ser aba e vira o bloco "O que mudou hoje" no topo de cada uma, com horário real da coleta.</p></li>
+    <li><span class="dot d-acao"></span><p><b>Ser útil para você primeiro.</b> O teste é simples: numa manhã de estudo, você deixa de abrir TradingView, CryptoBubbles e CoinMarketCap. Por isso cada modelo abaixo diz qual desses sites ele substitui.</p></li>
+    <li><span class="dot d-acao"></span><p><b>Público ou só clientes, ainda aberto.</b> A estrutura funciona nos dois casos: o panorama (números, mapa, listas) pode virar vitrine aberta depois; o que cruza com sua carteira, alertas seus e o Scanner ficam atrás do login. Hoje tudo continua exigindo login, como o resto do site.</p></li>
+  </ul>
+  <div class="callout">
+    <p><b>Uma sugestão minha que você não pediu:</b> filtro de qualidade em toda lista de "em alta" (valor de mercado acima de US$ 50 mi e volume real). É o que separa um site sério de um que mostra A7A5 +550% como destaque.</p>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">3 · Concorrentes</span>
+  <h2>O que cada site faz bem e o que o ATLAS pega dele</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Site</th><th>Por que você abre</th><th>O que falta</th><th>O que o ATLAS faz</th></tr></thead>
+    <tbody>
+      <tr><td>TradingView</td><td>Gráfico excelente, mapa de calor do mercado, lista de observação</td><td>Quase nada de DeFi: não mostra TVL, pools, fluxo entre cadeias</td><td>Mapa de calor de DeFi (cadeias e protocolos) e gráfico de TVL no mesmo lugar</td></tr>
+      <tr><td>CryptoBubbles</td><td>Leitura em 2 segundos: quem subiu, quem caiu, quem é grande</td><td>Só preço. Não diz por quê, não tem DeFi, não leva a lugar nenhum</td><td>Bolhas que abrem um painel com o motivo e um botão para o Scanner ou a página do ativo</td></tr>
+      <tr><td>CoinMarketCap / CoinGecko</td><td>Lista completa, categorias, dados de cada moeda</td><td>Poluído de anúncio, sem curadoria, lixo nas listas de alta</td><td>Listas filtradas por qualidade, em português, com setores (RWA, IA, DePIN) que o ATLAS já classifica</td></tr>
+      <tr><td>DefiLlama</td><td>A fonte de verdade de TVL, cadeias, rendimentos, stablecoins</td><td>Tabelas cruas, difícil de ler, nada explicado</td><td>Os mesmos dados (já usamos a API grátis) contados como história: o que entrou, o que saiu, por quê importa</td></tr>
+      <tr><td>rwa.xyz</td><td>Panorama de ativos tokenizados</td><td>Em inglês, separado de DeFi e cripto</td><td>Aba RWA ligada à Central RWA que você já tem</td></tr>
+      <tr><td>Artemis</td><td>Fluxo de capital entre cadeias, métricas de uso</td><td>Pago para o que é bom; pensado para fundos</td><td>Fluxo de 7 dias por cadeia com dados grátis (DefiLlama), em versão simples</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">O diferencial que nenhum deles tem: <b>do mercado direto para a ação</b>. Ver uma oportunidade e, no mesmo site, simular a pool, conferir no Scanner e lançar na carteira. E tudo em português.</p>
+</section>
+
+<section>
+  <span class="eyebrow">4 · No lugar do globo</span>
+  <h2>Três formas de mostrar "onde está o dinheiro"</h2>
+  <div class="grid2">
+    <div class="opt pick"><span class="tag">Minha escolha</span><h3>Mapa de calor</h3><p class="small">Quadrados do tamanho do TVL de cada cadeia, divididos pelos protocolos dela. Verde subiu, vermelho caiu. Clique numa cadeia e o mapa abre só ela. É o que o TradingView faz com ações, aplicado a DeFi.</p></div>
+    <div class="opt"><span class="tag">Alternativa</span><h3>Bolhas</h3><p class="small">Bolhas flutuando, tamanho pelo valor, cor pela variação. Mais bonito e mais rápido de ler, mas some com a hierarquia (qual protocolo é de qual cadeia).</p></div>
+    <div class="opt"><span class="tag">Alternativa</span><h3>Rio de fluxo</h3><p class="small">Faixas mostrando o dinheiro saindo de uma cadeia e entrando em outra em 7 dias. Conta uma história, mas os dados grátis de pontes são incompletos; ficaria aproximado.</p></div>
+  </div>
+  <p class="small">Dá para ter mapa e bolhas com um botão para alternar, igual o TradingView faz. Os três usam dados que o site já busca hoje.</p>
+</section>
+
+<section>
+  <span class="eyebrow">5 · Os três modelos</span>
+  <h2>Três caminhos para a aba DeFi</h2>
+  <p>Esboços de estrutura, para escolher a direção. Depois da sua escolha eu desenho os três em alta fidelidade, com dados reais, cada um num link próprio para abrir no navegador.</p>
+  <div class="tabs" aria-label="Abas propostas">
+    <span class="tab on">DeFi</span><span class="tab">Cripto</span><span class="tab">RWA</span><span class="tab">Rendimentos</span>
+    <span class="tab"><s>Análises</s></span><span class="tab"><s>Alertas</s></span>
+  </div>
+
+  <div class="model">
+    <div class="model-head"><h3>A · Terminal</h3><span class="small">substitui: TradingView + DefiLlama</span></div>
+    <div class="wf wfA" role="img" aria-label="Esboço do modelo Terminal">
+      <div class="full tape">esteira de cotações</div>
+      <div class="full hi">frase do dia (centralizada) · TVL · 24h · volume DEX · taxas · stablecoins</div>
+      <div style="min-height:200px">cadeias<br>ranking</div>
+      <div class="hi ac" style="min-height:200px">MAPA DE CALOR<br>cadeias → protocolos<br>[mapa | bolhas]</div>
+      <div style="min-height:200px">o que mudou hoje<br>(sinais com hora real)</div>
+      <div>fluxo 7d por cadeia</div><div>gráfico TVL + dominância</div><div>stablecoins por cadeia</div>
+      <div class="full">tabela de protocolos com filtros (cadeia, categoria, tamanho)</div>
+    </div>
+    <div class="pros">
+      <p><span class="lbl">Bom para</span>Quem estuda todo dia e quer tudo numa tela, sem rolar.</p>
+      <p><span class="lbl">Cuidado</span>É o mais próximo do que existe hoje em densidade. Precisa de muita disciplina para não virar 14 painéis de novo.</p>
+    </div>
+  </div>
+
+  <div class="model">
+    <div class="model-head"><h3>B · Briefing</h3><span class="small">substitui: CoinMarketCap + a primeira olhada do dia</span></div>
+    <div class="wf wfB" role="img" aria-label="Esboço do modelo Briefing">
+      <div class="full tape">esteira de cotações</div>
+      <div class="full hi" style="min-height:56px">FRASE DO DIA, centralizada e grande</div>
+      <div>TVL DeFi</div><div>24h / 7d</div><div>volume DEX</div><div>medo e ganância</div>
+      <div class="full hi" style="min-height:64px">3 coisas que mudaram hoje (cartões com motivo + link para Scanner/ativo)</div>
+      <div class="full hi ac" style="min-height:170px">MAPA DE CALOR, largura total</div>
+      <div class="half" style="min-height:90px">maiores entradas e saídas (7d)</div><div class="half" style="min-height:90px">melhores rendimentos do Scanner</div>
+      <div class="full">tabela de protocolos</div>
+    </div>
+    <div class="pros">
+      <p><span class="lbl">Bom para</span>Abrir de manhã e entender o dia rolando de cima para baixo. Também é o melhor se um dia virar página pública.</p>
+      <p><span class="lbl">Cuidado</span>Precisa rolar para ver tudo. A frase do dia tem que ser boa todo dia, senão vira enfeite.</p>
+    </div>
+  </div>
+
+  <div class="model">
+    <div class="model-head"><h3>C · Bolhas</h3><span class="small">substitui: CryptoBubbles</span></div>
+    <div class="wf wfC" role="img" aria-label="Esboço do modelo Bolhas">
+      <div class="full tape">esteira de cotações · faixa de 5 números</div>
+      <div class="bubbles ac">
+        <span style="width:96px;height:96px;left:8%;top:14%;background:color-mix(in srgb,var(--up) 45%,transparent)">Aave</span>
+        <span style="width:70px;height:70px;left:34%;top:46%;background:color-mix(in srgb,var(--down) 45%,transparent)">Lido</span>
+        <span style="width:58px;height:58px;left:52%;top:10%;background:color-mix(in srgb,var(--up) 35%,transparent)">Aero</span>
+        <span style="width:44px;height:44px;left:70%;top:52%;background:color-mix(in srgb,var(--up) 30%,transparent)">Jup</span>
+        <span style="width:38px;height:38px;left:20%;top:66%;background:color-mix(in srgb,var(--down) 30%,transparent)">Pendle</span>
+        <span style="width:30px;height:30px;left:84%;top:16%;background:color-mix(in srgb,var(--down) 25%,transparent)">Ethena</span>
+      </div>
+      <div style="min-height:220px">painel do item clicado:<br>por que mexeu<br>TVL · taxas · pools<br>[abrir no Scanner]</div>
+      <div class="full">alternar: protocolos · cadeias · tokens DeFi &nbsp;|&nbsp; 24h · 7d · 30d</div>
+      <div class="full">o que mudou hoje · tabela</div>
+    </div>
+    <div class="pros">
+      <p><span class="lbl">Bom para</span>Impacto visual e leitura instantânea. É o mais diferente do que existe hoje.</p>
+      <p><span class="lbl">Cuidado</span>Bolhas animadas pesam no celular (o site já passou por uma limpeza de desempenho em 18/11). Mostra menos números de cara.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <p><b>Minha recomendação: B, com o mapa de calor do A no meio.</b> Abre como uma leitura do dia, centralizada e calma, que é o que faltou no panorama de hoje. O mapa entrega o que o globo prometia. E se o site abrir ao público, a página já está pronta para isso.</p>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">6 · Próximos passos</span>
+  <h2>Como seguimos</h2>
+  <ol class="steps">
+    <li>Você comenta esta proposta: o que corta, o que falta, qual modelo te puxa mais.</li>
+    <li>Se quiser, me manda os links dos sites que você abre de manhã. Eu olho cada um e trago o que vale copiar.</li>
+    <li>Eu desenho os três modelos em alta fidelidade, com dados reais, um link para cada.</li>
+    <li>Você aprova um. Eu escrevo o plano e aplico, começando pela aba DeFi.</li>
+  </ol>
+</section>
+
+</div>

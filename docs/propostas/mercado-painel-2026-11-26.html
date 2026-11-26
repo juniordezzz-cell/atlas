@@ -1,0 +1,271 @@
+<title>Mercado: Painel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: moldura de navegador; abas centralizadas; cada aba = frase + 5 números + mapa central + listas + tabela */
+:root{
+  --bg:#05080F; --raise:#0A1120; --card:#0E1628; --line:#1A2438; --fg:#E6ECF5; --mute:#8391A8;
+  --acao:#00BFFF; --tinta:#04121C; --up:#2FD38A; --down:#FF6B6B; --warn:#F5B941;
+  --f-disp:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#EEF2F8; --raise:#F6F8FC; --card:#FFFFFF; --line:#DCE3EE; --fg:#0D1626; --mute:#56637A;
+  --acao:#0086B8; --tinta:#FFFFFF; --up:#0F8A57; --down:#C93838; --warn:#9A6B00; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#EEF2F8; --raise:#F6F8FC; --card:#FFFFFF; --line:#DCE3EE; --fg:#0D1626; --mute:#56637A;
+  --acao:#0086B8; --tinta:#FFFFFF; --up:#0F8A57; --down:#C93838; --warn:#9A6B00; color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+h1,h2,h3{font-family:var(--f-disp);margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:clamp(24px,4vw,34px)}
+.eyebrow{font:500 12px/1 var(--f-num);letter-spacing:.12em;text-transform:uppercase;color:var(--acao)}
+.lead{color:var(--mute);font-size:16px;max-width:72ch;margin:0}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)} .mute{color:var(--mute)}
+
+.frame{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--raise)}
+.chrome{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--card)}
+.chrome i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.chrome span{margin-left:10px;font:12px var(--f-num);color:var(--mute)}
+.screen{padding:14px;display:flex;flex-direction:column;gap:14px}
+.tape{display:flex;gap:22px;overflow:hidden;white-space:nowrap;font:12px var(--f-num);color:var(--mute);border-bottom:1px solid var(--line);padding-bottom:10px}
+.tape b{color:var(--fg);font-weight:500}
+
+.tabs{display:flex;justify-content:center}
+.tabs div{display:inline-flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--card);flex-wrap:wrap;justify-content:center}
+.tabs button{all:unset;cursor:pointer;padding:9px 22px;border-radius:9px;font-weight:600;font-size:14px;color:var(--mute)}
+.tabs button.on{background:var(--acao);color:var(--tinta)}
+.tabs button:focus-visible,.cell:focus-visible{outline:2px solid var(--acao);outline-offset:2px}
+
+.hero{text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.hero p{margin:0;font-family:var(--f-disp);font-size:clamp(16px,2.2vw,21px);max-width:62ch}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;width:100%}
+.kpis div{background:var(--card);padding:10px 12px;display:flex;flex-direction:column;gap:2px;text-align:left}
+.kpis span{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.kpis b{font:600 17px var(--f-num)}
+.kpis small{font:12px var(--f-num)}
+
+.core{display:grid;gap:12px;grid-template-columns:1fr 2.4fr 1fr}
+.full{grid-column:1/-1}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.panel h3{font-size:13px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.panel h3 small{font:400 11px var(--f-num);color:var(--mute)}
+.row{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+.row .num{font-size:12px;white-space:nowrap}
+.sig{display:grid;grid-template-columns:42px 1fr auto;gap:8px;font-size:12px;align-items:center}
+.sig time{font:11px var(--f-num);color:var(--mute)}
+.pill{font:600 10px var(--f-num);padding:2px 7px;border-radius:999px;border:1px solid currentColor}
+.p-alta{color:var(--down)} .p-media{color:var(--warn)} .p-baixa{color:var(--mute)}
+
+.heat{display:grid;gap:3px;min-height:310px}
+.blk{display:grid;gap:3px;border-radius:6px;overflow:hidden;position:relative}
+.cell{all:unset;cursor:pointer;padding:6px 8px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;min-height:34px;border-radius:3px;overflow:hidden}
+.cell b{font:600 12px var(--f-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell span{font:500 11px var(--f-num);opacity:.92;white-space:nowrap}
+.g3{background:#147a4c}.g2{background:#1b6146}.g1{background:#1f4a3d}.r1{background:#5a2a33}.r2{background:#7a2c35}.r3{background:#9e2f3a}.n0{background:#2a3446}
+.legend{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font:11px var(--f-num);color:var(--mute)}
+
+.bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.bar{display:grid;grid-template-columns:72px 1fr 64px;gap:6px;align-items:center;font-size:11.5px}
+.bar i{display:block;height:8px;border-radius:4px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:12.5px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font:500 11px var(--f-num);color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--f-body);font-weight:600}
+tr:last-child td{border-bottom:0}
+.ruler{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px dashed var(--warn);border-radius:8px;font-size:12.5px}
+.ruler b{font-family:var(--f-num);color:var(--warn)}
+.yb{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--line)}
+.yb:last-child{border-bottom:0}
+.yb small{color:var(--mute);font-size:11px;grid-column:1}
+.yb .num{grid-row:1/3;grid-column:2;font-size:15px;font-weight:600}
+.risk{font:600 10px var(--f-num);padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px}
+.rk-b{background:color-mix(in srgb,var(--up) 22%,transparent);color:var(--up)}
+.rk-m{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
+.rk-a{background:color-mix(in srgb,var(--down) 22%,transparent);color:var(--down)}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.note{display:flex;flex-direction:column;gap:6px;border-top:2px solid var(--line);padding-top:12px}
+.note.k{border-color:var(--acao)}
+.note h3{font-size:15px}
+.note p{margin:0;color:var(--mute);font-size:13.5px}
+
+@media (max-width:900px){
+  .core{grid-template-columns:1fr}
+  .bottom{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpis div:last-child{grid-column:1/-1}
+  .tabs button{padding:8px 14px}
+}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="eyebrow">Desenho · Mercado, só o Painel</span>
+    <h1>Quatro abas centralizadas, cada uma com seu mapa</h1>
+    <p class="lead">Clique nas abas para ver cada uma. O topo é igual em todas (esteira, abas, frase do dia, cinco números) e o miolo muda. Os números são de exemplo; no site eles vêm das fontes que o ATLAS já usa.</p>
+  </header>
+
+  <div class="frame">
+    <div class="chrome"><i></i><i></i><i></i><span>atlas · mercado</span></div>
+    <div class="screen">
+      <div class="tape">
+        <span><b>BTC</b> $91.420 <span class="up">+1,2%</span></span><span><b>ETH</b> $3.118 <span class="up">+0,9%</span></span>
+        <span><b>SOL</b> $71,15 <span class="up">+1,0%</span></span><span><b>HYPE</b> $62,32 <span class="up">+1,5%</span></span>
+        <span><b>AAVE</b> $188,40 <span class="down">−2,1%</span></span><span><b>ZEC</b> $701,97 <span class="down">−6,8%</span></span>
+        <span><b>TRX</b> $0,3039 <span class="up">+0,4%</span></span>
+      </div>
+      <nav class="tabs" aria-label="Mercados"><div id="tabs"></div></nav>
+      <div class="hero"><p id="frase"></p><div class="kpis" id="kpis"></div></div>
+      <div class="core" id="core"></div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note k"><h3>Sempre abre em DeFi</h3><p>Quem entra no Mercado cai na aba DeFi. As outras ficam a um clique.</p></div>
+    <div class="note"><h3>Mesmo esqueleto em todas</h3><p>Frase do dia, cinco números, mapa no centro, listas dos lados e tabela embaixo. Quem aprende uma aba já sabe ler as outras.</p></div>
+    <div class="note"><h3>Filtro de qualidade em Tokens</h3><p>Só entra quem tem mais de US$ 50 mi de valor de mercado e volume real. Fim da A7A5 com +550%.</p></div>
+    <div class="note"><h3>Hora real</h3><p>"O que mudou hoje" mostra a hora em que o dado chegou, não um horário inventado.</p></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function h(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+  function add(p){for(var i=1;i<arguments.length;i++)if(arguments[i])p.appendChild(arguments[i]);return p;}
+  function pc(v){return (v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(1).replace('.',',')+'%';}
+  function cor(v){var a=Math.abs(v);var s=v>=0?'g':'r';return s+(a>=6?3:a>=2?2:a>=0.3?1:0).toString().replace(/^(g|r)0$/,'n0');}
+  function tone(v){var c=cor(v);return c==='g0'||c==='r0'?'n0':c;}
+  function cls(v){return v>=0?'up':'down';}
+  function panel(t,sub){var p=h('div','panel');var hh=h('h3',null,t);if(sub)hh.appendChild(h('small',null,sub));p.appendChild(hh);return p;}
+  function row(a,b,v){var r=h('div','row');r.appendChild(h('span',null,a));var s=h('span','num',b+' ');if(v!=null)s.appendChild(h('span',cls(v),pc(v)));r.appendChild(s);return r;}
+  function sigs(list){var p=panel('O que mudou hoje','hora real da coleta');list.forEach(function(s){var r=h('div','sig');add(r,h('time',null,s[0]),h('span',null,s[1]),h('span','pill p-'+s[2],s[2]==='media'?'média':s[2]));p.appendChild(r);});return p;}
+  function cell(n,txt,v,style){var c=h('button','cell '+tone(v));add(c,h('b',null,n),h('span',null,txt));if(style)c.setAttribute('style',style);return c;}
+  function heat(title,sub,blocks,cols,legend){
+    var p=panel(title,sub);var g=h('div','heat');g.style.gridTemplateColumns=cols;
+    blocks.forEach(function(b){var k=h('div','blk');if(b.area)k.style.gridArea=b.area;k.style.gridTemplateColumns=b.cols||'1fr';
+      if(b.rows)k.style.gridTemplateRows=b.rows;
+      b.items.forEach(function(it){k.appendChild(cell(it[0],it[1],it[2],it[3]));});g.appendChild(k);});
+    if(blocks.rowsTpl)g.style.gridTemplateRows=blocks.rowsTpl;
+    add(p,g,h('div','legend',legend));return p;}
+  function table(title,sub,head,rows){
+    var p=panel(title,sub);p.classList.add('full');var w=h('div','tbl');var t=h('table');var tr=h('tr');
+    head.forEach(function(x){tr.appendChild(h('th',null,x));});add(t,add(h('thead'),tr));var tb=h('tbody');
+    rows.forEach(function(r){var tr=h('tr');r.forEach(function(x,i){var td=h('td',null,typeof x==='number'?pc(x):x);if(typeof x==='number')td.className=cls(x);tr.appendChild(td);});tb.appendChild(tr);});
+    add(t,tb);add(w,t);p.appendChild(w);return p;}
+  function bars(title,sub,list){var p=panel(title,sub);var max=Math.max.apply(null,list.map(function(x){return Math.abs(x[1]);}));
+    list.forEach(function(x){var b=h('div','bar');var i=h('i');i.style.width=(Math.abs(x[1])/max*100)+'%';i.style.background=x[1]>=0?'var(--up)':'var(--down)';
+      add(b,h('span',null,x[0]),i,h('span','num '+cls(x[1]),x[2]));p.appendChild(b);});return p;}
+
+  var TABS={
+    'DeFi':{
+      frase:'DeFi parado em US$ 68,5 bi. Hyperliquid e Solana puxam o volume; Base e Bitcoin perdem dinheiro.',
+      kpis:[['TVL DeFi','$68,5 bi',0.3,'24h'],['Volume 24h','$54,4 bi',4.2,'24h'],['Taxas 24h','$61 mi',-2.0,'24h'],['Stablecoins','$286 bi',0.4,'7d'],['Medo e ganância','32',null,'medo']],
+      build:function(core){
+        var l=panel('Redes','TVL · 7d');[['Ethereum','$36,9 bi',2.2],['Solana','$4,7 bi',2.4],['Base','$4,7 bi',-6.4],['Tron','$4,4 bi',-0.8],['BSC','$4,3 bi',1.6],['Bitcoin','$2,3 bi',-22.2],['Hyperliquid','$2,2 bi',3.3]].forEach(function(r){l.appendChild(row(r[0],r[1],r[2]));});
+        var blocks=[
+          {area:'1/1/3/2',cols:'1.4fr 1fr',rows:'1.3fr 1fr 1fr',items:[['Aave','$14,1 bi',3.1,'grid-row:1/3'],['Lido','$9,8 bi',-1.2],['EigenLayer','$6,2 bi',0.8],['Uniswap','$4,4 bi',1.4],['Sky','$3,9 bi',0]]},
+          {area:'1/2/2/3',cols:'1fr',items:[['Hyperliquid','$2,2 bi · vol $9,8 bi',5.6]]},
+          {area:'1/3/2/4',cols:'1fr 1fr',rows:'1fr 1fr',items:[['Jupiter','$2,1 bi',6.8,'grid-column:1/3'],['Kamino','$1,9 bi',1.1],['Raydium','$1,3 bi',2.9]]},
+          {area:'2/2/3/3',cols:'1fr 1fr',items:[['Aero','$1,6 bi',-9.4],['Morpho','$2,6 bi',-1.8]]},
+          {area:'2/3/3/4',cols:'1fr 1fr',rows:'1fr 1fr',items:[['Venus','$1,5 bi',2.0],['Pancake','$1,4 bi',1.2],['JustLend','$3,6 bi',-0.8],['Babylon','$2,3 bi',-22.2]]}
+        ];blocks.rowsTpl='1fr 1fr';
+        var m=heat('Onde está o dinheiro','tamanho = TVL · cor = variação 7d',blocks,'2.1fr 1fr 1fr','Ethereum · Hyperliquid · Solana · Base · BSC/Tron/Bitcoin  —  clique numa rede para abrir só ela');
+        var s=sigs([['08:00','DeFi no Bitcoin perde 22% do TVL na semana','alta'],['08:00','Hyperliquid movimenta $9,8 bi em 24h, recorde do mês','media'],['08:00','Aero recua 9,4%; Base é a rede que mais perde','media'],['04:00','Medo e ganância cai para 32','media'],['04:00','Stablecoins somam +$1,1 bi em 7 dias','baixa']]);
+        add(core,l,m,s);
+        var b=add(h('div','bottom full'),
+          bars('Fluxo da semana','entrou · saiu',[['Ethereum',790,'+$790 mi'],['Hyperliquid',240,'+$240 mi'],['Solana',110,'+$110 mi'],['Base',-320,'−$320 mi'],['Bitcoin',-650,'−$650 mi']]),
+          add(panel('Maior volume 24h','DEX e perpétuos'),row('Hyperliquid','$9,8 bi',12.4),row('Uniswap','$3,1 bi',-3.0),row('Jupiter','$1,9 bi',8.2),row('Pancake','$1,7 bi',1.1),row('Aero','$0,9 bi',-6.5)),
+          add(panel('Maiores taxas 24h','quem mais fatura'),row('Hyperliquid','$4,1 mi',9.0),row('Uniswap','$2,6 mi',-2.4),row('Aave','$2,2 mi',1.3),row('Jupiter','$1,8 mi',7.7),row('Lido','$1,5 mi',-0.6)));
+        core.appendChild(b);
+        core.appendChild(table('Protocolos','ordenar por qualquer coluna · filtrar por rede e categoria',
+          ['Protocolo','Categoria','TVL','Volume 24h','Taxas 24h','TVL 7d'],
+          [['Aave','Empréstimo','$14,1 bi','—','$2,2 mi',3.1],['Lido','Staking','$9,8 bi','—','$1,5 mi',-1.2],['Uniswap','DEX','$4,4 bi','$3,1 bi','$2,6 mi',1.4],['Hyperliquid','Perpétuos','$2,2 bi','$9,8 bi','$4,1 mi',5.6],['Jupiter','DEX','$2,1 bi','$1,9 bi','$1,8 mi',6.8],['Aero','DEX','$1,6 bi','$0,9 bi','$0,8 mi',-9.4]]));
+      }
+    },
+    'Tokens':{
+      frase:'Mercado sobe pouco: BTC +1,2%. HYPE e SOL na frente; privacidade (ZEC, XMR) devolve a alta da semana.',
+      kpis:[['Valor de mercado','$3,21 tri',1.1,'24h'],['Volume 24h','$112 bi',-4.0,'24h'],['Dominância BTC','57,9%',null,''],['Subindo / caindo','63 / 37',null,'dos 100 maiores'],['Medo e ganância','32',null,'medo']],
+      build:function(core){
+        var l=panel('Maiores altas 24h','acima de $50 mi');[['HYPE','$62,32',8.4],['SEI','$0,39',7.1],['JUP','$0,82',6.3],['SOL','$171,15',4.0],['RUNE','$1,57',3.8],['AAVE','$188,40',3.2]].forEach(function(r){l.appendChild(row(r[0],r[1],r[2]));});
+        var blocks=[
+          {area:'1/1/3/2',cols:'1fr',items:[['BTC','$1,82 tri',1.2]]},
+          {area:'1/2/2/3',cols:'1fr 1fr',items:[['ETH','$376 bi',0.9],['XRP','$94 bi',-0.4]]},
+          {area:'1/3/2/4',cols:'1fr 1fr',items:[['SOL','$82 bi',4.0],['BNB','$88 bi',0.6]]},
+          {area:'2/2/3/3',cols:'1fr 1fr 1fr',items:[['HYPE','$21 bi',8.4],['TRX','$29 bi',0.4],['DOGE','$26 bi',-1.1]]},
+          {area:'2/3/3/4',cols:'1fr 1fr 1fr',items:[['ZEC','$11 bi',-6.8],['XMR','$8 bi',-12.3],['LINK','$9 bi',1.9]]}
+        ];blocks.rowsTpl='1fr 1fr';
+        var m=heat('Mapa do mercado','tamanho = valor de mercado · cor = 24h',blocks,'1.6fr 1fr 1fr','os 30 maiores tokens, sem stablecoins — clique para abrir a página do token');
+        var r=panel('Maiores quedas 24h','acima de $50 mi');[['XMR','$456,20',-12.3],['ZEC','$701,97',-6.8],['RAIN','$0,0025',-6.7],['WLD','$1,12',-4.9],['ENA','$0,41',-4.1],['DOGE','$0,17',-1.1]].forEach(function(x){r.appendChild(row(x[0],x[1],x[2]));});
+        add(core,l,m,r);
+        core.appendChild(add(h('div','bottom full'),
+          add(panel('Volume fora do normal','volume ÷ valor de mercado'),row('RUNE','2,4×',3.8),row('SEI','1,9×',7.1),row('WIF','1,7×',-2.2),row('SAND','1,5×',0.6)),
+          bars('Setores 24h','média ponderada',[['IA',3.1,'+3,1%'],['DeFi',2.4,'+2,4%'],['Camada 1',1.2,'+1,2%'],['Memes',-1.8,'−1,8%'],['Privacidade',-8.9,'−8,9%']]),
+          sigs([['08:00','XMR cai 12,3% em 24h','alta'],['08:00','HYPE renova máxima do mês','media'],['04:00','Volume de RUNE 2,4× o normal','baixa']])));
+        core.appendChild(table('Tokens','100 maiores · filtro de qualidade ligado',['Token','Setor','Preço','Valor de mercado','Volume 24h','24h'],
+          [['Bitcoin','Camada 1','$91.420','$1,82 tri','$38 bi',1.2],['Ethereum','Camada 1','$3.118','$376 bi','$19 bi',0.9],['Solana','Camada 1','$171,15','$82 bi','$5,1 bi',4.0],['Hyperliquid','DeFi','$62,32','$21 bi','$1,4 bi',8.4],['Monero','Privacidade','$456,20','$8 bi','$0,4 bi',-12.3]]));
+      }
+    },
+    'RWA':{
+      frase:'Ações tokenizadas sobem com Nasdaq: NVIDIA e Tesla na frente. Tesouro tokenizado segue crescendo.',
+      kpis:[['RWA na rede','$28,4 bi',1.9,'7d'],['Ações tokenizadas','$1,1 bi',6.2,'7d'],['Tesouro tokenizado','$8,9 bi',1.1,'7d'],['Ouro tokenizado','$2,6 bi',0.8,'7d'],['Detentores','412 mil',null,'carteiras']],
+      build:function(core){
+        var l=panel('Ações em alta','24h');[['NVDAx','$188,40',3.9],['TSLAx','$412,10',3.1],['COINx','$311,50',2.6],['QQQx','$612,80',1.4],['AAPLx','$241,30',0.9],['SPYx','$689,20',0.7]].forEach(function(r){l.appendChild(row(r[0],r[1],r[2]));});
+        var blocks=[
+          {area:'1/1/3/2',cols:'1fr 1fr',rows:'1.4fr 1fr',items:[['BUIDL (BlackRock)','$2,9 bi',1.4,'grid-column:1/3'],['USYC','$1,1 bi',0.9],['BENJI','$0,8 bi',0.3]]},
+          {area:'1/2/2/3',cols:'1fr 1fr',items:[['PAXG','$1,4 bi',0.8],['XAUT','$1,2 bi',0.7]]},
+          {area:'1/3/2/4',cols:'1fr',items:[['Crédito privado','$9,1 bi',2.2]]},
+          {area:'2/2/3/4',cols:'1fr 1fr 1fr 1fr',items:[['NVDAx','$210 mi',3.9],['TSLAx','$160 mi',3.1],['SPYx','$140 mi',0.7],['COINx','$90 mi',2.6]]}
+        ];blocks.rowsTpl='1fr 1fr';
+        var m=heat('Onde está o dinheiro tokenizado','tamanho = valor · cor = 7d',blocks,'1.8fr 1fr 1fr','Tesouro · Ouro · Crédito privado · Ações — clique para abrir na Central RWA');
+        var r=panel('Ações em queda','24h');[['MSTRx','$302,40',-4.2],['AMZNx','$221,10',-1.1],['METAx','$688,00',-0.6]].forEach(function(x){r.appendChild(row(x[0],x[1],x[2]));});
+        add(core,l,m,r);
+        core.appendChild(add(h('div','bottom full'),
+          bars('Categorias 7d','crescimento',[['Ações',6.2,'+6,2%'],['Crédito',2.2,'+2,2%'],['Tesouro',1.1,'+1,1%'],['Ouro',0.8,'+0,8%'],['Imóveis',-0.4,'−0,4%']]),
+          add(panel('Redes do RWA','valor'),row('Ethereum','$15,2 bi',1.2),row('Solana','$1,9 bi',4.8),row('Stellar','$0,6 bi',0.4),row('Arbitrum','$0,5 bi',2.1)),
+          sigs([['08:00','Ações tokenizadas +6,2% na semana','media'],['04:00','BUIDL passa de $2,9 bi','baixa']])));
+        core.appendChild(table('Ações tokenizadas','preço na rede · comparar com a bolsa',['Ação','Emissor','Preço','Na bolsa','Diferença','24h'],
+          [['NVIDIA','xStocks','$188,40','$188,10','+0,16%',3.9],['Tesla','xStocks','$412,10','$412,90','−0,19%',3.1],['S&P 500','xStocks','$689,20','$689,00','+0,03%',0.7],['Coinbase','xStocks','$311,50','$310,80','+0,23%',2.6]]));
+      }
+    },
+    'Rendimentos':{
+      frase:'Dólar rende 4,8% na Aave, perto do Tesouro americano (4,1%). Acima disso, alguém está pagando por risco.',
+      kpis:[['Tesouro americano','4,1%',null,'régua'],['Dólar na Aave','4,8%',null,'USDC'],['ETH em staking','2,9%',null,'Lido'],['SOL em staking','7,4%',null,'Jito'],['Melhor pool nota A','24%',null,'Scanner']],
+      build:function(core){
+        function yb(n,sub,v,rk){var d=h('div','yb');var t=h('span',null,n);var s={b:['baixo','rk-b'],m:['médio','rk-m'],a:['alto','rk-a']}[rk];t.appendChild(h('span','risk '+s[1],s[0]));add(d,t,h('span','num',v),h('small',null,sub));return d;}
+        var l=panel('Dólar parado','stablecoins');[['USDC · Aave','Ethereum · empréstimo','4,8%','b'],['USDC · Morpho','Base · cofre','6,1%','m'],['USDT · Aave','Ethereum · empréstimo','4,3%','b'],['sUSDe · Ethena','dólar sintético','7,0%','a'],['USDC · Kamino','Solana · empréstimo','5,6%','m']].forEach(function(x){l.appendChild(yb(x[0],x[1],x[2],x[3]));});
+        var c=panel('Rendimento × risco','cada linha começa na régua do Tesouro');
+        var ruler=h('div','ruler');add(ruler,h('span',null,'Régua: Tesouro americano tokenizado (BUIDL)'),h('b',null,'4,1%'));c.appendChild(ruler);
+        [['USDC Aave',4.8,'b'],['ETH staking',2.9,'b'],['USDC Morpho',6.1,'m'],['SOL staking',7.4,'m'],['sUSDe',7.0,'a'],['WETH/USDC Aero',24,'m'],['SOL/USDC Orca',19,'m'],['Pool degen',62,'a']].forEach(function(x){
+          var b=h('div','bar');b.style.gridTemplateColumns='110px 1fr 54px';var i=h('i');i.style.width=Math.min(100,x[1]/62*100)+'%';
+          i.style.background={b:'var(--up)',m:'var(--warn)',a:'var(--down)'}[x[2]];add(b,h('span',null,x[0]),i,h('span','num',x[1].toString().replace('.',',')+'%'));c.appendChild(b);});
+        c.appendChild(h('div','legend','verde risco baixo · amarelo médio · vermelho alto — o risco vem da nota do Scanner e do tipo de produto'));
+        var r=panel('Staking','sem risco de preço do dólar');[['ETH · Lido','líquido (stETH)','2,9%','b'],['ETH · Rocket Pool','líquido (rETH)','2,7%','b'],['SOL · Jito','líquido (JitoSOL)','7,4%','b'],['HYPE · Kinetiq','líquido (kHYPE)','2,2%','m']].forEach(function(x){r.appendChild(yb(x[0],x[1],x[2],x[3]));});
+        add(core,l,c,r);
+        core.appendChild(table('Melhores pools do Scanner','só nota A e B · clique para simular no Simulador de Pools',['Pool','Rede · DEX','Nota','Rendimento','TVL','Volume 24h'],
+          [['WETH/USDC','Base · Aero','A','24%','$48 mi','$31 mi'],['SOL/USDC','Solana · Orca','A','19%','$36 mi','$22 mi'],['cbBTC/WETH','Base · Uniswap v3','B','15%','$22 mi','$9 mi'],['HYPE/USDC','Hyperliquid · HyperSwap','B','31%','$8 mi','$6 mi']]));
+      }
+    }
+  };
+
+  var tabsEl=document.getElementById('tabs'),core=document.getElementById('core'),kp=document.getElementById('kpis'),fr=document.getElementById('frase');
+  function render(name){
+    var T=TABS[name];
+    tabsEl.querySelectorAll('button').forEach(function(b){var on=b.textContent===name;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));});
+    fr.textContent=T.frase;
+    while(kp.firstChild)kp.removeChild(kp.firstChild);
+    T.kpis.forEach(function(k){var d=h('div');add(d,h('span',null,k[0]),h('b',null,k[1]));
+      var sm=k[2]!=null?h('small',cls(k[2]),pc(k[2])+' '+k[3]):h('small','mute',k[3]);if(k[3]==='medo')sm.style.color='var(--warn)';d.appendChild(sm);kp.appendChild(d);});
+    while(core.firstChild)core.removeChild(core.firstChild);
+    T.build(core);
+  }
+  Object.keys(TABS).forEach(function(n){var b=h('button',null,n);b.addEventListener('click',function(){render(n);});tabsEl.appendChild(b);});
+  render('DeFi');
+})();
+</script>

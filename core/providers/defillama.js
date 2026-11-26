@@ -36,9 +36,171 @@
     if (!prev.tvl) return null;
     return (last.tvl - prev.tvl) / prev.tvl * 100;
   }
+  /* valor de ~7 dias antes do último ponto da série (para fluxo da semana) */
+  function valor7dAtras(arr) {
+    if (!arr || arr.length < 2) return null;
+    var alvo = arr[arr.length - 1].date - 7 * 86400;
+    for (var i = arr.length - 2; i >= 0; i--) { if (arr[i].date <= alvo) return arr[i].tvl || null; }
+    return null;
+  }
+
+  /* ---------- respostas de vários MB: só em memória (26/11/2026) ----------
+     /protocols (~10 MB), yields (~11 MB), taxas (~6 MB) e volume (~3 MB)
+     não cabem no localStorage: o AtlasHttp tentava gravar, convertia o
+     objeto inteiro em texto a cada leitura e a gravação falhava. Aqui a
+     promessa fica guardada em memória por `ttl` e quem chama guarda só o
+     resultado já resumido. */
+  var memo = {};
+  function lerGrande(chave, url, ttl, timeout) {
+    var m = memo[chave];
+    if (m && Date.now() - m.t < ttl) return m.p;
+    var p = AtlasHttp.getJSON(url, { ttl: 0, timeout: timeout || 25000, retries: 1 });
+    memo[chave] = { t: Date.now(), p: p };
+    p.catch(function () { if (memo[chave] && memo[chave].p === p) delete memo[chave]; });
+    return p;
+  }
+  function protocolosBrutos() { return lerGrande("protocols", API + "/protocols", 300000); }
+  function yieldsBrutos() { return lerGrande("yields", "https://yields.llama.fi/pools", 300000); }
+
+  /* Agrupamento por protocolo-mãe: "Aave V3" + "Aave V2" = Aave.
+     Pontes, curadores e alocadores contam o mesmo dinheiro de novo
+     (a própria DefiLlama os tira do TVL padrão); CEX e Chain não são DeFi. */
+  var FORA_DO_DEFI = /^(CEX|Chain|Bridge|Canonical Bridge|Cross Chain Bridge|Risk Curators|Onchain Capital Allocator)$/i;
+  var NOME_GRUPO = { "maker": "Sky", "aero-protocol": "Aero", "ether-fi": "ether.fi", "pancakeswap": "PancakeSwap",
+    "justlend": "JustLend", "uniswap": "Uniswap", "eigenlayer": "EigenLayer", "hyperliquid": "Hyperliquid" };
+  var CHAVE_REDE_FORA = /-|^(staking|pool2|borrowed|doublecounted|liquidstaking|vesting|offers|treasury|dcAndLsOverlap)$/i;
+  function chaveGrupo(p) {
+    if (p.parentProtocol) return String(p.parentProtocol).replace(/^parent#/, "");
+    return p.slug || String(p.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  }
+  function prefixoComum(nomes) {
+    var partes = nomes.map(function (n) { return String(n).split(/\s+/); });
+    var out = [];
+    for (var i = 0; i < partes[0].length; i++) {
+      var w = partes[0][i];
+      if (partes.every(function (p) { return p[i] === w; })) out.push(w); else break;
+    }
+    return out.join(" ");
+  }
+  function nomeDoGrupo(chave, filhos) {
+    if (NOME_GRUPO[chave]) return NOME_GRUPO[chave];
+    if (filhos.length === 1) return filhos[0].name;
+    var pre = prefixoComum(filhos.map(function (f) { return f.name; }));
+    if (pre) return pre;
+    return chave.split("-").map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" ");
+  }
+  /* variação ponderada de um grupo: soma do valor de antes / soma do de hoje */
+  function variacaoGrupo(filhos, campo) {
+    var hoje = 0, antes = 0;
+    filhos.forEach(function (f) {
+      var c = f[campo];
+      if (c == null || !isFinite(c) || !f.tvl) return;
+      hoje += f.tvl; antes += f.tvl / (1 + c / 100);
+    });
+    return antes > 0 ? (hoje - antes) / antes * 100 : null;
+  }
+  /* agrupa linhas do overview (volume/taxas) pela mesma chave do /protocols */
+  function somaPorGrupo(lista, filtro) {
+    var g = {};
+    (lista || []).forEach(function (x) {
+      if (!x || !(x.total24h > 0) || (filtro && !filtro(x))) return;
+      var k = chaveGrupo(x);
+      var e = g[k] || (g[k] = { chave: k, nome: null, v24h: 0, antes: 0, filhos: [] });
+      e.v24h += x.total24h;
+      if (x.total48hto24h > 0) e.antes += x.total48hto24h;
+      e.filhos.push({ name: x.displayName || x.name });
+    });
+    Object.keys(g).forEach(function (k) {
+      var e = g[k];
+      e.nome = nomeDoGrupo(k, e.filhos);
+      e.change1d = e.antes > 0 ? (e.v24h - e.antes) / e.antes * 100 : null;
+      // dia anterior quase zerado (protocolo novo, coleta falha) dá +19.000%: não informa nada
+      if (e.change1d != null && Math.abs(e.change1d) > 500) e.change1d = null;
+      delete e.filhos; delete e.antes;
+    });
+    return g;
+  }
 
   var DefiLlama = {
-    capabilities: ["onchainPrice", "precosAtuais", "seriesLote", "variacoes", "defiTvl", "defiChains", "defiYields", "rwaTvl", "protocolFlows", "stablecoins", "defiCategories"],
+    capabilities: ["onchainPrice", "precosAtuais", "seriesLote", "variacoes", "defiTvl", "defiChains", "defiYields", "rwaTvl", "protocolFlows", "stablecoins", "defiCategories",
+                   "defiProtocolos", "defiVolume", "defiTaxas", "stablecoinsTotal", "yieldsBrutos"],
+
+    /* ------------------------------------------------------------
+       MERCADO · ABA DEFI (26/11/2026)
+       ------------------------------------------------------------ */
+
+    /* Protocolos agrupados pela mãe, maior TVL primeiro.
+       { chave, nome, categoria, tvl, change1d, change7d, redes:{rede:tvl},
+         redePrincipal, geckoId, logo, link } */
+    defiProtocolos: function () {
+      return protocolosBrutos().then(function (arr) {
+        var grupos = {};
+        (arr || []).forEach(function (p) {
+          if (!(p.tvl > 0) || FORA_DO_DEFI.test(p.category || "")) return;
+          var k = chaveGrupo(p);
+          (grupos[k] || (grupos[k] = [])).push(p);
+        });
+        return Object.keys(grupos).map(function (k) {
+          var fs = grupos[k].slice().sort(function (a, b) { return b.tvl - a.tvl; });
+          var redes = {};
+          fs.forEach(function (f) {
+            var ct = f.chainTvls || {};
+            Object.keys(ct).forEach(function (r) {
+              if (CHAVE_REDE_FORA.test(r) || !(ct[r] > 0)) return;
+              redes[r] = (redes[r] || 0) + ct[r];
+            });
+          });
+          var principal = Object.keys(redes).sort(function (a, b) { return redes[b] - redes[a]; })[0] || fs[0].chain || null;
+          var gecko = null; fs.some(function (f) { if (f.gecko_id) { gecko = f.gecko_id; return true; } return false; });
+          var tvl = fs.reduce(function (s, f) { return s + f.tvl; }, 0);
+          return {
+            chave: k, nome: nomeDoGrupo(k, fs), categoria: fs[0].category || null, tvl: tvl,
+            change1d: variacaoGrupo(fs, "change_1d"), change7d: variacaoGrupo(fs, "change_7d"),
+            redes: redes, redePrincipal: principal, geckoId: gecko, logo: fs[0].logo || null,
+            link: "https://defillama.com/protocol/" + encodeURIComponent(k)
+          };
+        }).sort(function (a, b) { return b.tvl - a.tvl; });
+      });
+    },
+
+    /* Volume de DEX em 24h: total + por protocolo-mãe. Perpétuos ficaram
+       pagos na DefiLlama (402); o da Hyperliquid vem do provedor dela. */
+    defiVolume: function () {
+      return lerGrande("dexs", API + "/overview/dexs?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true", 300000)
+        .then(function (d) {
+          if (!d) return null;
+          return { total24h: d.total24h || null, change1d: d.change_1d != null ? d.change_1d : null,
+                   porGrupo: somaPorGrupo(d.protocols, function (x) { return /^dexs$/i.test(x.category || ""); }) };
+        });
+    },
+
+    /* Taxas pagas pelos usuários em 24h, por protocolo-mãe. O total
+       deixa de fora emissores de stablecoin (juros do Tesouro da Tether
+       e da Circle), redes e corretoras — não é atividade DeFi. */
+    defiTaxas: function () {
+      return lerGrande("fees", API + "/overview/fees?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true", 300000)
+        .then(function (d) {
+          if (!d) return null;
+          var g = somaPorGrupo(d.protocols, function (x) { return !/^(Stablecoin Issuer|Chain|CEX)$/i.test(x.category || ""); });
+          var total = Object.keys(g).reduce(function (s, k) { return s + g[k].v24h; }, 0);
+          return { total24h: total || null, porGrupo: g };
+        });
+    },
+
+    /* Total de stablecoins em dólar e variação de 7 dias. */
+    stablecoinsTotal: function () {
+      return lerGrande("stchart", "https://stablecoins.llama.fi/stablecoincharts/all", 600000).then(function (arr) {
+        if (!arr || arr.length < 8) return null;
+        function usd(x) { return x && x.totalCirculatingUSD && x.totalCirculatingUSD.peggedUSD || 0; }
+        var hoje = usd(arr[arr.length - 1]), antes = usd(arr[arr.length - 8]);
+        return { total: hoje || null, change7d: antes ? (hoje - antes) / antes * 100 : null };
+      });
+    },
+
+    /* Todas as pools de rendimento, cruas (lista grande, só em memória). */
+    yieldsBrutos: function () {
+      return yieldsBrutos().then(function (d) { return d && d.data ? d.data : []; });
+    },
 
     /* ------------------------------------------------------------
        HISTÓRICO E VARIAÇÃO EM LOTE (16/10/2026)
@@ -184,17 +346,19 @@
           return Promise.all(top.map(function (c) {
             return AtlasHttp.getJSON(API + "/v2/historicalChainTvl/" + encodeURIComponent(c.name),
               { ttl: 300000, cacheKey: "llama.chain.hist." + c.name })
-              .then(function (h) { return { name: c.name, tvl: c.tvl, change24h: change24hFromSeries(h) }; })
-              .catch(function () { return { name: c.name, tvl: c.tvl, change24h: null }; });
+              .then(function (h) {
+                var v7 = valor7dAtras(h);
+                return { name: c.name, tvl: c.tvl, change24h: change24hFromSeries(h),
+                         change7d: v7 ? (c.tvl - v7) / v7 * 100 : null, delta7d: v7 ? c.tvl - v7 : null };
+              })
+              .catch(function () { return { name: c.name, tvl: c.tvl, change24h: null, change7d: null, delta7d: null }; });
           }));
         });
     },
 
     /* Yields: APY médio (pools grandes) + melhores pools. */
     defiYields: function () {
-      return AtlasHttp.getJSON("https://yields.llama.fi/pools",
-        { ttl: 300000, cacheKey: "llama.yields" }
-      ).then(function (d) {
+      return yieldsBrutos().then(function (d) {
         var pools = d && d.data ? d.data : [];
         var big = pools.filter(function (p) { return p.tvlUsd > 1e7 && p.apy != null && p.apy < 1000; });
         var avg = big.length ? big.reduce(function (s, p) { return s + p.apy; }, 0) / big.length : null;
@@ -207,11 +371,13 @@
     /* Protocolos RWA por TVL (BlackRock BUIDL, Ondo, Tether Gold…). */
     rwaTvl: function (n) {
       n = n || 8;
-      return AtlasHttp.getJSON(API + "/protocols", { ttl: 300000, cacheKey: "llama.protocols" })
+      return protocolosBrutos()
         .then(function (arr) {
           return (arr || []).filter(function (p) { return /rwa/i.test(p.category || "") && p.tvl; })
             .sort(function (a, b) { return b.tvl - a.tvl; }).slice(0, n)
-            .map(function (p) { return { name: p.name, tvl: p.tvl, change24h: p.change_1d != null ? p.change_1d : null, logo: p.logo || null }; });
+            .map(function (p) { return { name: p.name, tvl: p.tvl, change24h: p.change_1d != null ? p.change_1d : null,
+                                         change7d: p.change_7d != null ? p.change_7d : null, logo: p.logo || null,
+                                         link: "https://defillama.com/protocol/" + encodeURIComponent(p.slug || "") }; });
         });
     },
 
@@ -219,7 +385,7 @@
        chainFilter opcional: só protocolos presentes naquela rede. */
     protocolFlows: function (n, chainFilter) {
       n = n || 8;
-      return AtlasHttp.getJSON(API + "/protocols", { ttl: 300000, cacheKey: "llama.protocols" })
+      return protocolosBrutos()
         .then(function (arr) {
           return (arr || []).filter(function (p) {
               if (!(p.tvl > 5e7 && p.change_1d != null) || /cex|chain/i.test(p.category || "")) return false;
@@ -251,7 +417,7 @@
        Staking, Dexs…). Exclui CEX e Chain, que não são DeFi — igual à
        própria DefiLlama. Devolve total + lista com share %. */
     defiCategories: function (n) {
-      return AtlasHttp.getJSON(API + "/protocols", { ttl: 300000, cacheKey: "llama.protocols" })
+      return protocolosBrutos()
         .then(function (arr) {
           var byCat = {};
           (arr || []).forEach(function (p) {

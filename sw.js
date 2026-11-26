@@ -189,7 +189,10 @@
    e do retrato embutido enxuto do DCA e das Estratégias. */
 /* v107 = junção com a main das mensagens sem termos técnicos (Comparador,
    Conversor e Trade sem "carregando" eterno; abas do Trade no celular). */
-var VERSAO = "atlas-v107";
+/* v108 = Mercado reformado: abas DeFi · Tokens · RWA · Rendimentos centralizadas,
+   mapa de calor no lugar do globo (academy-globe.js saiu), provedor da
+   Hyperliquid e pools do Scanner na aba Rendimentos. */
+var VERSAO = "atlas-v108";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

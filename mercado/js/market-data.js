@@ -38,7 +38,167 @@
   function sortByChangeDesc(a, b) { return (b.change24h == null ? -1e9 : b.change24h) - (a.change24h == null ? -1e9 : a.change24h); }
   function sortByChangeAsc(a, b)  { return (a.change24h == null ?  1e9 : a.change24h) - (b.change24h == null ?  1e9 : b.change24h); }
 
+  /* ---------- resultado resumido guardado no navegador (26/11/2026) ----------
+     As respostas brutas da DefiLlama têm vários MB e ficam só em memória
+     (core/providers/defillama.js). O que a tela usa, já resumido, fica aqui
+     por `ttl`; se a fonte falhar, devolve o último resumo bom de até 24 h e
+     anota a hora em AcademyData.idade[chave]. */
+  var LS_MERCADO = "atlas.mercado.v1";
+  var emVoo = {};
+  function lerLS() { try { return JSON.parse(localStorage.getItem(LS_MERCADO) || "{}"); } catch (e) { return {}; } }
+  function gravarLS(chave, dado) {
+    try { var all = lerLS(); all[chave] = { t: Date.now(), d: dado }; localStorage.setItem(LS_MERCADO, JSON.stringify(all)); } catch (e) {}
+  }
+  function guardado(chave, ttl, fn) {
+    var g = lerLS()[chave];
+    if (g && Date.now() - g.t < ttl) { AcademyData.idade[chave] = g.t; return Promise.resolve(g.d); }
+    if (emVoo[chave]) return emVoo[chave];
+    var p = Promise.resolve().then(fn).then(function (d) {
+      if (d == null || (Array.isArray(d) && !d.length)) throw new Error("vazio");
+      gravarLS(chave, d); AcademyData.idade[chave] = Date.now(); return d;
+    }).catch(function (e) {
+      if (g && Date.now() - g.t < 86400000) { AcademyData.idade[chave] = g.t; return g.d; }
+      throw e;
+    });
+    emVoo[chave] = p;
+    p.then(function () { delete emVoo[chave]; }, function () { delete emVoo[chave]; });
+    return p;
+  }
+  function prov(nome) { var x = P.get(nome); if (!x) throw new Error("provedor " + nome + " ausente"); return x; }
+
+  /* ---------- Rendimentos: risco ESTIMADO pelo tipo de produto ----------
+     baixo: Tesouro tokenizado, empréstimo nos protocolos grandes, staking líquido;
+     alto: dólar sintético / estratégia de base, ou o que rende mais de 2× a régua;
+     médio: o resto (cofres, curadores, empréstimo menor). A tela diz que é estimado. */
+  var RISCO_BAIXO = /^(aave-v3|aave-v2|sky-lending|spark-savings|compound-v3|lido|rocket-pool|jito-liquid-staking|binance-staked-eth|coinbase-wrapped-staked-eth|blackrock-buidl|ondo-yield-assets|circle-usyc|marinade-liquid-staking|jupiter-staked-sol|ether\.fi-stake)$/;
+  var RISCO_ALTO = /^(ethena-usde|usual-usd0|usd-ai|resolv|elixir|level|falcon-finance|f-x-protocol)/;
+  var STAKING = /^(lido|rocket-pool|jito-liquid-staking|binance-staked-eth|coinbase-wrapped-staked-eth|jupiter-staked-sol|marinade-liquid-staking|kinetiq|ether\.fi-stake|stakewise-v2|frax-ether)$/;
+  var NOME_PROJ = { "aave-v3": "Aave", "sky-lending": "Sky", "spark-savings": "Spark", "ethena-usde": "Ethena", "maple": "Maple",
+    "morpho-blue": "Morpho", "jupiter-lend": "Jupiter", "kamino-lend": "Kamino", "usual-usd0": "Usual", "usd-ai": "USD.AI",
+    "lido": "Lido", "rocket-pool": "Rocket Pool", "jito-liquid-staking": "Jito", "binance-staked-eth": "Binance",
+    "jupiter-staked-sol": "Jupiter", "marinade-liquid-staking": "Marinade", "kinetiq": "Kinetiq", "compound-v3": "Compound",
+    "invesco-ustb": "Invesco", "ether.fi-stake": "ether.fi", "coinbase-wrapped-staked-eth": "Coinbase" };
+  function nomeProjeto(p) { return NOME_PROJ[p] || p.split("-").map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(" "); }
+  function risco(proj, apy, regua) {
+    if (RISCO_ALTO.test(proj) || (regua && apy > regua * 2)) return "alto";
+    if (RISCO_BAIXO.test(proj)) return "baixo";
+    return "medio";
+  }
+  function maiorPorChave(pools, chaveFn) {
+    var m = {};
+    pools.forEach(function (p) { var k = chaveFn(p); if (!m[k] || p.tvlUsd > m[k].tvlUsd) m[k] = p; });
+    return Object.keys(m).map(function (k) { return m[k]; });
+  }
+
   var AcademyData = {
+    idade: {},
+
+    /* ---- Mercado · aba DeFi (26/11/2026) ---- */
+    defiProtocolos: function () {
+      return guardado("protocolos", 300000, function () {
+        return prov("defillama").defiProtocolos().then(function (l) {
+          // só o que a tela usa: 200 maiores, redes resumidas às 4 maiores
+          return (l || []).slice(0, 200).map(function (p) {
+            var rs = Object.keys(p.redes || {}).sort(function (a, b) { return p.redes[b] - p.redes[a]; }).slice(0, 4);
+            var redes = {}; rs.forEach(function (r) { redes[r] = p.redes[r]; });
+            return { chave: p.chave, nome: p.nome, categoria: p.categoria, tvl: p.tvl, change1d: p.change1d, change7d: p.change7d,
+                     redes: redes, redePrincipal: p.redePrincipal, geckoId: p.geckoId, link: p.link };
+          });
+        });
+      });
+    },
+    defiVolume: function () {
+      return guardado("volume", 300000, function () {
+        return prov("defillama").defiVolume().then(function (v) {
+          if (!v) return null;
+          var g = v.porGrupo, top = Object.keys(g).map(function (k) { return g[k]; })
+            .sort(function (a, b) { return b.v24h - a.v24h; }).slice(0, 60);
+          var porGrupo = {}; top.forEach(function (x) { porGrupo[x.chave] = x; });
+          return { total24h: v.total24h, change1d: v.change1d, porGrupo: porGrupo };
+        });
+      });
+    },
+    defiTaxas: function () {
+      return guardado("taxas", 300000, function () {
+        return prov("defillama").defiTaxas().then(function (v) {
+          if (!v) return null;
+          var g = v.porGrupo, top = Object.keys(g).map(function (k) { return g[k]; })
+            .sort(function (a, b) { return b.v24h - a.v24h; }).slice(0, 80);
+          var porGrupo = {}; top.forEach(function (x) { porGrupo[x.chave] = x; });
+          return { total24h: v.total24h, porGrupo: porGrupo };
+        });
+      });
+    },
+    stablecoinsTotal: function () {
+      return guardado("stables", 600000, function () { return prov("defillama").stablecoinsTotal(); });
+    },
+    hlVolume: function () {
+      return guardado("hl", 300000, function () { return prov("hyperliquid").volumePerps(); });
+    },
+
+    /* ---- Mercado · aba Rendimentos ---- */
+    rendimentos: function () {
+      return guardado("rendimentos", 600000, function () {
+        return prov("defillama").yieldsBrutos().then(function (pools) {
+          pools = (pools || []).filter(function (p) { return p && p.apy != null && isFinite(p.apy) && p.apy > 0 && p.apy < 200 && !p.outlier; });
+          var buidl = pools.filter(function (p) { return p.project === "blackrock-buidl" && p.tvlUsd > 1e7; });
+          var tv = buidl.reduce(function (s, p) { return s + p.tvlUsd; }, 0);
+          var regua = tv ? buidl.reduce(function (s, p) { return s + p.apy * p.tvlUsd; }, 0) / tv : null;
+          function linha(p) {
+            return { projeto: nomeProjeto(p.project), slug: p.project, simbolo: p.symbol, rede: p.chain, apy: p.apy,
+                     tvl: p.tvlUsd, risco: risco(p.project, p.apy, regua), pool: p.pool };
+          }
+          var dolar = maiorPorChave(pools.filter(function (p) {
+            return p.stablecoin && p.exposure === "single" && p.tvlUsd > 2e8 && p.apy >= 1 && !/^(blackrock-buidl|ondo-yield-assets|circle-usyc)$/.test(p.project);
+          }), function (p) { return p.project + "|" + p.symbol; }).sort(function (a, b) { return b.tvlUsd - a.tvlUsd; }).slice(0, 8).map(linha);
+          var staking = maiorPorChave(pools.filter(function (p) {
+            return STAKING.test(p.project) && p.exposure === "single" && !p.stablecoin && p.tvlUsd > 5e7;
+          }), function (p) { return p.project; }).sort(function (a, b) { return b.tvlUsd - a.tvlUsd; }).slice(0, 6).map(linha);
+          if (!dolar.length && !staking.length) return null;
+          return { regua: regua, dolar: dolar, staking: staking };
+        });
+      });
+    },
+
+    /* Pools do Scanner (as mesmas que o Simulador lê), só as Sólidas,
+       maior nota primeiro. Precisa de ferramentas/scanner-pools/servidor.js. */
+    scannerPools: function (n) {
+      var S = window.ScannerServidor;
+      if (!S) return Promise.resolve([]);
+      return S.carregar().then(function (d) {
+        var lista = S.lerTokens(), decisoes = S.lerDecisoes(), marcas = S.lerMarcas();
+        var ps = S.semDuplicatas((d.pools || []).map(function (r) { return S.paraPool(r, marcas[r.id]); }));
+        return ps.filter(function (p) { return S.trilhoEfetivo(p, lista, decisoes) === "solida" && p.apr != null; })
+                 .sort(function (a, b) { return (b.nota || 0) - (a.nota || 0); }).slice(0, n || 6);
+      }).catch(function () { return []; });
+    },
+
+    /* Classes de ativo tokenizado pelas categorias da CoinGecko (uma chamada).
+       Desde nov/2026 a DefiLlama zera o TVL de BUIDL, Ondo, Paxos Gold e
+       Tether Gold no /protocols, então a soma dela deixou de servir para RWA. */
+    categoriasRwa: function () {
+      var IDS = ["tokenized-products", "tokenized-private-credit", "tokenized-treasuries", "tokenized-gold", "tokenized-silver", "tokenized-stock"];
+      return guardado("catrwa", 600000, function () {
+        return P.tryChain("categories", "categories", []).then(function (cats) {
+          var out = {};
+          (cats || []).forEach(function (c) { if (IDS.indexOf(c.id) > -1 && c.marketCap) out[c.id] = { valor: c.marketCap, change24h: c.change24h }; });
+          return Object.keys(out).length ? out : null;
+        });
+      });
+    },
+
+    /* Ações tokenizadas: lista inteira (alta, queda e soma do valor). */
+    tokenizedStocksAll: function () {
+      return guardado("acoes", 300000, function () {
+        var cg = P.get("coingecko");
+        if (!cg) return [];
+        return cg.topMovers({ category: "tokenized-stock", order: "market_cap_desc", perPage: 100 }).then(function (rows) {
+          return (rows || []).filter(function (r) { return r.usd; }).map(function (r) {
+            return { id: r.id, symbol: r.symbol, name: r.name, usd: r.usd, change24h: r.change24h, marketCap: r.marketCap, volume24h: r.volume24h };
+          });
+        });
+      });
+    },
 
     /* Faixa superior: BTC/ETH/SOL/PAXG com preço, %24h e imagem.
        Deriva da lista ampla (CoinGecko) e completa o que faltar pela

@@ -21,3 +21,4 @@ Plano de venda **futuro** (não implementado; Grátis + Premium, preços mínimo
 Pendências adiadas (CSP, auditoria de segurança, depois do domínio próprio): [pendências futuras](docs/pendencias-futuras.md).
 Simulador de Pools de Liquidez (ferramenta própria, lê as pools do Scanner): [registro de 17/11](docs/simulador-de-pool-2026-11-17.md).
 Desempenho do site (ícone de 2,1 MB → 32 KB, fundo animado enxuto, revisão das ferramentas): [registro de 18/11](docs/desempenho-2026-11-18.md).
+Mercado reformado (abas DeFi · Tokens · RWA · Rendimentos centralizadas, mapa de calor, Hyperliquid): [registro de 26/11](docs/mercado-painel-2026-11-26.md).

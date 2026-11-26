@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Mercado do ATLAS — central de pesquisa de mercado: cripto e RWA em tempo real, com pagina dedicada por ativo.">
+  <meta name="description" content="Mercado do ATLAS — DeFi, tokens, RWA e rendimentos em tempo real, com mapa de calor e página de cada ativo.">
   <link rel="icon" type="image/png" href="../assets/iconeatlas.png">
   <link rel="manifest" href="../manifest.webmanifest">
   <meta name="theme-color" content="#05080F">
@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/global.css">
   <link rel="stylesheet" href="css/academy.css?v=academy-19">
+  <link rel="stylesheet" href="css/painel.css?v=painel-1">
 
   <!-- ===== ATLAS · camada global (Fase 0) ===================================
        Identidade visual, tema, idioma e moeda centralizados.
@@ -74,14 +75,18 @@
 <script src="../core/providers/coinpaprika.js?v=academy-19"></script>
 <script src="../core/providers/binance.js?v=academy-19"></script>
 <script src="../core/providers/coinlore.js?v=academy-19"></script>
-<script src="../core/providers/defillama.js?v=academy-19"></script>
+<script src="../core/providers/defillama.js?v=painel-2"></script>
+<script src="../core/providers/hyperliquid.js?v=painel-1"></script>
 <script src="../core/providers/id-map.js?v=academy-19"></script>
-<script src="js/market-data.js?v=academy-19"></script>
+<script src="js/market-data.js?v=painel-3"></script>
+<!-- pools do Scanner (as mesmas que o Simulador lê) para a aba Rendimentos -->
+<script src="../core/atlas-supabase-config.js"></script>
+<script src="../ferramentas/scanner-pools/servidor.js?v=sim-2"></script>
 
 <!-- ===== UI ===== -->
 <script src="js/academy-chart.js?v=academy-20"></script>
-<script src="js/academy-globe.js?v=academy-19"></script>
-<script src="js/dashboard.js?v=academy-21"></script>
+<script src="js/academy-treemap.js?v=painel-1"></script>
+<script src="js/dashboard.js?v=painel-4"></script>
 <script src="js/asset-page.js?v=academy-19"></script>
 <script src="js/academy.js?v=academy-19"></script>
 <!-- Shell do ATLAS (15/11/2026): moldura única, Oráculo, sino e busca, como nas outras áreas. -->

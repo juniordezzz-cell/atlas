@@ -1,0 +1,312 @@
+<title>Mercado: Painel e Bolhas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: uma moldura de navegador com a tela do Mercado; a chave Painel/Bolhas troca só o miolo */
+:root{
+  --bg:#05080F; --raise:#0A1120; --card:#0E1628; --line:#1A2438; --fg:#E6ECF5; --mute:#8391A8;
+  --acao:#00BFFF; --tinta:#04121C; --up:#2FD38A; --down:#FF6B6B; --warn:#F5B941;
+  --f-disp:"Space Grotesk",system-ui,sans-serif; --f-body:"Inter",system-ui,sans-serif; --f-num:"JetBrains Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#EEF2F8; --raise:#F6F8FC; --card:#FFFFFF; --line:#DCE3EE; --fg:#0D1626; --mute:#56637A;
+  --acao:#0086B8; --tinta:#FFFFFF; --up:#0F8A57; --down:#C93838; --warn:#9A6B00; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#EEF2F8; --raise:#F6F8FC; --card:#FFFFFF; --line:#DCE3EE; --fg:#0D1626; --mute:#56637A;
+  --acao:#0086B8; --tinta:#FFFFFF; --up:#0F8A57; --down:#C93838; --warn:#9A6B00; color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-disp);margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:clamp(24px,4vw,34px)}
+.eyebrow{font:500 12px/1 var(--f-num);letter-spacing:.12em;text-transform:uppercase;color:var(--acao)}
+.lead{color:var(--mute);font-size:16px;max-width:70ch;margin:0}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)}
+
+.frame{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--raise)}
+.chrome{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--card)}
+.chrome i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.chrome span{margin-left:10px;font:12px var(--f-num);color:var(--mute)}
+.screen{padding:14px;display:flex;flex-direction:column;gap:12px}
+.tape{display:flex;gap:22px;overflow:hidden;white-space:nowrap;font:12px var(--f-num);color:var(--mute);border-bottom:1px solid var(--line);padding-bottom:10px}
+.tape b{color:var(--fg);font-weight:500}
+.nav{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tabs button{all:unset;cursor:pointer;padding:7px 14px;border-radius:8px;font-weight:500;color:var(--mute)}
+.tabs button.on{background:var(--card);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
+.switch{display:inline-flex;padding:3px;border-radius:999px;border:1px solid var(--line);background:var(--card);position:relative}
+.switch button{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;padding:7px 16px;border-radius:999px;font-weight:600;font-size:13px;color:var(--mute)}
+.switch button.on{background:var(--acao);color:var(--tinta)}
+.switch button:focus-visible,.tabs button:focus-visible,.cell:focus-visible,.bub:focus-visible{outline:2px solid var(--acao);outline-offset:2px}
+.switch svg{width:15px;height:15px}
+.pulse{position:absolute;inset:-6px;border-radius:999px;border:2px dashed var(--warn);pointer-events:none}
+.hero{text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;padding:6px 0 2px}
+.hero p{margin:0;font-family:var(--f-disp);font-size:clamp(16px,2.2vw,21px);max-width:60ch}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;width:100%}
+.kpis div{background:var(--card);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.kpis span{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.kpis b{font:600 17px var(--f-num)}
+
+.core{display:grid;gap:12px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.panel h3{font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.panel h3 small{font:400 11px var(--f-num);color:var(--mute)}
+.row{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+.row .num{font-size:12px}
+.sig{display:grid;grid-template-columns:42px 1fr auto;gap:8px;font-size:12px;align-items:center}
+.sig time{font:11px var(--f-num);color:var(--mute)}
+.pill{font:600 10px var(--f-num);padding:2px 7px;border-radius:999px;border:1px solid currentColor}
+.p-alta{color:var(--down)} .p-media{color:var(--warn)} .p-baixa{color:var(--mute)}
+
+.viewA{grid-template-columns:1fr 2.4fr 1fr}
+.heat{display:grid;grid-template-columns:2.2fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;min-height:300px}
+.chain{display:grid;gap:3px;border-radius:6px;overflow:hidden}
+.c-eth{grid-row:1/3;grid-template-columns:1.4fr 1fr;grid-template-rows:1.3fr 1fr 1fr}
+.c-eth .cell:first-child{grid-row:1/3}
+.c-sol{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr} .c-sol .cell:first-child{grid-column:1/3}
+.c-base{grid-template-columns:1fr 1fr}
+.c-tron{grid-template-columns:1fr} .c-bsc{grid-template-columns:1fr 1fr}
+.heat .lower{grid-column:2/4;display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px}
+.cell{all:unset;cursor:pointer;padding:6px 8px;display:flex;flex-direction:column;justify-content:space-between;font-size:11px;color:#fff;min-height:36px;border-radius:3px}
+.cell b{font:600 12px var(--f-body)} .cell span{font:500 11px var(--f-num);opacity:.9}
+.g3{background:#147a4c}.g2{background:#1b6146}.g1{background:#1f4a3d}.r1{background:#5a2a33}.r2{background:#7a2c35}.r3{background:#9e2f3a}.n0{background:#2a3446}
+.heat-legend{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font:11px var(--f-num);color:var(--mute)}
+.bottomA{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.bars{display:flex;flex-direction:column;gap:5px}
+.bar{display:grid;grid-template-columns:60px 1fr 64px;gap:6px;align-items:center;font-size:11.5px}
+.bar i{display:block;height:8px;border-radius:4px}
+.spark{width:100%;height:70px}
+
+.viewC{grid-template-columns:2.6fr 1fr}
+.bfilters{display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chips span{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mute)}
+.chips span.on{color:var(--fg);border-color:var(--acao)}
+.field{position:relative;min-height:400px;border-radius:8px;background:radial-gradient(ellipse at center,color-mix(in srgb,var(--acao) 5%,transparent),transparent 70%)}
+.bub{all:unset;cursor:pointer;position:absolute;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--fg);transform:translate(-50%,-50%);transition:transform .2s}
+.bub:hover{transform:translate(-50%,-50%) scale(1.06)}
+.bub b{font:600 12px var(--f-body)} .bub span{font:500 11px var(--f-num)}
+.bub.up{background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--up) 55%,transparent),color-mix(in srgb,var(--up) 18%,transparent));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--up) 70%,transparent)}
+.bub.down{background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--down) 55%,transparent),color-mix(in srgb,var(--down) 18%,transparent));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--down) 70%,transparent)}
+.bub.sel{box-shadow:0 0 0 3px var(--acao)}
+.detail .big{font:600 22px var(--f-num)}
+.detail .big small{font-size:12px;color:var(--mute)}
+.btn{all:unset;cursor:pointer;text-align:center;padding:9px;border-radius:8px;background:var(--acao);color:var(--tinta);font-weight:600;font-size:13px}
+.btn.ghost{background:transparent;color:var(--fg);box-shadow:inset 0 0 0 1px var(--line)}
+.bottomC{grid-column:1/-1}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+.note{display:flex;flex-direction:column;gap:6px;border-top:2px solid var(--line);padding-top:12px}
+.note.k{border-color:var(--acao)}
+.note h3{font-size:15px}
+.note p,.note li{margin:0;color:var(--mute);font-size:13.5px}
+.note ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.hint{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--warn);margin:0}
+
+@media (max-width:900px){
+  .viewA,.viewC{grid-template-columns:1fr}
+  .bottomA{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpis div:last-child{grid-column:1/-1}
+  .side-l{order:2}
+}
+@media (prefers-reduced-motion:reduce){.bub{transition:none}}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <span class="eyebrow">Desenho · Mercado com A e C juntos</span>
+    <h1>A tela abre no Painel. A chave lá em cima troca para as Bolhas.</h1>
+    <p class="lead">A esteira, as abas, a frase do dia e os números ficam iguais nas duas telas. Só o miolo troca. Clique na chave para ver. Os números são de exemplo, tirados do que o site mostrava hoje.</p>
+    <p class="hint"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>A chave está marcada com o tracejado amarelo</p>
+  </header>
+
+  <div class="frame">
+    <div class="chrome"><i></i><i></i><i></i><span>atlas · mercado</span></div>
+    <div class="screen">
+      <div class="tape">
+        <span><b>BTC</b> $91.420 <span class="up">+1,2%</span></span><span><b>ETH</b> $3.118 <span class="up">+0,9%</span></span>
+        <span><b>SOL</b> $71,15 <span class="up">+1,0%</span></span><span><b>HYPE</b> $62,32 <span class="up">+1,5%</span></span>
+        <span><b>AAVE</b> $188,40 <span class="down">−2,1%</span></span><span><b>ZEC</b> $701,97 <span class="down">−6,8%</span></span>
+        <span><b>TRX</b> $0,3039 <span class="up">+0,4%</span></span>
+      </div>
+
+      <div class="nav">
+        <div class="tabs" aria-label="Mercados">
+          <button class="on">DeFi</button><button>Cripto</button><button>RWA</button><button>Rendimentos</button>
+        </div>
+        <div class="switch" role="group" aria-label="Modo de visualização">
+          <span class="pulse" aria-hidden="true"></span>
+          <button id="bt-a" class="on" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="10" height="11" rx="1"/><rect x="15" y="3" width="6" height="5" rx="1"/><rect x="15" y="10" width="6" height="11" rx="1"/><rect x="3" y="16" width="10" height="5" rx="1"/></svg>Painel</button>
+          <button id="bt-c" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="10" r="6"/><circle cx="17.5" cy="16.5" r="4"/><circle cx="18" cy="5.5" r="2.5"/></svg>Bolhas</button>
+        </div>
+      </div>
+
+      <div class="hero">
+        <p>DeFi parado em <span class="num">US$ 68,5 bi</span>. Base e Bitcoin perdem dinheiro, Solana e Ethereum ganham. Mercado com medo.</p>
+        <div class="kpis">
+          <div><span>TVL DeFi</span><b>$68,5 bi</b><small class="up num">+0,3% 24h</small></div>
+          <div><span>Volume 24h</span><b>$54,4 bi</b><small class="num" style="color:var(--mute)">todas as redes</small></div>
+          <div><span>Stablecoins</span><b>$286 bi</b><small class="up num">+0,4% 7d</small></div>
+          <div><span>Rendimento médio</span><b>3,43%</b><small class="num" style="color:var(--mute)">pools grandes</small></div>
+          <div><span>Medo e ganância</span><b>32</b><small class="num" style="color:var(--warn)">medo</small></div>
+        </div>
+      </div>
+
+      <!-- ===== A · PAINEL ===== -->
+      <div id="viewA" class="core viewA">
+        <div class="panel side-l">
+          <h3>Redes <small>TVL · 7d</small></h3>
+          <div class="row"><span>Ethereum</span><span class="num">$36,9 bi <span class="up">+2,2%</span></span></div>
+          <div class="row"><span>Solana</span><span class="num">$4,7 bi <span class="up">+2,4%</span></span></div>
+          <div class="row"><span>Base</span><span class="num">$4,7 bi <span class="down">−6,4%</span></span></div>
+          <div class="row"><span>Tron</span><span class="num">$4,4 bi <span class="down">−0,8%</span></span></div>
+          <div class="row"><span>BSC</span><span class="num">$4,3 bi <span class="up">+1,6%</span></span></div>
+          <div class="row"><span>Bitcoin</span><span class="num">$2,3 bi <span class="down">−22,2%</span></span></div>
+          <div class="row"><span>Hyperliquid</span><span class="num">$2,2 bi <span class="up">+3,3%</span></span></div>
+        </div>
+
+        <div class="panel">
+          <h3>Onde está o dinheiro <small>tamanho = TVL · cor = variação 7d</small></h3>
+          <div class="heat">
+            <div class="chain c-eth">
+              <button class="cell g2"><b>Aave</b><span>$14,1 bi +3,1%</span></button>
+              <button class="cell r1"><b>Lido</b><span>$9,8 bi −1,2%</span></button>
+              <button class="cell g1"><b>EigenLayer</b><span>+0,8%</span></button>
+              <button class="cell g1"><b>Uniswap</b><span>+1,4%</span></button>
+              <button class="cell n0"><b>Sky</b><span>0,0%</span></button>
+            </div>
+            <div class="chain c-sol">
+              <button class="cell g3"><b>Jupiter</b><span>+6,8%</span></button>
+              <button class="cell g1"><b>Kamino</b><span>+1,1%</span></button>
+              <button class="cell g2"><b>Raydium</b><span>+2,9%</span></button>
+            </div>
+            <div class="chain c-base">
+              <button class="cell r3"><b>Aero</b><span>−9,4%</span></button>
+              <button class="cell r1"><b>Morpho</b><span>−1,8%</span></button>
+            </div>
+            <div class="lower">
+              <div class="chain c-tron"><button class="cell r1"><b>JustLend</b><span>−0,8%</span></button></div>
+              <div class="chain c-bsc"><button class="cell g2"><b>Venus</b><span>+2,0%</span></button><button class="cell g1"><b>Pancake</b><span>+1,2%</span></button></div>
+              <div class="chain"><button class="cell r3" style="height:100%"><b>Babylon</b><span>−22,2%</span></button></div>
+            </div>
+          </div>
+          <div class="heat-legend"><span>Ethereum · Solana · Base · Tron · BSC · Bitcoin</span><span>clique numa rede para abrir só ela</span></div>
+        </div>
+
+        <div class="panel">
+          <h3>O que mudou hoje <small>hora real da coleta</small></h3>
+          <div class="sig"><time>08:00</time><span>DeFi no Bitcoin perde 22% do TVL na semana</span><span class="pill p-alta">alta</span></div>
+          <div class="sig"><time>08:00</time><span>Aero recua 9,4%; Base é a rede que mais perde</span><span class="pill p-media">média</span></div>
+          <div class="sig"><time>08:00</time><span>Jupiter puxa entradas na Solana (+6,8%)</span><span class="pill p-media">média</span></div>
+          <div class="sig"><time>04:00</time><span>Medo e ganância cai para 32</span><span class="pill p-media">média</span></div>
+          <div class="sig"><time>04:00</time><span>Stablecoins somam +$1,1 bi em 7 dias</span><span class="pill p-baixa">baixa</span></div>
+        </div>
+
+        <div class="bottomA" style="grid-column:1/-1">
+          <div class="panel"><h3>Fluxo da semana <small>entrou · saiu</small></h3>
+            <div class="bars">
+              <div class="bar"><span>Ethereum</span><i style="width:80%;background:var(--up)"></i><span class="num up">+$790 mi</span></div>
+              <div class="bar"><span>Solana</span><i style="width:30%;background:var(--up)"></i><span class="num up">+$110 mi</span></div>
+              <div class="bar"><span>Base</span><i style="width:46%;background:var(--down)"></i><span class="num down">−$320 mi</span></div>
+              <div class="bar"><span>Bitcoin</span><i style="width:94%;background:var(--down)"></i><span class="num down">−$650 mi</span></div>
+            </div>
+          </div>
+          <div class="panel"><h3>TVL DeFi <small>90 dias</small></h3>
+            <svg class="spark" viewBox="0 0 300 70" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M0 22 L30 18 L60 24 L90 16 L120 20 L150 28 L180 26 L210 38 L240 44 L270 52 L300 49 L300 70 L0 70Z" fill="color-mix(in srgb,var(--acao) 18%,transparent)"/>
+              <path d="M0 22 L30 18 L60 24 L90 16 L120 20 L150 28 L180 26 L210 38 L240 44 L270 52 L300 49" fill="none" stroke="var(--acao)" stroke-width="2"/>
+              <circle cx="297" cy="49" r="3" fill="var(--acao)"/>
+            </svg>
+          </div>
+          <div class="panel"><h3>Melhores pools do Scanner <small>nota · rendimento</small></h3>
+            <div class="row"><span>WETH/USDC · Aero</span><span class="num">A · 24%</span></div>
+            <div class="row"><span>SOL/USDC · Orca</span><span class="num">A · 19%</span></div>
+            <div class="row"><span>cbBTC/WETH · Uni v3</span><span class="num">B · 15%</span></div>
+          </div>
+          <div class="panel" style="grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;flex-wrap:wrap"><h3>Tabela de protocolos</h3><span style="color:var(--mute);font-size:12px">filtros: rede · categoria · tamanho · ordenar por variação</span></div>
+        </div>
+      </div>
+
+      <!-- ===== C · BOLHAS ===== -->
+      <div id="viewC" class="core viewC" hidden>
+        <div class="panel">
+          <div class="bfilters">
+            <div class="chips"><span class="on">Protocolos</span><span>Redes</span><span>Tokens DeFi</span></div>
+            <div class="chips"><span>24h</span><span class="on">7d</span><span>30d</span></div>
+          </div>
+          <div class="field" id="field"></div>
+          <div class="heat-legend"><span>tamanho = TVL · verde subiu · vermelho caiu</span><span>clique numa bolha</span></div>
+        </div>
+        <div class="panel detail">
+          <h3><span id="d-nome">Jupiter</span> <small id="d-tipo">Solana · DEX</small></h3>
+          <div class="big up" id="d-var">+6,8% <small>7d</small></div>
+          <div class="row"><span>TVL</span><span class="num" id="d-tvl">$2,1 bi</span></div>
+          <div class="row"><span>Taxas 7d</span><span class="num">$18,4 mi</span></div>
+          <div class="row"><span>Pools no Scanner</span><span class="num">12</span></div>
+          <p id="d-motivo" style="margin:0;font-size:12.5px;color:var(--mute)">Por que mexeu: entrada de stablecoins na Solana e volume de perpétuos em alta na semana.</p>
+          <button class="btn">Ver pools no Scanner</button>
+          <button class="btn ghost">Abrir página do protocolo</button>
+        </div>
+        <div class="panel bottomC" style="flex-direction:row;justify-content:space-between;align-items:center;flex-wrap:wrap"><h3>O que mudou hoje · tabela</h3><span style="color:var(--mute);font-size:12px">os mesmos sinais do Painel, embaixo das bolhas</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note k"><h3>Sempre abre no Painel</h3><p>Toda vez que alguém entra no Mercado, cai na A. A escolha das Bolhas não fica guardada para a próxima visita.</p></div>
+    <div class="note"><h3>A chave vale em todas as abas</h3><ul><li>DeFi: bolhas de protocolos ou redes</li><li>Cripto: bolhas de moedas</li><li>RWA: bolhas de ativos tokenizados</li><li>Rendimentos: bolhas de pools</li></ul></div>
+    <div class="note"><h3>O mesmo painel de detalhe</h3><p>Clicar num quadrado do mapa ou numa bolha abre os mesmos detalhes, com o botão para o Scanner.</p></div>
+    <div class="note"><h3>No celular</h3><p>A chave fica no mesmo lugar. O Painel vira uma coluna só; as Bolhas usam a largura toda e o detalhe sobe de baixo.</p></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var A=document.getElementById('viewA'),C=document.getElementById('viewC');
+  var ba=document.getElementById('bt-a'),bc=document.getElementById('bt-c');
+  function set(c){A.hidden=c;C.hidden=!c;ba.classList.toggle('on',!c);bc.classList.toggle('on',c);
+    ba.setAttribute('aria-pressed',String(!c));bc.setAttribute('aria-pressed',String(c));}
+  ba.addEventListener('click',function(){set(false);});
+  bc.addEventListener('click',function(){set(true);});
+  var tabs=document.querySelectorAll('.tabs button');
+  tabs.forEach(function(b){b.addEventListener('click',function(){tabs.forEach(function(x){x.classList.remove('on');});b.classList.add('on');});});
+
+  var data=[
+    ['Aave','Ethereum · Empréstimo',3.1,14.1,22,32],['Lido','Ethereum · Staking',-1.2,9.8,46,60],
+    ['EigenLayer','Ethereum · Restaking',0.8,6.2,70,28],['Jupiter','Solana · DEX',6.8,2.1,64,68],
+    ['Aero','Base · DEX',-9.4,1.6,84,52],['Uniswap','Ethereum · DEX',1.4,4.4,40,20],
+    ['Morpho','Base · Empréstimo',-1.8,2.6,28,74],['Kamino','Solana · Empréstimo',1.1,1.9,54,86],
+    ['Babylon','Bitcoin · Staking',-22.2,2.3,12,62],['Venus','BSC · Empréstimo',2.0,1.5,88,22],
+    ['Raydium','Solana · DEX',2.9,1.3,76,80],['Pendle','Ethereum · Rendimento',-3.4,3.1,58,40],
+    ['JustLend','Tron · Empréstimo',-0.8,3.6,8,30],['Ethena','Ethereum · Dólar sintético',-4.1,2.8,36,86]
+  ];
+  var field=document.getElementById('field');
+  function fmt(v){return (v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(1).replace('.',',')+'%';}
+  function el(tag,txt){var e=document.createElement(tag);e.textContent=txt;return e;}
+  function show(d){
+    document.getElementById('d-nome').textContent=d[0];
+    document.getElementById('d-tipo').textContent=d[1];
+    var v=document.getElementById('d-var');v.className='big '+(d[2]>=0?'up':'down');
+    v.textContent=fmt(d[2])+' ';v.appendChild(el('small','7d'));
+    document.getElementById('d-tvl').textContent='$'+d[3].toFixed(1).replace('.',',')+' bi';
+    document.getElementById('d-motivo').textContent='Por que mexeu: aqui entra o motivo, montado com os dados da rede '+d[1].split(' · ')[0]+' e do protocolo.';
+  }
+  data.forEach(function(d){
+    var size=Math.round(46+Math.sqrt(d[3])*26);
+    var b=document.createElement('button');
+    b.className='bub '+(d[2]>=0?'up':'down')+(d[0]==='Jupiter'?' sel':'');
+    b.style.width=b.style.height='min('+size+'px,'+(size/7).toFixed(1)+'vw)';
+    b.style.left=d[4]+'%';b.style.top=d[5]+'%';
+    b.appendChild(el('b',d[0]));b.appendChild(el('span',fmt(d[2])));
+    b.addEventListener('click',function(){
+      field.querySelectorAll('.bub').forEach(function(x){x.classList.remove('sel');});
+      b.classList.add('sel');show(d);
+    });
+    field.appendChild(b);
+  });
+})();
+</script>
