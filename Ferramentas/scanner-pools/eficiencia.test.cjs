@@ -16,7 +16,8 @@ const lite = {
       chainTvls: { Ethereum: { tvl: 100e6 } } },
     { defillamaId: '5', name: 'Orca', category: 'Dexs', chainTvls: { Solana: { tvl: 200e6 } } },
     { defillamaId: '6', name: 'Miuda', category: 'Dexs', chainTvls: { Solana: { tvl: 2e6 } } },
-    { defillamaId: '4', name: 'Aave', category: 'Lending', chainTvls: { Ethereum: { tvl: 9e9 } } }
+    { defillamaId: '4', name: 'Aave', category: 'Lending', chainTvls: { Ethereum: { tvl: 9e9 } } },
+    { defillamaId: '7', name: 'THORChain DEX', category: 'Dexs', chainTvls: { THORChain: { tvl: 60e6 } } }
   ]
 };
 const dexs = { protocols: [
@@ -24,7 +25,8 @@ const dexs = { protocols: [
   { defillamaId: '2', breakdown24h: { optimism: { 'Uniswap V3': 20e6 }, ethereum: { 'Uniswap V3': 150e6 } } },
   { defillamaId: '3', breakdown24h: { ethereum: { 'Uniswap V4': 50e6 } } },
   { defillamaId: '5', breakdown24h: { solana: { Orca: 120e6 } } },
-  { defillamaId: '6', breakdown24h: { solana: { Miuda: 50e6 } } }
+  { defillamaId: '6', breakdown24h: { solana: { Miuda: 50e6 } } },
+  { defillamaId: '7', breakdown24h: { thorchain: { 'THORChain DEX': 240e6 } } }
 ] };
 const L = E.agrega(lite, dexs);
 const P = E.ranking(L, 'dex'), R = E.ranking(L, 'rede');
@@ -55,6 +57,8 @@ test('fica de fora: TVL abaixo de US$ 50 mi e o que não é DEX', () => {
   assert.equal(acha(P, 'Miuda'), undefined);
   assert.equal(acha(R, 'OP Mainnet'), undefined);
   assert.equal(acha(P, 'Aave'), undefined);
+  assert.equal(acha(P, 'THORChain DEX'), undefined);   // fora a pedido do dono
+  assert.equal(acha(R, 'THORChain'), undefined);
 });
 
 test('ordena pela razão, maior primeiro, e corta no limite', () => {

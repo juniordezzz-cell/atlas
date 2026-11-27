@@ -269,6 +269,8 @@ tamanho, focada só em volume 24h ÷ TVL.
   Uniswap V3 + V4 = Uniswap; TVL de staking fora), volume do `overview/dexs`
   (`breakdown24h`). Nomes de rede diferentes entre as duas ("BSC"/"bsc",
   "OP Mainnet"/"optimism", "Avalanche"/"avax") passam por `chaveRede`.
+- **Fora:** THORChain (plataforma e rede), a pedido do dono: troca entre redes
+  com pool pareada em RUNE, fora da ideia do projeto (`FORA`).
 - **Clique:** linha com pools no Scanner ("N pools") leva ao Descobrir com
   a plataforma ou a rede no filtro. Nomes do Scanner: BSC = "BNB Chain",
   Hyperliquid L1 = "HyperEVM", Curve Finance = "Curve" (`REDE_SCANNER`,

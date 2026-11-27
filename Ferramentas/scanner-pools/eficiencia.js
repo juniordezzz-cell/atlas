@@ -28,7 +28,7 @@
   "use strict";
 
   var TVL_MIN = 50e6, LINHAS = 8;     // abaixo de 50 mi apareciam DEX pequenas com giro inflado
-  var CACHE_KEY = "atlas.scanner.eficiencia.v2", CACHE_MS = 3600e3;
+  var CACHE_KEY = "atlas.scanner.eficiencia.v3", CACHE_MS = 3600e3;
   var URLS = {
     lite: "https://api.llama.fi/lite/protocols2",
     dexs: "https://api.llama.fi/overview/dexs?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true"
@@ -39,6 +39,9 @@
   // nome da DefiLlama → nome que o Scanner usa nos filtros
   var REDE_SCANNER = { "BSC": "BNB Chain", "OP Mainnet": "Optimism", "Hyperliquid L1": "HyperEVM", "Robinhood Chain": "Robinhood" };
   var DEX_SCANNER = { "Curve Finance": "Curve" };
+  // fora a pedido do dono (28/11): THORChain é troca entre redes com pool pareada em RUNE,
+  // não é o tipo de pool que o projeto estuda (e o Scanner não acompanha)
+  var FORA = /thorchain/i;
   var REDE_EXIBE = { "BSC": "BNB Chain", "OP Mainnet": "Optimism", "Hyperliquid L1": "Hyperliquid", "Robinhood Chain": "Robinhood" };
 
   function norm(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
@@ -62,11 +65,11 @@
     ((lite && lite.parentProtocols) || []).forEach(function (p) { nomePai[p.id] = p.name; });
     var vol = porRede(dexs), linhas = {};
     ((lite && lite.protocols) || []).forEach(function (p) {
-      if (p.category !== "Dexs" || !p.chainTvls) return;
+      if (p.category !== "Dexs" || !p.chainTvls || FORA.test(p.name) || FORA.test(nomePai[p.parentProtocol] || "")) return;
       var v = vol[String(p.defillamaId)]; if (!v) return;
       var dex = nomePai[p.parentProtocol] || p.name;
       for (var rede in p.chainTvls) {
-        if (rede.indexOf("-") >= 0 || /^(staking|pool2|borrowed|vesting|treasury)$/i.test(rede)) continue;
+        if (rede.indexOf("-") >= 0 || FORA.test(rede) || /^(staking|pool2|borrowed|vesting|treasury)$/i.test(rede)) continue;
         var tvl = p.chainTvls[rede] && p.chainTvls[rede].tvl; if (!(tvl > 0)) continue;
         var chave = dex + "|" + rede;
         var l = linhas[chave] || (linhas[chave] = { dex: dex, rede: rede, tvl: 0, vol: 0 });
