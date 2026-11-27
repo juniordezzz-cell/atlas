@@ -411,10 +411,10 @@
     mount.appendChild(T.el);
     // 28/11: só o mapa na faixa central; altas e quedas viraram filtro do mapa
     var grade = h("div", "mk-miolo mk-miolo-so");
-    var pMapa = painel("Mapa do mercado", "tamanho = valor de mercado · cor = 24h"); pMapa.classList.add("mk-p-mapa");
+    var pMapa = painel("Tokens por valor de mercado", "tamanho: valor de mercado · cor: variação em 24h"); pMapa.classList.add("mk-p-mapa");
     add(grade, pMapa); mount.appendChild(grade);
     var modoMapa = "maiores", dadosMapa = null;
-    filtroPainel(pMapa, [["maiores", "Maiores"], ["altas", "Maiores altas"], ["quedas", "Maiores quedas"]],
+    filtroPainel(pMapa, [["maiores", "Maior valor de mercado"], ["altas", "Maiores altas"], ["quedas", "Maiores quedas"]],
       function (k) { modoMapa = k; desenhaMapa(); });
     function desenhaMapa() {
       if (!dadosMapa) return;
@@ -422,10 +422,10 @@
       if (modoMapa === "maiores") {
         itens = dadosMapa.maiores.map(function (x) {
           return { nome: x.symbol, valor: x.marketCap, variacao: x.change24h, detalhe: big(x.marketCap), aoClicar: assetLink(x.id, x.symbol) }; });
-        dica = "30 maiores · tamanho = valor de mercado · cor = 24h";
+        dica = "20 maiores · tamanho: valor de mercado · cor: variação em 24h";
       } else {
         itens = itensMovimento(dadosMapa.Q, modoMapa, 20);
-        dica = "acima de $50 mi · tamanho = " + (modoMapa === "altas" ? "alta" : "queda") + " em 24h";
+        dica = "20 maiores " + modoMapa + " acima de $50 mi · tamanho: " + (modoMapa === "altas" ? "alta" : "queda") + " em 24h";
       }
       if (!itens.length) return pMapa.indisponivel(null, modoMapa === "altas" ? "Nenhum token subindo agora." : modoMapa === "quedas" ? "Nenhum token caindo agora." : "Dados indisponíveis no momento.");
       var caixa = h("div", "mk-mapa"); pMapa.estado(caixa);
@@ -461,7 +461,7 @@
         T.frase(f.join(" "));
         // mapa: 30 maiores sem stablecoins; altas e quedas pelo filtro de qualidade
         var mapa = mk.filter(function (x) { return x.marketCap > 0 && !STABLE_SYM[x.symbol] && !/^(usd|eur)/i.test(x.symbol || ""); })
-          .sort(function (a, b) { return b.marketCap - a.marketCap; }).slice(0, 30);
+          .sort(function (a, b) { return b.marketCap - a.marketCap; }).slice(0, 20);
         if (mk.length) { dadosMapa = { maiores: mapa, Q: Q }; desenhaMapa(); }
         // volume fora do normal
         var va = Q.map(function (x) { return { x: x, r: x.volume24h / x.marketCap }; }).sort(function (a, b) { return b.r - a.r; }).slice(0, 6);
@@ -511,10 +511,10 @@
     mount.appendChild(T.el);
     // 28/11: só o mapa na faixa central; ações em alta e em queda viraram filtro do mapa
     var grade = h("div", "mk-miolo mk-miolo-so");
-    var pMapa = painel("Mapa das ações tokenizadas", "tamanho = valor de mercado · cor = 24h"); pMapa.classList.add("mk-p-mapa");
+    var pMapa = painel("Ações tokenizadas por valor de mercado", "tamanho: valor de mercado · cor: variação em 24h"); pMapa.classList.add("mk-p-mapa");
     add(grade, pMapa); mount.appendChild(grade);
     var modoMapa = "maiores";
-    filtroPainel(pMapa, [["maiores", "Maiores"], ["altas", "Ações em alta"], ["quedas", "Ações em queda"]],
+    filtroPainel(pMapa, [["maiores", "Maior valor de mercado"], ["altas", "Ações em alta"], ["quedas", "Ações em queda"]],
       function (k) { modoMapa = k; desenhaMapa(); });
     var baixo = h("div", "mk-baixo");
     var pClasses = painel("Classes de ativo", "valor de mercado · 24h");
@@ -536,12 +536,12 @@
       if (modoMapa === "maiores") {
         var ord = A.filter(function (x) { return x.marketCap > 0; }).sort(function (a, b) { return b.marketCap - a.marketCap; });
         if (!ord.length) return pMapa.indisponivel(carregar);
-        itens = ord.slice(0, 30).map(function (x) { return { nome: x.symbol, valor: x.marketCap, variacao: x.change24h, detalhe: big(x.marketCap), aoClicar: assetLink(x.id, x.symbol) }; });
-        dica = "30 maiores · tamanho = valor de mercado · cor = 24h";
+        itens = ord.slice(0, 20).map(function (x) { return { nome: x.symbol, valor: x.marketCap, variacao: x.change24h, detalhe: big(x.marketCap), aoClicar: assetLink(x.id, x.symbol) }; });
+        dica = "20 maiores · tamanho: valor de mercado · cor: variação em 24h";
       } else {
         itens = itensMovimento(A, modoMapa, 20);
         if (!itens.length) return pMapa.indisponivel(null, modoMapa === "altas" ? "Nenhuma ação subindo agora." : "Nenhuma ação caindo agora.");
-        dica = "tamanho = " + (modoMapa === "altas" ? "alta" : "queda") + " em 24h · cor = 24h";
+        dica = "20 maiores " + modoMapa + " · tamanho: " + (modoMapa === "altas" ? "alta" : "queda") + " em 24h";
       }
       var caixa = h("div", "mk-mapa"); pMapa.estado(caixa);
       AcademyTreemap.render(caixa, [{ nome: "Ações", itens: itens }], { titulos: false, escala: 4 });

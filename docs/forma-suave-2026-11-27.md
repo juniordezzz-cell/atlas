@@ -129,3 +129,8 @@ RWA mantêm as três colunas.
   maiores protocolos; cada rede mostra os 20 maiores dela, pelo TVL naquela
   rede. A tabela de protocolos segue o mesmo filtro. Saiu o botão "← Todas
   as redes".
+- Mesmo padrão levado a Tokens e RWA (o dono: "já era para ter feito
+  automaticamente"): títulos "Tokens por valor de mercado" e "Ações
+  tokenizadas por valor de mercado", legenda "tamanho: … · cor: variação em
+  24h", filtro "Maior valor de mercado · Maiores altas/Ações em alta ·
+  Maiores quedas/Ações em queda", 20 células em todos os modos.
