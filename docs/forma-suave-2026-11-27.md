@@ -134,3 +134,6 @@ RWA mantêm as três colunas.
   tokenizadas por valor de mercado", legenda "tamanho: … · cor: variação em
   24h", filtro "Maior valor de mercado · Maiores altas/Ações em alta ·
   Maiores quedas/Ações em queda", 20 células em todos os modos.
+- Linha preta entre os quadrados (referência do dono): `.tmap-area` com fundo
+  #04060a e células sem canto; o vão de 1 px de cada célula mostra o preto.
+  O bloco inteiro do mapa mantém o canto `sm`.

@@ -114,9 +114,11 @@ button.mk-sinal:hover { background: var(--mk-hover); }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
 button.tmap-titulo { cursor: pointer; }
 button.tmap-titulo:hover { color: var(--atlas-acao, #00BFFF); }
-.tmap-area { position: absolute; left: 3px; right: 3px; bottom: 3px; border-radius: var(--atlas-r-sm, 12px); overflow: hidden; }
+/* 28/11: fundo preto atrás das células; o vão de 1 px de cada uma vira a linha
+   preta entre os quadrados (referência do dono) */
+.tmap-area { position: absolute; left: 3px; right: 3px; bottom: 3px; border-radius: var(--atlas-r-sm, 12px); overflow: hidden; background: #04060a; }
 .tmap-celula { all: unset; position: absolute; box-sizing: border-box; border: 1px solid transparent; background-clip: padding-box;
-  border-radius: var(--atlas-r-xxs, 4px); overflow: hidden;
+  border-radius: 0; overflow: hidden;
   display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; gap: 4px; padding: 6px 12px;
   color: #fff; cursor: pointer; transition: filter .15s; }
 .tmap-celula:hover { filter: brightness(1.15); }
