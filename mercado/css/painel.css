@@ -117,13 +117,15 @@ button.tmap-titulo:hover { color: var(--atlas-acao, #00BFFF); }
 .tmap-area { position: absolute; left: 3px; right: 3px; bottom: 3px; border-radius: var(--atlas-r-sm, 12px); overflow: hidden; }
 .tmap-celula { all: unset; position: absolute; box-sizing: border-box; border: 1px solid transparent; background-clip: padding-box;
   border-radius: var(--atlas-r-xxs, 4px); overflow: hidden;
-  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 1px; padding: 4px;
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-start; text-align: left; gap: 4px; padding: 6px 12px;
   color: #fff; cursor: pointer; transition: filter .15s; }
 .tmap-celula:hover { filter: brightness(1.15); }
 .tmap-celula:focus-visible { outline: 2px solid var(--atlas-acao, #00BFFF); outline-offset: -2px; z-index: 1; }
-.tmap-celula b { font-size: 12px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
-.tmap-celula b.tmap-mini { font-size: 10px; }
-.tmap-celula span { font-family: var(--mono, monospace); font-size: 10.5px; opacity: .92; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+/* o tamanho da letra vem do JS, proporcional à célula (referência do dono, 28/11) */
+.tmap-celula b { font-size: 12px; font-weight: 600; line-height: 1.05; letter-spacing: -.01em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tmap-celula span { font-size: 10.5px; font-weight: 500; line-height: 1.2; font-variant-numeric: tabular-nums; opacity: .9; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.tmap-celula.tmap-resto { cursor: default; }
+.tmap-celula.tmap-resto:hover { filter: none; }
 
 /* rendimentos */
 .mk-rend { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; margin: 0 8px; padding: 10px 12px;
@@ -195,3 +197,19 @@ button.tmap-titulo:hover { color: var(--atlas-acao, #00BFFF); }
 @media (min-width: 721px) {
   .mk-miolo-so .mk-p-mapa .mk-mapa { aspect-ratio: 2.3; flex: none; min-height: 420px; }
 }
+
+/* filtro do mapa (Tokens e RWA, 28/11): pílulas no topo do painel */
+.mk-filtro { display: inline-flex; gap: 2px; padding: 3px; margin-right: auto; border-radius: var(--atlas-r-pill, 999px); background: var(--mk-sup-hi); }
+.mk-filtro-op { all: unset; cursor: pointer; padding: 6px 14px; border-radius: var(--atlas-r-pill, 999px); font-size: 12.5px; font-weight: 600;
+  color: var(--texto-suave); transition: background .15s, color .15s; white-space: nowrap; }
+.mk-filtro-op:hover { color: var(--texto); background: var(--mk-hover); }
+.mk-filtro-op.ativa { background: var(--atlas-acao, #00BFFF); color: var(--atlas-acao-tinta, #04121C); }
+.mk-filtro-op:focus-visible { outline: 2px solid var(--atlas-acao, #00BFFF); outline-offset: 2px; }
+.mk-p-mapa .mk-p-head { align-items: center; }
+.mk-p-mapa .mk-p-titulo { margin-right: 8px; }
+@media (max-width: 720px) {
+  .mk-filtro { order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .mk-filtro-op { padding: 6px 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .mk-filtro-op { transition: none; } }
+.tmap-celula.tmap-resto span { white-space: normal; opacity: .75; }

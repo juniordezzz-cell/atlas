@@ -103,3 +103,15 @@ Saíram os painéis Redes e "O que mudou hoje" (e o código deles). Clicar no
 nome de uma rede abre só ela; o botão "← Todas as redes" no topo do painel
 volta. Cada rede mostra até 12 protocolos e "Outras redes" até 14. Tokens e
 RWA mantêm as três colunas.
+
+## Ajuste de 28/11 (Mercado, terceira parte)
+
+- Tokens e RWA também ficam só com o mapa na faixa central. Os painéis de
+  altas e quedas viraram um filtro em pílulas no topo do mapa
+  (`filtroPainel`): Tokens = Maiores · Maiores altas · Maiores quedas;
+  RWA = Maiores · Ações em alta · Ações em queda. Em altas e quedas o
+  tamanho da célula é o tamanho do movimento em 24h (20 maiores).
+- Mapa no jeito da referência do dono: texto alinhado à esquerda, nome com
+  letra proporcional à célula (até 64 px) e o valor embaixo; o valor só
+  aparece se couber inteiro. Na DeFi (`juntar: true`) as migalhas, abaixo de
+  0,3% do mapa, viram uma célula "+N" com os nomes.

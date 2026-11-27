@@ -104,6 +104,27 @@
     return add(r, h("span", "mk-linha-nome", nome),
       add(h("span", "mk-ativo-num"), h("b", null, valor), variacao !== undefined ? h("small", cls(variacao), pc(variacao)) : null));
   }
+  /* filtro em pílulas no topo de um painel (28/11): [[chave, rótulo]]; devolve marca(chave) */
+  function filtroPainel(p, opcoes, aoMudar) {
+    var trilho = h("div", "mk-filtro"); trilho.setAttribute("role", "group");
+    var bts = {};
+    opcoes.forEach(function (o) {
+      var b = h("button", "mk-filtro-op", o[1]); b.type = "button";
+      b.addEventListener("click", function () { marca(o[0]); aoMudar(o[0]); });
+      bts[o[0]] = b; trilho.appendChild(b);
+    });
+    function marca(k) { Object.keys(bts).forEach(function (x) { bts[x].classList.toggle("ativa", x === k); bts[x].setAttribute("aria-pressed", x === k ? "true" : "false"); }); }
+    p.querySelector(".mk-p-head").insertBefore(trilho, p.querySelector(".mk-p-dica"));
+    marca(opcoes[0][0]);
+    return marca;
+  }
+  /* mapa de altas ou quedas: tamanho = tamanho do movimento, cor = 24h */
+  function itensMovimento(rows, modo, n) {
+    var sinal = modo === "altas" ? 1 : -1;
+    return rows.filter(function (x) { return x.change24h * sinal > 0; })
+      .sort(function (a, b) { return (b.change24h - a.change24h) * sinal; }).slice(0, n)
+      .map(function (x) { return { nome: x.symbol, valor: Math.abs(x.change24h), variacao: x.change24h, detalhe: big(x.marketCap), aoClicar: assetLink(x.id, x.symbol) }; });
+  }
   function lista(linhas) { var l = h("div", "mk-lista"); linhas.forEach(function (x) { l.appendChild(x); }); return l; }
   /* [{nome, valor, rotulo, cor?}]; teto opcional: barra para de crescer ali
      (uma pool de 250% achataria todas as outras), o rótulo mostra o valor real */
@@ -304,7 +325,7 @@
       if (outras.length) grupos.push({ nome: "Outras redes", itens: outras.slice(0, 14).map(function (p) {
         return { nome: p.nome, valor: p.tvl, variacao: p.change7d, detalhe: big(p.tvl) + " · " + rede(p.redePrincipal), aoClicar: abrirProto(p) }; }) });
       pMapa.estado(caixa);
-      AcademyTreemap.render(caixa, grupos, { escala: 10, aoClicarGrupo: function (g) { if (g.chave) escolheRede(g.chave); } });
+      AcademyTreemap.render(caixa, grupos, { escala: 10, juntar: true, aoClicarGrupo: function (g) { if (g.chave) escolheRede(g.chave); } });
       pMapa.dica("tamanho = TVL · cor = 7 dias · clique numa rede para abrir só ela");
     }
     function desenhaTabela() {
@@ -394,11 +415,29 @@
   function abaTokens(mount) {
     var T = topo(["Valor de mercado", "Volume 24h", "Dominância BTC", "Subindo / caindo", "Medo e ganância"]);
     mount.appendChild(T.el);
-    var grade = h("div", "mk-miolo");
-    var pAlta = painel("Maiores altas 24h", "acima de $50 mi");
+    // 28/11: só o mapa na faixa central; altas e quedas viraram filtro do mapa
+    var grade = h("div", "mk-miolo mk-miolo-so");
     var pMapa = painel("Mapa do mercado", "tamanho = valor de mercado · cor = 24h"); pMapa.classList.add("mk-p-mapa");
-    var pQueda = painel("Maiores quedas 24h", "acima de $50 mi");
-    add(grade, pAlta, pMapa, pQueda); mount.appendChild(grade);
+    add(grade, pMapa); mount.appendChild(grade);
+    var modoMapa = "maiores", dadosMapa = null;
+    filtroPainel(pMapa, [["maiores", "Maiores"], ["altas", "Maiores altas"], ["quedas", "Maiores quedas"]],
+      function (k) { modoMapa = k; desenhaMapa(); });
+    function desenhaMapa() {
+      if (!dadosMapa) return;
+      var itens, dica;
+      if (modoMapa === "maiores") {
+        itens = dadosMapa.maiores.map(function (x) {
+          return { nome: x.symbol, valor: x.marketCap, variacao: x.change24h, detalhe: big(x.marketCap), aoClicar: assetLink(x.id, x.symbol) }; });
+        dica = "30 maiores · tamanho = valor de mercado · cor = 24h";
+      } else {
+        itens = itensMovimento(dadosMapa.Q, modoMapa, 20);
+        dica = "acima de $50 mi · tamanho = " + (modoMapa === "altas" ? "alta" : "queda") + " em 24h";
+      }
+      if (!itens.length) return pMapa.indisponivel(null, modoMapa === "altas" ? "Nenhum token subindo agora." : modoMapa === "quedas" ? "Nenhum token caindo agora." : "Dados indisponíveis no momento.");
+      var caixa = h("div", "mk-mapa"); pMapa.estado(caixa);
+      AcademyTreemap.render(caixa, [{ nome: "Tokens", itens: itens }], { titulos: false, escala: 6 });
+      pMapa.dica(dica);
+    }
     var baixo = h("div", "mk-baixo");
     var pVolAn = painel("Volume fora do normal", "volume ÷ valor de mercado");
     var pSet = painel("Setores 24h", "valor de mercado");
@@ -409,7 +448,7 @@
     function carregar() {
       Promise.all([AcademyData.markets().catch(nada), AcademyData.global().catch(nada), AcademyData.feargreed().catch(nada)]).then(function (r) {
         var mk = r[0] || [], g = r[1], fg = r[2], quando = Date.now();
-        if (!mk.length) { [pAlta, pMapa, pQueda, pVolAn, pTab].forEach(function (p) { p.indisponivel(carregar); }); }
+        if (!mk.length) { [pMapa, pVolAn, pTab].forEach(function (p) { p.indisponivel(carregar); }); }
         var Q = qualidade(mk);
         var top100 = Q.slice().sort(function (a, b) { return b.marketCap - a.marketCap; }).slice(0, 100);
         var up = top100.filter(function (x) { return x.change24h > 0; }).length;
@@ -426,18 +465,10 @@
         if (top100.length) f.push(up >= top100.length * 0.6 ? "A maioria dos tokens sobe." : up <= top100.length * 0.4 ? "A maioria dos tokens cai." : "Mercado dividido.");
         if (altas[0] && altas[0].change24h > 0) f.push(altas[0].symbol + " lidera as altas (" + pc(altas[0].change24h) + ")" + (quedas[0] && quedas[0].change24h < 0 ? "; " + quedas[0].symbol + " lidera as quedas (" + pc(quedas[0].change24h) + ")." : "."));
         T.frase(f.join(" "));
-        function lt(x) { return linhaAtivo(x, money(x.usd), x.change24h, assetLink(x.id, x.symbol)); }
-        if (altas.length) pAlta.estado(lista(altas.filter(function (x) { return x.change24h > 0; }).slice(0, 8).map(lt)));
-        if (quedas.length) pQueda.estado(lista(quedas.filter(function (x) { return x.change24h < 0; }).slice(0, 8).map(lt)));
-        // mapa: 30 maiores sem stablecoins
+        // mapa: 30 maiores sem stablecoins; altas e quedas pelo filtro de qualidade
         var mapa = mk.filter(function (x) { return x.marketCap > 0 && !STABLE_SYM[x.symbol] && !/^(usd|eur)/i.test(x.symbol || ""); })
           .sort(function (a, b) { return b.marketCap - a.marketCap; }).slice(0, 30);
-        if (mapa.length) {
-          var caixa = h("div", "mk-mapa"); pMapa.estado(caixa);
-          AcademyTreemap.render(caixa, [{ nome: "Tokens", itens: mapa.map(function (x) {
-            return { nome: x.symbol, valor: x.marketCap, variacao: x.change24h, detalhe: big(x.marketCap), aoClicar: assetLink(x.id, x.symbol) }; }) }],
-            { titulos: false, escala: 6 });
-        }
+        if (mk.length) { dadosMapa = { maiores: mapa, Q: Q }; desenhaMapa(); }
         // volume fora do normal
         var va = Q.map(function (x) { return { x: x, r: x.volume24h / x.marketCap }; }).sort(function (a, b) { return b.r - a.r; }).slice(0, 6);
         if (va.length) pVolAn.estado(lista(va.map(function (o) { return linhaAtivo(o.x, n(o.r, 1) + "×", o.x.change24h, assetLink(o.x.id, o.x.symbol), "volume " + big(o.x.volume24h)); })));
@@ -484,11 +515,13 @@
   function abaRwa(mount) {
     var T = topo(["Ativos tokenizados", "Crédito privado", "Tesouro tokenizado", "Ouro tokenizado", "Ações tokenizadas"]);
     mount.appendChild(T.el);
-    var grade = h("div", "mk-miolo");
-    var pAlta = painel("Ações em alta", "24h");
+    // 28/11: só o mapa na faixa central; ações em alta e em queda viraram filtro do mapa
+    var grade = h("div", "mk-miolo mk-miolo-so");
     var pMapa = painel("Mapa das ações tokenizadas", "tamanho = valor de mercado · cor = 24h"); pMapa.classList.add("mk-p-mapa");
-    var pQueda = painel("Ações em queda", "24h");
-    add(grade, pAlta, pMapa, pQueda); mount.appendChild(grade);
+    add(grade, pMapa); mount.appendChild(grade);
+    var modoMapa = "maiores";
+    filtroPainel(pMapa, [["maiores", "Maiores"], ["altas", "Ações em alta"], ["quedas", "Ações em queda"]],
+      function (k) { modoMapa = k; desenhaMapa(); });
     var baixo = h("div", "mk-baixo");
     var pClasses = painel("Classes de ativo", "valor de mercado · 24h");
     var pNeg = painel("Ações mais negociadas", "volume 24h");
@@ -505,12 +538,20 @@
        classes (crédito, Tesouro, ouro) ficam nos números e na lista */
     function desenhaMapa() {
       if (!A) return;
-      var ord = A.filter(function (x) { return x.marketCap > 0; }).sort(function (a, b) { return b.marketCap - a.marketCap; });
-      if (!ord.length) return pMapa.indisponivel(carregar);
-      var itens = ord.slice(0, 30).map(function (x) { return { nome: x.symbol, valor: x.marketCap, variacao: x.change24h, detalhe: big(x.marketCap), aoClicar: assetLink(x.id, x.symbol) }; });
+      var itens, dica;
+      if (modoMapa === "maiores") {
+        var ord = A.filter(function (x) { return x.marketCap > 0; }).sort(function (a, b) { return b.marketCap - a.marketCap; });
+        if (!ord.length) return pMapa.indisponivel(carregar);
+        itens = ord.slice(0, 30).map(function (x) { return { nome: x.symbol, valor: x.marketCap, variacao: x.change24h, detalhe: big(x.marketCap), aoClicar: assetLink(x.id, x.symbol) }; });
+        dica = "30 maiores · tamanho = valor de mercado · cor = 24h";
+      } else {
+        itens = itensMovimento(A, modoMapa, 20);
+        if (!itens.length) return pMapa.indisponivel(null, modoMapa === "altas" ? "Nenhuma ação subindo agora." : "Nenhuma ação caindo agora.");
+        dica = "tamanho = " + (modoMapa === "altas" ? "alta" : "queda") + " em 24h · cor = 24h";
+      }
       var caixa = h("div", "mk-mapa"); pMapa.estado(caixa);
       AcademyTreemap.render(caixa, [{ nome: "Ações", itens: itens }], { titulos: false, escala: 4 });
-      pMapa.dica("30 maiores · tamanho = valor de mercado · cor = 24h");
+      pMapa.dica(dica);
     }
     function frase() {
       var f = [];
@@ -551,12 +592,6 @@
           AcademyData.tokenizedStocksAll().then(function (acoes) {
             A = (acoes || []).filter(function (x) { return x.change24h != null; });
             desenhaMapa(); frase();
-            var altas = A.slice().sort(function (a, b) { return b.change24h - a.change24h; });
-            var quedas = A.slice().sort(function (a, b) { return a.change24h - b.change24h; });
-            function la(x) { return linhaAtivo(x, money(x.usd), x.change24h, assetLink(x.id, x.symbol)); }
-            var al = altas.filter(function (x) { return x.change24h > 0; }).slice(0, 8), qu = quedas.filter(function (x) { return x.change24h < 0; }).slice(0, 8);
-            if (al.length) pAlta.estado(lista(al.map(la))); else pAlta.indisponivel(null, "Nenhuma ação subindo agora.");
-            if (qu.length) pQueda.estado(lista(qu.map(la))); else pQueda.indisponivel(null, "Nenhuma ação caindo agora.");
             var neg = A.filter(function (x) { return x.volume24h > 0; }).sort(function (a, b) { return b.volume24h - a.volume24h; }).slice(0, 7);
             if (neg.length) pNeg.estado(lista(neg.map(function (x) { return linhaAtivo(x, big(x.volume24h), x.change24h, assetLink(x.id, x.symbol)); })));
             else pNeg.indisponivel(carregar);
@@ -571,7 +606,7 @@
             sinaisRwa();
           }).catch(function () {
             A = null;
-            [pAlta, pQueda, pNeg, pTab, pMapa].forEach(function (p) { p.indisponivel(carregar, "A lista de ações tokenizadas não respondeu (limite da CoinGecko)."); });
+            [pNeg, pTab, pMapa].forEach(function (p) { p.indisponivel(carregar, "A lista de ações tokenizadas não respondeu (limite da CoinGecko)."); });
             sinaisRwa();
           });
         }, 900);

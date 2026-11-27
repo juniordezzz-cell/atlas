@@ -8,6 +8,7 @@
      opts.titulos  (padrão true): faixa com o nome do grupo
      opts.escala   (padrão 8): variação (%) que pinta a cor mais forte
      opts.aoClicarGrupo(grupo): clique no título do grupo
+     opts.juntar   (padrão false): migalhas (< 0,3% do mapa) viram uma célula "+N"
 
    Algoritmo "squarified" (Bruls, Huizing e van Wijk): retângulos o mais
    perto possível de quadrados. Tudo em porcentagem da caixa, então o
@@ -93,7 +94,20 @@
       }
       var area = el("div", "tmap-area"); area.style.top = (faixa || 3) + "px";
       bloco.appendChild(area);
-      var its = G.itens.filter(function (it) { return it.valor > 0; });
+      var its = G.itens.filter(function (it) { return it.valor > 0; })
+                       .sort(function (a, b) { return b.valor - a.valor; });
+      // 28/11: as migalhas (menos de 0,3% do mapa) viram uma célula "+N",
+      // em vez de dezenas de caixinhas sem nome apertadas no canto
+      var totG = its.reduce(function (s, it) { return s + it.valor; }, 0);
+      var corte = totG * 0.003 * (W * H) / (r.w * r.h);
+      var fica = opts.juntar ? its.filter(function (it, k) { return k < 3 || it.valor >= corte; }) : its;
+      var resto = its.slice(fica.length);
+      if (resto.length > 1) {
+        fica.push({ nome: "+" + resto.length, valor: resto.reduce(function (s, it) { return s + it.valor; }, 0), variacao: null,
+                    detalhe: resto.slice(0, 6).map(function (it) { return it.nome; }).join(", ") + (resto.length > 6 ? "…" : ""), resto: true });
+      } else if (resto.length) fica.push(resto[0]);
+      its = fica;
+      var pxW = (caixa.clientWidth || 900) / W, pxH = (caixa.clientHeight || 560) / H;
       layout(its, 0, 0, r.w, r.h).forEach(function (c) {
         var it = its[c.i];
         var b = el("button", "tmap-celula");
@@ -101,14 +115,22 @@
         b.style.left = (c.x / r.w * 100) + "%"; b.style.top = (c.y / r.h * 100) + "%";
         b.style.width = (c.w / r.w * 100) + "%"; b.style.height = (c.h / r.h * 100) + "%";
         b.style.background = cor(it.variacao, escala);
-        var areaRel = (c.w / W) * (c.h / H);
-        b.title = it.nome + (it.detalhe ? " · " + it.detalhe : "") + " · " + pc(it.variacao);
-        if (areaRel > 0.0035) {
-          b.appendChild(el("b", null, it.nome));
-          var s = el("span", null, (areaRel > 0.012 && it.detalhe ? it.detalhe + " " : "") + pc(it.variacao));
-          b.appendChild(s);
-        } else if (areaRel > 0.0012) {
-          b.appendChild(el("b", "tmap-mini", it.nome));
+        b.title = it.nome + (it.detalhe ? " · " + it.detalhe : "") + (it.resto ? "" : " · " + pc(it.variacao));
+        if (it.resto) b.classList.add("tmap-resto");
+        // texto do tamanho da célula (28/11, referência do dono): nome grande
+        // nas grandes, valor embaixo; célula pequena demais fica sem texto
+        var wpx = c.w / r.w * (r.w * pxW - 6), hpx = c.h / r.h * (r.h * pxH - (faixa || 3) - 3);
+        var fs = Math.max(11, Math.min(it.resto ? 20 : 64, hpx * 0.26, (wpx - 26) * 1.3 / Math.max(3, it.nome.length)));
+        if (wpx >= 34 && hpx >= 22) {
+          var nm = el("b", null, it.nome); nm.style.fontSize = Math.round(fs) + "px";
+          b.appendChild(nm);
+          var fd = Math.max(10, Math.min(22, fs * 0.42));
+          if (hpx >= fs * 1.25 + fd * 1.4 + 14) {
+            var txt = it.resto ? (wpx > 110 ? it.detalhe : "") : pc(it.variacao);
+            // o valor (TVL, valor de mercado) só entra se couber inteiro na largura
+            if (!it.resto && it.detalhe && (it.detalhe.length + txt.length + 1) * fd * 0.58 < wpx - 24) txt = it.detalhe + " " + txt;
+            if (txt) { var sd = el("span", null, txt); sd.style.fontSize = Math.round(fd) + "px"; b.appendChild(sd); }
+          }
         }
         if (it.aoClicar) b.addEventListener("click", it.aoClicar); else b.tabIndex = -1;
         area.appendChild(b);
