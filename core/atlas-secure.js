@@ -80,7 +80,7 @@
           b.textContent = "MODO DEV · sem login";
           b.title = "Só no servidor local. Desligue com ?atlas-dev=0 no endereço.";
           b.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:2147483647;padding:4px 8px;" +
-            "border-radius:6px;background:#f5b942;color:#1a1200;font:600 11px/1.2 system-ui,sans-serif;" +
+            "border-radius:var(--atlas-r-xs, 8px);background:#f5b942;color:#1a1200;font:600 11px/1.2 system-ui,sans-serif;" +
             "pointer-events:none;opacity:.9";
           document.body.appendChild(b);
         };

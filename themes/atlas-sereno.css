@@ -19,7 +19,7 @@ html[data-theme="dark"] {
   --sereno-rule:      rgba(160, 185, 230, 0.08);   /* linha entre seções */
   --sereno-fill:      rgba(148, 170, 215, 0.045);  /* contêiner necessário */
   --sereno-fill-hi:   rgba(148, 170, 215, 0.075);  /* hover de clicável */
-  --sereno-r:         20px;
+  --sereno-r:         var(--atlas-r-lg, 20px);
   --sereno-gap:       40px;                        /* respiro entre seções */
 }
 html[data-theme="light"] {
@@ -58,7 +58,12 @@ body::before { content: none !important; }
 /* a grade própria do Trade (trade/assets/css/base.css) mora no ::after */
 body::after { content: none !important; }
 
-/* ---------- 2. Seções abertas: o cartão de conteúdo perde a caixa ---------- */
+/* ---------- 2. Superfícies suaves (27/11/2026) ----------
+   Até 26/11 aqui era "seção aberta": o cartão perdia fundo, borda e canto,
+   e a página virava blocos soltos separados por linha reta. O dono:
+   "o site tá muito quadrado, sem suavidade nenhuma". Agora o cartão é uma
+   superfície leve, sem contorno, com o canto da escala única
+   (core/ui/atlas-shell.css). Spec: specs/2026-11-27-forma-suave-design.md */
 html .card,
 html .panel,
 html .set-card,
@@ -69,15 +74,15 @@ html .pos-card,
 html .hpanel,
 html .chart-card,
 html .rep-card {
-  background: transparent;
+  background: var(--sereno-fill);
   background-image: none;
   border: 0;
-  border-radius: 0;
+  border-radius: var(--atlas-r-lg, 20px);
   box-shadow: none;
   -webkit-backdrop-filter: none;
           backdrop-filter: none;
-  padding-left: 0;
-  padding-right: 0;
+  padding-left: var(--atlas-sp-5);
+  padding-right: var(--atlas-sp-5);
 }
 /* sem pulinho, sem sombra, sem borda acesa no hover */
 html .card:hover, html .panel:hover, html .set-card:hover, html .wcard:hover,
@@ -93,13 +98,8 @@ html .kpi::after {
   content: none;
 }
 
-/* linha fina entre FILEIRAS de seções (não entre colunas lado a lado:
-   a linha no irmão da mesma grade desalinhava as colunas) */
-html :is(.grid, .row):has(> :is(.card, .panel, .hpanel, .chart-card))
-  + :is(.grid, .row):has(> :is(.card, .panel, .hpanel, .chart-card)) {
-  border-top: 1px solid var(--sereno-rule);
-  padding-top: var(--atlas-sp-6);
-}
+/* (27/11) saiu a linha reta entre fileiras de seções: com as
+   superfícies, o espaço já separa uma fileira da outra */
 
 /* estado vazio dentro de seção: sem a moldura tracejada */
 html :is(.card, .panel, .hpanel, .chart-card, .set-card, .rep-card)
@@ -136,22 +136,21 @@ html :is(a.card, .card--link, .card[role="button"], .card.is-clickable, .tool-ca
   box-shadow: none;
 }
 
-/* ---------- 3. Faixa de números ---------- */
-/* a linha que contém KPIs vira uma faixa: sem caixas, traço fino entre eles */
+/* ---------- 3. Números em placas suaves (27/11/2026) ----------
+   Antes: faixa sem caixa com traço reto entre os números. Agora cada
+   número é uma placa leve com canto md, separada por espaço. */
 html :has(> .kpi + .kpi) {
-  column-gap: 0;
-  row-gap: var(--atlas-sp-5);   /* faixas em grade (2×2 do Trade) não colam */
+  column-gap: var(--atlas-sp-3);
+  row-gap: var(--atlas-sp-3);
 }
 html .kpi {
-  background: transparent;
+  background: var(--sereno-fill);
   background-image: none;
   border: 0;
-  border-radius: 0;
+  border-radius: var(--atlas-r-md, 16px);
   box-shadow: none;
-  padding: var(--atlas-sp-2) var(--atlas-sp-6);
+  padding: var(--atlas-sp-4) var(--atlas-sp-5);
 }
-html .kpi + .kpi { border-left: 1px solid var(--sereno-rule); }
-html .kpi:first-child { padding-left: 0; }
 /* ícone decorativo no canto do KPI */
 html .kpi :is(.kpi-ic, .kpi__ic, .kpi-icon, .kpi__icon) { display: none; }
 
@@ -190,11 +189,8 @@ html :is(.money, .num, [data-num], td.num, .est__ticker) {
 
 /* abaixo de 1280px a faixa costuma quebrar em mais de uma linha, e o
    traço/recuo cairia no começo da segunda linha: vira só espaço */
-@media (max-width: 1280px) {
-  html :has(> .kpi + .kpi) { row-gap: var(--atlas-sp-5); }
-  html .kpi, html .kpi:first-child { padding-left: 0; padding-right: var(--atlas-sp-4); }
-  html .kpi + .kpi { border-left: 0; }
-}
+/* (27/11) a regra de abaixo de 1280px sumiu: as placas quebram de linha
+   sem traço nem recuo para corrigir */
 
 /* ---------- 4. Tipografia de seção ---------- */
 html :is(.eyebrow, .card-eyebrow, .panel-eyebrow, .sec-eyebrow) {
@@ -221,7 +217,7 @@ html .onboard {
 html :is(.onboard-card, .quick-item, .mini-stat, .scenario, .cap-calc, .obj-item, .fee-item, .cmp) {
   background: var(--sereno-fill);
   border-color: transparent;
-  border-radius: 14px;
+  border-radius: var(--atlas-r-md, 16px);
   box-shadow: none;
 }
 
@@ -248,14 +244,14 @@ html :is(.grid, .row) + :is(.grid, .row) { margin-top: var(--atlas-sp-7); }
 html :is(.awsel .awsel__btn, .atlas-side-search, .atlas-cmdk) {
   border-color: transparent;
   background: var(--sereno-fill);
-  border-radius: 12px;
+  border-radius: var(--atlas-r-sm, 12px);
   box-shadow: none;
 }
 html :is(.atlas-bell__btn, .atlas-theme-toggle, .nav-toggle),
 html :is(.topbar, .topnav) .icon-btn {
   border-color: transparent;
   background: transparent;
-  border-radius: 12px;
+  border-radius: var(--atlas-r-sm, 12px);
   box-shadow: none;
 }
 html :is(.awsel .awsel__btn, .atlas-side-search, .atlas-cmdk, .atlas-bell__btn, .atlas-theme-toggle, .nav-toggle):hover,
@@ -561,20 +557,19 @@ html .hpanel-title[class] {
 }
 html .cc-globe-title[class] { text-transform: none; letter-spacing: 0; }
 
-/* faixas de métrica: sem grade de células, traço fino entre números */
+/* faixas de métrica: placas suaves separadas por espaço (27/11/2026;
+   antes eram células sem caixa com traço reto entre elas) */
 html :is(.kpi-strip, .cc-metrics, .metric-grid) {
   background: transparent;
   border: 0;
   border-radius: 0;
-  gap: var(--atlas-sp-4) 0;
+  gap: var(--atlas-sp-3);
 }
 html :is(.kpi-cell, .cc-metric, .metric) {
-  background: transparent;
-  padding: var(--atlas-sp-1) var(--atlas-sp-5);
-}
-html :is(.kpi-cell, .cc-metric, .metric):first-child { padding-left: 0; }
-html :is(.kpi-cell, .cc-metric, .metric) + :is(.kpi-cell, .cc-metric, .metric) {
-  border-left: 1px solid var(--sereno-rule);
+  background: var(--sereno-fill);
+  border: 0;
+  border-radius: var(--atlas-r-md, 16px);
+  padding: var(--atlas-sp-3) var(--atlas-sp-4);
 }
 html .kpi-cell::after { content: none; }
 html :is(.kpi-label, .cc-mlabel, .metric-label)[class] {
@@ -584,11 +579,6 @@ html :is(.kpi-label, .cc-mlabel, .metric-label)[class] {
   font-weight: 500;
 }
 html :is(.kpi-value, .metric-value, .cc-mvalue) { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-@media (max-width: 1280px) {
-  html :is(.kpi-cell, .cc-metric, .metric),
-  html :is(.kpi-cell, .cc-metric, .metric):first-child { padding-left: 0; padding-right: var(--atlas-sp-4); }
-  html :is(.kpi-cell, .cc-metric, .metric) + :is(.kpi-cell, .cc-metric, .metric) { border-left: 0; }
-}
 
 /* fita de cotações: sem caixa em volta */
 html .cc-tape {
@@ -654,12 +644,12 @@ html .rep-field > label { text-transform: none; letter-spacing: 0; }
 html :is(.cx-hero-card, .cx-wallet-card) {
   background: var(--sereno-fill);
   border-color: transparent;
-  border-radius: 16px;
+  border-radius: var(--atlas-r-md, 16px);
   box-shadow: none;
 }
 /* Configurações: seção aberta já cobre .set-card; bloco "bloqueado" e
    o relatório de suporte ficam preenchidos */
-html :is(.locked, .sup-relatorio) { border-color: transparent; background: var(--sereno-fill); border-radius: 16px; }
+html :is(.locked, .sup-relatorio) { border-color: transparent; background: var(--sereno-fill); border-radius: var(--atlas-r-md, 16px); }
 /* legenda da distribuição: linha de lista, não caixinha */
 html .cx-donut-legend li {
   border: 0;
@@ -679,7 +669,7 @@ html .atlas-cal { border-color: transparent; background: var(--sereno-fill); box
 html .login-card {
   border-color: transparent;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
-  border-radius: 24px;
+  border-radius: var(--atlas-r-xl, 24px);
 }
 html .lp-card { box-shadow: none; }
 html .lp-brand { letter-spacing: 0.12em; }
@@ -708,7 +698,7 @@ html .demo-faixa {
   flex-wrap: wrap;
   margin: 0 0 var(--atlas-sp-6);
   padding: 10px 12px 10px 16px;
-  border-radius: 14px;
+  border-radius: var(--atlas-r-md, 16px);
   background: color-mix(in srgb, var(--atlas-accent) 9%, transparent);
   color: var(--atlas-text);
   font-size: var(--atlas-fs-sm);
@@ -719,7 +709,7 @@ html .demo-faixa__btn {
   flex: none;
   padding: 7px 14px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--atlas-r-sm, 12px);
   background: color-mix(in srgb, var(--atlas-accent) 18%, transparent);
   color: var(--atlas-text-hi);
   font: inherit;
@@ -753,7 +743,7 @@ html[data-module="rwa"] .crwa-table th { white-space: nowrap; }
 html[data-module="rwa"] .crwa-tag {
   display: inline-block;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--atlas-r-pill, 999px);
   background: color-mix(in srgb, var(--warn, #F59E0B) 16%, transparent);
   color: var(--warn, #F59E0B);
   font-size: 11px;
@@ -765,7 +755,7 @@ html[data-module="rwa"] .crwa-ok { color: var(--pos, #22C55E); font-weight: 600;
 html[data-module="rwa"] .crwa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 html[data-module="rwa"] .crwa-chip {
   padding: 2px 9px;
-  border-radius: 999px;
+  border-radius: var(--atlas-r-pill, 999px);
   background: color-mix(in srgb, var(--atlas-accent, #4F8CFF) 12%, transparent);
   color: var(--text-1, inherit);
   font-size: 12px;
@@ -776,7 +766,7 @@ html[data-module="rwa"] .crwa-chip:hover { background: color-mix(in srgb, var(--
 /* Cartão de agente: contêiner clicável = preenchido, sem contorno, raio ~20px */
 html[data-module="rwa"] .crwa-agent {
   cursor: pointer;
-  border-radius: 20px;
+  border-radius: var(--atlas-r-lg, 20px);
   background: color-mix(in srgb, var(--atlas-text, #E5E7EB) 3%, transparent);
 }
 html[data-module="rwa"] .crwa-agent:hover { background: color-mix(in srgb, var(--atlas-text, #E5E7EB) 5.5%, transparent); }
@@ -820,9 +810,9 @@ html[data-module="rwa"] .crwa-strip b { font-size: 18px; font-weight: 600; font-
   --suave-campo:      rgba(148, 170, 215, 0.075);
   --suave-campo-hi:   rgba(148, 170, 215, 0.11);
   --suave-anel:       rgba(76, 154, 255, 0.55);
-  --suave-r-campo:    12px;
-  --suave-r-botao:    12px;
-  --suave-r-janela:   20px;
+  --suave-r-campo:    var(--atlas-r-sm, 12px);
+  --suave-r-botao:    var(--atlas-r-sm, 12px);
+  --suave-r-janela:   var(--atlas-r-xl, 24px);
 }
 html[data-theme="light"] {
   --suave-campo:      rgba(15, 30, 60, 0.05);
@@ -877,7 +867,7 @@ html:root body :is(
   border-radius: var(--suave-r-botao);
 }
 /* botões só de ícone ficam com canto proporcional, não quadrado */
-html:root body :is(.icon-btn, .act-btn, .collapse-btn) { border-radius: 10px; }
+html:root body :is(.icon-btn, .act-btn, .collapse-btn) { border-radius: var(--atlas-r-sm, 12px); }
 
 /* ---- 8c. Janelas ---- */
 html:root body :is(.modal, .awd, .atlas-oraculo__review-dialog, [role="dialog"]:not(.modal-scrim):not(.modal-overlay)) {
@@ -890,21 +880,21 @@ html:root body :is(.modal-head, .modal-header, .modal-foot, .modal-footer) {
 }
 
 /* ---- 8d. Filtros segmentados e abas em trilho ---- */
-html:root body :is(.cc-tab, .tab-btn, .period-btn) { border-radius: 10px; }
+html:root body :is(.cc-tab, .tab-btn, .period-btn) { border-radius: var(--atlas-r-sm, 12px); }
 html:root body :is(.segmented, .seg, .defidom-seg) {
   border-radius: var(--suave-r-botao);
 }
 html:root body :is(.segmented, .seg, .defidom-seg) > :is(button, a, .seg__opt) {
-  border-radius: 9px;
+  border-radius: var(--atlas-r-sm, 12px);
 }
 
 /* ---- 8e. Menus suspensos e avisos ---- */
 html:root body :is(.menu, [class*="dropdown"]:not(button), .awsel__menu, .toast, [class*="toast"]:not(button)) {
-  border-radius: 14px;
+  border-radius: var(--atlas-r-md, 16px);
 }
 
 /* ---- 8f. Tabelas: a moldura arredonda junto ---- */
-html:root body :is(.table-wrap, .data-table, .tbl) { border-radius: 14px; }
+html:root body :is(.table-wrap, .data-table, .tbl) { border-radius: var(--atlas-r-md, 16px); }
 
 /* ---- 8g. O "fio de luz" sob o campo em foco sai ----
    atlas-effects.css desenha um traço degradê embaixo de .field,

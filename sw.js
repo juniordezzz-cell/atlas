@@ -195,7 +195,10 @@
 /* v109 = junção com a main (moldura em lista única, Mercado objetivo de 18/11
    substituído pela reforma de 26/11, Ferramentas pelo roteador com a Coinbase
    no câmbio). */
-var VERSAO = "atlas-v109";
+/* v110 = forma suave: escala única de cantos (core/ui/atlas-shell.css),
+   superfícies no lugar das seções abertas, uma animação de entrada só e
+   Mercado trocando de aba sem apagar a tela. */
+var VERSAO = "atlas-v110";
 var CACHE = VERSAO;
 
 /* A casca: o que precisa existir para o ATLAS abrir sem rede. Não é o

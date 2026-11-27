@@ -31,11 +31,11 @@ html.atlas-com-cenario section[id^="tab-"] {
   -webkit-backdrop-filter: var(--sc-desfoque);
           backdrop-filter: var(--sc-desfoque);
   border: 1px solid var(--sc-vidro-borda);
-  border-radius: 22px;
+  border-radius: var(--atlas-r-lg, 20px);
   padding: 22px 22px 18px;
 }
 @media (max-width: 640px) {
-  html.atlas-com-cenario section[id^="tab-"] { padding: 14px 12px 12px; border-radius: 18px; }
+  html.atlas-com-cenario section[id^="tab-"] { padding: 14px 12px 12px; border-radius: var(--atlas-r-md, 16px); }
 }
 /* o rodapé (atualização, links) fica fora das abas: ganha o mesmo vidro,
    mais discreto, para não ficar sobre a cor que se mexe */
@@ -46,7 +46,7 @@ html.atlas-com-cenario .wrap > footer {
   -webkit-backdrop-filter: var(--sc-desfoque);
           backdrop-filter: var(--sc-desfoque);
   border: 1px solid var(--sc-vidro-borda);
-  border-radius: 18px;
+  border-radius: var(--atlas-r-md, 16px);
 }
 /* o rodapé tem a largura da aba aberta: no Oráculo (1140 px) e no Guia
    (920 px) ele passava para os dois lados do painel e virava uma faixa
@@ -151,7 +151,7 @@ html.atlas-com-cenario .rowact .iconbtn {
   height: 30px;
   padding: 0;
   border: 0;
-  border-radius: 9px;
+  border-radius: var(--atlas-r-sm, 12px);
   background: transparent;
   color: var(--mut);
   font-size: 13px;

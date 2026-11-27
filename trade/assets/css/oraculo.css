@@ -105,8 +105,8 @@
 
 .oraculo__log { flex: 1; overflow-y: auto; padding: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-4); }
 .oraculo__msg { max-width: 88%; font-size: var(--fs-sm); line-height: 1.5; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); }
-.oraculo__msg--bot  { align-self: flex-start; background: var(--azure-soft); color: var(--text-hi); border: 1px solid var(--glass-border); border-bottom-left-radius: 6px; }
-.oraculo__msg--user { align-self: flex-end; background: var(--atlas-inner); border: 1px solid var(--glass-border); border-bottom-right-radius: 6px; }
+.oraculo__msg--bot  { align-self: flex-start; background: var(--azure-soft); color: var(--text-hi); border: 1px solid var(--glass-border); border-bottom-left-radius: var(--atlas-r-xs, 8px); }
+.oraculo__msg--user { align-self: flex-end; background: var(--atlas-inner); border: 1px solid var(--glass-border); border-bottom-right-radius: var(--atlas-r-xs, 8px); }
 
 .oraculo__chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: 0 var(--sp-5) var(--sp-3); }
 .oraculo__chip {

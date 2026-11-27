@@ -47,9 +47,9 @@
   --sidebar-w-min: 72px;
   --topbar-h:      60px;
   --maxw:          1400px;
-  --radius:        10px;
-  --radius-sm:     7px;
-  --radius-lg:     14px;
+  --radius:        var(--atlas-r-sm, 12px);
+  --radius-sm:     var(--atlas-r-xs, 8px);
+  --radius-lg:     var(--atlas-r-md, 16px);
 
   /* ---- Type ---- */
   --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -83,12 +83,12 @@ svg { display: block; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--atlas-r-xs, 8px); border: 2px solid var(--bg); }
 ::-webkit-scrollbar-thumb:hover { background: #2b3a4f; }
 
 ::selection { background: var(--primary-24); color: #fff; }
 
-:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: var(--atlas-r-xxs, 4px); }
 
 /* ---------------- type scale ---------------- */
 h1 { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.15; }
@@ -164,7 +164,7 @@ img.brand-mark { object-fit: contain; display: block; }
 
 .nav-item {
   display: flex; align-items: center; gap: 11px;
-  padding: 9px 12px; border-radius: 8px;
+  padding: 9px 12px; border-radius: var(--atlas-r-xs, 8px);
   color: var(--text-dim);
   font-weight: 500; font-size: 13.5px;
   white-space: nowrap;
@@ -175,13 +175,13 @@ img.brand-mark { object-fit: contain; display: block; }
 .nav-item.active { background: var(--primary-14); color: var(--primary-text); }
 .nav-item.active::before {
   content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 18px; border-radius: 0 3px 3px 0; background: var(--primary);
+  width: 3px; height: 18px; border-radius: 0 var(--atlas-r-xxs, 4px) var(--atlas-r-xxs, 4px) 0; background: var(--primary);
 }
 .nav-item .ico { width: 18px; height: 18px; flex-shrink: 0; stroke-width: 1.9; }
 .nav-item .count {
   margin-left: auto; font-size: 11px; font-family: var(--mono);
   background: var(--surface-alt); color: var(--text-dim);
-  padding: 1px 7px; border-radius: 20px;
+  padding: 1px 7px; border-radius: var(--atlas-r-lg, 20px);
 }
 .nav-item.active .count { background: var(--primary-24); color: var(--primary-text); }
 .collapsed .nav-item { justify-content: center; padding: 10px; }
@@ -189,11 +189,11 @@ img.brand-mark { object-fit: contain; display: block; }
 
 .nav-back {
   display: flex; align-items: center; gap: 11px;
-  margin: 0 0 10px; padding: 9px 12px; border-radius: 8px;
+  margin: 0 0 10px; padding: 9px 12px; border-radius: var(--atlas-r-xs, 8px);
   color: var(--text-dim); font-weight: 500; font-size: 13.5px;
   white-space: nowrap;
   border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--atlas-r-xs, 8px) var(--atlas-r-xs, 8px) 0 0;
   transition: background 0.14s var(--ease), color 0.14s var(--ease);
 }
 .nav-back:hover { background: var(--surface-alt); color: var(--primary-text); }
@@ -208,7 +208,7 @@ img.brand-mark { object-fit: contain; display: block; }
 }
 .collapse-btn {
   display: flex; align-items: center; gap: 10px; width: 100%;
-  padding: 8px 10px; border-radius: 8px; color: var(--text-dim);
+  padding: 8px 10px; border-radius: var(--atlas-r-xs, 8px); color: var(--text-dim);
   font-size: 12.5px; transition: background 0.14s;
 }
 .collapse-btn:hover { background: var(--surface-alt); color: var(--text); }
@@ -329,20 +329,11 @@ img.brand-mark { object-fit: contain; display: block; }
 }
 
 
-/* ===== Transição suave de páginas/views (ATLAS) ===== */
-@keyframes atlasPageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-/* ATENÇÃO — NÃO devolver transform a esta animação.
-   O <body> com animação que TOCA em transform vira bloco de contenção
-   para position:fixed. Com fill-mode "both" o efeito é PERMANENTE, mesmo
-   com o quadro final em "transform: none". Isso quebrava, na página
-   inteira: o botão do Oráculo (rolava junto), o diálogo de carteira
-   (descia da tela) e a folha dos menus (ficava fora da área visível,
-   por isso o menu não fechava).
-   O body faz só opacidade. O transform continua nos filhos, que não são
-   ancestrais de nada com position:fixed. */
-@keyframes atlasPageFade { from { opacity: 0; } to { opacity: 1; } }
-body { animation: atlasPageFade .45s ease both; }
-#app-view > * { animation: atlasPageIn .5s ease both; }
+/* ===== Entrada de página (27/11/2026) =====
+   Não há mais animação de entrada aqui. A troca de página é o esmaecimento
+   do @view-transition (core/atlas-secure.js); esta camada fazia o conteúdo
+   nascer transparente por cima dele: eram as "duas piscadas" do dono.
+   Spec: docs/superpowers/specs/2026-11-27-forma-suave-design.md */
 
 
 /* ============================================================
@@ -413,7 +404,7 @@ body { animation: atlasPageFade .45s ease both; }
   .sidebar .nav { display: flex; flex-direction: row; flex: 1; gap: 2px; padding: 0; margin: 0; overflow: visible; }
   .sidebar .nav-item {
     flex: 1 1 0; flex-direction: column; justify-content: center; gap: 3px;
-    min-height: 52px; padding: 4px 2px; margin: 0; border-radius: 12px;
+    min-height: 52px; padding: 4px 2px; margin: 0; border-radius: var(--atlas-r-sm, 12px);
   }
   .sidebar .nav-item .label { display: block !important; font-size: 11px; line-height: 1.1; }
   .sidebar .nav-item .count { display: none !important; }
@@ -422,7 +413,7 @@ body { animation: atlasPageFade .45s ease both; }
      "Voltar ao Atlas" largura inteira e o empilhava como 2ª linha */
   html body .sidebar .nav-back, html body .sidebar .atlas-backfoot {
     order: -1; flex: 0 0 44px; width: 44px; min-height: 52px; margin: 0; padding: 0;
-    position: static; display: flex; align-items: center; justify-content: center; border-radius: 12px;
+    position: static; display: flex; align-items: center; justify-content: center; border-radius: var(--atlas-r-sm, 12px);
   }
   html body .sidebar { flex-direction: row; flex-wrap: nowrap; align-items: stretch; }
   .sidebar .nav-back .label, .sidebar .atlas-backfoot span { display: none; }

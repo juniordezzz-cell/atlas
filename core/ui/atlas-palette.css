@@ -107,7 +107,7 @@
   min-width: 16px;
   padding: 1px 5px;
   margin-right: 3px;
-  border-radius: 5px;
+  border-radius: var(--atlas-r-xxs, 4px);
   border: 1px solid var(--atlas-border);
   background: var(--atlas-inner);
   font-family: var(--atlas-font-mono);

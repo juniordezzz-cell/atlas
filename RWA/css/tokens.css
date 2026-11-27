@@ -44,11 +44,11 @@
   --mono:   "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
 
   /* Raios */
-  --r-xs: 6px;
-  --r-sm: 8px;
-  --r-md: 11px;
-  --r-lg: 14px;
-  --r-pill: 999px;
+  --r-xs: var(--atlas-r-xs, 8px);
+  --r-sm: var(--atlas-r-xs, 8px);
+  --r-md: var(--atlas-r-sm, 12px);
+  --r-lg: var(--atlas-r-md, 16px);
+  --r-pill: var(--atlas-r-pill, 999px);
 
   /* Sombras (quase invisíveis — institucional) */
   --sh-1: 0 1px 0 rgba(255,255,255,0.02) inset, 0 1px 2px rgba(0,0,0,0.4);

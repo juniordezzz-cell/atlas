@@ -33,7 +33,7 @@ a{color:var(--accent)}
 .estudo{color:var(--mut2);font-size:12.5px;margin:6px 0 0}
 
 /* blocos */
-.bloco{background:var(--panel-a);border:1px solid var(--line);border-radius:14px;padding:18px;margin:0 0 18px}
+.bloco{background:var(--panel-a);border:1px solid var(--line);border-radius:var(--atlas-r-md, 16px);padding:18px;margin:0 0 18px}
 .bloco__titulo{margin:0 0 14px;font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
 .secao-titulo{margin:24px 0 10px;font-size:12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
 
@@ -42,7 +42,7 @@ a{color:var(--accent)}
 .grade3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .campo{min-width:0}
 .campo label{display:block;font-size:12.5px;color:var(--mut);margin-bottom:5px}
-.campo input,.campo select{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--txt);font:inherit;padding:9px 12px}
+.campo input,.campo select{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:var(--atlas-r-xs, 8px);color:var(--txt);font:inherit;padding:9px 12px}
 .campo input:focus,.campo select:focus{outline:2px solid var(--accent);outline-offset:1px}
 .campo__junto{display:flex;gap:6px}
 .campo__junto input{flex:1 1 auto;min-width:0}
@@ -53,7 +53,7 @@ a{color:var(--accent)}
 
 /* botões */
 .acoes{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
-.btn{background:transparent;border:1px solid var(--line);color:var(--txt2);border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+.btn{background:transparent;border:1px solid var(--line);color:var(--txt2);border-radius:var(--atlas-r-xs, 8px);padding:8px 14px;font:inherit;cursor:pointer}
 .btn:hover{border-color:var(--accent-line);color:var(--txt)}
 /* cor de ação única do ATLAS (ver themes/atlas-theme.css) */
 .btn--principal{background:#00BFFF;border-color:#00BFFF;color:#04121C;font-weight:600}
@@ -62,13 +62,13 @@ a{color:var(--accent)}
 .btn--link:hover{color:var(--txt)}
 
 /* seletor de opções (moeda, modo, APR/APY…) */
-.toggle{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--line);border-radius:999px;background:var(--panel-a)}
-.toggle button{background:transparent;border:0;color:var(--mut);border-radius:999px;padding:7px 16px;font:inherit;cursor:pointer}
+.toggle{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--line);border-radius:var(--atlas-r-pill, 999px);background:var(--panel-a)}
+.toggle button{background:transparent;border:0;color:var(--mut);border-radius:var(--atlas-r-pill, 999px);padding:7px 16px;font:inherit;cursor:pointer}
 .toggle button[aria-selected="true"]{background:var(--accent-bg);color:var(--txt)}
 
 /* resultados */
 .resultados{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:0 0 18px}
-.res{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--panel-a);min-width:0}
+.res{border:1px solid var(--line);border-radius:var(--atlas-r-sm, 12px);padding:14px 16px;background:var(--panel-a);min-width:0}
 .res__rotulo{font-size:12px;color:var(--mut)}
 .res__valor{font-size:20px;font-weight:700;margin:2px 0 0;font-family:var(--mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .res__nota{font-size:12.5px;color:var(--mut);margin:6px 0 0}
@@ -78,7 +78,7 @@ a{color:var(--accent)}
 .res--ruim .res__valor{color:var(--red)}
 
 /* tabelas */
-.tabela{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel-a)}
+.tabela{overflow-x:auto;border:1px solid var(--line);border-radius:var(--atlas-r-sm, 12px);background:var(--panel-a)}
 .tabela table{width:100%;border-collapse:collapse;font-size:13.5px}
 .tabela th,.tabela td{text-align:right;padding:9px 12px;border-bottom:1px solid #161d2b;white-space:nowrap}
 .tabela th:first-child,.tabela td:first-child{text-align:left}
@@ -93,7 +93,7 @@ a{color:var(--accent)}
 .grafico canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
 
 /* avisos e textos */
-.aviso{border:1px solid #4d3d1a;background:rgba(245,185,66,.07);color:var(--txt2);border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 14px}
+.aviso{border:1px solid #4d3d1a;background:rgba(245,185,66,.07);color:var(--txt2);border-radius:var(--atlas-r-sm, 12px);padding:10px 14px;font-size:13px;margin:0 0 14px}
 .aviso--erro{border-color:#5a2430;background:rgba(240,85,106,.07)}
 .status{color:var(--mut2);font-size:12px;margin:6px 0 0}
 .explica{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);color:var(--txt2);max-width:760px}
@@ -111,10 +111,10 @@ a{color:var(--accent)}
 /* busca de token (../_comum/busca-token.js) */
 .busca-token{position:relative;max-width:520px}
 .busca-token > label{display:block;font-size:12.5px;color:var(--mut);margin-bottom:5px}
-.busca-token > input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--txt);font:inherit;padding:9px 12px}
+.busca-token > input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:var(--atlas-r-xs, 8px);color:var(--txt);font:inherit;padding:9px 12px}
 .busca-token > input:focus{outline:2px solid var(--accent);outline-offset:1px}
-.busca-token__lista{position:absolute;z-index:5;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;background:#0d1320;border:1px solid var(--line);border-radius:10px;max-height:300px;overflow:auto}
-.busca-token__lista li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer}
+.busca-token__lista{position:absolute;z-index:5;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;background:#0d1320;border:1px solid var(--line);border-radius:var(--atlas-r-sm, 12px);max-height:300px;overflow:auto}
+.busca-token__lista li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--atlas-r-xs, 8px);cursor:pointer}
 .busca-token__lista li[aria-selected="true"],.busca-token__lista li:hover{background:var(--accent-bg)}
 .busca-token__lista img{width:22px;height:22px;border-radius:50%}
 .busca-token__lista .rank{margin-left:auto;color:var(--mut2);font-size:12px}
@@ -132,7 +132,7 @@ a{color:var(--accent)}
 .calc-res .resultados{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
 .calc-res .secao-titulo:first-of-type{margin-top:6px}
 .wrap--calc .acoes .btn--principal{display:none}
-.exemplo{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:rgba(245,185,66,.12);color:var(--amber);margin-left:6px;vertical-align:middle}
+.exemplo{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:var(--atlas-r-xs, 8px);background:rgba(245,185,66,.12);color:var(--amber);margin-left:6px;vertical-align:middle}
 @media (min-width:1100px){
   .calc-grade{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}
   .calc-res{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;padding-right:4px}
@@ -142,11 +142,11 @@ a{color:var(--accent)}
 details.explica summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
 details.explica summary::-webkit-details-marker{display:none}
 details.explica summary h2{margin:0}
-details.explica summary::after{content:"Abrir";font-size:12px;color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+details.explica summary::after{content:"Abrir";font-size:12px;color:var(--mut);border:1px solid var(--line);border-radius:var(--atlas-r-pill, 999px);padding:3px 10px}
 details.explica[open] summary::after{content:"Fechar"}
 details.explica[open] summary{margin-bottom:10px}
-details.explica summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+details.explica summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:var(--atlas-r-xs, 8px)}
 /* celular: o botão do menu do site fica no canto, o cabeçalho abre espaço para ele */
 @media (max-width:860px){ html.atlas-moldura .top{padding-left:46px} }
 .exemplo-nota{margin:0 0 12px;color:var(--mut);font-size:12.5px}
-.calc-vazio{border:1px dashed var(--line);border-radius:12px;padding:18px;color:var(--mut);font-size:13.5px;line-height:1.5;background:var(--panel-a)}
+.calc-vazio{border:1px dashed var(--line);border-radius:var(--atlas-r-sm, 12px);padding:18px;color:var(--mut);font-size:13.5px;line-height:1.5;background:var(--panel-a)}

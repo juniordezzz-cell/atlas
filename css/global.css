@@ -57,7 +57,7 @@ input { font-family: inherit; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: rgba(0, 191, 255, 0.18);
-  border-radius: 8px;
+  border-radius: var(--atlas-r-xs, 8px);
 }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0, 191, 255, 0.32); }
 
@@ -80,20 +80,8 @@ input { font-family: inherit; }
 }
 
 
-/* ===== Transição suave de entrada de página (ATLAS) ===== */
-@keyframes atlasPageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-/* ATENÇÃO — NÃO devolver transform a esta animação.
-   O <body> com animação que TOCA em transform vira bloco de contenção
-   para position:fixed. Com fill-mode "both" o efeito é PERMANENTE, mesmo
-   com o quadro final em "transform: none". Isso quebrava, na página
-   inteira: o botão do Oráculo (rolava junto), o diálogo de carteira
-   (descia da tela) e a folha dos menus (ficava fora da área visível,
-   por isso o menu não fechava).
-   O body faz só opacidade. O transform continua nos filhos, que não são
-   ancestrais de nada com position:fixed. */
-@keyframes atlasPageFade { from { opacity: 0; } to { opacity: 1; } }
-body { animation: atlasPageFade .5s ease both; }
-.card, .kpis > * { animation: atlasPageIn .55s ease both; }
-.kpis > *:nth-child(2) { animation-delay: .06s; }
-.kpis > *:nth-child(3) { animation-delay: .12s; }
-.kpis > *:nth-child(4) { animation-delay: .18s; }
+/* ===== Entrada de página (27/11/2026) =====
+   Não há mais animação de entrada aqui. A troca de página é o esmaecimento
+   do @view-transition (core/atlas-secure.js); esta camada fazia o conteúdo
+   nascer transparente por cima dele: eram as "duas piscadas" do dono.
+   Spec: docs/superpowers/specs/2026-11-27-forma-suave-design.md */

@@ -229,7 +229,7 @@ img.brand__mark { object-fit: contain; border-radius: 0; display: block; }
 
 /* aviso de carteira isolada na topbar */
 .topbar__iso {
-  display: inline-block; margin-left: 10px; padding: 2px 10px; border-radius: 20px;
+  display: inline-block; margin-left: 10px; padding: 2px 10px; border-radius: var(--atlas-r-lg, 20px);
   font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
   background: rgba(251,191,36,0.14); color: #FBBF24; vertical-align: middle;
 }

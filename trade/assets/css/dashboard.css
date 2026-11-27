@@ -68,5 +68,5 @@
 .nsum__text .up { font-weight: 600; }
 
 /* Entrada escalonada dos cards */
-.reveal { opacity: 0; transform: translateY(10px); animation: rise var(--dur-slow) var(--ease) forwards; }
+/* .reveal sem animação de entrada desde 27/11/2026 (troca de página já esmaece) */
 @keyframes rise { to { opacity: 1; transform: translateY(0); } }

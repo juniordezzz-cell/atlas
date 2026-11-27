@@ -195,7 +195,7 @@ textarea:focus,
   right: 0;
   bottom: 0;
   height: 2px;
-  border-radius: 2px;
+  border-radius: var(--atlas-r-xxs, 4px);
   background: var(--atlas-grad);
   transform: scaleX(0);
   transform-origin: left center;
@@ -339,7 +339,7 @@ a.card:hover,
   top: 50%;
   width: 3px;
   height: 0;
-  border-radius: 0 3px 3px 0;
+  border-radius: 0 var(--atlas-r-xxs, 4px) var(--atlas-r-xxs, 4px) 0;
   background: var(--atlas-grad);
   transform: translateY(-50%);
   transition: height var(--atlas-dur) var(--atlas-ease);
@@ -458,24 +458,10 @@ svg .atlas-dot:hover {
 }
 @keyframes atlas-fade { from { opacity: 0; } to { opacity: 1; } }
 
-.view__inner,
-#app > .view,
-.page-enter {
-  animation: atlas-view-in var(--atlas-dur) var(--atlas-ease-out);
-}
-/* blur-fade (Magic UI): entra desfocado e foca.
-   CUIDADO: um filter que sobra depois da animação (mesmo blur(0px))
-   vira bloco de contenção e desloca menus/modais fixos dentro do card.
-   E "none" no último quadro NÃO basta: o navegador interpola none como
-   blur(0px), e com fill-mode both/forwards esse valor fica para sempre.
-   Por isso o desfoque é uma animação À PARTE, atlas-blur-in, sempre com
-   fill-mode backwards — age na entrada e some ao terminar. atlas-view-in
-   não tem fill, então pode levar o filtro direto. */
-@keyframes atlas-view-in {
-  from { opacity: 0; transform: translateY(8px); filter: blur(6px); }
-  to   { opacity: 1; transform: translateY(0); filter: none; }
-}
-@keyframes atlas-blur-in { from { filter: blur(6px); } }
+/* (27/11/2026) .view__inner, #app > .view e .page-enter não animam mais a
+   entrada: com o @view-transition da troca de página eram duas piscadas.
+   A animação atlas-view-in saiu junto (não sobrou quem usasse). */
+/* O desfoque de entrada (atlas-blur-in) saiu em 27/11/2026 com as entradas. */
 
 /* ===================================================================
    8. UTILITÁRIOS DE MOVIMENTO
@@ -643,7 +629,7 @@ html[data-theme="light"] body::before { opacity: .40; }
   pointer-events: none;
   z-index: 2;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--atlas-r-xxs, 4px);
   /* só os cantos: superior-esquerdo e inferior-direito */
   -webkit-mask-image:
     linear-gradient(#000 0 0), linear-gradient(#000 0 0),
@@ -699,16 +685,8 @@ table td, table th { font-variant-numeric: tabular-nums; }
    aqui — isso cortaria o sparkline que vive dentro do card.
    =================================================================== */
 
-@media (prefers-reduced-motion: no-preference) {
-  html[data-anim="on"] .kpi {
-    animation: atlas-kpi-in var(--atlas-dur-slow) var(--atlas-ease-out) both,
-               atlas-blur-in var(--atlas-dur-slow) var(--atlas-ease-out) backwards;
-  }
-}
-@keyframes atlas-kpi-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none; }
-}
+/* (27/11/2026) os números não entram mais do transparente: era a terceira
+   animação na chegada de cada página. */
 
 
 /* ===================================================================
@@ -726,9 +704,11 @@ table td, table th { font-variant-numeric: tabular-nums; }
     html[data-anim="on"] .panel,
     html[data-anim="on"] .set-card,
     html[data-anim="on"] .est__card {
-      animation: atlas-reveal linear both, atlas-blur-in linear backwards;
-      animation-timeline: view(), view();
-      animation-range: entry 0% entry 42%, entry 0% entry 42%;
+      /* (27/11/2026) sem o desfoque: o cartão que aparecia pela metade
+         embaixo da tela ficava borrado, parecendo erro de carregamento */
+      animation: atlas-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 42%;
     }
   }
 }
@@ -763,7 +743,7 @@ table td, table th { font-variant-numeric: tabular-nums; }
   background: var(--atlas-border);
   border: 3px solid transparent;
   background-clip: content-box;
-  border-radius: 999px;
+  border-radius: var(--atlas-r-pill, 999px);
 }
 *::-webkit-scrollbar-thumb:hover { background-clip: content-box; background-color: var(--atlas-border-hi); }
 

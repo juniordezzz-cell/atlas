@@ -61,7 +61,7 @@ body {
   align-items: center;
   gap: 12px;
   padding: 11px 14px;
-  border-radius: 10px;
+  border-radius: var(--atlas-r-sm, 12px);
   color: var(--texto-suave);
   font-size: 14px;
   font-weight: 500;
@@ -82,7 +82,7 @@ body {
   gap: 12px;
   margin-top: 16px;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--atlas-r-sm, 12px);
   background: linear-gradient(135deg, color-mix(in srgb, var(--atlas-gold) 12%, transparent), var(--atlas-accent-soft));
   border: 1px solid color-mix(in srgb, var(--atlas-gold) 26%, transparent);
 }
@@ -110,7 +110,7 @@ body {
   position: relative;
   width: 40px; height: 40px;
   display: grid; place-items: center;
-  border-radius: 10px;
+  border-radius: var(--atlas-r-sm, 12px);
   background: var(--card);
   border: 1px solid var(--card-borda);
   color: var(--texto-suave);
@@ -152,7 +152,7 @@ body {
   color: var(--texto-suave);
   background: color-mix(in srgb, var(--atlas-sunken-base) 60%, transparent);
   border: 1px solid var(--card-borda);
-  border-radius: 8px;
+  border-radius: var(--atlas-r-xs, 8px);
   padding: 6px 11px;
 }
 .select .chev { width: 14px; height: 14px; }
@@ -181,7 +181,9 @@ body {
 /* ---- Charts row ---- */
 .charts {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  /* minmax(0,…): sem ele o gráfico de evolução crescia até a largura do
+     próprio canvas e a página passava da janela em 1440 px (27/11/2026) */
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--gap);
   margin-bottom: var(--gap);
 }
@@ -201,7 +203,7 @@ body {
   position: absolute; z-index: 3; pointer-events: none;
   transform: translate(-50%, calc(-100% - 12px));
   display: flex; gap: 8px; align-items: baseline; white-space: nowrap;
-  padding: 7px 10px; border-radius: 8px;
+  padding: 7px 10px; border-radius: var(--atlas-r-xs, 8px);
   background: var(--atlas-surface-solid, #0D1422);
   border: 1px solid var(--atlas-border-hi, rgba(140,170,225,.22));
   box-shadow: 0 10px 24px -12px rgba(0,0,0,.6);
@@ -245,7 +247,7 @@ body {
 }
 .mov-item:last-child { border-bottom: none; }
 .mov-icon {
-  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: var(--atlas-r-sm, 12px); flex-shrink: 0;
   display: grid; place-items: center;
   background: rgba(0,191,255,0.10); color: var(--atlas-accent-text);
 }
@@ -294,7 +296,7 @@ body {
 }
 .alert-item:last-of-type { border-bottom: none; }
 .alert-ic {
-  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  width: 30px; height: 30px; border-radius: var(--atlas-r-xs, 8px); flex-shrink: 0;
   display: grid; place-items: center;
   background: var(--atlas-gold-soft); color: var(--dourado);
 }
@@ -486,7 +488,7 @@ body {
   flex: none;
   place-items: center;
   margin-right: 4px;
-  border-radius: 10px;
+  border-radius: var(--atlas-r-sm, 12px);
   background: var(--card);
   border: 1px solid var(--card-borda);
   color: var(--texto-suave);
@@ -513,7 +515,7 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
 /* ============ RESPONSIVO ============ */
 @media (max-width: 1240px) {
   .kpis { grid-template-columns: repeat(3, 1fr); }
-  .charts { grid-template-columns: 1fr 1fr; }
+  .charts { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .chart-evolucao { grid-column: 1 / -1; }
   .bottom { grid-template-columns: 1fr; }
 }
@@ -538,7 +540,7 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
   .nav-toggle { display: grid; }
   .main { padding: 18px; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
-  .charts { grid-template-columns: 1fr; }
+  .charts { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 480px) {
   .kpis { grid-template-columns: 1fr; }
@@ -664,7 +666,7 @@ html.nav-locked, html.nav-locked body { overflow: hidden; }
   display: inline-block;
   margin-right: 7px;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--atlas-r-xxs, 4px);
   background: rgba(0,191,255,0.10);
   color: var(--atlas-accent-text);
   font-size: 9.5px;

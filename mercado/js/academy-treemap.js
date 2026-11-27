@@ -102,6 +102,9 @@
         b.style.width = (c.w / r.w * 100) + "%"; b.style.height = (c.h / r.h * 100) + "%";
         b.style.background = cor(it.variacao, escala);
         var areaRel = (c.w / W) * (c.h / H);
+        // célula estreita leva canto menor: com 8 px ela virava bolinha
+        var ladoPx = Math.min(c.w, c.h) / W * (caixa.clientWidth || 600);
+        if (ladoPx < 32) b.classList.add("tmap-estreita");
         b.title = it.nome + (it.detalhe ? " · " + it.detalhe : "") + " · " + pc(it.variacao);
         if (areaRel > 0.0035) {
           b.appendChild(el("b", null, it.nome));

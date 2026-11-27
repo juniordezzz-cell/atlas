@@ -76,12 +76,8 @@
   --atlas-sp-10: 72px;   /* existia só na escala do Trade; subiu para cá */
 
   /* --- Geometria -------------------------------------------------- */
-  --atlas-r-xs:   6px;
-  --atlas-r-sm:  10px;
-  --atlas-r-md:  14px;
-  --atlas-r-lg:  20px;
-  --atlas-r-xl:  26px;
-  --atlas-r-pill: 999px;
+  /* A escala de cantos (--atlas-r-*) mora em core/ui/atlas-shell.css,
+     o único CSS que toda página carrega (27/11/2026). */
 
   /* --- Layout ----------------------------------------------------- */
   --atlas-sidebar-w: 240px;

@@ -97,9 +97,9 @@
     s.id = "awd-seg-css";
     s.textContent = [
       ".awd__seg{display:flex;gap:6px;margin:14px 0 4px;padding:4px;",
-        "background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;}",
+        "background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--atlas-r-sm, 12px);}",
       ".awd__seg-opt{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;",
-        "padding:9px 10px;border:0;border-radius:9px;cursor:pointer;background:transparent;",
+        "padding:9px 10px;border:0;border-radius:var(--atlas-r-sm, 12px);cursor:pointer;background:transparent;",
         "color:#9aa7bd;font-size:13px;font-weight:600;transition:background .12s ease,color .12s ease;}",
       ".awd__seg-opt:hover{color:#cdd6e6;}",
       ".awd__seg-opt.on{background:rgba(76,154,255,.16);color:#7FB4FF;}",

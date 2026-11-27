@@ -17,7 +17,7 @@
       if (!el) {
         el = document.createElement("div");
         el.id = "rwaErrors";
-        el.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:rgba(127,29,29,.96);color:#FECACA;border:1px solid #EF4444;border-radius:10px;padding:12px 16px;font:12.5px/1.5 Inter,system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.5)";
+        el.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:rgba(127,29,29,.96);color:#FECACA;border:1px solid #EF4444;border-radius:var(--atlas-r-sm, 12px);padding:12px 16px;font:12.5px/1.5 Inter,system-ui,sans-serif;box-shadow:0 12px 40px rgba(0,0,0,.5)";
         document.body.appendChild(el);
       }
       el.innerHTML = "<b>Erro no módulo RWA:</b> " + String(msg) +

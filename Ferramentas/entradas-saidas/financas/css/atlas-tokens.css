@@ -12,10 +12,10 @@
   --verde:#00E28A; --vermelho:#FF5470; --dourado:#FFD700; --cinza:#A0AEC0;
   --card-borda:rgba(0,191,255,.10); --card-borda-forte:rgba(0,191,255,.22); --linha:rgba(160,174,192,.10);
   --glow-azul:0 0 40px rgba(0,191,255,.45); --glow-ciano:0 0 60px rgba(0,240,255,.35);
-  --raio:14px; --raio-sm:10px; --gap:20px; --sidebar-w:240px; --topbar-h:64px; --content-max:1400px;
+  --raio:var(--atlas-r-md, 16px); --raio-sm:var(--atlas-r-sm, 12px); --gap:20px; --sidebar-w:240px; --topbar-h:64px; --content-max:1400px;
   --atlas-sp-1:4px; --atlas-sp-2:8px; --atlas-sp-3:12px; --atlas-sp-4:16px; --atlas-sp-5:20px;
   --atlas-sp-6:24px; --atlas-sp-7:32px; --atlas-sp-8:40px;
-  --atlas-r-sm:10px; --atlas-r-md:14px; --atlas-r-lg:20px; --atlas-r-pill:999px;
+  /* cantos: escala única em core/ui/atlas-shell.css (27/11/2026) */
   --atlas-ease:cubic-bezier(.22,1,.36,1); --atlas-dur:260ms;
   --font-ui:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
   --font-mono:"JetBrains Mono","SF Mono",ui-monospace,SFMono-Regular,Menlo,monospace;

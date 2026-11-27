@@ -23,3 +23,4 @@ Simulador de Pools de Liquidez (ferramenta própria, lê as pools do Scanner): [
 Desempenho do site (ícone de 2,1 MB → 32 KB, fundo animado enxuto, revisão das ferramentas): [registro de 18/11](docs/desempenho-2026-11-18.md).
 Mercado objetivo (Panorama: ciclo, dinheiro e RWA; saíram altas/quedas, alertas, Análises e Rendimentos): [registro de 18/11](docs/mercado-objetivo-2026-11-18.md) — **substituído** pela reforma de 26/11.
 Mercado reformado (abas DeFi · Tokens · RWA · Rendimentos centralizadas, mapa de calor, Hyperliquid): [registro de 26/11](docs/mercado-painel-2026-11-26.md).
+Forma suave (escala única de cantos em `core/ui/atlas-shell.css`, superfícies no lugar das seções abertas, uma animação de entrada só, Mercado sem piscar): [registro de 27/11](docs/forma-suave-2026-11-27.md).

@@ -113,14 +113,14 @@ html.boot-lock, html.boot-lock body { overflow: hidden; }
 .boot__track {
   flex: 1;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--atlas-r-pill, 999px);
   background: rgba(120, 170, 220, .14);
   overflow: hidden;
 }
 .boot__bar {
   width: 0%;
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--atlas-r-pill, 999px);
   background: linear-gradient(90deg, #0090E8, #00E5FF);
   box-shadow: 0 0 12px rgba(0, 200, 255, .5);
   transition: width .3s ease;

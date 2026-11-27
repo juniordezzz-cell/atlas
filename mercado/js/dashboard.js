@@ -76,6 +76,27 @@
     if (variacao !== undefined) v.appendChild(h("span", cls(variacao), pc(variacao)));
     return add(r, nm, v);
   }
+  /* linha de ativo (27/11): ícone (regra do dono: todo ativo mostra a
+     imagem), símbolo com o nome embaixo, preço com a variação embaixo.
+     Sem imagem, fica a bolinha com as iniciais. */
+  function icone(img, simbolo) {
+    var bola = h("span", "mk-ico", String(simbolo || "?").slice(0, 3).toUpperCase());
+    if (!img) return bola;
+    var i = document.createElement("img");
+    i.className = "mk-ico"; i.alt = ""; i.loading = "lazy"; i.decoding = "async"; i.width = 30; i.height = 30;
+    i.addEventListener("error", function () { if (i.parentNode) i.parentNode.replaceChild(bola, i); });
+    i.src = img;
+    return i;
+  }
+  function linhaAtivo(x, valor, variacao, aoClicar, legenda) {
+    var r = h(aoClicar ? "button" : "div", "mk-linha");
+    if (aoClicar) { r.type = "button"; r.addEventListener("click", aoClicar); }
+    var esq = add(h("span", "mk-ativo"), icone(x.image, x.symbol),
+      add(h("span", "mk-ativo-txt"), h("b", null, x.symbol), h("small", null, legenda != null ? legenda : (x.name || ""))));
+    var dir = add(h("span", "mk-ativo-num"), h("b", null, valor),
+      variacao !== undefined ? h("small", cls(variacao), pc(variacao)) : null);
+    return add(r, esq, dir);
+  }
   function lista(linhas) { var l = h("div", "mk-lista"); linhas.forEach(function (x) { l.appendChild(x); }); return l; }
   /* [{nome, valor, rotulo, cor?}]; teto opcional: barra para de crescer ali
      (uma pool de 250% achataria todas as outras), o rótulo mostra o valor real */
@@ -414,7 +435,7 @@
         if (top100.length) f.push(up >= top100.length * 0.6 ? "A maioria dos tokens sobe." : up <= top100.length * 0.4 ? "A maioria dos tokens cai." : "Mercado dividido.");
         if (altas[0] && altas[0].change24h > 0) f.push(altas[0].symbol + " lidera as altas (" + pc(altas[0].change24h) + ")" + (quedas[0] && quedas[0].change24h < 0 ? "; " + quedas[0].symbol + " lidera as quedas (" + pc(quedas[0].change24h) + ")." : "."));
         T.frase(f.join(" "));
-        function lt(x) { return linha(x.symbol, money(x.usd), x.change24h, assetLink(x.id, x.symbol), null); }
+        function lt(x) { return linhaAtivo(x, money(x.usd), x.change24h, assetLink(x.id, x.symbol)); }
         if (altas.length) pAlta.estado(lista(altas.filter(function (x) { return x.change24h > 0; }).slice(0, 8).map(lt)));
         if (quedas.length) pQueda.estado(lista(quedas.filter(function (x) { return x.change24h < 0; }).slice(0, 8).map(lt)));
         // mapa: 30 maiores sem stablecoins
@@ -428,7 +449,7 @@
         }
         // volume fora do normal
         var va = Q.map(function (x) { return { x: x, r: x.volume24h / x.marketCap }; }).sort(function (a, b) { return b.r - a.r; }).slice(0, 6);
-        if (va.length) pVolAn.estado(lista(va.map(function (o) { return linha(o.x.symbol, n(o.r, 1) + "×", o.x.change24h, assetLink(o.x.id, o.x.symbol)); })));
+        if (va.length) pVolAn.estado(lista(va.map(function (o) { return linhaAtivo(o.x, n(o.r, 1) + "×", o.x.change24h, assetLink(o.x.id, o.x.symbol), "volume " + big(o.x.volume24h)); })));
         // tabela
         if (Q.length) tabela(pTab, [
           { rot: "Token", val: function (r) { return r.symbol; } },
@@ -541,12 +562,12 @@
             desenhaMapa(); frase();
             var altas = A.slice().sort(function (a, b) { return b.change24h - a.change24h; });
             var quedas = A.slice().sort(function (a, b) { return a.change24h - b.change24h; });
-            function la(x) { return linha(x.symbol, money(x.usd), x.change24h, assetLink(x.id, x.symbol)); }
+            function la(x) { return linhaAtivo(x, money(x.usd), x.change24h, assetLink(x.id, x.symbol)); }
             var al = altas.filter(function (x) { return x.change24h > 0; }).slice(0, 8), qu = quedas.filter(function (x) { return x.change24h < 0; }).slice(0, 8);
             if (al.length) pAlta.estado(lista(al.map(la))); else pAlta.indisponivel(null, "Nenhuma ação subindo agora.");
             if (qu.length) pQueda.estado(lista(qu.map(la))); else pQueda.indisponivel(null, "Nenhuma ação caindo agora.");
             var neg = A.filter(function (x) { return x.volume24h > 0; }).sort(function (a, b) { return b.volume24h - a.volume24h; }).slice(0, 7);
-            if (neg.length) pNeg.estado(lista(neg.map(function (x) { return linha(x.symbol, big(x.volume24h), x.change24h, assetLink(x.id, x.symbol)); })));
+            if (neg.length) pNeg.estado(lista(neg.map(function (x) { return linhaAtivo(x, big(x.volume24h), x.change24h, assetLink(x.id, x.symbol)); })));
             else pNeg.indisponivel(carregar);
             tabela(pTab, [
               { rot: "Ação", val: function (r) { return r.symbol; } },
@@ -653,26 +674,50 @@
       b.addEventListener("click", function () { if (t !== window.__academyTab) desenha(t); });
       trilho.appendChild(b); botoes[t] = b;
     });
-    var esteira = null;
+
+    /* Cada aba é montada UMA vez e fica guardada (27/11/2026). Antes, trocar
+       de aba apagava tudo, mostrava "Carregando…" e montava de novo: a tela
+       piscava. Agora trocar só mostra ou esconde. A aba guarda as próprias
+       funções de atualização e a hora da última leitura; se voltar a
+       aparecer com mais de 5 min, atualiza no lugar, sem apagar nada. */
+    var CINCO_MIN = 300000;
+    var abas = {}; // tab -> { corpo, atualiza: [], quando }
+    function atualizaAba(a) {
+      a.quando = Date.now();
+      a.atualiza.forEach(function (f) { try { f(); } catch (e) {} });
+    }
     function desenha(tab) {
       window.__academyTab = tab;
-      TABS.forEach(function (t) { botoes[t].classList.toggle("ativa", t === tab); botoes[t].setAttribute("aria-pressed", String(t === tab)); });
-      refreshers = esteira ? [esteira._load] : [];
-      limpa(conteudo);
-      MONTA[tab](conteudo);
+      TABS.forEach(function (t) {
+        botoes[t].classList.toggle("ativa", t === tab);
+        botoes[t].setAttribute("aria-pressed", String(t === tab));
+        if (abas[t]) abas[t].corpo.hidden = t !== tab;
+      });
+      var a = abas[tab];
+      if (!a) {
+        var corpo = h("div", "mk-aba-corpo");
+        conteudo.appendChild(corpo);
+        refreshers = [];               // as abas registram aqui o seu carregar()
+        MONTA[tab](corpo);
+        abas[tab] = { corpo: corpo, atualiza: refreshers, quando: Date.now() };
+      } else if (Date.now() - a.quando > CINCO_MIN) {
+        atualizaAba(a);
+      }
     }
     refreshers = [];
-    esteira = tickerTape();
-    esteira._load = refreshers[0];
+    var esteira = tickerTape();
+    var atualizaEsteira = refreshers.slice();
     add(root, esteira, nav, conteudo);
     desenha(atual);
     el.appendChild(root);
 
-    // atualiza a cada 5 min (os resumos ficam guardados por 5 a 10 min)
+    // atualiza a cada 5 min só a esteira e a aba aberta (os resumos ficam
+    // guardados por 5 a 10 min); as outras atualizam quando voltarem
     var timer = setInterval(function () {
       if (!document.body.contains(root)) { clearInterval(timer); return; }
-      refreshers.forEach(function (f) { try { f(); } catch (e) {} });
-    }, 300000);
+      atualizaEsteira.forEach(function (f) { try { f(); } catch (e) {} });
+      if (abas[window.__academyTab]) atualizaAba(abas[window.__academyTab]);
+    }, CINCO_MIN);
     window.__academyOnLeave = function () { clearInterval(timer); };
   };
 })();

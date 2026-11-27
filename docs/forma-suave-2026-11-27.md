@@ -1,0 +1,84 @@
+# Forma suave: cantos numa escala só, superfícies e uma entrada (27/11/2026)
+
+Spec aprovada: [2026-11-27-forma-suave-design.md](superpowers/specs/2026-11-27-forma-suave-design.md).
+
+## Por quê
+
+O dono, em 26/11: o site "tá muito quadrado, sem suavidade nenhuma", a aba
+Tokens "apertada demais", e "sempre quando eu troco de aba no site, a tela
+pisca 2 vezes". Pediu correção na raiz, não remendo.
+
+## O que mudou
+
+### Cantos
+
+- Escala única em `core/ui/atlas-shell.css` (o único CSS que toda página
+  carrega): `--atlas-r-xxs 4` · `xs 8` · `sm 12` · `md 16` · `lg 20` ·
+  `xl 24` · `pill 999px`. Saiu de `atlas-theme.css`, do bloco do Oráculo nas
+  Ferramentas e de `financas/css/atlas-tokens.css`.
+- 762 `border-radius` com px solto, em 63 arquivos, passaram para a escala com
+  reserva (`var(--atlas-r-sm, 12px)`). Os apelidos de cada módulo (`--r-*` do
+  RWA, DeFi e Trade; `--radius*` do Hold; `--raio*`; `--aws-radius*`;
+  `--sereno-r`; `--suave-r-*`; `--sp-r`) apontam para a mesma escala.
+- `Ferramentas/escada-dca` e `estrategia-de-pool` foram regerados pelo
+  `node Ferramentas/_fonte-quadro/build.js` depois da troca na fonte.
+
+### Superfícies no lugar das seções abertas
+
+`themes/atlas-sereno.css`: cartões, painéis e números deixaram de ser "seção
+aberta" (sem fundo, borda nem canto, separados por linha reta) e viraram
+superfícies leves (`--sereno-fill`), sem contorno, canto `lg` (cartão) ou
+`md` (número). Saíram as linhas retas entre fileiras de seções e entre
+números.
+
+### Uma entrada só (as duas piscadas)
+
+Medido no Dashboard: a página pintava e o conteúdo ainda nascia transparente
+por cima do esmaecimento da troca de página. Saíram todas as animações de
+entrada de página:
+
+- `atlasPageIn` em `css/global.css` (cartões e números do Dashboard, com
+  atraso em cascata), `defi/css/global.css`, `hold/css/global.css` e
+  `trade/assets/css/base.css`;
+- `atlas-view-in` (`.view__inner`, `#app > .view`, `.page-enter`) e
+  `atlas-kpi-in` em `themes/atlas-effects.css`;
+- `.page-enter` e `.reveal` em cascata no DeFi, `#app > *` e `.reveal` no RWA,
+  `.reveal` no Trade, `fadeUp` no Simulador de Trade;
+- o desfoque da revelação ao rolar (cartão pela metade embaixo da tela ficava
+  borrado).
+
+Fica só o `@view-transition` de 0,18 s (`core/atlas-secure.js`). As telas de
+abertura (boot, boas-vindas, login, Finanças) mantêm a animação própria.
+
+### Mercado
+
+- Cada aba é montada uma vez e fica guardada; trocar só mostra ou esconde.
+  Conferido: no mesmo quadro do clique a aba aparece inteira, sem
+  "Carregando…". A atualização de 5 em 5 min roda só na aba aberta; a que
+  volta depois de 5 min parada atualiza no lugar.
+- `mercado/css/painel.css` refeito: painéis como superfícies com canto 20,
+  números em placas, linhas em pílula, abas em pílula, mapa de calor com vão
+  e canto (canto menor em célula estreita), mais respiro em tudo.
+- Aba Tokens e RWA: linhas de ativo com ícone do token (regra do dono), nome
+  embaixo do símbolo e variação embaixo do preço.
+- Celular: as quatro abas cabem numa linha.
+
+## Erros achados de passagem
+
+- Dashboard em 1440 px: a página ficava 151 px mais larga que a janela e
+  cortava "Distribuição por Plataforma". Causa: `.charts` com
+  `1.5fr 1fr 1fr` deixava o gráfico crescer até a largura do canvas.
+  Corrigido com `minmax(0, …)`.
+- `#app > *` do RWA animava com `both` e `transform`: é o mesmo erro que já
+  quebrou o `position: fixed` no `body` (atlas-effects §16). Saiu junto.
+
+## Teste
+
+`node --test core/ui/atlas-forma.test.cjs` — falha se aparecer canto com px
+solto, reserva diferente do degrau, ou `--atlas-r-*` definido fora do shell.
+
+## Fica para a próxima etapa
+
+- Desmontar o resto do `atlas-sereno.css` (fundo, tipografia dos números,
+  mono → Inter) para dentro da camada única, área por área.
+- Escala de espaçamento obrigatória (o teste cobre só cantos).

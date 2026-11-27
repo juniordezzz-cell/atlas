@@ -1,6 +1,6 @@
 /* Oráculo do Scanner — linha serena do ATLAS: contêiner preenchido e
    arredondado, sem contorno, sem brilho, sem caixa alta espaçada. */
-.sp-oraculo{--sp-fundo:rgba(148,170,215,.06);--sp-fundo2:rgba(148,170,215,.10);--sp-user:#1d2d4d;--sp-r:20px}
+.sp-oraculo{--sp-fundo:rgba(148,170,215,.06);--sp-fundo2:rgba(148,170,215,.10);--sp-user:#1d2d4d;--sp-r:var(--atlas-r-lg, 20px)}
 
 /* ---------- aba inteira ---------- */
 #tab-assistente.sp-oraculo{max-width:1140px;margin:0 auto;padding:20px 16px 0;display:grid;grid-template-columns:232px minmax(0,1fr);gap:28px;align-items:start}
@@ -9,24 +9,24 @@
 /* ---------- lista de conversas ---------- */
 .sp-lista{position:sticky;top:76px;max-height:calc(100dvh - 96px);overflow:auto;padding-top:6px}
 .sp-lista-topo{display:grid;gap:6px;margin-bottom:14px}
-.sp-lista-nova,.sp-lista-temp{border:0;text-align:left;font:inherit;font-size:13px;padding:10px 12px;border-radius:12px;cursor:pointer}
+.sp-lista-nova,.sp-lista-temp{border:0;text-align:left;font:inherit;font-size:13px;padding:10px 12px;border-radius:var(--atlas-r-sm, 12px);cursor:pointer}
 .sp-lista-nova{background:rgba(91,140,255,.16);color:#cfe0ff}
 .sp-lista-nova:hover{background:rgba(91,140,255,.24)}
 .sp-lista-temp{background:var(--sp-fundo);color:var(--mut)}
 .sp-lista-temp:hover{background:var(--sp-fundo2);color:var(--txt)}
 .sp-lista-vazia{font-size:12px;color:var(--mut2);margin:6px 2px}
 .sp-lista-itens{list-style:none;margin:0;padding:0;display:grid;gap:2px}
-.sp-lista-item{display:flex;align-items:center;border-radius:10px}
+.sp-lista-item{display:flex;align-items:center;border-radius:var(--atlas-r-sm, 12px)}
 .sp-lista-item:hover,.sp-lista-item.on{background:var(--sp-fundo)}
 .sp-lista-abrir{flex:1;min-width:0;border:0;background:transparent;text-align:left;font:inherit;padding:8px 10px;cursor:pointer;display:grid;gap:2px}
 .sp-lista-titulo{font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sp-lista-data{font-size:11px;color:var(--mut2)}
 .sp-lista-item.temp .sp-lista-data{color:var(--amber)}
-.sp-lista-del{border:0;background:transparent;color:var(--mut2);font-size:16px;line-height:1;padding:6px 9px;border-radius:8px;cursor:pointer;opacity:0}
+.sp-lista-del{border:0;background:transparent;color:var(--mut2);font-size:16px;line-height:1;padding:6px 9px;border-radius:var(--atlas-r-xs, 8px);cursor:pointer;opacity:0}
 .sp-lista-item:hover .sp-lista-del,.sp-lista-item.on .sp-lista-del,.sp-lista-del:focus-visible{opacity:1}
 .sp-lista-del:hover{color:var(--red);background:rgba(240,85,106,.1)}
 .sp-lista-btn{display:none}
-.sp-temp{white-space:nowrap;font-size:12px;color:var(--amber);background:rgba(245,185,66,.12);padding:6px 11px;border-radius:999px}
+.sp-temp{white-space:nowrap;font-size:12px;color:var(--amber);background:rgba(245,185,66,.12);padding:6px 11px;border-radius:var(--atlas-r-pill, 999px)}
 .sp-temp[hidden]{display:none}
 .sp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line)}
 .sp-marca{display:flex;align-items:center;gap:12px}
@@ -80,36 +80,36 @@
 @media (prefers-reduced-motion:reduce){.sp-palco .sp-avatar-g,.sp-halo,.sp-anel{animation:none}
   .sp-anel-a{transform:translate(-50%,-50%) rotateX(74deg)}.sp-anel-b{transform:translate(-50%,-50%) rotateX(78deg)}
   .sp-anel-c{transform:translate(-50%,-50%) rotateX(64deg) rotateY(22deg)}}
-.sp-modo{white-space:nowrap;font-size:12px;color:var(--mut);background:var(--sp-fundo);padding:6px 11px;border-radius:999px}
+.sp-modo{white-space:nowrap;font-size:12px;color:var(--mut);background:var(--sp-fundo);padding:6px 11px;border-radius:var(--atlas-r-pill, 999px)}
 .sp-modo.on{color:#8fe3bd;background:rgba(46,199,133,.12)}
-.sp-ghost{white-space:nowrap;border:0;background:transparent;color:var(--mut);font:inherit;font-size:13px;padding:7px 11px;border-radius:999px;cursor:pointer}
+.sp-ghost{white-space:nowrap;border:0;background:transparent;color:var(--mut);font:inherit;font-size:13px;padding:7px 11px;border-radius:var(--atlas-r-pill, 999px);cursor:pointer}
 .sp-ghost:hover{background:var(--sp-fundo);color:var(--txt)}
 
 /* ---------- conversa ---------- */
 .sp-log{flex:1;overflow:auto;padding:22px 2px 12px;display:flex;flex-direction:column;gap:18px}
 .sp-msg{display:flex;gap:12px;align-items:flex-start}
 .sp-msg-user{justify-content:flex-end}
-.sp-balao{margin:0;max-width:78%;background:var(--sp-user);color:#e9f0ff;padding:11px 15px;border-radius:18px 18px 6px 18px;line-height:1.55;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.sp-balao{margin:0;max-width:78%;background:var(--sp-user);color:#e9f0ff;padding:11px 15px;border-radius:var(--atlas-r-md, 16px) var(--atlas-r-md, 16px) var(--atlas-r-xs, 8px) var(--atlas-r-md, 16px);line-height:1.55;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .sp-msg-corpo{flex:1;min-width:0}
 .sp-texto{margin:4px 0 0;color:var(--txt);font-size:14.5px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
-.sp-guia-link{display:inline-flex;align-items:center;gap:6px;margin:12px 0 0;padding:8px 14px;border-radius:999px;border:1px solid rgba(91,141,239,.35);background:rgba(91,141,239,.10);color:#9db8f5;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left}
+.sp-guia-link{display:inline-flex;align-items:center;gap:6px;margin:12px 0 0;padding:8px 14px;border-radius:var(--atlas-r-pill, 999px);border:1px solid rgba(91,141,239,.35);background:rgba(91,141,239,.10);color:#9db8f5;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left}
 .sp-guia-link:hover{background:rgba(91,141,239,.18);border-color:rgba(91,141,239,.55);color:#c3d4fa}
 .sp-guia-link:focus-visible{outline:2px solid #5b8def;outline-offset:2px}
 .sp-rodape{margin:12px 0 0;color:var(--mut);font-size:12.5px;line-height:1.55;white-space:pre-wrap}
 .sp-aviso{margin:10px 0 0;color:var(--amber);font-size:12.5px;line-height:1.5}
 .sp-calc{margin-top:12px;font-size:12.5px;color:var(--mut)}
 .sp-calc summary{cursor:pointer;width:max-content;padding:4px 0}
-.sp-calc p{white-space:pre-wrap;line-height:1.55;margin:8px 0 0;background:var(--sp-fundo);padding:12px 14px;border-radius:14px}
+.sp-calc p{white-space:pre-wrap;line-height:1.55;margin:8px 0 0;background:var(--sp-fundo);padding:12px 14px;border-radius:var(--atlas-r-md, 16px)}
 
 /* cartões de pool */
 .sp-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:14px}
-.sp-card{background:var(--sp-fundo);border-radius:16px;padding:13px 14px}
+.sp-card{background:var(--sp-fundo);border-radius:var(--atlas-r-md, 16px);padding:13px 14px}
 .sp-card-top{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px}
 .sp-card-par{font-size:14.5px;font-weight:600;color:var(--txt)}
 .sp-card-link{text-decoration:none}
 .sp-card-link:hover{color:var(--accent)}
 .sp-card-onde{font-size:12px;color:var(--mut)}
-.sp-tag{font-size:11px;color:var(--mut);background:var(--sp-fundo2);padding:2px 8px;border-radius:999px}
+.sp-tag{font-size:11px;color:var(--mut);background:var(--sp-fundo2);padding:2px 8px;border-radius:var(--atlas-r-pill, 999px)}
 .sp-tag-meme{color:var(--amber);background:rgba(245,185,66,.12)}
 .sp-card-num{display:flex;flex-wrap:wrap;gap:9px 18px;margin:11px 0 0}
 .sp-card-num div{min-width:0}
@@ -127,17 +127,17 @@
 
 /* avaliação */
 .sp-avaliar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
-.sp-mini{border:0;background:transparent;color:var(--mut2);font:inherit;font-size:12px;padding:4px 9px;border-radius:999px;cursor:pointer}
+.sp-mini{border:0;background:transparent;color:var(--mut2);font:inherit;font-size:12px;padding:4px 9px;border-radius:var(--atlas-r-pill, 999px);cursor:pointer}
 .sp-mini:hover{background:var(--sp-fundo);color:var(--txt)}
 .sp-mini-status{font-size:12px;color:var(--mut)}
-.sp-avaliar textarea{flex-basis:100%;background:var(--sp-fundo);color:var(--txt);border:0;border-radius:12px;padding:10px 12px;font:inherit;font-size:13px;resize:vertical}
+.sp-avaliar textarea{flex-basis:100%;background:var(--sp-fundo);color:var(--txt);border:0;border-radius:var(--atlas-r-sm, 12px);padding:10px 12px;font:inherit;font-size:13px;resize:vertical}
 
 /* estado vazio */
 .sp-vazio{margin:auto;max-width:600px;text-align:center;padding:24px 8px}
 .sp-vazio h3{margin:14px 0 6px;font-size:20px;font-weight:600;color:var(--txt)}
 .sp-vazio p{margin:0 auto;color:var(--mut);font-size:14px;line-height:1.6;max-width:520px}
 .sp-sugestoes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:22px}
-.sp-sugestao{border:0;text-align:left;background:var(--sp-fundo);color:var(--txt);font:inherit;font-size:13.5px;padding:13px 15px;border-radius:14px;cursor:pointer;line-height:1.4}
+.sp-sugestao{border:0;text-align:left;background:var(--sp-fundo);color:var(--txt);font:inherit;font-size:13.5px;padding:13px 15px;border-radius:var(--atlas-r-md, 16px);cursor:pointer;line-height:1.4}
 .sp-sugestao:hover{background:var(--sp-fundo2)}
 
 /* ---------- compositor ---------- */
@@ -154,9 +154,9 @@
 /* preferências (memória) */
 .sp-pe details{margin-top:12px;font-size:13px;color:var(--mut)}
 .sp-pe details summary{cursor:pointer;width:max-content;padding:4px 0}
-.sp-pe details form{display:grid;gap:10px;margin-top:10px;background:var(--sp-fundo);border-radius:16px;padding:14px}
-.sp-pe details input:not([type=checkbox]),.sp-pe details textarea{background:var(--bg);color:var(--txt);border:0;border-radius:10px;padding:9px 11px;font:inherit;font-size:13px;margin-top:4px}
-.sp-pe details button{justify-self:start;border:0;background:var(--sp-fundo2);color:var(--txt);font:inherit;font-size:12.5px;padding:8px 12px;border-radius:999px;cursor:pointer}
+.sp-pe details form{display:grid;gap:10px;margin-top:10px;background:var(--sp-fundo);border-radius:var(--atlas-r-md, 16px);padding:14px}
+.sp-pe details input:not([type=checkbox]),.sp-pe details textarea{background:var(--bg);color:var(--txt);border:0;border-radius:var(--atlas-r-sm, 12px);padding:9px 11px;font:inherit;font-size:13px;margin-top:4px}
+.sp-pe details button{justify-self:start;border:0;background:var(--sp-fundo2);color:var(--txt);font:inherit;font-size:12.5px;padding:8px 12px;border-radius:var(--atlas-r-pill, 999px);cursor:pointer}
 
 /* ---------- versão flutuante (quando o ATLAS não traz o Oráculo global) ---------- */
 .sp-chat-orb{position:fixed;right:24px;bottom:24px;z-index:900;width:52px;height:52px;border-radius:50%;background:#1d2d4d;color:#9dbbff;border:0;font-size:22px;cursor:pointer}
@@ -169,7 +169,7 @@
   #tab-assistente.sp-oraculo{padding-top:14px;grid-template-columns:minmax(0,1fr);gap:0}
   /* no celular a lista vira gaveta, aberta pelo botão "Conversas" */
   .sp-lista{display:none}
-  .sp-lista-aberta .sp-lista{display:block;position:fixed;inset:64px 12px auto 12px;max-height:70dvh;z-index:60;background:#0f1625;border-radius:18px;padding:14px;box-shadow:0 24px 60px -20px rgba(0,0,0,.8)}
+  .sp-lista-aberta .sp-lista{display:block;position:fixed;inset:64px 12px auto 12px;max-height:70dvh;z-index:60;background:#0f1625;border-radius:var(--atlas-r-md, 16px);padding:14px;box-shadow:0 24px 60px -20px rgba(0,0,0,.8)}
   .sp-lista-btn{display:inline-block}
   .sp-lista-item .sp-lista-del{opacity:1}
   .sp-head{align-items:flex-start}

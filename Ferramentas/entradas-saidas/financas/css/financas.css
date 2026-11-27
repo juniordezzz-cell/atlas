@@ -156,7 +156,7 @@ a { color: inherit; }
   flex-shrink: 0;
   height: 36px;
   padding: 0 12px 0 10px;
-  border-radius: 999px;
+  border-radius: var(--atlas-r-pill, 999px);
   background: var(--card);
   border: 1px solid var(--card-borda);
   color: var(--texto-suave);
@@ -319,7 +319,7 @@ a { color: inherit; }
 .fx-tab-ic {
   width: 18px;
   height: 18px;
-  border-radius: 5px;
+  border-radius: var(--atlas-r-xxs, 4px);
   background: var(--texto-fraco);
 }
 

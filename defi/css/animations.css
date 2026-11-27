@@ -13,14 +13,13 @@
 @keyframes countUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes floatGlow { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
 
-/* Reveal em cascata (aplicado via JS com --i) */
-.reveal { opacity: 0; animation: rise var(--med) var(--ease) forwards; animation-delay: calc(var(--i, 0) * 55ms); }
+/* (27/11/2026) Sem animação de entrada: a troca de página já tem o
+   esmaecimento do @view-transition (core/atlas-secure.js). Duas entradas
+   seguidas eram as "duas piscadas" que o dono via. */
 
-/* Entrada de página */
-.page-enter { animation: fade 380ms var(--ease); }
 
 /* Barra de progresso genérica (loading de gráficos etc.) */
-.bar-load { height: 2px; background: var(--grad-line); background-size: 200% 100%; animation: barMove 1.4s linear infinite; border-radius: 2px; }
+.bar-load { height: 2px; background: var(--grad-line); background-size: 200% 100%; animation: barMove 1.4s linear infinite; border-radius: var(--atlas-r-xxs, 4px); }
 @keyframes barMove { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 /* Hover lift utilitário */
@@ -34,5 +33,4 @@
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .reveal { opacity: 1; }
 }

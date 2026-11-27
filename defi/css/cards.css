@@ -42,7 +42,7 @@
 .fin-card .fin-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .fin-card .fin-label { font-size: 12.5px; color: var(--text-mut); font-weight: 500; letter-spacing: 0.2px; }
 .fin-card .fin-ic {
-  width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: var(--atlas-r-sm, 12px); display: grid; place-items: center;
   background: rgba(59,130,246,0.10); color: var(--blue-400-text); flex: none;
 }
 .fin-card .fin-ic svg { width: 17px; height: 17px; }
@@ -96,8 +96,8 @@
 .pos-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; padding-top: 14px; border-top: 1px solid var(--glass-border); }
 
 /* range bar (visual da posição no range) */
-.range-bar { height: 5px; border-radius: 3px; background: rgba(120,150,220,0.12); position: relative; margin-top: 12px; overflow: hidden; }
-.range-bar > i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--grad-brand); }
+.range-bar { height: 5px; border-radius: var(--atlas-r-xxs, 4px); background: rgba(120,150,220,0.12); position: relative; margin-top: 12px; overflow: hidden; }
+.range-bar > i { position: absolute; top: 0; bottom: 0; border-radius: var(--atlas-r-xxs, 4px); background: var(--grad-brand); }
 .range-bar.out > i { background: linear-gradient(90deg, var(--warn), #f59e0b); }
 
 /* ---------- Mini stat inline ---------- */
@@ -110,7 +110,7 @@
 .mov-list { display: flex; flex-direction: column; }
 .mov-item { display: flex; align-items: center; gap: 14px; padding: 13px 4px; border-bottom: 1px solid var(--glass-border); }
 .mov-item:last-child { border-bottom: none; }
-.mov-ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; flex: none; }
+.mov-ic { width: 36px; height: 36px; border-radius: var(--atlas-r-sm, 12px); display: grid; place-items: center; flex: none; }
 .mov-ic svg { width: 17px; height: 17px; }
 .mov-ic.in { background: var(--ok-bg); color: var(--ok); }
 .mov-ic.out { background: var(--danger-bg); color: var(--danger); }

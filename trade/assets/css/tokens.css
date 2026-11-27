@@ -63,11 +63,11 @@
   --sp-9: 56px; --sp-10: 72px;
 
   /* ---- Raio --------------------------------------------- */
-  --r-sm:  10px;
-  --r-md:  16px;
-  --r-lg:  22px;
-  --r-xl:  28px;
-  --r-pill: 999px;
+  --r-sm:  var(--atlas-r-sm, 12px);
+  --r-md:  var(--atlas-r-md, 16px);
+  --r-lg:  var(--atlas-r-lg, 20px);
+  --r-xl:  var(--atlas-r-xl, 24px);
+  --r-pill: var(--atlas-r-pill, 999px);
 
   /* ---- Sombra / brilho ---------------------------------- */
   --shadow-soft:  0 1px 0 var(--glass-inner) inset,

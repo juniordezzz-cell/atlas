@@ -8,12 +8,11 @@
 @keyframes rpulse { 0% { transform: scale(1); opacity: 0.4; } 70% { transform: scale(2.6); opacity: 0; } 100% { opacity: 0; } }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-.reveal { opacity: 0; animation: rise var(--med) var(--ease) forwards; animation-delay: calc(var(--i, 0) * 45ms); }
+/* (27/11/2026) Sem animação de entrada: a troca de página já tem o
+   esmaecimento do @view-transition (core/atlas-secure.js). Duas entradas
+   seguidas eram as "duas piscadas" que o dono via. */
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
-  .reveal { opacity: 1; }
 }
 
-/* transicao de views */
-#app > * { animation: rise var(--med) var(--ease) both; }

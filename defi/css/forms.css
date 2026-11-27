@@ -39,7 +39,7 @@
 }
 .opt:hover { border-color: var(--glass-border-hi); background: rgba(120,150,220,0.08); }
 .opt.selected { border-color: var(--blue-500); background: rgba(59,130,246,0.10); color: var(--text-hi); box-shadow: 0 0 0 1px var(--blue-500) inset; }
-.opt .swatch { position: relative; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-size: 9px; font-weight: 700; color: #fff; flex: none; overflow: hidden; }
+.opt .swatch { position: relative; width: 22px; height: 22px; border-radius: var(--atlas-r-xs, 8px); display: grid; place-items: center; font-size: 9px; font-weight: 700; color: #fff; flex: none; overflow: hidden; }
 .opt .swatch-ini { line-height: 1; }
 .opt .swatch-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 
@@ -47,7 +47,7 @@
 .segmented { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface); border: 1px solid var(--glass-border); border-radius: var(--r-md); }
 .segmented button {
   padding: 7px 14px; font-size: 12.5px; font-weight: 600; color: var(--text-mut); background: transparent;
-  border: none; border-radius: 9px; transition: all var(--fast) var(--ease);
+  border: none; border-radius: var(--atlas-r-sm, 12px); transition: all var(--fast) var(--ease);
 }
 .segmented button:hover { color: var(--text-hi); }
 .segmented button.active { color: var(--text-hi); background: rgba(59,130,246,0.16); }
@@ -94,7 +94,7 @@
 /* Toggle switch (config) */
 .switch { position: relative; width: 44px; height: 25px; flex: none; }
 .switch input { opacity: 0; width: 0; height: 0; }
-.switch .track { position: absolute; inset: 0; border-radius: 999px; background: rgba(120,150,220,0.18); transition: background var(--fast) var(--ease); cursor: pointer; }
+.switch .track { position: absolute; inset: 0; border-radius: var(--atlas-r-pill, 999px); background: rgba(120,150,220,0.18); transition: background var(--fast) var(--ease); cursor: pointer; }
 .switch .track::before { content: ""; position: absolute; left: 3px; top: 3px; width: 19px; height: 19px; border-radius: 50%; background: #fff; transition: transform var(--fast) var(--ease); box-shadow: var(--shadow-1); }
 .switch input:checked + .track { background: var(--blue-500); }
 .switch input:checked + .track::before { transform: translateX(19px); }
@@ -122,7 +122,7 @@
   flex-wrap: wrap;
   margin-bottom: 16px;
   padding: 9px 12px;
-  border-radius: 10px;
+  border-radius: var(--atlas-r-sm, 12px);
   border: 1px solid var(--warn, #F59E0B);
   background: color-mix(in srgb, var(--warn, #F59E0B) 12%, transparent);
   font-size: 12.5px;

@@ -43,8 +43,8 @@
   --fs-legenda:  12px;  --fw-legenda:  400;
 
   /* --- Espaçamento / raio --- */
-  --raio:      14px;
-  --raio-sm:   10px;
+  --raio:      var(--atlas-r-md, 16px);
+  --raio-sm:   var(--atlas-r-sm, 12px);
   --gap:       20px;
   --sidebar-w: 248px;
 }

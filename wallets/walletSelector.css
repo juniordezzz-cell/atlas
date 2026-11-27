@@ -35,8 +35,8 @@
   --aws-row-pad-y: 8px;
   --aws-row-pad-x: 10px;
   --aws-gap: 10px;
-  --aws-radius: 12px;
-  --aws-radius-sm: 9px;
+  --aws-radius: var(--atlas-r-sm, 12px);
+  --aws-radius-sm: var(--atlas-r-sm, 12px);
   --aws-swatch: 26px;
 
   /* ---- tipografia ---- */
@@ -149,7 +149,7 @@
   max-width: 300px;
   padding: 6px 10px 6px 12px;
   border: 1px solid transparent !important;
-  border-radius: 20px;
+  border-radius: var(--atlas-r-lg, 20px);
   background: var(--sereno-fill, rgba(148, 170, 215, 0.045)) !important;
   font-size: 12px;
   line-height: 1.2;
@@ -198,7 +198,7 @@
 .awsel__swatch {
   width: var(--aws-swatch);
   height: var(--aws-swatch);
-  border-radius: 8px;
+  border-radius: var(--atlas-r-xs, 8px);
   flex: none;
   display: grid;
   place-items: center;
@@ -283,7 +283,7 @@
 }
 .awsel__list::-webkit-scrollbar { width: 6px; }
 .awsel__list::-webkit-scrollbar-thumb {
-  background: var(--aws-border); border-radius: 3px;
+  background: var(--aws-border); border-radius: var(--atlas-r-xxs, 4px);
 }
 
 /* uma linha = a opção (clique troca) + as ações (renomear/excluir) */
@@ -336,7 +336,7 @@
 .awsel__badge {
   flex: none;
   padding: 1px 6px;
-  border-radius: 20px;
+  border-radius: var(--atlas-r-lg, 20px);
   font-size: var(--aws-fs-badge);
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -372,7 +372,7 @@
   height: 24px;
   display: grid;
   place-items: center;
-  border-radius: 7px;
+  border-radius: var(--atlas-r-xs, 8px);
   color: var(--aws-text-dim);
   transition: background .12s ease, color .12s ease;
 }

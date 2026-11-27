@@ -17,7 +17,7 @@
   width: 100%;
   max-width: 400px;
   padding: 40px 36px;
-  border-radius: 18px;
+  border-radius: var(--atlas-r-md, 16px);
   background: linear-gradient(180deg, color-mix(in srgb, var(--atlas-bg-raise) 92%, transparent), color-mix(in srgb, var(--atlas-bg-deep) 92%, transparent));
   border: 1px solid var(--card-borda-forte);
   box-shadow: 0 30px 80px rgba(0,0,0,0.55), var(--glow-azul);
@@ -44,7 +44,7 @@
 .field input {
   width: 100%;
   padding: 13px 15px;
-  border-radius: 10px;
+  border-radius: var(--atlas-r-sm, 12px);
   background: color-mix(in srgb, var(--atlas-sunken-base) 70%, transparent);
   border: 1px solid rgba(160,174,192,0.16);
   color: var(--texto);
@@ -70,7 +70,7 @@
 .btn-entrar {
   width: 100%;
   padding: 13px;
-  border-radius: 10px;
+  border-radius: var(--atlas-r-sm, 12px);
   font-weight: 600;
   font-size: 15px;
   color: #04121e;
@@ -101,7 +101,7 @@
 }
 .btn-google {
   width: 100%; display: flex; align-items: center; justify-content: center; gap: 11px;
-  padding: 13px; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer;
+  padding: 13px; border-radius: var(--atlas-r-sm, 12px); font-weight: 600; font-size: 15px; cursor: pointer;
   color: #04121e; background: #fff; border: 1px solid transparent;
   box-shadow: 0 8px 26px rgba(0,0,0,0.35); transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease;
 }
@@ -109,6 +109,6 @@
 .btn-google:disabled { opacity: .7; cursor: default; transform: none; }
 .btn-google svg { flex-shrink: 0; }
 .login-erro {
-  margin: 16px 0 0; padding: 11px 14px; border-radius: 10px; font-size: 13px;
+  margin: 16px 0 0; padding: 11px 14px; border-radius: var(--atlas-r-sm, 12px); font-size: 13px;
   color: var(--vermelho); background: rgba(255,84,112,0.08); border: 1px solid rgba(255,84,112,0.25);
 }

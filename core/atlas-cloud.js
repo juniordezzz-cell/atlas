@@ -189,12 +189,12 @@
     var s = document.createElement("style");
     s.textContent =
       ".atlas-cloud-aviso{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9999;" +
-      "display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;" +
+      "display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--atlas-r-sm, 12px);" +
       "background:#0C1626;border:1px solid rgba(0,240,255,.28);box-shadow:0 18px 50px rgba(0,0,0,.5);" +
       "color:#E6F1FF;font-family:'Inter',system-ui,sans-serif;font-size:13.5px;max-width:92vw}" +
       ".atlas-cloud-aviso button{cursor:pointer;font-family:inherit}" +
       ".atlas-cloud-aviso>button:not(.atlas-cloud-aviso__x){font-size:12.5px;font-weight:600;color:#04121e;" +
-      "background:linear-gradient(135deg,#00BFFF,#00F0FF);border:none;border-radius:8px;padding:7px 12px}" +
+      "background:linear-gradient(135deg,#00BFFF,#00F0FF);border:none;border-radius:var(--atlas-r-xs, 8px);padding:7px 12px}" +
       ".atlas-cloud-aviso__x{background:none;border:none;color:rgba(230,241,255,.55);font-size:18px;line-height:1;padding:0 2px}";
     (document.head || document.documentElement).appendChild(s);
   }

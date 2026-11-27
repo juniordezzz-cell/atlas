@@ -45,7 +45,7 @@
 @media (max-width: 640px) { .cx-acoes .cx-wallet-sel { margin-left: 0; flex: 1 1 100%; } }
 
 .cx-btn {
-  padding: 10px 18px; border-radius: 10px; cursor: pointer;
+  padding: 10px 18px; border-radius: var(--atlas-r-sm, 12px); cursor: pointer;
   border: 1px solid var(--atlas-border, rgba(140,170,225,.14));
   background: transparent; color: var(--text-2, #8b98a9);
   font-family: inherit; font-size: 13px; font-weight: 600;
@@ -79,9 +79,9 @@
 .cx-ponto { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 
 /* barra de proporção — a fatia de cada destino no patrimônio */
-.cx-barra { grid-column: 1 / -1; height: 4px; border-radius: 3px;
+.cx-barra { grid-column: 1 / -1; height: 4px; border-radius: var(--atlas-r-xxs, 4px);
             background: rgba(120,150,220,.12); overflow: hidden; margin-top: 2px; }
-.cx-barra > i { display: block; height: 100%; border-radius: 3px; }
+.cx-barra > i { display: block; height: 100%; border-radius: var(--atlas-r-xxs, 4px); }
 
 /* ---------- Extrato ---------- */
 .cx-ev {
@@ -92,7 +92,7 @@
 .cx-ev:last-child { border-bottom: 0; }
 .cx-ev__tipo {
   font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
-  padding: 3px 8px; border-radius: 6px; white-space: nowrap;
+  padding: 3px 8px; border-radius: var(--atlas-r-xs, 8px); white-space: nowrap;
   background: rgba(120,150,220,.12); color: var(--text-2, #8b98a9);
 }
 .cx-ev__tipo.is-in  { background: rgba(52,211,153,.14); color: var(--pos, #34d399); }
@@ -109,7 +109,7 @@
 .cx-hero { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; }
 .cx-hero-card {
   border: 1px solid var(--atlas-border, rgba(140,170,225,.14));
-  border-radius: 14px;
+  border-radius: var(--atlas-r-md, 16px);
   background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
   padding: 14px 16px;
 }
@@ -117,7 +117,7 @@
 .cx-hero__actions { display: inline-flex; gap: 8px; }
 .cx-hero__pill {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 10px; border-radius: 999px;
+  padding: 5px 10px; border-radius: var(--atlas-r-pill, 999px);
   color: #8ff1bc; font-size: 12px; font-weight: 700;
   background: rgba(52,211,153,.14);
 }
@@ -170,7 +170,7 @@
 .cx-donut-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .cx-donut-legend li {
   display: grid; grid-template-columns: auto 1fr auto auto; gap: 8px; align-items: center;
-  padding: 7px 9px; border-radius: 8px;
+  padding: 7px 9px; border-radius: var(--atlas-r-xs, 8px);
   border: 1px solid var(--atlas-border, rgba(140,170,225,.10));
   background: rgba(255,255,255,.01);
 }
@@ -182,7 +182,7 @@
 /* ---------- Carteiras detalhadas ---------- */
 .cx-wallet-card {
   border: 1px solid var(--atlas-border, rgba(140,170,225,.12));
-  border-radius: 12px; padding: 12px 13px; margin-bottom: 10px;
+  border-radius: var(--atlas-r-sm, 12px); padding: 12px 13px; margin-bottom: 10px;
   background: rgba(255,255,255,.01);
 }
 .cx-wallet-card:last-child { margin-bottom: 0; }
@@ -196,17 +196,17 @@
 .cx-wallet-mods { display: grid; grid-template-columns: repeat(5, minmax(110px, 1fr)); gap: 7px; margin-top: 8px; }
 .cx-wallet-mod {
   border: 1px solid var(--atlas-border, rgba(140,170,225,.10));
-  border-radius: 8px; padding: 7px 8px;
+  border-radius: var(--atlas-r-xs, 8px); padding: 7px 8px;
 }
 .cx-wallet-mod__k { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-3, #6b7a8f); }
 .cx-wallet-mod__v { margin-top: 2px; font-size: 12px; font-family: var(--font-mono, monospace); }
 .cx-wallet-stack { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 10px; }
-.cx-wallet-stack i { height: 6px; border-radius: 4px; display: block; min-width: 2px; }
+.cx-wallet-stack i { height: 6px; border-radius: var(--atlas-r-xxs, 4px); display: block; min-width: 2px; }
 
 /* ---------- Caixa por ativo (estilo holdings) ---------- */
 .cx-assets-table {
   border: 1px solid var(--atlas-border, rgba(140,170,225,.12));
-  border-radius: 12px;
+  border-radius: var(--atlas-r-sm, 12px);
   overflow: hidden;
 }
 .cx-assets-head {
@@ -245,7 +245,7 @@
 .cx-pill-btn {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 68px; height: 30px; padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--atlas-r-pill, 999px);
   border: 1px solid rgba(140,170,225,.24);
   background: rgba(120,150,220,.10);
   color: var(--text-1, #e6edf7);
@@ -270,7 +270,7 @@
 }
 .cx-modal[hidden] { display: none; }
 .cx-modal__box {
-  width: 100%; max-width: 460px; border-radius: 14px;
+  width: 100%; max-width: 460px; border-radius: var(--atlas-r-md, 16px);
   background: var(--surface, #0e1526);
   border: 1px solid var(--atlas-border, rgba(140,170,225,.14));
   box-shadow: 0 24px 64px rgba(0,0,0,.55);
@@ -290,7 +290,7 @@
 .cx-campo > label { display: block; font-size: 12px; font-weight: 600;
                     color: var(--text-2, #8b98a9); margin-bottom: 6px; }
 .cx-campo input, .cx-campo select {
-  width: 100%; padding: 10px 12px; border-radius: 9px;
+  width: 100%; padding: 10px 12px; border-radius: var(--atlas-r-sm, 12px);
   border: 1px solid var(--atlas-border, rgba(140,170,225,.14));
   background: var(--surface-2, rgba(255,255,255,.03));
   color: var(--text-1, #e6edf7); font-family: inherit; font-size: 13.5px;
@@ -327,7 +327,7 @@
 .cx-redes { display: grid; gap: 12px; }
 .cx-rede-card {
   border: 1px solid var(--atlas-border, rgba(140,170,225,.12));
-  border-radius: 12px; overflow: hidden;
+  border-radius: var(--atlas-r-sm, 12px); overflow: hidden;
 }
 .cx-rede-card__head {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -337,7 +337,7 @@
 .cx-rede-card__nome { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 14px; }
 .cx-rede-card__tot { font-family: var(--font-mono, monospace); font-weight: 650; font-size: 14px; }
 .cx-rede-barra { display: flex; height: 6px; gap: 2px; padding: 10px 12px 0; }
-.cx-rede-barra i { display: block; height: 6px; border-radius: 4px; min-width: 3px; }
+.cx-rede-barra i { display: block; height: 6px; border-radius: var(--atlas-r-xxs, 4px); min-width: 3px; }
 .cx-rede-linha {
   display: grid; grid-template-columns: 1.1fr .8fr 2fr; gap: 12px; align-items: center;
   padding: 10px 12px; border-bottom: 1px solid var(--atlas-border, rgba(140,170,225,.08));
@@ -351,7 +351,7 @@
 .cx-rede-tokens { display: flex; flex-wrap: wrap; gap: 6px; }
 .cx-rede-token {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px;
-  border: 1px solid var(--atlas-border, rgba(140,170,225,.14)); border-radius: 999px;
+  border: 1px solid var(--atlas-border, rgba(140,170,225,.14)); border-radius: var(--atlas-r-pill, 999px);
   font-size: 12px; white-space: nowrap;
 }
 .cx-rede-token b { font-weight: 650; }

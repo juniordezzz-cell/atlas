@@ -19,7 +19,7 @@ main { background: transparent; }
 .course-level { font-size: 13px; color: var(--atlas-muted); white-space: nowrap; }
 .course-current {
   display: inline-flex; align-items: center; gap: 8px; min-height: 40px;
-  padding: 6px 14px; border-radius: 8px;
+  padding: 6px 14px; border-radius: var(--atlas-r-xs, 8px);
   border: 1px solid var(--atlas-border); background: #111a30; color: #fff;
   font-size: 14px; font-weight: 600; max-width: 60vw;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -29,7 +29,7 @@ main { background: transparent; }
 .course-menu {
   display: none; position: absolute; top: calc(100% + 8px); left: 0;
   width: 320px; max-height: min(70vh, 560px); overflow-y: auto; padding: 6px 0;
-  border: 1px solid var(--atlas-border); border-radius: 12px; background: #0d1526;
+  border: 1px solid var(--atlas-border); border-radius: var(--atlas-r-sm, 12px); background: #0d1526;
   box-shadow: 0 16px 40px rgba(0, 0, 0, .55);
 }
 .course-bar.menu-open .course-menu { display: block; }
@@ -40,7 +40,7 @@ main { background: transparent; }
 .course-links { display: flex; gap: 4px; margin-left: auto; }
 .course-links button {
   border: 0; background: none; color: var(--atlas-muted);
-  font-size: 13px; padding: 6px 10px; border-radius: 6px; min-height: 36px;
+  font-size: 13px; padding: 6px 10px; border-radius: var(--atlas-r-xs, 8px); min-height: 36px;
 }
 .course-links button:hover { color: #fff; background: #ffffff0d; }
 .course-bar #search-form { max-width: 260px; }

@@ -336,7 +336,7 @@
     var bar = document.createElement("div");
     bar.setAttribute("role", "status");
     bar.style.cssText = "position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9999;" +
-      "display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;background:#0C1626;" +
+      "display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--atlas-r-sm, 12px);background:#0C1626;" +
       "border:1px solid rgba(0,240,255,.28);box-shadow:0 18px 50px rgba(0,0,0,.5);color:#E6F1FF;" +
       "font-family:'Inter',system-ui,sans-serif;font-size:13.5px;max-width:92vw";
     var txt = document.createElement("span");
@@ -344,7 +344,7 @@
     var btn = document.createElement("button");
     btn.type = "button"; btn.textContent = "Recarregar";
     btn.style.cssText = "cursor:pointer;font:600 12.5px 'Inter',system-ui,sans-serif;color:#04121e;" +
-      "background:linear-gradient(135deg,#00BFFF,#00F0FF);border:none;border-radius:8px;padding:7px 12px";
+      "background:linear-gradient(135deg,#00BFFF,#00F0FF);border:none;border-radius:var(--atlas-r-xs, 8px);padding:7px 12px";
     btn.addEventListener("click", function () { location.reload(); });
     var x = document.createElement("button");
     x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Fechar");

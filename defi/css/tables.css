@@ -37,16 +37,16 @@
 .dist-list { display: flex; flex-direction: column; gap: 14px; }
 .dist-item .dist-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
 .dist-item .dist-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
-.dist-item .dist-label .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.dist-item .dist-label .sw { width: 10px; height: 10px; border-radius: var(--atlas-r-xxs, 4px); flex: none; }
 .dist-item .dist-val { font-family: var(--font-mono); font-size: 13px; color: var(--text-hi); font-weight: 600; }
-.dist-item .dist-bar { height: 7px; border-radius: 4px; background: rgba(120,150,220,0.10); overflow: hidden; }
-.dist-item .dist-bar > i { display: block; height: 100%; border-radius: 4px; }
+.dist-item .dist-bar { height: 7px; border-radius: var(--atlas-r-xxs, 4px); background: rgba(120,150,220,0.10); overflow: hidden; }
+.dist-item .dist-bar > i { display: block; height: 100%; border-radius: var(--atlas-r-xxs, 4px); }
 
 /* legenda de donut */
 .legend { display: flex; flex-direction: column; gap: 11px; }
 .legend-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
 .legend-item .lg-l { display: flex; align-items: center; gap: 9px; color: var(--text); }
-.legend-item .lg-l .sw { width: 10px; height: 10px; border-radius: 3px; }
+.legend-item .lg-l .sw { width: 10px; height: 10px; border-radius: var(--atlas-r-xxs, 4px); }
 .legend-item .lg-v { font-family: var(--font-mono); color: var(--text-hi); font-weight: 600; }
 /* Histórico por ciclo, reutilizado na aba Pools e no arquivo DeFi. */
 .pool-view { margin-bottom: 12px; }
@@ -59,7 +59,7 @@
 .pool-audit__body h3 { font-size:14px; margin:20px 0 12px; }
 .pool-audit__body h3:first-child { margin-top:0; }
 .pool-audit__metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
-.pool-audit__metric { padding:12px; border-radius:10px; background:rgba(120,150,220,.045); }
+.pool-audit__metric { padding:12px; border-radius:var(--atlas-r-sm, 12px); background:rgba(120,150,220,.045); }
 .pool-audit__metric dt { font-size:12px; color:var(--text-mut); margin-bottom:6px; }
 .pool-audit__metric dd { margin:0; font-family:var(--font-mono); font-size:14px; overflow-wrap:anywhere; }
 .pool-audit__scroll { overflow-x:auto; }

@@ -1,22 +1,22 @@
 /* Formato novo de aula (blocos). Mesmo estilo do curso: fundo escuro, azul, borda fina. */
 .lesson>p{max-width:76ch;font-size:16px;line-height:1.75;color:#d5deeb}
-.aula-analogia{max-width:76ch;margin:18px 0;padding:14px 18px;border:1px solid var(--atlas-border);border-left:3px solid #67e8f9;border-radius:0 8px 8px 0;background:#67e8f90a;font-size:15px;line-height:1.7;color:#d5deeb}
+.aula-analogia{max-width:76ch;margin:18px 0;padding:14px 18px;border:1px solid var(--atlas-border);border-left:3px solid #67e8f9;border-radius:0 var(--atlas-r-xs, 8px) var(--atlas-r-xs, 8px) 0;background:#67e8f90a;font-size:15px;line-height:1.7;color:#d5deeb}
 .aula-analogia strong{display:block;margin-bottom:4px;color:#67e8f9;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
-.aula-figura{margin:22px 0;padding:16px;border:1px solid var(--atlas-border);border-radius:12px;background:#0d1729}
+.aula-figura{margin:22px 0;padding:16px;border:1px solid var(--atlas-border);border-radius:var(--atlas-r-sm, 12px);background:#0d1729}
 .aula-figura svg{display:block;width:100%;max-width:640px;height:auto;margin:0 auto}
 .aula-figura figcaption{margin-top:12px;font-size:13px;line-height:1.6;color:var(--atlas-muted);text-align:center}
-.aula-dado{max-width:76ch;margin:16px 0;padding:10px 14px;border:1px dashed var(--atlas-border);border-radius:8px;font-size:14px;line-height:1.65;color:#d5deeb}
+.aula-dado{max-width:76ch;margin:16px 0;padding:10px 14px;border:1px dashed var(--atlas-border);border-radius:var(--atlas-r-xs, 8px);font-size:14px;line-height:1.65;color:#d5deeb}
 .aula-dado a{color:var(--atlas-primary);overflow-wrap:anywhere}
 .aula-data{display:inline-block;font-size:12px;color:var(--atlas-muted)}
-.aula-frase{max-width:76ch;margin:20px 0 8px;padding:12px 16px;border-radius:8px;background:#3b82f614;font-size:15px;line-height:1.65;color:#e2e8f0}
+.aula-frase{max-width:76ch;margin:20px 0 8px;padding:12px 16px;border-radius:var(--atlas-r-xs, 8px);background:#3b82f614;font-size:15px;line-height:1.65;color:#e2e8f0}
 .aula-frase strong{margin-right:6px;color:var(--atlas-primary)}
 .aula-termos{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;font-size:13px;color:var(--atlas-muted)}
 .aula-termos button[aria-expanded="true"]{border-color:#67e8f9;color:#67e8f9}
-.aula-termo-def{max-width:76ch;margin:-4px 0 14px;padding:12px 16px;border:1px solid var(--atlas-border);border-left:3px solid #67e8f9;border-radius:0 8px 8px 0;background:#67e8f90a;font-size:14px;line-height:1.65;color:#d5deeb}
+.aula-termo-def{max-width:76ch;margin:-4px 0 14px;padding:12px 16px;border:1px solid var(--atlas-border);border-left:3px solid #67e8f9;border-radius:0 var(--atlas-r-xs, 8px) var(--atlas-r-xs, 8px) 0;background:#67e8f90a;font-size:14px;line-height:1.65;color:#d5deeb}
 .aula-termo-def p{margin:0 0 6px}
 .aula-termo-def strong:first-child{margin-right:4px;color:#67e8f9}
 .aula-termo-def a{font-size:13px;color:var(--atlas-primary)}
-.aula-historia{margin-bottom:28px;padding:24px;border:1px solid var(--atlas-border);border-radius:12px;background:#151e32;scroll-margin-top:24px}
+.aula-historia{margin-bottom:28px;padding:24px;border:1px solid var(--atlas-border);border-radius:var(--atlas-r-sm, 12px);background:#151e32;scroll-margin-top:24px}
 .aula-historia>p{max-width:76ch;font-size:16px;line-height:1.75;color:#d5deeb}
 .aula-alem{margin-top:34px}
 .aula-alem>h2{scroll-margin-top:24px}
@@ -44,7 +44,7 @@
  .aula-figura figcaption::before{content:"deslize para ver a figura inteira →";content:"deslize para ver a figura inteira →"/"";display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:#67e8f9}
 }
 
-.sim-field textarea{display:block;background:#0b1120;border:1px solid #2a3b55;border-radius:7px;color:#e2e8f0;width:100%;box-sizing:border-box;padding:10px 12px;margin-top:6px;min-height:110px;resize:vertical;font:inherit;font-size:14px;line-height:1.5}
+.sim-field textarea{display:block;background:#0b1120;border:1px solid #2a3b55;border-radius:var(--atlas-r-xs, 8px);color:#e2e8f0;width:100%;box-sizing:border-box;padding:10px 12px;margin-top:6px;min-height:110px;resize:vertical;font:inherit;font-size:14px;line-height:1.5}
 
 /* Celular (21/10/2026): os recuos somados (página de fora, iframe, contêiner,
    aula e figura) deixavam só ~247px de figura visível em 375px. Aqui o
@@ -73,12 +73,12 @@
 }
 
 /* Índice: barra de progresso do módulo e a aula que está na tela. */
-.aula-progresso{height:3px;margin:4px 0 10px;background:#2a3b5566;border-radius:2px;overflow:hidden}
+.aula-progresso{height:3px;margin:4px 0 10px;background:#2a3b5566;border-radius:var(--atlas-r-xxs, 4px);overflow:hidden}
 .aula-progresso i{display:block;height:100%;background:linear-gradient(90deg,#60a5fa,#67e8f9);transform:scaleX(0);transform-origin:left}
 .lesson-toc a.ativo{color:#e2e8f0;border-left:2px solid #67e8f9;margin-left:-16px;padding-left:14px}
 
 /* Cena 3D (cadeia de blocos). Sem WebGL fica o SVG (.cena-plano). */
-.aula-cena,.aula-interativo{padding:18px;border:1px solid var(--atlas-border);border-radius:12px;background:radial-gradient(ellipse at 50% 0%,#2563eb1f,transparent 70%),#0b1120}
+.aula-cena,.aula-interativo{padding:18px;border:1px solid var(--atlas-border);border-radius:var(--atlas-r-sm, 12px);background:radial-gradient(ellipse at 50% 0%,#2563eb1f,transparent 70%),#0b1120}
 .cena-3d{display:none;height:280px;margin:-6px -6px 6px;cursor:grab}
 .aula-cena.com-3d .cena-3d{display:block}
 .aula-cena.com-3d .cena-plano{display:none}
@@ -89,11 +89,11 @@
 
 /* Interativo: SHA-256 ao vivo. */
 .interativo-rotulo{display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:600;color:#bfdbfe}
-.hash-entrada{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--atlas-border);border-radius:8px;background:#05080f;color:#e2e8f0;font-size:15px}
+.hash-entrada{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--atlas-border);border-radius:var(--atlas-r-xs, 8px);background:#05080f;color:#e2e8f0;font-size:15px}
 .hash-entrada:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
 .interativo-sub{margin:14px 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--atlas-muted)}
-.hash-saida{display:block;font-family:ui-monospace,monospace;font-size:15px;line-height:1.7;letter-spacing:.04em;word-break:break-all;color:#67e8f9;padding:12px 14px;border-radius:8px;background:#05080f;border:1px solid #2a3b5599}
-.hash-saida mark{background:#f8717133;color:#fecaca;border-radius:2px}
+.hash-saida{display:block;font-family:ui-monospace,monospace;font-size:15px;line-height:1.7;letter-spacing:.04em;word-break:break-all;color:#67e8f9;padding:12px 14px;border-radius:var(--atlas-r-xs, 8px);background:#05080f;border:1px solid #2a3b5599}
+.hash-saida mark{background:#f8717133;color:#fecaca;border-radius:var(--atlas-r-xxs, 4px)}
 .hash-mudou{font-size:14px;color:#d5deeb;margin:10px 0 0}
 
 /* Visão geral: cenário 3D da trilha ao lado do texto de abertura. */
@@ -104,7 +104,7 @@
 .trilha-nome{display:none;text-align:center;font-size:13px;color:var(--atlas-muted);margin:4px 0 10px;min-height:1.6em}
 .trilha.com-3d .trilha-nome{display:block}
 .trilha-lista{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;list-style:none;padding:0;margin:0}
-.trilha-bloco{width:44px;height:44px;border-radius:8px;border:1px solid #a78bfa66;background:#111c30;color:#c4b5fd;font-size:13px;font-weight:700}
+.trilha-bloco{width:44px;height:44px;border-radius:var(--atlas-r-xs, 8px);border:1px solid #a78bfa66;background:#111c30;color:#c4b5fd;font-size:13px;font-weight:700}
 .trilha-bloco.feito{border-color:#67e8f9;background:#67e8f926;color:#cffafe}
 .trilha-bloco.atual{border-color:#60a5fa;background:#2563eb33;color:#dbeafe}
 .trilha-bloco:hover{border-color:#e2e8f0}
@@ -157,7 +157,7 @@
 
 /* ===== Interativos do Módulo 3 (21/10/2026) ===== */
 .k-cartoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
-.k-cartao,.e-item,.g-dono{display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px;border:1px solid var(--atlas-border);border-radius:10px;background:#111c30;color:#e2e8f0;font-size:14px;min-height:44px;cursor:pointer}
+.k-cartao,.e-item,.g-dono{display:flex;flex-direction:column;gap:4px;text-align:left;padding:12px;border:1px solid var(--atlas-border);border-radius:var(--atlas-r-sm, 12px);background:#111c30;color:#e2e8f0;font-size:14px;min-height:44px;cursor:pointer}
 .k-cartao span,.k-cartao small,.e-item small,.g-dono small{font-size:12px;color:var(--atlas-muted)}
 .k-cartao code,.e-item code{font-family:ui-monospace,monospace;font-size:13px;color:#67e8f9;word-break:break-all}
 .k-cartao:hover,.e-item:hover,.g-dono:hover{border-color:#60a5fa}
@@ -166,7 +166,7 @@
 .c-cenarios{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
 .c-cenarios .btn[aria-pressed=true]{border-color:#67e8f9;color:#cffafe}
 .c-lados,.h-telas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.c-lado,.h-tela{padding:12px;border:1px solid var(--atlas-border);border-radius:10px;background:#0b1120}
+.c-lado,.h-tela{padding:12px;border:1px solid var(--atlas-border);border-radius:var(--atlas-r-sm, 12px);background:#0b1120}
 .c-quem{font-size:13px;color:var(--atlas-muted);margin:0 0 8px}
 .c-res,.h-msg{font-size:14px;line-height:1.6;color:#d5deeb;margin:0}
 .c-res.ruim{color:#fecaca}
@@ -176,7 +176,7 @@
 .h-errado .h-aparelho{border-color:#f87171}
 .e-lista{display:flex;flex-direction:column;gap:8px;margin:6px 0}
 .e-item mark{background:transparent;color:inherit}
-.e-revelado .e-item mark{background:#f8717140;color:#fecaca;border-radius:2px}
+.e-revelado .e-item mark{background:#f8717140;color:#fecaca;border-radius:var(--atlas-r-xxs, 4px)}
 .e-salvo{font-family:ui-monospace,monospace;color:#67e8f9;word-break:break-all;text-transform:none;letter-spacing:0}
 .a-perigo .a-caixa-perm{stroke:#f87171}
 .g-donos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0}
@@ -193,11 +193,11 @@
 [data-interativo=gastoduplo].passo-3 .gd-txb rect{stroke:#f87171;stroke-dasharray:6 5}
 /* Montar transação. */
 .mt-moedas{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
-.mt-moeda{display:flex;align-items:center;gap:8px;padding:10px 12px;min-height:44px;border:1px solid var(--atlas-border);border-radius:8px;background:#111c30;font-family:ui-monospace,monospace;font-size:13px;color:#e2e8f0;cursor:pointer}
+.mt-moeda{display:flex;align-items:center;gap:8px;padding:10px 12px;min-height:44px;border:1px solid var(--atlas-border);border-radius:var(--atlas-r-xs, 8px);background:#111c30;font-family:ui-monospace,monospace;font-size:13px;color:#e2e8f0;cursor:pointer}
 .mt-moeda:has(input:checked){border-color:#67e8f9;background:#67e8f914}
 .mt-moeda input{accent-color:#67e8f9;width:18px;height:18px}
 .mt-conta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
-.mt-conta p{margin:0;padding:8px 10px;border-radius:8px;background:#0b1120;font-size:12px;color:var(--atlas-muted)}
+.mt-conta p{margin:0;padding:8px 10px;border-radius:var(--atlas-r-xs, 8px);background:#0b1120;font-size:12px;color:var(--atlas-muted)}
 .mt-conta strong{display:block;font-family:ui-monospace,monospace;font-size:13px;color:#e2e8f0}
 .mt-falta .mt-troco{color:#fca5a5}
 /* Tipo de endereço. */
