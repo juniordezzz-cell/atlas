@@ -246,12 +246,16 @@
   function abaDefi(mount) {
     var T = topo(["TVL DeFi", "Volume 24h", "Taxas 24h", "Stablecoins", "Medo e ganância"]);
     mount.appendChild(T.el);
-    var grade = h("div", "mk-miolo");
-    var pRedes = painel("Redes", "TVL · 7 dias");
+    // 28/11: só o mapa na faixa central (o dono: "muito apertado"); Redes e
+    // "O que mudou hoje" saíram. Voltar para todas as redes é pelo botão no topo.
+    var grade = h("div", "mk-miolo mk-miolo-so");
     var pMapa = painel("Onde está o dinheiro", "tamanho = TVL · cor = 7 dias");
     pMapa.classList.add("mk-p-mapa");
-    var pSinais = painel("O que mudou hoje", "");
-    add(grade, pRedes, pMapa, pSinais); mount.appendChild(grade);
+    var voltar = h("button", "mk-voltar", "← Todas as redes");
+    voltar.type = "button"; voltar.hidden = true;
+    voltar.addEventListener("click", function () { if (redeSel) escolheRede(redeSel); });
+    pMapa.querySelector(".mk-p-head").insertBefore(voltar, pMapa.querySelector(".mk-p-dica"));
+    add(grade, pMapa); mount.appendChild(grade);
     var baixo = h("div", "mk-baixo");
     var pFluxo = painel("Fluxo da semana", "entrou · saiu, por rede");
     var pVol = painel("Maior volume 24h", "DEX e perpétuos");
@@ -274,6 +278,7 @@
     function desenhaMapa() {
       var ps = D.protos;
       var caixa = h("div", "mk-mapa");
+      voltar.hidden = !redeSel;
       if (redeSel) {
         var its = ps.filter(function (p) { return p.redes && p.redes[redeSel] > 0; })
           .sort(function (a, b) { return b.redes[redeSel] - a.redes[redeSel]; }).slice(0, 24)
@@ -281,7 +286,7 @@
         if (!its.length) return pMapa.indisponivel(null, "Sem protocolos de " + rede(redeSel) + " na lista.");
         pMapa.estado(caixa);
         AcademyTreemap.render(caixa, [{ nome: rede(redeSel), itens: its }], { titulos: false, escala: 10 });
-        pMapa.dica(rede(redeSel) + " · clique na rede de novo para ver todas");
+        pMapa.dica(rede(redeSel) + " · tamanho = TVL na rede · cor = 7 dias");
         return;
       }
       var porRede = {};
@@ -290,25 +295,17 @@
         .sort(function (a, b) { return b.tvl - a.tvl; });
       var principais = redes.slice(0, 7).map(function (x) { return x.r; });
       var grupos = principais.map(function (r) {
-        return { nome: rede(r), chave: r, itens: porRede[r].slice(0, 9).map(function (p) {
+        return { nome: rede(r), chave: r, itens: porRede[r].slice(0, 12).map(function (p) {
           return { nome: p.nome, valor: p.tvl, variacao: p.change7d, detalhe: big(p.tvl), aoClicar: abrirProto(p) }; }) };
       });
       var outras = [];
       redes.slice(7).forEach(function (x) { porRede[x.r].forEach(function (p) { outras.push(p); }); });
       outras.sort(function (a, b) { return b.tvl - a.tvl; });
-      if (outras.length) grupos.push({ nome: "Outras redes", itens: outras.slice(0, 10).map(function (p) {
+      if (outras.length) grupos.push({ nome: "Outras redes", itens: outras.slice(0, 14).map(function (p) {
         return { nome: p.nome, valor: p.tvl, variacao: p.change7d, detalhe: big(p.tvl) + " · " + rede(p.redePrincipal), aoClicar: abrirProto(p) }; }) });
       pMapa.estado(caixa);
       AcademyTreemap.render(caixa, grupos, { escala: 10, aoClicarGrupo: function (g) { if (g.chave) escolheRede(g.chave); } });
       pMapa.dica("tamanho = TVL · cor = 7 dias · clique numa rede para abrir só ela");
-    }
-    function desenhaRedes() {
-      if (!D.chains || !D.chains.length) return pRedes.indisponivel(carregar);
-      pRedes.estado(lista(D.chains.map(function (c) {
-        var l = linhaPilha(rede(c.name), big(c.tvl), c.change7d, function () { escolheRede(c.name); });
-        if (redeSel === c.name) l.classList.add("ativa");
-        return l;
-      })));
     }
     function desenhaTabela() {
       var rows = D.protos.filter(function (p) { return !redeSel || (p.redes && p.redes[redeSel] > 0); });
@@ -323,7 +320,7 @@
       ], rows, { ordem: 2, aoClicar: function (r) { abrirProto(r)(); } });
       pTab.dica(redeSel ? "filtrado por " + rede(redeSel) + " · clique numa linha para abrir" : "clique no título da coluna para ordenar · clique numa linha para abrir");
     }
-    function escolheRede(r) { redeSel = redeSel === r ? null : r; desenhaRedes(); desenhaMapa(); desenhaTabela(); }
+    function escolheRede(r) { redeSel = redeSel === r ? null : r; desenhaMapa(); desenhaTabela(); }
 
     function carregar() {
       Promise.all([
@@ -332,7 +329,6 @@
         AcademyData.feargreed().catch(nada), AcademyData.hlVolume().catch(nada)
       ]).then(function (r) {
         D = { protos: r[0] || [], chains: r[1] || [], tvl: r[2], vol: r[3], taxas: r[4], st: r[5], fg: r[6], hl: r[7] };
-        var quando = AcademyData.idade.protocolos || Date.now();
         // números
         T.kpi[0].set(D.tvl ? big(D.tvl.current) : null, D.tvl && D.tvl.change24h != null ? pc(D.tvl.change24h) + " em 24h" : "", cls(D.tvl && D.tvl.change24h));
         var volTot = (D.vol && D.vol.total24h || 0) + (D.hl ? D.hl.total24h : 0);
@@ -355,7 +351,6 @@
         T.frase(f.join(" "));
         if (!D.protos.length) { pMapa.indisponivel(carregar); pTab.indisponivel(carregar); }
         else { desenhaMapa(); desenhaTabela(); }
-        desenhaRedes();
         // fluxo da semana
         var fl = (D.chains || []).filter(function (c) { return c.delta7d != null; }).sort(function (a, b) { return b.delta7d - a.delta7d; });
         if (fl.length) pFluxo.estado(barras(fl.map(function (c) { return { nome: rede(c.name), valor: c.delta7d, rotulo: (c.delta7d >= 0 ? "+" : "") + big(c.delta7d) }; })));
@@ -374,20 +369,6 @@
           var ts = Object.keys(D.taxas.porGrupo).map(function (k) { return D.taxas.porGrupo[k]; }).sort(function (a, b) { return b.v24h - a.v24h; }).slice(0, 6);
           pTaxas.estado(lista(ts.map(function (x) { return linha(x.nome, big(x.v24h), x.change1d); })));
         } else pTaxas.indisponivel(carregar);
-        // o que mudou hoje
-        var S = [];
-        var cMov = cs.slice().sort(function (a, b) { return Math.abs(b.change7d) - Math.abs(a.change7d); })[0];
-        if (cMov && Math.abs(cMov.change7d) >= 2) S.push({ sev: sevDe(cMov.change7d, 15, 5), txt: rede(cMov.name) + (cMov.change7d >= 0 ? " ganha " : " perde ") + pc(Math.abs(cMov.change7d)).replace(/^[+−]/, "") + " do TVL na semana", aoClicar: function () { escolheRede(cMov.name); } });
-        var grandes = D.protos.filter(function (p) { return p.tvl > 5e8 && p.change7d != null; });
-        var g1 = grandes.slice().sort(function (a, b) { return b.change7d - a.change7d; })[0];
-        var g2 = grandes.slice().sort(function (a, b) { return a.change7d - b.change7d; })[0];
-        if (g1 && g1.change7d >= 3) S.push({ sev: sevDe(g1.change7d, 20, 8), txt: g1.nome + " cresce " + pc(g1.change7d).slice(1) + " em 7 dias (" + big(g1.tvl) + ")", aoClicar: abrirProto(g1) });
-        if (g2 && g2.change7d <= -3) S.push({ sev: sevDe(g2.change7d, 20, 8), txt: g2.nome + " perde " + pc(g2.change7d).slice(1) + " em 7 dias (" + big(g2.tvl) + ")", aoClicar: abrirProto(g2) });
-        if (D.hl) S.push({ sev: "baixa", txt: "Hyperliquid negocia " + big(D.hl.total24h) + " em perpétuos em 24h" });
-        if (D.vol && D.vol.change1d != null && Math.abs(D.vol.change1d) >= 10) S.push({ sev: sevDe(D.vol.change1d, 30, 10), txt: "Volume das DEX " + (D.vol.change1d > 0 ? "sobe " : "cai ") + pc(Math.abs(D.vol.change1d)).slice(1) + " em 24h" });
-        if (D.st && D.st.change7d != null) S.push({ sev: sevDe(D.st.change7d, 3, 1), txt: "Stablecoins " + (D.st.change7d >= 0 ? "somam " : "perdem ") + big(Math.abs(D.st.total - D.st.total / (1 + D.st.change7d / 100))) + " em 7 dias" });
-        if (D.fg && (D.fg.value <= 25 || D.fg.value >= 75)) S.push({ sev: "alta", txt: "Medo e ganância em " + D.fg.value + " (" + rotuloFG(D.fg.value) + ")" });
-        sinais(pSinais, S, quando);
       });
     }
     carregar(); refreshers.push(carregar);

@@ -94,3 +94,12 @@ solto, reserva diferente do degrau, ou `--atlas-r-*` definido fora do shell.
 - Mapa: cada rede é um bloco com canto `sm`; as células se separam por um fio
   de 1 px com canto `xxs`, sem a grade de linhas escuras. Saiu `tmap-estreita`.
 - Painéis com canto `xl` (24) e números com `lg` (20).
+
+## Ajuste de 28/11 (Mercado, segunda parte)
+
+Aba DeFi só com "Onde está o dinheiro" na faixa central, largura inteira
+(`.mk-miolo-so`, proporção 2,3 e mínimo de 420 px; no celular continua 0,9).
+Saíram os painéis Redes e "O que mudou hoje" (e o código deles). Clicar no
+nome de uma rede abre só ela; o botão "← Todas as redes" no topo do painel
+volta. Cada rede mostra até 12 protocolos e "Outras redes" até 14. Tokens e
+RWA mantêm as três colunas.
