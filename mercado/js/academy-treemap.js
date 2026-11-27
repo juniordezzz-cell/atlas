@@ -120,11 +120,11 @@
         // texto do tamanho da célula (28/11, referência do dono): nome grande
         // nas grandes, valor embaixo; célula pequena demais fica sem texto
         var wpx = c.w / r.w * (r.w * pxW - 6), hpx = c.h / r.h * (r.h * pxH - (faixa || 3) - 3);
-        var fs = Math.max(11, Math.min(it.resto ? 20 : 64, hpx * 0.26, (wpx - 26) * 1.3 / Math.max(3, it.nome.length)));
+        var fs = Math.max(11, Math.min(it.resto ? 15 : 34, hpx * 0.2, (wpx - 26) * 1.3 / Math.max(3, it.nome.length)));
         if (wpx >= 34 && hpx >= 22) {
           var nm = el("b", null, it.nome); nm.style.fontSize = Math.round(fs) + "px";
           b.appendChild(nm);
-          var fd = Math.max(10, Math.min(22, fs * 0.42));
+          var fd = Math.max(10, Math.min(14, fs * 0.45));
           if (hpx >= fs * 1.25 + fd * 1.4 + 14) {
             var txt = it.resto ? (wpx > 110 ? it.detalhe : "") : pc(it.variacao);
             // o valor (TVL, valor de mercado) só entra se couber inteiro na largura

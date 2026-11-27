@@ -115,3 +115,6 @@ RWA mantêm as três colunas.
   letra proporcional à célula (até 64 px) e o valor embaixo; o valor só
   aparece se couber inteiro. Na DeFi (`juntar: true`) as migalhas, abaixo de
   0,3% do mapa, viram uma célula "+N" com os nomes.
+- Mesmo dia, o dono achou o mapa enorme numa tela de 1888 px (~770 px de
+  altura). Agora a altura é fixa, `clamp(340px, 28vw, 480px)`, e a letra
+  do nome vai no máximo a 34 px (o valor, a 14 px).

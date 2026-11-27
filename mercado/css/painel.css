@@ -195,7 +195,8 @@ button.tmap-titulo:hover { color: var(--atlas-acao, #00BFFF); }
 .mk-voltar:focus-visible { outline: 2px solid var(--atlas-acao, #00BFFF); outline-offset: 2px; }
 .mk-voltar[hidden] { display: none; }
 @media (min-width: 721px) {
-  .mk-miolo-so .mk-p-mapa .mk-mapa { aspect-ratio: 2.3; flex: none; min-height: 420px; }
+  /* 28/11: altura fixa (o dono achou enorme com 2,3 de proporção em tela grande) */
+  .mk-miolo-so .mk-p-mapa .mk-mapa { aspect-ratio: auto; flex: none; height: clamp(340px, 28vw, 480px); min-height: 0; }
 }
 
 /* filtro do mapa (Tokens e RWA, 28/11): pílulas no topo do painel */
