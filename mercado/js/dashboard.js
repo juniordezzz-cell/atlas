@@ -97,6 +97,13 @@
       variacao !== undefined ? h("small", cls(variacao), pc(variacao)) : null);
     return add(r, esq, dir);
   }
+  /* linha empilhada (painel estreito): nome à esquerda; valor com a variação embaixo */
+  function linhaPilha(nome, valor, variacao, aoClicar) {
+    var r = h(aoClicar ? "button" : "div", "mk-linha mk-linha-pilha");
+    if (aoClicar) { r.type = "button"; r.addEventListener("click", aoClicar); }
+    return add(r, h("span", "mk-linha-nome", nome),
+      add(h("span", "mk-ativo-num"), h("b", null, valor), variacao !== undefined ? h("small", cls(variacao), pc(variacao)) : null));
+  }
   function lista(linhas) { var l = h("div", "mk-lista"); linhas.forEach(function (x) { l.appendChild(x); }); return l; }
   /* [{nome, valor, rotulo, cor?}]; teto opcional: barra para de crescer ali
      (uma pool de 250% achataria todas as outras), o rótulo mostra o valor real */
@@ -122,7 +129,10 @@
     itens.forEach(function (s) {
       var r = h(s.aoClicar ? "button" : "div", "mk-sinal");
       if (s.aoClicar) { r.type = "button"; r.addEventListener("click", s.aoClicar); }
-      add(r, h("time", null, hhmm(quando)), h("span", null, s.txt), h("span", "mk-sev sev-" + s.sev, SEV[s.sev]));
+      // a hora é a mesma em todas (já está no topo, "dados de …"); o peso vira um ponto de cor
+      var ponto = h("i", "mk-sev sev-" + s.sev); ponto.title = "importância " + SEV[s.sev];
+      ponto.setAttribute("aria-label", "importância " + SEV[s.sev]); ponto.setAttribute("role", "img");
+      add(r, ponto, h("span", null, s.txt));
       l.appendChild(r);
     });
     p.estado(l);
@@ -295,7 +305,7 @@
     function desenhaRedes() {
       if (!D.chains || !D.chains.length) return pRedes.indisponivel(carregar);
       pRedes.estado(lista(D.chains.map(function (c) {
-        var l = linha(rede(c.name), big(c.tvl), c.change7d, function () { escolheRede(c.name); });
+        var l = linhaPilha(rede(c.name), big(c.tvl), c.change7d, function () { escolheRede(c.name); });
         if (redeSel === c.name) l.classList.add("ativa");
         return l;
       })));

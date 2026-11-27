@@ -91,7 +91,7 @@
         if (opts.aoClicarGrupo) { t.type = "button"; t.addEventListener("click", function () { opts.aoClicarGrupo(G); }); }
         bloco.appendChild(t); faixa = 20;
       }
-      var area = el("div", "tmap-area"); area.style.top = faixa + "px";
+      var area = el("div", "tmap-area"); area.style.top = (faixa || 3) + "px";
       bloco.appendChild(area);
       var its = G.itens.filter(function (it) { return it.valor > 0; });
       layout(its, 0, 0, r.w, r.h).forEach(function (c) {
@@ -102,9 +102,6 @@
         b.style.width = (c.w / r.w * 100) + "%"; b.style.height = (c.h / r.h * 100) + "%";
         b.style.background = cor(it.variacao, escala);
         var areaRel = (c.w / W) * (c.h / H);
-        // célula estreita leva canto menor: com 8 px ela virava bolinha
-        var ladoPx = Math.min(c.w, c.h) / W * (caixa.clientWidth || 600);
-        if (ladoPx < 32) b.classList.add("tmap-estreita");
         b.title = it.nome + (it.detalhe ? " · " + it.detalhe : "") + " · " + pc(it.variacao);
         if (areaRel > 0.0035) {
           b.appendChild(el("b", null, it.nome));

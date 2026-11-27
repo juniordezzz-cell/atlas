@@ -33,18 +33,19 @@
 .mk-frase { margin: 4px 0 0; font-family: var(--fonte-titulo); font-size: clamp(17px, 1.9vw, 21px); line-height: 1.45;
   max-width: 62ch; text-wrap: balance; min-height: 1.45em; color: var(--texto); }
 .mk-kpis { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
-.mk-kpi { background: var(--mk-sup); border-radius: var(--atlas-r-md, 16px); padding: 14px 18px;
+.mk-kpi { background: var(--mk-sup); border-radius: var(--atlas-r-lg, 20px); padding: 14px 18px;
   display: flex; flex-direction: column; gap: 4px; text-align: left; min-width: 0; }
 .mk-kpi span { font-size: 12px; font-weight: 500; color: var(--texto-fraco); }
 .mk-kpi b { font-family: var(--mono, monospace); font-size: 22px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--texto); }
 .mk-kpi small { font-family: var(--mono, monospace); font-size: 12px; color: var(--texto-fraco); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* grades */
-.mk-miolo { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 2.2fr) minmax(0, 1.2fr); gap: 16px; align-items: stretch; }
+/* 28/11: o mapa é o centro (≈60% da faixa); as laterais ficam estreitas e compactas */
+.mk-miolo { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 2.7fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .mk-baixo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 
 /* painel: superfície leve, sem contorno */
-.mk-p { background: var(--mk-sup); border-radius: var(--atlas-r-lg, 20px); display: flex; flex-direction: column; min-width: 0; }
+.mk-p { background: var(--mk-sup); border-radius: var(--atlas-r-xl, 24px); display: flex; flex-direction: column; min-width: 0; }
 .mk-p-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; padding: 16px 20px 8px; }
 .mk-p-titulo { margin: 0; font-family: var(--fonte-titulo); font-size: 15px; font-weight: 600; color: var(--texto); }
 .mk-p-dica { font-size: 11.5px; color: var(--texto-fraco); }
@@ -67,6 +68,9 @@ button.mk-linha:focus-visible { outline: 2px solid var(--atlas-acao, #00BFFF); o
 .mk-linha-nome { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mk-linha-nome small { font-weight: 400; color: var(--texto-fraco); margin-left: 6px; font-size: 11.5px; }
 .mk-linha-valor { font-family: var(--mono, monospace); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--texto-suave); }
+.mk-linha-pilha { padding: 7px 12px; }
+.mk-linha-pilha .mk-ativo-num { gap: 0; }
+.mk-linha-pilha .mk-ativo-num small { font-size: 11.5px; }
 .mk .up { color: var(--verde); } .mk .down { color: var(--vermelho); }
 .mk .mute { color: var(--texto-fraco); } .mk .aviso { color: var(--dourado); }
 
@@ -91,15 +95,16 @@ button.mk-linha:focus-visible { outline: 2px solid var(--atlas-acao, #00BFFF); o
 
 /* o que mudou hoje */
 .mk-sinais { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; }
-.mk-sinal { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 42px 1fr auto; gap: 10px; align-items: center;
-  padding: 10px 12px; border-radius: var(--atlas-r-sm, 12px); font-size: 13px; color: var(--texto); }
+.mk-sinal { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline;
+  padding: 8px 12px; border-radius: var(--atlas-r-sm, 12px); font-size: 13px; line-height: 1.4; color: var(--texto); }
 button.mk-sinal { cursor: pointer; }
 button.mk-sinal:hover { background: var(--mk-hover); }
-.mk-sinal time { font-family: var(--mono, monospace); font-size: 11.5px; color: var(--texto-fraco); }
-.mk-sev { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: var(--atlas-r-pill, 999px); background: color-mix(in srgb, currentColor 14%, transparent); }
+.mk-sev { width: 8px; height: 8px; border-radius: 50%; background: currentColor; transform: translateY(-1px); }
 .sev-alta { color: var(--vermelho); } .sev-media { color: var(--dourado); } .sev-baixa { color: var(--texto-fraco); }
 
-/* mapa de calor: células com canto e vão (o vão mostra a superfície) */
+/* mapa de calor (28/11): cada rede é um bloco arredondado; dentro dele as
+   células se separam por um fio de 1 px, sem a grade de linhas escuras
+   que marcava cada caixinha (o dono: "tirar essa marcação das bordas") */
 .mk-p-mapa .mk-p-corpo { padding: 4px 12px 12px; }
 .mk-mapa { position: relative; width: 100%; aspect-ratio: 1.62; min-height: 320px; }
 .tmap { --mapa-alta: #12955c; --mapa-queda: #c43b48; --mapa-neutro: #273246; }
@@ -109,12 +114,11 @@ button.mk-sinal:hover { background: var(--mk-hover); }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box; }
 button.tmap-titulo { cursor: pointer; }
 button.tmap-titulo:hover { color: var(--atlas-acao, #00BFFF); }
-.tmap-area { position: absolute; left: 0; right: 0; bottom: 0; }
-.tmap-celula { all: unset; position: absolute; box-sizing: border-box; border: 2px solid transparent; background-clip: padding-box;
-  border-radius: var(--atlas-r-xs, 8px); overflow: hidden;
+.tmap-area { position: absolute; left: 3px; right: 3px; bottom: 3px; border-radius: var(--atlas-r-sm, 12px); overflow: hidden; }
+.tmap-celula { all: unset; position: absolute; box-sizing: border-box; border: 1px solid transparent; background-clip: padding-box;
+  border-radius: var(--atlas-r-xxs, 4px); overflow: hidden;
   display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 1px; padding: 4px;
   color: #fff; cursor: pointer; transition: filter .15s; }
-.tmap-celula.tmap-estreita { border-width: 1px; border-radius: var(--atlas-r-xxs, 4px); }
 .tmap-celula:hover { filter: brightness(1.15); }
 .tmap-celula:focus-visible { outline: 2px solid var(--atlas-acao, #00BFFF); outline-offset: -2px; z-index: 1; }
 .tmap-celula b { font-size: 12px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
@@ -174,3 +178,9 @@ button.tmap-titulo:hover { color: var(--atlas-acao, #00BFFF); }
   .mk-mapa { aspect-ratio: 0.9; }
 }
 @media (prefers-reduced-motion: reduce) { .mk-aba, .tmap-celula, .mk-linha { transition: none; } }
+
+/* 28/11: em tela larga o mapa acompanha a altura das listas ao lado
+   (antes ele crescia pela proporção e deixava as laterais com vazio embaixo) */
+@media (min-width: 1281px) {
+  .mk-p-mapa .mk-mapa { aspect-ratio: auto; flex: 1; min-height: 460px; }
+}

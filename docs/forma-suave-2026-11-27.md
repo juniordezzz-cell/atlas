@@ -82,3 +82,15 @@ solto, reserva diferente do degrau, ou `--atlas-r-*` definido fora do shell.
 - Desmontar o resto do `atlas-sereno.css` (fundo, tipografia dos números,
   mono → Inter) para dentro da camada única, área por área.
 - Escala de espaçamento obrigatória (o teste cobre só cantos).
+
+## Ajuste de 28/11 (Mercado, primeira parte)
+
+- Miolo com o mapa no centro: colunas `.85fr · 2,7fr · 1fr` (o mapa foi de
+  ~48% para ~60% da faixa). Em tela larga o mapa acompanha a altura das
+  listas ao lado (mínimo 460 px), sem vazio embaixo das laterais.
+- Redes: valor com a variação embaixo (`linhaPilha`), linhas mais baixas.
+- O que mudou hoje: saiu a hora repetida em cada linha (já está em "dados
+  de …"); o peso virou um ponto de cor com o nome em `title`/`aria-label`.
+- Mapa: cada rede é um bloco com canto `sm`; as células se separam por um fio
+  de 1 px com canto `xxs`, sem a grade de linhas escuras. Saiu `tmap-estreita`.
+- Painéis com canto `xl` (24) e números com `lg` (20).
