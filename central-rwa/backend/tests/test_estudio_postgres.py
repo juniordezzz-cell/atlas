@@ -21,6 +21,16 @@ MIGRATIONS = Path(__file__).resolve().parents[2] / "supabase" / "migrations"
 AGORA = datetime(2026, 11, 11, 23, 0, tzinfo=timezone.utc)
 
 
+@pytest.fixture
+def sem_limpeza(monkeypatch):
+    """A varredura termina com estudio.manutencao(), que apaga pelo now() real
+    (snapshots com mais de 7 dias, velas com mais de 45, status com mais de 30).
+    As datas destes testes são fixas (AGORA = 11/11/2026): desde 18/11 a limpeza
+    apagava os snapshots recém-gravados antes da conferência. A limpeza tem teste
+    próprio, com datas relativas ao now() (test_manutencao_...)."""
+    monkeypatch.setattr(PostgresEstudio, "manutencao", lambda self: None)
+
+
 @pytest.fixture(scope="module")
 def dsns(tmp_path_factory):
     server = pgserver.get_server(tmp_path_factory.mktemp("pgestudio"), cleanup_mode="stop")
@@ -75,7 +85,7 @@ def test_agente_nao_le_o_scanner_direto_e_anon_nao_le_o_estudio(dsns):
         assert not c.execute("select has_function_privilege('estudio_agente', 'estudio.disparar_varredura()', 'execute')").fetchone()[0]
 
 
-def test_varredura_grava_com_o_papel_do_agente(dsns):
+def test_varredura_grava_com_o_papel_do_agente(dsns, sem_limpeza):
     uri, agente = dsns
     store, cli = PostgresEstudio(agente), ClienteFalso()
     try:
@@ -109,15 +119,18 @@ def test_varredura_grava_com_o_papel_do_agente(dsns):
 
 def test_manutencao_resume_por_hora_e_apaga_o_vencido(dsns):
     uri, _ = dsns
-    with psycopg.connect(uri, autocommit=True) as c:
+    # transação desfeita no fim: a limpeza apaga pelo now() real e levaria junto
+    # os snapshots de AGORA que o teste da DeFiLlama, mais abaixo, consulta
+    with psycopg.connect(uri) as c:
         c.execute("insert into estudio.snapshots (pool_id, observado_em, tvl, vol_24h) values "
                   "('velho', now() - interval '8 days', 1, 1), ('novo', now(), 2, 2), ('novo', now() - interval '15 minutes', 4, 2)")
         c.execute("select estudio.manutencao()")
         assert c.execute("select count(*) from estudio.snapshots where pool_id = 'velho'").fetchone()[0] == 0
         assert c.execute("select sum(amostras) from estudio.snapshots_hora where pool_id = 'novo'").fetchone()[0] == 2
+        c.rollback()
 
 
-def test_varredura_pela_defillama_grava_fonte_volume_e_chamadas(dsns, monkeypatch):
+def test_varredura_pela_defillama_grava_fonte_volume_e_chamadas(dsns, monkeypatch, sem_limpeza):
     """Depois das velas da GT (teste acima), a DeFiLlama assume: fonte, endereço
     da cotação, volume da hora pelos snapshots e o registro das chamadas."""
     from tests.test_estudio_fontes_llama import AGORA as AGORA_LLAMA, AERO_DS, LlamaFalso
