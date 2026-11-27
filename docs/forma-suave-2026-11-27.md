@@ -137,3 +137,7 @@ RWA mantêm as três colunas.
 - Linha preta entre os quadrados (referência do dono): `.tmap-area` com fundo
   #04060a e células sem canto; o vão de 1 px de cada célula mostra o preto.
   O bloco inteiro do mapa mantém o canto `sm`.
+- Correção: a linha não aparecia. O `academy-treemap.js` pinta a célula com
+  `style.background` (atalho), que volta o `background-clip` para
+  `border-box`; a cor cobria a borda transparente. Agora a borda tem cor
+  própria (`1px solid #04060a`) e aparece de qualquer jeito.
