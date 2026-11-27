@@ -267,16 +267,15 @@
   function abaDefi(mount) {
     var T = topo(["TVL DeFi", "Volume 24h", "Taxas 24h", "Stablecoins", "Medo e ganância"]);
     mount.appendChild(T.el);
-    // 28/11: só o mapa na faixa central (o dono: "muito apertado"); Redes e
-    // "O que mudou hoje" saíram. Voltar para todas as redes é pelo botão no topo.
+    // 28/11: só o mapa na faixa central, com um submenu de redes (termos da
+    // DefiLlama: TVL, redes, protocolos). "Todas" mostra os maiores protocolos
+    // sem agrupar; cada rede mostra só os protocolos dela. Antes o mapa era
+    // agrupado por rede e as células ficavam pequenas demais para ler.
     var grade = h("div", "mk-miolo mk-miolo-so");
-    var pMapa = painel("Onde está o dinheiro", "tamanho = TVL · cor = 7 dias");
+    var pMapa = painel("TVL por protocolo", "tamanho: TVL · cor: variação em 7 dias");
     pMapa.classList.add("mk-p-mapa");
-    var voltar = h("button", "mk-voltar", "← Todas as redes");
-    voltar.type = "button"; voltar.hidden = true;
-    voltar.addEventListener("click", function () { if (redeSel) escolheRede(redeSel); });
-    pMapa.querySelector(".mk-p-head").insertBefore(voltar, pMapa.querySelector(".mk-p-dica"));
     add(grade, pMapa); mount.appendChild(grade);
+    var marcaRede = null;
     var baixo = h("div", "mk-baixo");
     var pFluxo = painel("Fluxo da semana", "entrou · saiu, por rede");
     var pVol = painel("Maior volume 24h", "DEX e perpétuos");
@@ -299,34 +298,29 @@
     function desenhaMapa() {
       var ps = D.protos;
       var caixa = h("div", "mk-mapa");
-      voltar.hidden = !redeSel;
       if (redeSel) {
         var its = ps.filter(function (p) { return p.redes && p.redes[redeSel] > 0; })
-          .sort(function (a, b) { return b.redes[redeSel] - a.redes[redeSel]; }).slice(0, 24)
+          .sort(function (a, b) { return b.redes[redeSel] - a.redes[redeSel]; }).slice(0, 20)
           .map(function (p) { return { nome: p.nome, valor: p.redes[redeSel], variacao: p.change7d, detalhe: big(p.redes[redeSel]), aoClicar: abrirProto(p) }; });
         if (!its.length) return pMapa.indisponivel(null, "Sem protocolos de " + rede(redeSel) + " na lista.");
         pMapa.estado(caixa);
         AcademyTreemap.render(caixa, [{ nome: rede(redeSel), itens: its }], { titulos: false, escala: 10 });
-        pMapa.dica(rede(redeSel) + " · tamanho = TVL na rede · cor = 7 dias");
+        pMapa.dica("20 maiores em " + rede(redeSel) + " · tamanho: TVL na rede · cor: variação em 7 dias");
         return;
       }
-      var porRede = {};
-      ps.forEach(function (p) { var r = p.redePrincipal || "Outras"; (porRede[r] || (porRede[r] = [])).push(p); });
-      var redes = Object.keys(porRede).map(function (r) { return { r: r, tvl: porRede[r].reduce(function (s, p) { return s + p.tvl; }, 0) }; })
-        .sort(function (a, b) { return b.tvl - a.tvl; });
-      var principais = redes.slice(0, 7).map(function (x) { return x.r; });
-      var grupos = principais.map(function (r) {
-        return { nome: rede(r), chave: r, itens: porRede[r].slice(0, 12).map(function (p) {
-          return { nome: p.nome, valor: p.tvl, variacao: p.change7d, detalhe: big(p.tvl), aoClicar: abrirProto(p) }; }) };
-      });
-      var outras = [];
-      redes.slice(7).forEach(function (x) { porRede[x.r].forEach(function (p) { outras.push(p); }); });
-      outras.sort(function (a, b) { return b.tvl - a.tvl; });
-      if (outras.length) grupos.push({ nome: "Outras redes", itens: outras.slice(0, 14).map(function (p) {
-        return { nome: p.nome, valor: p.tvl, variacao: p.change7d, detalhe: big(p.tvl) + " · " + rede(p.redePrincipal), aoClicar: abrirProto(p) }; }) });
+      var top = ps.filter(function (p) { return p.tvl > 0; }).sort(function (a, b) { return b.tvl - a.tvl; }).slice(0, 20);
       pMapa.estado(caixa);
-      AcademyTreemap.render(caixa, grupos, { escala: 10, juntar: true, aoClicarGrupo: function (g) { if (g.chave) escolheRede(g.chave); } });
-      pMapa.dica("tamanho = TVL · cor = 7 dias · clique numa rede para abrir só ela");
+      AcademyTreemap.render(caixa, [{ nome: "Protocolos", itens: top.map(function (p) {
+        return { nome: p.nome, valor: p.tvl, variacao: p.change7d, detalhe: big(p.tvl) + " · " + rede(p.redePrincipal), aoClicar: abrirProto(p) }; }) }],
+        { titulos: false, escala: 10 });
+      pMapa.dica("20 maiores · tamanho: TVL · cor: variação em 7 dias");
+    }
+    /* submenu de redes: as 8 maiores por TVL (lista da DefiLlama) */
+    function montaRedes() {
+      if (marcaRede || !D.chains || !D.chains.length) return;
+      var ops = [["", "Todas as redes"]].concat(D.chains.slice(0, 8).map(function (c) { return [c.name, rede(c.name)]; }));
+      marcaRede = filtroPainel(pMapa, ops, function (k) { escolheRede(k || null); });
+      pMapa.querySelector(".mk-filtro").classList.add("mk-filtro-largo");
     }
     function desenhaTabela() {
       var rows = D.protos.filter(function (p) { return !redeSel || (p.redes && p.redes[redeSel] > 0); });
@@ -341,7 +335,7 @@
       ], rows, { ordem: 2, aoClicar: function (r) { abrirProto(r)(); } });
       pTab.dica(redeSel ? "filtrado por " + rede(redeSel) + " · clique numa linha para abrir" : "clique no título da coluna para ordenar · clique numa linha para abrir");
     }
-    function escolheRede(r) { redeSel = redeSel === r ? null : r; desenhaMapa(); desenhaTabela(); }
+    function escolheRede(r) { redeSel = r; desenhaMapa(); desenhaTabela(); }
 
     function carregar() {
       Promise.all([
@@ -371,7 +365,7 @@
         if (D.fg) f.push("Mercado com " + rotuloFG(D.fg.value) + ".");
         T.frase(f.join(" "));
         if (!D.protos.length) { pMapa.indisponivel(carregar); pTab.indisponivel(carregar); }
-        else { desenhaMapa(); desenhaTabela(); }
+        else { montaRedes(); desenhaMapa(); desenhaTabela(); }
         // fluxo da semana
         var fl = (D.chains || []).filter(function (c) { return c.delta7d != null; }).sort(function (a, b) { return b.delta7d - a.delta7d; });
         if (fl.length) pFluxo.estado(barras(fl.map(function (c) { return { nome: rede(c.name), valor: c.delta7d, rotulo: (c.delta7d >= 0 ? "+" : "") + big(c.delta7d) }; })));

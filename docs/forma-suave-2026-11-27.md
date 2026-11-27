@@ -118,3 +118,14 @@ RWA mantêm as três colunas.
 - Mesmo dia, o dono achou o mapa enorme numa tela de 1888 px (~770 px de
   altura). Agora a altura é fixa, `clamp(340px, 28vw, 480px)`, e a letra
   do nome vai no máximo a 34 px (o valor, a 14 px).
+
+## Ajuste de 28/11 (Mercado, quarta parte)
+
+- O dono achou o mapa da DeFi ainda apertado e pediu nomes mais
+  profissionais, no padrão da DefiLlama, CoinGecko e CoinMarketCap.
+  Título: "TVL por protocolo"; legenda: "tamanho: TVL · cor: variação em 7 dias".
+- O mapa deixou de ser agrupado por rede. Submenu em pílulas: "Todas as redes"
+  mais as 8 maiores redes por TVL (lista da DefiLlama). "Todas" mostra os 20
+  maiores protocolos; cada rede mostra os 20 maiores dela, pelo TVL naquela
+  rede. A tabela de protocolos segue o mesmo filtro. Saiu o botão "← Todas
+  as redes".

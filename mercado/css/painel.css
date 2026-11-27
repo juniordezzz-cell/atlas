@@ -189,11 +189,6 @@ button.tmap-titulo:hover { color: var(--atlas-acao, #00BFFF); }
 
 /* 28/11: aba DeFi só com o mapa na faixa central, largura inteira */
 .mk-miolo.mk-miolo-so { grid-template-columns: minmax(0, 1fr); }
-.mk-voltar { all: unset; cursor: pointer; margin-right: auto; font-size: 12.5px; font-weight: 600; color: var(--atlas-acao, #00BFFF);
-  padding: 4px 12px; border-radius: var(--atlas-r-pill, 999px); }
-.mk-voltar:hover { background: rgba(0, 191, 255, .1); }
-.mk-voltar:focus-visible { outline: 2px solid var(--atlas-acao, #00BFFF); outline-offset: 2px; }
-.mk-voltar[hidden] { display: none; }
 @media (min-width: 721px) {
   /* 28/11: altura fixa (o dono achou enorme com 2,3 de proporção em tela grande) */
   .mk-miolo-so .mk-p-mapa .mk-mapa { aspect-ratio: auto; flex: none; height: clamp(340px, 28vw, 480px); min-height: 0; }
@@ -214,3 +209,6 @@ button.tmap-titulo:hover { color: var(--atlas-acao, #00BFFF); }
 }
 @media (prefers-reduced-motion: reduce) { .mk-filtro-op { transition: none; } }
 .tmap-celula.tmap-resto span { white-space: normal; opacity: .75; }
+
+/* submenu de redes da DeFi: linha própria embaixo do título, rola de lado se faltar espaço */
+.mk-filtro.mk-filtro-largo { order: 3; flex-basis: 100%; max-width: max-content; overflow-x: auto; scrollbar-width: none; margin-top: 6px; }
