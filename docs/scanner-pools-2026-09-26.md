@@ -249,3 +249,28 @@ colunas) mais o botão de simular em cada linha da lista.
   virar posição da carteira.
 - Testes: `simulador.test.cjs` (5): preço parado sem perda e taxa exata,
   fora da faixa sem taxa, fatia limitada a 100%, inversão e tokens do par.
+
+## Onde o capital rende mais (28/11/2026)
+
+Pedido do dono depois de perguntar se a PancakeSwap (US$ 1,8 bi de TVL)
+rende mais que Raydium, Orca e Meteora juntas. Ele escolheu pôr a conta
+dentro do Scanner, não numa ferramenta nova.
+
+- **Onde:** aba Descobrir, painel recolhível acima dos filtros
+  (`#cxPainel`). Só busca na DefiLlama ao abrir; guarda o resultado 1 h
+  (`atlas.scanner.capitalDex.v1`).
+- **Arquivo:** `Ferramentas/scanner-pools/capital-dex.js` (conta pura em
+  `agrega()`, tela em `montar()`), teste `capital-dex.test.cjs`.
+- **Uma linha por DEX × rede**, TVL ≥ US$ 10 mi, 15 primeiras:
+  TVL (`lite/protocols2`, versões somadas pelo protocolo-pai: Uniswap V3 +
+  V4 = Uniswap), volume 24h (`overview/dexs`, `breakdown24h`), taxas para o
+  LP (`overview/fees?dataType=dailySupplySideRevenue`).
+  Razão 24h = volume ÷ TVL; por US$ 1.000 = taxa do LP ÷ TVL × 1.000 por
+  dia, × 365 ao ano. Sem dado de taxa do LP aparece "—", nunca zero.
+- **Nomes de rede:** a DefiLlama usa "BSC" no TVL e "bsc" no volume, "OP
+  Mainnet" e "optimism", "Avalanche" e "avax" (`chaveRede`). O Scanner chama
+  BSC de "BNB Chain" e Hyperliquid L1 de "HyperEVM" (`REDE_SCANNER`).
+- **Clique:** a linha de uma DEX que tem pools no Scanner (mostra "N pools
+  no Scanner") põe a plataforma e a rede nos filtros da tabela e rola até ela.
+- **Leitura:** na Aero a taxa vai para quem vota (veAERO); o LP recebe
+  emissão, por isso a taxa para o LP é baixa. Está escrito no rodapé do bloco.
