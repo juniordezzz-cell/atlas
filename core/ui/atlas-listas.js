@@ -58,7 +58,9 @@
     { slug: "comparador-de-ativos", nome: "Comparador de Ativos", href: "Ferramentas/comparador-de-ativos/index.html",
       icon: '<path d="M12 4v16M5 8h14"/><path d="m5 8-3 6h6zM19 8l-3 6h6z"/>' },
     { slug: "medo-e-ganancia", nome: "Medo e Ganância", href: "Ferramentas/medo-e-ganancia/index.html",
-      icon: '<path d="M4 16a8 8 0 0 1 16 0"/><path d="m12 16 4-5"/><circle cx="12" cy="16" r="1"/>' }
+      icon: '<path d="M4 16a8 8 0 0 1 16 0"/><path d="m12 16 4-5"/><circle cx="12" cy="16" r="1"/>' },
+    { slug: "fundamentos", nome: "Fundamentos de Protocolo", href: "Ferramentas/fundamentos/index.html",
+      icon: '<path d="M4 20V14M10 20V10M16 20V6M22 20H2"/><path d="m3 9 6-4 5 3 7-5"/>' }
   ];
 
   if (typeof module !== 'undefined' && module.exports) module.exports = L;

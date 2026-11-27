@@ -1,0 +1,22 @@
+/* ATLAS · Ferramentas/fundamentos/estilo.css (28/11/2026) — só o que é desta ferramenta */
+.fd-controles{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px 20px;margin-bottom:6px}
+.fd-escolha{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:1;min-width:280px}
+.fd-chips{display:flex;flex-wrap:wrap;gap:6px}
+.fd-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 6px 5px 12px;border-radius:var(--atlas-r-pill, 999px);background:var(--accent-bg);font-size:13px}
+.fd-chip-x{border:0;background:transparent;color:var(--mut);font-size:16px;line-height:1;cursor:pointer;padding:0 6px;border-radius:var(--atlas-r-pill, 999px)}
+.fd-chip-x:hover{color:var(--txt);background:rgba(255,255,255,.06)}
+.fd-chip-x:focus-visible{outline:2px solid var(--atlas-acao, #00BFFF);outline-offset:1px}
+.fd-busca input{min-width:260px;padding:8px 14px;border-radius:var(--atlas-r-pill, 999px);border:1px solid var(--line);background:var(--panel-a);color:var(--txt);font:inherit}
+.fd-busca input:focus{outline:2px solid var(--atlas-acao, #00BFFF);outline-offset:1px}
+.fd-bloco{margin-top:16px}
+.fd-nome b{display:block;font-weight:600}
+.fd-nome small{color:var(--mut);font-size:11.5px}
+.tabela td .fd-v{display:block}
+.tabela td small{display:block;font-size:11.5px}
+.tabela tr.clicavel{cursor:pointer}
+.tabela tr.clicavel:hover td{background:rgba(91,140,255,.06)}
+.tabela tr.clicavel:focus-visible{outline:2px solid var(--atlas-acao, #00BFFF);outline-offset:-2px}
+.fd-carregando{color:var(--mut);font-family:inherit!important;text-align:left!important}
+.fd-foco-topo{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.fd-leitura{margin:8px 0 14px;font-size:14px;line-height:1.6;color:var(--txt2);max-width:80ch}
+@media (max-width:720px){ .fd-busca input{min-width:0;width:100%} .fd-busca{width:100%} }

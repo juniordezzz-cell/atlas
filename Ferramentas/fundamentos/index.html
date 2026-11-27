@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-module="tools">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Fundamentos de Protocolo do ATLAS: volume, taxas, receita de quem tem o token e valor de mercado de protocolos DeFi, com crescimento em 7, 30, 90 dias e 1 ano.">
+<title>Fundamentos de Protocolo — ATLAS</title>
+<link rel="icon" type="image/png" href="../../assets/iconeatlas.png">
+<link rel="stylesheet" href="../../themes/atlas-fonts.css">
+<link rel="stylesheet" href="../../core/ui/atlas-shell.css">
+<link rel="stylesheet" href="../_comum/ferramenta.css?v=3">
+<link rel="stylesheet" href="estilo.css?v=1">
+<!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
+<script src="../../core/atlas-auth.js"></script>
+<script src="../../core/atlas-secure.js"></script>
+<!-- Cenário de fundo do ATLAS (piloto 15/10/2026). Registro: docs/visual-ferramentas-2026-10-15.md -->
+<link rel="stylesheet" href="../../core/ui/atlas-cenario.css?v=5">
+<script type="module" src="../../core/ui/atlas-cenario.js?v=3"></script>
+</head>
+<body>
+<!-- Fundamentos de Protocolo (28/11/2026). Registro: docs/fundamentos-2026-11-28.md
+     O negócio por trás do token está crescendo? Quanto o mercado paga por ele?
+     Dados: DefiLlama (lite/protocols2 + summary/fees e summary/dexs). Conta: conta.js. -->
+<div class="wrap wrap--larga">
+
+  <header class="top">
+    <a class="voltar" href="../../pages/ferramentas.html">← Ferramentas</a>
+    <h1>Fundamentos de <span>Protocolo</span></h1>
+    <p class="sub">O negócio por trás do token está crescendo? Quanto do que ele fatura chega a quem tem o token, e quanto o mercado paga por isso?</p>
+    <p class="estudo">Ferramenta de estudo. Não é recomendação de compra ou venda.</p>
+  </header>
+
+  <div class="fd-controles">
+    <div class="toggle" role="tablist" aria-label="Período" id="fd-periodo">
+      <button type="button" role="tab" data-dias="7" aria-selected="false">7 dias</button>
+      <button type="button" role="tab" data-dias="30" aria-selected="true">30 dias</button>
+      <button type="button" role="tab" data-dias="90" aria-selected="false">90 dias</button>
+      <button type="button" role="tab" data-dias="365" aria-selected="false">1 ano</button>
+    </div>
+    <div class="fd-escolha">
+      <div class="fd-chips" id="fd-chips" aria-label="Protocolos na comparação"></div>
+      <div class="fd-busca">
+        <input id="fd-busca" type="search" placeholder="Adicionar protocolo (ex.: Raydium, CAKE)" autocomplete="off" aria-label="Adicionar protocolo" list="fd-lista">
+        <datalist id="fd-lista"></datalist>
+      </div>
+    </div>
+  </div>
+  <p class="status" id="fd-status">Carregando a lista de protocolos da DefiLlama…</p>
+
+  <section class="bloco fd-bloco">
+    <h2 class="bloco__titulo" id="fd-titulo-tabela">Comparação · últimos 30 dias contra os 30 anteriores</h2>
+    <div class="tabela">
+      <table>
+        <thead><tr>
+          <th>Protocolo</th><th>Valor de mercado</th><th>Volume</th><th>Taxas pagas</th>
+          <th>Receita para o token</th><th title="Parte das taxas que chega a quem tem o token">Parte do token</th>
+          <th title="Valor de mercado ÷ receita do token em um ano">Anos de receita</th>
+        </tr></thead>
+        <tbody id="fd-tabela"></tbody>
+      </table>
+    </div>
+    <p class="status">Clique numa linha para ver o gráfico. Embaixo de cada número, a variação contra o período anterior de mesmo tamanho.</p>
+  </section>
+
+  <section class="bloco fd-bloco" id="fd-foco" hidden>
+    <div class="fd-foco-topo">
+      <h2 class="bloco__titulo" id="fd-foco-nome">—</h2>
+      <div class="toggle" role="tablist" aria-label="O que mostrar no gráfico" id="fd-metrica">
+        <button type="button" role="tab" data-m="volume" aria-selected="false">Volume</button>
+        <button type="button" role="tab" data-m="taxas" aria-selected="true">Taxas pagas</button>
+        <button type="button" role="tab" data-m="token" aria-selected="false">Receita para o token</button>
+      </div>
+    </div>
+    <p class="fd-leitura" id="fd-leitura"></p>
+    <div class="grafico" style="height:300px"><canvas id="fd-grafico" aria-label="Gráfico do último ano, média de 7 dias"></canvas></div>
+    <p class="status" id="fd-grafico-nota">Último ano, média de 7 dias por dia.</p>
+  </section>
+
+  <details class="explica">
+    <summary><h2>Como ler</h2></summary>
+    <h3>Volume, taxas e receita</h3>
+    <p><strong>Volume</strong> é quanto foi negociado (só existe em DEX). <strong>Taxas pagas</strong> é o que os usuários pagaram para usar o protocolo. <strong>Receita para o token</strong> é a parte dessas taxas que chega a quem tem o token: recompra, queima ou distribuição para quem trava o token. Numa DEX, a maior parte das taxas costuma ir para quem fornece liquidez, não para o token.</p>
+    <h3>Crescendo ou encolhendo</h3>
+    <p>A variação compara o período escolhido com o período anterior de mesmo tamanho: os últimos 30 dias contra os 30 dias antes deles, por exemplo. Volume e taxas subindo por meses seguidos mostram uso crescendo. Um dia só não diz nada: use 30 ou 90 dias.</p>
+    <h3>Anos de receita</h3>
+    <p>É o valor de mercado dividido pela receita do token em um ano, calculada pelo ritmo do período escolhido. Funciona como o preço/lucro de uma ação: quantos anos de receita o mercado está pagando hoje. Número baixo pode ser barato ou um negócio que vai encolher; número alto pode ser caro ou uma aposta em crescimento. Sem receita para o token, não há como calcular.</p>
+    <h3>O que a ferramenta não mostra</h3>
+    <p>Emissão de tokens novos (diluição), desbloqueios futuros, dívida, riscos de contrato e de regulação. Para oferta e desbloqueio, use a <a href="../calculadora-market-cap/index.html">Calculadora de Market Cap</a>. Fonte dos números: DefiLlama.</p>
+  </details>
+
+</div>
+
+<script src="../../core/http.js"></script>
+<script src="../../core/atlas-dados.js?v=1"></script>
+<script src="../../assets/vendor/chart-4.4.1.min.js"></script>
+<script src="conta.js?v=1"></script>
+<script src="app.js?v=1"></script>
+<script src="../../core/ui/atlas-shell.js"></script>
+</body>
+</html>

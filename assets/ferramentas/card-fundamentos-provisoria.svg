@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" role="img" aria-label="">
+  <!-- Arte PROVISÓRIA de Fundamentos de Protocolo (28/11/2026), até a capa definitiva:
+       barras de receita crescendo e a linha do valor de mercado. -->
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f2a33"/><stop offset=".55" stop-color="#0c1a2c"/><stop offset="1" stop-color="#0a1122"/>
+    </linearGradient>
+    <radialGradient id="brilho" cx=".6" cy=".26" r=".55">
+      <stop offset="0" stop-color="#2ec785" stop-opacity=".35"/><stop offset="1" stop-color="#2ec785" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="barra" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2ec785"/><stop offset="1" stop-color="#1b7f57"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="800" fill="url(#fundo)"/>
+  <rect width="600" height="800" fill="url(#brilho)"/>
+  <g stroke="#ffffff" stroke-opacity=".06">
+    <path d="M0 120H600M0 200H600M0 280H600M0 360H600"/>
+  </g>
+  <g fill="url(#barra)">
+    <rect x="70" y="300" width="44" height="60" rx="6"/>
+    <rect x="140" y="270" width="44" height="90" rx="6"/>
+    <rect x="210" y="250" width="44" height="110" rx="6"/>
+    <rect x="280" y="215" width="44" height="145" rx="6"/>
+    <rect x="350" y="190" width="44" height="170" rx="6"/>
+    <rect x="420" y="150" width="44" height="210" rx="6"/>
+    <rect x="490" y="115" width="44" height="245" rx="6"/>
+  </g>
+  <path d="M60 230 C150 215 210 250 290 190 S430 160 545 95" fill="none" stroke="#5b8cff" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="545" cy="95" r="9" fill="#5b8cff"/>
+  <path d="M60 360H560" stroke="#9aa6c4" stroke-opacity=".5" stroke-width="2"/>
+</svg>
