@@ -250,27 +250,26 @@ colunas) mais o botão de simular em cada linha da lista.
 - Testes: `simulador.test.cjs` (5): preço parado sem perda e taxa exata,
   fora da faixa sem taxa, fatia limitada a 100%, inversão e tokens do par.
 
-## Onde o capital rende mais (28/11/2026)
+## Aba Eficiência (28/11/2026)
 
 Pedido do dono depois de perguntar se a PancakeSwap (US$ 1,8 bi de TVL)
-rende mais que Raydium, Orca e Meteora juntas. Ele escolheu pôr a conta
-dentro do Scanner, não numa ferramenta nova.
+rende mais que Raydium, Orca e Meteora juntas. Primeiro entrou como painel
+no Descobrir; no mesmo dia ele pediu aba própria, nome novo e metade do
+tamanho, focada só em volume 24h ÷ TVL.
 
-- **Onde:** aba Descobrir, painel recolhível acima dos filtros
-  (`#cxPainel`). Só busca na DefiLlama ao abrir; guarda o resultado 1 h
-  (`atlas.scanner.capitalDex.v1`).
-- **Arquivo:** `Ferramentas/scanner-pools/capital-dex.js` (conta pura em
-  `agrega()`, tela em `montar()`), teste `capital-dex.test.cjs`.
-- **Uma linha por DEX × rede**, TVL ≥ US$ 10 mi, 15 primeiras:
-  TVL (`lite/protocols2`, versões somadas pelo protocolo-pai: Uniswap V3 +
-  V4 = Uniswap), volume 24h (`overview/dexs`, `breakdown24h`), taxas para o
-  LP (`overview/fees?dataType=dailySupplySideRevenue`).
-  Razão 24h = volume ÷ TVL; por US$ 1.000 = taxa do LP ÷ TVL × 1.000 por
-  dia, × 365 ao ano. Sem dado de taxa do LP aparece "—", nunca zero.
-- **Nomes de rede:** a DefiLlama usa "BSC" no TVL e "bsc" no volume, "OP
-  Mainnet" e "optimism", "Avalanche" e "avax" (`chaveRede`). O Scanner chama
-  BSC de "BNB Chain" e Hyperliquid L1 de "HyperEVM" (`REDE_SCANNER`).
-- **Clique:** a linha de uma DEX que tem pools no Scanner (mostra "N pools
-  no Scanner") põe a plataforma e a rede nos filtros da tabela e rola até ela.
-- **Leitura:** na Aero a taxa vai para quem vota (veAERO); o LP recebe
-  emissão, por isso a taxa para o LP é baixa. Está escrito no rodapé do bloco.
+- **Onde:** aba "Eficiência", entre Oráculo e Guia (`#tab-giro`). Só busca
+  na DefiLlama quando a aba abre; guarda 1 h (`atlas.scanner.eficiencia.v2`).
+- **Arquivo:** `Ferramentas/scanner-pools/eficiencia.js` (conta pura em
+  `agrega()` e `ranking()`, tela em `montar()`), teste `eficiencia.test.cjs`.
+- **Tela:** dois destaques (plataforma e rede que mais giram) e duas listas
+  de 8 linhas, por plataforma (redes somadas) e por rede (DEX somadas), com
+  TVL, volume 24h e razão. Só entra TVL ≥ US$ 50 mi: com 10 mi o topo era de
+  DEX pequenas com giro inflado (Metric, BisonFi, Elysium).
+- **Fontes:** TVL do `lite/protocols2` (versões somadas pelo protocolo-pai:
+  Uniswap V3 + V4 = Uniswap; TVL de staking fora), volume do `overview/dexs`
+  (`breakdown24h`). Nomes de rede diferentes entre as duas ("BSC"/"bsc",
+  "OP Mainnet"/"optimism", "Avalanche"/"avax") passam por `chaveRede`.
+- **Clique:** linha com pools no Scanner ("N pools") leva ao Descobrir com
+  a plataforma ou a rede no filtro. Nomes do Scanner: BSC = "BNB Chain",
+  Hyperliquid L1 = "HyperEVM", Curve Finance = "Curve" (`REDE_SCANNER`,
+  `DEX_SCANNER`).

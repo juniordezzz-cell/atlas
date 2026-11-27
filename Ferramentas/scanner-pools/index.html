@@ -716,26 +716,36 @@
   .wrap.wrap-larga{max-width:1560px}
   /* sinais da pool pendente quebram linha em vez de alargar a coluna */
   td.pool .sinais{white-space:normal; min-width:235px; max-width:340px; line-height:1.35}
-  /* 28/11: "Onde o capital rende mais" (capital-dex.js) */
-  .cx-topo{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:2px 0 12px}
-  .cx-topo select{color:var(--txt)}
-  .cx-nota{font-size:12px; color:var(--mut)}
-  .cx-corpo{font-size:13px; color:var(--mut)}
-  .cx-rolagem{overflow-x:auto}
-  .cx-tabela{width:100%; border-collapse:separate; border-spacing:0; min-width:720px; font-size:13px}
-  .cx-tabela th{text-align:left; font-size:11.5px; font-weight:500; color:var(--mut); padding:8px 12px; white-space:nowrap}
-  .cx-tabela td{padding:9px 12px; color:var(--txt); white-space:nowrap; border-top:1px solid var(--line); text-align:left}
-  .cx-tabela th.n, .cx-tabela td.n{text-align:right}
-  .cx-tabela .n{text-align:right; font-variant-numeric:tabular-nums}
-  .cx-tabela tr.clicavel{cursor:pointer}
-  .cx-tabela tr.clicavel:hover td{background:rgba(127,160,210,.06)}
-  .cx-tabela tr.clicavel:focus-visible{outline:2px solid var(--atlas-acao, #00BFFF); outline-offset:-2px}
-  .cx-dex b{display:block; font-weight:600}
-  .cx-dex small, .cx-rende small{display:block; font-size:11px; color:var(--mut)}
-  .cx-rende b{font-weight:600}
-  .cx-razao.bom{color:var(--green)} .cx-razao.medio{color:var(--amber)} .cx-razao.fraco{color:var(--red)}
-  .cx-vazio{padding:14px 0}
-  .cx-rodape{margin:12px 0 0; font-size:11.5px; line-height:1.55; color:var(--mut)}
+  /* 28/11: aba Eficiência (eficiencia.js): volume 24h ÷ TVL por plataforma e por rede */
+  .ef-cab{margin:6px 0 16px}
+  .ef-titulo{margin:0 0 6px; font-size:20px; font-weight:600}
+  .ef-sub{margin:0; font-size:13px; color:var(--mut); max-width:70ch}
+  .ef-destaques{display:flex; flex-wrap:wrap; align-items:stretch; gap:12px; margin-bottom:16px}
+  .ef-destaque{display:flex; flex-direction:column; gap:2px; background:var(--panel); border-radius:var(--atlas-r-lg, 20px); padding:14px 20px; min-width:220px}
+  .ef-destaque span{font-size:12px; color:var(--mut)}
+  .ef-destaque b{font-size:20px; font-weight:600}
+  .ef-destaque small{font-size:12.5px; font-weight:600}
+  .ef-hora{align-self:flex-end; font-size:12px; color:var(--mut); margin-left:auto}
+  .ef-grade{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px; font-size:13px; color:var(--mut)}
+  .ef-lista{background:var(--panel); border-radius:var(--atlas-r-lg, 20px); padding:14px 12px 10px}
+  .ef-lista h3{margin:0 8px 8px; font-size:14px; font-weight:600; color:var(--txt)}
+  .ef-tabela{width:100%; border-collapse:separate; border-spacing:0; font-size:13px}
+  .ef-tabela th{font-size:11.5px; font-weight:500; color:var(--mut); padding:6px 8px; text-align:left; white-space:nowrap}
+  .ef-tabela td{padding:8px; color:var(--txt); text-align:left; white-space:nowrap}
+  .ef-tabela th.n, .ef-tabela td.n{text-align:right; font-variant-numeric:tabular-nums}
+  .ef-tabela td:first-child{border-radius:var(--atlas-r-sm, 12px) 0 0 var(--atlas-r-sm, 12px)}
+  .ef-tabela td:last-child{border-radius:0 var(--atlas-r-sm, 12px) var(--atlas-r-sm, 12px) 0}
+  .ef-tabela tr.clicavel{cursor:pointer}
+  .ef-tabela tr.clicavel:hover td{background:rgba(127,160,210,.07)}
+  .ef-tabela tr.clicavel:focus-visible{outline:2px solid var(--atlas-acao, #00BFFF); outline-offset:-2px}
+  .ef-nome i{font-style:normal; color:var(--mut); display:inline-block; width:18px}
+  .ef-nome b{font-weight:600}
+  .ef-nome small{margin-left:8px; font-size:11px; color:var(--mut)}
+  .ef-razao{font-weight:600}
+  .ef-razao.bom{color:var(--green)} .ef-razao.medio{color:var(--amber)} .ef-razao.fraco{color:var(--red)}
+  .ef-vazio{padding:14px 0}
+  .ef-rodape{margin:14px 0 0; font-size:12px; line-height:1.55; color:var(--mut)}
+  @media (max-width:900px){ .ef-grade{grid-template-columns:minmax(0, 1fr)} .ef-hora{margin-left:0} }
 </style>
   <!-- Trava de login do ATLAS: sem sessão autorizada, vai para pages/login.html. -->
   <script src="../../core/atlas-auth.js"></script>
@@ -764,6 +774,7 @@
       <button class="tab" data-tab="battle" onclick="switchTab('battle')">Comparar pools</button>
       <button class="tab" data-tab="mine" onclick="switchTab('mine')">Minhas pools</button>
       <button class="tab" data-tab="assistente" onclick="switchTab('assistente')">Oráculo</button>
+      <button class="tab" data-tab="giro" onclick="switchTab('giro')">Eficiência</button>
       <button class="tab" data-tab="learn" onclick="switchTab('learn')">Guia</button>
     </nav>
   </header>
@@ -782,13 +793,6 @@
        (10/10/2026); os bloqueios continuam valendo. Abre pelo "Bloqueados"
        do rodapé. -->
   <div class="toklista" id="tokLista" hidden></div>
-
-  <!-- 28/11: em qual DEX e rede cada dólar trabalha mais (capital-dex.js).
-       Recolhido: carrega da DefiLlama só ao abrir. Clicar numa linha filtra a tabela. -->
-  <details class="dx-painel" id="cxPainel">
-    <summary><b>Onde o capital rende mais</b><span>razão volume ÷ TVL e taxa para o LP de cada DEX, por rede</span></summary>
-    <div id="cxCaixa"></div>
-  </details>
 
   <!-- filtros numa linha só: rede e plataforma viraram menus (eram 19 chips) -->
   <div class="controls">
@@ -876,6 +880,8 @@
   </section>
 
   <section id="tab-assistente" style="display:none"></section>
+  <!-- 28/11: eficiência de capital (volume 24h ÷ TVL) por plataforma e por rede; eficiencia.js -->
+  <section id="tab-giro" style="display:none"></section>
   <section id="tab-learn" style="display:none">
 
     <div class="learn-hero">
@@ -1390,7 +1396,7 @@
 <!-- pools do coletor (visões scanner_* no Supabase) -->
 <script src="../../core/atlas-supabase-config.js"></script>
 <script src="servidor.js?v=sim-2"></script>
-<script src="capital-dex.js?v=1"></script>
+<script src="eficiencia.js?v=1"></script>
 <script src="assistente-dados.js?v=oraculo-17"></script>
 <script src="assistente-api.js?v=oraculo-17"></script>
 <script src="assistente-conversa.js?v=oraculo-17"></script>
@@ -3231,6 +3237,7 @@ function switchTab(t){
   document.getElementById("tab-battle").style.display = (t==="battle") ? "" : "none";
   document.getElementById("tab-learn").style.display = (t==="learn")? "" : "none";
   document.getElementById("tab-assistente").style.display = t==="assistente" ? "" : "none";
+  document.getElementById("tab-giro").style.display = t==="giro" ? "" : "none";
   document.querySelector(".wrap").classList.toggle("wrap-larga", t==="dash");
   document.querySelector(".wrap").dataset.aba = t;   // o rodapé acompanha a largura da aba (visual-cenario.css)
   if(scannerChat) scannerChat.abaAtiva(t);
@@ -3238,27 +3245,32 @@ function switchTab(t){
   if(t==="hist") renderRadar();
   if(t==="battle" && window.BattlePools) BattlePools.render();
   if(t==="mine") renderMinhas();
+  if(t==="giro" && eficiencia) eficiencia.carregar();
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
 /* atalhos globais p/ inputs do form */
 let iPool,iPlatform,iNetwork,iCat,iFee,iTvl,iVol,iVol30,iApr,iDate;
-/* "Onde o capital rende mais" (capital-dex.js, 28/11): abre recolhido e só
-   busca na DefiLlama ao abrir. A linha de uma DEX que tem pools no Scanner
-   filtra a tabela por plataforma + rede e rola até ela. */
-function montarCapital(){
-  const painel = document.getElementById("cxPainel");
-  if(!painel || !window.ScannerCapital) return;
-  const cx = ScannerCapital.montar(document.getElementById("cxCaixa"), {
-    temPools: (dex, rede) => poolsDoTrilho().filter(p=>p.platform===dex && p.network===rede).length,
-    aoEscolher: (dex, rede) => {
-      state.platform = dex; state.page = 1; render();
-      const sel = document.getElementById("fNetwork");
-      if([...sel.options].some(o=>o.value===rede)){ sel.value = rede; render(); }
-      document.querySelector("#tab-dash .tablewrap").scrollIntoView({behavior:"smooth", block:"start"});
-    }
+/* aba Eficiência (eficiencia.js, 28/11): só busca na DefiLlama quando a aba
+   abre. A linha de uma plataforma ou rede que tem pools no Scanner leva ao
+   Descobrir com o filtro já posto. */
+let eficiencia = null;
+function irParaDescobrir(plataforma, rede){
+  switchTab("dash");
+  state.platform = plataforma || "Todas"; state.page = 1; render();
+  const sel = document.getElementById("fNetwork");
+  const alvo = rede && [...sel.options].some(o=>o.value===rede) ? rede : "Todas";
+  if(sel.value!==alvo){ sel.value = alvo; render(); }
+}
+function montarEficiencia(){
+  if(!window.ScannerEficiencia) return;
+  const vis = () => state.pools.filter(p=>!p.arquivada && !p.migrada);
+  eficiencia = ScannerEficiencia.montar(document.getElementById("tab-giro"), {
+    temPlataforma: nome => vis().filter(p=>p.platform===nome).length,
+    temRede: nome => vis().filter(p=>p.network===nome).length,
+    abrirPlataforma: nome => irParaDescobrir(nome, null),
+    abrirRede: nome => irParaDescobrir(null, nome)
   });
-  painel.addEventListener("toggle", ()=>{ if(painel.open) cx.carregar(); });
 }
 
 window.addEventListener("DOMContentLoaded",()=>{
@@ -3269,7 +3281,7 @@ window.addEventListener("DOMContentLoaded",()=>{
   iDate=document.getElementById("iDate");
   document.getElementById("modal").addEventListener("click",e=>{ if(e.target.id==="modal") closeForm(); });
   load(); render();
-  montarCapital();
+  montarEficiencia();
   scannerChat = ScannerChat.montar(contextoChat);
   if(window.AtlasOraculo) AtlasOraculo.registerTool(q=>
     ScannerConversa.perguntaDePools(q) ? scannerChat.perguntar(q) : null);
