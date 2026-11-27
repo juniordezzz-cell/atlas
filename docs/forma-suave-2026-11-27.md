@@ -141,3 +141,8 @@ RWA mantêm as três colunas.
   `style.background` (atalho), que volta o `background-clip` para
   `border-box`; a cor cobria a borda transparente. Agora a borda tem cor
   própria (`1px solid #04060a`) e aparece de qualquer jeito.
+- Filtro BSC vazio: a DefiLlama chama a rede de "BSC" em /v2/chains e de
+  "Binance" no TVL de cada protocolo. `APELIDO_REDE` + `chaveRede()` em
+  `mercado/js/dashboard.js` (também Gnosis→xDai, OP Mainnet→Optimism).
+  Conferido: as 8 redes abrem protocolos. Tron mostra 3 e Hyperliquid 7
+  porque o Mercado guarda os 200 maiores protocolos.

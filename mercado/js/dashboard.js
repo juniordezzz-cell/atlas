@@ -260,6 +260,11 @@
     "Services": "Serviços", "Insurance": "Seguro", "Algo-Stables": "Dólar algorítmico", "Leveraged Farming": "Alavancagem" };
   function cat(c) { return CATEGORIA[c] || c || "—"; }
   function rede(r) { return r ? String(r).replace(/ L1$/, "").replace(/^Binance$/, "BSC") : "—"; }
+  /* A DefiLlama dá dois nomes à mesma rede: a lista de redes (/v2/chains) diz
+     "BSC", "Gnosis", "OP Mainnet"; o TVL de cada protocolo (chainTvls) diz
+     "Binance", "xDai", "Optimism". Sem isto o filtro BSC saía vazio (28/11). */
+  var APELIDO_REDE = { "BSC": "Binance", "Gnosis": "xDai", "OP Mainnet": "Optimism" };
+  function chaveRede(nome) { return APELIDO_REDE[nome] || nome; }
 
   /* ==========================================================
      ABA DEFI
@@ -318,7 +323,7 @@
     /* submenu de redes: as 8 maiores por TVL (lista da DefiLlama) */
     function montaRedes() {
       if (marcaRede || !D.chains || !D.chains.length) return;
-      var ops = [["", "Todas as redes"]].concat(D.chains.slice(0, 8).map(function (c) { return [c.name, rede(c.name)]; }));
+      var ops = [["", "Todas as redes"]].concat(D.chains.slice(0, 8).map(function (c) { return [chaveRede(c.name), rede(c.name)]; }));
       marcaRede = filtroPainel(pMapa, ops, function (k) { escolheRede(k || null); });
       pMapa.querySelector(".mk-filtro").classList.add("mk-filtro-largo");
     }
